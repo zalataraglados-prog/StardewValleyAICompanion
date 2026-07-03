@@ -1,0 +1,51 @@
+namespace StardewAI.TransparentBridge.Adapters;
+
+public abstract class ReadAdapterBase : IStateAdapter
+{
+    public abstract string Domain { get; }
+    public abstract int Priority { get; }
+    public abstract StateAdapterResult Collect(long tick);
+
+    protected static FieldEnvelope<T> Field<T>(T value, string source, long readAtTick, string adapter = "vanilla_1_6")
+    {
+        return new FieldEnvelope<T>
+        {
+            Value = value,
+            Status = value is null ? "unavailable" : "available",
+            Source = SourceRef(value is null ? "unavailable" : "game_object", source),
+            Adapter = adapter,
+            ReadAtTick = readAtTick,
+            Confidence = value is null ? 0.0 : 1.0,
+            Reason = value is null ? "value_unavailable" : null
+        };
+    }
+
+    protected static FieldEnvelope<object?> Unavailable(string reason, string source, long readAtTick, string adapter = "not_implemented")
+    {
+        return new FieldEnvelope<object?>
+        {
+            Value = null,
+            Status = "unavailable",
+            Source = SourceRef("unavailable", source),
+            Adapter = adapter,
+            ReadAtTick = readAtTick,
+            Confidence = 0.0,
+            Reason = reason
+        };
+    }
+
+    protected static StateAdapterResult Section(
+        string sectionName,
+        IReadOnlyDictionary<string, object> fields,
+        IReadOnlyList<string>? unavailableFields = null,
+        string completeness = "partial")
+    {
+        return new StateAdapterResult(sectionName, fields, unavailableFields ?? Array.Empty<string>(), completeness);
+    }
+
+    protected static object SourceRef(string kind, string path) => new
+    {
+        kind,
+        path
+    };
+}

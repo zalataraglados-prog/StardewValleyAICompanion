@@ -1,13 +1,49 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
+from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema.exceptions import ValidationError
 from pydantic import BaseModel, Field
 
 
 app = FastAPI(title="StardewAI Backend State Store", version="0.1.0")
+SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas" / "json"
+TRANSPARENT_FIELD_KEYS = {
+    "value",
+    "status",
+    "source",
+    "adapter",
+    "read_at_tick",
+    "confidence",
+}
+
+
+def _load_schema(name: str) -> dict[str, Any]:
+    import json
+
+    with (SCHEMA_DIR / name).open("r", encoding="utf-8") as schema_file:
+        return json.load(schema_file)
+
+
+schema_validators = {
+    "snapshot": Draft202012Validator(
+        _load_schema("snapshot.schema.json"),
+        format_checker=FormatChecker(),
+    ),
+    "event": Draft202012Validator(
+        _load_schema("event.schema.json"),
+        format_checker=FormatChecker(),
+    ),
+    "capability": Draft202012Validator(
+        _load_schema("capability.schema.json"),
+        format_checker=FormatChecker(),
+    ),
+}
 
 
 class StoredSnapshot(BaseModel):
@@ -20,8 +56,19 @@ class StoredSnapshot(BaseModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
+class StoredEvent(BaseModel):
+    event_id: str
+    event_type: str
+    schema_version: str
+    game_tick: int
+    real_timestamp: datetime
+    source: str
+    raw: dict[str, Any] = Field(default_factory=dict)
+
+
 snapshots: dict[str, StoredSnapshot] = {}
-events: list[dict[str, Any]] = []
+events: list[StoredEvent] = []
+capabilities: dict[str, dict[str, Any]] = {}
 audit_records: list[dict[str, Any]] = []
 
 
@@ -36,28 +83,34 @@ def health() -> dict[str, Any]:
 
 @app.post("/api/v1/snapshots")
 def ingest_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
-    state_hash = snapshot.get("state_hash")
-    if not state_hash:
-        raise HTTPException(status_code=400, detail="snapshot.state_hash is required")
+    _validate_payload("snapshot", snapshot)
+    metadata_errors = _transparent_metadata_errors(snapshot.get("state", {}))
+    if metadata_errors:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "snapshot.state fields must include transparent metadata",
+                "errors": metadata_errors,
+            },
+        )
 
     stored = StoredSnapshot(
-        schema_version=snapshot.get("schema_version", "unknown"),
-        bridge_version=snapshot.get("bridge_version", "unknown"),
-        game_tick=int(snapshot.get("game_tick", 0)),
+        schema_version=snapshot["schema_version"],
+        bridge_version=snapshot["bridge_version"],
+        game_tick=int(snapshot["game_tick"]),
         real_timestamp=_parse_timestamp(snapshot.get("real_timestamp")),
-        state_hash=state_hash,
-        state=snapshot.get("state", {}),
+        state_hash=snapshot["state_hash"],
+        state=snapshot["state"],
         raw=snapshot,
     )
-    snapshots[state_hash] = stored
-    audit_records.append(
-        {
-            "event_type": "SnapshotIngested",
-            "state_hash": state_hash,
-            "real_timestamp": datetime.now(timezone.utc).isoformat(),
-        }
+    snapshots[stored.state_hash] = stored
+    _append_audit(
+        "SnapshotIngested",
+        stored.game_tick,
+        stored.state_hash,
+        {"schema_version": stored.schema_version},
     )
-    return {"accepted": True, "state_hash": state_hash}
+    return {"accepted": True, "state_hash": stored.state_hash}
 
 
 @app.get("/api/v1/snapshots/latest")
@@ -69,10 +122,58 @@ def latest_snapshot() -> StoredSnapshot:
 
 @app.post("/api/v1/events")
 def ingest_event(event: dict[str, Any]) -> dict[str, Any]:
-    if "event_type" not in event:
-        raise HTTPException(status_code=400, detail="event.event_type is required")
-    events.append(event)
+    _validate_payload("event", event)
+    stored = StoredEvent(
+        event_id=event["event_id"],
+        event_type=event["event_type"],
+        schema_version=event["schema_version"],
+        game_tick=int(event["game_tick"]),
+        real_timestamp=_parse_timestamp(event["real_timestamp"]),
+        source=event["source"],
+        raw=event,
+    )
+    events.append(stored)
+    _append_audit(
+        "EventIngested",
+        stored.game_tick,
+        event.get("state_hash_after") or event.get("state_hash_before") or "",
+        {"event_id": stored.event_id, "event_type": stored.event_type},
+    )
     return {"accepted": True, "count": len(events)}
+
+
+@app.get("/api/v1/events")
+def list_events(after_tick: int | None = None, limit: int = 100) -> list[StoredEvent]:
+    selected = events
+    if after_tick is not None:
+        selected = [event for event in selected if event.game_tick > after_tick]
+    return selected[-limit:]
+
+
+@app.post("/api/v1/capabilities")
+def ingest_capabilities(payload: dict[str, Any] | list[dict[str, Any]]) -> dict[str, Any]:
+    items = payload if isinstance(payload, list) else [payload]
+    accepted: list[str] = []
+    for capability in items:
+        _validate_payload("capability", capability)
+        capabilities[capability["capability_id"]] = capability
+        accepted.append(capability["capability_id"])
+        _append_audit(
+            "CapabilityIngested",
+            _latest_game_tick(),
+            _latest_state_hash(),
+            {
+                "capability_id": capability["capability_id"],
+                "status": capability["status"],
+                "access_mode": capability["access_mode"],
+            },
+        )
+    return {"accepted": True, "count": len(accepted), "capability_ids": accepted}
+
+
+@app.get("/api/v1/capabilities")
+def list_capabilities() -> list[dict[str, Any]]:
+    return list(capabilities.values())
 
 
 @app.get("/api/v1/audit")
@@ -80,8 +181,123 @@ def audit(limit: int = 100) -> list[dict[str, Any]]:
     return audit_records[-limit:]
 
 
+@app.get("/api/v1/sync")
+def sync(after_tick: int | None = None) -> dict[str, Any]:
+    latest = _latest_snapshot_or_none()
+    selected_events = events
+    if after_tick is not None:
+        selected_events = [event for event in selected_events if event.game_tick > after_tick]
+
+    return {
+        "latest_snapshot": latest,
+        "snapshot_count": len(snapshots),
+        "event_count": len(events),
+        "capability_count": len(capabilities),
+        "events": selected_events,
+        "capabilities": list(capabilities.values()),
+        "audit_head": audit_records[-10:],
+    }
+
+
 def _parse_timestamp(value: Any) -> datetime:
     if isinstance(value, str):
         normalized = value.replace("Z", "+00:00")
         return datetime.fromisoformat(normalized)
     return datetime.now(timezone.utc)
+
+
+def _validate_payload(kind: str, payload: dict[str, Any]) -> None:
+    try:
+        schema_validators[kind].validate(payload)
+    except ValidationError as exc:
+        path = ".".join(str(part) for part in exc.absolute_path)
+        location = path or "<root>"
+        raise HTTPException(
+            status_code=422,
+            detail=f"{kind} schema validation failed at {location}: {exc.message}",
+        ) from exc
+
+
+def _transparent_metadata_errors(value: Any, path: str = "state") -> list[str]:
+    errors: list[str] = []
+    if isinstance(value, dict):
+        keys = set(value)
+        if keys & TRANSPARENT_FIELD_KEYS:
+            missing = sorted(TRANSPARENT_FIELD_KEYS - keys)
+            if missing:
+                errors.append(f"{path} missing metadata keys: {', '.join(missing)}")
+            _validate_transparent_field_types(value, path, errors)
+            return errors
+
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            if isinstance(child, (dict, list)):
+                errors.extend(_transparent_metadata_errors(child, child_path))
+            else:
+                errors.append(f"{child_path} must be a transparent field object")
+        return errors
+
+    if isinstance(value, list):
+        for index, child in enumerate(value):
+            child_path = f"{path}[{index}]"
+            if isinstance(child, (dict, list)):
+                errors.extend(_transparent_metadata_errors(child, child_path))
+            else:
+                errors.append(f"{child_path} must be a transparent field object")
+        return errors
+
+    errors.append(f"{path} must be an object or array")
+    return errors
+
+
+def _validate_transparent_field_types(
+    field: dict[str, Any],
+    path: str,
+    errors: list[str],
+) -> None:
+    if "status" in field and field["status"] not in {"available", "derived", "unavailable"}:
+        errors.append(f"{path}.status must be available, derived, or unavailable")
+    if "adapter" in field and not isinstance(field["adapter"], str):
+        errors.append(f"{path}.adapter must be a string")
+    if "read_at_tick" in field and not isinstance(field["read_at_tick"], int):
+        errors.append(f"{path}.read_at_tick must be an integer")
+    confidence = field.get("confidence")
+    if "confidence" in field and (
+        not isinstance(confidence, (int, float)) or confidence < 0 or confidence > 1
+    ):
+        errors.append(f"{path}.confidence must be a number between 0 and 1")
+
+
+def _append_audit(
+    event_type: str,
+    game_tick: int,
+    state_hash: str,
+    details: dict[str, Any],
+) -> None:
+    audit_records.append(
+        {
+            "schema_version": "audit.v1",
+            "event_id": str(uuid4()),
+            "event_type": event_type,
+            "real_timestamp": datetime.now(timezone.utc).isoformat(),
+            "game_tick": game_tick,
+            "state_hash": state_hash,
+            "details": details,
+        }
+    )
+
+
+def _latest_snapshot_or_none() -> StoredSnapshot | None:
+    if not snapshots:
+        return None
+    return max(snapshots.values(), key=lambda item: item.real_timestamp)
+
+
+def _latest_game_tick() -> int:
+    latest = _latest_snapshot_or_none()
+    return latest.game_tick if latest else 0
+
+
+def _latest_state_hash() -> str:
+    latest = _latest_snapshot_or_none()
+    return latest.state_hash if latest else ""

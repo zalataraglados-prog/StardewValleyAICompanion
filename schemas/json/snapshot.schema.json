@@ -2,36 +2,345 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://stardewai.local/schemas/snapshot.v1.json",
   "title": "StardewAI Snapshot Envelope",
+  "description": "Transparent-read snapshot contract. All CanonicalState game facts are reported through a field envelope with provenance, adapter, tick, confidence, and explicit unavailable semantics.",
   "type": "object",
-  "required": ["schema_version", "bridge_version", "game_tick", "real_timestamp", "state_hash", "completeness", "unavailable_fields", "state"],
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bridge_version",
+    "game_tick",
+    "real_timestamp",
+    "state_hash",
+    "completeness",
+    "unavailable_fields",
+    "state"
+  ],
   "properties": {
     "schema_version": { "const": "snapshot.v1" },
-    "bridge_version": { "type": "string" },
+    "bridge_version": { "type": "string", "minLength": 1 },
     "smapi_version": { "type": "string" },
     "game_version": { "type": "string" },
-    "installed_mods": { "type": "array" },
+    "installed_mods": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mod_ref" }
+    },
     "save_id": { "$ref": "#/$defs/field" },
     "player_id": { "$ref": "#/$defs/field" },
-    "game_tick": { "type": "integer" },
+    "game_tick": { "type": "integer", "minimum": 0 },
     "in_game_time": { "$ref": "#/$defs/field" },
     "real_timestamp": { "type": "string", "format": "date-time" },
-    "state_hash": { "type": "string" },
-    "completeness": { "enum": ["complete", "partial"] },
-    "unavailable_fields": { "type": "array", "items": { "type": "string" } },
-    "state": { "type": "object" }
+    "state_hash": { "type": "string", "minLength": 1 },
+    "completeness": { "enum": ["complete", "partial", "unavailable"] },
+    "unavailable_fields": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "derived_fields": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "state": { "$ref": "#/$defs/canonical_state" }
   },
   "$defs": {
-    "field": {
+    "canonical_state": {
+      "title": "CanonicalState",
+      "description": "Full transparent-read target for game facts consumed by the AI engine. Domain properties are objects whose game-data leaves must use the field envelope. Unknown modded facts belong under modded_state and must still use field envelopes.",
       "type": "object",
-      "required": ["value", "status", "source", "adapter", "read_at_tick", "confidence"],
+      "additionalProperties": false,
+      "required": [
+        "game",
+        "player",
+        "farm",
+        "locations",
+        "npcs",
+        "quests",
+        "world_progress",
+        "menus",
+        "mods",
+        "modded_state"
+      ],
       "properties": {
-        "value": {},
-        "status": { "enum": ["available", "derived", "unavailable"] },
-        "source": {},
-        "adapter": { "type": "string" },
-        "read_at_tick": { "type": "integer" },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        "game": { "$ref": "#/$defs/game_state" },
+        "player": { "$ref": "#/$defs/player_state" },
+        "farm": { "$ref": "#/$defs/farm_state" },
+        "locations": { "$ref": "#/$defs/location_state" },
+        "npcs": { "$ref": "#/$defs/npc_state" },
+        "quests": { "$ref": "#/$defs/quest_state" },
+        "world_progress": { "$ref": "#/$defs/world_progress_state" },
+        "menus": { "$ref": "#/$defs/menu_state" },
+        "mods": { "$ref": "#/$defs/mod_state" },
+        "modded_state": { "$ref": "#/$defs/modded_state" }
       }
+    },
+    "field": {
+      "title": "Transparent Field Envelope",
+      "description": "Required wrapper for each readable game-data field. A field must not be guessed; unsupported or unimplemented facts are represented as status=unavailable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "status",
+        "source",
+        "adapter",
+        "read_at_tick",
+        "confidence"
+      ],
+      "properties": {
+        "value": true,
+        "status": { "enum": ["available", "derived", "unavailable"] },
+        "source": { "$ref": "#/$defs/source_ref" },
+        "adapter": { "type": "string", "minLength": 1 },
+        "read_at_tick": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "derivation": { "$ref": "#/$defs/derivation_ref" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "unavailable" } },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["reason"],
+            "properties": {
+              "value": { "type": "null" },
+              "confidence": { "const": 0 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "derived" } },
+            "required": ["status"]
+          },
+          "then": { "required": ["derivation"] }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "available" } },
+            "required": ["status"]
+          },
+          "then": {
+            "not": {
+              "properties": { "value": { "type": "null" } },
+              "required": ["value"]
+            }
+          }
+        }
+      ]
+    },
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "smapi_api",
+            "game_object",
+            "content_data",
+            "save_data",
+            "event",
+            "capability",
+            "derived",
+            "unavailable"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "object_ref": { "$ref": "#/$defs/object_ref" },
+        "mod_id": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "derivation_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "inputs"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "object_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type"],
+      "properties": {
+        "object_type": { "type": "string", "minLength": 1 },
+        "object_id": { "type": "string" },
+        "qualified_item_id": { "type": "string" },
+        "location_id": { "type": "string" },
+        "tile_x": { "type": "integer" },
+        "tile_y": { "type": "integer" },
+        "instance_id": { "type": "string" },
+        "mod_id": { "type": "string" }
+      }
+    },
+    "mod_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "field_map": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" }
+    },
+    "game_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "date": { "$ref": "#/$defs/field" },
+        "year": { "$ref": "#/$defs/field" },
+        "season": { "$ref": "#/$defs/field" },
+        "day_of_month": { "$ref": "#/$defs/field" },
+        "time_of_day": { "$ref": "#/$defs/field" },
+        "time_speed": { "$ref": "#/$defs/field" },
+        "weather_today": { "$ref": "#/$defs/field" },
+        "weather_tomorrow": { "$ref": "#/$defs/field" },
+        "daily_luck": { "$ref": "#/$defs/field" },
+        "current_location": { "$ref": "#/$defs/field" },
+        "festival": { "$ref": "#/$defs/field" },
+        "active_event": { "$ref": "#/$defs/field" },
+        "multiplayer": { "$ref": "#/$defs/field" }
+      }
+    },
+    "player_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "name": { "$ref": "#/$defs/field" },
+        "farm_name": { "$ref": "#/$defs/field" },
+        "position": { "$ref": "#/$defs/field" },
+        "facing_direction": { "$ref": "#/$defs/field" },
+        "stamina": { "$ref": "#/$defs/field" },
+        "max_stamina": { "$ref": "#/$defs/field" },
+        "health": { "$ref": "#/$defs/field" },
+        "max_health": { "$ref": "#/$defs/field" },
+        "money": { "$ref": "#/$defs/field" },
+        "inventory": { "$ref": "#/$defs/field" },
+        "tools": { "$ref": "#/$defs/field" },
+        "equipment": { "$ref": "#/$defs/field" },
+        "buffs": { "$ref": "#/$defs/field" },
+        "professions": { "$ref": "#/$defs/field" },
+        "skills": { "$ref": "#/$defs/field" },
+        "deepest_mine_level": { "$ref": "#/$defs/field" },
+        "current_action": { "$ref": "#/$defs/field" }
+      }
+    },
+    "farm_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "farm_type": { "$ref": "#/$defs/field" },
+        "buildings": { "$ref": "#/$defs/field" },
+        "crops": { "$ref": "#/$defs/field" },
+        "terrain_features": { "$ref": "#/$defs/field" },
+        "objects": { "$ref": "#/$defs/field" },
+        "machines": { "$ref": "#/$defs/field" },
+        "chests": { "$ref": "#/$defs/field" },
+        "animals": { "$ref": "#/$defs/field" },
+        "resource_clumps": { "$ref": "#/$defs/field" },
+        "debris": { "$ref": "#/$defs/field" },
+        "warps": { "$ref": "#/$defs/field" }
+      }
+    },
+    "location_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "all_locations": { "$ref": "#/$defs/field" },
+        "current_location_objects": { "$ref": "#/$defs/field" },
+        "current_location_terrain_features": { "$ref": "#/$defs/field" },
+        "current_location_characters": { "$ref": "#/$defs/field" },
+        "collision_grid": { "$ref": "#/$defs/field" },
+        "warps": { "$ref": "#/$defs/field" },
+        "shops": { "$ref": "#/$defs/field" },
+        "fish_areas": { "$ref": "#/$defs/field" },
+        "mine_state": { "$ref": "#/$defs/field" },
+        "island_state": { "$ref": "#/$defs/field" }
+      }
+    },
+    "npc_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "all_npcs": { "$ref": "#/$defs/field" },
+        "positions": { "$ref": "#/$defs/field" },
+        "schedules": { "$ref": "#/$defs/field" },
+        "friendships": { "$ref": "#/$defs/field" },
+        "gift_tastes": { "$ref": "#/$defs/field" },
+        "gift_history": { "$ref": "#/$defs/field" },
+        "dialogue_state": { "$ref": "#/$defs/field" }
+      }
+    },
+    "quest_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "active_quests": { "$ref": "#/$defs/field" },
+        "completed_quests": { "$ref": "#/$defs/field" },
+        "special_orders": { "$ref": "#/$defs/field" },
+        "mail_received": { "$ref": "#/$defs/field" },
+        "journal": { "$ref": "#/$defs/field" }
+      }
+    },
+    "world_progress_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "community_center": { "$ref": "#/$defs/field" },
+        "joja_membership": { "$ref": "#/$defs/field" },
+        "unlocked_areas": { "$ref": "#/$defs/field" },
+        "museum": { "$ref": "#/$defs/field" },
+        "shipping_collection": { "$ref": "#/$defs/field" },
+        "fish_collection": { "$ref": "#/$defs/field" },
+        "artifact_collection": { "$ref": "#/$defs/field" },
+        "mineral_collection": { "$ref": "#/$defs/field" },
+        "cooking_recipes": { "$ref": "#/$defs/field" },
+        "crafting_recipes": { "$ref": "#/$defs/field" },
+        "achievements": { "$ref": "#/$defs/field" },
+        "perfection": { "$ref": "#/$defs/field" },
+        "golden_walnuts": { "$ref": "#/$defs/field" }
+      }
+    },
+    "menu_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "active_menu": { "$ref": "#/$defs/field" },
+        "menu_context": { "$ref": "#/$defs/field" },
+        "dialogue_question": { "$ref": "#/$defs/field" },
+        "shop_menu": { "$ref": "#/$defs/field" },
+        "inventory_menu": { "$ref": "#/$defs/field" }
+      }
+    },
+    "mod_state": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/field" },
+      "properties": {
+        "installed_mods": { "$ref": "#/$defs/field" },
+        "loaded_content_packs": { "$ref": "#/$defs/field" },
+        "known_adapters": { "$ref": "#/$defs/field" },
+        "unsupported_mods": { "$ref": "#/$defs/field" },
+        "mod_conflicts": { "$ref": "#/$defs/field" }
+      }
+    },
+    "modded_state": {
+      "type": "object",
+      "description": "Per-mod transparent fields. Keys are mod IDs; values are field maps where each modded fact is still reported through the field envelope.",
+      "additionalProperties": { "$ref": "#/$defs/field_map" }
     }
   }
 }
