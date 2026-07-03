@@ -1,0 +1,242 @@
+{
+  "$schema": "../schemas/json/model-parameters.schema.json",
+  "schema_version": "model_parameters.v1",
+  "model": {
+    "type": "CF-SMDP",
+    "tuple": ["S", "O", "T", "D", "R", "C", "gamma", "H", "V", "U"],
+    "state_contract": "snapshot.v1",
+    "option_contract": "OptionSpec.v1",
+    "execution_policy": "non_executable_contract"
+  },
+  "state_factors": {
+    "required_domains": [
+      "game",
+      "player",
+      "farm",
+      "locations",
+      "npcs",
+      "quests",
+      "world_progress",
+      "menus",
+      "mods",
+      "modded_state"
+    ],
+    "required_field_envelope_keys": [
+      "value",
+      "status",
+      "source",
+      "adapter",
+      "read_at_tick",
+      "confidence"
+    ],
+    "critical_for_execution": [
+      "player.position",
+      "player.inventory",
+      "player.money",
+      "game.date",
+      "game.time",
+      "menus.active_menu",
+      "locations.passability",
+      "mods.installed"
+    ]
+  },
+  "option_specs": {
+    "required_keys": [
+      "id",
+      "name",
+      "domain",
+      "initiation_conditions",
+      "goal_conditions",
+      "estimated_effects",
+      "duration_model",
+      "policy",
+      "success_conditions",
+      "abort_conditions",
+      "recovery_policy",
+      "safety_constraints",
+      "required_state_factors",
+      "reversible",
+      "irreversible_risk_class"
+    ],
+    "initial_families": [
+      "farm.maintain_crops",
+      "farm.process_machines",
+      "economy.buy_supplies",
+      "economy.sell_items",
+      "social.gift_npc",
+      "quest.advance",
+      "exploration.visit_location",
+      "recovery.stabilize_day"
+    ]
+  },
+  "reward_weights": {
+    "goal_progress": 1.0,
+    "interaction_density": 0.35,
+    "novelty": 0.3,
+    "shared_experience": 0.25,
+    "user_preference_match": 0.75,
+    "resource_efficiency": 0.55,
+    "fatigue_cost": 0.45,
+    "irreversible_risk": 2.0,
+    "time_pressure": 0.7,
+    "repetitive_work": 0.35,
+    "plan_fragility": 1.1,
+    "state_uncertainty": 1.5
+  },
+  "safety_constraints": {
+    "hard": [
+      "block_unavailable_required_state",
+      "block_stale_required_state",
+      "never_sell_protected_items",
+      "never_spend_below_emergency_reserve",
+      "block_state_hash_mismatch",
+      "block_unverified_irreversible_actions",
+      "block_unverified_movement",
+      "block_unknown_ui_clicks",
+      "block_llm_direct_execution",
+      "block_mutation_in_observer_or_planner_mode"
+    ],
+    "soft": [
+      "prefer_low_fatigue_when_relaxed_or_recovery",
+      "prefer_novelty_when_exploration",
+      "prefer_social_when_social_mode",
+      "prefer_lower_fragility_under_uncertainty"
+    ],
+    "emergency_reserve_money": 500
+  },
+  "verifier_thresholds": {
+    "minimum_snapshot_completeness": "partial",
+    "minimum_required_field_confidence": 0.92,
+    "maximum_required_field_age_ticks": 2,
+    "maximum_plan_fragility_unattended": 0.35,
+    "maximum_irreversible_risk_without_confirmation": 0.0,
+    "minimum_route_confidence": 0.95,
+    "minimum_menu_confidence": 0.98,
+    "minimum_item_identity_confidence": 0.99,
+    "minimum_recoverability_assisted": 0.85
+  },
+  "user_mode_overrides": {
+    "efficiency": {
+      "reward_multipliers": {
+        "goal_progress": 1.35,
+        "resource_efficiency": 1.25,
+        "interaction_density": 0.8,
+        "novelty": 0.8,
+        "fatigue_cost": 0.9
+      },
+      "planner": {
+        "max_option_depth": 7,
+        "beam_width": 10
+      }
+    },
+    "relaxed": {
+      "reward_multipliers": {
+        "goal_progress": 0.85,
+        "interaction_density": 1.3,
+        "fatigue_cost": 1.35,
+        "time_pressure": 1.25,
+        "repetitive_work": 1.2
+      },
+      "planner": {
+        "max_option_depth": 5,
+        "beam_width": 8
+      }
+    },
+    "exploration": {
+      "reward_multipliers": {
+        "novelty": 1.6,
+        "shared_experience": 1.25,
+        "goal_progress": 0.8,
+        "state_uncertainty": 1.2
+      },
+      "planner": {
+        "max_option_depth": 6,
+        "beam_width": 9
+      }
+    },
+    "recovery": {
+      "reward_multipliers": {
+        "irreversible_risk": 1.8,
+        "plan_fragility": 1.6,
+        "fatigue_cost": 1.5,
+        "time_pressure": 1.4,
+        "goal_progress": 0.75
+      },
+      "planner": {
+        "max_option_depth": 4,
+        "beam_width": 6
+      },
+      "confirmation": {
+        "require_confirmation_for_spending": true,
+        "require_confirmation_for_inventory_mutation": true
+      }
+    },
+    "social": {
+      "reward_multipliers": {
+        "interaction_density": 1.35,
+        "shared_experience": 1.45,
+        "user_preference_match": 1.2,
+        "resource_efficiency": 0.8
+      },
+      "planner": {
+        "max_option_depth": 6,
+        "beam_width": 8
+      }
+    }
+  },
+  "planner_search": {
+    "algorithm": "verified_option_beam_search",
+    "beam_width": 8,
+    "max_option_depth": 6,
+    "in_game_horizon_minutes": 780,
+    "real_time_budget_ms": 1200,
+    "candidate_option_cap_per_expansion": 32,
+    "gamma_per_10_in_game_minutes": 0.985,
+    "replan_triggers": [
+      "state_hash_mismatch",
+      "event_interrupt",
+      "option_abort",
+      "time_window_change",
+      "required_field_confidence_drop",
+      "menu_state_change"
+    ]
+  },
+  "preference_ranker": {
+    "model_type": "deterministic_weighted_linear",
+    "training_target": "pairwise_plan_preference",
+    "calibration_target": "user_acceptance_probability",
+    "features": [
+      "reward_terms",
+      "weighted_reward_total",
+      "user_mode",
+      "interaction_need",
+      "efficiency_preference",
+      "fatigue_estimate",
+      "risk_tolerance",
+      "novelty_preference",
+      "plan_duration_minutes",
+      "plan_depth",
+      "interruption_risk",
+      "state_uncertainty",
+      "unavailable_field_count",
+      "expected_interaction_points",
+      "novelty_source_count",
+      "deadline_slack_minutes",
+      "historical_acceptance_label"
+    ],
+    "explanation": {
+      "top_positive_factors": 3,
+      "top_negative_factors": 3
+    }
+  },
+  "open_uncertainties": [
+    "transparent_bridge_adapter_coverage",
+    "duration_model_calibration",
+    "reward_weight_tuning_from_feedback",
+    "state_uncertainty_aggregation",
+    "mod_compatibility_adapters",
+    "executor_mode_safety_gate",
+    "preference_ranker_training_data_format",
+    "multiplayer_out_of_scope"
+  ]
+}

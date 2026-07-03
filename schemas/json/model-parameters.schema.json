@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stardewai.local/schemas/model-parameters.v1.json",
+  "title": "StardewAI Model Parameters",
+  "description": "Non-executable local mathematical-model parameter contract for CF-SMDP planning, verification, and preference ranking.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model",
+    "state_factors",
+    "option_specs",
+    "reward_weights",
+    "safety_constraints",
+    "verifier_thresholds",
+    "user_mode_overrides",
+    "planner_search",
+    "preference_ranker",
+    "open_uncertainties"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schema_version": { "const": "model_parameters.v1" },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tuple", "state_contract", "option_contract", "execution_policy"],
+      "properties": {
+        "type": { "const": "CF-SMDP" },
+        "tuple": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "S" },
+            { "const": "O" },
+            { "const": "T" },
+            { "const": "D" },
+            { "const": "R" },
+            { "const": "C" },
+            { "const": "gamma" },
+            { "const": "H" },
+            { "const": "V" },
+            { "const": "U" }
+          ],
+          "minItems": 10,
+          "maxItems": 10
+        },
+        "state_contract": { "const": "snapshot.v1" },
+        "option_contract": { "type": "string", "minLength": 1 },
+        "execution_policy": { "const": "non_executable_contract" }
+      }
+    },
+    "state_factors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_domains", "required_field_envelope_keys", "critical_for_execution"],
+      "properties": {
+        "required_domains": {
+          "type": "array",
+          "items": { "enum": ["game", "player", "farm", "locations", "npcs", "quests", "world_progress", "menus", "mods", "modded_state"] },
+          "minItems": 10,
+          "uniqueItems": true
+        },
+        "required_field_envelope_keys": {
+          "type": "array",
+          "items": { "enum": ["value", "status", "source", "adapter", "read_at_tick", "confidence"] },
+          "minItems": 6,
+          "uniqueItems": true
+        },
+        "critical_for_execution": { "$ref": "#/$defs/string_list" }
+      }
+    },
+    "option_specs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_keys", "initial_families"],
+      "properties": {
+        "required_keys": { "$ref": "#/$defs/string_list" },
+        "initial_families": { "$ref": "#/$defs/string_list" }
+      }
+    },
+    "reward_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal_progress",
+        "interaction_density",
+        "novelty",
+        "shared_experience",
+        "user_preference_match",
+        "resource_efficiency",
+        "fatigue_cost",
+        "irreversible_risk",
+        "time_pressure",
+        "repetitive_work",
+        "plan_fragility",
+        "state_uncertainty"
+      ],
+      "properties": {
+        "goal_progress": { "$ref": "#/$defs/non_negative_number" },
+        "interaction_density": { "$ref": "#/$defs/non_negative_number" },
+        "novelty": { "$ref": "#/$defs/non_negative_number" },
+        "shared_experience": { "$ref": "#/$defs/non_negative_number" },
+        "user_preference_match": { "$ref": "#/$defs/non_negative_number" },
+        "resource_efficiency": { "$ref": "#/$defs/non_negative_number" },
+        "fatigue_cost": { "$ref": "#/$defs/non_negative_number" },
+        "irreversible_risk": { "$ref": "#/$defs/non_negative_number" },
+        "time_pressure": { "$ref": "#/$defs/non_negative_number" },
+        "repetitive_work": { "$ref": "#/$defs/non_negative_number" },
+        "plan_fragility": { "$ref": "#/$defs/non_negative_number" },
+        "state_uncertainty": { "$ref": "#/$defs/non_negative_number" }
+      }
+    },
+    "safety_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hard", "soft", "emergency_reserve_money"],
+      "properties": {
+        "hard": { "$ref": "#/$defs/string_list" },
+        "soft": { "$ref": "#/$defs/string_list" },
+        "emergency_reserve_money": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verifier_thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_snapshot_completeness",
+        "minimum_required_field_confidence",
+        "maximum_required_field_age_ticks",
+        "maximum_plan_fragility_unattended",
+        "maximum_irreversible_risk_without_confirmation",
+        "minimum_route_confidence",
+        "minimum_menu_confidence",
+        "minimum_item_identity_confidence",
+        "minimum_recoverability_assisted"
+      ],
+      "properties": {
+        "minimum_snapshot_completeness": { "enum": ["complete", "partial", "unavailable"] },
+        "minimum_required_field_confidence": { "$ref": "#/$defs/probability" },
+        "maximum_required_field_age_ticks": { "type": "integer", "minimum": 0 },
+        "maximum_plan_fragility_unattended": { "$ref": "#/$defs/probability" },
+        "maximum_irreversible_risk_without_confirmation": { "$ref": "#/$defs/probability" },
+        "minimum_route_confidence": { "$ref": "#/$defs/probability" },
+        "minimum_menu_confidence": { "$ref": "#/$defs/probability" },
+        "minimum_item_identity_confidence": { "$ref": "#/$defs/probability" },
+        "minimum_recoverability_assisted": { "$ref": "#/$defs/probability" }
+      }
+    },
+    "user_mode_overrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["efficiency", "relaxed", "exploration", "recovery", "social"],
+      "properties": {
+        "efficiency": { "$ref": "#/$defs/mode_override" },
+        "relaxed": { "$ref": "#/$defs/mode_override" },
+        "exploration": { "$ref": "#/$defs/mode_override" },
+        "recovery": { "$ref": "#/$defs/mode_override" },
+        "social": { "$ref": "#/$defs/mode_override" }
+      }
+    },
+    "planner_search": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "beam_width",
+        "max_option_depth",
+        "in_game_horizon_minutes",
+        "real_time_budget_ms",
+        "candidate_option_cap_per_expansion",
+        "gamma_per_10_in_game_minutes",
+        "replan_triggers"
+      ],
+      "properties": {
+        "algorithm": { "type": "string", "minLength": 1 },
+        "beam_width": { "type": "integer", "minimum": 1 },
+        "max_option_depth": { "type": "integer", "minimum": 1 },
+        "in_game_horizon_minutes": { "type": "integer", "minimum": 1 },
+        "real_time_budget_ms": { "type": "integer", "minimum": 1 },
+        "candidate_option_cap_per_expansion": { "type": "integer", "minimum": 1 },
+        "gamma_per_10_in_game_minutes": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "replan_triggers": { "$ref": "#/$defs/string_list" }
+      }
+    },
+    "preference_ranker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_type", "training_target", "calibration_target", "features", "explanation"],
+      "properties": {
+        "model_type": { "type": "string", "minLength": 1 },
+        "training_target": { "type": "string", "minLength": 1 },
+        "calibration_target": { "type": "string", "minLength": 1 },
+        "features": { "$ref": "#/$defs/string_list" },
+        "explanation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top_positive_factors", "top_negative_factors"],
+          "properties": {
+            "top_positive_factors": { "type": "integer", "minimum": 1 },
+            "top_negative_factors": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "open_uncertainties": { "$ref": "#/$defs/string_list" }
+  },
+  "$defs": {
+    "mode_override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reward_multipliers", "planner"],
+      "properties": {
+        "reward_multipliers": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/non_negative_number" },
+          "minProperties": 1
+        },
+        "planner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_option_depth", "beam_width"],
+          "properties": {
+            "max_option_depth": { "type": "integer", "minimum": 1 },
+            "beam_width": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "confirmation": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        }
+      }
+    },
+    "non_negative_number": { "type": "number", "minimum": 0 },
+    "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "string_list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}
