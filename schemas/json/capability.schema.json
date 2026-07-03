@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stardewai.local/schemas/capability.v1.json",
+  "title": "StardewAI Capability",
+  "type": "object",
+  "required": ["capability_id", "access_mode", "status", "source", "limitations", "required_permission", "supported_game_versions", "supported_mods", "known_conflicts"],
+  "properties": {
+    "capability_id": { "type": "string" },
+    "access_mode": { "enum": ["read", "preview", "execute"] },
+    "status": { "enum": ["available", "partial", "unavailable", "disabled"] },
+    "source": {},
+    "limitations": {},
+    "required_permission": { "enum": ["observer", "planner", "assisted", "executor", "developer"] },
+    "supported_game_versions": { "type": "array" },
+    "supported_mods": { "type": "array" },
+    "known_conflicts": { "type": "array" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stardewai.local/schemas/event.v1.json",
+  "title": "StardewAI Event",
+  "type": "object",
+  "required": ["event_id", "event_type", "schema_version", "game_tick", "in_game_time", "real_timestamp", "source"],
+  "properties": {
+    "schema_version": { "const": "event.v1" },
+    "event_id": { "type": "string" },
+    "event_type": { "type": "string" },
+    "game_tick": { "type": "integer" },
+    "in_game_time": {},
+    "real_timestamp": { "type": "string", "format": "date-time" },
+    "source": { "type": "string" },
+    "before": {},
+    "after": {},
+    "state_hash_before": { "type": "string" },
+    "state_hash_after": { "type": "string" }
+  }
+}

@@ -1,0 +1,1914 @@
+================================================================================
+STARDEW VALLEY AI 副官 → 完全体陪玩智能体
+AI-ONLY IMPLEMENTATION BLUEPRINT
+版本：v0.2（加入全透明接入 MOD）
+目标：在用户几乎不具备该领域知识、主要依赖 AI 编程的前提下，
+      先完成可用的“规划副官”，并保留升级为完整 AI 队友的能力，
+      避免后期整体重构。
+================================================================================
+
+
+一、项目定位
+--------------------------------------------------------------------------------
+
+本项目不是先做“会自己走路的机器人”，而是先做：
+
+    一个能读取游戏状态、理解当前局势、生成可验证计划、
+    记住共同经历、持续聊天的 AI 副官。
+
+第一阶段由玩家手动执行计划。
+后续逐步加入自动执行能力。
+
+最终目标：
+
+    副官版
+        ↓
+    规划版
+        ↓
+    半自动版
+        ↓
+    完整 AI 队友
+        ↓
+    具备长期记忆、偏好学习和协作能力的陪玩智能体
+
+核心原则：
+
+1. 第一版就固定核心接口。
+2. 后续升级只新增模块，不推翻核心结构。
+3. LLM 不直接控制游戏。
+4. 所有操作先经过规则验证。
+5. 所有事实必须来自真实游戏状态。
+6. 聊天人格、规划器、执行器共享同一份状态和记忆。
+7. 不追求“绝不犯错”，而追求“错误可检测、可中止、可恢复”。
+
+
+二、最终数学模型
+--------------------------------------------------------------------------------
+
+采用：
+
+    约束型因子化半马尔可夫决策过程
+    Constrained Factored Semi-Markov Decision Process
+
+并结合：
+
+    Options 分层动作模型
+    HTN 风格任务分解
+    Safety Verifier 安全验证器
+    Preference Ranker 偏好排序器
+    Behavior Tree 行为树执行器
+
+
+统一写作：
+
+    M = <S, O, Pτ, R, C, γ>
+
+含义：
+
+    S   = 状态空间
+    O   = 高层动作 Options
+    Pτ  = 执行动作后，经过不定时长到达新状态的转移模型
+    R   = 奖励函数
+    C   = 硬约束和安全约束
+    γ   = 长期折扣因子
+
+为什么不用普通 MDP：
+
+    星露谷中的动作持续时间差别极大。
+
+例如：
+
+    走一格：几秒
+    收一片农田：几十分钟
+    去商店采购：数小时
+    下矿：可能占用一整天
+
+因此高层动作必须允许不同持续时间。
+SMDP 比普通 MDP 更适合。
+
+
+三、核心系统结构
+--------------------------------------------------------------------------------
+
+推荐架构：
+
+    SMAPI / Save / Game Events
+                ↓
+          World Adapter
+                ↓
+       Canonical State Store
+                ↓
+       Event & Memory Store
+                ↓
+        Goal Compiler / HTN
+                ↓
+          CF-SMDP Planner
+                ↓
+         Safety Verifier
+                ↓
+            Plan[Option]
+             ↙       ↘
+      Dialogue Layer   Executor Port
+                          ↓
+                 Human Executor
+                 Bot Executor
+                 Future AI Executor
+
+
+必须固定的四个核心接口：
+
+    1. CanonicalState
+    2. ActionSpec
+    3. OptionSpec
+    4. ExecutorPort
+
+只要这四个接口稳定，
+副官版升级为完全体时就不需要整体重构。
+
+
+四、状态模型
+--------------------------------------------------------------------------------
+
+统一状态：
+
+    s_t = (
+        game_state,
+        player_state,
+        world_progress,
+        task_state,
+        memory_state,
+        user_state
+    )
+
+建议字段：
+
+1. game_state
+
+    日期
+    时间
+    季节
+    天气
+    当前地图
+    NPC 日程
+    商店营业状态
+    作物状态
+    动物状态
+    地图可交互对象
+    节日状态
+    当前事件
+
+2. player_state
+
+    玩家位置
+    体力
+    血量
+    金币
+    背包
+    工具
+    装备
+    Buff
+    当前动作
+
+3. world_progress
+
+    社区中心进度
+    建筑进度
+    农场布局
+    解锁区域
+    好感度
+    收藏进度
+    烹饪进度
+    钓鱼进度
+    技能等级
+
+4. task_state
+
+    当前目标
+    当前计划
+    已完成步骤
+    失败步骤
+    待验证步骤
+    任务优先级
+    截止时间
+
+5. memory_state
+
+    最近事件
+    每日摘要
+    共同经历
+    用户偏好
+    重要失误
+    长期目标
+    对话连续性摘要
+
+6. user_state
+
+第一版可以手动设置：
+
+    mode:
+        efficiency
+        relaxed
+        exploration
+        recovery
+        social
+
+    interaction_need: 0.0 - 1.0
+    efficiency_preference: 0.0 - 1.0
+    fatigue_estimate: 0.0 - 1.0
+    risk_tolerance: 0.0 - 1.0
+    novelty_preference: 0.0 - 1.0
+
+
+五、Option 高层动作接口
+--------------------------------------------------------------------------------
+
+每个高层动作统一定义：
+
+    Option = {
+        id,
+        name,
+        initiation_conditions,
+        goal_conditions,
+        estimated_effects,
+        duration_model,
+        policy,
+        success_conditions,
+        abort_conditions,
+        recovery_policy,
+        safety_constraints
+    }
+
+示例：
+
+    option: visit_pierre_and_buy_seeds
+
+    initiation_conditions:
+        season == summer
+        pierre_shop_open == true
+        money >= estimated_cost
+        inventory_has_space == true
+
+    goal_conditions:
+        inventory.melon_seeds >= target_count
+
+    estimated_effects:
+        money -= target_count * 80
+        inventory.melon_seeds += target_count
+        time += estimated_travel_and_purchase_time
+
+    success_conditions:
+        target_seeds_purchased == true
+
+    abort_conditions:
+        shop_closed == true
+        insufficient_money == true
+        inventory_full == true
+        festival_override == true
+
+    recovery_policy:
+        stop_execution
+        return_control_to_user
+        explain_failure
+        request_replan
+
+    safety_constraints:
+        never_sell_protected_items
+        never_spend_reserved_money
+        never_continue_after_state_mismatch
+
+
+六、任务分解：HTN
+--------------------------------------------------------------------------------
+
+HTN 只负责任务分解，不直接做最终决策。
+
+示例：
+
+    目标：夏季第一天种满 128 格
+
+    分解：
+
+        prepare_summer_field
+            ├─ inspect_field
+            ├─ remove_dead_crops
+            ├─ count_available_tiles
+            ├─ calculate_seed_quantity
+            ├─ verify_budget
+            ├─ travel_to_pierre
+            ├─ buy_seeds
+            ├─ return_to_farm
+            └─ plant_seeds
+
+HTN 的作用：
+
+    把大目标拆成可验证的小任务。
+
+SMDP 的作用：
+
+    比较多套计划的长期价值。
+
+Safety Verifier 的作用：
+
+    删除非法或高风险方案。
+
+Preference Ranker 的作用：
+
+    在合法方案中选出更适合用户当前状态的方案。
+
+
+七、安全验证器
+--------------------------------------------------------------------------------
+
+绝不能只靠奖励函数惩罚错误。
+
+必须先构造安全动作集合：
+
+    Safe(s) = {
+        option |
+        PreconditionsSatisfied
+        AND InvariantsSatisfied
+        AND Recoverable
+        AND StateVerified
+    }
+
+执行前检查：
+
+1. 前置条件是否满足。
+2. 游戏状态是否与计划一致。
+3. 动作是否合法。
+4. 动作是否可中止。
+5. 动作失败后是否可恢复。
+6. 是否涉及不可逆操作。
+7. 是否可能丢弃关键物品。
+8. 是否可能花掉保留资金。
+9. 是否可能错过节日或商店时间。
+10. 是否存在地图、版本或模组不兼容。
+
+硬约束示例：
+
+    禁止出售标记为 protected 的物品。
+    禁止花费 emergency_reserve。
+    禁止在状态不确定时执行不可逆操作。
+    禁止在路径不可验证时自动移动。
+    禁止在 UI 状态未知时自动点击。
+    禁止 LLM 绕过规划器直接调用执行器。
+    禁止聊天模块修改真实世界状态。
+
+
+八、奖励函数
+--------------------------------------------------------------------------------
+
+不能只奖励利润和速度。
+
+建议：
+
+    R =
+        θ1 * goal_progress
+      + θ2 * interaction_density
+      + θ3 * novelty
+      + θ4 * shared_experience
+      + θ5 * user_preference_match
+      - θ6 * fatigue_cost
+      - θ7 * irreversible_risk
+      - θ8 * time_pressure
+      - θ9 * repetitive_work
+      - θ10 * plan_fragility
+
+字段解释：
+
+    goal_progress
+        对长期目标的推进程度。
+
+    interaction_density
+        当前计划是否提供持续反馈和互动。
+
+    novelty
+        是否接触新内容。
+
+    shared_experience
+        是否容易产生值得记忆和讨论的事件。
+
+    user_preference_match
+        是否符合用户当前模式。
+
+    fatigue_cost
+        是否包含大量重复劳动。
+
+    irreversible_risk
+        是否存在不可逆损失。
+
+    time_pressure
+        是否要求极限赶时间。
+
+    repetitive_work
+        是否机械重复。
+
+    plan_fragility
+        是否容易因为一个小意外整体失败。
+
+
+九、用户模式
+--------------------------------------------------------------------------------
+
+系统必须支持至少五种模式：
+
+1. efficiency
+
+    目标：
+        最大化收益和长期进度。
+
+2. relaxed
+
+    目标：
+        有互动，但不追求极限效率。
+
+3. exploration
+
+    目标：
+        接触新地图、新事件、新机制。
+
+4. recovery
+
+    目标：
+        只处理会造成损失的事项，
+        其余安排高互动、低压力活动。
+
+5. social
+
+    目标：
+        提高 NPC 互动、事件和共同体验。
+
+
+十、第一版先训练什么
+--------------------------------------------------------------------------------
+
+不要训练完整规划器。
+不要训练视觉到键鼠的端到端模型。
+不要一开始做强化学习。
+
+第一阶段训练：
+
+    计划偏好排序器
+    Preference Ranker
+
+流程：
+
+    规划器生成若干合法候选方案。
+
+例如：
+
+    A. 收益最高
+    B. 互动最多
+    C. 最轻松
+    D. 探索最多
+    E. 社交最多
+
+记录：
+
+    系统推荐了什么
+    用户选择了什么
+    用户拒绝了什么
+    用户中途改了什么
+    用户最后是否觉得疲惫
+    用户是否愿意继续玩
+    用户是否认为计划太机械
+    用户是否觉得陪伴感更强
+
+训练目标：
+
+    给定当前状态，
+    学习用户更可能接受哪一套合法计划。
+
+成对偏好损失：
+
+    L = -log sigmoid(
+        Q(state, preferred_plan)
+        - Q(state, rejected_plan)
+    )
+
+
+十一、聊天层职责
+--------------------------------------------------------------------------------
+
+聊天层必须读取：
+
+    当前 CanonicalState
+    当前 Plan
+    最近事件
+    长期记忆
+    用户模式
+    失败原因
+    安全验证结果
+
+聊天层允许：
+
+    解释计划
+    询问用户目标
+    评论事件
+    生成每日总结
+    提醒计划冲突
+    发起重新规划
+    维持固定人格
+    进行自然语言交流
+
+聊天层禁止：
+
+    编造游戏事实
+    直接生成执行动作
+    绕过 Safety Verifier
+    直接修改真实状态
+    直接修改长期记忆事实
+    猜测未知坐标
+    在状态不确定时假装确定
+
+
+十二、长期记忆
+--------------------------------------------------------------------------------
+
+长期记忆不能只放在聊天上下文中。
+
+必须单独保存：
+
+    daily_summary
+    important_events
+    player_preferences
+    recurring_patterns
+    long_term_goals
+    known_dislikes
+    protected_items
+    common_mistakes
+    current_relationship_context
+
+每日结束生成：
+
+    日期：
+    天气：
+    完成事项：
+    重要事件：
+    意外：
+    用户状态：
+    用户喜欢的部分：
+    用户不喜欢的部分：
+    明日候选计划：
+    未解决问题：
+    需要长期记住的事实：
+
+示例：
+
+    第二年春 25 日
+
+    完成：
+        购买动物目录
+        安装自动收集器
+        升级畜棚
+
+    意外：
+        误按 Shift 买了 5 本书
+        用户选择读档
+
+    用户反应：
+        对不可逆错误较焦虑
+        对明确可恢复方案接受度高
+
+    明日计划：
+        检查施工
+        准备夏季种子预算
+
+
+十三、执行器接口
+--------------------------------------------------------------------------------
+
+统一接口：
+
+    ExecutorPort
+
+方法建议：
+
+    validate(option, state)
+    preview(option, state)
+    execute(option, state)
+    pause()
+    resume()
+    abort()
+    rollback_if_possible()
+    report_status()
+    report_failure()
+    request_replan()
+
+第一阶段：
+
+    HumanExecutor
+
+作用：
+
+    只输出清晰步骤，
+    由玩家手动执行。
+
+后续：
+
+    AssistedExecutor
+        自动计算数量
+        自动标记路线
+        自动整理信息
+
+    BotExecutor
+        执行白名单动作
+
+    FullExecutor
+        通过行为树执行复杂动作
+
+
+十四、行为树
+--------------------------------------------------------------------------------
+
+行为树只用于执行器内部。
+
+示例：
+
+    Option：前往皮埃尔购买种子
+
+        Sequence
+            ├─ VerifyCurrentState
+            ├─ VerifyShopOpen
+            ├─ VerifyMoney
+            ├─ VerifyInventorySpace
+            ├─ PlanRoute
+            ├─ ValidateRoute
+            ├─ WalkToShop
+            ├─ OpenShopUI
+            ├─ VerifyProduct
+            ├─ ExecutePurchase
+            ├─ VerifyInventory
+            └─ ReportSuccess
+
+任一步失败：
+
+    立即中止
+    保存错误日志
+    交还控制权
+    请求重新规划
+
+
+十五、阶段路线
+--------------------------------------------------------------------------------
+
+阶段 0：项目骨架
+
+目标：
+    建立仓库、数据结构、接口和日志系统。
+
+产出：
+    CanonicalState
+    ActionSpec
+    OptionSpec
+    ExecutorPort
+    EventLog
+    MemoryStore
+
+不得开始：
+    自动键鼠
+    强化学习
+    复杂寻路
+    视觉识别
+
+
+阶段 1：只读副官
+
+目标：
+    读取游戏状态并聊天。
+
+能力：
+    知道日期、时间、天气
+    知道背包、金币、体力
+    知道当前任务
+    知道作物和动物状态
+    生成每日摘要
+    保存共同记忆
+
+验收：
+    AI 不编造游戏事实。
+    重新启动后能恢复近期记忆。
+    能回答“今天发生了什么”。
+
+
+阶段 2：规划副官
+
+目标：
+    生成可验证的日程和计划。
+
+能力：
+    HTN 任务分解
+    候选计划生成
+    安全验证
+    多目标排序
+    不同用户模式
+
+验收：
+    能生成至少 3 套合法计划。
+    能解释不同计划的取舍。
+    能发现商店关闭、时间不足、资金不足。
+
+
+阶段 3：偏好学习
+
+目标：
+    学会用户喜欢哪种计划。
+
+能力：
+    记录接受和拒绝
+    训练排序器
+    根据疲劳和互动需求调整计划
+
+验收：
+    一段时间后推荐更符合用户偏好的方案。
+    不把所有计划都优化成利润最大化。
+
+
+阶段 4：辅助执行
+
+目标：
+    自动处理无风险信息操作。
+
+能力：
+    自动计算采购数量
+    自动生成路线
+    自动检查库存
+    自动生成提醒
+    自动标记目标
+
+验收：
+    不直接控制角色。
+    不执行不可逆操作。
+
+
+阶段 5：白名单半自动
+
+目标：
+    自动执行低风险动作。
+
+候选动作：
+    简单跟随
+    指定区域移动
+    箱子整理
+    固定路线
+    状态明确的简单交互
+
+验收：
+    每个动作都有启动、结束、中止和恢复条件。
+    状态不一致时立即停止。
+
+
+阶段 6：完整 AI 队友
+
+目标：
+    自主完成复杂任务并与玩家协作。
+
+能力：
+    自主寻路
+    自动交互
+    任务协作
+    行为树执行
+    动态重新规划
+    玩家意图预测
+    长期协作
+
+
+十六、推荐技术栈
+--------------------------------------------------------------------------------
+
+第一版建议：
+
+语言：
+
+    Python
+        规划器
+        AI 服务
+        记忆
+        日志
+        API
+
+    C#
+        SMAPI 模组
+        游戏状态读取
+        游戏事件监听
+        后续执行接口
+
+通信：
+
+    WebSocket
+    或
+    本地 HTTP API
+
+存储：
+
+    SQLite
+        第一版足够
+
+后续可升级：
+
+    PostgreSQL
+    向量数据库
+    事件流系统
+
+AI：
+
+    任意支持 API 的 LLM
+    但必须通过统一 LLMProvider 接口接入
+
+不要把项目绑定死在某一家模型。
+
+
+十七、推荐仓库结构
+--------------------------------------------------------------------------------
+
+    stardew-ai-companion/
+    ├─ README.md
+    ├─ docs/
+    │  ├─ architecture.md
+    │  ├─ state-schema.md
+    │  ├─ option-schema.md
+    │  ├─ safety-rules.md
+    │  └─ roadmap.md
+    │
+    ├─ contracts/
+    │  ├─ canonical_state.schema.json
+    │  ├─ action_spec.schema.json
+    │  ├─ option_spec.schema.json
+    │  ├─ plan.schema.json
+    │  └─ event.schema.json
+    │
+    ├─ smapi_mod/
+    │  ├─ StardewAICompanion.csproj
+    │  ├─ ModEntry.cs
+    │  ├─ StateReader.cs
+    │  ├─ EventPublisher.cs
+    │  └─ ApiClient.cs
+    │
+    ├─ backend/
+    │  ├─ app.py
+    │  ├─ config.py
+    │  ├─ state_store/
+    │  ├─ event_store/
+    │  ├─ memory/
+    │  ├─ planner/
+    │  ├─ htn/
+    │  ├─ safety/
+    │  ├─ preference/
+    │  ├─ dialogue/
+    │  ├─ executors/
+    │  └─ tests/
+    │
+    ├─ data/
+    │  ├─ game_rules/
+    │  ├─ npc_schedules/
+    │  ├─ item_rules/
+    │  ├─ maps/
+    │  └─ user_preferences/
+    │
+    └─ scripts/
+       ├─ run_backend.ps1
+       ├─ run_backend.sh
+       └─ validate_contracts.py
+
+
+十八、AI 编程工作方式
+--------------------------------------------------------------------------------
+
+用户几乎不具备这一领域知识，因此所有开发任务必须拆成：
+
+    1. 当前目标
+    2. 要创建或修改的文件
+    3. 完整代码
+    4. 运行命令
+    5. 预期输出
+    6. 验证方法
+    7. 常见错误
+    8. 回滚方法
+    9. 下一步
+
+每次只做一个可验证小目标。
+
+禁止 AI：
+
+    一次生成整个项目
+    跳过测试
+    跳过接口定义
+    跳过错误处理
+    擅自重构核心接口
+    擅自更换技术栈
+    用伪代码代替可运行代码
+    省略安装命令
+    省略验证步骤
+
+
+十九、总控提示词
+--------------------------------------------------------------------------------
+
+把下面内容发给负责写代码的 AI：
+
+--------------------------------------------------------------------------------
+
+你现在是本项目的首席架构师、实现工程师和测试工程师。
+
+用户几乎不了解：
+SMDP、HTN、Options、行为树、SMAPI、C#、Python 后端和安全规划。
+
+因此你必须：
+
+1. 不假设用户具备背景知识。
+2. 每一步提供完整可运行代码。
+3. 所有命令必须可复制。
+4. 所有文件必须说明路径。
+5. 每一步必须有验收标准。
+6. 每一步必须有失败排查。
+7. 不得一次实现超过一个阶段。
+8. 不得在未测试前进入下一阶段。
+9. 不得修改以下核心接口，除非先解释兼容方案：
+   - CanonicalState
+   - ActionSpec
+   - OptionSpec
+   - ExecutorPort
+10. 所有升级必须向后兼容。
+11. LLM 不得直接控制游戏。
+12. 所有执行动作必须通过 Safety Verifier。
+13. 所有事实必须来自游戏状态或持久化数据。
+14. 不得编造未知状态。
+15. 不得使用端到端强化学习作为第一阶段方案。
+16. 不得一开始做视觉识别和键鼠模拟。
+17. 第一目标是完成只读副官。
+18. 第二目标是完成规划副官。
+19. 第三目标才是偏好学习。
+20. 自动执行放在后续阶段。
+
+每次回复必须按以下结构：
+
+【当前阶段】
+【本次唯一目标】
+【原理说明】
+【创建/修改文件】
+【完整代码】
+【安装与运行命令】
+【预期结果】
+【验收测试】
+【常见错误】
+【回滚方法】
+【下一步】
+
+当前阶段：
+阶段 0，项目骨架。
+
+当前唯一目标：
+创建仓库结构，并定义以下 JSON Schema：
+
+- CanonicalState
+- ActionSpec
+- OptionSpec
+- Plan
+- Event
+
+先不要连接游戏。
+先不要调用 LLM。
+先不要做自动执行。
+先完成接口和测试。
+
+--------------------------------------------------------------------------------
+
+
+二十、第一个开发任务
+--------------------------------------------------------------------------------
+
+第一条发送给 AI 的任务：
+
+--------------------------------------------------------------------------------
+
+请创建 Stardew Valley AI Companion 项目阶段 0。
+
+要求：
+
+1. 使用 Python 3.12。
+2. 创建推荐仓库结构。
+3. 创建以下 JSON Schema：
+   - canonical_state.schema.json
+   - action_spec.schema.json
+   - option_spec.schema.json
+   - plan.schema.json
+   - event.schema.json
+4. 创建 Python 数据模型。
+5. 使用 pytest 编写验证测试。
+6. 创建 validate_contracts.py。
+7. 创建 README。
+8. 给出 Windows PowerShell 安装和运行命令。
+9. 不连接游戏。
+10. 不接入 LLM。
+11. 不做规划器。
+12. 不做自动执行。
+13. 所有代码必须完整。
+14. 所有测试必须可运行。
+15. 任何设计决策都必须说明如何保证后续无需整体重构。
+
+输出格式必须是：
+
+【目录结构】
+【设计说明】
+【完整文件内容】
+【安装命令】
+【运行命令】
+【测试命令】
+【预期结果】
+【错误排查】
+
+--------------------------------------------------------------------------------
+
+
+二十一、禁止事项
+--------------------------------------------------------------------------------
+
+严禁：
+
+    直接让 LLM 输出键鼠动作
+    让 LLM 猜地图坐标
+    用聊天上下文当长期记忆
+    用单一模型绑定整个项目
+    用奖励函数替代硬约束
+    自动出售物品
+    自动购买不可验证商品
+    自动执行不可逆操作
+    在状态不一致时继续执行
+    第一版做完整自主角色
+    第一版做端到端强化学习
+    第一版做视觉识别
+    第一版做复杂寻路
+    先写 UI 再写核心合同
+    先写聊天再写状态层
+    随意改变数据格式
+    随意改变核心接口
+    没有测试就进入下一阶段
+
+
+二十二、阶段完成标准
+--------------------------------------------------------------------------------
+
+阶段 0 完成：
+
+    所有 Schema 通过验证。
+    所有 Python 模型通过测试。
+    核心接口有版本号。
+    README 可让陌生 AI 继续开发。
+
+阶段 1 完成：
+
+    能从游戏读取真实状态。
+    状态更新稳定。
+    事件有日志。
+    AI 不编造状态。
+    重新启动后可恢复记忆。
+
+阶段 2 完成：
+
+    能生成多个合法计划。
+    计划可解释。
+    计划可验证。
+    时间、资金、营业状态可检查。
+
+阶段 3 完成：
+
+    能记录用户偏好。
+    能根据历史调整排序。
+    不只推荐最高收益路线。
+
+阶段 4 完成：
+
+    能自动计算和辅助。
+    不直接操作角色。
+
+阶段 5 完成：
+
+    只执行白名单动作。
+    任一步失败可中止。
+    不可逆操作必须人工确认。
+
+阶段 6 完成：
+
+    能自主协作。
+    能动态重规划。
+    能安全恢复。
+    能保持长期连续性。
+
+
+================================================================================
+补充核心：全透明接入 MOD（TransparentBridge）
+================================================================================
+
+本项目从第一版开始，就必须通过一个“全透明接入 MOD”读取游戏，
+而不是让聊天模型依赖截图、OCR、猜测、存档逆向或零散事件。
+
+该 MOD 是整个系统的底层事实源，也是副官版和完全体之间保持兼容的关键。
+
+建议名称：
+
+    StardewAI.TransparentBridge
+
+项目定位：
+
+    一个开源、可审计、版本化、只提供真实游戏状态与受控操作接口的
+    SMAPI 接入层。
+
+它必须做到：
+
+    1. 所有输入可追溯。
+    2. 所有状态字段有明确来源。
+    3. 所有变化有事件日志。
+    4. 所有命令可预览。
+    5. 所有执行可拒绝、可中止、可审计。
+    6. 未知状态明确标记 unknown，不允许猜测。
+    7. 聊天模型不能绕过它直接接触游戏。
+    8. 副官版即使用完整透明状态，不允许先做“阉割版接入”。
+    9. 后续自动执行只是在相同接口上增加写权限，不重构状态层。
+   10. MOD 自身代码、Schema、日志格式和权限规则全部公开透明。
+
+
+一、全透明的含义
+--------------------------------------------------------------------------------
+
+“全透明”不是说必须无条件暴露游戏内部所有私有字段。
+
+工程定义是：
+
+    对于系统已经读取、推断、转换、规划和执行的每一项内容，
+    用户和上层模块都能知道：
+
+        它来自哪里
+        什么时候读取
+        使用了哪个版本
+        是否完整
+        是否经过转换
+        是否存在不确定性
+        哪个模块使用了它
+        最终产生了什么决定
+
+任何无法稳定读取的字段必须：
+
+    标记为 unavailable
+    标记失败原因
+    标记适配器版本
+    禁止上层假装已知
+
+禁止：
+
+    静默使用反射失败后的默认值
+    用 LLM 补全缺失字段
+    把推测结果伪装成游戏事实
+    隐藏执行失败
+    隐藏状态不同步
+    隐藏模组冲突
+
+
+二、MOD 的系统位置
+--------------------------------------------------------------------------------
+
+必须改为：
+
+    Stardew Valley
+          ↓
+    SMAPI
+          ↓
+    StardewAI.TransparentBridge MOD
+          ↓
+    Versioned State Snapshot + Event Stream + Capability Manifest
+          ↓
+    Backend State Store
+          ↓
+    Planner / Memory / Dialogue / Executor
+
+TransparentBridge 是唯一合法游戏事实入口。
+
+上层禁止直接：
+
+    读游戏进程内存
+    读截图猜状态
+    绕过 MOD 直接写存档
+    直接模拟键鼠
+    依赖聊天模型推断游戏事实
+
+
+三、MOD 必须公开的四类接口
+--------------------------------------------------------------------------------
+
+1. Snapshot API
+
+作用：
+
+    返回当前完整、规范化的游戏状态快照。
+
+建议接口：
+
+    GET /api/v1/snapshot
+
+必须包含：
+
+    schema_version
+    bridge_version
+    smapi_version
+    game_version
+    installed_mods
+    save_id
+    player_id
+    game_tick
+    in_game_time
+    real_timestamp
+    state_hash
+    completeness
+    unavailable_fields
+    state
+
+要求：
+
+    所有快照可序列化为 JSON。
+    相同状态必须得到稳定结构。
+    所有对象使用稳定 ID。
+    所有枚举使用固定值。
+    所有坐标包含地图名和 tile 坐标。
+
+
+2. Event Stream API
+
+作用：
+
+    实时发送游戏变化，而不是不断传输全量状态。
+
+建议接口：
+
+    WebSocket /api/v1/events
+
+事件示例：
+
+    DayStarted
+    TimeChanged
+    LocationChanged
+    InventoryChanged
+    MoneyChanged
+    EnergyChanged
+    HealthChanged
+    CropChanged
+    AnimalChanged
+    FriendshipChanged
+    QuestChanged
+    BundleChanged
+    BuildingChanged
+    MenuOpened
+    MenuClosed
+    ItemPurchased
+    ItemSold
+    ItemDropped
+    ToolUsed
+    InteractionOccurred
+    FestivalStarted
+    FestivalEnded
+    PlayerPassedOut
+    SaveLoaded
+    Saving
+    Saved
+    ModListChanged
+    StateDesyncDetected
+
+每个事件必须包含：
+
+    event_id
+    event_type
+    schema_version
+    game_tick
+    in_game_time
+    real_timestamp
+    source
+    before
+    after
+    state_hash_before
+    state_hash_after
+
+
+3. Capability Manifest
+
+作用：
+
+    明确当前版本“能读什么、能验证什么、能执行什么”。
+
+建议接口：
+
+    GET /api/v1/capabilities
+
+示例：
+
+    can_read_inventory: true
+    can_read_chests: true
+    can_read_crop_state: true
+    can_read_npc_schedule: partial
+    can_read_collision_map: true
+    can_read_menu_state: true
+    can_preview_purchase: true
+    can_execute_purchase: false
+    can_execute_movement: false
+    can_rollback_purchase: false
+
+每项能力必须包含：
+
+    capability_id
+    access_mode
+    status
+    source
+    limitations
+    required_permission
+    supported_game_versions
+    supported_mods
+    known_conflicts
+
+
+4. Command API
+
+副官版默认关闭执行，只保留预览。
+
+建议接口：
+
+    POST /api/v1/commands/preview
+    POST /api/v1/commands/execute
+    POST /api/v1/commands/abort
+    GET  /api/v1/commands/{command_id}
+    GET  /api/v1/audit
+
+preview 必须返回：
+
+    command_id
+    normalized_command
+    required_preconditions
+    current_precondition_result
+    expected_effects
+    irreversible_effects
+    estimated_duration
+    risk_level
+    recoverability
+    permission_required
+    executable
+
+execute 必须要求：
+
+    通过 Safety Verifier
+    状态哈希未变化
+    权限允许
+    命令未过期
+    不存在模组冲突
+    不存在未处理的状态不同步
+
+
+四、副官版也必须读取的透明状态
+--------------------------------------------------------------------------------
+
+即使第一阶段完全不控制角色，也必须读取完整副官所需状态：
+
+    日期、季节、天气、时间
+    玩家位置和朝向
+    玩家体力、血量、金币
+    背包每一格物品
+    工具和升级等级
+    当前地图
+    当前地图可行走区域
+    障碍物和碰撞信息
+    当前地图所有可交互对象
+    每个对象的稳定 ID
+    对象类型和状态
+    农田、作物、肥料和浇水状态
+    动物、畜棚、鸡舍和产品状态
+    箱子位置和内容
+    建筑、机器和加工状态
+    NPC 位置、日程、好感度和可交互状态
+    商店营业状态、商品、价格和库存
+    任务、献祭、收藏、技能和解锁状态
+    当前 UI 菜单和选中项
+    当前节日、剧情和事件状态
+    所有已安装模组及版本
+    所有字段的可用性和来源
+
+注意：
+
+    “完整透明状态”不等于每个字段都必须一开始实现。
+
+正确做法是：
+
+    Schema 从第一天覆盖完整目标范围。
+    未实现字段显式返回 unavailable。
+    后续只填充字段，不改变字段含义。
+
+
+五、状态字段必须带来源元数据
+--------------------------------------------------------------------------------
+
+关键字段建议采用：
+
+    {
+      "value": 69000,
+      "status": "available",
+      "source": "Game1.player.Money",
+      "adapter": "vanilla_1_6",
+      "read_at_tick": 123456,
+      "confidence": 1.0
+    }
+
+对于无法直接读取、只能计算的字段：
+
+    {
+      "value": 12,
+      "status": "derived",
+      "source": [
+        "inventory",
+        "protected_item_rules",
+        "planned_purchase"
+      ],
+      "derivation": "available_money_after_reserve",
+      "read_at_tick": 123456,
+      "confidence": 1.0
+    }
+
+对于未知字段：
+
+    {
+      "value": null,
+      "status": "unavailable",
+      "reason": "unsupported_modded_shop",
+      "adapter": "unknown",
+      "confidence": 0.0
+    }
+
+
+六、稳定对象 ID
+--------------------------------------------------------------------------------
+
+不能只用屏幕位置识别对象。
+
+所有对象必须有稳定引用：
+
+    save_id
+    location_id
+    object_type
+    object_id
+    tile_x
+    tile_y
+    instance_id
+
+示例：
+
+    object_ref:
+        save_id: farm_001
+        location_id: Farm
+        object_type: chest
+        tile_x: 18
+        tile_y: 24
+        instance_id: Farm:chest:18:24
+
+后续执行器、规划器、记忆系统全部引用 object_ref，
+不能引用“左边那个箱子”。
+
+
+七、地图透明层
+--------------------------------------------------------------------------------
+
+为了未来完全体不重构，副官版就必须建立统一地图模型。
+
+地图数据至少包含：
+
+    location_id
+    width
+    height
+    tile_properties
+    collision_grid
+    warp_points
+    doors
+    interactable_tiles
+    dynamic_obstacles
+    NPC_positions
+    object_positions
+    building_entrances
+    tool_action_targets
+    action_tiles
+    restricted_tiles
+
+输出两种结构：
+
+1. Tile Grid
+
+    用于精确坐标和碰撞验证。
+
+2. Interaction Graph
+
+    节点：
+        地图
+        建筑
+        门
+        商店
+        箱子
+        作物区
+        NPC
+        机器
+        可交互物
+
+    边：
+        reachable
+        interactable
+        contains
+        adjacent
+        opens_at
+        requires
+        warps_to
+
+副官版可用它解释路线。
+完全体可用同一结构做寻路和动作执行。
+
+
+八、只读与写入权限分离
+--------------------------------------------------------------------------------
+
+TransparentBridge 必须有权限模式：
+
+    observer
+    planner
+    assisted
+    executor
+    developer
+
+observer：
+
+    只读状态
+    接收事件
+    不允许任何写操作
+
+planner：
+
+    只读状态
+    可请求 command preview
+    不允许 execute
+
+assisted：
+
+    允许低风险辅助操作
+    例如标记、计算、UI 提示
+
+executor：
+
+    允许执行白名单动作
+    所有动作必须审计
+
+developer：
+
+    仅开发环境使用
+    允许调试接口
+    默认禁用
+
+第一版必须运行在：
+
+    observer + planner
+
+即使未来完全体启用 executor，
+聊天模型也不能直接获得 executor 权限。
+
+
+九、透明审计日志
+--------------------------------------------------------------------------------
+
+每次规划和执行必须留下日志：
+
+    输入状态哈希
+    使用的 Snapshot
+    使用的事件范围
+    用户目标
+    候选计划
+    被删除的非法计划
+    Safety Verifier 结果
+    最终计划
+    LLM 提示词版本
+    LLM 输出
+    规范化结果
+    用户确认
+    命令预览
+    命令执行
+    实际结果
+    状态差异
+    失败原因
+    恢复结果
+
+用户必须能回答：
+
+    AI 为什么提出这个计划？
+    AI 看到了哪些游戏状态？
+    哪些数据是直接读取的？
+    哪些数据是推导的？
+    哪个规则否决了某个动作？
+    执行器实际做了什么？
+    执行前后状态发生了什么变化？
+
+
+十、透明 UI
+--------------------------------------------------------------------------------
+
+后续应提供本地调试面板，至少包含：
+
+    当前状态
+    当前事件流
+    当前计划
+    当前用户模式
+    当前能力清单
+    当前未知字段
+    当前模组冲突
+    当前 Safety Verifier 结果
+    当前 LLM 输入摘要
+    当前命令预览
+    当前权限模式
+    当前执行状态
+    当前审计日志
+
+用户可随时：
+
+    暂停
+    禁用执行
+    切换 observer
+    查看状态来源
+    导出日志
+    删除记忆
+    重建索引
+    强制重新同步
+
+
+十一、模组兼容层
+--------------------------------------------------------------------------------
+
+不得假设只有原版游戏。
+
+TransparentBridge 必须使用适配器机制：
+
+    adapters/
+        vanilla/
+        content_patcher/
+        automate/
+        stardew_valley_expanded/
+        custom_npc/
+        custom_shop/
+        custom_map/
+        generic_fallback/
+
+每个适配器声明：
+
+    supported_mod_id
+    supported_versions
+    readable_fields
+    executable_actions
+    known_limitations
+    known_conflicts
+
+未知模组状态不得静默忽略。
+
+必须出现在：
+
+    installed_mods
+    unknown_mods
+    unsupported_features
+    capability_manifest
+
+
+十二、状态同步
+--------------------------------------------------------------------------------
+
+必须使用：
+
+    周期性完整 Snapshot
+    +
+    高频 Event Diff
+
+建议：
+
+    每个游戏日开始：完整快照
+    位置变化：局部快照
+    背包变化：事件差异
+    重要交互后：局部验证
+    执行命令前：状态哈希检查
+    执行命令后：结果快照
+    保存前：完整快照
+    发现不同步：强制重建快照
+
+状态不一致时：
+
+    禁止继续执行
+    标记 StateDesyncDetected
+    交还控制权
+    请求重新规划
+
+
+十三、项目阶段调整
+--------------------------------------------------------------------------------
+
+原阶段路线修改为：
+
+阶段 0：合同与 Schema
+
+    定义：
+        CanonicalState
+        Event
+        Capability
+        Command
+        AuditRecord
+        ActionSpec
+        OptionSpec
+        ExecutorPort
+
+阶段 0.5：TransparentBridge 只读 MOD
+
+    读取：
+        基础玩家状态
+        时间天气
+        位置
+        背包
+        任务
+        农场状态
+        事件流
+        模组列表
+
+    输出：
+        Snapshot API
+        Event Stream API
+        Capability Manifest
+        Audit Log
+
+阶段 1：透明只读副官
+
+    聊天和规划只读取 TransparentBridge。
+    禁止截图猜测。
+    禁止手动输入关键游戏事实作为常规方案。
+
+阶段 2：规划副官
+
+    使用完整透明状态生成计划。
+    所有计划附状态来源和约束解释。
+
+阶段 3：偏好学习
+
+    只学习排序，不修改事实层。
+
+阶段 4：命令预览
+
+    增加 Command Preview。
+    仍不执行。
+
+阶段 5：白名单执行
+
+    增加 executor 权限。
+    只执行通过验证的低风险动作。
+
+阶段 6：完整 AI 队友
+
+    继续沿用同一个 TransparentBridge。
+
+
+十四、阶段 0.5 验收标准
+--------------------------------------------------------------------------------
+
+TransparentBridge 必须达到：
+
+    能返回版本化 JSON Snapshot。
+    能持续输出事件流。
+    能列出全部已安装模组。
+    能标记未知和不支持字段。
+    能输出 Capability Manifest。
+    能输出状态哈希。
+    能检测 Snapshot 与 Event 不一致。
+    能保存审计日志。
+    observer 模式下不存在任何写操作。
+    关闭后不修改游戏存档。
+    上层 AI 不接触游戏进程。
+    所有测试可自动运行。
+
+
+十五、修改后的首个实际开发顺序
+--------------------------------------------------------------------------------
+
+正确顺序：
+
+    1. 定义完整 Schema。
+    2. 建立 TransparentBridge MOD 骨架。
+    3. 先读取基础状态。
+    4. 建立 Snapshot API。
+    5. 建立 Event Stream API。
+    6. 建立 Capability Manifest。
+    7. 建立审计日志。
+    8. 建立状态同步和哈希。
+    9. 后端接收并保存状态。
+   10. 再接聊天。
+   11. 再接规划。
+   12. 最后考虑执行。
+
+不能：
+
+    先做聊天界面
+    先做 LLM 提示词
+    先做计划器
+    后补游戏接入
+
+原因：
+
+    没有透明事实层，
+    后面的聊天、规划和记忆都会建立在不稳定输入上。
+
+
+十六、给编码 AI 的新增强制提示词
+--------------------------------------------------------------------------------
+
+追加以下要求：
+
+    本项目必须先实现 StardewAI.TransparentBridge。
+
+    TransparentBridge 是唯一合法的游戏事实来源。
+
+    任何状态字段必须包含：
+        value
+        status
+        source
+        adapter
+        read_at_tick
+        confidence
+
+    任何未知字段必须返回 unavailable，
+    禁止使用默认值伪装成功。
+
+    第一版必须支持：
+        Snapshot API
+        Event Stream API
+        Capability Manifest
+        Audit Log
+        observer 权限模式
+
+    第一版禁止：
+        自动执行
+        键鼠模拟
+        OCR
+        截图推断
+        LLM 猜状态
+        直接读写存档
+        直接读进程内存
+        绕过 MOD 访问游戏
+
+    所有接口必须版本化。
+    所有 Schema 必须有自动测试。
+    所有事件必须可追溯。
+    所有状态必须可审计。
+    所有模组兼容性必须显式声明。
+
+    副官模型也必须使用完整透明接入，
+    不允许使用临时简化接口。
+
+二十三、最终结论
+--------------------------------------------------------------------------------
+
+最终选型：
+
+    数学底座：
+        约束型因子化 SMDP + Options
+
+    任务分解：
+        HTN 风格领域模型
+
+    计划搜索：
+        Weighted A*
+        Beam Search
+        或启发式搜索
+
+    第一训练目标：
+        计划偏好排序器
+
+    执行控制：
+        行为树
+
+    自然语言：
+        LLM 只负责目标解析、解释、聊天和陪伴
+
+    记忆：
+        独立持久化存储
+
+    安全：
+        独立 Safety Verifier
+
+    第一可用版本：
+        只读状态 + 规划副官 + 长期记忆 + 聊天
+
+    最终版本：
+        可验证、可中止、可恢复的完整 AI 队友
+
+
+核心目标不是：
+
+    造一个最会赚钱的机器人。
+
+核心目标是：
+
+    造一个知道当前发生了什么，
+    记得共同经历，
+    能和玩家一起决定下一步，
+    并最终能够安全行动的长期陪玩伙伴。
+
+
+================================================================================
+END OF FILE
+================================================================================

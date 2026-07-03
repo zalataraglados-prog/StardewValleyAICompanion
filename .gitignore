@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.venv/
+__pycache__/
+.pytest_cache/
+*.user
+*.suo
+*.log
+appsettings.Development.json

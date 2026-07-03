@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stardewai.local/schemas/audit.v1.json",
+  "title": "StardewAI Audit Record",
+  "type": "object",
+  "required": ["event_id", "event_type", "real_timestamp", "game_tick", "state_hash"],
+  "properties": {
+    "schema_version": { "const": "audit.v1" },
+    "event_id": { "type": "string" },
+    "event_type": { "type": "string" },
+    "real_timestamp": { "type": "string", "format": "date-time" },
+    "game_tick": { "type": "integer" },
+    "state_hash": { "type": "string" },
+    "details": {}
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Name": "StardewAI TransparentBridge",
+  "Author": "StardewAI",
+  "Version": "0.1.0",
+  "Description": "Read-only transparent state bridge for AI companion planning.",
+  "UniqueID": "StardewAI.TransparentBridge",
+  "EntryDll": "StardewAI.TransparentBridge.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}

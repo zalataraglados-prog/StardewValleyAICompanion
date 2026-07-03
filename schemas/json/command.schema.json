@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stardewai.local/schemas/command.v1.json",
+  "title": "StardewAI Command Preview",
+  "type": "object",
+  "required": ["command_id", "normalized_command", "required_preconditions", "current_precondition_result", "expected_effects", "irreversible_effects", "risk_level", "recoverability", "permission_required", "executable"],
+  "properties": {
+    "command_id": { "type": "string" },
+    "normalized_command": { "type": "object" },
+    "required_preconditions": { "type": "array" },
+    "current_precondition_result": { "type": "array" },
+    "expected_effects": { "type": "array" },
+    "irreversible_effects": { "type": "array" },
+    "estimated_duration": {},
+    "risk_level": { "enum": ["none", "low", "medium", "high", "blocked"] },
+    "recoverability": { "enum": ["recoverable", "partial", "irreversible", "unknown"] },
+    "permission_required": { "enum": ["observer", "planner", "assisted", "executor", "developer"] },
+    "executable": { "type": "boolean" }
+  }
+}
