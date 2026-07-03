@@ -1,11 +1,20 @@
 # Stardew Valley AI Companion
 
-本仓库按蓝图 `Stardew Valley AI 副官 -> 完全体陪玩智能体` 搭建，当前只做阶段 0 / 0.5 的工程基础。
+本仓库按蓝图 `Stardew Valley AI 副官 -> 完全体陪玩智能体` 搭建。
+
+当前阶段定义为：
+
+```text
+Phase 1A: Transparent Read-Only Bridge + Typed Planning Preview
+全透明只读接入与强类型规划预览
+```
 
 ## 当前范围
 
-- `StardewAI.TransparentBridge`：SMAPI 只读 MOD 骨架。
-- `backend`：Python FastAPI 后端状态存储骨架。
+- `StardewAI.Contracts`：Bridge、Core、Backend 共享的强类型合同。
+- `StardewAI.TransparentBridge`：SMAPI 只读 MOD。
+- `StardewAI.Core`：GoalSpec、OptionSpec Registry、Verifier、CommandPreview 编译。
+- `StardewAI.Backend`：ASP.NET Core Minimal API transport。
 - `schemas/json`：版本化接口合同。
 - `docs`：蓝图源文件和工程笔记。
 
@@ -15,9 +24,7 @@
 
 ```powershell
 cd I:\StardewValleyAICompanion
-.\.venv\Scripts\Activate.ps1
-pip install -r backend\requirements.txt
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8787
+dotnet run --project src\StardewAI.Backend\StardewAI.Backend.csproj
 ```
 
 MOD 构建：
@@ -27,6 +34,14 @@ cd I:\StardewValleyAICompanion
 dotnet restore
 dotnet build
 ```
+
+测试：
+
+```powershell
+dotnet test
+```
+
+`backend/` 下的 Python FastAPI 原型已经退役，仅作为迁移参考，不再新增功能。
 
 SMAPI 运行后，Bridge 默认监听：
 
@@ -38,9 +53,11 @@ http://127.0.0.1:8765/api/v1/audit
 
 ## 开发顺序
 
-1. 固定完整 Schema：CanonicalState、Event、Capability、Command、AuditRecord、ActionSpec、OptionSpec、ExecutorPort。
-2. 完善 TransparentBridge 只读 MOD。
-3. 接入 Snapshot API、Event Stream API、Capability Manifest、Audit Log。
-4. 后端保存状态、事件和审计日志。
-5. 再接聊天、记忆和规划。
-6. 最后才考虑命令预览和白名单执行。
+1. TransparentBridge 输出真实、版本化、可审计的 Snapshot/Event/Capability/Audit。
+2. 所有模块引用 `StardewAI.Contracts`，不复制数据模型。
+3. 用户自然语言先编译为 `GoalSpec`。
+4. Planner 只能选择已注册 `OptionSpec` 并绑定为 `OptionInstance`。
+5. Verifier 输出 `feasible`、`blocked` 或 `unknown`。
+6. `CommandPreview` 明确分离 `feasibility` 和 `execution_permission`。
+7. `execution_permission` 在 Phase 1A 始终为 `disabled`。
+8. 不存在任何自动执行路径。

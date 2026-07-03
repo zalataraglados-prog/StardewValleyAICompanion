@@ -1,3 +1,5 @@
+using StardewAI.Contracts.State;
+
 namespace StardewAI.TransparentBridge.Adapters;
 
 public abstract class ReadAdapterBase : IStateAdapter
@@ -12,7 +14,7 @@ public abstract class ReadAdapterBase : IStateAdapter
         {
             Value = value,
             Status = value is null ? "unavailable" : "available",
-            Source = SourceRef(value is null ? "unavailable" : "game_object", source),
+            Source = new SourceRef { Kind = value is null ? "unavailable" : "game_object", Path = source },
             Adapter = adapter,
             ReadAtTick = readAtTick,
             Confidence = value is null ? 0.0 : 1.0,
@@ -26,7 +28,7 @@ public abstract class ReadAdapterBase : IStateAdapter
         {
             Value = null,
             Status = "unavailable",
-            Source = SourceRef("unavailable", source),
+            Source = new SourceRef { Kind = "unavailable", Path = source },
             Adapter = adapter,
             ReadAtTick = readAtTick,
             Confidence = 0.0,
@@ -42,10 +44,4 @@ public abstract class ReadAdapterBase : IStateAdapter
     {
         return new StateAdapterResult(sectionName, fields, unavailableFields ?? Array.Empty<string>(), completeness);
     }
-
-    protected static object SourceRef(string kind, string path) => new
-    {
-        kind,
-        path
-    };
 }

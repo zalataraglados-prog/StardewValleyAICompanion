@@ -1,6 +1,7 @@
 using StardewModdingAPI;
 using StardewValley;
 using StardewAI.TransparentBridge.Adapters;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.TransparentBridge.State;
 
@@ -72,7 +73,7 @@ public sealed class TransparentStateCollector
     {
         Value = value,
         Status = value is null ? "unavailable" : "available",
-        Source = new { kind = value is null ? "unavailable" : "game_object", path = source },
+        Source = new SourceRef { Kind = value is null ? "unavailable" : "game_object", Path = source },
         Adapter = "vanilla_1_6",
         ReadAtTick = readAtTick,
         Confidence = value is null ? 0.0 : 1.0,
@@ -98,7 +99,7 @@ public sealed class TransparentStateCollector
                 {
                     Value = null,
                     Status = "unavailable",
-                    Source = new { kind = "unavailable", path = $"state.{sectionName}" },
+                    Source = new SourceRef { Kind = "unavailable", Path = $"state.{sectionName}" },
                     Adapter = "not_connected",
                     ReadAtTick = tick,
                     Confidence = 0.0,

@@ -1,3 +1,5 @@
+using StardewAI.Contracts.State;
+
 namespace StardewAI.TransparentBridge;
 
 public sealed class BridgeConfig
@@ -23,17 +25,6 @@ public sealed class SnapshotEnvelope
     public string Completeness { get; set; } = "partial";
     public string[] UnavailableFields { get; set; } = Array.Empty<string>();
     public object State { get; set; } = new();
-}
-
-public sealed class FieldEnvelope<T>
-{
-    public T? Value { get; set; }
-    public string Status { get; set; } = "unavailable";
-    public object Source { get; set; } = "unknown";
-    public string Adapter { get; set; } = "unknown";
-    public long ReadAtTick { get; set; }
-    public double Confidence { get; set; }
-    public string? Reason { get; set; }
 }
 
 public sealed record InstalledMod(string Id, string Name, string Version);
