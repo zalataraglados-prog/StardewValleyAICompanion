@@ -141,3 +141,47 @@ def test_event_schema_validation_reports_missing_required_field(client: TestClie
     assert response.status_code == 422
     assert "event schema validation failed" in response.json()["detail"]
     assert "in_game_time" in response.json()["detail"]
+
+
+def test_stardew_input_endpoint_normalizes_latest_snapshot(client: TestClient) -> None:
+    assert client.post("/api/v1/snapshots", json=sample_snapshot()).status_code == 200
+
+    response = client.get("/api/v1/stardew/input/latest?goal=water%20crops&mode=efficiency")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["state_hash"] == "hash-100"
+    assert payload["mode"] == "efficiency"
+    assert payload["facts"]["game.current_location"] == "Farm"
+    assert "farm.crops" in payload["unavailable_required_fields"]
+
+
+def test_action_compiler_outputs_non_executable_command_preview(client: TestClient) -> None:
+    assert client.post("/api/v1/snapshots", json=sample_snapshot()).status_code == 200
+
+    response = client.post(
+        "/api/v1/action-compiler/compile",
+        json={"goal": "water crops today", "mode": "efficiency"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["schema_version"] == "action_compiler.v1"
+    assert payload["intent"] == "farm.maintain_crops"
+    assert payload["compiler_status"] == "blocked"
+    assert payload["options"][0]["id"] == "option.farm.maintain_crops.preview"
+    assert payload["command_previews"][0]["permission_required"] == "planner"
+    assert payload["command_previews"][0]["executable"] is False
+    assert payload["diagnostics"]["command_schema_errors"] == []
+
+
+def test_action_compiler_check_reports_loaded_compiler(client: TestClient) -> None:
+    assert client.post("/api/v1/snapshots", json=sample_snapshot()).status_code == 200
+
+    response = client.get("/api/v1/action-compiler/check")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["compiler_loaded"] is True
+    assert payload["command_preview_count"] == 1

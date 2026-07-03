@@ -10,6 +10,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import ValidationError
 from pydantic import BaseModel, Field
 
+from action_compiler import build_stardew_input, compile_actions
+
 
 app = FastAPI(title="StardewAI Backend State Store", version="0.1.0")
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas" / "json"
@@ -41,6 +43,10 @@ schema_validators = {
     ),
     "capability": Draft202012Validator(
         _load_schema("capability.schema.json"),
+        format_checker=FormatChecker(),
+    ),
+    "command": Draft202012Validator(
+        _load_schema("command.schema.json"),
         format_checker=FormatChecker(),
     ),
 }
@@ -196,6 +202,61 @@ def sync(after_tick: int | None = None) -> dict[str, Any]:
         "events": selected_events,
         "capabilities": list(capabilities.values()),
         "audit_head": audit_records[-10:],
+    }
+
+
+@app.get("/api/v1/stardew/input/latest")
+def latest_stardew_input(goal: str = "", mode: str = "relaxed") -> dict[str, Any]:
+    latest = _latest_snapshot_or_none()
+    if latest is None:
+        raise HTTPException(status_code=404, detail="no snapshots ingested")
+    return build_stardew_input(latest, goal, mode)
+
+
+@app.post("/api/v1/action-compiler/compile")
+def compile_action(payload: dict[str, Any]) -> dict[str, Any]:
+    snapshot_hash = payload.get("state_hash")
+    latest = snapshots.get(snapshot_hash) if isinstance(snapshot_hash, str) else _latest_snapshot_or_none()
+    if latest is None:
+        raise HTTPException(status_code=404, detail="no matching snapshot available")
+
+    result = compile_actions(latest, payload, schema_validators["command"])
+    _append_audit(
+        "ActionCompilerPreviewed",
+        latest.game_tick,
+        latest.state_hash,
+        {
+            "compiler_status": result["compiler_status"],
+            "intent": result["intent"],
+            "option_count": len(result["options"]),
+            "command_preview_count": len(result["command_previews"]),
+        },
+    )
+    return result
+
+
+@app.get("/api/v1/action-compiler/check")
+def check_action_compiler() -> dict[str, Any]:
+    latest = _latest_snapshot_or_none()
+    if latest is None:
+        return {
+            "status": "blocked",
+            "reason": "no_snapshots_ingested",
+            "compiler_loaded": True,
+        }
+
+    result = compile_actions(
+        latest,
+        {"goal": "stabilize current day", "mode": "recovery"},
+        schema_validators["command"],
+    )
+    return {
+        "status": "ok" if not result["diagnostics"]["command_schema_errors"] else "invalid",
+        "compiler_loaded": True,
+        "compiler_status": result["compiler_status"],
+        "state_hash": latest.state_hash,
+        "command_preview_count": len(result["command_previews"]),
+        "command_schema_errors": result["diagnostics"]["command_schema_errors"],
     }
 
 
