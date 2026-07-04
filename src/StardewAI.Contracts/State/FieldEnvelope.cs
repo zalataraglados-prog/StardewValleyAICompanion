@@ -2,6 +2,24 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.State
 {
+    public static class FieldStatus
+    {
+        public const string Available = "available";
+        public const string Derived = "derived";
+        public const string Unavailable = "unavailable";
+        public const string Stale = "stale";
+        public const string Error = "error";
+
+        public static bool IsKnown(string? status)
+        {
+            return status == Available ||
+                status == Derived ||
+                status == Unavailable ||
+                status == Stale ||
+                status == Error;
+        }
+    }
+
     public sealed class FieldEnvelope<T>
     {
         [JsonPropertyName("value")]
@@ -29,6 +47,14 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("derivation")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DerivationRef? Derivation { get; set; }
+    }
+
+    public static class FieldEnvelopeValidator
+    {
+        public static bool IsReadableStatus(string? status)
+        {
+            return status == FieldStatus.Available || status == FieldStatus.Derived;
+        }
     }
 
     public sealed class SourceRef

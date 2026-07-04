@@ -26,15 +26,18 @@ app.MapGet("/health", () => new
     transport = "aspnet-minimal-api"
 });
 
-app.MapPost("/api/v1/snapshots", (SnapshotEnvelope snapshot, StateStore store) =>
+app.MapPost("/api/v1/snapshots", async (HttpRequest request, StateStore store) =>
 {
-    var errors = SnapshotValidator.Validate(snapshot);
+    using var reader = new StreamReader(request.Body);
+    var rawPayload = await reader.ReadToEndAsync();
+    var errors = SnapshotValidator.ValidateRaw(rawPayload, out var snapshot);
     if (errors.Count > 0)
     {
         return Results.UnprocessableEntity(new { message = "snapshot validation failed", errors });
     }
 
-    store.Snapshots[snapshot.StateHash] = snapshot;
+    store.Snapshots[snapshot!.StateHash] = snapshot;
+    store.RawPayloads[snapshot.StateHash] = new RawIngestRecord("snapshot", snapshot.StateHash, DateTimeOffset.UtcNow.ToString("O"), rawPayload);
     store.AppendAudit("SnapshotIngested", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(new { accepted = true, state_hash = snapshot.StateHash });
 });
@@ -45,15 +48,20 @@ app.MapGet("/api/v1/snapshots/latest", (StateStore store) =>
     return latest is null ? Results.NotFound(new { detail = "no snapshots ingested" }) : Results.Ok(latest);
 });
 
-app.MapPost("/api/v1/events", (GameEvent gameEvent, StateStore store) =>
+app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
 {
-    if (string.IsNullOrWhiteSpace(gameEvent.EventId) || string.IsNullOrWhiteSpace(gameEvent.EventType))
+    using var reader = new StreamReader(request.Body);
+    var rawPayload = await reader.ReadToEndAsync();
+    var errors = EventValidator.ValidateRaw(rawPayload, store, out var gameEvent);
+    if (errors.Count > 0)
     {
-        return Results.UnprocessableEntity(new { detail = "event_id and event_type are required" });
+        return Results.UnprocessableEntity(new { message = "event validation failed", errors });
     }
 
-    store.Events.Add(gameEvent);
-    store.AppendAudit("EventIngested", gameEvent.GameTick, string.Empty);
+    var acceptedEvent = gameEvent!;
+    store.Events.Add(acceptedEvent);
+    store.RawPayloads[acceptedEvent.EventId] = new RawIngestRecord("event", acceptedEvent.EventId, DateTimeOffset.UtcNow.ToString("O"), rawPayload);
+    store.AppendAudit("EventIngested", acceptedEvent.GameTick, acceptedEvent.StateHashAfter);
     return Results.Ok(new { accepted = true, count = store.Events.Count });
 });
 
@@ -68,32 +76,30 @@ app.MapGet("/api/v1/events", (long? afterTick, int? limit, StateStore store) =>
     return Results.Ok(selected.TakeLast(limit.GetValueOrDefault(100)).ToArray());
 });
 
-app.MapPost("/api/v1/capabilities", (JsonElement payload, StateStore store) =>
+app.MapPost("/api/v1/capabilities", (CapabilityManifest manifest, StateStore store) =>
 {
-    var capabilities = payload.ValueKind == JsonValueKind.Array
-        ? JsonSerializer.Deserialize<Capability[]>(payload.GetRawText()) ?? Array.Empty<Capability>()
-        : new[] { JsonSerializer.Deserialize<Capability>(payload.GetRawText()) ?? new Capability() };
-
-    foreach (var capability in capabilities)
+    var errors = CapabilityValidator.Validate(manifest);
+    if (errors.Count > 0)
     {
-        if (string.IsNullOrWhiteSpace(capability.CapabilityId))
-        {
-            return Results.UnprocessableEntity(new { detail = "capability_id is required" });
-        }
-
-        store.Capabilities[capability.CapabilityId] = capability;
-        store.AppendAudit("CapabilityIngested", store.LatestSnapshot()?.GameTick ?? 0, store.LatestSnapshot()?.StateHash ?? string.Empty);
+        return Results.UnprocessableEntity(new { message = "capability validation failed", errors });
     }
 
+    store.CapabilityManifest = manifest;
+    foreach (var capability in manifest.Capabilities)
+    {
+        store.Capabilities[capability.CapabilityId] = capability;
+    }
+
+    store.AppendAudit("CapabilityIngested", store.LatestSnapshot()?.GameTick ?? 0, store.LatestSnapshot()?.StateHash ?? string.Empty);
     return Results.Ok(new
     {
         accepted = true,
-        count = capabilities.Length,
-        capability_ids = capabilities.Select(item => item.CapabilityId).ToArray()
+        count = manifest.Capabilities.Length,
+        capability_ids = manifest.Capabilities.Select(item => item.CapabilityId).ToArray()
     });
 });
 
-app.MapGet("/api/v1/capabilities", (StateStore store) => Results.Ok(store.Capabilities.Values.ToArray()));
+app.MapGet("/api/v1/capabilities", (StateStore store) => Results.Ok(store.CapabilityManifest));
 
 app.MapGet("/api/v1/audit", (int? limit, StateStore store) =>
     Results.Ok(store.Audit.TakeLast(limit.GetValueOrDefault(100)).ToArray()));
@@ -113,7 +119,7 @@ app.MapGet("/api/v1/sync", (long? afterTick, StateStore store) =>
         event_count = store.Events.Count,
         capability_count = store.Capabilities.Count,
         events = events.ToArray(),
-        capabilities = store.Capabilities.Values.ToArray(),
+        capabilities = store.CapabilityManifest,
         audit_head = store.Audit.TakeLast(10).ToArray()
     });
 });
@@ -184,6 +190,8 @@ public sealed class StateStore
     public Dictionary<string, SnapshotEnvelope> Snapshots { get; } = new Dictionary<string, SnapshotEnvelope>();
     public List<GameEvent> Events { get; } = new List<GameEvent>();
     public Dictionary<string, Capability> Capabilities { get; } = new Dictionary<string, Capability>();
+    public CapabilityManifest? CapabilityManifest { get; set; }
+    public Dictionary<string, RawIngestRecord> RawPayloads { get; } = new Dictionary<string, RawIngestRecord>();
     public List<AuditRecord> Audit { get; } = new List<AuditRecord>();
 
     public SnapshotEnvelope? LatestSnapshot()
@@ -203,25 +211,88 @@ public sealed class StateStore
     }
 }
 
+public sealed record RawIngestRecord(string PayloadType, string Id, string ReceivedAt, string RawPayload);
+
 public static class SnapshotValidator
 {
     private static readonly string[] RequiredDomains =
     {
-        "game",
+        "environment",
+        "identity",
+        "time",
         "player",
-        "farm",
-        "locations",
-        "npcs",
-        "quests",
-        "world_progress",
-        "menus",
-        "mods",
-        "modded_state"
+        "mods"
     };
+
+    public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)
+    {
+        snapshot = null;
+        var errors = new List<string>();
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(rawPayload);
+        }
+        catch (JsonException ex)
+        {
+            errors.Add("invalid json: " + ex.Message);
+            return errors;
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            if (!root.TryGetProperty("schema_version", out var schemaVersion))
+            {
+                errors.Add("schema_version is required");
+                return errors;
+            }
+
+            if (schemaVersion.GetString() != "snapshot.v1")
+            {
+                errors.Add("unsupported schema_version: " + schemaVersion.GetString());
+                return errors;
+            }
+
+            snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(rawPayload, JsonOptions);
+            if (snapshot is null)
+            {
+                errors.Add("snapshot deserialization failed");
+                return errors;
+            }
+
+            errors.AddRange(Validate(snapshot));
+            if (root.TryGetProperty("state", out _))
+            {
+                var computed = SnapshotHash.ComputeStateHash(snapshot.State);
+                if (!string.Equals(snapshot.StateHash, computed, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add("state_hash mismatch");
+                }
+            }
+        }
+
+        return errors;
+    }
 
     public static List<string> Validate(SnapshotEnvelope snapshot)
     {
         var errors = new List<string>();
+        if (snapshot.SchemaVersion != "snapshot.v1")
+        {
+            errors.Add("schema_version must be snapshot.v1");
+        }
+
+        if (string.IsNullOrWhiteSpace(snapshot.BridgeVersion))
+        {
+            errors.Add("bridge_version is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(snapshot.RealTimestamp))
+        {
+            errors.Add("real_timestamp is required");
+        }
+
         if (string.IsNullOrWhiteSpace(snapshot.StateHash))
         {
             errors.Add("state_hash is required");
@@ -245,11 +316,6 @@ public static class SnapshotValidator
 
     private static void ValidateTransparentFields(JsonElement element, string path, List<string> errors)
     {
-        if (path == "state.modded_state" && element.ValueKind == JsonValueKind.Object && !element.EnumerateObject().Any())
-        {
-            return;
-        }
-
         if (element.ValueKind != JsonValueKind.Object)
         {
             errors.Add(path + " must be an object");
@@ -266,6 +332,40 @@ public static class SnapshotValidator
                 }
             }
 
+            var status = element.TryGetProperty("status", out var statusElement) ? statusElement.GetString() : null;
+            if (!FieldStatus.IsKnown(status))
+            {
+                errors.Add(path + " has invalid status: " + status);
+            }
+
+            var hasValue = element.TryGetProperty("value", out var valueElement) && valueElement.ValueKind != JsonValueKind.Null;
+            if (FieldEnvelopeValidator.IsReadableStatus(status) && !hasValue)
+            {
+                errors.Add(path + " readable status requires non-null value");
+            }
+
+            if (!FieldEnvelopeValidator.IsReadableStatus(status) && hasValue)
+            {
+                errors.Add(path + " non-readable status must not carry a default value");
+            }
+
+            if (element.TryGetProperty("confidence", out var confidence) &&
+                (!confidence.TryGetDouble(out var confidenceValue) || confidenceValue < 0 || confidenceValue > 1))
+            {
+                errors.Add(path + " confidence must be between 0 and 1");
+            }
+
+            if (status == FieldStatus.Derived && !element.TryGetProperty("derivation", out _))
+            {
+                errors.Add(path + " derived status requires derivation");
+            }
+
+            if ((status == FieldStatus.Unavailable || status == FieldStatus.Stale || status == FieldStatus.Error) &&
+                !element.TryGetProperty("reason", out _))
+            {
+                errors.Add(path + " non-readable status requires reason");
+            }
+
             return;
         }
 
@@ -273,6 +373,99 @@ public static class SnapshotValidator
         {
             ValidateTransparentFields(child.Value, path + "." + child.Name, errors);
         }
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+}
+
+public static class EventValidator
+{
+    public static List<string> ValidateRaw(string rawPayload, StateStore store, out GameEvent? gameEvent)
+    {
+        gameEvent = null;
+        var errors = new List<string>();
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(rawPayload);
+        }
+        catch (JsonException ex)
+        {
+            errors.Add("invalid json: " + ex.Message);
+            return errors;
+        }
+
+        using (document)
+        {
+            if (!document.RootElement.TryGetProperty("schema_version", out var schema) || schema.GetString() != "event.v1")
+            {
+                errors.Add("schema_version must be event.v1");
+                return errors;
+            }
+        }
+
+        gameEvent = JsonSerializer.Deserialize<GameEvent>(rawPayload, JsonOptions);
+        if (gameEvent is null)
+        {
+            errors.Add("event deserialization failed");
+            return errors;
+        }
+
+        if (string.IsNullOrWhiteSpace(gameEvent.EventId) || string.IsNullOrWhiteSpace(gameEvent.EventType))
+        {
+            errors.Add("event_id and event_type are required");
+        }
+
+        if (gameEvent.ChangedFields.Length == 0 && gameEvent.EventType != "SnapshotPublished")
+        {
+            errors.Add("changed_fields is required for change events");
+        }
+
+        if (!string.IsNullOrWhiteSpace(gameEvent.StateHashAfter) && !store.Snapshots.ContainsKey(gameEvent.StateHashAfter))
+        {
+            errors.Add("state_hash_after does not match an ingested snapshot");
+        }
+
+        return errors;
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+}
+
+public static class CapabilityValidator
+{
+    public static List<string> Validate(CapabilityManifest manifest)
+    {
+        var errors = new List<string>();
+        if (manifest.SchemaVersion != "capabilities.v1")
+        {
+            errors.Add("schema_version must be capabilities.v1");
+        }
+
+        if (manifest.PermissionMode != "observer")
+        {
+            errors.Add("permission_mode must be observer");
+        }
+
+        if (manifest.CanExecuteCommands || manifest.CanWriteGameState)
+        {
+            errors.Add("Phase 1A-2 capabilities must not declare write or execute permission");
+        }
+
+        foreach (var capability in manifest.Capabilities)
+        {
+            if (string.IsNullOrWhiteSpace(capability.CapabilityId))
+            {
+                errors.Add("capability_id is required");
+            }
+
+            if (capability.AccessMode == "execute" && capability.Status != "disabled")
+            {
+                errors.Add(capability.CapabilityId + " execute capability must be disabled");
+            }
+        }
+
+        return errors;
     }
 }
 
@@ -303,6 +496,8 @@ public static class StardewInputProjector
         var current = ReadPath(snapshot, path);
         if (current.HasValue &&
             current.Value.ValueKind == JsonValueKind.Object &&
+            current.Value.TryGetProperty("status", out var status) &&
+            FieldEnvelopeValidator.IsReadableStatus(status.GetString()) &&
             current.Value.TryGetProperty("value", out var value))
         {
             return value.ValueKind switch

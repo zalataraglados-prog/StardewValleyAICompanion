@@ -28,6 +28,24 @@ namespace StardewAI.Contracts.Capabilities
         [JsonPropertyName("schema_version")]
         public string SchemaVersion { get; set; } = "capabilities.v1";
 
+        [JsonPropertyName("bridge_version")]
+        public string BridgeVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("permission_mode")]
+        public string PermissionMode { get; set; } = "observer";
+
+        [JsonPropertyName("verified_versions")]
+        public string[] VerifiedVersions { get; set; } = new string[0];
+
+        [JsonPropertyName("compatibility_status")]
+        public string CompatibilityStatus { get; set; } = "unverified";
+
+        [JsonPropertyName("can_write_game_state")]
+        public bool CanWriteGameState { get; set; }
+
+        [JsonPropertyName("can_execute_commands")]
+        public bool CanExecuteCommands { get; set; }
+
         [JsonPropertyName("capabilities")]
         public Capability[] Capabilities { get; set; } = new Capability[0];
     }

@@ -1,18 +1,36 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://stardewai.local/schemas/capability.v1.json",
-  "title": "StardewAI Capability",
+  "$id": "https://stardewai.local/schemas/capabilities.v1.json",
+  "title": "StardewAI Capability Manifest",
   "type": "object",
-  "required": ["capability_id", "access_mode", "status", "source", "limitations", "required_permission", "supported_game_versions", "supported_mods", "known_conflicts"],
+  "additionalProperties": false,
+  "required": ["schema_version", "bridge_version", "permission_mode", "compatibility_status", "can_write_game_state", "can_execute_commands", "capabilities"],
   "properties": {
-    "capability_id": { "type": "string" },
-    "access_mode": { "enum": ["read", "preview", "execute"] },
-    "status": { "enum": ["available", "partial", "unavailable", "disabled"] },
-    "source": {},
-    "limitations": {},
-    "required_permission": { "enum": ["observer", "planner", "assisted", "executor", "developer"] },
-    "supported_game_versions": { "type": "array" },
-    "supported_mods": { "type": "array" },
-    "known_conflicts": { "type": "array" }
+    "schema_version": { "const": "capabilities.v1" },
+    "bridge_version": { "type": "string" },
+    "permission_mode": { "const": "observer" },
+    "verified_versions": { "type": "array", "items": { "type": "string" } },
+    "compatibility_status": { "enum": ["verified", "unverified"] },
+    "can_write_game_state": { "const": false },
+    "can_execute_commands": { "const": false },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability_id", "access_mode", "status", "source", "limitations", "required_permission"],
+      "properties": {
+        "capability_id": { "type": "string" },
+        "access_mode": { "enum": ["read", "preview", "execute"] },
+        "status": { "enum": ["available", "partial", "unavailable", "disabled"] },
+        "source": {},
+        "limitations": {},
+        "required_permission": { "const": "observer" }
+      }
+    }
   }
 }

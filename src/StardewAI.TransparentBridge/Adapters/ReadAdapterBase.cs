@@ -13,7 +13,7 @@ public abstract class ReadAdapterBase : IStateAdapter
         return new FieldEnvelope<T>
         {
             Value = value,
-            Status = value is null ? "unavailable" : "available",
+            Status = value is null ? FieldStatus.Unavailable : FieldStatus.Available,
             Source = new SourceRef { Kind = value is null ? "unavailable" : "game_object", Path = source },
             Adapter = adapter,
             ReadAtTick = readAtTick,
@@ -27,7 +27,7 @@ public abstract class ReadAdapterBase : IStateAdapter
         return new FieldEnvelope<object?>
         {
             Value = null,
-            Status = "unavailable",
+            Status = FieldStatus.Unavailable,
             Source = new SourceRef { Kind = "unavailable", Path = source },
             Adapter = adapter,
             ReadAtTick = readAtTick,

@@ -2,6 +2,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewAI.TransparentBridge.Adapters;
 using StardewAI.Contracts.State;
+using System.Text.Json;
 
 namespace StardewAI.TransparentBridge.State;
 
@@ -44,70 +45,64 @@ public sealed class TransparentStateCollector
             unavailableFields.AddRange(result.UnavailableFields);
         }
 
-        EnsureCanonicalSection(sections, unavailableFields, "quests", tick);
-        EnsureCanonicalSection(sections, unavailableFields, "world_progress", tick);
-        EnsureCanonicalSection(sections, unavailableFields, "menus", tick);
-        EnsureCanonicalSection(sections, unavailableFields, "modded_state", tick, fieldMap: false);
+        sections["environment"] = new Dictionary<string, object>
+        {
+            ["game_version"] = Field(Game1.version, "Game1.version", tick),
+            ["smapi_version"] = Field(Constants.ApiVersion.ToString(), "StardewModdingAPI.Constants.ApiVersion", tick, "smapi_constants"),
+            ["bridge_version"] = Field(bridgeVersion, "IModManifest.Version", tick, "bridge_manifest"),
+            ["installed_mods"] = Field(modRegistry.GetAll()
+                .Select(mod => new
+                {
+                    id = mod.Manifest.UniqueID,
+                    name = mod.Manifest.Name,
+                    version = mod.Manifest.Version.ToString()
+                })
+                .ToArray(), "IModRegistry.GetAll()", tick, "smapi_mod_registry")
+        };
 
-        return new SnapshotEnvelope
+        sections["identity"] = new Dictionary<string, object>
+        {
+            ["save_id"] = Field(player?.farmName.Value, "Game1.player.farmName", tick),
+            ["player_id"] = Field(player?.UniqueMultiplayerID.ToString(), "Game1.player.UniqueMultiplayerID", tick)
+        };
+
+        var state = sections.ToDictionary(
+            item => item.Key,
+            item => JsonSerializer.SerializeToElement(item.Value, JsonOptions));
+
+        var snapshot = new SnapshotEnvelope
         {
             SchemaVersion = "snapshot.v1",
             BridgeVersion = bridgeVersion,
             SmapiVersion = Constants.ApiVersion.ToString(),
-            GameVersion = "unknown",
+            GameVersion = Game1.version,
             InstalledMods = modRegistry.GetAll()
-                .Select(mod => new InstalledMod(mod.Manifest.UniqueID, mod.Manifest.Name, mod.Manifest.Version.ToString()))
+                .Select(mod => new InstalledModRef(mod.Manifest.UniqueID, mod.Manifest.Name, mod.Manifest.Version.ToString()))
                 .ToArray(),
             SaveId = Field(player?.farmName.Value, "Game1.player.farmName", tick),
             PlayerId = Field(player?.UniqueMultiplayerID.ToString(), "Game1.player.UniqueMultiplayerID", tick),
             GameTick = tick,
             InGameTime = Field(Context.IsWorldReady ? (int?)Game1.timeOfDay : null, "Game1.timeOfDay", tick),
-            RealTimestamp = DateTimeOffset.UtcNow,
+            RealTimestamp = DateTimeOffset.UtcNow.ToString("O"),
             Completeness = unavailableFields.Count == 0 ? "complete" : "partial",
             UnavailableFields = unavailableFields.Distinct().OrderBy(field => field).ToArray(),
-            State = sections
+            State = state
         };
+
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return snapshot;
     }
 
-    private static FieldEnvelope<T> Field<T>(T value, string source, long readAtTick) => new()
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static FieldEnvelope<T> Field<T>(T value, string source, long readAtTick, string adapter = "vanilla_1_6") => new()
     {
         Value = value,
-        Status = value is null ? "unavailable" : "available",
+        Status = value is null ? FieldStatus.Unavailable : FieldStatus.Available,
         Source = new SourceRef { Kind = value is null ? "unavailable" : "game_object", Path = source },
-        Adapter = "vanilla_1_6",
+        Adapter = adapter,
         ReadAtTick = readAtTick,
         Confidence = value is null ? 0.0 : 1.0,
         Reason = value is null ? "value_unavailable" : null
     };
-
-    private static void EnsureCanonicalSection(
-        IDictionary<string, object> sections,
-        ICollection<string> unavailableFields,
-        string sectionName,
-        long tick,
-        bool fieldMap = true)
-    {
-        if (sections.ContainsKey(sectionName))
-        {
-            return;
-        }
-
-        sections[sectionName] = fieldMap
-            ? new Dictionary<string, object>
-            {
-                ["status"] = new FieldEnvelope<object?>
-                {
-                    Value = null,
-                    Status = "unavailable",
-                    Source = new SourceRef { Kind = "unavailable", Path = $"state.{sectionName}" },
-                    Adapter = "not_connected",
-                    ReadAtTick = tick,
-                    Confidence = 0.0,
-                    Reason = $"{sectionName}_reader_not_connected"
-                }
-            }
-            : new Dictionary<string, object>();
-
-        unavailableFields.Add(sectionName);
-    }
 }

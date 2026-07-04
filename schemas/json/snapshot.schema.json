@@ -50,18 +50,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "game",
+        "environment",
+        "identity",
+        "time",
         "player",
-        "farm",
-        "locations",
-        "npcs",
-        "quests",
-        "world_progress",
-        "menus",
-        "mods",
-        "modded_state"
+        "mods"
       ],
       "properties": {
+        "environment": { "$ref": "#/$defs/field_map" },
+        "identity": { "$ref": "#/$defs/field_map" },
+        "time": { "$ref": "#/$defs/field_map" },
         "game": { "$ref": "#/$defs/game_state" },
         "player": { "$ref": "#/$defs/player_state" },
         "farm": { "$ref": "#/$defs/farm_state" },
@@ -89,7 +87,7 @@
       ],
       "properties": {
         "value": true,
-        "status": { "enum": ["available", "derived", "unavailable"] },
+        "status": { "enum": ["available", "derived", "unavailable", "stale", "error"] },
         "source": { "$ref": "#/$defs/source_ref" },
         "adapter": { "type": "string", "minLength": 1 },
         "read_at_tick": { "type": "integer", "minimum": 0 },

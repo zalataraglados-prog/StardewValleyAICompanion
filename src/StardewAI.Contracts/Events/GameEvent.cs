@@ -23,6 +23,21 @@ namespace StardewAI.Contracts.Events
         [JsonPropertyName("source")]
         public string Source { get; set; } = string.Empty;
 
+        [JsonPropertyName("in_game_time")]
+        public int? InGameTime { get; set; }
+
+        [JsonPropertyName("state_hash_before")]
+        public string StateHashBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("state_hash_after")]
+        public string StateHashAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("changed_fields")]
+        public string[] ChangedFields { get; set; } = new string[0];
+
+        [JsonPropertyName("before")]
+        public JsonElement? Before { get; set; }
+
         [JsonPropertyName("after")]
         public JsonElement? After { get; set; }
     }

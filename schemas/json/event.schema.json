@@ -3,7 +3,7 @@
   "$id": "https://stardewai.local/schemas/event.v1.json",
   "title": "StardewAI Event",
   "type": "object",
-  "required": ["event_id", "event_type", "schema_version", "game_tick", "in_game_time", "real_timestamp", "source"],
+  "required": ["event_id", "event_type", "schema_version", "game_tick", "in_game_time", "real_timestamp", "source", "state_hash_before", "state_hash_after", "changed_fields"],
   "properties": {
     "schema_version": { "const": "event.v1" },
     "event_id": { "type": "string" },
@@ -15,6 +15,10 @@
     "before": {},
     "after": {},
     "state_hash_before": { "type": "string" },
-    "state_hash_after": { "type": "string" }
+    "state_hash_after": { "type": "string" },
+    "changed_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
   }
 }
