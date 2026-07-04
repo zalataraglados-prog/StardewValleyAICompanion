@@ -54,12 +54,18 @@
         "identity",
         "time",
         "player",
-        "mods"
+        "mods",
+        "farm",
+        "current_location",
+        "npcs",
+        "quests",
+        "world_progress"
       ],
       "properties": {
         "environment": { "$ref": "#/$defs/field_map" },
         "identity": { "$ref": "#/$defs/field_map" },
         "time": { "$ref": "#/$defs/field_map" },
+        "current_location": { "$ref": "#/$defs/field_map" },
         "game": { "$ref": "#/$defs/game_state" },
         "player": { "$ref": "#/$defs/player_state" },
         "farm": { "$ref": "#/$defs/farm_state" },
@@ -291,6 +297,10 @@
         "completed_quests": { "$ref": "#/$defs/field" },
         "special_orders": { "$ref": "#/$defs/field" },
         "mail_received": { "$ref": "#/$defs/field" },
+        "mail_for_tomorrow": { "$ref": "#/$defs/field" },
+        "mailbox": { "$ref": "#/$defs/field" },
+        "completed_special_orders": { "$ref": "#/$defs/field" },
+        "accepted_special_order_types": { "$ref": "#/$defs/field" },
         "journal": { "$ref": "#/$defs/field" }
       }
     },

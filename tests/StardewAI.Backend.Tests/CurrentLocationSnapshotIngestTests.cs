@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,78 +7,39 @@ using Xunit;
 
 namespace StardewAI.Backend.Tests
 {
-    public sealed class BackendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public sealed class CurrentLocationSnapshotIngestTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly WebApplicationFactory<Program> factory;
 
-        public BackendEndpointTests(WebApplicationFactory<Program> factory)
+        public CurrentLocationSnapshotIngestTests(WebApplicationFactory<Program> factory)
         {
             this.factory = factory;
         }
 
         [Fact]
-        public async Task SnapshotAndCompilerEndpointsReturnTypedPreview()
+        public async Task SnapshotIngestAcceptsCurrentLocationReadSlice()
         {
             using var client = factory.CreateClient();
 
-            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
-            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
-
-            var previewResponse = await client.PostAsJsonAsync("/api/v1/action-compiler/compile", new
-            {
-                goal = "water crops today",
-                mode = "efficiency"
-            });
-            Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
-
-            using var previewJson = JsonDocument.Parse(await previewResponse.Content.ReadAsStringAsync());
-            var root = previewJson.RootElement;
-            Assert.Equal("feasible", root.GetProperty("feasibility").GetString());
-            Assert.True(root.GetProperty("preview_only").GetBoolean());
-            Assert.Equal("disabled", root.GetProperty("execution_permission").GetString());
-            Assert.True(root.GetProperty("would_be_executable").GetBoolean());
-            Assert.Equal("farm.maintain_crops", root.GetProperty("selected_option").GetProperty("option_id").GetString());
-        }
-
-        [Fact]
-        public async Task ActionCompilerCheckDistinguishesFeasibilityFromExecutionPermission()
-        {
-            using var client = factory.CreateClient();
-            await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
-
-            var response = await client.GetAsync("/api/v1/action-compiler/check");
+            var response = await client.PostAsync("/api/v1/snapshots", SnapshotWithCurrentLocation());
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            Assert.Equal("ok", json.RootElement.GetProperty("status").GetString());
-            Assert.Equal("disabled", json.RootElement.GetProperty("execution_permission").GetString());
-            Assert.True(json.RootElement.GetProperty("preview_only").GetBoolean());
         }
 
         [Fact]
-        public async Task SnapshotIngestRejectsMismatchedHash()
+        public async Task SnapshotIngestRejectsUnavailableCurrentLocationDefault()
         {
             using var client = factory.CreateClient();
 
-            var response = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent("bad-hash"));
+            var response = await client.PostAsync("/api/v1/snapshots", SnapshotWithCurrentLocation(unavailableObjectsCarryDefault: true));
 
             Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-            Assert.Contains("state_hash mismatch", await response.Content.ReadAsStringAsync());
+            Assert.Contains("state.current_location.objects non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
         }
 
-        [Fact]
-        public async Task SnapshotIngestRejectsUnavailableDefaultValue()
+        private static StringContent SnapshotWithCurrentLocation(bool unavailableObjectsCarryDefault = false)
         {
-            using var client = factory.CreateClient();
-
-            var response = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent(unavailableCarriesDefault: true));
-
-            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-            Assert.Contains("non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
-        }
-
-        private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false)
-        {
+            var objectStatus = unavailableObjectsCarryDefault ? "unavailable" : "available";
             var stateJson = $$"""
             {
               "environment": {
@@ -107,25 +67,26 @@ namespace StardewAI.Backend.Tests
                 "health": {{FieldJson(100)}},
                 "max_health": {{FieldJson(100)}},
                 "energy": {{FieldJson(270)}},
-                "stamina": {{FieldJson(270)}},
                 "max_energy": {{FieldJson(270)}},
                 "current_tool": {{FieldJson("(T)Axe")}},
-                "active_menu": {{FieldJson("none", status: unavailableCarriesDefault ? "unavailable" : "available")}},
-                "inventory": {{FieldJson("[{\"slot_index\":0,\"item_id\":\"Axe\",\"qualified_item_id\":\"(T)Axe\",\"display_name\":\"Axe\",\"stack\":1,\"quality\":0,\"is_empty\":false}]", raw: true)}}
+                "active_menu": {{FieldJson("none")}},
+                "inventory": {{FieldJson("[]", raw: true)}}
               },
               "mods": {
                 "installed_count": {{FieldJson(0)}},
                 "installed_mods": {{FieldJson("[]", raw: true)}}
               },
-              "game": {
-                "current_location": {{FieldJson("Farm")}},
-                "time_of_day": {{FieldJson(610)}}
-              },
               "farm": {
                 "crops": {{FieldJson("[]", raw: true)}}
               },
               "current_location": {
-                "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}}
+                "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}},
+                "display_name": {{FieldJson("Farm")}},
+                "flags": {{FieldJson("{\"is_outdoors\":true,\"is_farm\":true}", raw: true)}},
+                "objects": {{FieldJson("[{\"tile_x\":64,\"tile_y\":15,\"item_id\":\"Chest\",\"qualified_item_id\":\"(BC)Chest\",\"name\":\"Chest\",\"display_name\":\"Chest\",\"stack\":1,\"quality\":0,\"type\":\"StardewValley.Objects.Chest\"}]", status: objectStatus, raw: true)}},
+                "terrain_features": {{FieldJson("[{\"tile_x\":10,\"tile_y\":20,\"type\":\"StardewValley.TerrainFeatures.Tree\"}]", raw: true)}},
+                "warps": {{FieldJson("[{\"x\":64,\"y\":15,\"target_name\":\"FarmHouse\",\"target_x\":3,\"target_y\":8,\"flip_farmer\":false,\"npc_only\":false}]", raw: true)}},
+                "map": {{FieldJson("{\"id\":\"Farm\",\"width\":120,\"height\":65,\"layer_count\":3,\"layers\":[{\"index\":0,\"id\":\"Back\",\"width\":120,\"height\":65}]}", raw: true)}}
               },
               "npcs": {
                 "positions": {{FieldJson("[]", raw: true)}},
@@ -144,7 +105,7 @@ namespace StardewAI.Backend.Tests
             """;
 
             var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(stateJson)!;
-            var hash = forcedHash ?? SnapshotHash.ComputeStateHash(state);
+            var hash = SnapshotHash.ComputeStateHash(state);
             var snapshotJson = $$"""
             {
               "schema_version": "snapshot.v1",
@@ -174,7 +135,7 @@ namespace StardewAI.Backend.Tests
                 : raw
                     ? value.ToString()
                     : JsonSerializer.Serialize(value);
-            var reason = status == "available" || status == "derived" ? "" : @",""reason"":""value_unavailable""";
+            var reason = status == "available" || status == "derived" ? string.Empty : @",""reason"":""value_unavailable""";
             return $$"""
             {
               "value": {{valueJson}},
@@ -185,16 +146,6 @@ namespace StardewAI.Backend.Tests
               "confidence": {{(status == "available" ? "1.0" : "0.0")}}{{reason}}
             }
             """;
-        }
-
-        private static string FieldJson(int value)
-        {
-            return FieldJson((object)value);
-        }
-
-        private static string FieldJson(string? value)
-        {
-            return FieldJson((object?)value);
         }
 
         private static string UnavailableFieldJson(string reason)

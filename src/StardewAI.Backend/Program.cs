@@ -221,7 +221,12 @@ public static class SnapshotValidator
         "identity",
         "time",
         "player",
-        "mods"
+        "mods",
+        "farm",
+        "current_location",
+        "npcs",
+        "quests",
+        "world_progress"
     };
 
     public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)
@@ -481,14 +486,28 @@ public static class StardewInputProjector
             mode,
             facts = new Dictionary<string, object?>
             {
-                ["game.current_location"] = ReadValue(snapshot, "game.current_location"),
-                ["game.time_of_day"] = ReadValue(snapshot, "game.time_of_day"),
+                ["game.current_location"] = ReadFirstValue(snapshot, "player.location_id", "game.current_location"),
+                ["game.time_of_day"] = ReadFirstValue(snapshot, "time.time", "game.time_of_day"),
                 ["player.money"] = ReadValue(snapshot, "player.money"),
-                ["player.stamina"] = ReadValue(snapshot, "player.stamina"),
+                ["player.stamina"] = ReadFirstValue(snapshot, "player.energy", "player.stamina"),
                 ["player.inventory"] = ReadValue(snapshot, "player.inventory"),
-                ["menus.active_menu"] = ReadValue(snapshot, "menus.active_menu")
+                ["menus.active_menu"] = ReadFirstValue(snapshot, "player.active_menu", "menus.active_menu")
             }
         };
+    }
+
+    private static object? ReadFirstValue(SnapshotEnvelope snapshot, params string[] paths)
+    {
+        foreach (var path in paths)
+        {
+            var value = ReadValue(snapshot, path);
+            if (value is not null)
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     private static object? ReadValue(SnapshotEnvelope snapshot, string path)

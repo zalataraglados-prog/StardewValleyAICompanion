@@ -164,6 +164,11 @@ public sealed class ModEntry : Mod
             Capability("read.time", "read", "available", "Game1.currentSeason/dayOfMonth/timeOfDay/weather flags", "vanilla fields only"),
             Capability("read.player", "read", "available", "Game1.player location/tile/facing/money/health/stamina/tool/menu", "local player only"),
             Capability("read.inventory", "read", "available", "Game1.player.Items", "slot summaries only"),
+            Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields", "farm domain summaries; no indoor building traversal"),
+            Capability("read.current_location", "read", "available", "Game1.currentLocation public read-only fields", "metadata summaries only; no pathing graph"),
+            Capability("read.npcs", "read", "partial", "Game1.currentLocation.characters", "current-location NPC positions only; schedules unavailable"),
+            Capability("read.quests", "read", "partial", "Game1.player.questLog/mail/team special orders", "completed quest history partially unavailable"),
+            Capability("read.world_progress", "read", "partial", "Game1.netWorldState/MasterPlayer collections", "perfection and golden walnuts unavailable"),
             Capability("execute.command", "execute", "disabled", "observer permission mode", "execution forbidden in Phase 1A-2")
         }
     };
@@ -267,6 +272,11 @@ public sealed class ModEntry : Mod
         {
             new WorldReadAdapter(),
             new PlayerReadAdapter(),
+            new FarmReadAdapter(),
+            new CurrentLocationReadAdapter(),
+            new NpcReadAdapter(),
+            new ProgressQuestReadAdapter(),
+            new WorldProgressReadAdapter(),
             new ModReadAdapter(helper.ModRegistry),
             new UnavailableFieldsAdapter()
         });
