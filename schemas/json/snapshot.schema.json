@@ -59,7 +59,9 @@
         "current_location",
         "npcs",
         "quests",
-        "world_progress"
+        "world_progress",
+        "menus",
+        "modded_state"
       ],
       "properties": {
         "environment": { "$ref": "#/$defs/field_map" },
@@ -347,8 +349,8 @@
     },
     "modded_state": {
       "type": "object",
-      "description": "Per-mod transparent fields. Keys are mod IDs; values are field maps where each modded fact is still reported through the field envelope.",
-      "additionalProperties": { "$ref": "#/$defs/field_map" }
+      "description": "Transparent mod-related facts that can be read generically without entering arbitrary private mod save/state. Leaves must still use field envelopes.",
+      "additionalProperties": { "$ref": "#/$defs/field" }
     }
   }
 }

@@ -169,6 +169,8 @@ public sealed class ModEntry : Mod
             Capability("read.npcs", "read", "partial", "Game1.currentLocation.characters", "current-location NPC positions only; schedules unavailable"),
             Capability("read.quests", "read", "partial", "Game1.player.questLog/mail/team special orders", "completed quest history partially unavailable"),
             Capability("read.world_progress", "read", "partial", "Game1.netWorldState/MasterPlayer collections", "perfection and golden walnuts unavailable"),
+            Capability("read.menus", "read", "partial", "Game1.activeClickableMenu public base fields", "menu-specific internals unavailable until individually verified"),
+            Capability("read.modded_state", "read", "partial", "IModRegistry.GetAll() metadata", "arbitrary private mod state unavailable without mod-specific read-only API"),
             Capability("execute.command", "execute", "disabled", "observer permission mode", "execution forbidden in Phase 1A-2")
         }
     };
@@ -277,7 +279,9 @@ public sealed class ModEntry : Mod
             new NpcReadAdapter(),
             new ProgressQuestReadAdapter(),
             new WorldProgressReadAdapter(),
+            new MenuReadAdapter(),
             new ModReadAdapter(helper.ModRegistry),
+            new ModdedStateReadAdapter(helper.ModRegistry),
             new UnavailableFieldsAdapter()
         });
 }

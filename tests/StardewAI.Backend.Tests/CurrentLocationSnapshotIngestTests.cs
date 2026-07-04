@@ -100,6 +100,17 @@ namespace StardewAI.Backend.Tests
                 "community_center": {{FieldJson("{\"bundles\":{},\"bundle_rewards\":{},\"completed_area_mail_flags\":[]}", raw: true)}},
                 "perfection": {{UnavailableFieldJson("perfection_fields_not_verified_in_this_slice")}},
                 "golden_walnuts": {{UnavailableFieldJson("golden_walnut_progress_not_verified_in_this_slice")}}
+              },
+              "menus": {
+                "active_menu": {{FieldJson("{\"is_open\":false,\"type\":\"none\",\"full_type\":null}", raw: true)}},
+                "menu_specific_state": {{UnavailableFieldJson("no_active_clickable_menu")}}
+              },
+              "modded_state": {
+                "installed_count": {{FieldJson(0)}},
+                "installed": {{FieldJson("[]", raw: true)}},
+                "content_pack_count": {{FieldJson(0)}},
+                "content_packs": {{FieldJson("[]", raw: true)}},
+                "private_mod_state": {{UnavailableFieldJson("arbitrary_mod_private_state_unavailable_without_mod_specific_read_only_api")}}
               }
             }
             """;

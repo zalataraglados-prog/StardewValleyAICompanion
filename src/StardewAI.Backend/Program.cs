@@ -226,7 +226,9 @@ public static class SnapshotValidator
         "current_location",
         "npcs",
         "quests",
-        "world_progress"
+        "world_progress",
+        "menus",
+        "modded_state"
     };
 
     public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)

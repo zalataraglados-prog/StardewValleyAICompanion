@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,78 +7,41 @@ using Xunit;
 
 namespace StardewAI.Backend.Tests
 {
-    public sealed class BackendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public sealed class MenuSnapshotIngestTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly WebApplicationFactory<Program> factory;
 
-        public BackendEndpointTests(WebApplicationFactory<Program> factory)
+        public MenuSnapshotIngestTests(WebApplicationFactory<Program> factory)
         {
             this.factory = factory;
         }
 
         [Fact]
-        public async Task SnapshotAndCompilerEndpointsReturnTypedPreview()
+        public async Task SnapshotIngestAcceptsMenuReadSlice()
         {
             using var client = factory.CreateClient();
 
-            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
-            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
-
-            var previewResponse = await client.PostAsJsonAsync("/api/v1/action-compiler/compile", new
-            {
-                goal = "water crops today",
-                mode = "efficiency"
-            });
-            Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
-
-            using var previewJson = JsonDocument.Parse(await previewResponse.Content.ReadAsStringAsync());
-            var root = previewJson.RootElement;
-            Assert.Equal("feasible", root.GetProperty("feasibility").GetString());
-            Assert.True(root.GetProperty("preview_only").GetBoolean());
-            Assert.Equal("disabled", root.GetProperty("execution_permission").GetString());
-            Assert.True(root.GetProperty("would_be_executable").GetBoolean());
-            Assert.Equal("farm.maintain_crops", root.GetProperty("selected_option").GetProperty("option_id").GetString());
-        }
-
-        [Fact]
-        public async Task ActionCompilerCheckDistinguishesFeasibilityFromExecutionPermission()
-        {
-            using var client = factory.CreateClient();
-            await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
-
-            var response = await client.GetAsync("/api/v1/action-compiler/check");
+            var response = await client.PostAsync("/api/v1/snapshots", SnapshotWithMenus());
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            Assert.Equal("ok", json.RootElement.GetProperty("status").GetString());
-            Assert.Equal("disabled", json.RootElement.GetProperty("execution_permission").GetString());
-            Assert.True(json.RootElement.GetProperty("preview_only").GetBoolean());
         }
 
         [Fact]
-        public async Task SnapshotIngestRejectsMismatchedHash()
+        public async Task SnapshotIngestRejectsUnavailableMenuSpecificDefault()
         {
             using var client = factory.CreateClient();
 
-            var response = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent("bad-hash"));
+            var response = await client.PostAsync("/api/v1/snapshots", SnapshotWithMenus(unavailableMenuSpecificCarriesDefault: true));
 
             Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-            Assert.Contains("state_hash mismatch", await response.Content.ReadAsStringAsync());
+            Assert.Contains("state.menus.menu_specific_state non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
         }
 
-        [Fact]
-        public async Task SnapshotIngestRejectsUnavailableDefaultValue()
+        private static StringContent SnapshotWithMenus(bool unavailableMenuSpecificCarriesDefault = false)
         {
-            using var client = factory.CreateClient();
-
-            var response = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent(unavailableCarriesDefault: true));
-
-            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-            Assert.Contains("non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
-        }
-
-        private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false)
-        {
+            var menuSpecific = unavailableMenuSpecificCarriesDefault
+                ? FieldJson("{\"selected_index\":0}", status: "unavailable", raw: true)
+                : UnavailableFieldJson("menu_specific_fields_not_verified_in_this_slice");
             var stateJson = $$"""
             {
               "environment": {
@@ -107,19 +69,14 @@ namespace StardewAI.Backend.Tests
                 "health": {{FieldJson(100)}},
                 "max_health": {{FieldJson(100)}},
                 "energy": {{FieldJson(270)}},
-                "stamina": {{FieldJson(270)}},
                 "max_energy": {{FieldJson(270)}},
                 "current_tool": {{FieldJson("(T)Axe")}},
-                "active_menu": {{FieldJson("none", status: unavailableCarriesDefault ? "unavailable" : "available")}},
-                "inventory": {{FieldJson("[{\"slot_index\":0,\"item_id\":\"Axe\",\"qualified_item_id\":\"(T)Axe\",\"display_name\":\"Axe\",\"stack\":1,\"quality\":0,\"is_empty\":false}]", raw: true)}}
+                "active_menu": {{FieldJson("StardewValley.Menus.ShopMenu")}},
+                "inventory": {{FieldJson("[]", raw: true)}}
               },
               "mods": {
                 "installed_count": {{FieldJson(0)}},
                 "installed_mods": {{FieldJson("[]", raw: true)}}
-              },
-              "game": {
-                "current_location": {{FieldJson("Farm")}},
-                "time_of_day": {{FieldJson(610)}}
               },
               "farm": {
                 "crops": {{FieldJson("[]", raw: true)}}
@@ -141,8 +98,11 @@ namespace StardewAI.Backend.Tests
                 "golden_walnuts": {{UnavailableFieldJson("golden_walnut_progress_not_verified_in_this_slice")}}
               },
               "menus": {
-                "active_menu": {{FieldJson("{\"is_open\":false,\"type\":\"none\",\"full_type\":null}", raw: true)}},
-                "menu_specific_state": {{UnavailableFieldJson("no_active_clickable_menu")}}
+                "active_menu": {{FieldJson("{\"is_open\":true,\"type\":\"ShopMenu\",\"full_type\":\"StardewValley.Menus.ShopMenu\"}", raw: true)}},
+                "identity": {{FieldJson("{\"type\":\"ShopMenu\",\"full_type\":\"StardewValley.Menus.ShopMenu\",\"assembly\":\"Stardew Valley\",\"is_iclickable_menu\":true}", raw: true)}},
+                "screen_bounds": {{FieldJson("{\"x\":100,\"y\":80,\"width\":800,\"height\":600}", raw: true)}},
+                "public_state": {{FieldJson("{\"destroy\":false,\"invisible\":false,\"game_window_size_changed\":false,\"upper_right_close_button_present\":true,\"currently_snapped_component_present\":false}", raw: true)}},
+                "menu_specific_state": {{menuSpecific}}
               },
               "modded_state": {
                 "installed_count": {{FieldJson(0)}},
@@ -155,7 +115,7 @@ namespace StardewAI.Backend.Tests
             """;
 
             var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(stateJson)!;
-            var hash = forcedHash ?? SnapshotHash.ComputeStateHash(state);
+            var hash = SnapshotHash.ComputeStateHash(state);
             var snapshotJson = $$"""
             {
               "schema_version": "snapshot.v1",
@@ -170,7 +130,7 @@ namespace StardewAI.Backend.Tests
               "real_timestamp": "2026-07-04T00:00:00Z",
               "state_hash": "{{hash}}",
               "completeness": "partial",
-              "unavailable_fields": [],
+              "unavailable_fields": ["menus.menu_specific_state"],
               "state": {{stateJson}}
             }
             """;
@@ -185,7 +145,7 @@ namespace StardewAI.Backend.Tests
                 : raw
                     ? value.ToString()
                     : JsonSerializer.Serialize(value);
-            var reason = status == "available" || status == "derived" ? "" : @",""reason"":""value_unavailable""";
+            var reason = status == "available" || status == "derived" ? string.Empty : @",""reason"":""value_unavailable""";
             return $$"""
             {
               "value": {{valueJson}},
@@ -196,16 +156,6 @@ namespace StardewAI.Backend.Tests
               "confidence": {{(status == "available" ? "1.0" : "0.0")}}{{reason}}
             }
             """;
-        }
-
-        private static string FieldJson(int value)
-        {
-            return FieldJson((object)value);
-        }
-
-        private static string FieldJson(string? value)
-        {
-            return FieldJson((object?)value);
         }
 
         private static string UnavailableFieldJson(string reason)
