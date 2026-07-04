@@ -23,8 +23,10 @@ public sealed class ModEntry : Mod
     private CancellationTokenSource? serverCancellation;
     private readonly List<AuditRecord> audit = new();
     private readonly List<GameEvent> events = new();
+    private readonly object snapshotLock = new();
     private BridgeConfig config = new();
     private TransparentStateCollector? stateCollector;
+    private SnapshotEnvelope? latestSnapshot;
     private string currentStateHash = "unavailable";
 
     public override void Entry(IModHelper helper)
@@ -62,8 +64,17 @@ public sealed class ModEntry : Mod
         };
         helper.Events.Display.MenuChanged += (_, e) => PublishEvent("MenuChanged", new[] { "player.active_menu" }, MenuSummary(e.OldMenu), MenuSummary(e.NewMenu));
         helper.Events.GameLoop.ReturnedToTitle += (_, _) => AddAudit("ReturnedToTitle");
+        helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
         StartReadOnlyServer();
+    }
+
+    private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+    {
+        if (e.IsMultipleOf(15))
+        {
+            RefreshSnapshotCache(publishSnapshotEvent: false);
+        }
     }
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -123,7 +134,7 @@ public sealed class ModEntry : Mod
 
         object response = path switch
         {
-            "/api/v1/snapshot" => BuildSnapshot(),
+            "/api/v1/snapshot" => GetLatestSnapshot(),
             "/api/v1/capabilities" => BuildCapabilities(),
             "/api/v1/events" => events.TakeLast(200).ToArray(),
             "/api/v1/audit" => audit.TakeLast(200).ToArray(),
@@ -139,14 +150,17 @@ public sealed class ModEntry : Mod
         context.Response.Close();
     }
 
-    private SnapshotEnvelope BuildSnapshot()
+    private SnapshotEnvelope GetLatestSnapshot()
     {
-        var snapshot = (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot();
+        lock (snapshotLock)
+        {
+            if (latestSnapshot is not null)
+            {
+                return latestSnapshot;
+            }
+        }
 
-        currentStateHash = snapshot.StateHash;
-        PublishSnapshotEvent(snapshot);
-        snapshot.StateHash = currentStateHash;
-        return snapshot;
+        return RefreshSnapshotCache(publishSnapshotEvent: true);
     }
 
     private CapabilityManifest BuildCapabilities() => new()
@@ -201,7 +215,7 @@ public sealed class ModEntry : Mod
     {
         var beforeHash = currentStateHash;
         var snapshot = BuildSnapshotWithoutEvent();
-        currentStateHash = snapshot.StateHash;
+        CacheSnapshot(snapshot, publishSnapshotEvent: false);
         events.Add(new GameEvent
         {
             EventId = Guid.NewGuid().ToString("N"),
@@ -223,6 +237,27 @@ public sealed class ModEntry : Mod
     private SnapshotEnvelope BuildSnapshotWithoutEvent()
     {
         return (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot();
+    }
+
+    private SnapshotEnvelope RefreshSnapshotCache(bool publishSnapshotEvent)
+    {
+        var snapshot = BuildSnapshotWithoutEvent();
+        CacheSnapshot(snapshot, publishSnapshotEvent);
+        return snapshot;
+    }
+
+    private void CacheSnapshot(SnapshotEnvelope snapshot, bool publishSnapshotEvent)
+    {
+        if (publishSnapshotEvent)
+        {
+            PublishSnapshotEvent(snapshot);
+        }
+
+        currentStateHash = snapshot.StateHash;
+        lock (snapshotLock)
+        {
+            latestSnapshot = snapshot;
+        }
     }
 
     private void PublishSnapshotEvent(SnapshotEnvelope snapshot)

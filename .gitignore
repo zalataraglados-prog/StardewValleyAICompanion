@@ -4,6 +4,7 @@ obj/
 .venv/
 __pycache__/
 .pytest_cache/
+artifacts/
 *.user
 *.suo
 *.log

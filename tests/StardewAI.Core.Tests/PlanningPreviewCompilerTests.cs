@@ -12,8 +12,7 @@ namespace StardewAI.Core.Tests
         {
             var snapshot = Snapshot(new[]
             {
-                Field("game", "current_location", "\"Farm\""),
-                Field("player", "stamina", "270"),
+                Fields("player", ("location_id", "\"Farm\""), ("energy", "270")),
                 Section("farm")
             });
             var compiler = new PlanningPreviewCompiler();
@@ -34,8 +33,7 @@ namespace StardewAI.Core.Tests
         {
             var snapshot = Snapshot(new[]
             {
-                Field("game", "current_location", "\"Farm\""),
-                Field("player", "stamina", "270"),
+                Fields("player", ("location_id", "\"Farm\""), ("energy", "270")),
                 Field("farm", "crops", "[]")
             });
             var compiler = new PlanningPreviewCompiler();
@@ -80,6 +78,19 @@ namespace StardewAI.Core.Tests
                 ""read_at_tick"": 100,
                 ""confidence"": 1.0
             }} }}";
+        }
+
+        private static string Fields(string section, params (string Name, string ValueJson)[] fields)
+        {
+            var fieldJson = string.Join(",", fields.Select(field => $@"""{field.Name}"": {{
+                ""value"": {field.ValueJson},
+                ""status"": ""available"",
+                ""source"": {{ ""kind"": ""game_object"", ""path"": ""{section}.{field.Name}"" }},
+                ""adapter"": ""test"",
+                ""read_at_tick"": 100,
+                ""confidence"": 1.0
+            }}"));
+            return $@"""{section}"": {{ {fieldJson} }}";
         }
 
         private static string Section(string section)

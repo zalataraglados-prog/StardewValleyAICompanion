@@ -1,0 +1,10 @@
+{
+  "Name": "StardewAI Runtime Test Harness",
+  "Author": "StardewAI",
+  "Version": "0.1.0",
+  "Description": "Test-only harness for isolated runtime acceptance. Not part of observer bridge capabilities.",
+  "UniqueID": "StardewAI.RuntimeTestHarness",
+  "EntryDll": "StardewAI.RuntimeTestHarness.dll",
+  "MinimumApiVersion": "4.5.2",
+  "UpdateKeys": []
+}

@@ -10,17 +10,17 @@ namespace StardewAI.Core.OptionRegistry
         public OptionRegistry()
         {
             Register(Option("farm.maintain_crops", "farm", "Maintain farm crops",
-                new[] { "game.current_location", "player.stamina", "farm.crops" },
+                new[] { "player.location_id", "player.energy", "farm.crops" },
                 new[] { "crop obligations inspected", "manual crop work plan produced" },
                 new[] { "block_unavailable_required_state", "block_unverified_movement" }));
 
             Register(Option("farm.process_machines", "farm", "Process machines",
-                new[] { "game.current_location", "player.inventory", "farm.machines" },
+                new[] { "player.location_id", "player.inventory", "farm.machines" },
                 new[] { "machine queue inspected", "manual machine plan produced" },
                 new[] { "never_sell_protected_items", "block_unavailable_required_state" }));
 
             Register(Option("economy.buy_supplies", "economy", "Buy supplies preview",
-                new[] { "game.time_of_day", "player.money", "locations.shops", "menus.active_menu" },
+                new[] { "time.time", "player.money", "locations.shops", "menus.active_menu" },
                 new[] { "purchase list verified", "budget impact previewed" },
                 new[] { "never_spend_below_emergency_reserve", "block_unknown_ui_clicks" }));
 
@@ -35,17 +35,17 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "never_sell_protected_items", "block_unavailable_required_state" }));
 
             Register(Option("quest.advance", "quest", "Advance quest preview",
-                new[] { "quests.active_quests", "player.inventory", "game.time_of_day" },
+                new[] { "quests.active_quests", "player.inventory", "time.time" },
                 new[] { "quest step previewed" },
                 new[] { "block_unavailable_required_state", "block_state_hash_mismatch" }));
 
             Register(Option("exploration.visit_location", "exploration", "Visit location preview",
-                new[] { "locations.collision_grid", "player.stamina", "game.time_of_day" },
+                new[] { "locations.collision_grid", "player.energy", "time.time" },
                 new[] { "route previewed" },
                 new[] { "block_unverified_movement", "block_unavailable_required_state" }));
 
             Register(Option("recovery.stabilize_day", "recovery", "Stabilize current day",
-                new[] { "game.time_of_day", "player.stamina", "menus.active_menu" },
+                new[] { "time.time", "player.energy", "menus.active_menu" },
                 new[] { "urgent risks inspected", "safe stopping plan produced" },
                 new[] { "block_state_hash_mismatch", "block_mutation_in_observer_or_planner_mode" }));
         }
