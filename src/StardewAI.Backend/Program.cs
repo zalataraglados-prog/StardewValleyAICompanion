@@ -9,6 +9,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Goals;
+using StardewAI.Core.MockModel;
 using StardewAI.Core.PreviewCompiler;
 using StardewAI.Core.Training;
 using StardewAI.Core.WorldModel;
@@ -25,6 +26,7 @@ builder.Services.AddSingleton<ActionQueueCompiler>();
 builder.Services.AddSingleton<IExecutorPort, DryRunExecutorPort>();
 builder.Services.AddSingleton<TrainingSandboxExecutorPort>();
 builder.Services.AddSingleton<TrainingStateTransitionSimulator>();
+builder.Services.AddSingleton<MockSmallModelPolicy>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
@@ -206,6 +208,22 @@ app.MapPost("/api/v1/small-model/action-queue/compile", (SmallModelActionEnvelop
     return Results.Ok(queue);
 });
 
+app.MapPost("/api/v1/mock-model/small-model-action", (MockModelActionRequest request, StateStore store, MockSmallModelPolicy policy) =>
+{
+    var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
+        ? selected
+        : store.LatestSnapshot();
+
+    if (snapshot is null)
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var output = policy.Generate(snapshot, request.Goal ?? string.Empty, request.ExecutionMode ?? "training_singleplayer");
+    store.AppendAudit("MockSmallModelActionGenerated", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(output);
+});
+
 app.MapGet("/api/v1/action-queues/{queueId}", (string queueId, StateStore store) =>
     store.ActionQueues.TryGetValue(queueId, out var queue)
         ? Results.Ok(queue)
@@ -287,6 +305,18 @@ public sealed class CompileRequest
 
     [JsonPropertyName("state_hash")]
     public string? StateHash { get; set; }
+}
+
+public sealed class MockModelActionRequest
+{
+    [JsonPropertyName("goal")]
+    public string? Goal { get; set; }
+
+    [JsonPropertyName("state_hash")]
+    public string? StateHash { get; set; }
+
+    [JsonPropertyName("execution_mode")]
+    public string? ExecutionMode { get; set; }
 }
 
 public sealed class StateStore

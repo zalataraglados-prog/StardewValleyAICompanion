@@ -192,6 +192,51 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task MockModelOutputCompilesAndSimulatesTrainingTransition()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var mockResponse = await client.PostAsJsonAsync("/api/v1/mock-model/small-model-action", new
+            {
+                goal = "water crops",
+                state_hash = stateHash,
+                execution_mode = "training_singleplayer"
+            });
+
+            Assert.Equal(HttpStatusCode.OK, mockResponse.StatusCode);
+            var mockPayload = await mockResponse.Content.ReadAsStringAsync();
+            using var mockJson = JsonDocument.Parse(mockPayload);
+            Assert.Equal("small_model_action.v1", mockJson.RootElement.GetProperty("schema_version").GetString());
+            Assert.Equal("mock-small-model.rule.v1", mockJson.RootElement.GetProperty("source_model").GetString());
+            Assert.Equal("farm.maintain_crops", mockJson.RootElement.GetProperty("actions")[0].GetProperty("option_id").GetString());
+            Assert.Contains(mockJson.RootElement.GetProperty("actions")[0].GetProperty("parameters").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "intent_category" &&
+                item.GetProperty("value").GetString() == "mechanical");
+
+            var compileResponse = await client.PostAsync(
+                "/api/v1/small-model/action-queue/compile",
+                new StringContent(mockPayload, Encoding.UTF8, "application/json"));
+
+            Assert.Equal(HttpStatusCode.OK, compileResponse.StatusCode);
+            using var queueJson = JsonDocument.Parse(await compileResponse.Content.ReadAsStringAsync());
+            var queueId = queueJson.RootElement.GetProperty("queue_id").GetString();
+            Assert.Equal("pending", queueJson.RootElement.GetProperty("status").GetString());
+
+            var transitionResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/simulate-training-transition", null);
+
+            Assert.Equal(HttpStatusCode.OK, transitionResponse.StatusCode);
+            using var transitionJson = JsonDocument.Parse(await transitionResponse.Content.ReadAsStringAsync());
+            Assert.Equal("simulated_transition.v1", transitionJson.RootElement.GetProperty("schema_version").GetString());
+            Assert.False(transitionJson.RootElement.GetProperty("blocked").GetBoolean());
+            Assert.Contains(transitionJson.RootElement.GetProperty("changed_facts").EnumerateArray(), item =>
+                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
+        }
+
+        [Fact]
         public async Task SnapshotIngestRejectsMismatchedHash()
         {
             using var client = factory.CreateClient();
