@@ -7,6 +7,7 @@ using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Goals;
 using StardewAI.Core.PreviewCompiler;
+using StardewAI.Core.Training;
 using StardewAI.Core.WorldModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,7 @@ builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
+builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
 
 var app = builder.Build();
 
@@ -149,6 +151,19 @@ app.MapGet("/api/v1/goals/grandpa-evaluation/latest", (StateStore store, WorldMo
 
     var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
     return Results.Ok(evaluator.Evaluate(model));
+});
+
+app.MapGet("/api/v1/training/grandpa-evaluation/latest", (StateStore store, WorldModelProjector projector, GrandpaEvaluationGoalEvaluator evaluator, GrandpaTrainingSampleAdapter adapter) =>
+{
+    var latest = store.LatestSnapshot();
+    if (latest is null)
+    {
+        return Results.NotFound(new { detail = "no snapshots ingested" });
+    }
+
+    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var report = evaluator.Evaluate(model);
+    return Results.Ok(adapter.Build(model, report));
 });
 
 app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateStore store, PlanningPreviewCompiler compiler) =>

@@ -96,6 +96,26 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task GrandpaTrainingEndpointReturnsDeterministicSample()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var response = await client.GetAsync("/api/v1/training/grandpa-evaluation/latest");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("training_sample.v1", root.GetProperty("schema_version").GetString());
+            Assert.Equal("grandpa_score", root.GetProperty("target").GetProperty("metric").GetString());
+            Assert.True(root.GetProperty("target").GetProperty("complete").GetBoolean());
+            Assert.False(root.GetProperty("feedback").GetProperty("executor_required").GetBoolean());
+            Assert.False(root.GetProperty("feedback").GetProperty("available_now").GetBoolean());
+            Assert.Empty(root.GetProperty("candidate_directions").EnumerateArray());
+        }
+
+        [Fact]
         public async Task SnapshotIngestRejectsMismatchedHash()
         {
             using var client = factory.CreateClient();
