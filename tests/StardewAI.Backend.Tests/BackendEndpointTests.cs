@@ -77,6 +77,25 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task GrandpaEvaluationEndpointReturnsFourCandleGoalReport()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var response = await client.GetAsync("/api/v1/goals/grandpa-evaluation/latest");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("grandpa_evaluation_goal.v1", root.GetProperty("schema_version").GetString());
+            Assert.Equal(12, root.GetProperty("target_score").GetInt32());
+            Assert.Equal(4, root.GetProperty("current_candles").GetInt32());
+            Assert.True(root.GetProperty("target_met").GetBoolean());
+            Assert.Empty(root.GetProperty("missing_fact_paths").EnumerateArray());
+        }
+
+        [Fact]
         public async Task SnapshotIngestRejectsMismatchedHash()
         {
             using var client = factory.CreateClient();
@@ -113,6 +132,7 @@ namespace StardewAI.Backend.Tests
                 "player_id": {{FieldJson("123")}}
               },
               "time": {
+                "year": {{FieldJson(3)}},
                 "season": {{FieldJson("spring")}},
                 "day": {{FieldJson(1)}},
                 "time": {{FieldJson(610)}},
@@ -124,12 +144,20 @@ namespace StardewAI.Backend.Tests
                 "tile_y": {{FieldJson(15)}},
                 "facing_direction": {{FieldJson(2)}},
                 "money": {{FieldJson(500)}},
+                "total_money_earned": {{FieldJson(1000000)}},
                 "health": {{FieldJson(100)}},
                 "max_health": {{FieldJson(100)}},
                 "energy": {{FieldJson(270)}},
                 "stamina": {{FieldJson(270)}},
                 "max_energy": {{FieldJson(270)}},
+                "level": {{FieldJson(25)}},
+                "has_skull_key": {{FieldJson(true)}},
+                "has_rusty_key": {{FieldJson(true)}},
+                "married_or_roommate": {{FieldJson(false)}},
+                "farmhouse_upgrade_level": {{FieldJson(1)}},
                 "current_tool": {{FieldJson("(T)Axe")}},
+                "current_item_qualified_id": {{FieldJson("(O)72")}},
+                "active_object_qualified_id": {{FieldJson("(O)72")}},
                 "active_menu": {{FieldJson("none", status: unavailableCarriesDefault ? "unavailable" : "available")}},
                 "inventory": {{FieldJson("[{\"slot_index\":0,\"item_id\":\"Axe\",\"qualified_item_id\":\"(T)Axe\",\"display_name\":\"Axe\",\"stack\":1,\"quality\":0,\"is_empty\":false}]", raw: true)}}
               },
@@ -142,6 +170,7 @@ namespace StardewAI.Backend.Tests
                 "time_of_day": {{FieldJson(610)}}
               },
               "farm": {
+                "grandpa_score": {{FieldJson(3)}},
                 "crops": {{FieldJson("[]", raw: true)}}
               },
               "current_location": {
@@ -149,14 +178,17 @@ namespace StardewAI.Backend.Tests
               },
               "npcs": {
                 "positions": {{FieldJson("[]", raw: true)}},
+                "friendships": {{FieldJson("[{\"npc_name\":\"A\",\"points\":2000},{\"npc_name\":\"B\",\"points\":2000},{\"npc_name\":\"C\",\"points\":2000},{\"npc_name\":\"D\",\"points\":2000},{\"npc_name\":\"E\",\"points\":2000}]", raw: true)}},
                 "schedules": {{UnavailableFieldJson("npc_schedules_unavailable_without_complete_read_only_decompile_proof")}}
               },
               "quests": {
                 "active_quests": {{FieldJson("[]", raw: true)}},
+                "mail_received": {{FieldJson("[\"petLoveMessage\"]", raw: true)}},
                 "completed_quests": {{UnavailableFieldJson("no_verified_global_completed_quest_collection_found")}}
               },
               "world_progress": {
-                "community_center": {{FieldJson("{\"bundles\":{},\"bundle_rewards\":{},\"completed_area_mail_flags\":[]}", raw: true)}},
+                "community_center": {{FieldJson("{\"location_accessible\":true,\"completed\":true,\"bundles\":{},\"bundle_rewards\":{},\"completed_area_mail_flags\":[]}", raw: true)}},
+                "achievements": {{FieldJson("[5,26,34]", raw: true)}},
                 "perfection": {{UnavailableFieldJson("perfection_fields_not_verified_in_this_slice")}},
                 "golden_walnuts": {{UnavailableFieldJson("golden_walnut_progress_not_verified_in_this_slice")}}
               },

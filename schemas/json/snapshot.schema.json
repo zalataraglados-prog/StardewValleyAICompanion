@@ -242,7 +242,15 @@
         "professions": { "$ref": "#/$defs/field" },
         "skills": { "$ref": "#/$defs/field" },
         "deepest_mine_level": { "$ref": "#/$defs/field" },
-        "current_action": { "$ref": "#/$defs/field" }
+        "current_action": { "$ref": "#/$defs/field" },
+        "total_money_earned": { "$ref": "#/$defs/field" },
+        "level": { "$ref": "#/$defs/field" },
+        "has_skull_key": { "$ref": "#/$defs/field" },
+        "has_rusty_key": { "$ref": "#/$defs/field" },
+        "married_or_roommate": { "$ref": "#/$defs/field" },
+        "farmhouse_upgrade_level": { "$ref": "#/$defs/field" },
+        "current_item_qualified_id": { "$ref": "#/$defs/field" },
+        "active_object_qualified_id": { "$ref": "#/$defs/field" }
       }
     },
     "farm_state": {
@@ -259,7 +267,8 @@
         "animals": { "$ref": "#/$defs/field" },
         "resource_clumps": { "$ref": "#/$defs/field" },
         "debris": { "$ref": "#/$defs/field" },
-        "warps": { "$ref": "#/$defs/field" }
+        "warps": { "$ref": "#/$defs/field" },
+        "grandpa_score": { "$ref": "#/$defs/field" }
       }
     },
     "location_state": {

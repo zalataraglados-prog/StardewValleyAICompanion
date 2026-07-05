@@ -141,6 +141,8 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
 
         return new CommunityCenterProgressRef
         {
+            LocationAccessible = Game1.isLocationAccessible("CommunityCenter"),
+            Completed = master.hasCompletedCommunityCenter(),
             Bundles = world.Bundles.Pairs
                 .OrderBy(pair => pair.Key)
                 .ToDictionary(pair => pair.Key, pair => pair.Value.ToArray()),

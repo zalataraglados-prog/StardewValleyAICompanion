@@ -14,6 +14,7 @@ public sealed class WorldReadAdapter : ReadAdapterBase
 
         return Section("time", new Dictionary<string, object>
         {
+            ["year"] = Field(Context.IsWorldReady ? (int?)Game1.year : null, "Game1.year", tick),
             ["season"] = Field(Context.IsWorldReady ? Game1.currentSeason : null, "Game1.currentSeason", tick),
             ["day"] = Field(Context.IsWorldReady ? (int?)Game1.dayOfMonth : null, "Game1.dayOfMonth", tick),
             ["time"] = Field(Context.IsWorldReady ? (int?)Game1.timeOfDay : null, "Game1.timeOfDay", tick),

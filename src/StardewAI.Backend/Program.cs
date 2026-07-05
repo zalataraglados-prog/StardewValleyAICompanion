@@ -5,6 +5,7 @@ using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Events;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Goals;
 using StardewAI.Core.PreviewCompiler;
 using StardewAI.Core.WorldModel;
 
@@ -17,6 +18,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
 builder.Services.AddSingleton<WorldModelProjector>();
+builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 
 var app = builder.Build();
 
@@ -135,6 +137,18 @@ app.MapGet("/api/v1/stardew/input/latest", (string? goal, string? mode, StateSto
     }
 
     return Results.Ok(projector.Project(latest, goal ?? string.Empty, mode ?? "relaxed"));
+});
+
+app.MapGet("/api/v1/goals/grandpa-evaluation/latest", (StateStore store, WorldModelProjector projector, GrandpaEvaluationGoalEvaluator evaluator) =>
+{
+    var latest = store.LatestSnapshot();
+    if (latest is null)
+    {
+        return Results.NotFound(new { detail = "no snapshots ingested" });
+    }
+
+    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    return Results.Ok(evaluator.Evaluate(model));
 });
 
 app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateStore store, PlanningPreviewCompiler compiler) =>

@@ -21,7 +21,8 @@ public sealed class FarmReadAdapter : ReadAdapterBase
         "animals",
         "resource_clumps",
         "debris",
-        "warps"
+        "warps",
+        "grandpa_score"
     };
 
     public override string Domain => "farm";
@@ -51,6 +52,7 @@ public sealed class FarmReadAdapter : ReadAdapterBase
                 is_farm = farm.IsFarm,
                 greenhouse_unlocked = farm.greenhouseUnlocked.Value
             }, "Game1.getFarm().Name/NameOrUniqueName/IsFarm/greenhouseUnlocked", tick, "vanilla_1_6_farm"),
+            ["grandpa_score"] = Field(farm.grandpaScore.Value, "Game1.getFarm().grandpaScore.Value", tick, "vanilla_1_6_farm"),
             ["buildings"] = Field(ReadBuildings(farm), "Game1.getFarm().buildings", tick, "vanilla_1_6_farm"),
             ["crops"] = Field(ReadCrops(farm), "Game1.getFarm().terrainFeatures[*] as HoeDirt.crop", tick, "vanilla_1_6_farm"),
             ["terrain_features"] = Field(ReadTerrainFeatures(farm), "Game1.getFarm().terrainFeatures", tick, "vanilla_1_6_farm"),

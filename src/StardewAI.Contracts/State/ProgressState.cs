@@ -95,6 +95,12 @@ namespace StardewAI.Contracts.State
 
     public sealed class CommunityCenterProgressRef
     {
+        [JsonPropertyName("location_accessible")]
+        public bool LocationAccessible { get; set; }
+
+        [JsonPropertyName("completed")]
+        public bool Completed { get; set; }
+
         [JsonPropertyName("bundles")]
         public Dictionary<int, bool[]> Bundles { get; set; } = new Dictionary<int, bool[]>();
 
