@@ -65,8 +65,17 @@ Then send that output to:
 1. `POST /api/v1/small-model/action-queue/compile`
 2. `GET /api/v1/action-queues/{queueId}/time-budget`
 3. `POST /api/v1/action-queues/{queueId}/simulate-training-transition`
+4. `GET /api/v1/action-queues/{queueId}/training-episode`
 
 This gives a no-training smoke test for the future model path.
+
+`training_episode.v1` is the dataset boundary for this loop. It deliberately splits feedback into three channels:
+
+- `strategy_value`: goal progress and reward terms for the model.
+- `hard_feasibility`: compiler, time, and simulator blockers.
+- `executor_calibration`: perfect-executor duration, state deltas, resource costs, and decompile-backed calibration notes.
+
+Low-level executor failures listed in `preference_penalty_exclusions` are excluded from strategic preference learning. They belong to executor quality or duration calibration, not to the model's desire to choose a task.
 
 ## Time And Mining Assumption
 

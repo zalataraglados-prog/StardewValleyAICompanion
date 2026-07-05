@@ -31,6 +31,7 @@ builder.Services.AddSingleton<MockSmallModelPolicy>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
+builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 
 var app = builder.Build();
 
@@ -288,6 +289,24 @@ app.MapGet("/api/v1/action-queues/{queueId}/time-budget", (string queueId, State
 
     var model = projector.Project(snapshot, queue.GoalId, "training");
     return Results.Ok(validator.Validate(model, queue));
+});
+
+app.MapGet("/api/v1/action-queues/{queueId}/training-episode", (string queueId, StateStore store, WorldModelProjector projector, TimeBudgetValidator timeBudgetValidator, TrainingStateTransitionSimulator simulator, TrainingEpisodeAdapter adapter) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    if (!store.Snapshots.TryGetValue(queue.StateHash, out var snapshot))
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var model = projector.Project(snapshot, queue.GoalId, "training");
+    var timeBudget = timeBudgetValidator.Validate(model, queue);
+    var transition = simulator.Simulate(model, queue);
+    return Results.Ok(adapter.Build(queue, timeBudget, transition));
 });
 
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>

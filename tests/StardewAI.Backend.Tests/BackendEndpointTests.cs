@@ -242,6 +242,19 @@ namespace StardewAI.Backend.Tests
             Assert.False(transitionJson.RootElement.GetProperty("blocked").GetBoolean());
             Assert.Contains(transitionJson.RootElement.GetProperty("changed_facts").EnumerateArray(), item =>
                 item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
+
+            var episodeResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-episode");
+
+            Assert.Equal(HttpStatusCode.OK, episodeResponse.StatusCode);
+            using var episodeJson = JsonDocument.Parse(await episodeResponse.Content.ReadAsStringAsync());
+            var episodeRoot = episodeJson.RootElement;
+            Assert.Equal("training_episode.v1", episodeRoot.GetProperty("schema_version").GetString());
+            Assert.Equal(queueId, episodeRoot.GetProperty("queue_id").GetString());
+            Assert.Equal("farm.maintain_crops", episodeRoot.GetProperty("action_summary").GetProperty("option_ids")[0].GetString());
+            Assert.False(episodeRoot.GetProperty("hard_feasibility").GetProperty("blocked").GetBoolean());
+            Assert.Equal("perfect_human_player", episodeRoot.GetProperty("executor_calibration").GetProperty("execution_profile").GetString());
+            Assert.Contains(episodeRoot.GetProperty("executor_calibration").GetProperty("changed_facts").EnumerateArray(), item =>
+                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
         }
 
         [Fact]
