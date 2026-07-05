@@ -116,6 +116,50 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task SmallModelActionQueueCompilesAndDryRunExecutes()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var compileResponse = await client.PostAsJsonAsync("/api/v1/small-model/action-queue/compile", new
+            {
+                schema_version = "small_model_action.v1",
+                model_output_id = "model-output.test",
+                source_model = "small-model.test",
+                state_hash = stateHash,
+                goal_id = "goal.test",
+                actions = new[]
+                {
+                    new
+                    {
+                        action_id = "action.test",
+                        option_id = "farm.maintain_crops",
+                        rationale = "maintain crops"
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, compileResponse.StatusCode);
+            using var queueJson = JsonDocument.Parse(await compileResponse.Content.ReadAsStringAsync());
+            var queueRoot = queueJson.RootElement;
+            Assert.Equal("action_queue.v1", queueRoot.GetProperty("schema_version").GetString());
+            Assert.Equal("pending", queueRoot.GetProperty("status").GetString());
+            var queueId = queueRoot.GetProperty("queue_id").GetString();
+
+            var executeResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/execute", null);
+
+            Assert.Equal(HttpStatusCode.OK, executeResponse.StatusCode);
+            using var resultJson = JsonDocument.Parse(await executeResponse.Content.ReadAsStringAsync());
+            var resultRoot = resultJson.RootElement;
+            Assert.Equal("execution_batch_result.v1", resultRoot.GetProperty("schema_version").GetString());
+            Assert.Equal("dry_run", resultRoot.GetProperty("executor_mode").GetString());
+            Assert.Equal("dry_run_ready", resultRoot.GetProperty("status").GetString());
+        }
+
+        [Fact]
         public async Task SnapshotIngestRejectsMismatchedHash()
         {
             using var client = factory.CreateClient();

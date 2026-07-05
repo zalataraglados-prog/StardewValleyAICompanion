@@ -3,8 +3,11 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Audit;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Events;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Goals;
 using StardewAI.Core.PreviewCompiler;
 using StardewAI.Core.Training;
@@ -18,6 +21,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
+builder.Services.AddSingleton<ActionQueueCompiler>();
+builder.Services.AddSingleton<IExecutorPort, DryRunExecutorPort>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
@@ -182,6 +187,41 @@ app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateSto
     return Results.Ok(preview);
 });
 
+app.MapPost("/api/v1/small-model/action-queue/compile", (SmallModelActionEnvelope request, StateStore store, ActionQueueCompiler compiler) =>
+{
+    var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
+        ? selected
+        : store.LatestSnapshot();
+
+    if (snapshot is null)
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var queue = compiler.Compile(request, snapshot);
+    store.ActionQueues[queue.QueueId] = queue;
+    store.AppendAudit("ActionQueueCompiled", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(queue);
+});
+
+app.MapGet("/api/v1/action-queues/{queueId}", (string queueId, StateStore store) =>
+    store.ActionQueues.TryGetValue(queueId, out var queue)
+        ? Results.Ok(queue)
+        : Results.NotFound(new { detail = "queue not found" }));
+
+app.MapPost("/api/v1/action-queues/{queueId}/execute", (string queueId, StateStore store, IExecutorPort executor) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    var result = executor.Execute(queue);
+    store.ExecutionResults[result.QueueId] = result;
+    store.AppendAudit("ActionQueueExecutionAttempted", store.LatestSnapshot()?.GameTick ?? 0, queue.StateHash);
+    return Results.Ok(result);
+});
+
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>
 {
     var latest = store.LatestSnapshot();
@@ -224,6 +264,8 @@ public sealed class StateStore
     public CapabilityManifest? CapabilityManifest { get; set; }
     public Dictionary<string, RawIngestRecord> RawPayloads { get; } = new Dictionary<string, RawIngestRecord>();
     public List<AuditRecord> Audit { get; } = new List<AuditRecord>();
+    public Dictionary<string, ActionQueueEnvelope> ActionQueues { get; } = new Dictionary<string, ActionQueueEnvelope>();
+    public Dictionary<string, ExecutionBatchResult> ExecutionResults { get; } = new Dictionary<string, ExecutionBatchResult>();
 
     public SnapshotEnvelope? LatestSnapshot()
     {
