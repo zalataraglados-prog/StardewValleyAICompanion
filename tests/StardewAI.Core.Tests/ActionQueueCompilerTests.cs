@@ -27,9 +27,11 @@ public sealed class ActionQueueCompilerTests
 
         Assert.Equal("action_queue.v1", queue.SchemaVersion);
         Assert.Equal("pending", queue.Status);
+        Assert.Equal("ai_companion.main", queue.Actor.ActorId);
         Assert.Single(queue.Items);
         Assert.Equal("pending", queue.Items[0].Status);
         Assert.Equal("farm.maintain_crops", queue.Items[0].NormalizedCommand.OptionId);
+        Assert.Equal("ai_companion.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
     }
 
     [Fact]
@@ -42,6 +44,25 @@ public sealed class ActionQueueCompilerTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains("unknown_option_id", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileBlocksHumanActorBeforeExecutor()
+    {
+        var snapshot = Snapshot("{}");
+        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        request.Actor = new ActionActorRef
+        {
+            ActorId = "human.local_player",
+            ActorType = "human_player",
+            ControlSurface = "keyboard_mouse"
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("actor_type_must_be_ai_companion", queue.CompilerDiagnostics);
+        Assert.Contains("control_surface_must_be_companion_actor", queue.CompilerDiagnostics);
     }
 
     [Fact]
@@ -76,6 +97,12 @@ public sealed class ActionQueueCompilerTests
             SourceModel = "small-model.test",
             StateHash = stateHash,
             GoalId = "goal.test",
+            Actor = new ActionActorRef
+            {
+                ActorId = "ai_companion.main",
+                ActorType = "ai_companion",
+                ControlSurface = "companion_actor"
+            },
             Actions = new[]
             {
                 new SmallModelAction

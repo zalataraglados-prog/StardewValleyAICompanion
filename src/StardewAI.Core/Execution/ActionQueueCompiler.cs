@@ -43,8 +43,10 @@ namespace StardewAI.Core.Execution
                 diagnostics.Add("empty_action_list");
             }
 
+            diagnostics.AddRange(ValidateActor(modelOutput.Actor));
+
             var items = modelOutput.Actions
-                .Select(action => CompileAction(action, snapshot, diagnostics.Count > 0))
+                .Select(action => CompileAction(action, snapshot, modelOutput.Actor, diagnostics.Count > 0))
                 .ToArray();
             var blocked = diagnostics.Count > 0 || items.Any(item => item.Status == "blocked");
 
@@ -55,13 +57,35 @@ namespace StardewAI.Core.Execution
                 SourceModel = modelOutput.SourceModel,
                 StateHash = snapshot.StateHash,
                 GoalId = modelOutput.GoalId,
+                Actor = modelOutput.Actor,
                 Status = blocked ? "blocked" : "pending",
                 Items = items,
                 CompilerDiagnostics = diagnostics.ToArray()
             };
         }
 
-        private ActionQueueItem CompileAction(SmallModelAction action, SnapshotEnvelope snapshot, bool globallyBlocked)
+        private static string[] ValidateActor(ActionActorRef actor)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(actor.ActorId))
+            {
+                errors.Add("actor_id_required");
+            }
+
+            if (!string.Equals(actor.ActorType, "ai_companion", StringComparison.Ordinal))
+            {
+                errors.Add("actor_type_must_be_ai_companion");
+            }
+
+            if (!string.Equals(actor.ControlSurface, "companion_actor", StringComparison.Ordinal))
+            {
+                errors.Add("control_surface_must_be_companion_actor");
+            }
+
+            return errors.ToArray();
+        }
+
+        private ActionQueueItem CompileAction(SmallModelAction action, SnapshotEnvelope snapshot, ActionActorRef actor, bool globallyBlocked)
         {
             var blocking = new List<string>();
             SafetyResult safety;
@@ -116,6 +140,7 @@ namespace StardewAI.Core.Execution
                 {
                     OptionId = action.OptionId,
                     StateHash = snapshot.StateHash,
+                    Actor = actor,
                     Parameters = action.Parameters
                 }
             };

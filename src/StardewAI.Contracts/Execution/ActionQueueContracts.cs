@@ -20,8 +20,23 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
 
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
+
         [JsonPropertyName("actions")]
         public SmallModelAction[] Actions { get; set; } = Array.Empty<SmallModelAction>();
+    }
+
+    public sealed class ActionActorRef
+    {
+        [JsonPropertyName("actor_id")]
+        public string ActorId { get; set; } = string.Empty;
+
+        [JsonPropertyName("actor_type")]
+        public string ActorType { get; set; } = "ai_companion";
+
+        [JsonPropertyName("control_surface")]
+        public string ControlSurface { get; set; } = "companion_actor";
     }
 
     public sealed class SmallModelAction
@@ -67,6 +82,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
+
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = "pending";
@@ -137,6 +155,9 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("state_hash")]
         public string StateHash { get; set; } = string.Empty;
 
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
+
         [JsonPropertyName("parameters")]
         public SmallModelActionParameter[] Parameters { get; set; } = Array.Empty<SmallModelActionParameter>();
     }
@@ -164,6 +185,9 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("state_hash")]
         public string StateHash { get; set; } = string.Empty;
 
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
+
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";
 
@@ -178,6 +202,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("option_id")]
         public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";

@@ -11,9 +11,17 @@ The execution path is:
 -> `execution_batch_result.v1`
 -> future transparent snapshot feedback.
 
+Execution is actor-scoped. The executor is for an AI companion actor, not the human player's local input surface.
+
 ## Small Model Output
 
 `small_model_action.v1` is the only accepted small-model action output shape. It may reference registered `OptionSpec.option_id` values, plus plain string parameters.
+
+It must include:
+
+- `actor.actor_type = "ai_companion"`
+- `actor.control_surface = "companion_actor"`
+- a non-empty AI actor id such as `ai_companion.main`
 
 It may not emit:
 
@@ -22,6 +30,8 @@ It may not emit:
 - arbitrary method names
 - direct SMAPI/game calls
 - save edits
+- `human_player` as the target actor
+- `keyboard_mouse` as the control surface
 
 ## Compiler
 
@@ -31,10 +41,11 @@ It checks:
 
 - schema version
 - source `state_hash`
+- actor isolation
 - registered `OptionSpec`
 - transparent required-state factors through the verifier
 
-Unknown options, state hash mismatch, or missing transparent facts produce a blocked queue/item.
+Unknown options, state hash mismatch, missing transparent facts, or a non-companion actor produce a blocked queue/item.
 
 ## Executor
 
@@ -43,6 +54,8 @@ The current executor is `DryRunExecutorPort`.
 It returns `execution_batch_result.v1` and never mutates game state. This gives the system a stable execution result contract while keeping real execution behind `IExecutorPort`.
 
 Future executors must consume `action_queue.v1`, not small-model output.
+
+Future real executors must also prove that their control target is the companion actor/farmhand. They must not steal keyboard or mouse focus from the human player.
 
 ## Feedback
 
