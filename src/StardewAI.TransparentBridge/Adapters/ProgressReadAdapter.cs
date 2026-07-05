@@ -19,7 +19,7 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
         var fields = new Dictionary<string, object>
         {
             ["active_quests"] = Field(ReadActiveQuests(player), "Game1.player.questLog", tick),
-            ["completed_quests"] = Unavailable("no_verified_global_completed_quest_collection_found", "StardewValley.Farmer questLog contains current Quest.completed only", tick),
+            ["completed_quests"] = Field(ReadCompletedQuests(player), "Game1.stats.QuestsCompleted; Game1.player.questLog where Quest.completed", tick),
             ["mail_received"] = Field(player?.mailReceived.OrderBy(id => id).ToArray(), "Game1.player.mailReceived", tick),
             ["mail_for_tomorrow"] = Field(player?.mailForTomorrow.OrderBy(id => id).ToArray(), "Game1.player.mailForTomorrow", tick),
             ["mailbox"] = Field(player?.mailbox.OrderBy(id => id).ToArray(), "Game1.player.mailbox", tick),
@@ -28,7 +28,7 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
             ["accepted_special_order_types"] = Field(team?.acceptedSpecialOrderTypes.OrderBy(id => id).ToArray(), "Game1.player.team.acceptedSpecialOrderTypes", tick)
         };
 
-        return Section("quests", fields, new[] { "quests.completed_quests" });
+        return Section("quests", fields, Array.Empty<string>());
     }
 
     private static QuestProgressRef[]? ReadActiveQuests(Farmer? player)
@@ -49,6 +49,25 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
             })
             .OrderBy(quest => quest.Id, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static CompletedQuestProgressRef? ReadCompletedQuests(Farmer? player)
+    {
+        if (player is null)
+        {
+            return null;
+        }
+
+        return new CompletedQuestProgressRef
+        {
+            TotalCount = Game1.stats.QuestsCompleted,
+            RetainedCompletedQuests = ReadActiveQuests(player)?
+                .Where(quest => quest.Completed)
+                .OrderBy(quest => quest.Id, StringComparer.Ordinal)
+                .ToArray() ?? Array.Empty<QuestProgressRef>(),
+            HistoryIdentityAvailable = false,
+            HistoryIdentitySource = "No verified global completed quest ID collection; Game1.stats.QuestsCompleted is the verified total count."
+        };
     }
 
     private static SpecialOrderProgressRef[]? ReadSpecialOrders(FarmerTeam? team)

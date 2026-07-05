@@ -6,7 +6,9 @@ Scope: close the world progress gaps for read-only transparent state. This slice
 
 | Section | Field | Status | Member path |
 | --- | --- | --- | --- |
-| `quests` | `completed_quests` | unavailable | no verified global completed quest ID collection found |
+| `quests` | `completed_quests.total_count` | available when world ready | `Game1.stats.QuestsCompleted` |
+| `quests` | `completed_quests.retained_completed_quests` | available when world ready | `Game1.player.questLog` entries where `Quest.completed` is true |
+| `quests` | `completed_quests.history_identity_available` | available when world ready | explicit `false`: vanilla exposes a count, not a durable completed quest ID collection |
 | `world_progress` | `perfection.percent_complete` | available when world ready | `StardewValley.Utility.percentGameComplete()` |
 | `world_progress` | `perfection.percent_floor` | available when world ready | `Math.Floor(Utility.percentGameComplete() * 100f)` mirrors Qi tracker display |
 | `world_progress` | `perfection.perfection_waivers` | available when world ready | `Game1.netWorldState.Value.PerfectionWaivers` |
@@ -36,11 +38,11 @@ Scope: close the world progress gaps for read-only transparent state. This slice
 | quest completion behavior | `StardewValley/StardewValley.Quests/Quest.cs` | lines 580-637 | sets `completed.Value`, increments `Game1.stats.QuestsCompleted` for some quest types, may remove quest from `questLog`, adds dialogue event `questComplete_{id}` | no verified completed quest ID collection |
 | quest log cleanup | `StardewValley/StardewValley.Menus/QuestLog.cs` | lines 230-238 | removes destroyed quests and shows only non-hidden current quest entries | reinforces no durable completed quest list |
 
-## Unavailable Items
+## Completed Quest Boundary
 
-`quests.completed_quests` remains unavailable.
+`quests.completed_quests` is now an available transparent object.
 
-Reason: the verified public paths show `Farmer.questLog` as current quest storage. Completion may leave a completed quest in the current log until reward/cleanup, or remove it immediately when no reward remains. `Game1.stats.QuestsCompleted` is a count, and generated mail/dialogue flags are not a reliable completed quest ID set. No verified global completed quest ID collection was found in the decompiled paths above.
+It exposes the verified total count from `Game1.stats.QuestsCompleted` and any completed quest objects still retained in `Game1.player.questLog`. It also exposes `history_identity_available=false` because the verified public paths show no durable vanilla collection of completed quest IDs. Generated mail/dialogue flags are intentionally not used as inferred quest IDs.
 
 ## Read-Only Audit Allowlist
 
@@ -55,6 +57,8 @@ Allowed member paths:
 - `Game1.netWorldState.Value.PerfectionWaivers`
 - `Game1.netWorldState.Value.GoldenWalnuts`
 - `Game1.netWorldState.Value.GoldenWalnutsFound`
+- `Game1.stats.QuestsCompleted`
+- `Game1.player.questLog`
 
 Allowed event subscriptions: none.
 

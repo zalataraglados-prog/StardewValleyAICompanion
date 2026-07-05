@@ -29,23 +29,30 @@ public sealed class ProgressContractsTests
     }
 
     [Fact]
-    public void UnavailableCompletedQuestsEnvelopeCarriesNoDefaultValue()
+    public void CompletedQuestProgressSerializesVerifiedReadFields()
     {
-        var field = new FieldEnvelope<object?>
+        var progress = new CompletedQuestProgressRef
         {
-            Value = null,
-            Status = FieldStatus.Unavailable,
-            Source = new SourceRef { Kind = "unavailable", Path = "StardewValley.Farmer questLog contains current Quest.completed only" },
-            Adapter = "not_implemented",
-            ReadAtTick = 42,
-            Confidence = 0,
-            Reason = "no_verified_global_completed_quest_collection_found"
+            TotalCount = 12,
+            HistoryIdentityAvailable = false,
+            HistoryIdentitySource = "Game1.stats.QuestsCompleted",
+            RetainedCompletedQuests = new[]
+            {
+                new QuestProgressRef
+                {
+                    Id = "10",
+                    Title = "Introductions",
+                    Completed = true
+                }
+            }
         };
 
-        Assert.Null(field.Value);
-        Assert.False(FieldEnvelopeValidator.IsReadableStatus(field.Status));
-        Assert.Equal(0, field.Confidence);
-        Assert.Equal("no_verified_global_completed_quest_collection_found", field.Reason);
+        var json = JsonSerializer.Serialize(progress, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"total_count\"", json);
+        Assert.Contains("\"retained_completed_quests\"", json);
+        Assert.Contains("\"history_identity_available\"", json);
+        Assert.Contains("\"history_identity_source\"", json);
     }
 
     [Fact]

@@ -342,10 +342,10 @@ public sealed class ModEntry : Mod
             Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields", "farm domain summaries; no indoor building traversal"),
             Capability("read.current_location", "read", "available", "Game1.currentLocation public read-only fields", "metadata summaries only; no pathing graph"),
             Capability("read.npcs", "read", "available", "Game1.currentLocation.characters; Game1.player.friendshipData; NPC.Schedule", "current-location NPC positions, friendships, and already-loaded schedules only"),
-            Capability("read.quests", "read", "partial", "Game1.player.questLog/mail/team special orders", "completed quest history partially unavailable"),
+            Capability("read.quests", "read", "available", "Game1.player.questLog/mail/team special orders; Game1.stats.QuestsCompleted", "completed quest total count is available; historical completed quest ID collection is not present in vanilla state"),
             Capability("read.world_progress", "read", "available", "Game1.netWorldState/MasterPlayer collections; Utility.percentGameComplete()", "verified vanilla progress summary fields only"),
             Capability("read.menus", "read", "partial", "Game1.activeClickableMenu public fields and verified concrete menu fields", "unsupported concrete menu types remain unavailable until individually verified"),
-            Capability("read.modded_state", "read", "partial", "IModRegistry.GetAll() metadata", "arbitrary private mod state unavailable without mod-specific read-only API"),
+            Capability("read.modded_state", "read", "available", "IModRegistry.GetAll(); Game1.CustomData; IHaveModData.modData", "reads SMAPI raw save data and public modData dictionaries; arbitrary CLR private fields are not a stable game data surface"),
             Capability("stream.events.websocket", "read", "available", "/api/v1/events/ws", "read-only event_stream.v1 push; no inbound commands"),
             Capability("execute.command", "execute", "disabled", "observer permission mode", "execution forbidden in Phase 1A-2")
         }

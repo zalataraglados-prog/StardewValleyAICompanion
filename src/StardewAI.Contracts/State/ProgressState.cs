@@ -36,6 +36,21 @@ namespace StardewAI.Contracts.State
         public int MoneyReward { get; set; }
     }
 
+    public sealed class CompletedQuestProgressRef
+    {
+        [JsonPropertyName("total_count")]
+        public uint TotalCount { get; set; }
+
+        [JsonPropertyName("retained_completed_quests")]
+        public QuestProgressRef[] RetainedCompletedQuests { get; set; } = new QuestProgressRef[0];
+
+        [JsonPropertyName("history_identity_available")]
+        public bool HistoryIdentityAvailable { get; set; }
+
+        [JsonPropertyName("history_identity_source")]
+        public string HistoryIdentitySource { get; set; } = string.Empty;
+    }
+
     public sealed class SpecialOrderProgressRef
     {
         [JsonPropertyName("quest_key")]
