@@ -80,6 +80,9 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
 
 public sealed class WorldProgressReadAdapter : ReadAdapterBase
 {
+    private const int GoldenWalnutPerfectionTarget = 130;
+    private const int GoldenWalnutQiRoomUnlockTarget = 100;
+
     public override string Domain => "world_progress";
     public override int Priority => 61;
 
@@ -101,11 +104,11 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             ["cooking_recipes"] = Field(ToSortedDictionary(master?.cookingRecipes), "Game1.MasterPlayer.cookingRecipes", tick),
             ["crafting_recipes"] = Field(ToSortedDictionary(master?.craftingRecipes), "Game1.MasterPlayer.craftingRecipes", tick),
             ["achievements"] = Field(master?.achievements.OrderBy(id => id).ToArray(), "Game1.MasterPlayer.achievements", tick),
-            ["perfection"] = Unavailable("perfection_fields_not_verified_in_this_slice", "unverified", tick),
-            ["golden_walnuts"] = Unavailable("golden_walnut_progress_not_verified_in_this_slice", "unverified", tick)
+            ["perfection"] = Field(ReadPerfection(world), "StardewValley.Utility.percentGameComplete(); Game1.netWorldState.Value.PerfectionWaivers", tick),
+            ["golden_walnuts"] = Field(ReadGoldenWalnuts(world), "Game1.netWorldState.Value.GoldenWalnuts/GoldenWalnutsFound", tick)
         };
 
-        return Section("world_progress", fields, new[] { "world_progress.perfection", "world_progress.golden_walnuts" });
+        return Section("world_progress", fields, Array.Empty<string>());
     }
 
     private static CommunityCenterProgressRef? ReadCommunityCenter(StardewValley.Network.NetWorldState? world, Farmer? master)
@@ -151,6 +154,49 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
                     .ToArray(),
                 DonatedCount = museum.museumPieces.Count()
             };
+    }
+
+    private static PerfectionProgressRef? ReadPerfection(StardewValley.Network.NetWorldState? world)
+    {
+        if (world is null)
+        {
+            return null;
+        }
+
+        var percentComplete = Utility.percentGameComplete();
+        var waivers = world.PerfectionWaivers;
+        var effectivePercent = percentComplete + waivers * 0.01f;
+
+        return new PerfectionProgressRef
+        {
+            PercentComplete = percentComplete,
+            PercentFloor = Math.Floor(percentComplete * 100f),
+            PerfectionWaivers = waivers,
+            EffectivePercentWithWaivers = effectivePercent,
+            IsCompleteWithWaivers = effectivePercent >= 1f
+        };
+    }
+
+    private static GoldenWalnutProgressRef? ReadGoldenWalnuts(StardewValley.Network.NetWorldState? world)
+    {
+        if (world is null)
+        {
+            return null;
+        }
+
+        var found = world.GoldenWalnutsFound;
+        var qiRoomActualFound = Math.Max(0, found - 1);
+
+        return new GoldenWalnutProgressRef
+        {
+            Current = world.GoldenWalnuts,
+            Found = found,
+            FoundCappedForPerfection = Math.Min(found, GoldenWalnutPerfectionTarget),
+            PerfectionTarget = GoldenWalnutPerfectionTarget,
+            QiRoomActualFound = qiRoomActualFound,
+            QiRoomUnlockTarget = GoldenWalnutQiRoomUnlockTarget,
+            QiRoomUnlocked = qiRoomActualFound >= GoldenWalnutQiRoomUnlockTarget
+        };
     }
 
     private static Dictionary<string, int>? ToSortedDictionary(NetStringDictionary<int, Netcode.NetInt>? source)

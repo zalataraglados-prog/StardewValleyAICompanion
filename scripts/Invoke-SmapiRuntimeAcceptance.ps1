@@ -26,6 +26,18 @@ function Invoke-JsonGet {
     Invoke-RestMethod -Method Get -Uri $Url -Headers @{ "Accept" = "application/json" }
 }
 
+function Invoke-RawJsonGet {
+    param([Parameter(Mandatory = $true)] [string] $Url)
+    $client = [System.Net.WebClient]::new()
+    try {
+        $client.Headers.Set("Accept", "application/json")
+        $client.DownloadString($Url)
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
 function Invoke-JsonPost {
     param(
         [Parameter(Mandatory = $true)] [string] $Url,
@@ -34,6 +46,15 @@ function Invoke-JsonPost {
 
     $json = $Body | ConvertTo-Json -Depth 100
     Invoke-RestMethod -Method Post -Uri $Url -ContentType "application/json" -Body $json
+}
+
+function Invoke-RawJsonPost {
+    param(
+        [Parameter(Mandatory = $true)] [string] $Url,
+        [Parameter(Mandatory = $true)] [string] $Json
+    )
+
+    Invoke-RestMethod -Method Post -Uri $Url -ContentType "application/json; charset=utf-8" -Body $Json
 }
 
 function Test-Envelope {
@@ -92,16 +113,56 @@ function Test-CapabilityManifestShape {
     }
 }
 
-function Test-EventShape {
-    param([Parameter(Mandatory = $true)] $Events)
+function Get-EventArray {
+    param([Parameter(Mandatory = $true)] $EventResponse)
 
-    foreach ($event in @($Events)) {
+    if ($EventResponse.PSObject.Properties.Name -contains "events") {
+        return @($EventResponse.events)
+    }
+
+    return @($EventResponse)
+}
+
+function Test-EventStreamShape {
+    param(
+        [Parameter(Mandatory = $true)] $EventResponse,
+        [Parameter(Mandatory = $true)] [string[]] $SnapshotHashes
+    )
+
+    if ($EventResponse.PSObject.Properties.Name -contains "schema_version") {
+        if ($EventResponse.schema_version -ne "event_stream.v1") {
+            throw "event stream schema_version must be event_stream.v1."
+        }
+        if ($EventResponse.latest_snapshot_hash -notin $SnapshotHashes) {
+            throw "event stream latest_snapshot_hash must match a captured snapshot.state_hash."
+        }
+        if ($EventResponse.chain_status -ne "ok") {
+            throw "event stream chain_status must be ok."
+        }
+        foreach ($required in @("latest_event_sequence", "latest_event_hash", "events", "count", "next_after_sequence")) {
+            if (-not ($EventResponse.PSObject.Properties.Name -contains $required)) {
+                throw "event stream is missing '$required'."
+            }
+        }
+    }
+
+    $previous = $null
+    foreach ($event in (Get-EventArray $EventResponse)) {
         if ($event.schema_version -ne "event.v1") {
             throw "event.schema_version must be event.v1 for event '$($event.event_id)'."
+        }
+        foreach ($required in @("event_sequence", "previous_event_hash", "event_hash", "state_hash_before", "state_hash_after")) {
+            if (-not ($event.PSObject.Properties.Name -contains $required)) {
+                throw "event.$required is required for event '$($event.event_id)'."
+            }
         }
         if (-not ($event.PSObject.Properties.Name -contains "changed_fields")) {
             throw "event.changed_fields is required for event '$($event.event_id)'."
         }
+        if ($null -ne $previous -and $event.previous_event_hash -ne $previous.event_hash) {
+            throw "event hash chain is broken between sequence '$($previous.event_sequence)' and '$($event.event_sequence)'."
+        }
+        $previous = $event
     }
 }
 
@@ -122,13 +183,24 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
 $bridgeSnapshot = Invoke-JsonGet "$BridgeBaseUrl/api/v1/snapshot"
 $bridgeCapabilities = Invoke-JsonGet "$BridgeBaseUrl/api/v1/capabilities"
-$bridgeEvents = Invoke-JsonGet "$BridgeBaseUrl/api/v1/events"
+$bridgeEvents = Invoke-JsonGet "$BridgeBaseUrl/api/v1/events?limit=200"
+$bridgeSnapshotAfterEvents = $null
+if (($bridgeEvents.PSObject.Properties.Name -contains "latest_snapshot_hash") -and $bridgeEvents.latest_snapshot_hash -ne $bridgeSnapshot.state_hash) {
+    $bridgeSnapshotAfterEvents = Invoke-JsonGet "$BridgeBaseUrl/api/v1/snapshot"
+}
 
 Test-SnapshotEnvelopeShape $bridgeSnapshot
 Test-CapabilityManifestShape $bridgeCapabilities
-Test-EventShape $bridgeEvents
+if ($null -ne $bridgeSnapshotAfterEvents) {
+    Test-SnapshotEnvelopeShape $bridgeSnapshotAfterEvents
+}
+$capturedSnapshotHashes = @($bridgeSnapshot.state_hash, $bridgeSnapshotAfterEvents.state_hash) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+Test-EventStreamShape $bridgeEvents $capturedSnapshotHashes
 
 Write-JsonFile (Join-Path $runDirectory "bridge-snapshot.json") $bridgeSnapshot
+if ($null -ne $bridgeSnapshotAfterEvents) {
+    Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-after-events.json") $bridgeSnapshotAfterEvents
+}
 Write-JsonFile (Join-Path $runDirectory "bridge-capabilities.json") $bridgeCapabilities
 Write-JsonFile (Join-Path $runDirectory "bridge-events.json") $bridgeEvents
 
@@ -145,10 +217,10 @@ $backendSummary = [ordered]@{
 }
 
 if ($IngestBackend) {
-    $backendSummary.snapshot_ingest = Invoke-JsonPost "$BackendBaseUrl/api/v1/snapshots" $bridgeSnapshot
-    $backendSummary.capabilities_ingest = Invoke-JsonPost "$BackendBaseUrl/api/v1/capabilities" $bridgeCapabilities
+    $backendSummary.snapshot_ingest = Invoke-RawJsonPost "$BackendBaseUrl/api/v1/snapshots" (Invoke-RawJsonGet "$BridgeBaseUrl/api/v1/snapshot")
+    $backendSummary.capabilities_ingest = Invoke-RawJsonPost "$BackendBaseUrl/api/v1/capabilities" (Invoke-RawJsonGet "$BridgeBaseUrl/api/v1/capabilities")
 
-    foreach ($event in @($bridgeEvents)) {
+    foreach ($event in (Get-EventArray $bridgeEvents | Where-Object { $_.state_hash_after -eq $backendSummary.snapshot_ingest.state_hash })) {
         Invoke-JsonPost "$BackendBaseUrl/api/v1/events" $event | Out-Null
         $backendSummary.event_ingest_count++
     }
@@ -157,7 +229,7 @@ if ($IngestBackend) {
     $backendSummary.events = Invoke-JsonGet "$BackendBaseUrl/api/v1/events"
     $backendSummary.capabilities = Invoke-JsonGet "$BackendBaseUrl/api/v1/capabilities"
     $backendSummary.sync = Invoke-JsonGet "$BackendBaseUrl/api/v1/sync"
-    $backendSummary.hash_match_after_ingest = $backendSummary.latest_snapshot.state_hash -eq $bridgeSnapshot.state_hash
+    $backendSummary.hash_match_after_ingest = $backendSummary.latest_snapshot.state_hash -eq $backendSummary.snapshot_ingest.state_hash
 }
 
 Write-JsonFile (Join-Path $runDirectory "backend-summary.json") $backendSummary

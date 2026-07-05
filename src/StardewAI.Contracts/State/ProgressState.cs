@@ -134,4 +134,46 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("achievements")]
         public int[] Achievements { get; set; } = new int[0];
     }
+
+    public sealed class PerfectionProgressRef
+    {
+        [JsonPropertyName("percent_complete")]
+        public double PercentComplete { get; set; }
+
+        [JsonPropertyName("percent_floor")]
+        public double PercentFloor { get; set; }
+
+        [JsonPropertyName("perfection_waivers")]
+        public int PerfectionWaivers { get; set; }
+
+        [JsonPropertyName("effective_percent_with_waivers")]
+        public double EffectivePercentWithWaivers { get; set; }
+
+        [JsonPropertyName("is_complete_with_waivers")]
+        public bool IsCompleteWithWaivers { get; set; }
+    }
+
+    public sealed class GoldenWalnutProgressRef
+    {
+        [JsonPropertyName("current")]
+        public int Current { get; set; }
+
+        [JsonPropertyName("found")]
+        public int Found { get; set; }
+
+        [JsonPropertyName("found_capped_for_perfection")]
+        public int FoundCappedForPerfection { get; set; }
+
+        [JsonPropertyName("perfection_target")]
+        public int PerfectionTarget { get; set; }
+
+        [JsonPropertyName("qi_room_actual_found")]
+        public int QiRoomActualFound { get; set; }
+
+        [JsonPropertyName("qi_room_unlock_target")]
+        public int QiRoomUnlockTarget { get; set; }
+
+        [JsonPropertyName("qi_room_unlocked")]
+        public bool QiRoomUnlocked { get; set; }
+    }
 }

@@ -1,4 +1,6 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Audit;
 using StardewAI.Contracts.Capabilities;
@@ -23,11 +25,14 @@ public sealed class ModEntry : Mod
     private CancellationTokenSource? serverCancellation;
     private readonly List<AuditRecord> audit = new();
     private readonly List<GameEvent> events = new();
+    private readonly object eventLock = new();
     private readonly object snapshotLock = new();
     private BridgeConfig config = new();
     private TransparentStateCollector? stateCollector;
     private SnapshotEnvelope? latestSnapshot;
     private string currentStateHash = "unavailable";
+    private long nextEventSequence = 1;
+    private string latestEventHash = "genesis";
 
     public override void Entry(IModHelper helper)
     {
@@ -136,7 +141,7 @@ public sealed class ModEntry : Mod
         {
             "/api/v1/snapshot" => GetLatestSnapshot(),
             "/api/v1/capabilities" => BuildCapabilities(),
-            "/api/v1/events" => events.TakeLast(200).ToArray(),
+            "/api/v1/events" => BuildEventStreamResponse(context.Request),
             "/api/v1/audit" => audit.TakeLast(200).ToArray(),
             "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
             _ => new { error = "not_found", path }
@@ -216,7 +221,7 @@ public sealed class ModEntry : Mod
         var beforeHash = currentStateHash;
         var snapshot = BuildSnapshotWithoutEvent();
         CacheSnapshot(snapshot, publishSnapshotEvent: false);
-        events.Add(new GameEvent
+        AppendEvent(new GameEvent
         {
             EventId = Guid.NewGuid().ToString("N"),
             EventType = eventType,
@@ -262,12 +267,15 @@ public sealed class ModEntry : Mod
 
     private void PublishSnapshotEvent(SnapshotEnvelope snapshot)
     {
-        if (events.Count > 0 && events[^1].EventType == "SnapshotPublished" && events[^1].StateHashAfter == snapshot.StateHash)
+        lock (eventLock)
         {
-            return;
+            if (events.Count > 0 && events[^1].EventType == "SnapshotPublished" && events[^1].StateHashAfter == snapshot.StateHash)
+            {
+                return;
+            }
         }
 
-        events.Add(new GameEvent
+        AppendEvent(new GameEvent
         {
             EventId = Guid.NewGuid().ToString("N"),
             EventType = "SnapshotPublished",
@@ -280,6 +288,116 @@ public sealed class ModEntry : Mod
             StateHashAfter = snapshot.StateHash,
             ChangedFields = Array.Empty<string>()
         });
+    }
+
+    private EventStreamEnvelope BuildEventStreamResponse(HttpListenerRequest request)
+    {
+        var afterSequence = ParseLongQuery(request, "after_sequence");
+        var afterTick = ParseLongQuery(request, "after_tick");
+        var limit = Math.Clamp((int)(ParseLongQuery(request, "limit") ?? 200), 1, 500);
+        GameEvent[] selected;
+        long latestSequence;
+        string streamEventHash;
+
+        lock (eventLock)
+        {
+            IEnumerable<GameEvent> query = events;
+            if (afterSequence.HasValue)
+            {
+                query = query.Where(item => item.EventSequence > afterSequence.Value);
+            }
+
+            if (afterTick.HasValue)
+            {
+                query = query.Where(item => item.GameTick > afterTick.Value);
+            }
+
+            selected = query.Take(limit).ToArray();
+            latestSequence = nextEventSequence - 1;
+            streamEventHash = latestEventHash;
+        }
+
+        return new EventStreamEnvelope
+        {
+            LatestSnapshotHash = currentStateHash,
+            LatestEventSequence = latestSequence,
+            LatestEventHash = streamEventHash,
+            Events = selected,
+            Count = selected.Length,
+            NextAfterSequence = selected.Length == 0 ? afterSequence : selected[^1].EventSequence,
+            ChainStatus = VerifyEventChain(selected) ? "ok" : "broken"
+        };
+    }
+
+    private void AppendEvent(GameEvent gameEvent)
+    {
+        lock (eventLock)
+        {
+            gameEvent.EventSequence = nextEventSequence++;
+            gameEvent.PreviousEventHash = latestEventHash;
+            gameEvent.EventHash = ComputeEventHash(gameEvent);
+            latestEventHash = gameEvent.EventHash;
+            events.Add(gameEvent);
+        }
+    }
+
+    private string ComputeEventHash(GameEvent gameEvent)
+    {
+        var hashPayload = JsonSerializer.SerializeToElement(new Dictionary<string, object?>
+        {
+            ["schema_version"] = gameEvent.SchemaVersion,
+            ["event_id"] = gameEvent.EventId,
+            ["event_sequence"] = gameEvent.EventSequence,
+            ["event_type"] = gameEvent.EventType,
+            ["game_tick"] = gameEvent.GameTick,
+            ["real_timestamp"] = gameEvent.RealTimestamp,
+            ["source"] = gameEvent.Source,
+            ["in_game_time"] = gameEvent.InGameTime,
+            ["state_hash_before"] = gameEvent.StateHashBefore,
+            ["state_hash_after"] = gameEvent.StateHashAfter,
+            ["previous_event_hash"] = gameEvent.PreviousEventHash,
+            ["changed_fields"] = gameEvent.ChangedFields,
+            ["before"] = gameEvent.Before,
+            ["after"] = gameEvent.After
+        }, jsonOptions);
+
+        var canonical = SnapshotHash.Canonicalize(hashPayload);
+        using var sha256 = SHA256.Create();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(canonical));
+        var builder = new StringBuilder(bytes.Length * 2);
+        foreach (var value in bytes)
+        {
+            builder.Append(value.ToString("x2"));
+        }
+
+        return builder.ToString();
+    }
+
+    private bool VerifyEventChain(GameEvent[] selected)
+    {
+        GameEvent? previous = null;
+        foreach (var gameEvent in selected)
+        {
+            if (!string.Equals(gameEvent.EventHash, ComputeEventHash(gameEvent), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (previous is not null && !string.Equals(gameEvent.PreviousEventHash, previous.EventHash, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            previous = gameEvent;
+        }
+
+        return true;
+    }
+
+    private static long? ParseLongQuery(HttpListenerRequest request, string name)
+    {
+        var value = request.QueryString[name];
+        return long.TryParse(value, out var parsed) ? parsed : null;
     }
 
     private static object ItemSummary(Item item) => new

@@ -19,6 +19,26 @@ public sealed class NpcSnapshotPayloadTests
     }
 
     [Fact]
+    public void NpcFriendshipsExposeReadOnlySummary()
+    {
+        using var json = JsonDocument.Parse(NpcStateJson());
+        var npcs = json.RootElement.GetProperty("npcs");
+        var friendships = npcs.GetProperty("friendships");
+        var abigail = friendships.GetProperty("value")[0];
+
+        Assert.Equal("available", friendships.GetProperty("status").GetString());
+        Assert.Equal("Abigail", abigail.GetProperty("npc_name").GetString());
+        Assert.Equal(875, abigail.GetProperty("points").GetInt32());
+        Assert.Equal(3, abigail.GetProperty("heart_level").GetInt32());
+        Assert.Equal(1, abigail.GetProperty("gifts_this_week").GetInt32());
+        Assert.Equal(0, abigail.GetProperty("gifts_today").GetInt32());
+        Assert.True(abigail.GetProperty("talked_to_today").GetBoolean());
+        Assert.Equal("Friendly", abigail.GetProperty("status").GetString());
+        Assert.False(abigail.GetProperty("is_dating").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, abigail.GetProperty("last_gift_date_total_days").ValueKind);
+    }
+
+    [Fact]
     public void NpcPositionsParticipateInStableCanonicalHash()
     {
         var first = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(NpcStateJson())!;
@@ -44,6 +64,30 @@ public sealed class NpcSnapshotPayloadTests
                 "visible_on_screen": true,
                 "is_villager": true,
                 "is_monster": false
+              }
+            ]
+            """, raw: true)}},
+            "friendships": {{FieldJson("""
+            [
+              {
+                "npc_name": "Abigail",
+                "points": 875,
+                "heart_level": 3,
+                "gifts_this_week": 1,
+                "gifts_today": 0,
+                "talked_to_today": true,
+                "status": "Friendly",
+                "is_dating": false,
+                "is_engaged": false,
+                "is_married": false,
+                "is_divorced": false,
+                "is_roommate": false,
+                "proposal_rejected": false,
+                "roommate_marriage": false,
+                "last_gift_date_total_days": null,
+                "wedding_date_total_days": null,
+                "next_birthing_date_total_days": null,
+                "proposer": 0
               }
             ]
             """, raw: true)}},

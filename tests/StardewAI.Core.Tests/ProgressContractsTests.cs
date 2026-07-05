@@ -64,4 +64,47 @@ public sealed class ProgressContractsTests
         Assert.Contains("false", json);
         Assert.Contains("ccPantry", json);
     }
+
+    [Fact]
+    public void PerfectionProgressSerializesVerifiedReadFields()
+    {
+        var progress = new PerfectionProgressRef
+        {
+            PercentComplete = 0.955,
+            PercentFloor = 95,
+            PerfectionWaivers = 2,
+            EffectivePercentWithWaivers = 0.975,
+            IsCompleteWithWaivers = false
+        };
+
+        var json = JsonSerializer.Serialize(progress, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"percent_complete\"", json);
+        Assert.Contains("\"perfection_waivers\"", json);
+        Assert.Contains("\"effective_percent_with_waivers\"", json);
+        Assert.Contains("\"is_complete_with_waivers\"", json);
+    }
+
+    [Fact]
+    public void GoldenWalnutProgressSerializesVerifiedReadFields()
+    {
+        var progress = new GoldenWalnutProgressRef
+        {
+            Current = 12,
+            Found = 101,
+            FoundCappedForPerfection = 101,
+            PerfectionTarget = 130,
+            QiRoomActualFound = 100,
+            QiRoomUnlockTarget = 100,
+            QiRoomUnlocked = true
+        };
+
+        var json = JsonSerializer.Serialize(progress, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"current\"", json);
+        Assert.Contains("\"found_capped_for_perfection\"", json);
+        Assert.Contains("\"perfection_target\"", json);
+        Assert.Contains("\"qi_room_actual_found\"", json);
+        Assert.Contains("\"qi_room_unlocked\"", json);
+    }
 }

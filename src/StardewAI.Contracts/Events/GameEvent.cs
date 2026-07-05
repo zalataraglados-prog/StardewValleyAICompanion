@@ -11,6 +11,9 @@ namespace StardewAI.Contracts.Events
         [JsonPropertyName("event_id")]
         public string EventId { get; set; } = string.Empty;
 
+        [JsonPropertyName("event_sequence")]
+        public long EventSequence { get; set; }
+
         [JsonPropertyName("event_type")]
         public string EventType { get; set; } = string.Empty;
 
@@ -31,6 +34,12 @@ namespace StardewAI.Contracts.Events
 
         [JsonPropertyName("state_hash_after")]
         public string StateHashAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("previous_event_hash")]
+        public string PreviousEventHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("event_hash")]
+        public string EventHash { get; set; } = string.Empty;
 
         [JsonPropertyName("changed_fields")]
         public string[] ChangedFields { get; set; } = new string[0];

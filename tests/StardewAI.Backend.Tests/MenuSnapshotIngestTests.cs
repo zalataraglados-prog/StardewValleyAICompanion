@@ -37,11 +37,24 @@ namespace StardewAI.Backend.Tests
             Assert.Contains("state.menus.menu_specific_state non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
         }
 
+        [Fact]
+        public async Task SnapshotIngestAcceptsUnknownMenuSpecificUnavailable()
+        {
+            using var client = factory.CreateClient();
+
+            var response = await client.PostAsync("/api/v1/snapshots", SnapshotWithMenus(false, unknownMenuSpecific: true));
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
         private static StringContent SnapshotWithMenus(bool unavailableMenuSpecificCarriesDefault = false)
         {
-            var menuSpecific = unavailableMenuSpecificCarriesDefault
-                ? FieldJson("{\"selected_index\":0}", status: "unavailable", raw: true)
-                : UnavailableFieldJson("menu_specific_fields_not_verified_in_this_slice");
+            return SnapshotWithMenus(unavailableMenuSpecificCarriesDefault, unknownMenuSpecific: false);
+        }
+
+        private static StringContent SnapshotWithMenus(bool unavailableMenuSpecificCarriesDefault, bool unknownMenuSpecific)
+        {
+            var (menuSpecific, unavailableFields) = MenuSpecificFieldJson(unavailableMenuSpecificCarriesDefault, unknownMenuSpecific);
             var stateJson = $$"""
             {
               "environment": {
@@ -130,12 +143,72 @@ namespace StardewAI.Backend.Tests
               "real_timestamp": "2026-07-04T00:00:00Z",
               "state_hash": "{{hash}}",
               "completeness": "partial",
-              "unavailable_fields": ["menus.menu_specific_state"],
+              "unavailable_fields": {{unavailableFields}},
               "state": {{stateJson}}
             }
             """;
 
             return new StringContent(snapshotJson, Encoding.UTF8, "application/json");
+        }
+
+        private static (string Field, string UnavailableFields) MenuSpecificFieldJson(bool unavailableMenuSpecificCarriesDefault, bool unknownMenuSpecific)
+        {
+            if (unavailableMenuSpecificCarriesDefault)
+            {
+                return (FieldJson("{\"selected_index\":0}", status: "unavailable", raw: true), """["menus.menu_specific_state"]""");
+            }
+
+            if (unknownMenuSpecific)
+            {
+                return (UnavailableFieldJson("menu_specific_fields_not_verified_for_menu_type"), """["menus.menu_specific_state"]""");
+            }
+
+            var shopState = $$"""
+            {
+              "kind": "shop",
+              "shop_id": "Pierre",
+              "shop_data_present": true,
+              "currency": 0,
+              "read_only": false,
+              "current_item_index": 0,
+              "safety_timer": 250,
+              "for_sale_count": 12,
+              "for_sale_button_count": 4,
+              "item_price_and_stock_count": 12,
+              "categories_to_sell_count": 0,
+              "tag_group_count": 1,
+              "tab_button_count": 0,
+              "buy_back_item_count": 0,
+              "buy_back_resell_tomorrow_count": 0,
+              "held_item_present": false,
+              "hovered_item_present": false,
+              "hover_price": -1,
+              "portrait_texture_present": true,
+              "portrait_dialogue_present": true,
+              "inventory": {
+                "player_inventory": false,
+                "draw_slots": true,
+                "show_grayed_out_slots": true,
+                "capacity": 36,
+                "rows": 3,
+                "horizontal_gap": 0,
+                "vertical_gap": 0,
+                "component_count": 36,
+                "actual_inventory_count": 36,
+                "occupied_slot_count": 8,
+                "drop_item_invisible_button_present": true,
+                "move_item_sound": "dwop"
+              },
+              "current_tab": {{UnavailableFieldJson("shop_current_tab_is_protected_field_not_read_in_this_slice")}},
+              "controls": {
+                "up_arrow_present": true,
+                "down_arrow_present": true,
+                "scroll_bar_present": true
+              }
+            }
+            """;
+
+            return (FieldJson(shopState, raw: true), """["menus.menu_specific_state.shop.current_tab"]""");
         }
 
         private static string FieldJson(object? value, string status = "available", bool raw = false)

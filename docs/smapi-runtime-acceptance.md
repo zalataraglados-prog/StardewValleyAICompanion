@@ -34,7 +34,7 @@ The script writes timestamped artifacts under `artifacts/smapi-runtime-acceptanc
 - `backend-summary.json`
 - `manual-checklist.json`
 
-The script only uses HTTP GET against the Bridge. With `-IngestBackend`, it POSTs the captured read-only payloads to Backend ingest endpoints and reads Backend comparison endpoints.
+The script only uses HTTP GET against the Bridge. `bridge-events.json` captures the HTTP event stream envelope from `GET /api/v1/events?limit=200`, including the current snapshot hash, latest event sequence, latest event hash, chain status, and the event page. With `-IngestBackend`, it POSTs the captured read-only payloads to Backend ingest endpoints and reads Backend comparison endpoints.
 
 `manual-checklist.json` records `isolated_stardew_directory`, `bridge_base_url`, `backend_base_url`, and the run directory. `-OutputDirectory` and its alias `-ArtifactsDirectory` select the artifact root. `-BridgeBaseUrl`/`-BridgeUrl` and `-BackendBaseUrl`/`-BackendUrl` select already-running services.
 
@@ -61,7 +61,9 @@ The script only uses HTTP GET against the Bridge. With `-IngestBackend`, it POST
 - All captured snapshot fields are field envelopes with `value`, `status`, `source`, `adapter`, `read_at_tick`, and `confidence`.
 - Non-readable statuses do not carry default values.
 - `bridge-capabilities.json` keeps `can_write_game_state=false` and `can_execute_commands=false`.
-- Events use `event.v1` and include `changed_fields`.
+- Bridge events are returned through `event_stream.v1`, with `latest_snapshot_hash` matching the captured snapshot `state_hash`.
+- Events use `event.v1` and include `event_sequence`, `state_hash_before`, `state_hash_after`, `previous_event_hash`, `event_hash`, and `changed_fields`.
+- Event pages report `chain_status=ok`; adjacent events in the page link `previous_event_hash` to the prior `event_hash`.
 - Backend comparison, when enabled, preserves the Bridge `state_hash`.
 - Any mismatch is recorded with the run directory, visible game observation, JSON path, and expected/actual values.
 
@@ -85,6 +87,14 @@ Allowed Bridge HTTP endpoints:
 - `GET /api/v1/snapshot`
 - `GET /api/v1/capabilities`
 - `GET /api/v1/events`
+
+Bridge event stream query parameters:
+
+- `limit`: optional page size, clamped by Bridge to a small bounded page.
+- `after_sequence`: optional cursor; returns events with `event_sequence` greater than this value.
+- `after_tick`: optional SMAPI/game tick filter; returns events with `game_tick` greater than this value.
+
+The endpoint is HTTP polling only. It does not require WebSocket support for runtime acceptance.
 
 Allowed Backend endpoints, only when `-IngestBackend` is explicitly passed:
 
