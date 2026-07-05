@@ -120,6 +120,62 @@ public sealed class ActionQueueCompilerTests
         Assert.Equal("dry_run_ready", result.Results[0].Status);
     }
 
+    [Fact]
+    public void TrainingSandboxExecutorAppliesOnlyTrainingSingleplayerQueue()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "farm.maintain_crops"), snapshot);
+
+        var result = new TrainingSandboxExecutorPort().Execute(queue);
+
+        Assert.True(new TrainingSandboxExecutorPort().ExecutionEnabled);
+        Assert.Equal("training_sandbox", result.ExecutorMode);
+        Assert.Equal("applied", result.Status);
+        Assert.True(result.FeedbackAvailable);
+        Assert.NotEmpty(result.AfterStateHash);
+        Assert.Contains("farm.maintain_crops", result.CompletedOptionIds);
+    }
+
+    [Fact]
+    public void TrainingSandboxExecutorRejectsCoopCompanionQueue()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        request.ExecutionMode = "coop_companion";
+        request.Actor = new ActionActorRef
+        {
+            ActorId = "ai_companion.main",
+            ActorType = "ai_companion",
+            ControlSurface = "companion_actor"
+        };
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        var result = new TrainingSandboxExecutorPort().Execute(queue);
+
+        Assert.Equal("blocked", result.Status);
+        Assert.Contains(result.Results, item => item.Reason == "training_sandbox_rejected_execution_target");
+    }
+
     private static SmallModelActionEnvelope Request(string stateHash, string optionId)
     {
         return new SmallModelActionEnvelope

@@ -194,11 +194,20 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("state_hash")]
         public string StateHash { get; set; } = string.Empty;
 
+        [JsonPropertyName("after_state_hash")]
+        public string AfterStateHash { get; set; } = string.Empty;
+
         [JsonPropertyName("actor")]
         public ActionActorRef Actor { get; set; } = new();
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";
+
+        [JsonPropertyName("feedback_available")]
+        public bool FeedbackAvailable { get; set; }
+
+        [JsonPropertyName("completed_option_ids")]
+        public string[] CompletedOptionIds { get; set; } = Array.Empty<string>();
 
         [JsonPropertyName("results")]
         public ExecutionItemResult[] Results { get; set; } = Array.Empty<ExecutionItemResult>();
@@ -217,6 +226,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";
+
+        [JsonPropertyName("feedback_key")]
+        public string FeedbackKey { get; set; } = string.Empty;
 
         [JsonPropertyName("reason")]
         public string Reason { get; set; } = string.Empty;

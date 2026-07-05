@@ -23,6 +23,7 @@ builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
 builder.Services.AddSingleton<ActionQueueCompiler>();
 builder.Services.AddSingleton<IExecutorPort, DryRunExecutorPort>();
+builder.Services.AddSingleton<TrainingSandboxExecutorPort>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
@@ -219,6 +220,19 @@ app.MapPost("/api/v1/action-queues/{queueId}/execute", (string queueId, StateSto
     var result = executor.Execute(queue);
     store.ExecutionResults[result.QueueId] = result;
     store.AppendAudit("ActionQueueExecutionAttempted", store.LatestSnapshot()?.GameTick ?? 0, queue.StateHash);
+    return Results.Ok(result);
+});
+
+app.MapPost("/api/v1/action-queues/{queueId}/execute-training-sandbox", (string queueId, StateStore store, TrainingSandboxExecutorPort executor) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    var result = executor.Execute(queue);
+    store.ExecutionResults[result.QueueId] = result;
+    store.AppendAudit("TrainingSandboxExecutionAttempted", store.LatestSnapshot()?.GameTick ?? 0, queue.StateHash);
     return Results.Ok(result);
 });
 

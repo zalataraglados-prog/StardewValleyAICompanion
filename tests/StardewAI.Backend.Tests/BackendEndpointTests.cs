@@ -167,6 +167,16 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("dry_run", resultRoot.GetProperty("executor_mode").GetString());
             Assert.Equal("dry_run_ready", resultRoot.GetProperty("status").GetString());
             Assert.Equal("training_farmer.main", resultRoot.GetProperty("actor").GetProperty("actor_id").GetString());
+
+            var sandboxResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/execute-training-sandbox", null);
+
+            Assert.Equal(HttpStatusCode.OK, sandboxResponse.StatusCode);
+            using var sandboxJson = JsonDocument.Parse(await sandboxResponse.Content.ReadAsStringAsync());
+            var sandboxRoot = sandboxJson.RootElement;
+            Assert.Equal("training_sandbox", sandboxRoot.GetProperty("executor_mode").GetString());
+            Assert.Equal("applied", sandboxRoot.GetProperty("status").GetString());
+            Assert.True(sandboxRoot.GetProperty("feedback_available").GetBoolean());
+            Assert.NotEqual(string.Empty, sandboxRoot.GetProperty("after_state_hash").GetString());
         }
 
         [Fact]

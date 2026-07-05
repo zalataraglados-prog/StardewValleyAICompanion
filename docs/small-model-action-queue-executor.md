@@ -67,6 +67,8 @@ The current executor is `DryRunExecutorPort`.
 
 It returns `execution_batch_result.v1` and never mutates game state. This gives the system a stable execution result contract while keeping real execution behind `IExecutorPort`.
 
+`TrainingSandboxExecutorPort` is the training path. It only accepts `training_singleplayer` queues targeting `training_farmer/training_sandbox`, returns `executor_mode = "training_sandbox"`, and emits feedback-ready before/after state hashes. It represents isolated training execution, not the player's live input surface.
+
 Future executors must consume `action_queue.v1`, not small-model output.
 
 Training executors may control the single training farmer in an isolated training save. Co-op executors must prove that their control target is the companion actor/farmhand. Neither path may steal keyboard or mouse focus from the human player.
