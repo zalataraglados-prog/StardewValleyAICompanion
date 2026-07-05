@@ -177,6 +177,18 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("applied", sandboxRoot.GetProperty("status").GetString());
             Assert.True(sandboxRoot.GetProperty("feedback_available").GetBoolean());
             Assert.NotEqual(string.Empty, sandboxRoot.GetProperty("after_state_hash").GetString());
+
+            var transitionResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/simulate-training-transition", null);
+
+            Assert.Equal(HttpStatusCode.OK, transitionResponse.StatusCode);
+            using var transitionJson = JsonDocument.Parse(await transitionResponse.Content.ReadAsStringAsync());
+            var transitionRoot = transitionJson.RootElement;
+            Assert.Equal("simulated_transition.v1", transitionRoot.GetProperty("schema_version").GetString());
+            Assert.False(transitionRoot.GetProperty("blocked").GetBoolean());
+            Assert.StartsWith("sim.", transitionRoot.GetProperty("after_state_hash").GetString());
+            Assert.Contains(transitionRoot.GetProperty("changed_facts").EnumerateArray(), item =>
+                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering" &&
+                item.GetProperty("after").GetString() == "false");
         }
 
         [Fact]
@@ -255,7 +267,7 @@ namespace StardewAI.Backend.Tests
               },
               "farm": {
                 "grandpa_score": {{FieldJson(3)}},
-                "crops": {{FieldJson("[]", raw: true)}}
+                "crops": {{FieldJson("[{\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}}
               },
               "current_location": {
                 "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}}

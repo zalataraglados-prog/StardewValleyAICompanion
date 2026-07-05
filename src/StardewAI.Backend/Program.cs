@@ -24,6 +24,7 @@ builder.Services.AddSingleton<PlanningPreviewCompiler>();
 builder.Services.AddSingleton<ActionQueueCompiler>();
 builder.Services.AddSingleton<IExecutorPort, DryRunExecutorPort>();
 builder.Services.AddSingleton<TrainingSandboxExecutorPort>();
+builder.Services.AddSingleton<TrainingStateTransitionSimulator>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
@@ -233,6 +234,24 @@ app.MapPost("/api/v1/action-queues/{queueId}/execute-training-sandbox", (string 
     var result = executor.Execute(queue);
     store.ExecutionResults[result.QueueId] = result;
     store.AppendAudit("TrainingSandboxExecutionAttempted", store.LatestSnapshot()?.GameTick ?? 0, queue.StateHash);
+    return Results.Ok(result);
+});
+
+app.MapPost("/api/v1/action-queues/{queueId}/simulate-training-transition", (string queueId, StateStore store, WorldModelProjector projector, TrainingStateTransitionSimulator simulator) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    if (!store.Snapshots.TryGetValue(queue.StateHash, out var snapshot))
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var model = projector.Project(snapshot, queue.GoalId, "training");
+    var result = simulator.Simulate(model, queue);
+    store.AppendAudit("TrainingTransitionSimulated", snapshot.GameTick, queue.StateHash);
     return Results.Ok(result);
 });
 

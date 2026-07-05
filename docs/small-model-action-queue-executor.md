@@ -21,6 +21,14 @@ Execution is mode-scoped and actor-scoped.
 
 `small_model_action.v1` is the only accepted small-model action output shape. It may reference registered `OptionSpec.option_id` values, plus plain string parameters.
 
+The model output level is task intent, not atomic controls. Examples of intended output granularity:
+
+- mechanical option request: maintain/water crops, till prepared field, process known machines, mine until a target depth.
+- spatial plan request: clear a new area, plant a tree, place buildings, route through unknown collision.
+- economic/strategic request: buy supplies, sell items, gift NPCs, advance a quest, prepare for Grandpa evaluation.
+
+Pure mechanical work should be emitted as an option request and expanded by deterministic compilers. The model should not enumerate tile-by-tile inputs when the compiler can derive the complete action sequence from transparent state. Non-mechanical work must carry enough constrained detail for validation, such as target item, budget, NPC, location, or desired position plan.
+
 It must include:
 
 For training:
@@ -58,8 +66,17 @@ It checks:
 - execution mode and actor isolation
 - registered `OptionSpec`
 - transparent required-state factors through the verifier
+- action feasibility
+- time feasibility, including required actions plus optional actions within the available day budget
 
 Unknown options, state hash mismatch, missing transparent facts, unsupported mode, or forbidden actor/control surface produce a blocked queue/item.
+
+The compiler family owns expansion:
+
+- mechanical expander: converts a compact option like `farm.maintain_crops` into deterministic action steps.
+- spatial planner: generates tile/position plans only where location choice matters.
+- economy planner: validates purchases, money reserve, shop availability, and menu constraints.
+- time validator: rejects queues where required plus optional work exceeds the time budget.
 
 ## Executor
 
@@ -68,6 +85,8 @@ The current executor is `DryRunExecutorPort`.
 It returns `execution_batch_result.v1` and never mutates game state. This gives the system a stable execution result contract while keeping real execution behind `IExecutorPort`.
 
 `TrainingSandboxExecutorPort` is the training path. It only accepts `training_singleplayer` queues targeting `training_farmer/training_sandbox`, returns `executor_mode = "training_sandbox"`, and emits feedback-ready before/after state hashes. It represents isolated training execution, not the player's live input surface.
+
+`TrainingStateTransitionSimulator` is the first deterministic feedback bridge. It consumes the projected transparent world model and an accepted queue, then returns `simulated_transition.v1` with fact deltas and resource costs. This is not a live game executor, not a complete environment simulator, and not yet a full after-snapshot generator. It is the baseline local feedback loop needed before larger model training.
 
 Future executors must consume `action_queue.v1`, not small-model output.
 
@@ -83,4 +102,4 @@ Training feedback should come from:
 - after transparent snapshot
 - goal/factor delta
 
-This makes execution feedback dense enough for training without letting the model bypass compiler and verifier checks.
+This makes the initial execution feedback trainable without letting the model bypass compiler and verifier checks. Feedback density must increase as more options, time validation, inventory changes, pathing, interruption, and failure cases are implemented.
