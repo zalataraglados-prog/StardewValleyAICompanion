@@ -34,6 +34,8 @@ builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
 builder.Services.AddSingleton<TrainingEpisodeRewardCalculator>();
 builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 builder.Services.AddSingleton<TrainingFeatureRowExporter>();
+builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
+builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 
 var app = builder.Build();
 
@@ -330,6 +332,35 @@ app.MapGet("/api/v1/action-queues/{queueId}/training-feature-row", (string queue
     return Results.Ok(exporter.Build(model, episode));
 });
 
+app.MapPost("/api/v1/action-queues/{queueId}/training-feature-row/append", (string queueId, TrainingDatasetRequest? request, StateStore store, WorldModelProjector projector, TimeBudgetValidator timeBudgetValidator, TrainingStateTransitionSimulator simulator, TrainingEpisodeAdapter adapter, TrainingFeatureRowExporter exporter, JsonlTrainingDatasetWriter writer) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    if (!store.Snapshots.TryGetValue(queue.StateHash, out var snapshot))
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var model = projector.Project(snapshot, queue.GoalId, "training");
+    var timeBudget = timeBudgetValidator.Validate(model, queue);
+    var transition = simulator.Simulate(model, queue);
+    var episode = adapter.Build(queue, timeBudget, transition);
+    var row = exporter.Build(model, episode);
+    var datasetPath = DatasetPathResolver.Resolve(request?.DatasetPath);
+    var result = writer.Append(datasetPath, row);
+    store.AppendAudit("TrainingFeatureRowAppended", snapshot.GameTick, queue.StateHash);
+    return Results.Ok(result);
+});
+
+app.MapPost("/api/v1/training/baseline/train", (TrainingDatasetRequest? request, BaselineFeatureRowTrainer trainer) =>
+{
+    var datasetPath = DatasetPathResolver.Resolve(request?.DatasetPath);
+    return Results.Ok(trainer.Train(datasetPath));
+});
+
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>
 {
     var latest = store.LatestSnapshot();
@@ -374,6 +405,25 @@ public sealed class MockModelActionRequest
 
     [JsonPropertyName("execution_mode")]
     public string? ExecutionMode { get; set; }
+}
+
+public sealed class TrainingDatasetRequest
+{
+    [JsonPropertyName("dataset_path")]
+    public string? DatasetPath { get; set; }
+}
+
+public static class DatasetPathResolver
+{
+    public static string Resolve(string? requestedPath)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedPath))
+        {
+            return Path.GetFullPath(requestedPath);
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "datasets", "training-feature-rows.jsonl");
+    }
 }
 
 public sealed class StateStore

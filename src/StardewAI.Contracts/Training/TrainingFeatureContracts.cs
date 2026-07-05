@@ -113,4 +113,70 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("policy")]
         public string Policy { get; set; } = "Feature rows are exported from world_model.v1 and training_episode.v1 only; missing facts are encoded as explicit defaults or unknown categories, not guessed.";
     }
+
+    public sealed class TrainingDatasetAppendResult
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "training_dataset_append.v1";
+
+        [JsonPropertyName("dataset_path")]
+        public string DatasetPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("row_id")]
+        public string RowId { get; set; } = string.Empty;
+
+        [JsonPropertyName("episode_id")]
+        public string EpisodeId { get; set; } = string.Empty;
+
+        [JsonPropertyName("bytes_written")]
+        public int BytesWritten { get; set; }
+
+        [JsonPropertyName("row_count")]
+        public int RowCount { get; set; }
+    }
+
+    public sealed class BaselineTrainingReport
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "baseline_training_report.v1";
+
+        [JsonPropertyName("dataset_path")]
+        public string DatasetPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("row_count")]
+        public int RowCount { get; set; }
+
+        [JsonPropertyName("option_scores")]
+        public BaselineOptionScore[] OptionScores { get; set; } = Array.Empty<BaselineOptionScore>();
+
+        [JsonPropertyName("audit")]
+        public BaselineTrainingAudit Audit { get; set; } = new();
+    }
+
+    public sealed class BaselineOptionScore
+    {
+        [JsonPropertyName("option_id")]
+        public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("example_count")]
+        public int ExampleCount { get; set; }
+
+        [JsonPropertyName("average_goal_progress_delta")]
+        public double AverageGoalProgressDelta { get; set; }
+
+        [JsonPropertyName("average_total_reward")]
+        public double AverageTotalReward { get; set; }
+
+        [JsonPropertyName("hard_block_rate")]
+        public double HardBlockRate { get; set; }
+    }
+
+    public sealed class BaselineTrainingAudit
+    {
+        [JsonPropertyName("trainer")]
+        public string Trainer { get; set; } = "StardewAI.Core.Training.BaselineFeatureRowTrainer";
+
+        [JsonPropertyName("policy")]
+        public string Policy { get; set; } = "Baseline trainer only aggregates feature-row labels by option id; it is a smoke-test trainer, not a learned policy model.";
+    }
 }

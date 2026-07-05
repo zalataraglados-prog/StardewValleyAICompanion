@@ -275,6 +275,31 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(featureRoot.GetProperty("action_features").GetProperty("features").GetProperty("categorical").EnumerateArray(), item =>
                 item.GetProperty("name").GetString() == "action.intent_category" &&
                 item.GetProperty("value").GetString() == "mechanical");
+
+            var datasetPath = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"), "rows.jsonl");
+            var appendResponse = await client.PostAsJsonAsync($"/api/v1/action-queues/{queueId}/training-feature-row/append", new
+            {
+                dataset_path = datasetPath
+            });
+
+            Assert.Equal(HttpStatusCode.OK, appendResponse.StatusCode);
+            using var appendJson = JsonDocument.Parse(await appendResponse.Content.ReadAsStringAsync());
+            Assert.Equal("training_dataset_append.v1", appendJson.RootElement.GetProperty("schema_version").GetString());
+            Assert.Equal(1, appendJson.RootElement.GetProperty("row_count").GetInt32());
+            Assert.True(File.Exists(datasetPath));
+
+            var trainResponse = await client.PostAsJsonAsync("/api/v1/training/baseline/train", new
+            {
+                dataset_path = datasetPath
+            });
+
+            Assert.Equal(HttpStatusCode.OK, trainResponse.StatusCode);
+            using var trainJson = JsonDocument.Parse(await trainResponse.Content.ReadAsStringAsync());
+            var trainRoot = trainJson.RootElement;
+            Assert.Equal("baseline_training_report.v1", trainRoot.GetProperty("schema_version").GetString());
+            Assert.Equal(1, trainRoot.GetProperty("row_count").GetInt32());
+            Assert.Equal("farm.maintain_crops", trainRoot.GetProperty("option_scores")[0].GetProperty("option_id").GetString());
+            Assert.Equal(0.09, trainRoot.GetProperty("option_scores")[0].GetProperty("average_total_reward").GetDouble());
         }
 
         [Fact]
