@@ -7,6 +7,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Goals;
 using StardewAI.Core.MockModel;
@@ -36,6 +37,7 @@ builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 builder.Services.AddSingleton<TrainingFeatureRowExporter>();
 builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
+builder.Services.AddSingleton<BaselinePolicyPredictor>();
 
 var app = builder.Build();
 
@@ -359,6 +361,18 @@ app.MapPost("/api/v1/training/baseline/train", (TrainingDatasetRequest? request,
 {
     var datasetPath = DatasetPathResolver.Resolve(request?.DatasetPath);
     return Results.Ok(trainer.Train(datasetPath));
+});
+
+app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselinePolicyPredictor predictor) =>
+{
+    var report = request.TrainingReport;
+    if (report is null)
+    {
+        var datasetPath = DatasetPathResolver.Resolve(request.DatasetPath);
+        report = trainer.Train(datasetPath);
+    }
+
+    return Results.Ok(predictor.Predict(report, request.CandidateOptionIds));
 });
 
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>

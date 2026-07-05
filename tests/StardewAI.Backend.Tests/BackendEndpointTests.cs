@@ -300,6 +300,20 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(1, trainRoot.GetProperty("row_count").GetInt32());
             Assert.Equal("farm.maintain_crops", trainRoot.GetProperty("option_scores")[0].GetProperty("option_id").GetString());
             Assert.Equal(0.09, trainRoot.GetProperty("option_scores")[0].GetProperty("average_total_reward").GetDouble());
+
+            var predictResponse = await client.PostAsJsonAsync("/api/v1/training/baseline/predict", new
+            {
+                dataset_path = datasetPath,
+                candidate_option_ids = new[] { "farm.maintain_crops", "social.gift_npc" }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, predictResponse.StatusCode);
+            using var predictJson = JsonDocument.Parse(await predictResponse.Content.ReadAsStringAsync());
+            var predictRoot = predictJson.RootElement;
+            Assert.Equal("policy_prediction.v1", predictRoot.GetProperty("schema_version").GetString());
+            Assert.Equal("farm.maintain_crops", predictRoot.GetProperty("ranked_options")[0].GetProperty("option_id").GetString());
+            Assert.Equal(1, predictRoot.GetProperty("ranked_options")[0].GetProperty("rank").GetInt32());
+            Assert.Equal("unseen_option", predictRoot.GetProperty("ranked_options")[1].GetProperty("evidence").GetString());
         }
 
         [Fact]

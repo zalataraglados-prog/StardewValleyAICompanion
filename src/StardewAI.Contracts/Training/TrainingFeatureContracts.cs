@@ -179,4 +179,67 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("policy")]
         public string Policy { get; set; } = "Baseline trainer only aggregates feature-row labels by option id; it is a smoke-test trainer, not a learned policy model.";
     }
+
+    public sealed class BaselinePredictionRequest
+    {
+        [JsonPropertyName("dataset_path")]
+        public string? DatasetPath { get; set; }
+
+        [JsonPropertyName("candidate_option_ids")]
+        public string[] CandidateOptionIds { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("training_report")]
+        public BaselineTrainingReport? TrainingReport { get; set; }
+    }
+
+    public sealed class PolicyPredictionEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "policy_prediction.v1";
+
+        [JsonPropertyName("source")]
+        public string Source { get; set; } = "baseline_training_report.v1";
+
+        [JsonPropertyName("ranked_options")]
+        public PolicyOptionPrediction[] RankedOptions { get; set; } = Array.Empty<PolicyOptionPrediction>();
+
+        [JsonPropertyName("audit")]
+        public PolicyPredictionAudit Audit { get; set; } = new();
+    }
+
+    public sealed class PolicyOptionPrediction
+    {
+        [JsonPropertyName("option_id")]
+        public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("rank")]
+        public int Rank { get; set; }
+
+        [JsonPropertyName("score")]
+        public double Score { get; set; }
+
+        [JsonPropertyName("expected_reward")]
+        public double ExpectedReward { get; set; }
+
+        [JsonPropertyName("expected_goal_progress_delta")]
+        public double ExpectedGoalProgressDelta { get; set; }
+
+        [JsonPropertyName("hard_block_risk")]
+        public double HardBlockRisk { get; set; }
+
+        [JsonPropertyName("example_count")]
+        public int ExampleCount { get; set; }
+
+        [JsonPropertyName("evidence")]
+        public string Evidence { get; set; } = "unseen_option";
+    }
+
+    public sealed class PolicyPredictionAudit
+    {
+        [JsonPropertyName("predictor")]
+        public string Predictor { get; set; } = "StardewAI.Core.Training.BaselinePolicyPredictor";
+
+        [JsonPropertyName("policy")]
+        public string Policy { get; set; } = "Baseline prediction ranks options from aggregated training labels; unseen options are retained with neutral reward and high uncertainty penalty.";
+    }
 }
