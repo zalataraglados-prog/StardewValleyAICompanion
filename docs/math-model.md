@@ -110,6 +110,8 @@ R = w_goal_progress * goal_progress
 
 All reward terms are normalized to `[0, 1]` before weighting. Hard safety constraints are not penalties; they filter options before reward scoring.
 
+Low-level executor mistakes are not reward penalties. For any domain covered by a `perfect_human_player` executor assumption, failures like missed clicks, missed swings, bad dodging, poor bobber control, slow menu navigation, or walking into walls belong to executor calibration or executor bugs. They must not reduce the strategy value of mining, fishing, combat, shopping, farming, or social play.
+
 ## Safety Constraints
 
 Hard constraints:
@@ -123,6 +125,7 @@ Hard constraints:
 - Never click UI controls when active menu identity is unknown.
 - Never bypass the planner/verifier path from dialogue or LLM output.
 - Never mutate real game state in observer or planner-only modes.
+- Never convert low-level perfect-executor failures into strategic dislike for a gameplay domain.
 
 Soft constraints:
 

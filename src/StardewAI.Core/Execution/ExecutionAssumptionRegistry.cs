@@ -1,0 +1,146 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace StardewAI.Core.Execution
+{
+    public sealed class ExecutionAssumption
+    {
+        public string DomainId { get; set; } = string.Empty;
+
+        public string Profile { get; set; } = "perfect_human_player";
+
+        public string[] AppliesToOptions { get; set; } = Array.Empty<string>();
+
+        public string[] HardConstraints { get; set; } = Array.Empty<string>();
+
+        public string[] CalibrationFactors { get; set; } = Array.Empty<string>();
+
+        public string[] PreferencePenaltyExclusions { get; set; } = Array.Empty<string>();
+
+        public string[] DecompiledAnchors { get; set; } = Array.Empty<string>();
+    }
+
+    public sealed class ExecutionAssumptionRegistry
+    {
+        private readonly ExecutionAssumption[] assumptions =
+        {
+            Assumption(
+                "mining_and_combat",
+                new[] { "exploration.visit_location" },
+                new[] { "time_budget", "health_floor", "energy_floor", "inventory_capacity", "route_to_exit_or_elevator" },
+                new[] { "mine_level", "mine_random", "ladder_discovery", "monster_mix", "ore_nodes", "loot" },
+                new[] { "missed_swings", "bad_dodging", "slow_reaction", "poor_path_micro" },
+                new[] { "MineShaft.mineLevel", "MineShaft.mineRandom", "MineShaft.findLadder", "Monster" }),
+            Assumption(
+                "volcano_dungeon",
+                new[] { "exploration.visit_location" },
+                new[] { "time_budget", "health_floor", "energy_floor", "route_to_exit", "water_or_bridge_requirements" },
+                new[] { "generated_level", "monster_mix", "resource_nodes", "forge_access" },
+                new[] { "bad_dodging", "poor_path_micro", "missed_weapon_timing" },
+                new[] { "VolcanoDungeon", "Monster", "GameLocation.warps" }),
+            Assumption(
+                "fishing",
+                new[] { "exploration.visit_location", "quest.advance" },
+                new[] { "time_budget", "energy_floor", "fishable_tile", "rod_and_bait_tackle" },
+                new[] { "bite_time", "fish_selection", "fish_difficulty", "treasure_chance", "weather_season_time" },
+                new[] { "missed_bite", "bad_bobber_control", "failed_perfect_catch_due_to_inputs" },
+                new[] { "FishingRod.minFishingBiteTime", "FishingRod.maxFishingBiteTime", "FishingRod.baseChanceForTreasure", "FishingGame" }),
+            Assumption(
+                "navigation",
+                new[] { "exploration.visit_location", "social.gift_npc", "economy.buy_supplies", "quest.advance" },
+                new[] { "passability_verified", "warp_verified", "destination_available", "time_budget" },
+                new[] { "route_length", "door_or_warp_rules", "temporary_obstacles", "npc_blockage" },
+                new[] { "walking_into_walls", "slow_path_following", "wrong_turns" },
+                new[] { "PathFindController", "GameLocation.isCollidingPosition", "GameLocation.warps" }),
+            Assumption(
+                "crop_farming",
+                new[] { "farm.maintain_crops" },
+                new[] { "energy_floor", "tool_available", "tile_reachable", "inventory_capacity" },
+                new[] { "crop_quality", "extra_harvest", "mixed_seed_crop", "fertilizer_effect" },
+                new[] { "missed_tile", "wrong_tool_timing", "slow_watering_micro" },
+                new[] { "Crop.phaseDays", "Crop.harvest", "HoeDirt", "Farmer.Stamina" }),
+            Assumption(
+                "forestry_and_resource_clumps",
+                new[] { "exploration.visit_location", "farm.maintain_crops" },
+                new[] { "energy_floor", "tool_available", "tile_reachable", "fall_zone_or_debris_capacity" },
+                new[] { "drop_tables", "tree_growth", "seed_drop", "resource_clump_health" },
+                new[] { "missed_tile", "bad_axe_timing", "poor_pickaxe_timing" },
+                new[] { "Tree", "ResourceClump", "GameLocation.resourceClumps" }),
+            Assumption(
+                "machines_and_processing",
+                new[] { "farm.process_machines" },
+                new[] { "input_item_verified", "output_slot_available", "inventory_capacity", "machine_ready_state" },
+                new[] { "machine_timer", "output_item", "quality_rules" },
+                new[] { "misclick_machine", "slow_menu_or_interact_micro" },
+                new[] { "MachineDataUtility" }),
+            Assumption(
+                "animals",
+                new[] { "farm.maintain_crops" },
+                new[] { "animal_location_verified", "tool_or_item_available", "inventory_capacity", "time_budget" },
+                new[] { "produce_quality", "friendship_mood", "incubator_or_birth_timing" },
+                new[] { "missed_pet", "poor_milking_shearing_micro" },
+                new[] { "FarmAnimal" }),
+            Assumption(
+                "shops_and_menus",
+                new[] { "economy.buy_supplies", "economy.sell_items" },
+                new[] { "menu_identity_verified", "stock_verified", "price_verified", "budget_reserve", "protected_items_verified" },
+                new[] { "stock_rules", "dialogue_variation", "limited_stock" },
+                new[] { "misclick_purchase", "wrong_scroll", "slow_menu_navigation" },
+                new[] { "ShopMenu.forSale", "ShopMenu.itemPriceAndStock", "ShopMenu.safetyTimer", "ShopBuilder.GetShopStock" }),
+            Assumption(
+                "social_and_quests",
+                new[] { "social.gift_npc", "quest.advance" },
+                new[] { "npc_identity_verified", "schedule_or_location_verified", "gift_item_verified", "quest_step_verified", "time_window" },
+                new[] { "npc_route_changes", "dialogue_variation", "quest_reward_randomness" },
+                new[] { "wrong_npc_click", "missed_dialogue_advance", "slow_route_following" },
+                new[] { "NPC", "Quest", "PathFindController" }),
+            Assumption(
+                "festivals_and_minigames",
+                new[] { "quest.advance", "exploration.visit_location" },
+                new[] { "event_state_verified", "rules_modeled", "time_window", "entry_and_exit_verified" },
+                new[] { "event_random_seed", "minigame_reward_rules", "contest_scoring" },
+                new[] { "bad_minigame_inputs", "missed_dialogue_or_menu_inputs" },
+                new[] { "Event", "DesertFestival", "FishingGame" }),
+            Assumption(
+                "inventory_chests_and_irreversible_actions",
+                new[] { "economy.sell_items", "quest.advance", "farm.process_machines" },
+                new[] { "item_identity_verified", "protected_item_policy", "target_container_verified", "state_hash_match" },
+                new[] { "stack_merge_rules", "inventory_space", "container_layout" },
+                new[] { "misclick_item", "wrong_slot_drag", "slow_menu_navigation" },
+                new[] { "ShopMenu", "Farmer.Items", "Item" })
+        };
+
+        public IReadOnlyCollection<ExecutionAssumption> All => assumptions;
+
+        public ExecutionAssumption GetRequired(string domainId)
+        {
+            var match = assumptions.FirstOrDefault(item => item.DomainId == domainId);
+            if (match is null)
+            {
+                throw new KeyNotFoundException("No execution assumption registered for domain: " + domainId);
+            }
+
+            return match;
+        }
+
+        private static ExecutionAssumption Assumption(
+            string domainId,
+            string[] options,
+            string[] hardConstraints,
+            string[] calibrationFactors,
+            string[] exclusions,
+            string[] anchors)
+        {
+            return new ExecutionAssumption
+            {
+                DomainId = domainId,
+                AppliesToOptions = options,
+                HardConstraints = hardConstraints,
+                CalibrationFactors = calibrationFactors,
+                PreferencePenaltyExclusions = exclusions,
+                DecompiledAnchors = anchors
+            };
+        }
+    }
+}
