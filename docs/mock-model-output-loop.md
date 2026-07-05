@@ -63,6 +63,18 @@ Output:
 Then send that output to:
 
 1. `POST /api/v1/small-model/action-queue/compile`
-2. `POST /api/v1/action-queues/{queueId}/simulate-training-transition`
+2. `GET /api/v1/action-queues/{queueId}/time-budget`
+3. `POST /api/v1/action-queues/{queueId}/simulate-training-transition`
 
 This gives a no-training smoke test for the future model path.
+
+## Time And Mining Assumption
+
+The time budget validator uses Stardew's decompiled time shape:
+
+- `Game1.timeOfDay` is the current clock.
+- the clock advances in 10-minute steps and caps at `2600`.
+- `TimeChangedEventArgs` exposes old/new clock values.
+- player energy is read from `Game1.player.Stamina`.
+
+Mining uses the `perfect_human_player` execution profile. Random mine layout facts such as `MineShaft.mineRandom`, `mineLevel`, ladder fields, monster areas, and ladder discovery affect calibration and elapsed-time estimates, but they must not be converted into low-level operation-failure fear. The model should not learn that mining is undesirable because an executor moves poorly. Poor execution belongs to executor quality, not strategic preference.

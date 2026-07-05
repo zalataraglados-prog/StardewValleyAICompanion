@@ -226,6 +226,14 @@ namespace StardewAI.Backend.Tests
             var queueId = queueJson.RootElement.GetProperty("queue_id").GetString();
             Assert.Equal("pending", queueJson.RootElement.GetProperty("status").GetString());
 
+            var timeBudgetResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/time-budget");
+
+            Assert.Equal(HttpStatusCode.OK, timeBudgetResponse.StatusCode);
+            using var timeBudgetJson = JsonDocument.Parse(await timeBudgetResponse.Content.ReadAsStringAsync());
+            Assert.Equal("time_budget.v1", timeBudgetJson.RootElement.GetProperty("schema_version").GetString());
+            Assert.Equal("perfect_human_player", timeBudgetJson.RootElement.GetProperty("execution_profile").GetString());
+            Assert.True(timeBudgetJson.RootElement.GetProperty("fits_required").GetBoolean());
+
             var transitionResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/simulate-training-transition", null);
 
             Assert.Equal(HttpStatusCode.OK, transitionResponse.StatusCode);

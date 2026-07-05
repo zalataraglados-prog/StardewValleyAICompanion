@@ -23,6 +23,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
 builder.Services.AddSingleton<ActionQueueCompiler>();
+builder.Services.AddSingleton<TimeBudgetValidator>();
 builder.Services.AddSingleton<IExecutorPort, DryRunExecutorPort>();
 builder.Services.AddSingleton<TrainingSandboxExecutorPort>();
 builder.Services.AddSingleton<TrainingStateTransitionSimulator>();
@@ -271,6 +272,22 @@ app.MapPost("/api/v1/action-queues/{queueId}/simulate-training-transition", (str
     var result = simulator.Simulate(model, queue);
     store.AppendAudit("TrainingTransitionSimulated", snapshot.GameTick, queue.StateHash);
     return Results.Ok(result);
+});
+
+app.MapGet("/api/v1/action-queues/{queueId}/time-budget", (string queueId, StateStore store, WorldModelProjector projector, TimeBudgetValidator validator) =>
+{
+    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
+    {
+        return Results.NotFound(new { detail = "queue not found" });
+    }
+
+    if (!store.Snapshots.TryGetValue(queue.StateHash, out var snapshot))
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+
+    var model = projector.Project(snapshot, queue.GoalId, "training");
+    return Results.Ok(validator.Validate(model, queue));
 });
 
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>
