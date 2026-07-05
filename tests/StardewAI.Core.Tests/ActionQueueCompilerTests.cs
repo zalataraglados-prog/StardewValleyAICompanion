@@ -27,11 +27,12 @@ public sealed class ActionQueueCompilerTests
 
         Assert.Equal("action_queue.v1", queue.SchemaVersion);
         Assert.Equal("pending", queue.Status);
-        Assert.Equal("ai_companion.main", queue.Actor.ActorId);
+        Assert.Equal("training_singleplayer", queue.ExecutionMode);
+        Assert.Equal("training_farmer.main", queue.Actor.ActorId);
         Assert.Single(queue.Items);
         Assert.Equal("pending", queue.Items[0].Status);
         Assert.Equal("farm.maintain_crops", queue.Items[0].NormalizedCommand.OptionId);
-        Assert.Equal("ai_companion.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
+        Assert.Equal("training_farmer.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
     }
 
     [Fact]
@@ -61,8 +62,38 @@ public sealed class ActionQueueCompilerTests
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
 
         Assert.Equal("blocked", queue.Status);
-        Assert.Contains("actor_type_must_be_ai_companion", queue.CompilerDiagnostics);
-        Assert.Contains("control_surface_must_be_companion_actor", queue.CompilerDiagnostics);
+        Assert.Contains("actor_type_human_player_forbidden", queue.CompilerDiagnostics);
+        Assert.Contains("control_surface_keyboard_mouse_forbidden", queue.CompilerDiagnostics);
+    }
+
+    [Fact]
+    public void CompileAllowsCoopCompanionModeForFutureCompanionActor()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        request.ExecutionMode = "coop_companion";
+        request.Actor = new ActionActorRef
+        {
+            ActorId = "ai_companion.main",
+            ActorType = "ai_companion",
+            ControlSurface = "companion_actor"
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("coop_companion", queue.ExecutionMode);
+        Assert.Equal("ai_companion.main", queue.Actor.ActorId);
     }
 
     [Fact]
@@ -97,11 +128,12 @@ public sealed class ActionQueueCompilerTests
             SourceModel = "small-model.test",
             StateHash = stateHash,
             GoalId = "goal.test",
+            ExecutionMode = "training_singleplayer",
             Actor = new ActionActorRef
             {
-                ActorId = "ai_companion.main",
-                ActorType = "ai_companion",
-                ControlSurface = "companion_actor"
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
             },
             Actions = new[]
             {

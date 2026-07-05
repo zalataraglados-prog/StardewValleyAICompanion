@@ -11,7 +11,11 @@ The execution path is:
 -> `execution_batch_result.v1`
 -> future transparent snapshot feedback.
 
-Execution is actor-scoped. The executor is for an AI companion actor, not the human player's local input surface.
+Execution is mode-scoped and actor-scoped.
+
+- `training_singleplayer`: AI controls the training save's single farmer through a training sandbox. This is the current training path.
+- `coop_companion`: AI controls a separate companion/farmhand actor in a future co-op companion mode.
+- `human_player`: forbidden for model-directed execution.
 
 ## Small Model Output
 
@@ -19,9 +23,19 @@ Execution is actor-scoped. The executor is for an AI companion actor, not the hu
 
 It must include:
 
+For training:
+
+- `execution_mode = "training_singleplayer"`
+- `actor.actor_type = "training_farmer"`
+- `actor.control_surface = "training_sandbox"`
+- a non-empty actor id such as `training_farmer.main`
+
+For future co-op companion play:
+
+- `execution_mode = "coop_companion"`
 - `actor.actor_type = "ai_companion"`
 - `actor.control_surface = "companion_actor"`
-- a non-empty AI actor id such as `ai_companion.main`
+- a non-empty actor id such as `ai_companion.main`
 
 It may not emit:
 
@@ -41,11 +55,11 @@ It checks:
 
 - schema version
 - source `state_hash`
-- actor isolation
+- execution mode and actor isolation
 - registered `OptionSpec`
 - transparent required-state factors through the verifier
 
-Unknown options, state hash mismatch, missing transparent facts, or a non-companion actor produce a blocked queue/item.
+Unknown options, state hash mismatch, missing transparent facts, unsupported mode, or forbidden actor/control surface produce a blocked queue/item.
 
 ## Executor
 
@@ -55,7 +69,7 @@ It returns `execution_batch_result.v1` and never mutates game state. This gives 
 
 Future executors must consume `action_queue.v1`, not small-model output.
 
-Future real executors must also prove that their control target is the companion actor/farmhand. They must not steal keyboard or mouse focus from the human player.
+Training executors may control the single training farmer in an isolated training save. Co-op executors must prove that their control target is the companion actor/farmhand. Neither path may steal keyboard or mouse focus from the human player.
 
 ## Feedback
 

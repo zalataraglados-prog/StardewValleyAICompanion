@@ -20,6 +20,9 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
 
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
+
         [JsonPropertyName("actor")]
         public ActionActorRef Actor { get; set; } = new();
 
@@ -82,6 +85,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
+
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
 
         [JsonPropertyName("actor")]
         public ActionActorRef Actor { get; set; } = new();
@@ -154,6 +160,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("state_hash")]
         public string StateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
 
         [JsonPropertyName("actor")]
         public ActionActorRef Actor { get; set; } = new();

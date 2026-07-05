@@ -131,11 +131,12 @@ namespace StardewAI.Backend.Tests
                 source_model = "small-model.test",
                 state_hash = stateHash,
                 goal_id = "goal.test",
+                execution_mode = "training_singleplayer",
                 actor = new
                 {
-                    actor_id = "ai_companion.main",
-                    actor_type = "ai_companion",
-                    control_surface = "companion_actor"
+                    actor_id = "training_farmer.main",
+                    actor_type = "training_farmer",
+                    control_surface = "training_sandbox"
                 },
                 actions = new[]
                 {
@@ -153,7 +154,8 @@ namespace StardewAI.Backend.Tests
             var queueRoot = queueJson.RootElement;
             Assert.Equal("action_queue.v1", queueRoot.GetProperty("schema_version").GetString());
             Assert.Equal("pending", queueRoot.GetProperty("status").GetString());
-            Assert.Equal("ai_companion.main", queueRoot.GetProperty("actor").GetProperty("actor_id").GetString());
+            Assert.Equal("training_singleplayer", queueRoot.GetProperty("execution_mode").GetString());
+            Assert.Equal("training_farmer.main", queueRoot.GetProperty("actor").GetProperty("actor_id").GetString());
             var queueId = queueRoot.GetProperty("queue_id").GetString();
 
             var executeResponse = await client.PostAsync($"/api/v1/action-queues/{queueId}/execute", null);
@@ -164,7 +166,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("execution_batch_result.v1", resultRoot.GetProperty("schema_version").GetString());
             Assert.Equal("dry_run", resultRoot.GetProperty("executor_mode").GetString());
             Assert.Equal("dry_run_ready", resultRoot.GetProperty("status").GetString());
-            Assert.Equal("ai_companion.main", resultRoot.GetProperty("actor").GetProperty("actor_id").GetString());
+            Assert.Equal("training_farmer.main", resultRoot.GetProperty("actor").GetProperty("actor_id").GetString());
         }
 
         [Fact]

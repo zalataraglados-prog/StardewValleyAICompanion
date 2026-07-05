@@ -43,10 +43,10 @@ namespace StardewAI.Core.Execution
                 diagnostics.Add("empty_action_list");
             }
 
-            diagnostics.AddRange(ValidateActor(modelOutput.Actor));
+            diagnostics.AddRange(ValidateExecutionTarget(modelOutput.ExecutionMode, modelOutput.Actor));
 
             var items = modelOutput.Actions
-                .Select(action => CompileAction(action, snapshot, modelOutput.Actor, diagnostics.Count > 0))
+                .Select(action => CompileAction(action, snapshot, modelOutput.ExecutionMode, modelOutput.Actor, diagnostics.Count > 0))
                 .ToArray();
             var blocked = diagnostics.Count > 0 || items.Any(item => item.Status == "blocked");
 
@@ -57,6 +57,7 @@ namespace StardewAI.Core.Execution
                 SourceModel = modelOutput.SourceModel,
                 StateHash = snapshot.StateHash,
                 GoalId = modelOutput.GoalId,
+                ExecutionMode = modelOutput.ExecutionMode,
                 Actor = modelOutput.Actor,
                 Status = blocked ? "blocked" : "pending",
                 Items = items,
@@ -64,28 +65,60 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static string[] ValidateActor(ActionActorRef actor)
+        private static string[] ValidateExecutionTarget(string executionMode, ActionActorRef actor)
         {
             var errors = new List<string>();
+            if (!string.Equals(executionMode, "training_singleplayer", StringComparison.Ordinal) &&
+                !string.Equals(executionMode, "coop_companion", StringComparison.Ordinal))
+            {
+                errors.Add("unsupported_execution_mode:" + executionMode);
+            }
+
             if (string.IsNullOrWhiteSpace(actor.ActorId))
             {
                 errors.Add("actor_id_required");
             }
 
-            if (!string.Equals(actor.ActorType, "ai_companion", StringComparison.Ordinal))
+            if (string.Equals(actor.ActorType, "human_player", StringComparison.Ordinal))
             {
-                errors.Add("actor_type_must_be_ai_companion");
+                errors.Add("actor_type_human_player_forbidden");
             }
 
-            if (!string.Equals(actor.ControlSurface, "companion_actor", StringComparison.Ordinal))
+            if (string.Equals(actor.ControlSurface, "keyboard_mouse", StringComparison.Ordinal))
             {
-                errors.Add("control_surface_must_be_companion_actor");
+                errors.Add("control_surface_keyboard_mouse_forbidden");
+            }
+
+            if (string.Equals(executionMode, "training_singleplayer", StringComparison.Ordinal))
+            {
+                if (!string.Equals(actor.ActorType, "training_farmer", StringComparison.Ordinal))
+                {
+                    errors.Add("training_singleplayer_requires_training_farmer");
+                }
+
+                if (!string.Equals(actor.ControlSurface, "training_sandbox", StringComparison.Ordinal))
+                {
+                    errors.Add("training_singleplayer_requires_training_sandbox");
+                }
+            }
+
+            if (string.Equals(executionMode, "coop_companion", StringComparison.Ordinal))
+            {
+                if (!string.Equals(actor.ActorType, "ai_companion", StringComparison.Ordinal))
+                {
+                    errors.Add("coop_companion_requires_ai_companion");
+                }
+
+                if (!string.Equals(actor.ControlSurface, "companion_actor", StringComparison.Ordinal))
+                {
+                    errors.Add("coop_companion_requires_companion_actor");
+                }
             }
 
             return errors.ToArray();
         }
 
-        private ActionQueueItem CompileAction(SmallModelAction action, SnapshotEnvelope snapshot, ActionActorRef actor, bool globallyBlocked)
+        private ActionQueueItem CompileAction(SmallModelAction action, SnapshotEnvelope snapshot, string executionMode, ActionActorRef actor, bool globallyBlocked)
         {
             var blocking = new List<string>();
             SafetyResult safety;
@@ -140,6 +173,7 @@ namespace StardewAI.Core.Execution
                 {
                     OptionId = action.OptionId,
                     StateHash = snapshot.StateHash,
+                    ExecutionMode = executionMode,
                     Actor = actor,
                     Parameters = action.Parameters
                 }

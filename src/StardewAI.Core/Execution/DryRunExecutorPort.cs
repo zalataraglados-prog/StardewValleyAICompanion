@@ -10,9 +10,7 @@ namespace StardewAI.Core.Execution
 
         public ExecutionBatchResult Execute(ActionQueueEnvelope queue)
         {
-            var actorAllowed = queue.Actor.ActorType == "ai_companion" &&
-                queue.Actor.ControlSurface == "companion_actor" &&
-                !string.IsNullOrWhiteSpace(queue.Actor.ActorId);
+            var actorAllowed = ActorAllowed(queue);
             var results = queue.Items
                 .Select(item =>
                 {
@@ -41,6 +39,33 @@ namespace StardewAI.Core.Execution
                     : "blocked",
                 Results = results
             };
+        }
+
+        private static bool ActorAllowed(ActionQueueEnvelope queue)
+        {
+            if (string.IsNullOrWhiteSpace(queue.Actor.ActorId))
+            {
+                return false;
+            }
+
+            if (queue.Actor.ActorType == "human_player" || queue.Actor.ControlSurface == "keyboard_mouse")
+            {
+                return false;
+            }
+
+            if (queue.ExecutionMode == "training_singleplayer")
+            {
+                return queue.Actor.ActorType == "training_farmer" &&
+                    queue.Actor.ControlSurface == "training_sandbox";
+            }
+
+            if (queue.ExecutionMode == "coop_companion")
+            {
+                return queue.Actor.ActorType == "ai_companion" &&
+                    queue.Actor.ControlSurface == "companion_actor";
+            }
+
+            return false;
         }
     }
 }
