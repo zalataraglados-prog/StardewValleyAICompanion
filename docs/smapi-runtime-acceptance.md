@@ -34,7 +34,7 @@ The script writes timestamped artifacts under `artifacts/smapi-runtime-acceptanc
 - `backend-summary.json`
 - `manual-checklist.json`
 
-The script only uses HTTP GET against the Bridge. `bridge-events.json` captures the HTTP event stream envelope from `GET /api/v1/events?limit=200`, including the current snapshot hash, latest event sequence, latest event hash, chain status, and the event page. With `-IngestBackend`, it POSTs the captured read-only payloads to Backend ingest endpoints and reads Backend comparison endpoints.
+The script only uses HTTP GET against the Bridge. `bridge-events.json` captures the HTTP event stream envelope from `GET /api/v1/events?limit=200`, including the current snapshot hash, latest event sequence, latest event hash, chain status, and the event page. The Bridge also exposes an optional read-only WebSocket stream at `ws://<host>:8766/api/v1/events/ws` by default with the same `event_stream.v1` envelope for consumers that need push delivery. With `-IngestBackend`, the script POSTs captured read-only payloads to Backend ingest endpoints and reads Backend comparison endpoints.
 
 `manual-checklist.json` records `isolated_stardew_directory`, `bridge_base_url`, `backend_base_url`, and the run directory. `-OutputDirectory` and its alias `-ArtifactsDirectory` select the artifact root. `-BridgeBaseUrl`/`-BridgeUrl` and `-BackendBaseUrl`/`-BackendUrl` select already-running services.
 
@@ -87,6 +87,7 @@ Allowed Bridge HTTP endpoints:
 - `GET /api/v1/snapshot`
 - `GET /api/v1/capabilities`
 - `GET /api/v1/events`
+- `ws://<host>:8766/api/v1/events/ws` as a WebSocket upgrade request by default; the port is `BridgeConfig.WebSocketPort`
 
 Bridge event stream query parameters:
 
@@ -94,7 +95,7 @@ Bridge event stream query parameters:
 - `after_sequence`: optional cursor; returns events with `event_sequence` greater than this value.
 - `after_tick`: optional SMAPI/game tick filter; returns events with `game_tick` greater than this value.
 
-The endpoint is HTTP polling only. It does not require WebSocket support for runtime acceptance.
+The WebSocket endpoint is read-only and emits `event_stream.v1` pages. It accepts no commands or game-state writes. HTTP polling remains the runtime acceptance baseline and fallback path.
 
 Allowed Backend endpoints, only when `-IngestBackend` is explicitly passed:
 

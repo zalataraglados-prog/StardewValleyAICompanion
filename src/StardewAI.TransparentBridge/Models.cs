@@ -4,5 +4,6 @@ public sealed class BridgeConfig
 {
     public string Host { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 8765;
+    public int WebSocketPort { get; set; } = 8766;
     public string PermissionMode { get; set; } = "observer";
 }

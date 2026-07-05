@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -22,6 +23,7 @@ public sealed class ModEntry : Mod
     };
 
     private HttpListener? listener;
+    private TcpListener? eventWebSocketListener;
     private CancellationTokenSource? serverCancellation;
     private readonly List<AuditRecord> audit = new();
     private readonly List<GameEvent> events = new();
@@ -107,6 +109,21 @@ public sealed class ModEntry : Mod
 
         Monitor.Log($"TransparentBridge read-only API listening on http://{config.Host}:{config.Port}/", LogLevel.Info);
         _ = Task.Run(() => ServeAsync(serverCancellation.Token));
+        StartEventWebSocketServer();
+    }
+
+    private void StartEventWebSocketServer()
+    {
+        if (!IPAddress.TryParse(config.Host, out var address))
+        {
+            Monitor.Log($"Event WebSocket disabled: host '{config.Host}' is not an IP address.", LogLevel.Warn);
+            return;
+        }
+
+        eventWebSocketListener = new TcpListener(address, config.WebSocketPort);
+        eventWebSocketListener.Start();
+        Monitor.Log($"TransparentBridge read-only event WebSocket listening on ws://{config.Host}:{config.WebSocketPort}/api/v1/events/ws", LogLevel.Info);
+        _ = Task.Run(() => ServeEventWebSocketAsync(serverCancellation?.Token ?? CancellationToken.None));
     }
 
     private async Task ServeAsync(CancellationToken cancellationToken)
@@ -142,17 +159,156 @@ public sealed class ModEntry : Mod
             "/api/v1/snapshot" => GetLatestSnapshot(),
             "/api/v1/capabilities" => BuildCapabilities(),
             "/api/v1/events" => BuildEventStreamResponse(context.Request),
+            "/api/v1/events/ws" => new
+            {
+                error = "use_websocket_endpoint",
+                endpoint = $"ws://{config.Host}:{config.WebSocketPort}/api/v1/events/ws",
+                schema_version = "event_stream.v1"
+            },
             "/api/v1/audit" => audit.TakeLast(200).ToArray(),
             "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
             _ => new { error = "not_found", path }
         };
 
-        context.Response.StatusCode = path is "/api/v1/snapshot" or "/api/v1/capabilities" or "/api/v1/events" or "/api/v1/audit" or "/" ? 200 : 404;
+        context.Response.StatusCode = path is "/api/v1/snapshot" or "/api/v1/capabilities" or "/api/v1/events" or "/api/v1/events/ws" or "/api/v1/audit" or "/" ? 200 : 404;
         context.Response.ContentType = "application/json; charset=utf-8";
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(response, jsonOptions);
         await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length);
         context.Response.Close();
+    }
+
+    private async Task ServeEventWebSocketAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested && eventWebSocketListener is not null)
+        {
+            try
+            {
+                var client = await eventWebSocketListener.AcceptTcpClientAsync();
+                _ = Task.Run(() => HandleEventWebSocketClientAsync(client, cancellationToken), cancellationToken);
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+            catch (SocketException)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"Event WebSocket server loop failed: {ex}", LogLevel.Error);
+            }
+        }
+    }
+
+    private async Task HandleEventWebSocketClientAsync(TcpClient client, CancellationToken cancellationToken)
+    {
+        await using var stream = client.GetStream();
+        try
+        {
+            using var reader = new StreamReader(stream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
+            var requestLine = await reader.ReadLineAsync();
+            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string? line;
+            while (!string.IsNullOrEmpty(line = await reader.ReadLineAsync()))
+            {
+                var separator = line.IndexOf(':');
+                if (separator > 0)
+                {
+                    headers[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+                }
+            }
+
+            var target = requestLine?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1).FirstOrDefault() ?? "/";
+            var uri = new Uri("http://localhost" + target);
+            if (!string.Equals(uri.AbsolutePath, "/api/v1/events/ws", StringComparison.OrdinalIgnoreCase) ||
+                !headers.TryGetValue("Sec-WebSocket-Key", out var key))
+            {
+                var badRequest = Encoding.ASCII.GetBytes("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+                await stream.WriteAsync(badRequest, 0, badRequest.Length, cancellationToken);
+                return;
+            }
+
+            var response = Encoding.ASCII.GetBytes(
+                "HTTP/1.1 101 Switching Protocols\r\n" +
+                "Upgrade: websocket\r\n" +
+                "Connection: Upgrade\r\n" +
+                $"Sec-WebSocket-Accept: {ComputeWebSocketAccept(key)}\r\n" +
+                "\r\n");
+            await stream.WriteAsync(response, 0, response.Length, cancellationToken);
+
+            var query = ParseQuery(uri.Query);
+            var afterSequence = ParseLongQuery(query, "after_sequence") ?? 0;
+            var afterTick = ParseLongQuery(query, "after_tick");
+            var limit = Math.Clamp((int)(ParseLongQuery(query, "limit") ?? 200), 1, 500);
+
+            while (!cancellationToken.IsCancellationRequested && client.Connected)
+            {
+                var envelope = BuildEventStreamResponse(afterSequence, afterTick, limit);
+                await SendWebSocketJsonAsync(stream, envelope);
+                afterSequence = envelope.NextAfterSequence ?? envelope.LatestEventSequence;
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Monitor.Log($"Event WebSocket failed: {ex}", LogLevel.Warn);
+        }
+        finally
+        {
+            client.Dispose();
+        }
+    }
+
+    private string ComputeWebSocketAccept(string key)
+    {
+        var raw = Encoding.ASCII.GetBytes(key.Trim() + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+        using var sha1 = SHA1.Create();
+        return Convert.ToBase64String(sha1.ComputeHash(raw));
+    }
+
+    private async Task SendWebSocketJsonAsync(Stream outputStream, object payload)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, jsonOptions);
+        var header = BuildWebSocketTextHeader(bytes.Length);
+        await outputStream.WriteAsync(header, 0, header.Length, serverCancellation?.Token ?? CancellationToken.None);
+        await outputStream.WriteAsync(bytes, 0, bytes.Length, serverCancellation?.Token ?? CancellationToken.None);
+        await outputStream.FlushAsync(serverCancellation?.Token ?? CancellationToken.None);
+    }
+
+    private static byte[] BuildWebSocketTextHeader(int payloadLength)
+    {
+        if (payloadLength <= 125)
+        {
+            return new[] { (byte)0x81, (byte)payloadLength };
+        }
+
+        if (payloadLength <= ushort.MaxValue)
+        {
+            return new[]
+            {
+                (byte)0x81,
+                (byte)126,
+                (byte)((payloadLength >> 8) & 0xff),
+                (byte)(payloadLength & 0xff)
+            };
+        }
+
+        var header = new byte[10];
+        header[0] = 0x81;
+        header[1] = 127;
+        var length = (ulong)payloadLength;
+        for (var i = 0; i < 8; i++)
+        {
+            header[9 - i] = (byte)(length & 0xff);
+            length >>= 8;
+        }
+
+        return header;
     }
 
     private SnapshotEnvelope GetLatestSnapshot()
@@ -185,11 +341,12 @@ public sealed class ModEntry : Mod
             Capability("read.inventory", "read", "available", "Game1.player.Items", "slot summaries only"),
             Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields", "farm domain summaries; no indoor building traversal"),
             Capability("read.current_location", "read", "available", "Game1.currentLocation public read-only fields", "metadata summaries only; no pathing graph"),
-            Capability("read.npcs", "read", "partial", "Game1.currentLocation.characters", "current-location NPC positions only; schedules unavailable"),
+            Capability("read.npcs", "read", "available", "Game1.currentLocation.characters; Game1.player.friendshipData; NPC.Schedule", "current-location NPC positions, friendships, and already-loaded schedules only"),
             Capability("read.quests", "read", "partial", "Game1.player.questLog/mail/team special orders", "completed quest history partially unavailable"),
-            Capability("read.world_progress", "read", "partial", "Game1.netWorldState/MasterPlayer collections", "perfection and golden walnuts unavailable"),
-            Capability("read.menus", "read", "partial", "Game1.activeClickableMenu public base fields", "menu-specific internals unavailable until individually verified"),
+            Capability("read.world_progress", "read", "available", "Game1.netWorldState/MasterPlayer collections; Utility.percentGameComplete()", "verified vanilla progress summary fields only"),
+            Capability("read.menus", "read", "partial", "Game1.activeClickableMenu public fields and verified concrete menu fields", "unsupported concrete menu types remain unavailable until individually verified"),
             Capability("read.modded_state", "read", "partial", "IModRegistry.GetAll() metadata", "arbitrary private mod state unavailable without mod-specific read-only API"),
+            Capability("stream.events.websocket", "read", "available", "/api/v1/events/ws", "read-only event_stream.v1 push; no inbound commands"),
             Capability("execute.command", "execute", "disabled", "observer permission mode", "execution forbidden in Phase 1A-2")
         }
     };
@@ -295,6 +452,11 @@ public sealed class ModEntry : Mod
         var afterSequence = ParseLongQuery(request, "after_sequence");
         var afterTick = ParseLongQuery(request, "after_tick");
         var limit = Math.Clamp((int)(ParseLongQuery(request, "limit") ?? 200), 1, 500);
+        return BuildEventStreamResponse(afterSequence, afterTick, limit);
+    }
+
+    private EventStreamEnvelope BuildEventStreamResponse(long? afterSequence, long? afterTick, int limit)
+    {
         GameEvent[] selected;
         long latestSequence;
         string streamEventHash;
@@ -400,6 +562,31 @@ public sealed class ModEntry : Mod
         return long.TryParse(value, out var parsed) ? parsed : null;
     }
 
+    private static long? ParseLongQuery(IReadOnlyDictionary<string, string> query, string name)
+    {
+        return query.TryGetValue(name, out var value) && long.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private static Dictionary<string, string> ParseQuery(string query)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return values;
+        }
+
+        var trimmed = query.TrimStart('?');
+        foreach (var part in trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = part.IndexOf('=');
+            var key = separator >= 0 ? part[..separator] : part;
+            var value = separator >= 0 ? part[(separator + 1)..] : string.Empty;
+            values[Uri.UnescapeDataString(key)] = Uri.UnescapeDataString(value);
+        }
+
+        return values;
+    }
+
     private static object ItemSummary(Item item) => new
     {
         item_id = item.ItemId,
@@ -435,6 +622,6 @@ public sealed class ModEntry : Mod
             new MenuReadAdapter(),
             new ModReadAdapter(helper.ModRegistry),
             new ModdedStateReadAdapter(helper.ModRegistry),
-            new UnavailableFieldsAdapter()
+            new UnavailableFieldsAdapter(config.Host, config.WebSocketPort)
         });
 }

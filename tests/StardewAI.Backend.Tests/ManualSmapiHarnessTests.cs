@@ -61,6 +61,10 @@ namespace StardewAI.Backend.Tests
             Assert.Contains("BackendUrl", doc);
             Assert.Contains("ArtifactsDirectory", doc);
             Assert.Contains("does not launch SMAPI", doc);
+            Assert.Contains("/api/v1/events/ws", doc);
+            Assert.Contains("WebSocket", doc);
+            Assert.Contains("accepts no commands", doc);
+            Assert.Contains("HTTP polling remains", doc);
         }
 
         [Fact]
