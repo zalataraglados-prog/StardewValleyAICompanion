@@ -350,6 +350,21 @@ namespace StardewAI.Backend.Tests
             Assert.Contains("non-readable status must not carry a default value", await response.Content.ReadAsStringAsync());
         }
 
+        [Fact]
+        public void DatasetPathResolverDefaultsToETrainingIsolationWhenDriveExists()
+        {
+            var resolved = DatasetPathResolver.Resolve(null);
+
+            if (Directory.Exists("E:\\"))
+            {
+                Assert.Equal(@"E:\StardewAITraining\datasets\training-feature-rows.jsonl", resolved);
+            }
+            else
+            {
+                Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), resolved);
+            }
+        }
+
         private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false)
         {
             var stateJson = $$"""

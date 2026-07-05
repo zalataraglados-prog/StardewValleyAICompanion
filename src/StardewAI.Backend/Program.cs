@@ -442,11 +442,18 @@ public sealed class TrainingDatasetRequest
 
 public static class DatasetPathResolver
 {
+    private const string DefaultIsolatedDatasetPath = @"E:\StardewAITraining\datasets\training-feature-rows.jsonl";
+
     public static string Resolve(string? requestedPath)
     {
         if (!string.IsNullOrWhiteSpace(requestedPath))
         {
             return Path.GetFullPath(requestedPath);
+        }
+
+        if (Directory.Exists(Path.GetPathRoot(DefaultIsolatedDatasetPath)))
+        {
+            return DefaultIsolatedDatasetPath;
         }
 
         return Path.Combine(AppContext.BaseDirectory, "datasets", "training-feature-rows.jsonl");

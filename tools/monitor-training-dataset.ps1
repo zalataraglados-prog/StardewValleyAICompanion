@@ -1,6 +1,6 @@
 param(
-    [string]$DatasetPath = (Join-Path $PSScriptRoot "..\src\StardewAI.Backend\bin\Debug\net8.0\datasets\training-feature-rows.jsonl"),
-    [string]$LogPath = (Join-Path $PSScriptRoot "..\logs\training-data-monitor.log"),
+    [string]$DatasetPath = "E:\StardewAITraining\datasets\training-feature-rows.jsonl",
+    [string]$LogPath = "E:\StardewAITraining\logs\training-data-monitor.log",
     [int]$IntervalSeconds = 30
 )
 
