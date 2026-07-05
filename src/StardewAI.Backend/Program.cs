@@ -31,6 +31,7 @@ builder.Services.AddSingleton<MockSmallModelPolicy>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
+builder.Services.AddSingleton<TrainingEpisodeRewardCalculator>();
 builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 
 var app = builder.Build();

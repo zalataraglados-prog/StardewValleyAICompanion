@@ -252,6 +252,10 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(queueId, episodeRoot.GetProperty("queue_id").GetString());
             Assert.Equal("farm.maintain_crops", episodeRoot.GetProperty("action_summary").GetProperty("option_ids")[0].GetString());
             Assert.False(episodeRoot.GetProperty("hard_feasibility").GetProperty("blocked").GetBoolean());
+            Assert.Equal(0.09, episodeRoot.GetProperty("strategy_value").GetProperty("goal_progress_delta").GetDouble());
+            Assert.Contains(episodeRoot.GetProperty("strategy_value").GetProperty("reward_terms").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "crop_watered" &&
+                item.GetProperty("source").GetString() == "simulated_transition.changed_facts");
             Assert.Equal("perfect_human_player", episodeRoot.GetProperty("executor_calibration").GetProperty("execution_profile").GetString());
             Assert.Contains(episodeRoot.GetProperty("executor_calibration").GetProperty("changed_facts").EnumerateArray(), item =>
                 item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");

@@ -8,6 +8,18 @@ namespace StardewAI.Core.Training
 {
     public sealed class TrainingEpisodeAdapter
     {
+        private readonly TrainingEpisodeRewardCalculator rewardCalculator;
+
+        public TrainingEpisodeAdapter()
+            : this(new TrainingEpisodeRewardCalculator())
+        {
+        }
+
+        public TrainingEpisodeAdapter(TrainingEpisodeRewardCalculator rewardCalculator)
+        {
+            this.rewardCalculator = rewardCalculator;
+        }
+
         public TrainingEpisodeEnvelope Build(
             ActionQueueEnvelope queue,
             TimeBudgetReport timeBudget,
@@ -26,6 +38,8 @@ namespace StardewAI.Core.Training
             var blocked = queue.Status == "blocked" ||
                 transition.Blocked ||
                 !timeBudget.FitsRequired;
+            var strategyValue = rewardCalculator.Calculate(queue, transition);
+            strategyValue.ExcludedExecutorFailures = ExtractExcludedFailures(timeBudget);
 
             return new TrainingEpisodeEnvelope
             {
@@ -40,12 +54,7 @@ namespace StardewAI.Core.Training
                     ExecutionMode = queue.ExecutionMode,
                     Actor = queue.Actor
                 },
-                StrategyValue = new StrategyValueFeedback
-                {
-                    GoalProgressDelta = 0,
-                    RewardTerms = Array.Empty<EpisodeRewardTerm>(),
-                    ExcludedExecutorFailures = ExtractExcludedFailures(timeBudget)
-                },
+                StrategyValue = strategyValue,
                 HardFeasibility = new HardFeasibilityFeedback
                 {
                     Blocked = blocked,

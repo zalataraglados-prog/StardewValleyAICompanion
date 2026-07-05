@@ -75,6 +75,8 @@ This gives a no-training smoke test for the future model path.
 - `hard_feasibility`: compiler, time, and simulator blockers.
 - `executor_calibration`: perfect-executor duration, state deltas, resource costs, and decompile-backed calibration notes.
 
+The initial `strategy_value` calculator only scores facts confirmed by `simulated_transition.v1`. For `farm.maintain_crops`, watered crops produce a positive `crop_watered` term and explicit energy use produces an `energy_spent` cost term. Blocked queues do not create negative strategic preference by themselves.
+
 Low-level executor failures listed in `preference_penalty_exclusions` are excluded from strategic preference learning. They belong to executor quality or duration calibration, not to the model's desire to choose a task.
 
 ## Time And Mining Assumption

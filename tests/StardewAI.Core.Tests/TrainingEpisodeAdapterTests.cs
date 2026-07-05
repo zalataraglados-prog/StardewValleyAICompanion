@@ -87,6 +87,72 @@ namespace StardewAI.Core.Tests
         }
 
         [Fact]
+        public void BuildAddsRewardOnlyFromSimulatedFactChanges()
+        {
+            var queue = new ActionQueueEnvelope
+            {
+                QueueId = "queue.farm",
+                StateHash = "hash.before",
+                SourceModel = "mock-small-model.rule.v1",
+                GoalId = "goal.farm",
+                Status = "pending",
+                ExecutionMode = "training_singleplayer",
+                Items = new[]
+                {
+                    new ActionQueueItem
+                    {
+                        QueueItemId = "item.farm",
+                        OptionId = "farm.maintain_crops",
+                        Status = "pending"
+                    }
+                }
+            };
+            var timeBudget = new TimeBudgetReport
+            {
+                StateHash = "hash.before",
+                ExecutionProfile = "perfect_human_player",
+                FitsRequired = true
+            };
+            var transition = new SimulatedTransitionResult
+            {
+                BeforeStateHash = "hash.before",
+                AfterStateHash = "hash.after",
+                AppliedOptionIds = new[] { "farm.maintain_crops" },
+                ChangedFacts = new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.crops[1,2].needs_watering",
+                        Before = "true",
+                        After = "false"
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.crops[1,2].watered",
+                        Before = "false",
+                        After = "true"
+                    }
+                },
+                ResourceCosts = new[]
+                {
+                    new SimulatedResourceCost { Resource = "player.energy", Amount = 2 }
+                }
+            };
+
+            var episode = new TrainingEpisodeAdapter().Build(queue, timeBudget, transition);
+
+            Assert.Equal(0.09, episode.StrategyValue.GoalProgressDelta);
+            Assert.Contains(episode.StrategyValue.RewardTerms, item =>
+                item.Name == "crop_watered" &&
+                item.Value == 0.10 &&
+                item.Source == "simulated_transition.changed_facts");
+            Assert.Contains(episode.StrategyValue.RewardTerms, item =>
+                item.Name == "energy_spent" &&
+                item.Value == -0.01 &&
+                item.Source == "simulated_transition.resource_costs");
+        }
+
+        [Fact]
         public void BuildMarksHardFeasibilityBlockedWithoutCreatingStrategyPenalty()
         {
             var queue = new ActionQueueEnvelope
