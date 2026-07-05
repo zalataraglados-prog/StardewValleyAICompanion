@@ -56,3 +56,13 @@ Do not write low-level perfect-executor failures into `strategy_value`. If an ex
 ## Immediate Engineering Implication
 
 The time budget and simulator should query `ExecutionAssumptionRegistry` before scoring risk. A future `MiningPerfectExecutorModel`, `FishingPerfectExecutorModel`, and `NavigationPerfectExecutorModel` should consume these assumptions and produce calibrated duration/resource estimates without injecting low-level control fear into the ranker.
+
+## Implemented Baseline
+
+The first duration-model baseline is implemented:
+
+- `MiningPerfectExecutorModel`: estimates target-depth mining with elevator-adjusted level deltas and perfect human inputs.
+- `FishingPerfectExecutorModel`: estimates catch-count fishing with perfect bite response and bobber control.
+- `NavigationPerfectExecutorModel`: estimates route-tile movement with perfect route following after passability proof.
+
+`TimeBudgetValidator` now uses these models and appends assumption-domain notes to each budget item. The notes intentionally preserve preference-penalty exclusions such as bad dodging, poor bobber control, walking into walls, wrong turns, or slow menu/path micro.

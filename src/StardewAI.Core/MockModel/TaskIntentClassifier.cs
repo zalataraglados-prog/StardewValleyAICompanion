@@ -40,6 +40,20 @@ namespace StardewAI.Core.MockModel
                 };
             }
 
+            if (ContainsAny(text, "fish", "fishing", "catch", "钓鱼", "鱼"))
+            {
+                return new TaskIntentClassification
+                {
+                    Category = TaskIntentCategory.ParameterizedMechanical,
+                    OptionId = "exploration.visit_location",
+                    Parameters = new[]
+                    {
+                        Parameter("target_activity", "fishing"),
+                        Parameter("target_catches", ExtractFirstInteger(text) ?? "1")
+                    }
+                };
+            }
+
             if (ContainsAny(text, "clear", "tree", "plant tree", "layout", "sprinkler", "building", "开荒", "种树", "布局", "洒水器", "建筑"))
             {
                 return new TaskIntentClassification

@@ -11,6 +11,31 @@ namespace StardewAI.Core.Execution
         private const int DefaultDeadlineTime = 2600;
         private const int DefaultSafetyBufferMinutes = 60;
         private const string PerfectHumanProfile = "perfect_human_player";
+        private readonly ExecutionAssumptionRegistry assumptionRegistry;
+        private readonly MiningPerfectExecutorModel miningModel;
+        private readonly FishingPerfectExecutorModel fishingModel;
+        private readonly NavigationPerfectExecutorModel navigationModel;
+
+        public TimeBudgetValidator()
+            : this(
+                new ExecutionAssumptionRegistry(),
+                new MiningPerfectExecutorModel(),
+                new FishingPerfectExecutorModel(),
+                new NavigationPerfectExecutorModel())
+        {
+        }
+
+        public TimeBudgetValidator(
+            ExecutionAssumptionRegistry assumptionRegistry,
+            MiningPerfectExecutorModel miningModel,
+            FishingPerfectExecutorModel fishingModel,
+            NavigationPerfectExecutorModel navigationModel)
+        {
+            this.assumptionRegistry = assumptionRegistry;
+            this.miningModel = miningModel;
+            this.fishingModel = fishingModel;
+            this.navigationModel = navigationModel;
+        }
 
         public TimeBudgetReport Validate(WorldModelEnvelope model, ActionQueueEnvelope queue)
         {
@@ -54,76 +79,109 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static TimeBudgetItem EstimateItem(ActionQueueItem item)
+        private TimeBudgetItem EstimateItem(ActionQueueItem item)
         {
             var role = Parameter(item, "schedule_role") == "optional" ? "optional" : "required";
             var optionId = item.OptionId;
-            var minutes = EstimateMinutes(item);
+            var estimate = EstimateDuration(item);
             return new TimeBudgetItem
             {
                 QueueItemId = item.QueueItemId,
                 OptionId = optionId,
                 ScheduleRole = role,
-                EstimatedMinutes = minutes,
-                Estimator = "decompile_seeded_rule.v1",
-                Notes = NotesFor(item).ToArray()
+                EstimatedMinutes = estimate.Minutes,
+                Estimator = estimate.Estimator,
+                Notes = NotesFor(item, estimate).ToArray()
             };
         }
 
-        private static int EstimateMinutes(ActionQueueItem item)
+        private DurationEstimate EstimateDuration(ActionQueueItem item)
         {
             switch (item.OptionId)
             {
                 case "farm.maintain_crops":
-                    return 30;
+                    return Fixed(30, "crop_farming_rule.v1");
                 case "farm.process_machines":
-                    return 20;
+                    return Fixed(20, "machine_processing_rule.v1");
                 case "economy.buy_supplies":
-                    return 90;
+                    return Fixed(90, "shop_menu_rule.v1");
                 case "economy.sell_items":
-                    return 30;
+                    return Fixed(30, "shop_menu_rule.v1");
                 case "social.gift_npc":
-                    return 90;
+                    return Fixed(90, "navigation_social_rule.v1");
                 case "quest.advance":
-                    return 120;
+                    return Fixed(120, "quest_rule.v1");
                 case "recovery.stabilize_day":
-                    return 30;
+                    return Fixed(30, "recovery_rule.v1");
                 case "exploration.visit_location":
-                    return EstimateExplorationMinutes(item);
+                    return EstimateExploration(item);
                 default:
-                    return 120;
+                    return Fixed(120, "unknown_option_rule.v1");
             }
         }
 
-        private static int EstimateExplorationMinutes(ActionQueueItem item)
+        private DurationEstimate EstimateExploration(ActionQueueItem item)
         {
             if (Parameter(item, "target_activity") == "mining")
             {
-                var targetDepth = ParseInt(Parameter(item, "target_depth"));
-                if (!targetDepth.HasValue)
-                {
-                    return 180;
-                }
-
-                var startingDepth = ParseInt(Parameter(item, "start_depth")) ?? 0;
-                var levels = Math.Max(1, targetDepth.Value - startingDepth);
-                var elevatorAdjustedLevels = Math.Min(levels, 5 + (levels % 5));
-                return 60 + elevatorAdjustedLevels * 8;
+                return miningModel.Estimate(item);
             }
 
-            return 90;
+            if (Parameter(item, "target_activity") == "fishing")
+            {
+                return fishingModel.Estimate(item);
+            }
+
+            return navigationModel.Estimate(item);
         }
 
-        private static IEnumerable<string> NotesFor(ActionQueueItem item)
+        private static DurationEstimate Fixed(int minutes, string estimator)
         {
-            if (item.OptionId == "exploration.visit_location" && Parameter(item, "target_activity") == "mining")
+            return new DurationEstimate
             {
-                yield return "execution_profile_assumes_perfect_human_player_inputs";
-                yield return "random_mine_layout_affects_calibration_not_low_level_failure_penalty";
-                yield return "decompile_evidence:MineShaft.mineLevel, MineShaft.mineRandom, MineShaft.findLadder";
+                Minutes = minutes,
+                Estimator = estimator,
+                Notes = Array.Empty<string>()
+            };
+        }
+
+        private IEnumerable<string> NotesFor(ActionQueueItem item, DurationEstimate estimate)
+        {
+            foreach (var note in estimate.Notes)
+            {
+                yield return note;
+            }
+
+            var assumption = FindAssumption(item);
+            if (assumption is not null)
+            {
+                yield return "assumption_domain:" + assumption.DomainId;
+                yield return "preference_penalty_exclusions:" + string.Join(",", assumption.PreferencePenaltyExclusions);
             }
 
             yield return "decompile_evidence:Game1.timeOfDay advances in 10 minute steps and caps at 2600";
+        }
+
+        private ExecutionAssumption? FindAssumption(ActionQueueItem item)
+        {
+            var activity = Parameter(item, "target_activity");
+            if (activity == "mining")
+            {
+                return assumptionRegistry.GetRequired("mining_and_combat");
+            }
+
+            if (activity == "fishing")
+            {
+                return assumptionRegistry.GetRequired("fishing");
+            }
+
+            if (item.OptionId == "exploration.visit_location")
+            {
+                return assumptionRegistry.GetRequired("navigation");
+            }
+
+            return assumptionRegistry.All.FirstOrDefault(assumption =>
+                assumption.AppliesToOptions.Contains(item.OptionId, StringComparer.Ordinal));
         }
 
         private static string? Parameter(ActionQueueItem item, string name)
@@ -131,11 +189,6 @@ namespace StardewAI.Core.Execution
             return item.NormalizedCommand.Parameters
                 .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
                 ?.Value;
-        }
-
-        private static int? ParseInt(string? value)
-        {
-            return int.TryParse(value, out var parsed) ? parsed : (int?)null;
         }
 
         private static int ClockMinutesBetween(int start, int end)

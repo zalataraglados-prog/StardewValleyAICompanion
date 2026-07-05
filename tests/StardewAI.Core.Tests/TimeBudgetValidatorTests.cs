@@ -22,8 +22,71 @@ public sealed class TimeBudgetValidatorTests
         Assert.Equal("perfect_human_player", report.ExecutionProfile);
         Assert.True(report.FitsRequired);
         Assert.Equal("exploration.visit_location", report.Items[0].OptionId);
+        Assert.Equal("mining_perfect_executor.v1", report.Items[0].Estimator);
         Assert.Contains(report.Items[0].Notes, item => item == "execution_profile_assumes_perfect_human_player_inputs");
+        Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:mining_and_combat"));
         Assert.DoesNotContain(report.BlockReasons, item => item.Contains("danger"));
+    }
+
+    [Fact]
+    public void FishingUsesPerfectExecutorDurationModel()
+    {
+        var snapshot = Snapshot(610);
+        var output = new MockSmallModelPolicy().Generate(snapshot, "catch 3 fish", "training_singleplayer");
+        var queue = new ActionQueueCompiler().Compile(output, snapshot);
+        var model = new WorldModelProjector().Project(snapshot, "catch 3 fish", "training");
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.True(report.FitsRequired);
+        Assert.Equal("fishing_perfect_executor.v1", report.Items[0].Estimator);
+        Assert.Equal(51, report.Items[0].EstimatedMinutes);
+        Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:fishing"));
+        Assert.Contains(report.Items[0].Notes, item => item.Contains("bad_bobber_control"));
+    }
+
+    [Fact]
+    public void GenericExplorationUsesNavigationPerfectExecutorModel()
+    {
+        var snapshot = Snapshot(610);
+        var model = new WorldModelProjector().Project(snapshot, "visit forest", "training");
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.navigation",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            },
+            Items = new[]
+            {
+                new ActionQueueItem
+                {
+                    QueueItemId = "queue_item.visit",
+                    OptionId = "exploration.visit_location",
+                    Status = "pending",
+                    NormalizedCommand = new NormalizedCommand
+                    {
+                        OptionId = "exploration.visit_location",
+                        Parameters = new[]
+                        {
+                            new SmallModelActionParameter { Name = "route_tiles", Value = "90" }
+                        }
+                    }
+                }
+            }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.Equal("navigation_perfect_executor.v1", report.Items[0].Estimator);
+        Assert.Equal(15, report.Items[0].EstimatedMinutes);
+        Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:navigation"));
+        Assert.Contains(report.Items[0].Notes, item => item.Contains("walking_into_walls"));
     }
 
     [Fact]
