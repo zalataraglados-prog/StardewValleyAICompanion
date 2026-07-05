@@ -259,6 +259,22 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("perfect_human_player", episodeRoot.GetProperty("executor_calibration").GetProperty("execution_profile").GetString());
             Assert.Contains(episodeRoot.GetProperty("executor_calibration").GetProperty("changed_facts").EnumerateArray(), item =>
                 item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
+
+            var featureResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-feature-row");
+
+            Assert.Equal(HttpStatusCode.OK, featureResponse.StatusCode);
+            using var featureJson = JsonDocument.Parse(await featureResponse.Content.ReadAsStringAsync());
+            var featureRoot = featureJson.RootElement;
+            Assert.Equal("training_feature_row.v1", featureRoot.GetProperty("schema_version").GetString());
+            Assert.Equal(queueId, featureRoot.GetProperty("queue_id").GetString());
+            Assert.Equal("farm.maintain_crops", featureRoot.GetProperty("action_features").GetProperty("option_ids")[0].GetString());
+            Assert.Equal(0.09, featureRoot.GetProperty("labels").GetProperty("goal_progress_delta").GetDouble());
+            Assert.Contains(featureRoot.GetProperty("state_features").GetProperty("numeric").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "farm.crops_needing_watering" &&
+                item.GetProperty("value").GetDouble() == 1);
+            Assert.Contains(featureRoot.GetProperty("action_features").GetProperty("features").GetProperty("categorical").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "action.intent_category" &&
+                item.GetProperty("value").GetString() == "mechanical");
         }
 
         [Fact]

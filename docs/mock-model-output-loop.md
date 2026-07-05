@@ -66,6 +66,7 @@ Then send that output to:
 2. `GET /api/v1/action-queues/{queueId}/time-budget`
 3. `POST /api/v1/action-queues/{queueId}/simulate-training-transition`
 4. `GET /api/v1/action-queues/{queueId}/training-episode`
+5. `GET /api/v1/action-queues/{queueId}/training-feature-row`
 
 This gives a no-training smoke test for the future model path.
 
@@ -78,6 +79,8 @@ This gives a no-training smoke test for the future model path.
 The initial `strategy_value` calculator only scores facts confirmed by `simulated_transition.v1`. For `farm.maintain_crops`, watered crops produce a positive `crop_watered` term and explicit energy use produces an `energy_spent` cost term. Blocked queues do not create negative strategic preference by themselves.
 
 Low-level executor failures listed in `preference_penalty_exclusions` are excluded from strategic preference learning. They belong to executor quality or duration calibration, not to the model's desire to choose a task.
+
+`training_feature_row.v1` is the first model-facing export. It keeps state features, action features, and labels separate so the same row can feed a C# HTN/CF-SMDP heuristic, ML.NET, or LightGBM-style learner later. This phase does not require Python, CUDA, TorchSharp, or a neural model runtime.
 
 ## Time And Mining Assumption
 
