@@ -38,6 +38,7 @@ builder.Services.AddSingleton<TrainingFeatureRowExporter>();
 builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 builder.Services.AddSingleton<BaselinePolicyPredictor>();
+builder.Services.AddSingleton<BaselineOptionRanker>();
 
 var app = builder.Build();
 
@@ -373,6 +374,18 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
     }
 
     return Results.Ok(predictor.Predict(report, request.CandidateOptionIds));
+});
+
+app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker) =>
+{
+    var report = request.TrainingReport;
+    if (report is null)
+    {
+        var datasetPath = DatasetPathResolver.Resolve(request.DatasetPath);
+        report = trainer.Train(datasetPath);
+    }
+
+    return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
 });
 
 app.MapGet("/api/v1/action-compiler/check", (StateStore store, PlanningPreviewCompiler compiler) =>

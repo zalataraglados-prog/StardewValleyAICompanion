@@ -314,6 +314,18 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("farm.maintain_crops", predictRoot.GetProperty("ranked_options")[0].GetProperty("option_id").GetString());
             Assert.Equal(1, predictRoot.GetProperty("ranked_options")[0].GetProperty("rank").GetInt32());
             Assert.Equal("unseen_option", predictRoot.GetProperty("ranked_options")[1].GetProperty("evidence").GetString());
+
+            var rankResponse = await client.PostAsJsonAsync("/api/v1/planner/baseline/rank-options", new
+            {
+                dataset_path = datasetPath
+            });
+
+            Assert.Equal(HttpStatusCode.OK, rankResponse.StatusCode);
+            using var rankJson = JsonDocument.Parse(await rankResponse.Content.ReadAsStringAsync());
+            var rankRoot = rankJson.RootElement;
+            Assert.Equal("policy_prediction.v1", rankRoot.GetProperty("schema_version").GetString());
+            Assert.Equal("farm.maintain_crops", rankRoot.GetProperty("ranked_options")[0].GetProperty("option_id").GetString());
+            Assert.True(rankRoot.GetProperty("ranked_options").GetArrayLength() >= 8);
         }
 
         [Fact]

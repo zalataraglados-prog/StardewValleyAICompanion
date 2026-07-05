@@ -70,6 +70,7 @@ Then send that output to:
 6. `POST /api/v1/action-queues/{queueId}/training-feature-row/append`
 7. `POST /api/v1/training/baseline/train`
 8. `POST /api/v1/training/baseline/predict`
+9. `POST /api/v1/planner/baseline/rank-options`
 
 This gives a no-training smoke test for the future model path.
 
@@ -88,6 +89,8 @@ Low-level executor failures listed in `preference_penalty_exclusions` are exclud
 The dataset writer appends `training_feature_row.v1` records to JSONL. The baseline trainer currently aggregates rows by `option_id` and reports average reward/progress and hard-block rate. This is a smoke-test trainer for the data pipeline, not the final learned policy.
 
 The baseline predictor consumes the aggregate training report or a dataset path and ranks candidate options. Unseen options remain in the output with neutral reward and high uncertainty penalty, which keeps exploration visible without pretending evidence exists.
+
+`planner/baseline/rank-options` is the first planner-facing selection endpoint. If no candidate list is provided, it ranks every registered `OptionSpec` from `StardewAI.Core.OptionRegistry`, using learned aggregate evidence where available and explicit unseen-option defaults elsewhere.
 
 ## Time And Mining Assumption
 
