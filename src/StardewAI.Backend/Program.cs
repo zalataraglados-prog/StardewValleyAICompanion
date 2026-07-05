@@ -6,6 +6,7 @@ using StardewAI.Contracts.Events;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
 using StardewAI.Core.PreviewCompiler;
+using StardewAI.Core.WorldModel;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -15,6 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddSingleton<StateStore>();
 builder.Services.AddSingleton<PlanningPreviewCompiler>();
+builder.Services.AddSingleton<WorldModelProjector>();
 
 var app = builder.Build();
 
@@ -124,7 +126,7 @@ app.MapGet("/api/v1/sync", (long? afterTick, StateStore store) =>
     });
 });
 
-app.MapGet("/api/v1/stardew/input/latest", (string? goal, string? mode, StateStore store) =>
+app.MapGet("/api/v1/stardew/input/latest", (string? goal, string? mode, StateStore store, WorldModelProjector projector) =>
 {
     var latest = store.LatestSnapshot();
     if (latest is null)
@@ -132,7 +134,7 @@ app.MapGet("/api/v1/stardew/input/latest", (string? goal, string? mode, StateSto
         return Results.NotFound(new { detail = "no snapshots ingested" });
     }
 
-    return Results.Ok(StardewInputProjector.Project(latest, goal ?? string.Empty, mode ?? "relaxed"));
+    return Results.Ok(projector.Project(latest, goal ?? string.Empty, mode ?? "relaxed"));
 });
 
 app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateStore store, PlanningPreviewCompiler compiler) =>
@@ -473,84 +475,6 @@ public static class CapabilityValidator
         }
 
         return errors;
-    }
-}
-
-public static class StardewInputProjector
-{
-    public static object Project(SnapshotEnvelope snapshot, string goal, string mode)
-    {
-        return new
-        {
-            state_hash = snapshot.StateHash,
-            game_tick = snapshot.GameTick,
-            user_goal = goal,
-            mode,
-            facts = new Dictionary<string, object?>
-            {
-                ["game.current_location"] = ReadFirstValue(snapshot, "player.location_id", "game.current_location"),
-                ["game.time_of_day"] = ReadFirstValue(snapshot, "time.time", "game.time_of_day"),
-                ["player.money"] = ReadValue(snapshot, "player.money"),
-                ["player.stamina"] = ReadFirstValue(snapshot, "player.energy", "player.stamina"),
-                ["player.inventory"] = ReadValue(snapshot, "player.inventory"),
-                ["menus.active_menu"] = ReadFirstValue(snapshot, "player.active_menu", "menus.active_menu")
-            }
-        };
-    }
-
-    private static object? ReadFirstValue(SnapshotEnvelope snapshot, params string[] paths)
-    {
-        foreach (var path in paths)
-        {
-            var value = ReadValue(snapshot, path);
-            if (value is not null)
-            {
-                return value;
-            }
-        }
-
-        return null;
-    }
-
-    private static object? ReadValue(SnapshotEnvelope snapshot, string path)
-    {
-        var current = ReadPath(snapshot, path);
-        if (current.HasValue &&
-            current.Value.ValueKind == JsonValueKind.Object &&
-            current.Value.TryGetProperty("status", out var status) &&
-            FieldEnvelopeValidator.IsReadableStatus(status.GetString()) &&
-            current.Value.TryGetProperty("value", out var value))
-        {
-            return value.ValueKind switch
-            {
-                JsonValueKind.String => value.GetString(),
-                JsonValueKind.Number => value.TryGetInt64(out var number) ? number : value.GetDouble(),
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                _ => null
-            };
-        }
-
-        return null;
-    }
-
-    private static JsonElement? ReadPath(SnapshotEnvelope snapshot, string path)
-    {
-        var parts = path.Split('.');
-        if (parts.Length == 0 || !snapshot.State.TryGetValue(parts[0], out var current))
-        {
-            return null;
-        }
-
-        for (var i = 1; i < parts.Length; i++)
-        {
-            if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(parts[i], out current))
-            {
-                return null;
-            }
-        }
-
-        return current;
     }
 }
 

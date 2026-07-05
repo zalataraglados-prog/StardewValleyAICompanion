@@ -57,6 +57,26 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task StardewInputLatestReturnsTypedWorldModel()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var response = await client.GetAsync("/api/v1/stardew/input/latest?goal=water%20crops&mode=efficiency");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("world_model.v1", root.GetProperty("schema_version").GetString());
+            Assert.Equal("efficiency", root.GetProperty("mode").GetString());
+            Assert.True(root.GetProperty("completeness").GetProperty("all_required_facts_readable").GetBoolean());
+            Assert.False(root.GetProperty("planner_inputs").GetProperty("blocked").GetBoolean());
+            Assert.Equal("Farm", root.GetProperty("facts").GetProperty("player").GetProperty("location_id").GetString());
+            Assert.Equal(610, root.GetProperty("facts").GetProperty("game").GetProperty("time").GetInt32());
+        }
+
+        [Fact]
         public async Task SnapshotIngestRejectsMismatchedHash()
         {
             using var client = factory.CreateClient();
@@ -150,6 +170,9 @@ namespace StardewAI.Backend.Tests
                 "content_pack_count": {{FieldJson(0)}},
                 "content_packs": {{FieldJson("[]", raw: true)}},
                 "private_mod_state": {{UnavailableFieldJson("arbitrary_mod_private_state_unavailable_without_mod_specific_read_only_api")}}
+              },
+              "transport": {
+                "event_stream_websocket": {{FieldJson("{\"endpoint\":\"ws://127.0.0.1:8766/api/v1/events/ws\"}", raw: true)}}
               }
             }
             """;
