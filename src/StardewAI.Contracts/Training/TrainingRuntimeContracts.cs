@@ -186,6 +186,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("latest_state_hash")]
         public string LatestStateHash { get; set; } = string.Empty;
 
+        [JsonPropertyName("manifest_loaded")]
+        public bool ManifestLoaded { get; set; }
+
+        [JsonPropertyName("run_id")]
+        public string RunId { get; set; } = string.Empty;
+
+        [JsonPropertyName("snapshot_run_id")]
+        public string SnapshotRunId { get; set; } = string.Empty;
+
         [JsonPropertyName("snapshot_game_tick")]
         public long? SnapshotGameTick { get; set; }
 

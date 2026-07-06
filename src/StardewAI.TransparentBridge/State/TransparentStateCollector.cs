@@ -50,6 +50,9 @@ public sealed class TransparentStateCollector
             ["game_version"] = Field(Game1.version, "Game1.version", tick),
             ["smapi_version"] = Field(Constants.ApiVersion.ToString(), "StardewModdingAPI.Constants.ApiVersion", tick, "smapi_constants"),
             ["bridge_version"] = Field(bridgeVersion, "IModManifest.Version", tick, "bridge_manifest"),
+            ["training_mode"] = Field(Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_MODE"), "Environment.STARDEWAI_TRAINING_MODE", tick, "process_environment"),
+            ["training_run_id"] = Field(Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_RUN_ID"), "Environment.STARDEWAI_TRAINING_RUN_ID", tick, "process_environment"),
+            ["save_isolation_path"] = Field(Environment.GetEnvironmentVariable("STARDEWAI_SAVE_ISOLATION_PATH"), "Environment.STARDEWAI_SAVE_ISOLATION_PATH", tick, "process_environment"),
             ["installed_mods"] = Field(modRegistry.GetAll()
                 .Select(mod => new
                 {

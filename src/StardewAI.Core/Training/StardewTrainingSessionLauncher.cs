@@ -109,7 +109,7 @@ namespace StardewAI.Core.Training
                 Sound = request.SoundEnabled ? "enabled" : "disabled",
                 WindowStyle = string.IsNullOrWhiteSpace(request.WindowStyle) ? "minimized" : request.WindowStyle.Trim(),
                 ExecutableKind = ClassifyExecutable(gameExecutablePath),
-                EnvironmentOverrides = BuildEnvironmentOverrides(request),
+                EnvironmentOverrides = BuildEnvironmentOverrides(request, runId),
                 CreatedAt = DateTimeOffset.UtcNow.ToString("O")
             };
         }
@@ -206,11 +206,12 @@ namespace StardewAI.Core.Training
             File.WriteAllText(manifest.ManifestPath, JsonSerializer.Serialize(manifest, JsonOptions));
         }
 
-        private static TrainingEnvironmentOverride[] BuildEnvironmentOverrides(TrainingLaunchRequest request)
+        private static TrainingEnvironmentOverride[] BuildEnvironmentOverrides(TrainingLaunchRequest request, string runId)
         {
             return new[]
             {
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_TRAINING_MODE", Value = "1" },
+                new TrainingEnvironmentOverride { Name = "STARDEWAI_TRAINING_RUN_ID", Value = runId },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BACKEND_URL", Value = request.BackendUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_BRIDGE_URL", Value = request.BridgeUrl },
                 new TrainingEnvironmentOverride { Name = "STARDEWAI_SAVE_ISOLATION_PATH", Value = request.SaveIsolationPath ?? string.Empty },

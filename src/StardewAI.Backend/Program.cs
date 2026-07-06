@@ -372,8 +372,11 @@ app.MapPost("/api/v1/training/session/prepare", (TrainingLaunchRequest request, 
 app.MapPost("/api/v1/training/session/launch", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
     Results.Ok(launcher.Launch(request)));
 
-app.MapGet("/api/v1/training/session/ready-probe", (StateStore store, TrainingReadyProbe probe) =>
-    Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null)));
+app.MapGet("/api/v1/training/session/ready-probe", (HttpRequest request, StateStore store, TrainingReadyProbe probe) =>
+{
+    var manifestPath = request.Query.TryGetValue("manifest_path", out var value) ? value.ToString() : null;
+    return Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null, manifestPath));
+});
 
 app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselinePolicyPredictor predictor) =>
 {

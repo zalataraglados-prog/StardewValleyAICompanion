@@ -555,7 +555,56 @@ namespace StardewAI.Backend.Tests
             Assert.Empty(readyJson.RootElement.GetProperty("block_reasons").EnumerateArray());
         }
 
-        private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false)
+        [Fact]
+        public async Task TrainingReadyProbeCanBindSnapshotToPreparedManifest()
+        {
+            await using var isolatedFactory = factory.WithWebHostBuilder(_ => { });
+            using var client = isolatedFactory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
+
+            var prepareResponse = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "stardew_windowed",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+            Assert.Equal(HttpStatusCode.OK, prepareResponse.StatusCode);
+            using var prepareJson = JsonDocument.Parse(await prepareResponse.Content.ReadAsStringAsync());
+            var manifest = prepareJson.RootElement.GetProperty("manifest");
+            var manifestPath = manifest.GetProperty("manifest_path").GetString();
+            var runId = manifest.GetProperty("run_id").GetString();
+
+            var blockedResponse = await client.GetAsync("/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(manifestPath!));
+            Assert.Equal(HttpStatusCode.OK, blockedResponse.StatusCode);
+            using var blockedJson = JsonDocument.Parse(await blockedResponse.Content.ReadAsStringAsync());
+            Assert.False(blockedJson.RootElement.GetProperty("ready").GetBoolean());
+            Assert.True(blockedJson.RootElement.GetProperty("manifest_loaded").GetBoolean());
+            Assert.Contains(blockedJson.RootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "no_transparent_snapshot_ingested");
+
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent(trainingRunId: runId));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var readyResponse = await client.GetAsync("/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(manifestPath!));
+            Assert.Equal(HttpStatusCode.OK, readyResponse.StatusCode);
+            using var readyJson = JsonDocument.Parse(await readyResponse.Content.ReadAsStringAsync());
+            var readyRoot = readyJson.RootElement;
+            Assert.True(readyRoot.GetProperty("ready").GetBoolean());
+            Assert.True(readyRoot.GetProperty("manifest_loaded").GetBoolean());
+            Assert.Equal(runId, readyRoot.GetProperty("run_id").GetString());
+            Assert.Equal(runId, readyRoot.GetProperty("snapshot_run_id").GetString());
+            Assert.Empty(readyRoot.GetProperty("block_reasons").EnumerateArray());
+        }
+
+        private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false, string? trainingRunId = null)
         {
             var stateJson = $$"""
             {
@@ -563,6 +612,9 @@ namespace StardewAI.Backend.Tests
                 "game_version": {{FieldJson("1.6.15")}},
                 "smapi_version": {{FieldJson("4.5.2")}},
                 "bridge_version": {{FieldJson("test")}},
+                "training_mode": {{(trainingRunId is null ? UnavailableFieldJson("not_a_training_process") : FieldJson("1"))}},
+                "training_run_id": {{(trainingRunId is null ? UnavailableFieldJson("not_a_training_process") : FieldJson(trainingRunId))}},
+                "save_isolation_path": {{(trainingRunId is null ? UnavailableFieldJson("not_a_training_process") : FieldJson("E:\\StardewAITraining\\saves"))}},
                 "installed_mods": {{FieldJson("[]", raw: true)}}
               },
               "identity": {
