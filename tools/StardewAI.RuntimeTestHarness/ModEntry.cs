@@ -1,4 +1,5 @@
 using HarmonyLib;
+using Microsoft.Xna.Framework;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
@@ -18,6 +19,7 @@ public sealed class ModEntry : Mod
     private HttpListener? executorListener;
     private CancellationTokenSource? executorCancellation;
     private readonly ConcurrentQueue<PendingExecution> pendingExecutions = new();
+    private ActiveVisibleWalk? activeVisibleWalk;
 
     public override void Entry(IModHelper helper)
     {
@@ -186,6 +188,8 @@ public sealed class ModEntry : Mod
 
     private void OnExecutorUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
+        TickVisibleWalk();
+
         if (!pendingExecutions.TryDequeue(out var pending))
         {
             return;
@@ -193,6 +197,12 @@ public sealed class ModEntry : Mod
 
         try
         {
+            if (pending.Request.OptionId == "debug.visible_walk")
+            {
+                StartVisibleWalk(pending);
+                return;
+            }
+
             pending.Completion.SetResult(ExecuteMaintainCrops(pending.Request));
         }
         catch (Exception ex)
@@ -200,6 +210,64 @@ public sealed class ModEntry : Mod
             Monitor.Log($"Training execution failed: {ex}", LogLevel.Error);
             pending.Completion.SetResult(Blocked(pending.Request, "execution_exception:" + ex.GetType().Name));
         }
+    }
+
+    private void StartVisibleWalk(PendingExecution pending)
+    {
+        var reasons = ValidateExecutionRequest(pending.Request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(pending.Request, reasons.ToArray()));
+            return;
+        }
+
+        activeVisibleWalk = new ActiveVisibleWalk(
+            pending,
+            Game1.player.Position,
+            Math.Clamp(pending.Request.MaxCrops, 1, 8));
+        Monitor.Log($"Started visible walk demo for {activeVisibleWalk.TileSteps} tile(s).", LogLevel.Info);
+    }
+
+    private void TickVisibleWalk()
+    {
+        if (activeVisibleWalk is null)
+        {
+            return;
+        }
+
+        var walk = activeVisibleWalk;
+        Game1.player.faceDirection(1);
+        Game1.player.Position = new Vector2(walk.StartPosition.X + walk.Tick * 4, walk.StartPosition.Y);
+        walk.Tick++;
+
+        if (walk.Tick <= walk.TileSteps * 16)
+        {
+            return;
+        }
+
+        var request = walk.Pending.Request;
+        activeVisibleWalk = null;
+        walk.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            StartedAt = walk.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "player.position",
+                    Before = ((int)walk.StartPosition.X) + "," + ((int)walk.StartPosition.Y),
+                    After = ((int)Game1.player.Position.X) + "," + ((int)Game1.player.Position.Y)
+                }
+            }
+        });
     }
 
     private TrainingExecutionResult ExecuteMaintainCrops(TrainingExecutionRequest request)
@@ -303,7 +371,8 @@ public sealed class ModEntry : Mod
             reasons.Add("world_not_ready");
         }
 
-        if (request.OptionId != "farm.maintain_crops")
+        if (request.OptionId != "farm.maintain_crops" &&
+            request.OptionId != "debug.visible_walk")
         {
             reasons.Add("unsupported_option_id");
         }
@@ -356,6 +425,23 @@ public sealed class ModEntry : Mod
 
         public TrainingExecutionRequest Request { get; }
         public TaskCompletionSource<TrainingExecutionResult> Completion { get; } = new();
+    }
+
+    private sealed class ActiveVisibleWalk
+    {
+        public ActiveVisibleWalk(PendingExecution pending, Vector2 startPosition, int tileSteps)
+        {
+            Pending = pending;
+            StartPosition = startPosition;
+            TileSteps = tileSteps;
+            StartedAt = DateTimeOffset.UtcNow.ToString("O");
+        }
+
+        public PendingExecution Pending { get; }
+        public Vector2 StartPosition { get; }
+        public int TileSteps { get; }
+        public int Tick { get; set; }
+        public string StartedAt { get; }
     }
 }
 
