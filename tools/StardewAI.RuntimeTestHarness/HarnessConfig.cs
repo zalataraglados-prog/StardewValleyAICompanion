@@ -9,4 +9,10 @@ public sealed class HarnessConfig
     public bool AutoLoad { get; set; } = true;
 
     public int LoadAfterTicks { get; set; } = 120;
+
+    public bool EnableTrainingExecutor { get; set; } = true;
+
+    public string ExecutorHost { get; set; } = "127.0.0.1";
+
+    public int ExecutorPort { get; set; } = 8767;
 }
