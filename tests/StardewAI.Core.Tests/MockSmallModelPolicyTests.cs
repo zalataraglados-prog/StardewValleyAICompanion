@@ -23,6 +23,20 @@ public sealed class MockSmallModelPolicyTests
     }
 
     [Fact]
+    public void ClassifierMapsGrandpaGoalToFeedbackSupportedTrainingProbe()
+    {
+        var classifier = new TaskIntentClassifier();
+
+        var grandpa = classifier.Classify("grandpa_four_candles_year3");
+
+        Assert.Equal(TaskIntentCategory.Mechanical, grandpa.Category);
+        Assert.Equal("farm.maintain_crops", grandpa.OptionId);
+        Assert.Contains(grandpa.Parameters, item =>
+            item.Name == "strategic_goal" &&
+            item.Value == "grandpa_four_candles_year3");
+    }
+
+    [Fact]
     public void MockPolicyEmitsOfficialSmallModelActionContract()
     {
         var snapshot = Snapshot();

@@ -49,6 +49,23 @@ for (var iteration = 1; iteration <= options.Iterations; iteration++)
     var modelOutput = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/mock-model/small-model-action", mockRequest);
     var queue = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/small-model/action-queue/compile", modelOutput.ToJsonString(JsonOptions));
     lastQueueId = ReadString(queue, "queue_id");
+    var queueStatus = ReadString(queue, "status");
+    if (options.RequireExecutorFeedback)
+    {
+        if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
+        {
+            AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "queue_not_pending executor_feedback_required");
+            continue;
+        }
+
+        var execution = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
+        var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
+        if (!feedbackAvailable)
+        {
+            AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "executor_feedback_unavailable status=" + ReadString(execution, "status"));
+            continue;
+        }
+    }
 
     var appendRequest = JsonSerializer.Serialize(new
     {
@@ -90,7 +107,8 @@ var report = new LiveTrainingLoopReport
     LastStateHash = lastStateHash,
     LastQueueId = lastQueueId,
     Concurrency = 1,
-    Execution = "disabled",
+    Execution = options.RequireExecutorFeedback ? "training_sandbox_feedback_gate" : "disabled",
+    ExecutorFeedbackRequired = options.RequireExecutorFeedback,
     TrainingReport = lastTrainingReport,
     Prediction = lastPrediction
 };
@@ -109,7 +127,8 @@ Console.WriteLine(JsonSerializer.Serialize(new
     report_path = reportPath,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
-    execution = "disabled"
+    execution = options.RequireExecutorFeedback ? "training_sandbox_feedback_gate" : "disabled",
+    executor_feedback_required = options.RequireExecutorFeedback
 }, JsonOptions));
 
 static async Task<JsonObject> PostJsonStringAsync(HttpClient http, string url, string json)
@@ -156,6 +175,7 @@ public sealed class LiveTrainingOptions
     public int Iterations { get; set; } = 3;
     public int TrainEvery { get; set; } = 1;
     public int SleepMs { get; set; } = 1000;
+    public bool RequireExecutorFeedback { get; set; } = true;
 
     public string RunDir => string.IsNullOrWhiteSpace(ManifestPath)
         ? Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId)
@@ -206,6 +226,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--sleep-ms" && i + 1 < args.Length && int.TryParse(args[++i], out var sleepMs))
             {
                 options.SleepMs = Math.Max(0, sleepMs);
+            }
+            else if (current == "--no-executor-feedback-required")
+            {
+                options.RequireExecutorFeedback = false;
             }
         }
 
@@ -266,6 +290,9 @@ public sealed class LiveTrainingLoopReport
 
     [JsonPropertyName("execution")]
     public string Execution { get; set; } = "disabled";
+
+    [JsonPropertyName("executor_feedback_required")]
+    public bool ExecutorFeedbackRequired { get; set; }
 
     [JsonPropertyName("training_report")]
     public JsonObject? TrainingReport { get; set; }

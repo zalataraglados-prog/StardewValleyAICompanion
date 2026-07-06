@@ -67,7 +67,21 @@ namespace StardewAI.Core.MockModel
                 };
             }
 
-            if (ContainsAny(text, "buy", "sell", "shop", "gift", "npc", "quest", "bundle", "grandpa", "购买", "卖", "送礼", "任务", "爷爷"))
+            if (ContainsAny(text, "grandpa", "four_candles", "four candles", "candles", "grandpa_four_candles_year3", "爷爷"))
+            {
+                return new TaskIntentClassification
+                {
+                    Category = TaskIntentCategory.Mechanical,
+                    OptionId = "farm.maintain_crops",
+                    Parameters = new[]
+                    {
+                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("training_probe", "maintain_crop_revenue_path")
+                    }
+                };
+            }
+
+            if (ContainsAny(text, "buy", "sell", "shop", "gift", "npc", "quest", "bundle", "购买", "卖", "送礼", "任务"))
             {
                 return new TaskIntentClassification
                 {
