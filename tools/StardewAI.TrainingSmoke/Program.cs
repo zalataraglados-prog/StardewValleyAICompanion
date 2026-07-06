@@ -9,24 +9,22 @@ Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(Path.GetDirectoryName(options.DatasetPath)!);
 Directory.CreateDirectory(Path.GetDirectoryName(options.ReportPath)!);
 Directory.CreateDirectory(Path.GetDirectoryName(options.CheckpointPath)!);
+Directory.CreateDirectory(Path.GetDirectoryName(options.ProgressLogPath)!);
 
 if (options.ResetDataset && File.Exists(options.DatasetPath))
 {
     File.Delete(options.DatasetPath);
 }
+if (options.ResetDataset && File.Exists(options.ProgressLogPath))
+{
+    File.Delete(options.ProgressLogPath);
+}
+AppendProgress(options.ProgressLogPath, "start", 0, 0, 0, "none", "game_launch=disabled sound=disabled");
 
 var total = Stopwatch.StartNew();
 var writer = new JsonlTrainingDatasetWriter();
 var dataWatch = Stopwatch.StartNew();
-var rows = new List<TrainingFeatureRowEnvelope>();
-for (var i = 0; i < options.Samples; i++)
-{
-    rows.Add(CreateRow(i));
-}
-
-writer.AppendMany(options.DatasetPath, rows);
-var rowsWritten = rows.Count;
-
+var rowsWritten = 0;
 dataWatch.Stop();
 
 var trainer = new BaselineFeatureRowTrainer();
@@ -35,20 +33,52 @@ var epochReports = new List<EpochMetric>();
 BaselineTrainingReport? finalTrainingReport = null;
 PolicyPredictionEnvelope? finalPrediction = null;
 var trainWatch = Stopwatch.StartNew();
-for (var epoch = 1; epoch <= options.Epochs; epoch++)
+for (var iteration = 1; iteration <= options.Iterations; iteration++)
 {
-    var epochWatch = Stopwatch.StartNew();
-    finalTrainingReport = trainer.Train(options.DatasetPath);
-    finalPrediction = predictor.Rank(finalTrainingReport, Array.Empty<string>());
-    epochWatch.Stop();
-    epochReports.Add(new EpochMetric
+    dataWatch.Start();
+    var rows = new List<TrainingFeatureRowEnvelope>();
+    for (var i = 0; i < options.Samples; i++)
     {
-        Epoch = epoch,
-        Rows = finalTrainingReport.RowCount,
-        BestOptionId = finalPrediction.RankedOptions.FirstOrDefault()?.OptionId ?? string.Empty,
-        BestScore = finalPrediction.RankedOptions.FirstOrDefault()?.Score ?? 0,
-        DurationMs = epochWatch.ElapsedMilliseconds
-    });
+        rows.Add(CreateRow(rowsWritten + i));
+    }
+
+    writer.AppendMany(options.DatasetPath, rows);
+    rowsWritten += rows.Count;
+    dataWatch.Stop();
+    AppendProgress(options.ProgressLogPath, "append", iteration, rowsWritten, 0, "pending", "batch_rows=" + rows.Count);
+
+    if (iteration % options.TrainEvery == 0 || iteration == options.Iterations)
+    {
+        for (var epoch = 1; epoch <= options.Epochs; epoch++)
+        {
+            var epochWatch = Stopwatch.StartNew();
+            finalTrainingReport = trainer.Train(options.DatasetPath);
+            finalPrediction = predictor.Rank(finalTrainingReport, Array.Empty<string>());
+            epochWatch.Stop();
+            epochReports.Add(new EpochMetric
+            {
+                Iteration = iteration,
+                Epoch = epoch,
+                Rows = finalTrainingReport.RowCount,
+                BestOptionId = finalPrediction.RankedOptions.FirstOrDefault()?.OptionId ?? string.Empty,
+                BestScore = finalPrediction.RankedOptions.FirstOrDefault()?.Score ?? 0,
+                DurationMs = epochWatch.ElapsedMilliseconds
+            });
+            AppendProgress(
+                options.ProgressLogPath,
+                "train",
+                iteration,
+                finalTrainingReport.RowCount,
+                epoch,
+                finalPrediction.RankedOptions.FirstOrDefault()?.OptionId ?? string.Empty,
+                "duration_ms=" + epochWatch.ElapsedMilliseconds);
+        }
+    }
+
+    if (options.SleepMs > 0 && iteration < options.Iterations)
+    {
+        Thread.Sleep(options.SleepMs);
+    }
 }
 
 trainWatch.Stop();
@@ -57,11 +87,13 @@ total.Stop();
 var report = new SmokeReport
 {
     SamplesRequested = options.Samples,
+    Iterations = options.Iterations,
     RowsWritten = rowsWritten,
     Epochs = options.Epochs,
     DatasetPath = options.DatasetPath,
     ReportPath = options.ReportPath,
     CheckpointPath = options.CheckpointPath,
+    ProgressLogPath = options.ProgressLogPath,
     GameLaunch = "disabled",
     Sound = "disabled",
     DataGenerationMs = dataWatch.ElapsedMilliseconds,
@@ -76,6 +108,7 @@ var report = new SmokeReport
 
 File.WriteAllText(options.ReportPath, JsonSerializer.Serialize(report, JsonOptions));
 File.WriteAllText(options.CheckpointPath, JsonSerializer.Serialize(report.TrainingReport, JsonOptions));
+AppendProgress(options.ProgressLogPath, "complete", options.Iterations, rowsWritten, options.Epochs, report.Prediction.RankedOptions.FirstOrDefault()?.OptionId ?? string.Empty, "total_ms=" + report.TotalMs);
 
 Console.WriteLine(JsonSerializer.Serialize(new
 {
@@ -88,6 +121,7 @@ Console.WriteLine(JsonSerializer.Serialize(new
     dataset = report.DatasetPath,
     report = report.ReportPath,
     checkpoint = report.CheckpointPath,
+    progress_log = options.ProgressLogPath,
     game_launch = report.GameLaunch,
     sound = report.Sound
 }, JsonOptions));
@@ -151,16 +185,42 @@ static TrainingFeatureRowEnvelope CreateRow(int index)
     };
 }
 
+static void AppendProgress(
+    string path,
+    string stage,
+    int iteration,
+    int rows,
+    int epoch,
+    string bestOption,
+    string detail)
+{
+    var line = string.Join(" ", new[]
+    {
+        DateTimeOffset.Now.ToString("O"),
+        "stage=" + stage,
+        "iteration=" + iteration,
+        "rows=" + rows,
+        "epoch=" + epoch,
+        "best_option=" + bestOption,
+        detail
+    });
+    File.AppendAllText(path, line + Environment.NewLine);
+}
+
 public sealed class SmokeOptions
 {
     public string Root { get; set; } = @"E:\StardewAITraining";
     public int Samples { get; set; } = 64;
     public int Epochs { get; set; } = 1;
+    public int Iterations { get; set; } = 1;
+    public int TrainEvery { get; set; } = 1;
+    public int SleepMs { get; set; }
     public bool ResetDataset { get; set; } = true;
 
     public string DatasetPath => Path.Combine(Root, "datasets", "training-feature-rows.jsonl");
     public string ReportPath => Path.Combine(Root, "reports", "training-smoke-report.json");
     public string CheckpointPath => Path.Combine(Root, "checkpoints", "baseline-latest.json");
+    public string ProgressLogPath => Path.Combine(Root, "logs", "training-smoke-progress.log");
 
     public static SmokeOptions Parse(string[] args)
     {
@@ -180,6 +240,18 @@ public sealed class SmokeOptions
             {
                 options.Epochs = Math.Max(1, epochs);
             }
+            else if (current == "--iterations" && i + 1 < args.Length && int.TryParse(args[++i], out var iterations))
+            {
+                options.Iterations = Math.Max(1, iterations);
+            }
+            else if (current == "--train-every" && i + 1 < args.Length && int.TryParse(args[++i], out var trainEvery))
+            {
+                options.TrainEvery = Math.Max(1, trainEvery);
+            }
+            else if (current == "--sleep-ms" && i + 1 < args.Length && int.TryParse(args[++i], out var sleepMs))
+            {
+                options.SleepMs = Math.Max(0, sleepMs);
+            }
             else if (current == "--append")
             {
                 options.ResetDataset = false;
@@ -198,6 +270,9 @@ public sealed class SmokeReport
     [JsonPropertyName("samples_requested")]
     public int SamplesRequested { get; set; }
 
+    [JsonPropertyName("iterations")]
+    public int Iterations { get; set; }
+
     [JsonPropertyName("rows_written")]
     public int RowsWritten { get; set; }
 
@@ -212,6 +287,9 @@ public sealed class SmokeReport
 
     [JsonPropertyName("checkpoint_path")]
     public string CheckpointPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("progress_log_path")]
+    public string ProgressLogPath { get; set; } = string.Empty;
 
     [JsonPropertyName("game_launch")]
     public string GameLaunch { get; set; } = "disabled";
@@ -246,6 +324,9 @@ public sealed class SmokeReport
 
 public sealed class EpochMetric
 {
+    [JsonPropertyName("iteration")]
+    public int Iteration { get; set; }
+
     [JsonPropertyName("epoch")]
     public int Epoch { get; set; }
 
