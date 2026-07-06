@@ -135,6 +135,66 @@ public sealed class TimeBudgetValidatorTests
         Assert.Contains("required_plus_optional_exceeds_time_budget", report.BlockReasons);
     }
 
+    [Fact]
+    public void StrategyPlanMinutesParticipateInTimeBudget()
+    {
+        var snapshot = Snapshot(2400);
+        var model = new WorldModelProjector().Project(snapshot, "grandpa strategy", "training");
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.strategy",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            },
+            Items = new[]
+            {
+                new ActionQueueItem
+                {
+                    QueueItemId = "queue_item.strategy",
+                    OptionId = "strategy.grandpa_progress",
+                    Status = "pending",
+                    NormalizedCommand = new NormalizedCommand
+                    {
+                        OptionId = "strategy.grandpa_progress",
+                        StrategyPlan = new[]
+                        {
+                            new StrategyPlanStep
+                            {
+                                DirectionId = "raise_friendships",
+                                Domain = "social",
+                                PotentialPoints = 2,
+                                PriorityScore = 1.9,
+                                FeedbackKey = "grandpa.friendships",
+                                RequiredMinutes = 180,
+                                OptionalMinutes = 20,
+                                HardPreconditions = new[] { "npc_friendship_facts_available" }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.False(report.FitsRequired);
+        Assert.False(report.FitsRequiredPlusOptional);
+        Assert.Contains("required_work_exceeds_time_budget", report.BlockReasons);
+        Assert.Contains(report.Items, item =>
+            item.ScheduleRole == "required" &&
+            item.EstimatedMinutes == 180 &&
+            item.Notes.Contains("strategy_direction:raise_friendships"));
+        Assert.Contains(report.Items, item =>
+            item.ScheduleRole == "optional" &&
+            item.EstimatedMinutes == 20);
+    }
+
     private static ActionQueueItem Item(string optionId, string role)
     {
         return new ActionQueueItem

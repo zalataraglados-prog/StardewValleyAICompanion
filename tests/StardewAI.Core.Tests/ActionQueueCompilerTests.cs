@@ -211,6 +211,38 @@ public sealed class ActionQueueCompilerTests
         Assert.Contains(result.Results, item => item.Reason == "training_sandbox_rejected_execution_target");
     }
 
+    [Fact]
+    public void StrategyGrandpaProgressRequiresDirectionId()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "total_money_earned": {"value":100000,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "level": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress": {
+            "achievements": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "community_center": {"value":{"completed":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "npcs": {
+            "friendships": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "quests": {
+            "mail_received": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "grandpa_score": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "strategy.grandpa_progress"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("strategy_direction_id_required", queue.Items[0].BlockingReasons);
+        Assert.Empty(queue.Items[0].NormalizedCommand.StrategyPlan);
+    }
+
     private static SmallModelActionEnvelope Request(string stateHash, string optionId)
     {
         return new SmallModelActionEnvelope

@@ -151,6 +151,8 @@ namespace StardewAI.Core.Execution
                 blocking.Add("queue_global_compiler_block");
             }
 
+            blocking.AddRange(ValidateStrategyPlan(action, option));
+
             var status = blocking.Count == 0 && safety.Feasibility == "feasible"
                 ? "pending"
                 : "blocked";
@@ -179,6 +181,8 @@ namespace StardewAI.Core.Execution
                 {
                     CommandType = option?.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion
                         ? "compiled_action_steps"
+                        : IsStrategyPlanOption(option, action)
+                            ? "strategy_plan"
                         : "option_request",
                     OptionId = action.OptionId,
                     BehaviorCategory = option?.BehaviorCategory ?? OptionBehaviorCategories.Unknown,
@@ -188,7 +192,59 @@ namespace StardewAI.Core.Execution
                     ExecutionMode = executionMode,
                     Actor = actor,
                     Parameters = action.Parameters,
-                    Steps = CompileSteps(action, snapshot, option)
+                    Steps = CompileSteps(action, snapshot, option),
+                    StrategyPlan = CompileStrategyPlan(action, option)
+                }
+            };
+        }
+
+        private static string[] ValidateStrategyPlan(SmallModelAction action, OptionSpec? option)
+        {
+            if (!IsStrategyPlanOption(option, action))
+            {
+                return Array.Empty<string>();
+            }
+
+            return string.IsNullOrWhiteSpace(ReadParameter(action, "direction_id"))
+                ? new[] { "strategy_direction_id_required" }
+                : Array.Empty<string>();
+        }
+
+        private static bool IsStrategyPlanOption(OptionSpec? option, SmallModelAction action)
+        {
+            return option is not null &&
+                option.CompilerResponsibility == CompilerResponsibilities.PlanValidation &&
+                action.OptionId == "strategy.grandpa_progress";
+        }
+
+        private static StrategyPlanStep[] CompileStrategyPlan(SmallModelAction action, OptionSpec? option)
+        {
+            if (!IsStrategyPlanOption(option, action))
+            {
+                return Array.Empty<StrategyPlanStep>();
+            }
+
+            var directionId = ReadParameter(action, "direction_id");
+            if (string.IsNullOrWhiteSpace(directionId))
+            {
+                return Array.Empty<StrategyPlanStep>();
+            }
+
+            return new[]
+            {
+                new StrategyPlanStep
+                {
+                    StepId = "strategy_step." + Guid.NewGuid().ToString("N"),
+                    DirectionId = directionId,
+                    Domain = ReadParameter(action, "direction_domain") ?? "unknown",
+                    PotentialPoints = ReadIntParameter(action, "potential_points") ?? 0,
+                    PriorityScore = ReadDoubleParameter(action, "priority_score") ?? 0,
+                    FeedbackKey = ReadParameter(action, "feedback_key") ?? string.Empty,
+                    RequiredMinutes = Math.Max(0, ReadIntParameter(action, "required_minutes") ?? 240),
+                    OptionalMinutes = Math.Max(0, ReadIntParameter(action, "optional_minutes") ?? 0),
+                    HardPreconditions = SplitList(ReadParameter(action, "hard_preconditions")),
+                    ResourceBudget = SplitList(ReadParameter(action, "resource_budget")),
+                    ExecutorHandoffOption = ReadParameter(action, "executor_handoff_option") ?? string.Empty
                 }
             };
         }
@@ -372,8 +428,31 @@ namespace StardewAI.Core.Execution
 
         private static int? ReadIntParameter(SmallModelAction action, string name)
         {
-            var value = action.Parameters.FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))?.Value;
+            var value = ReadParameter(action, name);
             return int.TryParse(value, out var result) ? result : null;
+        }
+
+        private static double? ReadDoubleParameter(SmallModelAction action, string name)
+        {
+            var value = ReadParameter(action, name);
+            return double.TryParse(value, out var result) ? result : null;
+        }
+
+        private static string? ReadParameter(SmallModelAction action, string name)
+        {
+            return action.Parameters
+                .FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
+                ?.Value;
+        }
+
+        private static string[] SplitList(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? Array.Empty<string>()
+                : value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(item => item.Trim())
+                    .Where(item => item.Length > 0)
+                    .ToArray();
         }
 
         private static int ReadInt(JsonElement item, string property)

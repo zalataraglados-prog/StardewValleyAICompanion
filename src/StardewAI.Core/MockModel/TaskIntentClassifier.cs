@@ -77,6 +77,13 @@ namespace StardewAI.Core.MockModel
                     {
                         Parameter("strategic_goal", "grandpa_four_candles_year3"),
                         Parameter("target_score", "12"),
+                        Parameter("direction_id", "auto_select_best_direction"),
+                        Parameter("direction_domain", "long_term_strategy"),
+                        Parameter("potential_points", "2"),
+                        Parameter("priority_score", "1.0"),
+                        Parameter("feedback_key", "grandpa.auto_direction"),
+                        Parameter("required_minutes", "240"),
+                        Parameter("optional_minutes", "0"),
                         Parameter("requires_direction_selection", "true")
                     }
                 };

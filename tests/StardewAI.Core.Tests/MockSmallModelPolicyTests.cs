@@ -69,8 +69,11 @@ public sealed class MockSmallModelPolicyTests
         Assert.Equal("long_term_strategic", queue.Items[0].BehaviorCategory);
         Assert.Equal("plan_validation", queue.Items[0].CompilerResponsibility);
         Assert.Equal("strategy_value", queue.Items[0].TrainingRole);
-        Assert.Equal("option_request", queue.Items[0].NormalizedCommand.CommandType);
+        Assert.Equal("strategy_plan", queue.Items[0].NormalizedCommand.CommandType);
         Assert.Empty(queue.Items[0].NormalizedCommand.Steps);
+        var plan = Assert.Single(queue.Items[0].NormalizedCommand.StrategyPlan);
+        Assert.Equal("auto_select_best_direction", plan.DirectionId);
+        Assert.Equal(240, plan.RequiredMinutes);
     }
 
     private static SnapshotEnvelope Snapshot()

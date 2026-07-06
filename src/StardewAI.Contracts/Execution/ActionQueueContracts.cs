@@ -190,6 +190,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("steps")]
         public CompiledActionStep[] Steps { get; set; } = Array.Empty<CompiledActionStep>();
+
+        [JsonPropertyName("strategy_plan")]
+        public StrategyPlanStep[] StrategyPlan { get; set; } = Array.Empty<StrategyPlanStep>();
     }
 
     public sealed class CompiledActionStep
@@ -208,6 +211,42 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("estimated_ticks")]
         public int EstimatedTicks { get; set; }
+    }
+
+    public sealed class StrategyPlanStep
+    {
+        [JsonPropertyName("step_id")]
+        public string StepId { get; set; } = string.Empty;
+
+        [JsonPropertyName("direction_id")]
+        public string DirectionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("domain")]
+        public string Domain { get; set; } = string.Empty;
+
+        [JsonPropertyName("potential_points")]
+        public int PotentialPoints { get; set; }
+
+        [JsonPropertyName("priority_score")]
+        public double PriorityScore { get; set; }
+
+        [JsonPropertyName("feedback_key")]
+        public string FeedbackKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_minutes")]
+        public int RequiredMinutes { get; set; }
+
+        [JsonPropertyName("optional_minutes")]
+        public int OptionalMinutes { get; set; }
+
+        [JsonPropertyName("hard_preconditions")]
+        public string[] HardPreconditions { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("resource_budget")]
+        public string[] ResourceBudget { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("executor_handoff_option")]
+        public string ExecutorHandoffOption { get; set; } = string.Empty;
     }
 
     public sealed class ActionQueueAudit

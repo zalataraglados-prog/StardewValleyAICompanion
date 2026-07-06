@@ -66,6 +66,11 @@ namespace StardewAI.Core.Training
                 return true;
             }
 
+            if (string.Equals(row.ActionFeatures.TrainingRole, "executor_calibration", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
             if (string.Equals(row.ActionFeatures.LearningScope, "calibration_only", StringComparison.Ordinal))
             {
                 return true;

@@ -43,7 +43,7 @@ namespace StardewAI.Core.Execution
             var available = Math.Max(0, ClockMinutesBetween(currentTime, DefaultDeadlineTime) - DefaultSafetyBufferMinutes);
             var items = queue.Items
                 .Where(item => item.Status == "pending")
-                .Select(EstimateItem)
+                .SelectMany(EstimateItems)
                 .ToArray();
             var required = items
                 .Where(item => item.ScheduleRole != "optional")
@@ -76,6 +76,57 @@ namespace StardewAI.Core.Execution
                 ExecutionProfile = PerfectHumanProfile,
                 Items = items,
                 BlockReasons = blockReasons.ToArray()
+            };
+        }
+
+        private IEnumerable<TimeBudgetItem> EstimateItems(ActionQueueItem item)
+        {
+            if (item.NormalizedCommand.StrategyPlan.Length > 0)
+            {
+                foreach (var plan in item.NormalizedCommand.StrategyPlan)
+                {
+                    if (plan.RequiredMinutes > 0)
+                    {
+                        yield return StrategyItem(item, plan, "required", plan.RequiredMinutes);
+                    }
+
+                    if (plan.OptionalMinutes > 0)
+                    {
+                        yield return StrategyItem(item, plan, "optional", plan.OptionalMinutes);
+                    }
+                }
+
+                yield break;
+            }
+
+            yield return EstimateItem(item);
+        }
+
+        private TimeBudgetItem StrategyItem(ActionQueueItem item, StrategyPlanStep plan, string role, int minutes)
+        {
+            var notes = new List<string>
+            {
+                "strategy_direction:" + plan.DirectionId,
+                "strategy_domain:" + plan.Domain,
+                "feedback_key:" + plan.FeedbackKey,
+                "potential_points:" + plan.PotentialPoints,
+                "priority_score:" + plan.PriorityScore
+            };
+            notes.AddRange(plan.HardPreconditions.Select(precondition => "hard_precondition:" + precondition));
+            notes.AddRange(plan.ResourceBudget.Select(resource => "resource_budget:" + resource));
+            if (!string.IsNullOrWhiteSpace(plan.ExecutorHandoffOption))
+            {
+                notes.Add("executor_handoff_option:" + plan.ExecutorHandoffOption);
+            }
+
+            return new TimeBudgetItem
+            {
+                QueueItemId = item.QueueItemId,
+                OptionId = item.OptionId,
+                ScheduleRole = role,
+                EstimatedMinutes = minutes,
+                Estimator = "strategy_plan_rule.v1",
+                Notes = notes.ToArray()
             };
         }
 
