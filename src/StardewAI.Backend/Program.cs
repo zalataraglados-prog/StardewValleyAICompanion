@@ -369,6 +369,9 @@ app.MapPost("/api/v1/training/baseline/train", (TrainingDatasetRequest? request,
 app.MapPost("/api/v1/training/session/prepare", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
     Results.Ok(launcher.Prepare(request)));
 
+app.MapPost("/api/v1/training/session/launch", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
+    Results.Ok(launcher.Launch(request)));
+
 app.MapGet("/api/v1/training/session/ready-probe", (StateStore store, TrainingReadyProbe probe) =>
     Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null)));
 

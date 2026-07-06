@@ -50,6 +50,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("sound_enabled")]
         public bool SoundEnabled { get; set; }
+
+        [JsonPropertyName("window_style")]
+        public string WindowStyle { get; set; } = "minimized";
     }
 
     public sealed class TrainingRunManifest
@@ -99,6 +102,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("sound")]
         public string Sound { get; set; } = "disabled";
 
+        [JsonPropertyName("window_style")]
+        public string WindowStyle { get; set; } = "minimized";
+
+        [JsonPropertyName("executable_kind")]
+        public string ExecutableKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("environment_overrides")]
+        public TrainingEnvironmentOverride[] EnvironmentOverrides { get; set; } = Array.Empty<TrainingEnvironmentOverride>();
+
         [JsonPropertyName("process_id")]
         public int? ProcessId { get; set; }
 
@@ -110,6 +122,15 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("audit")]
         public TrainingRuntimeAudit Audit { get; set; } = new TrainingRuntimeAudit();
+    }
+
+    public sealed class TrainingEnvironmentOverride
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("value")]
+        public string Value { get; set; } = string.Empty;
     }
 
     public sealed class TrainingRuntimeAudit
@@ -131,6 +152,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("started")]
         public bool Started { get; set; }
+
+        [JsonPropertyName("launch_attempted")]
+        public bool LaunchAttempted { get; set; }
 
         [JsonPropertyName("blocked")]
         public bool Blocked { get; set; }

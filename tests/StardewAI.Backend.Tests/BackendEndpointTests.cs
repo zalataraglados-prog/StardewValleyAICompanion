@@ -366,15 +366,21 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
-        public async Task TrainingSessionPrepareBlocksRealGameWithoutExplicitLaunchPermission()
+        public async Task TrainingSessionLaunchBlocksRealGameWithoutExplicitLaunchPermission()
         {
             using var client = factory.CreateClient();
             var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
 
-            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/launch", new
             {
                 mode = "stardew_windowed",
                 root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
                 allow_game_launch = false,
                 sound_enabled = false,
                 save_isolation_path = Path.Combine(root, "saves")
@@ -386,12 +392,12 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("training_launch_result.v1", rootElement.GetProperty("schema_version").GetString());
             Assert.True(rootElement.GetProperty("blocked").GetBoolean());
             Assert.False(rootElement.GetProperty("started").GetBoolean());
+            Assert.False(rootElement.GetProperty("launch_attempted").GetBoolean());
             Assert.Contains(rootElement.GetProperty("block_reasons").EnumerateArray(), item =>
                 item.GetString() == "real_game_launch_requires_allow_game_launch_true");
-            Assert.Contains(rootElement.GetProperty("block_reasons").EnumerateArray(), item =>
-                item.GetString() == "game_executable_path_required_for_real_game_mode");
             Assert.Equal("disabled", rootElement.GetProperty("manifest").GetProperty("game_launch").GetString());
             Assert.Equal("disabled", rootElement.GetProperty("manifest").GetProperty("sound").GetString());
+            Assert.Equal("smapi", rootElement.GetProperty("manifest").GetProperty("executable_kind").GetString());
             Assert.True(File.Exists(rootElement.GetProperty("manifest").GetProperty("manifest_path").GetString()));
         }
 
@@ -405,7 +411,7 @@ namespace StardewAI.Backend.Tests
             {
                 mode = "offline_smoke",
                 root_path = root,
-                allow_game_launch = false,
+                allow_game_launch = true,
                 sound_enabled = false
             });
 
@@ -420,6 +426,103 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(root, manifest.GetProperty("root_path").GetString());
             Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), manifest.GetProperty("dataset_path").GetString());
             Assert.True(File.Exists(manifest.GetProperty("manifest_path").GetString()));
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareAcceptsIsolatedSmapiPathWithoutStartingGame()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "stardew_windowed",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var rootElement = json.RootElement;
+            Assert.False(rootElement.GetProperty("blocked").GetBoolean());
+            Assert.False(rootElement.GetProperty("started").GetBoolean());
+            Assert.False(rootElement.GetProperty("launch_attempted").GetBoolean());
+            var manifest = rootElement.GetProperty("manifest");
+            Assert.Equal("requested", manifest.GetProperty("game_launch").GetString());
+            Assert.Equal("disabled", manifest.GetProperty("sound").GetString());
+            Assert.Equal("minimized", manifest.GetProperty("window_style").GetString());
+            Assert.Equal("smapi", manifest.GetProperty("executable_kind").GetString());
+            Assert.Contains(manifest.GetProperty("environment_overrides").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "SDL_AUDIODRIVER" &&
+                item.GetProperty("value").GetString() == "dummy");
+            Assert.True(Directory.Exists(Path.Combine(root, "saves")));
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareRejectsVanillaExecutableForTransparentTraining()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var vanilla = Path.Combine(runtime, "Stardew Valley.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(vanilla, string.Empty);
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "stardew_windowed",
+                root_path = root,
+                game_executable_path = vanilla,
+                game_working_directory = runtime,
+                allow_game_launch = false,
+                sound_enabled = false,
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.True(json.RootElement.GetProperty("blocked").GetBoolean());
+            Assert.Contains(json.RootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "smapi_executable_required_for_transparent_bridge_training");
+        }
+
+        [Fact]
+        public async Task TrainingSessionLaunchReturnsStructuredFailureWhenProcessCannotStart()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+            var runtime = Path.Combine(root, "Stardew Valley");
+            var smapi = Path.Combine(runtime, "StardewModdingAPI.exe");
+            Directory.CreateDirectory(runtime);
+            File.WriteAllText(smapi, string.Empty);
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/launch", new
+            {
+                mode = "stardew_windowed",
+                root_path = root,
+                game_executable_path = smapi,
+                game_working_directory = runtime,
+                allow_game_launch = true,
+                sound_enabled = false,
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var rootElement = json.RootElement;
+            Assert.True(rootElement.GetProperty("blocked").GetBoolean());
+            Assert.True(rootElement.GetProperty("launch_attempted").GetBoolean());
+            Assert.False(rootElement.GetProperty("started").GetBoolean());
+            Assert.Contains(rootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString()?.StartsWith("process_start_failed:", StringComparison.Ordinal) == true);
         }
 
         [Fact]
