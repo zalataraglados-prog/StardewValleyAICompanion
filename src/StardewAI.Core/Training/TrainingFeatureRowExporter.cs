@@ -190,6 +190,8 @@ namespace StardewAI.Core.Training
                     return OptionBehaviorCategories.EconomicStrategic;
                 case "social.gift_npc":
                     return OptionBehaviorCategories.SocialStrategic;
+                case "strategy.grandpa_progress":
+                    return OptionBehaviorCategories.LongTermStrategic;
                 case "recovery.stabilize_day":
                     return OptionBehaviorCategories.Recovery;
                 default:

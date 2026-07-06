@@ -32,6 +32,7 @@ builder.Services.AddSingleton<MockSmallModelPolicy>();
 builder.Services.AddSingleton<WorldModelProjector>();
 builder.Services.AddSingleton<GrandpaEvaluationGoalEvaluator>();
 builder.Services.AddSingleton<GrandpaTrainingSampleAdapter>();
+builder.Services.AddSingleton<GrandpaStrategyFeatureRowBuilder>();
 builder.Services.AddSingleton<TrainingEpisodeRewardCalculator>();
 builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 builder.Services.AddSingleton<TrainingFeatureRowExporter>();
@@ -184,6 +185,36 @@ app.MapGet("/api/v1/training/grandpa-evaluation/latest", (StateStore store, Worl
     var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
     var report = evaluator.Evaluate(model);
     return Results.Ok(adapter.Build(model, report));
+});
+
+app.MapGet("/api/v1/training/grandpa-evaluation/latest/feature-rows", (int? maxRows, StateStore store, WorldModelProjector projector, GrandpaEvaluationGoalEvaluator evaluator, GrandpaTrainingSampleAdapter adapter, GrandpaStrategyFeatureRowBuilder builder) =>
+{
+    var latest = store.LatestSnapshot();
+    if (latest is null)
+    {
+        return Results.NotFound(new { detail = "no snapshots ingested" });
+    }
+
+    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var report = evaluator.Evaluate(model);
+    var sample = adapter.Build(model, report);
+    return Results.Ok(builder.Build(model, sample, maxRows.GetValueOrDefault(5)));
+});
+
+app.MapPost("/api/v1/training/grandpa-evaluation/latest/feature-rows/append", (TrainingDatasetRequest? request, int? maxRows, StateStore store, WorldModelProjector projector, GrandpaEvaluationGoalEvaluator evaluator, GrandpaTrainingSampleAdapter adapter, GrandpaStrategyFeatureRowBuilder builder, JsonlTrainingDatasetWriter writer) =>
+{
+    var latest = store.LatestSnapshot();
+    if (latest is null)
+    {
+        return Results.NotFound(new { detail = "no snapshots ingested" });
+    }
+
+    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var report = evaluator.Evaluate(model);
+    var sample = adapter.Build(model, report);
+    var rows = builder.Build(model, sample, maxRows.GetValueOrDefault(5));
+    var datasetPath = DatasetPathResolver.Resolve(request?.DatasetPath);
+    return Results.Ok(writer.AppendMany(datasetPath, rows));
 });
 
 app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateStore store, PlanningPreviewCompiler compiler) =>

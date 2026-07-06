@@ -71,12 +71,13 @@ namespace StardewAI.Core.MockModel
             {
                 return new TaskIntentClassification
                 {
-                    Category = TaskIntentCategory.Mechanical,
-                    OptionId = "farm.maintain_crops",
+                    Category = TaskIntentCategory.EconomicStrategic,
+                    OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
                         Parameter("strategic_goal", "grandpa_four_candles_year3"),
-                        Parameter("training_probe", "maintain_crop_revenue_path")
+                        Parameter("target_score", "12"),
+                        Parameter("requires_direction_selection", "true")
                     }
                 };
             }

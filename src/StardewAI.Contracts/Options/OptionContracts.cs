@@ -10,6 +10,7 @@ namespace StardewAI.Contracts.Options
         public const string EconomicStrategic = "economic_strategic";
         public const string SocialStrategic = "social_strategic";
         public const string ExplorationUncertain = "exploration_uncertain";
+        public const string LongTermStrategic = "long_term_strategic";
         public const string Recovery = "recovery";
         public const string Unknown = "unknown";
     }

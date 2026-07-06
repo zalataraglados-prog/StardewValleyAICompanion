@@ -23,17 +23,20 @@ public sealed class MockSmallModelPolicyTests
     }
 
     [Fact]
-    public void ClassifierMapsGrandpaGoalToFeedbackSupportedTrainingProbe()
+    public void ClassifierMapsGrandpaGoalToStrategyOption()
     {
         var classifier = new TaskIntentClassifier();
 
         var grandpa = classifier.Classify("grandpa_four_candles_year3");
 
-        Assert.Equal(TaskIntentCategory.Mechanical, grandpa.Category);
-        Assert.Equal("farm.maintain_crops", grandpa.OptionId);
+        Assert.Equal(TaskIntentCategory.EconomicStrategic, grandpa.Category);
+        Assert.Equal("strategy.grandpa_progress", grandpa.OptionId);
         Assert.Contains(grandpa.Parameters, item =>
             item.Name == "strategic_goal" &&
             item.Value == "grandpa_four_candles_year3");
+        Assert.Contains(grandpa.Parameters, item =>
+            item.Name == "target_score" &&
+            item.Value == "12");
     }
 
     [Fact]
@@ -52,6 +55,22 @@ public sealed class MockSmallModelPolicyTests
             item.Name == "intent_category" &&
             item.Value == TaskIntentCategory.Mechanical);
         Assert.Equal("pending", queue.Status);
+    }
+
+    [Fact]
+    public void MockPolicyCompilesGrandpaGoalAsStrategyRequestNotMechanicalSteps()
+    {
+        var snapshot = Snapshot();
+
+        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var queue = new ActionQueueCompiler().Compile(output, snapshot);
+
+        Assert.Equal("strategy.grandpa_progress", output.Actions[0].OptionId);
+        Assert.Equal("long_term_strategic", queue.Items[0].BehaviorCategory);
+        Assert.Equal("plan_validation", queue.Items[0].CompilerResponsibility);
+        Assert.Equal("strategy_value", queue.Items[0].TrainingRole);
+        Assert.Equal("option_request", queue.Items[0].NormalizedCommand.CommandType);
+        Assert.Empty(queue.Items[0].NormalizedCommand.Steps);
     }
 
     private static SnapshotEnvelope Snapshot()

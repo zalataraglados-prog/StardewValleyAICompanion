@@ -11,7 +11,10 @@ namespace StardewAI.Core.Training
     {
         public TrainingSampleEnvelope Build(WorldModelEnvelope worldModel, GrandpaEvaluationGoalReport goalReport)
         {
-            var blocked = goalReport.MissingFactPaths.Length > 0;
+            var blockingMissingFacts = goalReport.MissingFactPaths
+                .Where(path => !IsNonBlockingEvaluationContextFact(path))
+                .ToArray();
+            var blocked = blockingMissingFacts.Length > 0;
             var directions = BuildDirections(goalReport, blocked);
 
             return new TrainingSampleEnvelope
@@ -133,6 +136,11 @@ namespace StardewAI.Core.Training
         {
             var context = report.EvaluationContext;
             return $"year={context.Year?.ToString() ?? "unknown"}; recorded_candles={context.RecordedGrandpaCandles?.ToString() ?? "unknown"}; reevaluation_available={context.ReevaluationAvailable?.ToString() ?? "unknown"}; holding_reevaluation_item={context.HoldingReevaluationItem?.ToString() ?? "unknown"}";
+        }
+
+        private static bool IsNonBlockingEvaluationContextFact(string path)
+        {
+            return string.Equals(path, "player.active_object_qualified_id", StringComparison.Ordinal);
         }
 
         private static DirectionSpec Spec(string id, string domain, string label, string feedbackKey, string[] factorIds)

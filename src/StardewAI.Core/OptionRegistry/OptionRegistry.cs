@@ -57,6 +57,23 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quest step previewed" },
                 new[] { "block_unavailable_required_state", "block_state_hash_mismatch" }));
 
+            Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[]
+                {
+                    "player.total_money_earned",
+                    "player.level",
+                    "world_progress.achievements",
+                    "world_progress.community_center",
+                    "npcs.friendships",
+                    "quests.mail_received",
+                    "farm.grandpa_score"
+                },
+                new[] { "grandpa evaluation direction selected", "score delta target estimated" },
+                new[] { "block_unavailable_required_state", "block_state_hash_mismatch" }));
+
             Register(Option("exploration.visit_location", "exploration", "Visit location preview",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
