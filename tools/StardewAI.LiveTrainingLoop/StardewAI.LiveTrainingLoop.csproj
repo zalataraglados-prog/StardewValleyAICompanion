@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StardewAI.Contracts\StardewAI.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
