@@ -92,6 +92,24 @@ The baseline predictor consumes the aggregate training report or a dataset path 
 
 `planner/baseline/rank-options` is the first planner-facing selection endpoint. If no candidate list is provided, it ranks every registered `OptionSpec` from `StardewAI.Core.OptionRegistry`, using learned aggregate evidence where available and explicit unseen-option defaults elsewhere.
 
+## Local Smoke Training
+
+`tools/StardewAI.TrainingSmoke` verifies that this machine can complete the current lightweight training loop without launching Stardew Valley, opening a GUI, or enabling sound.
+
+Example:
+
+```powershell
+dotnet run --project tools\StardewAI.TrainingSmoke\StardewAI.TrainingSmoke.csproj -c Release -- --root E:\StardewAITraining --samples 256 --epochs 3
+```
+
+Outputs:
+
+- `E:\StardewAITraining\datasets\training-feature-rows.jsonl`
+- `E:\StardewAITraining\reports\training-smoke-report.json`
+- `E:\StardewAITraining\checkpoints\baseline-latest.json`
+
+The smoke loop is intentionally small. It confirms data generation, JSONL write, baseline train, option ranking, checkpoint write, and metric reporting. It is not a final ML.NET/LightGBM policy model.
+
 ## Time And Mining Assumption
 
 The time budget validator uses Stardew's decompiled time shape:
