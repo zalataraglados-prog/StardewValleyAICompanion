@@ -275,6 +275,9 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(featureRoot.GetProperty("action_features").GetProperty("features").GetProperty("categorical").EnumerateArray(), item =>
                 item.GetProperty("name").GetString() == "action.intent_category" &&
                 item.GetProperty("value").GetString() == "mechanical");
+            Assert.Equal("executor_calibration", featureRoot.GetProperty("action_features").GetProperty("training_role").GetString());
+            Assert.Equal("calibration_only", featureRoot.GetProperty("action_features").GetProperty("learning_scope").GetString());
+            Assert.True(featureRoot.GetProperty("action_features").GetProperty("exclude_from_policy_training").GetBoolean());
 
             var datasetPath = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"), "rows.jsonl");
             var appendResponse = await client.PostAsJsonAsync($"/api/v1/action-queues/{queueId}/training-feature-row/append", new
@@ -298,8 +301,9 @@ namespace StardewAI.Backend.Tests
             var trainRoot = trainJson.RootElement;
             Assert.Equal("baseline_training_report.v1", trainRoot.GetProperty("schema_version").GetString());
             Assert.Equal(1, trainRoot.GetProperty("row_count").GetInt32());
-            Assert.Equal("farm.maintain_crops", trainRoot.GetProperty("option_scores")[0].GetProperty("option_id").GetString());
-            Assert.Equal(0.09, trainRoot.GetProperty("option_scores")[0].GetProperty("average_total_reward").GetDouble());
+            Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
+            Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
+            Assert.Equal(0, trainRoot.GetProperty("option_scores").GetArrayLength());
 
             var predictResponse = await client.PostAsJsonAsync("/api/v1/training/baseline/predict", new
             {
@@ -313,6 +317,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("policy_prediction.v1", predictRoot.GetProperty("schema_version").GetString());
             Assert.Equal("farm.maintain_crops", predictRoot.GetProperty("ranked_options")[0].GetProperty("option_id").GetString());
             Assert.Equal(1, predictRoot.GetProperty("ranked_options")[0].GetProperty("rank").GetInt32());
+            Assert.Equal("unseen_option", predictRoot.GetProperty("ranked_options")[0].GetProperty("evidence").GetString());
             Assert.Equal("unseen_option", predictRoot.GetProperty("ranked_options")[1].GetProperty("evidence").GetString());
 
             var rankResponse = await client.PostAsJsonAsync("/api/v1/planner/baseline/rank-options", new
@@ -324,8 +329,9 @@ namespace StardewAI.Backend.Tests
             using var rankJson = JsonDocument.Parse(await rankResponse.Content.ReadAsStringAsync());
             var rankRoot = rankJson.RootElement;
             Assert.Equal("policy_prediction.v1", rankRoot.GetProperty("schema_version").GetString());
-            Assert.Equal("farm.maintain_crops", rankRoot.GetProperty("ranked_options")[0].GetProperty("option_id").GetString());
-            Assert.True(rankRoot.GetProperty("ranked_options").GetArrayLength() >= 8);
+            Assert.DoesNotContain(rankRoot.GetProperty("ranked_options").EnumerateArray(), item =>
+                item.GetProperty("option_id").GetString() == "farm.maintain_crops");
+            Assert.True(rankRoot.GetProperty("ranked_options").GetArrayLength() >= 4);
         }
 
         [Fact]

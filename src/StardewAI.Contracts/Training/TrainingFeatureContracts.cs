@@ -77,6 +77,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("option_ids")]
         public string[] OptionIds { get; set; } = Array.Empty<string>();
 
+        [JsonPropertyName("training_role")]
+        public string TrainingRole { get; set; } = "unknown";
+
+        [JsonPropertyName("learning_scope")]
+        public string LearningScope { get; set; } = "unknown";
+
+        [JsonPropertyName("exclude_from_policy_training")]
+        public bool ExcludeFromPolicyTraining { get; set; }
+
         [JsonPropertyName("features")]
         public FeatureVector Features { get; set; } = new();
     }
@@ -145,6 +154,15 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("row_count")]
         public int RowCount { get; set; }
+
+        [JsonPropertyName("included_row_count")]
+        public int IncludedRowCount { get; set; }
+
+        [JsonPropertyName("excluded_calibration_row_count")]
+        public int ExcludedCalibrationRowCount { get; set; }
+
+        [JsonPropertyName("excluded_reasons")]
+        public string[] ExcludedReasons { get; set; } = Array.Empty<string>();
 
         [JsonPropertyName("option_scores")]
         public BaselineOptionScore[] OptionScores { get; set; } = Array.Empty<BaselineOptionScore>();

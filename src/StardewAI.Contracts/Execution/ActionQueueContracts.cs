@@ -122,6 +122,15 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("permission_required")]
         public string PermissionRequired { get; set; } = "executor";
 
+        [JsonPropertyName("behavior_category")]
+        public string BehaviorCategory { get; set; } = "unknown";
+
+        [JsonPropertyName("compiler_responsibility")]
+        public string CompilerResponsibility { get; set; } = "unknown";
+
+        [JsonPropertyName("training_role")]
+        public string TrainingRole { get; set; } = "unknown";
+
         [JsonPropertyName("required_state_factors")]
         public string[] RequiredStateFactors { get; set; } = Array.Empty<string>();
 
@@ -158,6 +167,15 @@ namespace StardewAI.Contracts.Execution
         [JsonPropertyName("option_id")]
         public string OptionId { get; set; } = string.Empty;
 
+        [JsonPropertyName("behavior_category")]
+        public string BehaviorCategory { get; set; } = "unknown";
+
+        [JsonPropertyName("compiler_responsibility")]
+        public string CompilerResponsibility { get; set; } = "unknown";
+
+        [JsonPropertyName("training_role")]
+        public string TrainingRole { get; set; } = "unknown";
+
         [JsonPropertyName("state_hash")]
         public string StateHash { get; set; } = string.Empty;
 
@@ -169,6 +187,27 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("parameters")]
         public SmallModelActionParameter[] Parameters { get; set; } = Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("steps")]
+        public CompiledActionStep[] Steps { get; set; } = Array.Empty<CompiledActionStep>();
+    }
+
+    public sealed class CompiledActionStep
+    {
+        [JsonPropertyName("step_id")]
+        public string StepId { get; set; } = string.Empty;
+
+        [JsonPropertyName("step_type")]
+        public string StepType { get; set; } = string.Empty;
+
+        [JsonPropertyName("target")]
+        public string Target { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_effect")]
+        public string ExpectedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("estimated_ticks")]
+        public int EstimatedTicks { get; set; }
     }
 
     public sealed class ActionQueueAudit

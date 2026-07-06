@@ -25,10 +25,9 @@ namespace StardewAI.Core.Tests
 
             var prediction = new BaselineOptionRanker().Rank(report, Array.Empty<string>());
 
-            Assert.Contains(prediction.RankedOptions, item => item.OptionId == "farm.maintain_crops");
+            Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "farm.maintain_crops");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "social.gift_npc" && item.Evidence == "unseen_option");
-            Assert.True(prediction.RankedOptions.Length >= 8);
-            Assert.Equal("farm.maintain_crops", prediction.RankedOptions[0].OptionId);
+            Assert.True(prediction.RankedOptions.Length >= 4);
         }
     }
 }

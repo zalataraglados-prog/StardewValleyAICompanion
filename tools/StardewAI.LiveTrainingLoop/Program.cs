@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 
 var options = LiveTrainingOptions.Parse(args);
@@ -220,6 +221,9 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
         ActionFeatures = new ActionFeatureVector
         {
             OptionIds = new[] { optionId },
+            TrainingRole = TrainingRoles.ExecutorCalibration,
+            LearningScope = "calibration_only",
+            ExcludeFromPolicyTraining = true,
             Features = new FeatureVector
             {
                 Numeric = new[]
@@ -231,14 +235,18 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
                 Categorical = new[]
                 {
                     Category("action.primary_option_id", optionId),
-                    Category("action.intent_category", "mechanical"),
+                    Category("action.intent_category", OptionBehaviorCategories.Mechanical),
+                    Category("action.behavior_category", OptionBehaviorCategories.Mechanical),
+                    Category("action.training_role", TrainingRoles.ExecutorCalibration),
+                    Category("action.learning_scope", "calibration_only"),
                     Category("action.execution_mode", "training_singleplayer"),
                     Category("action.actor_type", "training_farmer"),
                     Category("action.execution_profile", "real_runtime_harness")
                 },
                 Boolean = new[]
                 {
-                    Flag("action.hard_blocked", blocked)
+                    Flag("action.hard_blocked", blocked),
+                    Flag("action.exclude_from_policy_training", true)
                 }
             }
         },

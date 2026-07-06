@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
@@ -136,6 +137,7 @@ static TrainingFeatureRowEnvelope CreateRow(int index)
         _ => "social.gift_npc"
     };
     var blocked = optionId == "social.gift_npc" && index % 2 == 1;
+    var isMechanical = optionId == "farm.maintain_crops";
     var reward = optionId switch
     {
         "farm.maintain_crops" => 0.09,
@@ -170,7 +172,10 @@ static TrainingFeatureRowEnvelope CreateRow(int index)
         },
         ActionFeatures = new ActionFeatureVector
         {
-            OptionIds = new[] { optionId }
+            OptionIds = new[] { optionId },
+            TrainingRole = isMechanical ? TrainingRoles.ExecutorCalibration : TrainingRoles.StrategyValue,
+            LearningScope = isMechanical ? "calibration_only" : "policy_ranker",
+            ExcludeFromPolicyTraining = isMechanical
         },
         Labels = new TrainingLabelVector
         {

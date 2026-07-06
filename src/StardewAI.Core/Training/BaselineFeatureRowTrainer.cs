@@ -26,8 +26,12 @@ namespace StardewAI.Core.Training
                 .Where(row => row is not null)
                 .Select(row => row!)
                 .ToArray();
+            var includedRows = rows
+                .Where(row => !IsExcludedFromPolicyTraining(row))
+                .ToArray();
+            var excludedCalibrationRows = rows.Length - includedRows.Length;
             var groups = new Dictionary<string, List<TrainingFeatureRowEnvelope>>(StringComparer.Ordinal);
-            foreach (var row in rows)
+            foreach (var row in includedRows)
             {
                 var optionId = row.ActionFeatures.OptionIds.FirstOrDefault() ?? "none";
                 if (!groups.TryGetValue(optionId, out var group))
@@ -43,11 +47,33 @@ namespace StardewAI.Core.Training
             {
                 DatasetPath = fullPath,
                 RowCount = rows.Length,
+                IncludedRowCount = includedRows.Length,
+                ExcludedCalibrationRowCount = excludedCalibrationRows,
+                ExcludedReasons = excludedCalibrationRows > 0
+                    ? new[] { "exclude_from_policy_training" }
+                    : Array.Empty<string>(),
                 OptionScores = groups
                     .OrderBy(pair => pair.Key, StringComparer.Ordinal)
                     .Select(pair => Score(pair.Key, pair.Value))
                     .ToArray()
             };
+        }
+
+        private static bool IsExcludedFromPolicyTraining(TrainingFeatureRowEnvelope row)
+        {
+            if (row.ActionFeatures.ExcludeFromPolicyTraining)
+            {
+                return true;
+            }
+
+            if (string.Equals(row.ActionFeatures.LearningScope, "calibration_only", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return row.ActionFeatures.Features.Categorical.Any(item =>
+                string.Equals(item.Name, "action.training_role", StringComparison.Ordinal) &&
+                string.Equals(item.Value, "executor_calibration", StringComparison.Ordinal));
         }
 
         private static BaselineOptionScore Score(string optionId, IReadOnlyCollection<TrainingFeatureRowEnvelope> rows)

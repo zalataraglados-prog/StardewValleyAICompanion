@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
 using StardewAI.Core.OptionRegistry;
@@ -123,9 +125,10 @@ namespace StardewAI.Core.Execution
             var blocking = new List<string>();
             SafetyResult safety;
             string[] requiredFactors;
+            OptionSpec? option = null;
             try
             {
-                var option = optionRegistry.GetRequired(action.OptionId);
+                option = optionRegistry.GetRequired(action.OptionId);
                 safety = verifier.Verify(snapshot, option);
                 requiredFactors = option.RequiredStateFactors;
                 blocking.AddRange(safety.BlockingReasons);
@@ -158,6 +161,9 @@ namespace StardewAI.Core.Execution
                 SourceActionId = action.ActionId,
                 OptionId = action.OptionId,
                 Status = status,
+                BehaviorCategory = option?.BehaviorCategory ?? OptionBehaviorCategories.Unknown,
+                CompilerResponsibility = option?.CompilerResponsibility ?? CompilerResponsibilities.Unknown,
+                TrainingRole = option?.TrainingRole ?? TrainingRoles.Unknown,
                 RequiredStateFactors = requiredFactors,
                 MissingStateFactors = safety.MissingStateFactors,
                 PreconditionResults = safety.PreconditionResults
@@ -171,13 +177,210 @@ namespace StardewAI.Core.Execution
                 BlockingReasons = blocking.Distinct(StringComparer.Ordinal).ToArray(),
                 NormalizedCommand = new NormalizedCommand
                 {
+                    CommandType = option?.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion
+                        ? "compiled_action_steps"
+                        : "option_request",
                     OptionId = action.OptionId,
+                    BehaviorCategory = option?.BehaviorCategory ?? OptionBehaviorCategories.Unknown,
+                    CompilerResponsibility = option?.CompilerResponsibility ?? CompilerResponsibilities.Unknown,
+                    TrainingRole = option?.TrainingRole ?? TrainingRoles.Unknown,
                     StateHash = snapshot.StateHash,
                     ExecutionMode = executionMode,
                     Actor = actor,
-                    Parameters = action.Parameters
+                    Parameters = action.Parameters,
+                    Steps = CompileSteps(action, snapshot, option)
                 }
             };
+        }
+
+        private static CompiledActionStep[] CompileSteps(SmallModelAction action, SnapshotEnvelope snapshot, OptionSpec? option)
+        {
+            if (option is null)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            if (option.CompilerResponsibility != CompilerResponsibilities.FullActionExpansion)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            if (action.OptionId == "farm.maintain_crops")
+            {
+                return CompileCropMaintenanceSteps(snapshot, ReadIntParameter(action, "max_crops"));
+            }
+
+            if (action.OptionId == "farm.process_machines")
+            {
+                return CompileMachineProcessingSteps(snapshot);
+            }
+
+            if (action.OptionId == "recovery.stabilize_day")
+            {
+                return CompileRecoverySteps(snapshot);
+            }
+
+            return Array.Empty<CompiledActionStep>();
+        }
+
+        private static CompiledActionStep[] CompileCropMaintenanceSteps(SnapshotEnvelope snapshot, int? maxCrops)
+        {
+            if (!snapshot.State.TryGetValue("farm", out var farm) ||
+                farm.ValueKind != JsonValueKind.Object ||
+                !farm.TryGetProperty("crops", out var cropsField) ||
+                !cropsField.TryGetProperty("value", out var crops) ||
+                crops.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var limit = maxCrops.GetValueOrDefault(int.MaxValue);
+            var steps = new List<CompiledActionStep>();
+            foreach (var crop in crops.EnumerateArray())
+            {
+                if (steps.Count >= limit)
+                {
+                    break;
+                }
+
+                if (crop.ValueKind != JsonValueKind.Object ||
+                    !crop.TryGetProperty("needs_watering", out var needsWatering) ||
+                    needsWatering.ValueKind != JsonValueKind.True)
+                {
+                    continue;
+                }
+
+                var x = ReadInt(crop, "tile_x");
+                var y = ReadInt(crop, "tile_y");
+                steps.Add(new CompiledActionStep
+                {
+                    StepId = "step." + Guid.NewGuid().ToString("N"),
+                    StepType = "water_crop",
+                    Target = "Farm(" + x + "," + y + ")",
+                    ExpectedEffect = "crop_watered",
+                    EstimatedTicks = 60
+                });
+            }
+
+            if (steps.Count == 0)
+            {
+                steps.Add(new CompiledActionStep
+                {
+                    StepId = "step." + Guid.NewGuid().ToString("N"),
+                    StepType = "crop_maintenance_noop",
+                    Target = "Farm",
+                    ExpectedEffect = "no_crop_needs_watering",
+                    EstimatedTicks = 0
+                });
+            }
+
+            return steps.ToArray();
+        }
+
+        private static CompiledActionStep[] CompileMachineProcessingSteps(SnapshotEnvelope snapshot)
+        {
+            if (!snapshot.State.TryGetValue("farm", out var farm) ||
+                farm.ValueKind != JsonValueKind.Object ||
+                !farm.TryGetProperty("machines", out var machinesField) ||
+                !machinesField.TryGetProperty("value", out var machines) ||
+                machines.ValueKind != JsonValueKind.Array)
+            {
+                return new[]
+                {
+                    Step("machine_processing_noop", "Farm", "no_machine_data_available", 0)
+                };
+            }
+
+            var steps = new List<CompiledActionStep>();
+            foreach (var machine in machines.EnumerateArray())
+            {
+                if (machine.ValueKind != JsonValueKind.Object || !IsMachineReady(machine))
+                {
+                    continue;
+                }
+
+                var x = ReadInt(machine, "tile_x");
+                var y = ReadInt(machine, "tile_y");
+                steps.Add(Step("process_machine", "Farm(" + x + "," + y + ")", "machine_output_collected_or_input_loaded", 80));
+            }
+
+            return steps.Count == 0
+                ? new[] { Step("machine_processing_noop", "Farm", "no_machine_ready", 0) }
+                : steps.ToArray();
+        }
+
+        private static CompiledActionStep[] CompileRecoverySteps(SnapshotEnvelope snapshot)
+        {
+            var steps = new List<CompiledActionStep>
+            {
+                Step("close_blocking_menu", "active_menu", "menu_not_blocking_execution", 10)
+            };
+
+            var time = ReadStateFieldInt(snapshot, "time", "time");
+            if (time >= 2400)
+            {
+                steps.Add(Step("sleep_immediately", "farmhouse_bed", "day_safely_ended", 120));
+            }
+            else if (time >= 2200)
+            {
+                steps.Add(Step("return_home", "farmhouse", "player_in_safe_sleep_route", 900));
+                steps.Add(Step("sleep_before_collapse", "farmhouse_bed", "day_safely_ended", 120));
+            }
+            else
+            {
+                steps.Add(Step("refresh_plan_after_stabilization", "planner", "urgent_risks_rechecked", 0));
+            }
+
+            return steps.ToArray();
+        }
+
+        private static bool IsMachineReady(JsonElement machine)
+        {
+            foreach (var property in new[] { "ready", "ready_for_harvest", "has_output", "needs_processing" })
+            {
+                if (machine.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int ReadStateFieldInt(SnapshotEnvelope snapshot, string section, string property)
+        {
+            return snapshot.State.TryGetValue(section, out var sectionValue) &&
+                sectionValue.ValueKind == JsonValueKind.Object &&
+                sectionValue.TryGetProperty(property, out var field) &&
+                field.TryGetProperty("value", out var value) &&
+                value.TryGetInt32(out var result)
+                ? result
+                : 0;
+        }
+
+        private static CompiledActionStep Step(string stepType, string target, string expectedEffect, int estimatedTicks)
+        {
+            return new CompiledActionStep
+            {
+                StepId = "step." + Guid.NewGuid().ToString("N"),
+                StepType = stepType,
+                Target = target,
+                ExpectedEffect = expectedEffect,
+                EstimatedTicks = estimatedTicks
+            };
+        }
+
+        private static int? ReadIntParameter(SmallModelAction action, string name)
+        {
+            var value = action.Parameters.FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))?.Value;
+            return int.TryParse(value, out var result) ? result : null;
+        }
+
+        private static int ReadInt(JsonElement item, string property)
+        {
+            return item.TryGetProperty(property, out var value) && value.TryGetInt32(out var result)
+                ? result
+                : 0;
         }
     }
 }

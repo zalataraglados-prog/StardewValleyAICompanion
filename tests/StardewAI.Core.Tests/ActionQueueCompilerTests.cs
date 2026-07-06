@@ -31,8 +31,43 @@ public sealed class ActionQueueCompilerTests
         Assert.Equal("training_farmer.main", queue.Actor.ActorId);
         Assert.Single(queue.Items);
         Assert.Equal("pending", queue.Items[0].Status);
+        Assert.Equal("mechanical", queue.Items[0].BehaviorCategory);
+        Assert.Equal("full_action_expansion", queue.Items[0].CompilerResponsibility);
+        Assert.Equal("executor_calibration", queue.Items[0].TrainingRole);
         Assert.Equal("farm.maintain_crops", queue.Items[0].NormalizedCommand.OptionId);
+        Assert.Equal("compiled_action_steps", queue.Items[0].NormalizedCommand.CommandType);
+        Assert.Equal("executor_calibration", queue.Items[0].NormalizedCommand.TrainingRole);
+        Assert.Single(queue.Items[0].NormalizedCommand.Steps);
+        Assert.Equal("crop_maintenance_noop", queue.Items[0].NormalizedCommand.Steps[0].StepType);
         Assert.Equal("training_farmer.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
+    }
+
+    [Fact]
+    public void CompileExpandsCropMaintenanceIntoPerCropStepsFromTransparentState()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[
+              {"tile_x":1,"tile_y":2,"needs_watering":true},
+              {"tile_x":3,"tile_y":4,"needs_watering":false},
+              {"tile_x":5,"tile_y":6,"needs_watering":true}
+            ],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "farm.maintain_crops"), snapshot);
+
+        var steps = queue.Items[0].NormalizedCommand.Steps;
+        Assert.Equal(2, steps.Length);
+        Assert.All(steps, step => Assert.Equal("water_crop", step.StepType));
+        Assert.Contains(steps, step => step.Target == "Farm(1,2)");
+        Assert.Contains(steps, step => step.Target == "Farm(5,6)");
     }
 
     [Fact]

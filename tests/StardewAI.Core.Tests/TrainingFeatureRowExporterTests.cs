@@ -77,6 +77,11 @@ namespace StardewAI.Core.Tests
             Assert.Contains(row.StateFeatures.Numeric, item => item.Name == "completeness.required_readable_ratio" && item.Value == 0.8);
             Assert.Contains(row.StateFeatures.Categorical, item => item.Name == "game.season" && item.Value == "spring");
             Assert.Contains(row.ActionFeatures.Features.Categorical, item => item.Name == "action.intent_category" && item.Value == "mechanical");
+            Assert.Equal("executor_calibration", row.ActionFeatures.TrainingRole);
+            Assert.Equal("calibration_only", row.ActionFeatures.LearningScope);
+            Assert.True(row.ActionFeatures.ExcludeFromPolicyTraining);
+            Assert.Contains(row.ActionFeatures.Features.Categorical, item => item.Name == "action.training_role" && item.Value == "executor_calibration");
+            Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "action.exclude_from_policy_training" && item.Value);
             Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "action.hard_blocked" && item.Value == false);
             Assert.Equal(0.09, row.Labels.GoalProgressDelta);
             Assert.Equal(0.09, row.Labels.TotalReward, 4);

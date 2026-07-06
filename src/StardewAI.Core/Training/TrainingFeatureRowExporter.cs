@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.Contracts.WorldModel;
 
@@ -68,10 +69,16 @@ namespace StardewAI.Core.Training
                 .OrderBy(item => item, StringComparer.Ordinal)
                 .ToArray();
             var firstOption = optionIds.FirstOrDefault() ?? "none";
+            var behaviorCategory = BehaviorCategory(firstOption);
+            var trainingRole = TrainingRole(behaviorCategory);
+            var excludeFromPolicyTraining = trainingRole == TrainingRoles.ExecutorCalibration;
 
             return new ActionFeatureVector
             {
                 OptionIds = optionIds,
+                TrainingRole = trainingRole,
+                LearningScope = excludeFromPolicyTraining ? "calibration_only" : "policy_ranker",
+                ExcludeFromPolicyTraining = excludeFromPolicyTraining,
                 Features = new FeatureVector
                 {
                     Numeric = new[]
@@ -83,14 +90,18 @@ namespace StardewAI.Core.Training
                     Categorical = new[]
                     {
                         Category("action.primary_option_id", firstOption),
-                        Category("action.intent_category", IntentCategory(firstOption)),
+                        Category("action.intent_category", behaviorCategory),
+                        Category("action.behavior_category", behaviorCategory),
+                        Category("action.training_role", trainingRole),
+                        Category("action.learning_scope", excludeFromPolicyTraining ? "calibration_only" : "policy_ranker"),
                         Category("action.execution_mode", episode.ActionSummary.ExecutionMode),
                         Category("action.actor_type", episode.ActionSummary.Actor.ActorType),
                         Category("action.execution_profile", episode.ExecutorCalibration.ExecutionProfile)
                     },
                     Boolean = new[]
                     {
-                        Flag("action.hard_blocked", episode.HardFeasibility.Blocked)
+                        Flag("action.hard_blocked", episode.HardFeasibility.Blocked),
+                        Flag("action.exclude_from_policy_training", excludeFromPolicyTraining)
                     }
                 }
             };
@@ -164,22 +175,34 @@ namespace StardewAI.Core.Training
                 : "unknown";
         }
 
-        private static string IntentCategory(string optionId)
+        private static string BehaviorCategory(string optionId)
         {
             switch (optionId)
             {
                 case "farm.maintain_crops":
-                    return "mechanical";
+                case "farm.process_machines":
+                    return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":
-                    return "parameterized_mechanical";
+                    return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":
                 case "economy.sell_items":
-                case "social.gift_npc":
                 case "quest.advance":
-                    return "economic_strategic";
+                    return OptionBehaviorCategories.EconomicStrategic;
+                case "social.gift_npc":
+                    return OptionBehaviorCategories.SocialStrategic;
+                case "recovery.stabilize_day":
+                    return OptionBehaviorCategories.Recovery;
                 default:
-                    return "unknown";
+                    return OptionBehaviorCategories.Unknown;
             }
+        }
+
+        private static string TrainingRole(string behaviorCategory)
+        {
+            return behaviorCategory == OptionBehaviorCategories.Mechanical ||
+                behaviorCategory == OptionBehaviorCategories.Recovery
+                ? TrainingRoles.ExecutorCalibration
+                : TrainingRoles.StrategyValue;
         }
 
         private static NumericFeature Number(string name, double value)

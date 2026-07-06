@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.OptionRegistry;
 
@@ -30,6 +31,7 @@ namespace StardewAI.Core.Training
             var candidates = candidateOptionIds.Length > 0
                 ? candidateOptionIds
                 : optionRegistry.All
+                    .Where(option => option.TrainingRole != TrainingRoles.ExecutorCalibration)
                     .Select(option => option.OptionId)
                     .OrderBy(optionId => optionId, StringComparer.Ordinal)
                     .ToArray();
