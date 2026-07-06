@@ -365,6 +365,93 @@ namespace StardewAI.Backend.Tests
             }
         }
 
+        [Fact]
+        public async Task TrainingSessionPrepareBlocksRealGameWithoutExplicitLaunchPermission()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "stardew_windowed",
+                root_path = root,
+                allow_game_launch = false,
+                sound_enabled = false,
+                save_isolation_path = Path.Combine(root, "saves")
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var rootElement = json.RootElement;
+            Assert.Equal("training_launch_result.v1", rootElement.GetProperty("schema_version").GetString());
+            Assert.True(rootElement.GetProperty("blocked").GetBoolean());
+            Assert.False(rootElement.GetProperty("started").GetBoolean());
+            Assert.Contains(rootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "real_game_launch_requires_allow_game_launch_true");
+            Assert.Contains(rootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "game_executable_path_required_for_real_game_mode");
+            Assert.Equal("disabled", rootElement.GetProperty("manifest").GetProperty("game_launch").GetString());
+            Assert.Equal("disabled", rootElement.GetProperty("manifest").GetProperty("sound").GetString());
+            Assert.True(File.Exists(rootElement.GetProperty("manifest").GetProperty("manifest_path").GetString()));
+        }
+
+        [Fact]
+        public async Task TrainingSessionPrepareWritesOfflineManifest()
+        {
+            using var client = factory.CreateClient();
+            var root = Path.Combine(Path.GetTempPath(), "stardewai-backend-tests", Guid.NewGuid().ToString("N"));
+
+            var response = await client.PostAsJsonAsync("/api/v1/training/session/prepare", new
+            {
+                mode = "offline_smoke",
+                root_path = root,
+                allow_game_launch = false,
+                sound_enabled = false
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var rootElement = json.RootElement;
+            Assert.False(rootElement.GetProperty("blocked").GetBoolean());
+            Assert.False(rootElement.GetProperty("started").GetBoolean());
+            var manifest = rootElement.GetProperty("manifest");
+            Assert.Equal("training_run_manifest.v1", manifest.GetProperty("schema_version").GetString());
+            Assert.Equal("offline_smoke", manifest.GetProperty("mode").GetString());
+            Assert.Equal(root, manifest.GetProperty("root_path").GetString());
+            Assert.EndsWith(Path.Combine("datasets", "training-feature-rows.jsonl"), manifest.GetProperty("dataset_path").GetString());
+            Assert.True(File.Exists(manifest.GetProperty("manifest_path").GetString()));
+        }
+
+        [Fact]
+        public async Task TrainingReadyProbeRequiresTransparentSnapshot()
+        {
+            await using var isolatedFactory = factory.WithWebHostBuilder(_ => { });
+            using var client = isolatedFactory.CreateClient();
+
+            var blockedResponse = await client.GetAsync("/api/v1/training/session/ready-probe");
+
+            Assert.Equal(HttpStatusCode.OK, blockedResponse.StatusCode);
+            using var blockedJson = JsonDocument.Parse(await blockedResponse.Content.ReadAsStringAsync());
+            Assert.False(blockedJson.RootElement.GetProperty("ready").GetBoolean());
+            Assert.False(blockedJson.RootElement.GetProperty("latest_snapshot_available").GetBoolean());
+            Assert.Contains(blockedJson.RootElement.GetProperty("block_reasons").EnumerateArray(), item =>
+                item.GetString() == "no_transparent_snapshot_ingested");
+
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var readyResponse = await client.GetAsync("/api/v1/training/session/ready-probe");
+
+            Assert.Equal(HttpStatusCode.OK, readyResponse.StatusCode);
+            using var readyJson = JsonDocument.Parse(await readyResponse.Content.ReadAsStringAsync());
+            Assert.True(readyJson.RootElement.GetProperty("ready").GetBoolean());
+            Assert.True(readyJson.RootElement.GetProperty("backend_reachable").GetBoolean());
+            Assert.True(readyJson.RootElement.GetProperty("bridge_reachable").GetBoolean());
+            Assert.True(readyJson.RootElement.GetProperty("latest_snapshot_available").GetBoolean());
+            Assert.NotEqual(string.Empty, readyJson.RootElement.GetProperty("latest_state_hash").GetString());
+            Assert.Empty(readyJson.RootElement.GetProperty("block_reasons").EnumerateArray());
+        }
+
         private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false)
         {
             var stateJson = $$"""

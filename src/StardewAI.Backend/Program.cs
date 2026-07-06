@@ -39,6 +39,8 @@ builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 builder.Services.AddSingleton<BaselinePolicyPredictor>();
 builder.Services.AddSingleton<BaselineOptionRanker>();
+builder.Services.AddSingleton<StardewTrainingSessionLauncher>();
+builder.Services.AddSingleton<TrainingReadyProbe>();
 
 var app = builder.Build();
 
@@ -363,6 +365,12 @@ app.MapPost("/api/v1/training/baseline/train", (TrainingDatasetRequest? request,
     var datasetPath = DatasetPathResolver.Resolve(request?.DatasetPath);
     return Results.Ok(trainer.Train(datasetPath));
 });
+
+app.MapPost("/api/v1/training/session/prepare", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
+    Results.Ok(launcher.Prepare(request)));
+
+app.MapGet("/api/v1/training/session/ready-probe", (StateStore store, TrainingReadyProbe probe) =>
+    Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null)));
 
 app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselinePolicyPredictor predictor) =>
 {
