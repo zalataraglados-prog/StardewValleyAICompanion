@@ -878,6 +878,102 @@ public sealed class SocialTransparentPlanningTests
         };
     }
 
+    [Fact]
+    public void RemoteNpcBlockedAndNoStandCoordinatesEmittedForTalk()
+    {
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var snapshot = CompleteSocialSnapshot(socialInteractionValue: remoteSocial);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "social.talk_npc" });
+        var option = Assert.Single(availability.Options);
+        var candidate = Assert.Single(option.SocialCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains("social_npc_not_in_player_location", candidate.BlockReasons);
+        Assert.DoesNotContain(candidate.Parameters, p => p.Name == "stand_tile_x" && !string.IsNullOrEmpty(p.Value));
+        Assert.DoesNotContain(candidate.Parameters, p => p.Name == "stand_tile_y" && !string.IsNullOrEmpty(p.Value));
+    }
+
+    [Fact]
+    public void RemoteNpcBlockedAndNoStandCoordinatesEmittedForGift()
+    {
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var snapshot = CompleteSocialSnapshot(socialInteractionValue: remoteSocial);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "social.gift_npc" });
+        var option = Assert.Single(availability.Options);
+        var candidate = Assert.Single(option.SocialCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains("social_npc_not_in_player_location", candidate.BlockReasons);
+        Assert.DoesNotContain(candidate.Parameters, p => p.Name == "stand_tile_x" && !string.IsNullOrEmpty(p.Value));
+        Assert.DoesNotContain(candidate.Parameters, p => p.Name == "stand_tile_y" && !string.IsNullOrEmpty(p.Value));
+    }
+
+    [Fact]
+    public void GiftCandidateCapKeepsAvailableCurrentLocationCandidateAheadOfRemoteDiagnostics()
+    {
+        var remoteNpcs = Enumerable.Range(0, 65).Select(index => new
+        {
+            name = $"Remote{index:D3}",
+            display_name = $"Remote{index:D3}",
+            master_data_present = true,
+            gift_taste_master_data_present = true,
+            current_instance_loaded = true,
+            location_id = "AnimalShop",
+            tile_x = 10,
+            tile_y = 10,
+            facing_direction = 2,
+            is_villager = true,
+            simple_non_villager_npc = false,
+            is_invisible = false,
+            is_sleeping = false,
+            has_controller = false,
+            is_busy = false,
+            schedule_loaded = true,
+            can_socialize = true,
+            can_socialize_complete = true,
+            can_receive_gifts = true,
+            can_receive_gifts_complete = true,
+            is_birthday = false,
+            current_route_window_complete = true
+        });
+        var currentNpc = new
+        {
+            name = "Abigail",
+            display_name = "Abigail",
+            master_data_present = true,
+            gift_taste_master_data_present = true,
+            current_instance_loaded = true,
+            location_id = "Town",
+            tile_x = 10,
+            tile_y = 10,
+            facing_direction = 2,
+            is_villager = true,
+            simple_non_villager_npc = false,
+            is_invisible = false,
+            is_sleeping = false,
+            has_controller = false,
+            is_busy = false,
+            schedule_loaded = true,
+            can_socialize = true,
+            can_socialize_complete = true,
+            can_receive_gifts = true,
+            can_receive_gifts_complete = true,
+            is_birthday = false,
+            current_route_window_complete = true
+        };
+        var snapshot = CompleteSocialSnapshot(
+            socialInteractionValue: JsonSerializer.Serialize(remoteNpcs.Append(currentNpc), JsonOptions));
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "social.gift_npc" })
+            .Options);
+
+        Assert.Equal(64, option.SocialCandidates.Length);
+        var available = Assert.Single(option.SocialCandidates.Where(candidate => candidate.Available));
+        Assert.Contains(available.Parameters, parameter => parameter.Name == "npc_name" && parameter.Value == "Abigail");
+        Assert.DoesNotContain("no_available_social_current_state_candidates", option.BlockingReasons);
+    }
+
     private static SnapshotEnvelope CompleteSocialSnapshot(
         string? socialInteractionValue = null,
         string? friendshipValue = null,

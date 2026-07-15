@@ -26,7 +26,23 @@ namespace StardewAI.Core.Training
             var ranked = new List<PolicyEventCandidatePrediction>();
             foreach (var option in availability.Options)
             {
-                foreach (var candidate in option.EventCandidates.Where(CanEnterTimeline))
+                var seenCandidateIds = new HashSet<string>(StringComparer.Ordinal);
+                var legalEventCandidates = option.EventCandidates.Where(CanEnterTimeline).ToArray();
+                foreach (var ec in legalEventCandidates)
+                {
+                    if (!string.IsNullOrEmpty(ec.CandidateId))
+                    {
+                        seenCandidateIds.Add(ec.CandidateId);
+                    }
+                }
+
+                var legalSocialCandidates = option.SocialCandidates
+                    .Where(CanEnterTimeline)
+                    .Where(sc => string.IsNullOrEmpty(sc.CandidateId) || seenCandidateIds.Add(sc.CandidateId));
+
+                var combined = legalEventCandidates.Concat(legalSocialCandidates);
+
+                foreach (var candidate in combined)
                 {
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward

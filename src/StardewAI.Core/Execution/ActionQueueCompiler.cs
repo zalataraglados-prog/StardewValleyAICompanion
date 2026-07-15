@@ -1104,9 +1104,117 @@ namespace StardewAI.Core.Execution
                 return new[] { "close_menu_type_unknown" };
             }
 
-            return IsSafeCloseMenuType(type)
-                ? Array.Empty<string>()
-                : new[] { "close_menu_type_not_whitelisted" };
+            if (IsSafeCloseMenuType(type))
+            {
+                return Array.Empty<string>();
+            }
+
+            if (type == "DialogueBox")
+            {
+                return SafeOrdinaryDialogueBlockReasons(snapshot);
+            }
+
+            return new[] { "close_menu_type_not_whitelisted" };
+        }
+
+        private static string[] SafeOrdinaryDialogueBlockReasons(SnapshotEnvelope snapshot)
+        {
+            var reasons = new List<string>();
+            var activeMenu = ReadStateFieldValue(snapshot, "menus", "active_menu");
+            if (!activeMenu.HasValue || activeMenu.Value.ValueKind != JsonValueKind.Object)
+            {
+                return new[] { "dialogue_close_transparent_active_menu_fields_missing" };
+            }
+
+            var lastQuestionKey = ReadString(activeMenu.Value, "last_question_key");
+            if (!string.IsNullOrWhiteSpace(lastQuestionKey))
+            {
+                reasons.Add("dialogue_close_last_question_key_present:" + lastQuestionKey);
+            }
+
+            if (ReadBool(activeMenu.Value, "is_sleep_prompt"))
+            {
+                reasons.Add("dialogue_close_is_sleep_prompt");
+            }
+
+            var eventUp = ReadNullableBool(activeMenu.Value, "event_up");
+            if (eventUp is null)
+            {
+                reasons.Add("dialogue_close_event_up_field_missing_or_ambiguous");
+            }
+            else if (eventUp.Value)
+            {
+                reasons.Add("dialogue_close_event_up_true");
+            }
+
+            var isQuestion = ReadNullableBool(activeMenu.Value, "dialogue_is_question");
+            if (isQuestion is null)
+            {
+                reasons.Add("dialogue_close_is_question_field_missing_or_ambiguous");
+            }
+            else if (isQuestion.Value)
+            {
+                reasons.Add("dialogue_close_is_question_true");
+            }
+
+            var responseCount = ReadNullableInt(activeMenu.Value, "dialogue_response_count");
+            if (responseCount is null)
+            {
+                reasons.Add("dialogue_close_response_count_field_missing_or_ambiguous");
+            }
+            else if (responseCount.Value > 0)
+            {
+                reasons.Add("dialogue_close_responses_present:" + responseCount.Value);
+            }
+
+            var transitioning = ReadNullableBool(activeMenu.Value, "dialogue_transitioning");
+            if (transitioning is null)
+            {
+                reasons.Add("dialogue_close_transitioning_field_missing_or_ambiguous");
+            }
+
+            var characterPresent = ReadNullableBool(activeMenu.Value, "dialogue_character_present");
+            if (characterPresent is null)
+            {
+                reasons.Add("dialogue_close_character_present_field_missing_or_ambiguous");
+            }
+            else if (!characterPresent.Value)
+            {
+                reasons.Add("dialogue_close_character_present_false");
+            }
+
+            var speakerName = ReadString(activeMenu.Value, "dialogue_speaker_name");
+            var speakerNamePresent = activeMenu.Value.TryGetProperty("dialogue_speaker_name", out _);
+            if (!speakerNamePresent)
+            {
+                reasons.Add("dialogue_close_speaker_name_field_missing");
+            }
+            else if (string.IsNullOrWhiteSpace(speakerName))
+            {
+                reasons.Add("dialogue_close_speaker_name_empty");
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool? ReadNullableBool(JsonElement element, string property)
+        {
+            if (!element.TryGetProperty(property, out var value))
+            {
+                return null;
+            }
+
+            if (value.ValueKind == JsonValueKind.True)
+            {
+                return true;
+            }
+
+            if (value.ValueKind == JsonValueKind.False)
+            {
+                return false;
+            }
+
+            return null;
         }
 
         private static string[] ValidateBuyShopItemPlan(SmallModelAction action, SnapshotEnvelope snapshot)

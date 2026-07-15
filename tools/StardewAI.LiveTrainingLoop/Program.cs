@@ -64,6 +64,8 @@ for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVer
         await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
         var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
+        var rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
+        await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
         queue = dailyPlan.Queue;
     }
     else if (options.UsePlanOutput)
@@ -162,7 +164,7 @@ static async Task<JsonObject> BuildQueueFromMockActionAsync(HttpClient http, Liv
     return await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/small-model/action-queue/compile", modelOutput.ToJsonString(JsonOptions));
 }
 
-static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue)> BuildQueueFromDailyPlanAsync(
+static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildQueueFromDailyPlanAsync(
     HttpClient http,
     LiveTrainingOptions options,
     string stateHash)
@@ -188,7 +190,7 @@ static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue)> Buil
     var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile", compileRequest);
     var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
     var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
-    return (response, plan, queue);
+    return (response, plan, queue, ranking);
 }
 
 static string BuildMovePlanRequest(LiveTrainingOptions options, string stateHash)
@@ -407,9 +409,11 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
             var replanPlanPath = Path.Combine(options.SnapshotDir, "replan-model-plan-" + iteration.ToString("D4") + replanSuffix + ".json");
             var replanDailyPlanPath = Path.Combine(options.SnapshotDir, "replan-daily-plan-response-" + iteration.ToString("D4") + replanSuffix + ".json");
             var replanQueuePath = Path.Combine(options.SnapshotDir, "replan-compiled-queue-" + iteration.ToString("D4") + replanSuffix + ".json");
+            var replanRankingPath = Path.Combine(options.SnapshotDir, "replan-ranking-response-" + iteration.ToString("D4") + replanSuffix + ".json");
             await File.WriteAllTextAsync(replanPlanPath, replan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
             await File.WriteAllTextAsync(replanDailyPlanPath, replan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
             await File.WriteAllTextAsync(replanQueuePath, replan.Queue.ToJsonString(JsonOptions), Encoding.UTF8);
+            await File.WriteAllTextAsync(replanRankingPath, replan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
 
             queue = replan.Queue;
             queueId = ReadString(queue, "queue_id");
@@ -431,6 +435,7 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
             execution["queue_replan_plan_path"] = replanPlanPath;
             execution["queue_replan_response_path"] = replanDailyPlanPath;
             execution["queue_replan_queue_path"] = replanQueuePath;
+            execution["queue_replan_ranking_path"] = replanRankingPath;
             itemIndex = -1;
         }
         else
@@ -632,6 +637,11 @@ static TrainingExecutionRequest BuildExecutionRequest(
     if (!string.IsNullOrWhiteSpace(fishingLocationId))
     {
         executionRequest.LocationId = fishingLocationId;
+    }
+    var socialTargetLocation = SocialLocationMapping.ResolveLocationId(item, optionId);
+    if (!string.IsNullOrWhiteSpace(socialTargetLocation))
+    {
+        executionRequest.LocationId = socialTargetLocation;
     }
     if (fishingStandTileX.HasValue && fishingStandTileY.HasValue)
     {
@@ -985,7 +995,20 @@ static void WritePlanExecutionEpisode(
         ObservedEffect = ReadString(execution, "observed_effect"),
         ChangedFacts = execution["changed_facts"] is null
             ? JsonDocument.Parse("[]").RootElement.Clone()
-            : JsonSerializer.Deserialize<JsonElement>(execution["changed_facts"]!.ToJsonString())
+            : JsonSerializer.Deserialize<JsonElement>(execution["changed_facts"]!.ToJsonString()),
+        DialogueNativeHandled = execution["dialogue_native_handled"]?.GetValue<bool>(),
+        DialoguePressAttempts = execution["dialogue_press_attempts"]?.GetValue<int>(),
+        DialogueAdvanceTicks = execution["dialogue_advance_ticks"]?.GetValue<int>(),
+        DialogueMenuTypeBefore = ReadString(execution, "dialogue_menu_type_before"),
+        DialogueMenuTypeAfter = ReadString(execution, "dialogue_menu_type_after"),
+        DialogueIsQuestionBefore = execution["dialogue_is_question_before"]?.GetValue<bool>(),
+        DialogueIsQuestionAfter = execution["dialogue_is_question_after"]?.GetValue<bool>(),
+        DialogueResponseCountBefore = execution["dialogue_response_count_before"]?.GetValue<int>(),
+        DialogueResponseCountAfter = execution["dialogue_response_count_after"]?.GetValue<int>(),
+        DialogueSpeakerNameBefore = ReadString(execution, "dialogue_speaker_name_before"),
+        DialogueSpeakerNameAfter = ReadString(execution, "dialogue_speaker_name_after"),
+        DialogueEventUpBefore = execution["dialogue_event_up_before"]?.GetValue<bool>(),
+        DialogueEventUpAfter = execution["dialogue_event_up_after"]?.GetValue<bool>()
     };
 
     var episodePath = Path.Combine(options.SnapshotDir, "plan-execution-episode-" + iteration.ToString("D4") + ".json");

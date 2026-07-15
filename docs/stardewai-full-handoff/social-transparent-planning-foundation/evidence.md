@@ -1,6 +1,6 @@
 # Evidence
 
-Static-only evidence. Decompiled source was read from `I:\StardewValleyAICompanion-decompile`; no game, SMAPI, build, tests, runtime harness, schedule loaders, dialogue, gift, path-controller, RNG, or user process was invoked during evidence collection.
+Decompiled rule evidence was collected statically from `I:\StardewValleyAICompanion-decompile`. A later controller run added isolated E: runtime evidence; no claim below relies on documentation examples alone.
 
 ## Decompiled Social Rules
 
@@ -35,6 +35,13 @@ The native executor `executor.social_interact` calls `Game1.currentLocation.chec
 
 The executor does NOT call `NPC.checkAction`, `tryToReceiveActiveObject`, `receiveGift`, `changeFriendship`, `reduceActiveItemByOne`, or direct NPC position/tile mutation. It only calls `Game1.currentLocation.checkAction`, which internally dispatches to `NPC.checkAction` through the vanilla bounding-box dispatch.
 
+## Global Location Enumeration Anchors
+
+- `I:\StardewValleyAICompanion-decompile\StardewValley\StardewValley\Utility.cs:348-391` — `ForEachLocation(Func<GameLocation,bool> action, bool includeInteriors = true, bool includeGenerated = false)` iterates `Game1.locations` (`IList<GameLocation>` backed by `_locations`), then calls `gameLocation.ForEachInstancedInterior(...)` for each when `includeInteriors` is requested, and additionally `MineShaft.activeMines` and `VolcanoDungeon.activeLevels` when `includeGenerated` is requested. Returning `false` stops iteration.
+- `I:\StardewValleyAICompanion-decompile\StardewValley\StardewValley\Game1.cs:1326` — `Game1.locations` is exposed as `IList<GameLocation>` backed by `_locations`. Instanced interiors and active generated levels are additionally enumerated by `Utility.ForEachLocation` when requested via `includeInteriors` and `includeGenerated`.
+
+`NpcReadAdapter.CollectAllLoadedNpcs` now uses `Utility.ForEachLocation(action, includeInteriors:true, includeGenerated:true)` to enumerate all loaded NPCs globally, preserving reference-identity deduplication.
+
 ## Implemented Sandbox Surfaces
 
 - `tools/StardewAI.RuntimeTestHarness/ModEntry.cs:ExecuteSocialInteract` — native `executor.social_interact` that validates all preconditions (NPC identity/presence/location/tile/adjacency/action rectangle/visibility/sleeping/CanSocialize/CanReceiveGifts, menu-closed, active-object match for gift, exact slot/item/stack and gift limits; only Stardrop Tea bypasses the daily limit, while spouse, birthday, or Stardrop Tea can bypass the weekly limit), calls `Game1.currentLocation.checkAction`, and records before/after typed output including NPC/player state, friendship counters, dialogue state, menu state, timestamps/ticks, and verification results. Unknown/unresolved state is null/empty, not guessed.
@@ -47,3 +54,11 @@ The executor does NOT call `NPC.checkAction`, `tryToReceiveActiveObject`, `recei
 - `src/StardewAI.Core/Execution/ActionQueueCompiler.cs:CompileSocialPlan` — builds `SocialPlanEnvelope` with live legality evidence, time/route constraints, expected deterministic outcome, and training recording contract.
 - `src/StardewAI.Core/OptionRegistry/OptionRegistry.cs` — registers `executor.social_interact` with required state fields.
 - `src/StardewAI.Core/Execution/TimeBudgetValidator.cs` — handles `recovery.stabilize_day`, `social.talk_npc`, `social.gift_npc` with estimated-duration sentinel.
+
+## Isolated Runtime Evidence (2026-07-15)
+
+- PASS summary: `artifacts/runtime-native-social-smoke/runtime-native-social-smoke-20260715-183304/summary.json`.
+- Talk selected Pierre in `SeedShop`, moved to `(3,17)` beside NPC `(4,17)`, faced right, opened native `DialogueBox`, and recorded `applied/verified` plus one training row.
+- Safe ordinary dialogue advancement used native SMAPI MouseLeft input, closed `DialogueBox -> none`, recorded one press and typed dialogue before/after fields in both execution output and episode.
+- Gift selected exact slot 10 `(O)388`, used `Game1.currentLocation.checkAction`, changed stack `4 -> 3`, gifts today/week `0 -> 1`, friendship `66 -> 46`, and recorded `applied/verified` plus one training row.
+- Runtime also proved known no-spouse state is transparent (`value="", status="available"`) and that available current-location social candidates survive the bounded 64-row diagnostic cap.

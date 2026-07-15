@@ -17,23 +17,24 @@ public sealed class NpcReadAdapter : ReadAdapterBase
         {
             return Section("npcs", new Dictionary<string, object>
             {
-                ["positions"] = Unavailable("world_not_ready", "Game1.currentLocation.characters", tick, "vanilla_1_6_npc"),
+                ["positions"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters", tick, "vanilla_1_6_npc"),
                 ["friendships"] = Unavailable("world_not_ready", "Game1.player.friendshipData", tick, "vanilla_1_6_npc"),
-                ["schedules"] = Unavailable("world_not_ready", "Game1.currentLocation.characters[].Schedule", tick, "vanilla_1_6_npc"),
-                ["social_interaction"] = Unavailable("world_not_ready", "Game1.currentLocation.characters social fields", tick, "vanilla_1_6_npc"),
-                ["gift_tastes"] = Unavailable("world_not_ready", "transparent gift taste derivation unavailable", tick, "vanilla_1_6_npc")
+                ["schedules"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].Schedule", tick, "vanilla_1_6_npc"),
+                ["social_interaction"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters social fields", tick, "vanilla_1_6_npc"),
+                ["gift_tastes"] = Unavailable("world_not_ready", "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].getGiftTasteForThisItem; transparent gift taste derivation unavailable", tick, "vanilla_1_6_npc")
             }, new[] { "npcs.positions", "npcs.friendships", "npcs.schedules", "npcs.social_interaction", "npcs.gift_tastes" }, "unavailable");
         }
 
-        var location = Game1.currentLocation;
-        var locationId = location.NameOrUniqueName;
-        var npcs = location.characters
-            .Where(npc => npc is not null && ReferenceEquals(npc.currentLocation, location))
+        var allLoadedNpcs = CollectAllLoadedNpcs();
+        var npcs = allLoadedNpcs
             .Select(npc =>
             {
                 var tile = npc.TilePoint;
-                var visibleOnScreen = Utility.isOnScreen(tile, 128, location);
+                var npcLocation = npc.currentLocation;
+                var isCurrentLocation = ReferenceEquals(npcLocation, Game1.currentLocation);
+                var visibleOnScreen = isCurrentLocation && Utility.isOnScreen(tile, 128, npcLocation);
 
+                var locationId = npc.currentLocation?.NameOrUniqueName ?? "";
                 return new
                 {
                     name = npc.Name,
@@ -49,6 +50,7 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                 };
             })
             .OrderBy(npc => npc.name, StringComparer.Ordinal)
+            .ThenBy(npc => npc.location_id, StringComparer.Ordinal)
             .ThenBy(npc => npc.tile_x)
             .ThenBy(npc => npc.tile_y)
             .ToArray();
@@ -81,13 +83,13 @@ public sealed class NpcReadAdapter : ReadAdapterBase
 
         var fields = new Dictionary<string, object>
         {
-            ["positions"] = Field(npcs, "Game1.currentLocation.characters[].Name/displayName/TilePoint/FacingDirection/currentLocation; Utility.isOnScreen(TilePoint, 128, Game1.currentLocation); Monster Health/MaxHealth/DamageToFarmer/resilience", tick, "vanilla_1_6_npc"),
+            ["positions"] = Field(npcs, "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].Name/displayName/TilePoint/FacingDirection/currentLocation; Utility.isOnScreen current-location only; Monster Health/MaxHealth/DamageToFarmer/resilience", tick, "vanilla_1_6_npc"),
             ["friendships"] = friendships is null
                 ? (object)Unavailable("player_unavailable", "Game1.player.friendshipData", tick, "vanilla_1_6_npc")
                 : Field(friendships, "Game1.player.friendshipData.Pairs[].Key/Value Points/GiftsThisWeek/GiftsToday/TalkedToToday/Status/ProposalRejected/RoommateMarriage/LastGiftDate/WeddingDate/NextBirthingDate/Proposer", tick, "vanilla_1_6_npc"),
-            ["schedules"] = Field(ReadLoadedSchedules(location.characters), "Game1.currentLocation.characters[].Schedule/ScheduleKey/followSchedule/ignoreScheduleToday", tick, "vanilla_1_6_npc"),
-            ["social_interaction"] = Field(ReadSocialInteractions(location.characters, locationId), "Game1.currentLocation.characters raw fields plus NPC.CanSocialize/CanReceiveGifts when runtime type uses vanilla non-overridden query paths", tick, "vanilla_1_6_npc"),
-            ["gift_tastes"] = Field(ReadGiftTastes(location.characters, Game1.player), "NPC.getGiftTasteForThisItem(current owned Object items) for supported vanilla NPC query paths; expected delta only when Farmer.changeFriendship deterministic modifiers and cap are transparent", tick, "vanilla_1_6_npc")
+            ["schedules"] = Field(ReadLoadedSchedules(allLoadedNpcs), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].Schedule/ScheduleKey/followSchedule/ignoreScheduleToday", tick, "vanilla_1_6_npc"),
+            ["social_interaction"] = Field(ReadSocialInteractions(allLoadedNpcs), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters raw fields plus NPC.CanSocialize/CanReceiveGifts when runtime type uses vanilla non-overridden query paths", tick, "vanilla_1_6_npc"),
+            ["gift_tastes"] = Field(ReadGiftTastes(allLoadedNpcs, Game1.player), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:true): Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels[].characters[].getGiftTasteForThisItem; NPC.getGiftTasteForThisItem(current owned Object items) for supported vanilla NPC query paths; expected delta only when Farmer.changeFriendship deterministic modifiers and cap are transparent", tick, "vanilla_1_6_npc")
         };
 
         var unavailable = friendships is null
@@ -112,6 +114,32 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             invisible = monster.IsInvisible,
             invincible = monster.isInvincible()
         };
+    }
+
+    private static NPC[] CollectAllLoadedNpcs()
+    {
+        var seen = new HashSet<NPC>(ReferenceEqualityComparer.Instance);
+        var firstSeen = new List<NPC>();
+        Utility.ForEachLocation(delegate(GameLocation location)
+        {
+            if (location?.characters is not null)
+            {
+                foreach (var npc in location.characters)
+                {
+                    if (npc is not null && seen.Add(npc))
+                    {
+                        firstSeen.Add(npc);
+                    }
+                }
+            }
+            return true;
+        }, includeInteriors: true, includeGenerated: true);
+        return firstSeen
+            .OrderBy(npc => npc.Name, StringComparer.Ordinal)
+            .ThenBy(npc => npc.currentLocation?.NameOrUniqueName ?? "", StringComparer.Ordinal)
+            .ThenBy(npc => npc.TilePoint.X)
+            .ThenBy(npc => npc.TilePoint.Y)
+            .ToArray();
     }
 
     private static object[] ReadLoadedSchedules(IEnumerable<NPC> npcs)
@@ -147,7 +175,7 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             .ToArray();
     }
 
-    private static object[] ReadSocialInteractions(IEnumerable<NPC> npcs, string currentLocationId)
+    private static object[] ReadSocialInteractions(IEnumerable<NPC> npcs)
     {
         return npcs
             .Where(npc => npc is not null)
@@ -160,6 +188,9 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                 var giftTastePresent = Game1.NPCGiftTastes?.ContainsKey(npc.Name) == true;
                 var canSocialize = socialQuerySupported && npc.CanSocialize;
                 var canReceiveGifts = socialQuerySupported && npc.CanReceiveGifts();
+                var npcCurrentLocation = npc.currentLocation;
+                var instanceLoaded = npcCurrentLocation is not null &&
+                    npcCurrentLocation.characters.Any(c => ReferenceEquals(c, npc));
                 return new
                 {
                     name = npc.Name,
@@ -168,8 +199,8 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                     vanilla_social_query_supported = socialQuerySupported,
                     master_data_present = masterDataPresent,
                     gift_taste_master_data_present = giftTastePresent,
-                    current_instance_loaded = ReferenceEquals(npc.currentLocation, Game1.currentLocation),
-                    location_id = npc.currentLocation?.NameOrUniqueName ?? currentLocationId,
+                    current_instance_loaded = instanceLoaded,
+                    location_id = npc.currentLocation?.NameOrUniqueName ?? "",
                     tile_x = tile.X,
                     tile_y = tile.Y,
                     bounding_box_x = bounds.X,

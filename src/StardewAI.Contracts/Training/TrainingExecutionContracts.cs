@@ -508,5 +508,44 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("ship_source_date")]
         public string ShipSourceDate { get; set; } = string.Empty;
+
+        [JsonPropertyName("dialogue_native_handled")]
+        public bool? DialogueNativeHandled { get; set; }
+
+        [JsonPropertyName("dialogue_press_attempts")]
+        public int? DialoguePressAttempts { get; set; }
+
+        [JsonPropertyName("dialogue_advance_ticks")]
+        public int? DialogueAdvanceTicks { get; set; }
+
+        [JsonPropertyName("dialogue_menu_type_before")]
+        public string DialogueMenuTypeBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("dialogue_menu_type_after")]
+        public string DialogueMenuTypeAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("dialogue_is_question_before")]
+        public bool? DialogueIsQuestionBefore { get; set; }
+
+        [JsonPropertyName("dialogue_is_question_after")]
+        public bool? DialogueIsQuestionAfter { get; set; }
+
+        [JsonPropertyName("dialogue_response_count_before")]
+        public int? DialogueResponseCountBefore { get; set; }
+
+        [JsonPropertyName("dialogue_response_count_after")]
+        public int? DialogueResponseCountAfter { get; set; }
+
+        [JsonPropertyName("dialogue_speaker_name_before")]
+        public string DialogueSpeakerNameBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("dialogue_speaker_name_after")]
+        public string DialogueSpeakerNameAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("dialogue_event_up_before")]
+        public bool? DialogueEventUpBefore { get; set; }
+
+        [JsonPropertyName("dialogue_event_up_after")]
+        public bool? DialogueEventUpAfter { get; set; }
     }
 }

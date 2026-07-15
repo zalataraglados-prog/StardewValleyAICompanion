@@ -112,13 +112,43 @@ public sealed class MenuReadAdapter : ReadAdapterBase
     private static object ReadActiveMenu(IClickableMenu menu)
     {
         var type = menu.GetType();
+        if (menu is DialogueBox dialogueBox)
+        {
+            return new
+            {
+                is_open = true,
+                type = type.Name,
+                full_type = type.FullName,
+                last_question_key = Game1.currentLocation?.lastQuestionKey,
+                is_sleep_prompt = string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal),
+                event_up = (bool?)Game1.eventUp,
+                dialogue_is_question = (bool?)dialogueBox.isQuestion,
+                dialogue_response_count = (int?)dialogueBox.responses?.Length,
+                dialogue_transitioning = (bool?)dialogueBox.transitioning,
+                dialogue_safety_timer = (int?)dialogueBox.safetyTimer,
+                dialogue_character_present = (bool?)(dialogueBox.characterDialogue is not null),
+                dialogue_speaker_name = dialogueBox.characterDialogue?.speaker?.Name,
+                dialogue_typing = (bool?)dialogueBox.showTyping,
+                dialogue_finished = (bool?)dialogueBox.dialogueFinished
+            };
+        }
+
         return new
         {
             is_open = true,
             type = type.Name,
             full_type = type.FullName,
             last_question_key = Game1.currentLocation?.lastQuestionKey,
-            is_sleep_prompt = menu is DialogueBox && string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal)
+            is_sleep_prompt = false,
+            event_up = (bool?)null,
+            dialogue_is_question = (bool?)null,
+            dialogue_response_count = (int?)null,
+            dialogue_transitioning = (bool?)null,
+            dialogue_safety_timer = (int?)null,
+            dialogue_character_present = (bool?)null,
+            dialogue_speaker_name = (string?)null,
+            dialogue_typing = (bool?)null,
+            dialogue_finished = (bool?)null
         };
     }
 

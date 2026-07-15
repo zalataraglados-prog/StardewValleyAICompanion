@@ -648,6 +648,17 @@ public sealed class SocialNativeSourceGuardTests
         Assert.Contains("\"social_current_dialogue_count_after\":null", json);
     }
 
+    [Fact]
+    public void DialogueSpeakerComparisonUsesStringEqualsNotReferenceEquals()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var dialogueAdvanceSource = Slice(source, "private void TickDialogueAdvanceCore", "private static TrainingExecutionResult DialogueAdvanceResult");
+
+        Assert.DoesNotContain("ReferenceEquals(currentBox.characterDialogue?.speaker?.Name", dialogueAdvanceSource, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(currentBox.characterDialogue?.speaker?.Name", dialogueAdvanceSource, StringComparison.Ordinal);
+        Assert.Contains("StringComparison.Ordinal", dialogueAdvanceSource, StringComparison.Ordinal);
+    }
+
     private static string Slice(string source, string startMarker, string endMarker)
     {
         var start = source.IndexOf(startMarker, StringComparison.Ordinal);

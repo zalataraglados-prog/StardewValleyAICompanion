@@ -1809,14 +1809,178 @@ public sealed class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileCloseMenuBlocksUnknownMenuType()
+    public void CompileCloseMenuBlocksDialogueWithMissingTransparentFields()
     {
         var snapshot = CloseMenuSnapshot(true, "DialogueBox");
 
         var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
 
         Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_is_question_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+        Assert.Contains("dialogue_close_response_count_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+        Assert.Contains("dialogue_close_transitioning_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+        Assert.Contains("dialogue_close_character_present_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+        Assert.Contains("dialogue_close_event_up_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+        Assert.Contains("dialogue_close_speaker_name_field_missing", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuAllowsSafeOrdinaryDialogue()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot();
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithQuestion()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""dialogue_is_question"": true");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_is_question_true", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithResponses()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""dialogue_response_count"": 3");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_responses_present:3", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithLastQuestionKey()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""last_question_key"": ""Blacksmith""");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(queue.Items[0].BlockingReasons, reason => reason.StartsWith("dialogue_close_last_question_key_present:"));
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithSleepPrompt()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""is_sleep_prompt"": true");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_is_sleep_prompt", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithEventUpTrue()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""event_up"": true");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_event_up_true", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithEventUpMissing()
+    {
+        var json = """
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"DialogueBox","last_question_key":null,"is_sleep_prompt":false,"dialogue_is_question":false,"dialogue_response_count":0,"dialogue_transitioning":false,"dialogue_safety_timer":0,"dialogue_character_present":true,"dialogue_speaker_name":"Lewis"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """;
+        var snapshot = Snapshot(json);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_event_up_field_missing_or_ambiguous", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithCharacterPresentFalse()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""dialogue_character_present"": false");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_character_present_false", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithSpeakerNameEmpty()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""dialogue_speaker_name"": """"");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_speaker_name_empty", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksDialogueWithSpeakerNameMissing()
+    {
+        var json = """
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"DialogueBox","last_question_key":null,"is_sleep_prompt":false,"event_up":false,"dialogue_is_question":false,"dialogue_response_count":0,"dialogue_transitioning":false,"dialogue_safety_timer":0,"dialogue_character_present":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """;
+        var snapshot = Snapshot(json);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dialogue_close_speaker_name_field_missing", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksUnknownMenuType()
+    {
+        var snapshot = CloseMenuSnapshot(true, "CraftingPage");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
         Assert.Contains("close_menu_type_not_whitelisted", queue.Items[0].BlockingReasons);
+    }
+
+    private static SnapshotEnvelope SafeOrdinaryDialogueSnapshot(string inject = "")
+    {
+        var json = """
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"DialogueBox","last_question_key":null,"is_sleep_prompt":false,"event_up":false,"dialogue_is_question":false,"dialogue_response_count":0,"dialogue_transitioning":false,"dialogue_safety_timer":0,"dialogue_character_present":true,"dialogue_speaker_name":"Lewis" INJECT},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """;
+        if (!string.IsNullOrWhiteSpace(inject))
+        {
+            json = json.Replace("INJECT", "," + inject);
+        }
+        else
+        {
+            json = json.Replace("INJECT", "");
+        }
+
+        return Snapshot(json);
     }
 
     [Fact]

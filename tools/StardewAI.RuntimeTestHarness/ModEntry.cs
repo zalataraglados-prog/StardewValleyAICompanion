@@ -41,6 +41,7 @@ public sealed class ModEntry : Mod
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
+    private ActiveDialogueAdvance? activeDialogueAdvance;
 
     public override void Entry(IModHelper helper)
     {
@@ -239,8 +240,9 @@ public sealed class ModEntry : Mod
         TickMineFishingSetup();
         TickNativeFarmTool();
         TickShipInventoryToBin();
+        TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeNativeFarmTool is not null || activeShipInventoryToBin is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeNativeFarmTool is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -370,7 +372,7 @@ public sealed class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.close_menu")
             {
-                pending.Completion.SetResult(ExecuteCloseMenu(pending.Request));
+                StartDialogueAdvance(pending);
                 return;
             }
 
@@ -471,6 +473,16 @@ public sealed class ModEntry : Mod
             StopAllMovement();
             activeCatchFish = null;
             ReleaseSmapiLeftButtonOverride();
+            var activeDialogue = activeDialogueAdvance;
+            if (activeDialogue is not null)
+            {
+                activeDialogueAdvance = null;
+                activeDialogue.Pending.Completion.SetResult(BlockedWithPrimitive(
+                    activeDialogue.Pending.Request, "close_menu",
+                    "menus.active_menu.is_open=false",
+                    CloseMenuObservedEffect(),
+                    "dialogue_advance_exception:" + ex.GetType().Name));
+            }
             Monitor.Log($"Training execution failed: {ex}", LogLevel.Error);
             pending.Completion.SetResult(Blocked(pending.Request, "execution_exception:" + ex.GetType().Name));
         }
@@ -3164,9 +3176,53 @@ public sealed class ModEntry : Mod
             return CompletedCloseMenu(request, beforeOpen, beforeType, "no_op", "verified_no_active_menu", new[] { "active_menu_already_closed" });
         }
 
-        if (menu is DialogueBox)
+        if (beforeType == "DialogueBox" && menu is DialogueBox unsafeBox && !CanAdvanceOrdinaryDialogue(unsafeBox))
         {
-            return BlockedWithPrimitive(request, "close_menu", "menus.active_menu.is_open=false", CloseMenuObservedEffect(), "close_menu_dialogue_box_unsupported");
+            var unsafeReasons = new List<string>();
+            if (unsafeBox.isQuestion) unsafeReasons.Add("dialogue_is_question_true");
+            if (unsafeBox.responses is { Length: > 0 }) unsafeReasons.Add("dialogue_responses_present:" + unsafeBox.responses.Length);
+            if (Game1.eventUp) unsafeReasons.Add("dialogue_event_up_true");
+            if (unsafeBox.characterDialogue is null) unsafeReasons.Add("dialogue_character_missing");
+            else if (string.IsNullOrWhiteSpace(unsafeBox.characterDialogue.speaker?.Name)) unsafeReasons.Add("dialogue_speaker_name_missing_or_empty");
+            if (!string.IsNullOrWhiteSpace(Game1.currentLocation?.lastQuestionKey)) unsafeReasons.Add("dialogue_last_question_key_present:" + Game1.currentLocation.lastQuestionKey);
+            if (unsafeBox.transitioning) unsafeReasons.Add("dialogue_transitioning_true");
+            var beforeSpeakerName = unsafeBox.characterDialogue?.speaker?.Name ?? string.Empty;
+            return new TrainingExecutionResult
+            {
+                RunId = request.RunId,
+                QueueId = request.QueueId,
+                QueueItemId = request.QueueItemId,
+                BeforeStateHash = request.BeforeStateHash,
+                OptionId = request.OptionId,
+                Status = "blocked",
+                FeedbackAvailable = true,
+                StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+                CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+                PrimitiveKind = "close_menu",
+                PrimitiveVerificationStatus = "blocked",
+                PrimitiveVerificationReasons = unsafeReasons.ToArray(),
+                RequestedEffect = "menus.active_menu.is_open=false",
+                ObservedEffect = CloseMenuObservedEffect(),
+                BlockReasons = unsafeReasons.ToArray(),
+                DialogueNativeHandled = false,
+                DialoguePressAttempts = 0,
+                DialogueAdvanceTicks = 0,
+                DialogueMenuTypeBefore = "DialogueBox",
+                DialogueMenuTypeAfter = "DialogueBox",
+                DialogueIsQuestionBefore = unsafeBox.isQuestion,
+                DialogueIsQuestionAfter = unsafeBox.isQuestion,
+                DialogueResponseCountBefore = unsafeBox.responses?.Length ?? 0,
+                DialogueResponseCountAfter = unsafeBox.responses?.Length ?? 0,
+                DialogueSpeakerNameBefore = beforeSpeakerName,
+                DialogueSpeakerNameAfter = beforeSpeakerName,
+                DialogueEventUpBefore = Game1.eventUp,
+                DialogueEventUpAfter = Game1.eventUp,
+                ChangedFacts = new[]
+                {
+                    new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = "true", After = "true" },
+                    new SimulatedFactChange { Path = "menus.active_menu.type", Before = "DialogueBox", After = "DialogueBox" }
+                }
+            };
         }
 
         if (!IsSafeCloseMenuType(beforeType))
@@ -3188,6 +3244,249 @@ public sealed class ModEntry : Mod
             verified ? "applied" : "blocked",
             verified ? "verified" : "observed_mismatch",
             verified ? new[] { "active_menu_closed" } : new[] { "active_menu_still_open" });
+    }
+
+    private static bool CanAdvanceOrdinaryDialogue(DialogueBox dialogueBox)
+    {
+        return !dialogueBox.isQuestion &&
+            (dialogueBox.responses is null || dialogueBox.responses.Length == 0) &&
+            !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
+            string.IsNullOrWhiteSpace(Game1.currentLocation?.lastQuestionKey) &&
+            !Game1.eventUp &&
+            dialogueBox.characterDialogue is not null &&
+            !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name);
+    }
+
+    private void StartDialogueAdvance(PendingExecution pending)
+    {
+        var reasons = ValidateExecutionRequest(pending.Request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(pending.Request, reasons.ToArray()));
+            return;
+        }
+
+        var menu = Game1.activeClickableMenu;
+        if (menu is not DialogueBox dialogueBox || !CanAdvanceOrdinaryDialogue(dialogueBox))
+        {
+            pending.Completion.SetResult(ExecuteCloseMenu(pending.Request));
+            return;
+        }
+
+        if (activeDialogueAdvance is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request, "close_menu",
+                "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(),
+                "dialogue_advance_executor_busy"));
+            return;
+        }
+
+        activeDialogueAdvance = new ActiveDialogueAdvance(pending, dialogueBox);
+        Monitor.Log($"Started native dialogue advance: isQuestion={dialogueBox.isQuestion}, responses={dialogueBox.responses?.Length ?? 0}, transitioning={dialogueBox.transitioning}, safetyTimer={dialogueBox.safetyTimer}, eventUp={Game1.eventUp}, speaker={dialogueBox.characterDialogue?.speaker?.Name ?? "none"}", LogLevel.Info);
+    }
+
+    private void TickDialogueAdvance()
+    {
+        if (activeDialogueAdvance is null)
+        {
+            return;
+        }
+
+        var advance = activeDialogueAdvance;
+        advance.ElapsedTicks++;
+
+        try
+        {
+            TickDialogueAdvanceCore(advance);
+        }
+        catch (Exception ex)
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                advance, "blocked", "blocked", "dialogue_advance_exception:" + ex.GetType().Name,
+                new[] { "dialogue_advance_exception:" + ex.GetType().Name + ":" + ex.Message }));
+        }
+    }
+
+    private void TickDialogueAdvanceCore(ActiveDialogueAdvance advance)
+    {
+        if (advance.ElapsedTicks > advance.MaxTicks)
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                advance, "blocked", "blocked", "dialogue_advance_timeout",
+                new[] { "dialogue_advance_timeout" }));
+            return;
+        }
+
+        var currentBox = Game1.activeClickableMenu as DialogueBox;
+
+        if (!ReferenceEquals(currentBox, advance.InitialMenu))
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            var verified = Game1.activeClickableMenu is null;
+            advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                advance,
+                verified ? "applied" : "blocked",
+                verified ? "verified" : "observed_mismatch",
+                verified ? "dialogue_advanced_and_closed_natively" : "dialogue_menu_instance_changed_during_advance",
+                verified
+                    ? new[] { "dialogue_advanced_and_closed_natively", "press_attempts=" + advance.PressAttempts, "advance_ticks=" + advance.ElapsedTicks }
+                    : new[] { "dialogue_menu_instance_changed_during_advance", "type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") }));
+            return;
+        }
+
+        if (!string.Equals(currentBox.characterDialogue?.speaker?.Name, advance.InitialSpeakerName, StringComparison.Ordinal))
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                advance, "blocked", "blocked", "dialogue_speaker_changed_during_advance",
+                new[] { "dialogue_speaker_changed_during_advance:expected=" + advance.InitialSpeakerName + ";actual=" + (currentBox.characterDialogue?.speaker?.Name ?? "null") }));
+            return;
+        }
+
+        if (!CanAdvanceOrdinaryDialogue(currentBox))
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                advance, "blocked", "blocked", "dialogue_became_unsafe_during_advance",
+                new[] { "dialogue_became_unsafe_during_advance:isQuestion=" + currentBox.isQuestion + ";responses=" + (currentBox.responses?.Length ?? 0) + ";lastQuestionKey=" + (Game1.currentLocation?.lastQuestionKey ?? "null") + ";eventUp=" + Game1.eventUp }));
+            return;
+        }
+
+        switch (advance.Stage)
+        {
+            case DialogueAdvanceStage.WaitTransition:
+                if (currentBox.transitioning || currentBox.safetyTimer > 0)
+                {
+                    advance.TransitionWaitTicks++;
+                    return;
+                }
+
+                advance.Stage = DialogueAdvanceStage.Press;
+                break;
+
+            case DialogueAdvanceStage.Press:
+                if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+                {
+                    ReleaseSmapiLeftButtonOverride();
+                    activeDialogueAdvance = null;
+                    advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                        advance, "blocked", "blocked", "dialogue_advance_input_press_failed",
+                        new[] { "dialogue_advance_input_press_failed:" + pressReason }));
+                    return;
+                }
+
+                advance.PressAttempts++;
+                advance.SawDialogueFinishedBeforePress = currentBox.dialogueFinished;
+                advance.SawShowTypingBeforePress = currentBox.showTyping;
+                advance.SawTransitioningBeforePress = currentBox.transitioning;
+                advance.Stage = DialogueAdvanceStage.ReleaseAfterAdvance;
+                break;
+
+            case DialogueAdvanceStage.ReleaseAfterAdvance:
+                if (!TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
+                {
+                    ReleaseSmapiLeftButtonOverride();
+                    activeDialogueAdvance = null;
+                    advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                        advance, "blocked", "blocked", "dialogue_advance_input_release_failed",
+                        new[] { "dialogue_advance_input_release_failed:" + releaseReason }));
+                    return;
+                }
+
+                advance.AdvanceWaitTicks = 0;
+                advance.Stage = DialogueAdvanceStage.WaitAdvanceEffect;
+                break;
+
+            case DialogueAdvanceStage.WaitAdvanceEffect:
+                advance.AdvanceWaitTicks++;
+                var dialogueChanged = currentBox.dialogueFinished != advance.SawDialogueFinishedBeforePress ||
+                    currentBox.showTyping != advance.SawShowTypingBeforePress ||
+                    currentBox.transitioning != advance.SawTransitioningBeforePress;
+                if (dialogueChanged || advance.AdvanceWaitTicks > 30)
+                {
+                    advance.Stage = DialogueAdvanceStage.CheckClose;
+                }
+
+                break;
+
+            case DialogueAdvanceStage.CheckClose:
+                advance.CheckCloseTicks++;
+                if (advance.PressAttempts >= advance.MaxPressAttempts)
+                {
+                    ReleaseSmapiLeftButtonOverride();
+                    activeDialogueAdvance = null;
+                    advance.Pending.Completion.SetResult(DialogueAdvanceResult(
+                        advance, "blocked", "blocked", "dialogue_advance_max_press_exhausted",
+                        new[] { "dialogue_advance_max_press_exhausted:" + advance.PressAttempts }));
+                    return;
+                }
+
+                if (currentBox.transitioning || currentBox.safetyTimer > 0)
+                {
+                    advance.Stage = DialogueAdvanceStage.WaitTransition;
+                    return;
+                }
+
+                advance.Stage = DialogueAdvanceStage.Press;
+                break;
+        }
+    }
+
+    private static TrainingExecutionResult DialogueAdvanceResult(
+        ActiveDialogueAdvance advance,
+        string status,
+        string verificationStatus,
+        string primaryReason,
+        string[] allReasons)
+    {
+        var observedMenu = Game1.activeClickableMenu;
+        var observedType = observedMenu?.GetType().Name ?? "none";
+        var observedBox = observedMenu as DialogueBox;
+        return new TrainingExecutionResult
+        {
+            RunId = advance.Pending.Request.RunId,
+            QueueId = advance.Pending.Request.QueueId,
+            QueueItemId = advance.Pending.Request.QueueItemId,
+            BeforeStateHash = advance.Pending.Request.BeforeStateHash,
+            OptionId = advance.Pending.Request.OptionId,
+            Status = status,
+            FeedbackAvailable = true,
+            StartedAt = advance.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "close_menu",
+            PrimitiveVerificationStatus = verificationStatus,
+            PrimitiveVerificationReasons = allReasons,
+            RequestedEffect = "menus.active_menu.is_open=false",
+            ObservedEffect = CloseMenuObservedEffect() + ";dialogue_press_attempts=" + advance.PressAttempts + ";advance_ticks=" + advance.ElapsedTicks,
+            BlockReasons = status == "blocked" ? allReasons : Array.Empty<string>(),
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = "true", After = (observedMenu is not null).ToString().ToLowerInvariant() },
+                new SimulatedFactChange { Path = "menus.active_menu.type", Before = advance.BeforeMenuType, After = observedType }
+            },
+            DialogueNativeHandled = true,
+            DialoguePressAttempts = advance.PressAttempts,
+            DialogueAdvanceTicks = advance.ElapsedTicks,
+            DialogueMenuTypeBefore = advance.BeforeMenuType,
+            DialogueMenuTypeAfter = observedType,
+            DialogueIsQuestionBefore = advance.BeforeIsQuestion,
+            DialogueIsQuestionAfter = observedBox?.isQuestion,
+            DialogueResponseCountBefore = advance.BeforeResponseCount,
+            DialogueResponseCountAfter = observedBox?.responses?.Length,
+            DialogueSpeakerNameBefore = advance.BeforeSpeakerName,
+            DialogueSpeakerNameAfter = observedBox?.characterDialogue?.speaker?.Name ?? string.Empty,
+            DialogueEventUpBefore = advance.BeforeEventUp,
+            DialogueEventUpAfter = Game1.eventUp
+        };
     }
 
     private static TrainingExecutionResult CompletedCloseMenu(TrainingExecutionRequest request, bool beforeOpen, string beforeType, string status, string verificationStatus, string[] verificationReasons)
@@ -9094,6 +9393,54 @@ public sealed class ModEntry : Mod
         SlotRelease,
         WaitForSlotDispatch,
         VerifyAndClose
+    }
+
+    private enum DialogueAdvanceStage
+    {
+        WaitTransition,
+        Press,
+        ReleaseAfterAdvance,
+        WaitAdvanceEffect,
+        CheckClose
+    }
+
+    private sealed class ActiveDialogueAdvance
+    {
+        public ActiveDialogueAdvance(PendingExecution pending, DialogueBox initialMenu)
+        {
+            Pending = pending;
+            InitialMenu = initialMenu;
+            InitialSpeakerName = initialMenu.characterDialogue?.speaker?.Name ?? string.Empty;
+            StartedAt = DateTimeOffset.UtcNow.ToString("O");
+            MaxTicks = 600;
+            MaxPressAttempts = 60;
+            BeforeMenuType = "DialogueBox";
+            BeforeIsQuestion = initialMenu.isQuestion;
+            BeforeResponseCount = initialMenu.responses?.Length ?? 0;
+            BeforeSpeakerName = InitialSpeakerName;
+            BeforeEventUp = Game1.eventUp;
+        }
+
+        public PendingExecution Pending { get; }
+        public DialogueBox InitialMenu { get; }
+        public string InitialSpeakerName { get; }
+        public string StartedAt { get; }
+        public int ElapsedTicks { get; set; }
+        public int MaxTicks { get; }
+        public int MaxPressAttempts { get; }
+        public int PressAttempts { get; set; }
+        public int AdvanceWaitTicks { get; set; }
+        public int TransitionWaitTicks { get; set; }
+        public int CheckCloseTicks { get; set; }
+        public DialogueAdvanceStage Stage { get; set; } = DialogueAdvanceStage.WaitTransition;
+        public bool SawDialogueFinishedBeforePress { get; set; }
+        public bool SawShowTypingBeforePress { get; set; }
+        public bool SawTransitioningBeforePress { get; set; }
+        public string BeforeMenuType { get; }
+        public bool BeforeIsQuestion { get; }
+        public int BeforeResponseCount { get; }
+        public string BeforeSpeakerName { get; }
+        public bool BeforeEventUp { get; }
     }
 
     private sealed class ActiveShipInventoryToBin

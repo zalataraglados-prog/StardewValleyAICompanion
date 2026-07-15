@@ -45,8 +45,11 @@ namespace StardewAI.Core.OptionRegistry
                 }
             }
 
+            var playerLocationId = ReadStateFieldString(snapshot, "player", "location_id");
             return results
-                .OrderBy(candidate => candidate.LocationId, StringComparer.Ordinal)
+                .OrderByDescending(candidate => candidate.Available)
+                .ThenByDescending(candidate => string.Equals(candidate.LocationId, playerLocationId, StringComparison.Ordinal))
+                .ThenBy(candidate => candidate.LocationId, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.TileY ?? 0)
                 .ThenBy(candidate => candidate.TileX ?? 0)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
@@ -70,7 +73,8 @@ namespace StardewAI.Core.OptionRegistry
 
             var tileX = ReadInt(npc, "tile_x");
             var tileY = ReadInt(npc, "tile_y");
-            var standTile = SelectReachableStandTile(snapshot, tileX, tileY);
+            var npcLocationId = ReadString(npc, "location_id") ?? "";
+            var standTile = SelectReachableStandTile(snapshot, tileX, tileY, npcLocationId);
             reasons.AddRange(standTile.BlockReasons);
             var hasValidStand = standTile.RouteDistance >= 0;
             var routeDistanceTicks = hasValidStand ? standTile.RouteDistance * 12 : -1;
@@ -176,7 +180,8 @@ namespace StardewAI.Core.OptionRegistry
 
                 var tileX = ReadInt(npc, "tile_x");
                 var tileY = ReadInt(npc, "tile_y");
-                var standTile = SelectReachableStandTile(snapshot, tileX, tileY);
+                var npcLocationId = ReadString(npc, "location_id") ?? "";
+                var standTile = SelectReachableStandTile(snapshot, tileX, tileY, npcLocationId);
                 reasons.AddRange(standTile.BlockReasons);
                 var slotIndex = ReadInt(item, "slot_index");
                 var hasValidStand = standTile.RouteDistance >= 0;
@@ -474,8 +479,14 @@ namespace StardewAI.Core.OptionRegistry
             return false;
         }
 
-        private static StandTileSelection SelectReachableStandTile(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private static StandTileSelection SelectReachableStandTile(SnapshotEnvelope snapshot, int targetX, int targetY, string npcLocationId)
         {
+            var playerLocationId = ReadStateFieldString(snapshot, "player", "location_id");
+            if (!string.Equals(npcLocationId, playerLocationId, StringComparison.Ordinal))
+            {
+                return new StandTileSelection(null, -1, new[] { "social_npc_not_in_player_location_stand_skipped" });
+            }
+
             var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
             var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
             var grid = ReadStateFieldValue(snapshot, "locations", "collision_grid");

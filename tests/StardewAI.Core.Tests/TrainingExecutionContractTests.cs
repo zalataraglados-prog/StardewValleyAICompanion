@@ -326,4 +326,202 @@ public sealed class TrainingExecutionContractTests
         Assert.Contains("\"quest_plan\"", json);
         Assert.Contains("\"quest_native_executor_not_implemented\"", json);
     }
+
+    [Fact]
+    public void DialogueFieldsRoundTripSuccessfully()
+    {
+        var result = new TrainingExecutionResult
+        {
+            RunId = "run.test",
+            QueueId = "queue.test",
+            QueueItemId = "queue-item.test",
+            BeforeStateHash = "hash.before",
+            OptionId = "executor.close_menu",
+            Status = "applied",
+            FeedbackAvailable = true,
+            PrimitiveKind = "close_menu",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "dialogue_advanced_and_closed_natively" },
+            RequestedEffect = "menus.active_menu.is_open=false",
+            ObservedEffect = "menus.active_menu.is_open=false;menus.active_menu.type=none",
+            DialogueNativeHandled = true,
+            DialoguePressAttempts = 3,
+            DialogueAdvanceTicks = 15,
+            DialogueMenuTypeBefore = "DialogueBox",
+            DialogueMenuTypeAfter = "none",
+            DialogueIsQuestionBefore = false,
+            DialogueIsQuestionAfter = null,
+            DialogueResponseCountBefore = 0,
+            DialogueResponseCountAfter = null,
+            DialogueSpeakerNameBefore = "Lewis",
+            DialogueSpeakerNameAfter = "",
+            DialogueEventUpBefore = false,
+            DialogueEventUpAfter = null
+        };
+
+        var json = JsonSerializer.Serialize(result, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(json, JsonOptions)!;
+
+        Assert.Contains("\"dialogue_native_handled\":true", json);
+        Assert.Contains("\"dialogue_press_attempts\":3", json);
+        Assert.Contains("\"dialogue_advance_ticks\":15", json);
+        Assert.Contains("\"dialogue_menu_type_before\":\"DialogueBox\"", json);
+        Assert.Contains("\"dialogue_menu_type_after\":\"none\"", json);
+        Assert.Contains("\"dialogue_is_question_before\":false", json);
+        Assert.Contains("\"dialogue_response_count_before\":0", json);
+        Assert.Contains("\"dialogue_speaker_name_before\":\"Lewis\"", json);
+        Assert.Contains("\"dialogue_event_up_before\":false", json);
+
+        Assert.True(roundTrip.DialogueNativeHandled);
+        Assert.Equal(3, roundTrip.DialoguePressAttempts);
+        Assert.Equal(15, roundTrip.DialogueAdvanceTicks);
+        Assert.Equal("DialogueBox", roundTrip.DialogueMenuTypeBefore);
+        Assert.Equal("none", roundTrip.DialogueMenuTypeAfter);
+        Assert.False(roundTrip.DialogueIsQuestionBefore);
+        Assert.Null(roundTrip.DialogueIsQuestionAfter);
+        Assert.Equal(0, roundTrip.DialogueResponseCountBefore);
+        Assert.Null(roundTrip.DialogueResponseCountAfter);
+        Assert.Equal("Lewis", roundTrip.DialogueSpeakerNameBefore);
+        Assert.Equal("", roundTrip.DialogueSpeakerNameAfter);
+        Assert.False(roundTrip.DialogueEventUpBefore);
+        Assert.Null(roundTrip.DialogueEventUpAfter);
+    }
+
+    [Fact]
+    public void DialogueFieldsSerializeNullsWhenDefault()
+    {
+        var result = new TrainingExecutionResult
+        {
+            RunId = "run.test",
+            QueueId = "queue.test",
+            OptionId = "executor.move_to_tile",
+            Status = "applied"
+        };
+
+        var json = JsonSerializer.Serialize(result, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(json, JsonOptions)!;
+
+        Assert.Null(roundTrip.DialogueNativeHandled);
+        Assert.Null(roundTrip.DialoguePressAttempts);
+        Assert.Null(roundTrip.DialogueAdvanceTicks);
+        Assert.Equal("", roundTrip.DialogueMenuTypeBefore);
+        Assert.Equal("", roundTrip.DialogueMenuTypeAfter);
+        Assert.Null(roundTrip.DialogueIsQuestionBefore);
+        Assert.Null(roundTrip.DialogueResponseCountBefore);
+        Assert.Equal("", roundTrip.DialogueSpeakerNameBefore);
+        Assert.Null(roundTrip.DialogueEventUpBefore);
+    }
+
+    [Fact]
+    public void DialogueFieldsRoundTripBlockedResult()
+    {
+        var result = new TrainingExecutionResult
+        {
+            RunId = "run.test",
+            QueueId = "queue.test",
+            QueueItemId = "queue-item.test",
+            BeforeStateHash = "hash.before",
+            OptionId = "executor.close_menu",
+            Status = "blocked",
+            FeedbackAvailable = true,
+            PrimitiveKind = "close_menu",
+            PrimitiveVerificationStatus = "blocked",
+            PrimitiveVerificationReasons = new[] { "dialogue_became_unsafe_during_advance" },
+            RequestedEffect = "menus.active_menu.is_open=false",
+            ObservedEffect = "menus.active_menu.is_open=true;menus.active_menu.type=DialogueBox",
+            DialogueNativeHandled = true,
+            DialoguePressAttempts = 5,
+            DialogueAdvanceTicks = 40,
+            DialogueMenuTypeBefore = "DialogueBox",
+            DialogueMenuTypeAfter = "DialogueBox",
+            DialogueIsQuestionBefore = false,
+            DialogueIsQuestionAfter = true,
+            DialogueResponseCountBefore = 0,
+            DialogueResponseCountAfter = 2,
+            DialogueSpeakerNameBefore = "Abigail",
+            DialogueSpeakerNameAfter = "Abigail",
+            DialogueEventUpBefore = false,
+            DialogueEventUpAfter = true,
+            BlockReasons = new[] { "dialogue_became_unsafe_during_advance" }
+        };
+
+        var json = JsonSerializer.Serialize(result, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(json, JsonOptions)!;
+
+        Assert.True(roundTrip.DialogueNativeHandled);
+        Assert.Equal(5, roundTrip.DialoguePressAttempts);
+        Assert.Equal(40, roundTrip.DialogueAdvanceTicks);
+        Assert.Equal("DialogueBox", roundTrip.DialogueMenuTypeBefore);
+        Assert.Equal("DialogueBox", roundTrip.DialogueMenuTypeAfter);
+        Assert.False(roundTrip.DialogueIsQuestionBefore);
+        Assert.True(roundTrip.DialogueIsQuestionAfter);
+        Assert.Equal(0, roundTrip.DialogueResponseCountBefore);
+        Assert.Equal(2, roundTrip.DialogueResponseCountAfter);
+        Assert.Equal("Abigail", roundTrip.DialogueSpeakerNameBefore);
+        Assert.Equal("Abigail", roundTrip.DialogueSpeakerNameAfter);
+        Assert.False(roundTrip.DialogueEventUpBefore);
+        Assert.True(roundTrip.DialogueEventUpAfter);
+        Assert.Contains("dialogue_became_unsafe_during_advance", roundTrip.BlockReasons);
+    }
+
+    [Fact]
+    public void DialogueFieldsPropagateThroughPlanExecutionEpisodeEnvelope()
+    {
+        var episode = new PlanExecutionEpisodeEnvelope
+        {
+            EpisodeId = "episode.dialogue.propagation",
+            RunId = "run.dialogue",
+            SourceStateHash = "hash.before",
+            AfterStateHash = "hash.after",
+            QueueId = "queue.dialogue",
+            OptionId = "executor.close_menu",
+            Status = "applied",
+            Success = true,
+            PrimitiveKind = "close_menu",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "dialogue_advanced_and_closed_natively" },
+            RequestedEffect = "menus.active_menu.is_open=false",
+            ObservedEffect = "menus.active_menu.is_open=false;menus.active_menu.type=none",
+            DialogueNativeHandled = true,
+            DialoguePressAttempts = 3,
+            DialogueAdvanceTicks = 15,
+            DialogueMenuTypeBefore = "DialogueBox",
+            DialogueMenuTypeAfter = "none",
+            DialogueIsQuestionBefore = false,
+            DialogueIsQuestionAfter = null,
+            DialogueResponseCountBefore = 0,
+            DialogueResponseCountAfter = null,
+            DialogueSpeakerNameBefore = "Lewis",
+            DialogueSpeakerNameAfter = "",
+            DialogueEventUpBefore = false,
+            DialogueEventUpAfter = null,
+            EffectiveQueueItem = JsonDocument.Parse("{}").RootElement.Clone(),
+            ChangedFacts = JsonDocument.Parse("[]").RootElement.Clone()
+        };
+
+        var json = JsonSerializer.Serialize(episode, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(json, JsonOptions)!;
+
+        Assert.Contains("\"dialogue_native_handled\":true", json);
+        Assert.Contains("\"dialogue_press_attempts\":3", json);
+        Assert.Contains("\"dialogue_advance_ticks\":15", json);
+        Assert.Contains("\"dialogue_menu_type_before\":\"DialogueBox\"", json);
+        Assert.Contains("\"dialogue_menu_type_after\":\"none\"", json);
+        Assert.Contains("\"dialogue_is_question_before\":false", json);
+        Assert.Contains("\"dialogue_speaker_name_before\":\"Lewis\"", json);
+        Assert.Contains("\"dialogue_event_up_before\":false", json);
+
+        Assert.True(roundTrip.DialogueNativeHandled);
+        Assert.Equal(3, roundTrip.DialoguePressAttempts);
+        Assert.Equal(15, roundTrip.DialogueAdvanceTicks);
+        Assert.Equal("DialogueBox", roundTrip.DialogueMenuTypeBefore);
+        Assert.Equal("none", roundTrip.DialogueMenuTypeAfter);
+        Assert.False(roundTrip.DialogueIsQuestionBefore);
+        Assert.Null(roundTrip.DialogueIsQuestionAfter);
+        Assert.Equal(0, roundTrip.DialogueResponseCountBefore);
+        Assert.Equal("Lewis", roundTrip.DialogueSpeakerNameBefore);
+        Assert.Equal("", roundTrip.DialogueSpeakerNameAfter);
+        Assert.False(roundTrip.DialogueEventUpBefore);
+        Assert.Null(roundTrip.DialogueEventUpAfter);
+    }
 }

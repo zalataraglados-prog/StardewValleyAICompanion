@@ -65,7 +65,7 @@ public sealed class PlayerReadAdapter : ReadAdapterBase
             ["has_skull_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasSkullKey : null, "Game1.player.hasSkullKey", tick),
             ["has_rusty_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasRustyKey : null, "Game1.player.hasRustyKey", tick),
             ["married_or_roommate"] = Field(Context.IsWorldReady ? (bool?)player?.isMarriedOrRoommates() : null, "Game1.player.isMarriedOrRoommates()", tick),
-            ["spouse"] = Field(Context.IsWorldReady ? player?.spouse : null, "Game1.player.spouse", tick),
+            ["spouse"] = Field(Context.IsWorldReady && player is not null ? (player.spouse ?? string.Empty) : null, "Game1.player.spouse", tick),
             ["has_pending_roommate"] = Field(Context.IsWorldReady ? (bool?)player?.hasCurrentOrPendingRoommate() : null, "Game1.player.hasCurrentOrPendingRoommate()", tick),
             ["can_understand_dwarves"] = Field(Context.IsWorldReady ? (bool?)player?.canUnderstandDwarves : null, "Game1.player.canUnderstandDwarves", tick),
             ["book_friendship"] = Field(Context.IsWorldReady && player is not null ? (long?)player.stats.Get("Book_Friendship") : null, "Game1.player.stats.Get(\"Book_Friendship\")", tick),
