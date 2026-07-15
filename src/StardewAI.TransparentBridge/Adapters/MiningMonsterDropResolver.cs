@@ -15,8 +15,6 @@ internal static class MiningMonsterDropResolver
 
     public const string NaturalTrinketCatalogKey = "natural_monster_trinkets";
 
-    private static readonly string[] RandomCosmeticCatalog = BuildRandomCosmeticQualifiedItemIds();
-
     public static MiningMonsterDropProjection Resolve(MineShaft mine, Monster monster, Farmer player, int deathTileX, int deathTileY)
     {
         var selected = monster.objectsToDrop.Select(QualifyDropId)
@@ -114,7 +112,7 @@ internal static class MiningMonsterDropResolver
             : "partial_custom_runtime_type";
         result.DropProbabilityRules = ReadBaseProbabilityRules(monster, player, selected, pendantOverrideEligible, baseBranchChance);
         result.DropProbabilityCompleteness = monster.GetType().Assembly == typeof(Monster).Assembly
-            ? "complete_current_snapshot_vanilla_runtime_type_and_common_event_probabilities;position_seeded_rules_require_replan_after_movement;weighted_cosmetic_identity_selection_pending"
+            ? "complete_current_snapshot_vanilla_runtime_type_and_common_event_probabilities;position_seeded_rules_require_replan_after_movement;weighted_catalog_identity_probability_in_shared_catalog"
             : "partial_common_game_location_rules_exact;custom_runtime_type_probabilities_unavailable";
         return result;
     }
@@ -951,14 +949,18 @@ internal static class MiningMonsterDropResolver
 
     public static MiningDropCatalogProjection[] ReadSharedCatalogs(Farmer player)
     {
+        var cosmeticEntries = BuildRandomCosmeticSelectionEntries();
+        var naturalTrinkets = NaturalTrinketQualifiedItemIds();
         return new[]
         {
             new MiningDropCatalogProjection
             {
                 Key = RandomCosmeticCatalogKey,
-                PossibleQualifiedItemIds = RandomCosmeticCatalog,
+                PossibleQualifiedItemIds = cosmeticEntries.Select(entry => entry.QualifiedItemId).ToArray(),
+                SelectionProbabilityEntries = cosmeticEntries,
                 Active = Game1.stats.DaysPlayed > 2,
                 ItemIdentityCompleteness = "complete",
+                SelectionProbabilityCompleteness = "complete_conditional_on_cosmetic_event_for_loaded_furniture_data",
                 Source = "Utility.getRandomCosmeticItem/getRandomSingleTileFurniture"
             },
             new MiningDropCatalogProjection
@@ -967,51 +969,98 @@ internal static class MiningMonsterDropResolver
                 PossibleQualifiedItemIds = HardMineTreasureQualifiedItemIds(player),
                 Active = true,
                 ItemIdentityCompleteness = "complete_for_current_player_gates",
+                SelectionProbabilityCompleteness = "not_projected_global_rng_branch_tree",
                 Source = "MineShaft.getTreasureRoomItem; DataLoader.Trinkets"
             },
             new MiningDropCatalogProjection
             {
                 Key = NaturalTrinketCatalogKey,
-                PossibleQualifiedItemIds = NaturalTrinketQualifiedItemIds(),
+                PossibleQualifiedItemIds = naturalTrinkets,
+                SelectionProbabilityEntries = UniformSelectionEntries(naturalTrinkets),
                 Active = player.stats.Get("trinketSlots") != 0,
                 ItemIdentityCompleteness = "complete_for_loaded_trinket_data",
+                SelectionProbabilityCompleteness = naturalTrinkets.Length > 0 ? "complete_uniform_loaded_natural_trinkets" : "complete_empty_loaded_natural_trinkets",
                 Source = "Trinket.TrySpawnTrinket/GetRandomTrinket; DataLoader.Trinkets"
             }
         };
     }
 
-    private static string[] BuildRandomCosmeticQualifiedItemIds()
+    private static MiningDropCatalogEntryProjection[] BuildRandomCosmeticSelectionEntries()
     {
-        var ids = new HashSet<string>(StringComparer.Ordinal) { "(F)1369" };
+        var weights = new Dictionary<string, double>(StringComparer.Ordinal);
+        AddSelectionWeight(weights, "(F)1369", 0.2d * 0.05d, validateFurnitureFallback: true);
+        var furnitureRemainderBranch = 0.2d * 0.95d / 3d;
+        var singleTileBranch = furnitureRemainderBranch / 3d;
         for (var id = 0; id < 30; id += 3)
         {
-            ids.Add("(F)" + id);
+            AddSelectionWeight(weights, "(F)" + id, singleTileBranch / 10d, validateFurnitureFallback: true);
         }
         for (var id = 1362; id < 1370; id++)
         {
-            ids.Add("(F)" + id);
+            AddSelectionWeight(weights, "(F)" + id, furnitureRemainderBranch / 8d, validateFurnitureFallback: true);
         }
         for (var id = 1376; id < 1391; id++)
         {
-            ids.Add("(F)" + id);
+            AddSelectionWeight(weights, "(F)" + id, singleTileBranch / 15d, validateFurnitureFallback: true);
+            AddSelectionWeight(weights, "(F)" + id, furnitureRemainderBranch / 15d, validateFurnitureFallback: true);
         }
         for (var id = 1391; id <= 1401; id += 2)
         {
-            ids.Add("(F)" + id);
+            AddSelectionWeight(weights, "(F)" + id, singleTileBranch / 6d, validateFurnitureFallback: true);
         }
-        foreach (var id in new[] { 45, 46, 47, 49, 52, 53, 54, 55, 57, 58, 59, 62, 63, 68, 69, 70, 84, 85, 87, 88, 89, 90 })
+        var hats = new[] { 45, 46, 47, 49, 52, 53, 54, 55, 57, 58, 59, 62, 63, 68, 69, 70, 84, 85, 87, 88, 89, 90 };
+        foreach (var id in hats)
         {
-            ids.Add("(H)" + id);
+            AddSelectionWeight(weights, "(H)" + id, 0.2d / hats.Length, validateFurnitureFallback: false);
         }
         var excludedShirts = new HashSet<int> { 1127, 1129, 1130, 1132, 1133, 1136, 1152, 1176, 1177, 1201, 1202 };
-        for (var id = 1112; id < 1291; id++)
+        var shirts = Enumerable.Range(1112, 1291 - 1112).Where(id => !excludedShirts.Contains(id)).ToArray();
+        foreach (var id in shirts)
         {
-            if (!excludedShirts.Contains(id))
+            AddSelectionWeight(weights, "(S)" + id, 0.6d / shirts.Length, validateFurnitureFallback: false);
+        }
+        return weights
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => new MiningDropCatalogEntryProjection
             {
-                ids.Add("(S)" + id);
+                QualifiedItemId = pair.Key,
+                ConditionalSelectionChance = pair.Value,
+                ProbabilityStatus = "exact_decompiled_weight_with_loaded_furniture_fallback"
+            })
+            .ToArray();
+    }
+
+    private static void AddSelectionWeight(
+        Dictionary<string, double> weights,
+        string qualifiedItemId,
+        double chance,
+        bool validateFurnitureFallback)
+    {
+        var resolvedId = qualifiedItemId;
+        if (validateFurnitureFallback)
+        {
+            var data = ItemRegistry.GetDataOrErrorItem(qualifiedItemId);
+            if (data.IsErrorItem || data.InternalName.Contains("Error", StringComparison.Ordinal))
+            {
+                resolvedId = "(F)1369";
             }
         }
-        return Ordered(ids);
+        weights[resolvedId] = weights.GetValueOrDefault(resolvedId) + chance;
+    }
+
+    private static MiningDropCatalogEntryProjection[] UniformSelectionEntries(string[] qualifiedItemIds)
+    {
+        if (qualifiedItemIds.Length == 0)
+        {
+            return Array.Empty<MiningDropCatalogEntryProjection>();
+        }
+        var chance = 1d / qualifiedItemIds.Length;
+        return qualifiedItemIds.Select(id => new MiningDropCatalogEntryProjection
+        {
+            QualifiedItemId = id,
+            ConditionalSelectionChance = chance,
+            ProbabilityStatus = "exact_uniform_loaded_catalog"
+        }).ToArray();
     }
 
     private static string[] NaturalTrinketQualifiedItemIds()
@@ -1262,9 +1311,22 @@ internal sealed class MiningDropCatalogProjection
 
     public string[] PossibleQualifiedItemIds { get; set; } = Array.Empty<string>();
 
+    public MiningDropCatalogEntryProjection[] SelectionProbabilityEntries { get; set; } = Array.Empty<MiningDropCatalogEntryProjection>();
+
     public bool Active { get; set; }
 
     public string ItemIdentityCompleteness { get; set; } = string.Empty;
 
+    public string SelectionProbabilityCompleteness { get; set; } = string.Empty;
+
     public string Source { get; set; } = string.Empty;
+}
+
+internal sealed class MiningDropCatalogEntryProjection
+{
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    public double ConditionalSelectionChance { get; set; }
+
+    public string ProbabilityStatus { get; set; } = string.Empty;
 }

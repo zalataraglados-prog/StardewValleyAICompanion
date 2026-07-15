@@ -187,6 +187,49 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveMultipliesEventAndCatalogSelectionChance()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(S)1200" }
+            },
+            monsters: """
+            [{"runtime_identity":"weighted-catalog-source","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":[],"conditional_drop_catalog_keys":["utility_random_cosmetic_item"],"drop_probability_rules":[{"catalog_key":"utility_random_cosmetic_item","effective_per_kill_chance":0.003,"probability_status":"exact_current_state_formula","item_selection_status":"weighted_catalog"}]}]
+            """,
+            dropCatalogs: """
+            [{"key":"utility_random_cosmetic_item","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(S)1200","(S)1201"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(S)1200","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_weight_with_loaded_furniture_fallback"},{"qualified_item_id":"(S)1201","conditional_selection_chance":0.75,"probability_status":"exact_decompiled_weight_with_loaded_furniture_fallback"}]}]
+            """);
+
+        Assert.Equal("weighted-catalog-source", plan.TargetRuntimeIdentity);
+        Assert.Equal(0.00075d, plan.TargetDropChancePreview);
+        Assert.Equal(0.00075d, plan.TargetExpectedQuantityPerKill);
+        Assert.Equal("exact_current_snapshot", plan.TargetDropProbabilityStatus);
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveRejectsIncompleteCatalogProbabilityMassOnly()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(S)1200" }
+            },
+            monsters: """
+            [{"runtime_identity":"bad-weight-source","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":[],"conditional_drop_catalog_keys":["utility_random_cosmetic_item"],"drop_probability_rules":[{"catalog_key":"utility_random_cosmetic_item","effective_per_kill_chance":0.003,"probability_status":"exact_current_state_formula","item_selection_status":"weighted_catalog"}]}]
+            """,
+            dropCatalogs: """
+            [{"key":"utility_random_cosmetic_item","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(S)1200","(S)1201"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(S)1200","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_weight_with_loaded_furniture_fallback"},{"qualified_item_id":"(S)1201","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_weight_with_loaded_furniture_fallback"}]}]
+            """);
+
+        Assert.Equal("bad-weight-source", plan.TargetRuntimeIdentity);
+        Assert.Null(plan.TargetDropChancePreview);
+        Assert.Equal("unavailable_no_stable_per_identity_probability", plan.TargetDropProbabilityStatus);
+    }
+
+    [Fact]
     public void MonsterDropObjectiveRejectsIncompleteSharedCatalog()
     {
         var plan = ObjectivePlan(

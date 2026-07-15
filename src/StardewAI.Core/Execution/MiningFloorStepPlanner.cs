@@ -369,7 +369,7 @@ namespace StardewAI.Core.Execution
             bool[,] grid,
             string reason,
             string[]? targetDropIds = null,
-            IReadOnlyDictionary<string, string[]>? dropCatalogs = null)
+            IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs = null)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -424,7 +424,7 @@ namespace StardewAI.Core.Execution
             JsonElement monster,
             HashSet<string>? targets,
             string[] possible,
-            IReadOnlyDictionary<string, string[]>? dropCatalogs)
+            IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs)
         {
             if (targets is null)
             {
@@ -485,7 +485,7 @@ namespace StardewAI.Core.Execution
         private static IEnumerable<TargetProbabilityRule> ReadExactTargetProbabilityRules(
             JsonElement monster,
             string target,
-            IReadOnlyDictionary<string, string[]>? dropCatalogs)
+            IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs)
         {
             if (!monster.TryGetProperty("drop_probability_rules", out var rules) || rules.ValueKind != JsonValueKind.Array)
             {
@@ -502,24 +502,43 @@ namespace StardewAI.Core.Execution
                 }
                 var directMatch = ReadStrings(rule, "qualified_item_ids").Contains(target, StringComparer.OrdinalIgnoreCase);
                 var catalogKey = ReadString(rule, "catalog_key");
-                var catalogMatch = !string.IsNullOrWhiteSpace(catalogKey) &&
+                var catalogMatch = false;
+                double? catalogSelectionChance = null;
+                if (!string.IsNullOrWhiteSpace(catalogKey) &&
                     dropCatalogs is not null &&
-                    dropCatalogs.TryGetValue(catalogKey, out var catalogIds) &&
-                    catalogIds.Contains(target, StringComparer.OrdinalIgnoreCase);
+                    dropCatalogs.TryGetValue(catalogKey, out var catalog) &&
+                    catalog.Ids.Contains(target, StringComparer.OrdinalIgnoreCase))
+                {
+                    catalogMatch = true;
+                    if (catalog.ConditionalSelectionChances.TryGetValue(target, out var parsedSelectionChance))
+                    {
+                        catalogSelectionChance = parsedSelectionChance;
+                    }
+                }
                 if (!directMatch && !catalogMatch)
                 {
                     continue;
                 }
                 var chance = ReadDouble(rule, "per_identity_chance");
+                double? expectedQuantity = ReadDouble(rule, "expected_quantity_per_kill");
+                if (!chance.HasValue && catalogMatch && catalogSelectionChance.HasValue)
+                {
+                    var eventChance = ReadDouble(rule, "effective_per_kill_chance");
+                    if (eventChance.HasValue)
+                    {
+                        chance = eventChance.Value * catalogSelectionChance.Value;
+                        expectedQuantity = chance;
+                    }
+                }
                 if (!chance.HasValue)
                 {
                     continue;
                 }
-                yield return new TargetProbabilityRule(chance.Value, ReadDouble(rule, "expected_quantity_per_kill"));
+                yield return new TargetProbabilityRule(chance.Value, expectedQuantity);
             }
         }
 
-        private static string[] ExpandMonsterPossibleDrops(JsonElement monster, IReadOnlyDictionary<string, string[]>? dropCatalogs)
+        private static string[] ExpandMonsterPossibleDrops(JsonElement monster, IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs)
         {
             var possible = new HashSet<string>(
                 ReadStringsWithLegacyFallback(monster, "possible_drop_qualified_item_ids", "selected_drop_qualified_item_ids"),
@@ -530,17 +549,17 @@ namespace StardewAI.Core.Execution
             }
             foreach (var key in ReadStrings(monster, "conditional_drop_catalog_keys"))
             {
-                if (dropCatalogs.TryGetValue(key, out var ids))
+                if (dropCatalogs.TryGetValue(key, out var catalog))
                 {
-                    possible.UnionWith(ids);
+                    possible.UnionWith(catalog.Ids);
                 }
             }
             return possible.OrderBy(id => id, StringComparer.Ordinal).ToArray();
         }
 
-        private static IReadOnlyDictionary<string, string[]> ReadMonsterDropCatalogs(JsonElement mining)
+        private static IReadOnlyDictionary<string, MonsterDropCatalogInfo> ReadMonsterDropCatalogs(JsonElement mining)
         {
-            var result = new Dictionary<string, string[]>(StringComparer.Ordinal);
+            var result = new Dictionary<string, MonsterDropCatalogInfo>(StringComparer.Ordinal);
             if (!TryFieldValue(mining, "monster_drop_catalogs", out var catalogs) || catalogs.ValueKind != JsonValueKind.Array)
             {
                 return result;
@@ -555,7 +574,35 @@ namespace StardewAI.Core.Execution
                 {
                     continue;
                 }
-                result[key] = ReadStrings(catalog, "possible_qualified_item_ids");
+                var ids = ReadStrings(catalog, "possible_qualified_item_ids");
+                var selectionChances = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                var probabilityCompleteness = ReadString(catalog, "selection_probability_completeness");
+                if (probabilityCompleteness.StartsWith("complete", StringComparison.Ordinal) &&
+                    catalog.TryGetProperty("selection_probability_entries", out var entries) &&
+                    entries.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var entry in entries.EnumerateArray())
+                    {
+                        var id = ReadString(entry, "qualified_item_id");
+                        var chance = ReadDouble(entry, "conditional_selection_chance");
+                        var status = ReadString(entry, "probability_status");
+                        if (!string.IsNullOrWhiteSpace(id) && chance.HasValue && chance.Value >= 0d && chance.Value <= 1d &&
+                            (string.Equals(status, "exact_decompiled_weight_with_loaded_furniture_fallback", StringComparison.Ordinal) ||
+                             string.Equals(status, "exact_uniform_loaded_catalog", StringComparison.Ordinal)))
+                        {
+                            selectionChances[id] = chance.Value;
+                        }
+                    }
+                }
+                var idSet = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                var probabilityMass = selectionChances.Values.Sum();
+                if (selectionChances.Count != idSet.Count ||
+                    selectionChances.Keys.Any(id => !idSet.Contains(id)) ||
+                    Math.Abs(probabilityMass - 1d) > 0.000000001d)
+                {
+                    selectionChances.Clear();
+                }
+                result[key] = new MonsterDropCatalogInfo(ids, selectionChances);
             }
             return result;
         }
@@ -986,6 +1033,19 @@ namespace StardewAI.Core.Execution
             {
                 return Chance.HasValue ? Chance.Value / (Math.Max(0, distance) + 1d) : -1d;
             }
+        }
+
+        private sealed class MonsterDropCatalogInfo
+        {
+            public MonsterDropCatalogInfo(string[] ids, IReadOnlyDictionary<string, double> conditionalSelectionChances)
+            {
+                Ids = ids;
+                ConditionalSelectionChances = conditionalSelectionChances;
+            }
+
+            public string[] Ids { get; }
+
+            public IReadOnlyDictionary<string, double> ConditionalSelectionChances { get; }
         }
 
         private sealed class TargetProbabilityRule
