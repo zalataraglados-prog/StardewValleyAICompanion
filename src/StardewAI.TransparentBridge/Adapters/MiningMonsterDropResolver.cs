@@ -1,4 +1,5 @@
 using StardewValley;
+using System.Globalization;
 using StardewValley.Constants;
 using StardewValley.Extensions;
 using StardewValley.Locations;
@@ -62,6 +63,10 @@ internal static class MiningMonsterDropResolver
                 : "available_for_current_death_tile";
             projection.RuntimeExtraDropRuleInputs = ReadRuntimeExtraDropRuleInputs(monster, player);
             projection.RuntimeExtraDropRuleCompleteness = "not_executed_special_item_override";
+            projection.DropProbabilityRules = SpecialItemProbabilityRules(special);
+            projection.DropProbabilityCompleteness = string.IsNullOrWhiteSpace(special)
+                ? "complete_primary_branch_event;treasure_catalog_item_selection_not_previewed"
+                : "complete_current_death_tile_primary_branch";
             return projection;
         }
 
@@ -70,6 +75,7 @@ internal static class MiningMonsterDropResolver
             player.houseUpgradeLevel.Value >= 1 &&
             !player.isMarriedOrRoommates() &&
             !player.isEngaged();
+        var baseBranchChance = pendantOverrideEligible ? 0.999d : 1d;
         if (pendantOverrideEligible)
         {
             conditional.UnionWith(selected);
@@ -106,6 +112,10 @@ internal static class MiningMonsterDropResolver
         result.RuntimeExtraDropRuleCompleteness = monster.GetType().Assembly == typeof(Monster).Assembly
             ? "complete_for_vanilla_runtime_type"
             : "partial_custom_runtime_type";
+        result.DropProbabilityRules = ReadBaseProbabilityRules(monster, player, selected, pendantOverrideEligible, baseBranchChance);
+        result.DropProbabilityCompleteness = monster.GetType().Assembly == typeof(Monster).Assembly
+            ? "partial_common_game_location_rules_exact;runtime_type_extra_drop_probabilities_pending"
+            : "partial_common_game_location_rules_exact;custom_runtime_type_probabilities_unavailable";
         return result;
     }
 
@@ -356,7 +366,10 @@ internal static class MiningMonsterDropResolver
                 var dropTokens = ArgUtility.SplitBySpace(fields[6]);
                 for (var i = 0; i + 1 < dropTokens.Length; i += 2)
                 {
-                    conditional.Add(QualifyDropId(dropTokens[i]));
+                    if (TryReadDataChance(dropTokens[i + 1], out var chance) && EffectiveChance(chance) > 0d)
+                    {
+                        conditional.Add(QualifyDropId(dropTokens[i]));
+                    }
                 }
             }
         }
@@ -398,6 +411,259 @@ internal static class MiningMonsterDropResolver
         {
             conditionalCatalogKeys.Add(NaturalTrinketCatalogKey);
         }
+    }
+
+    private static MiningMonsterDropProbabilityRule[] SpecialItemProbabilityRules(string? special)
+    {
+        return string.IsNullOrWhiteSpace(special)
+            ? new[]
+            {
+                ProbabilityRule(
+                    "mine_special_item_treasure_catalog",
+                    Array.Empty<string>(),
+                    HardMineTreasureCatalogKey,
+                    1d,
+                    1d,
+                    null,
+                    "global_rng_catalog_selection_not_consumed",
+                    "MineShaft.monsterDrop/getSpecialItemForThisMineLevel")
+            }
+            : new[]
+            {
+                ProbabilityRule(
+                    "mine_special_item_current_death_tile",
+                    new[] { special! },
+                    string.Empty,
+                    1d,
+                    1d,
+                    1d,
+                    "fixed_current_death_tile",
+                    "MineShaft.monsterDrop/getSpecialItemForThisMineLevel")
+            };
+    }
+
+    private static MiningMonsterDropProbabilityRule[] ReadBaseProbabilityRules(
+        Monster monster,
+        Farmer player,
+        string[] selected,
+        bool pendantOverrideEligible,
+        double baseBranchChance)
+    {
+        var rules = new List<MiningMonsterDropProbabilityRule>();
+        if (selected.Length > 0)
+        {
+            rules.Add(ProbabilityRule(
+                "base_selected_drops",
+                selected,
+                string.Empty,
+                1d,
+                baseBranchChance,
+                baseBranchChance,
+                "all_selected_identities_emitted_when_branch_runs",
+                "MineShaft.monsterDrop/GameLocation.monsterDrop"));
+        }
+        if (pendantOverrideEligible)
+        {
+            rules.Add(ProbabilityRule(
+                "rare_krobus_pendant_override",
+                new[] { "(O)808" },
+                string.Empty,
+                0.001d,
+                0.001d,
+                0.001d,
+                "fixed_identity_replaces_base_branch",
+                "MineShaft.monsterDrop"));
+        }
+
+        AddMonsterDataRingProbabilityRules(monster, player, baseBranchChance, rules);
+
+        if (HasUnseenSecretNote(player))
+        {
+            AddFixedProbabilityRule(rules, "unseen_secret_note", "(O)79", 0.033d, baseBranchChance, "GameLocation.monsterDrop");
+        }
+        if (Game1.MasterPlayer.mailReceived.Contains("sawQiPlane"))
+        {
+            var baseChance = 0.01d + player.team.AverageDailyLuck() / 10d + player.LuckLevel * 0.008d;
+            var mysteryChance = EffectiveChance(baseChance * (player.stats.Get("Book_Mystery") == 0 ? 0.66d : 0.88d));
+            AddFixedProbabilityRule(
+                rules,
+                "mystery_box",
+                player.stats.Get(StatKeys.Mastery(2)) != 0 ? "(O)GoldenMysteryBox" : "(O)MysteryBox",
+                mysteryChance,
+                baseBranchChance,
+                "GameLocation.monsterDrop/Utility.tryRollMysteryBox");
+        }
+        if (player.stats.MonstersKilled + 1 > 10)
+        {
+            var voidChance = 0.0001d + (!player.mailReceived.Contains("voidBookDropped")
+                ? (player.stats.MonstersKilled + 1) * 0.000015d
+                : 0.0004d);
+            AddFixedProbabilityRule(rules, "book_void", "(O)Book_Void", EffectiveChance(voidChance), baseBranchChance, "GameLocation.monsterDrop");
+        }
+        if (Game1.netWorldState.Value.GoldenWalnutsFound >= 100 && monster.isHardModeMonster.Value)
+        {
+            var hardModeKillsAtDrop = Game1.stats.Get("hardModeMonstersKilled") + 1;
+            var radioactiveChance = EffectiveChance(0.008d + player.LuckLevel * 0.002d);
+            if (hardModeKillsAtDrop > 50)
+            {
+                var soulChance = EffectiveChance(0.001d + player.LuckLevel * 0.0002d);
+                AddFixedProbabilityRule(rules, "galaxy_soul", "(O)896", soulChance, baseBranchChance, "GameLocation.monsterDrop");
+                AddFixedProbabilityRule(rules, "radioactive_ore_else_if", "(O)858", (1d - soulChance) * radioactiveChance, baseBranchChance, "GameLocation.monsterDrop");
+            }
+            else
+            {
+                AddFixedProbabilityRule(rules, "radioactive_ore", "(O)858", radioactiveChance, baseBranchChance, "GameLocation.monsterDrop");
+            }
+        }
+
+        var rareObjectLuckMultiplier = 1d + player.team.AverageDailyLuck();
+        if (player.stats.Get(StatKeys.Mastery(0)) != 0)
+        {
+            AddFixedProbabilityRule(rules, "rare_golden_animal_cracker", "(O)GoldenAnimalCracker", EffectiveChance(0.0015d * rareObjectLuckMultiplier), baseBranchChance, "Utility.trySpawnRareObject(chanceModifier=1.5)");
+        }
+        if (Game1.stats.DaysPlayed > 2)
+        {
+            var cosmeticEventChance = 0.003d;
+            rules.Add(ProbabilityRule(
+                "rare_random_cosmetic",
+                Array.Empty<string>(),
+                RandomCosmeticCatalogKey,
+                cosmeticEventChance,
+                baseBranchChance * cosmeticEventChance,
+                null,
+                "weighted_catalog_selection_with_runtime_error_item_fallback",
+                "Utility.trySpawnRareObject/getRandomCosmeticItem"));
+
+            var skillBookIds = Enumerable.Range(0, 5).Select(index => "(O)SkillBook_" + index).ToArray();
+            var skillBookEventChance = 0.0009d;
+            rules.Add(ProbabilityRule(
+                "rare_skill_book",
+                skillBookIds,
+                string.Empty,
+                skillBookEventChance,
+                baseBranchChance * skillBookEventChance,
+                baseBranchChance * skillBookEventChance / skillBookIds.Length,
+                "uniform_identity_selection",
+                "Utility.trySpawnRareObject"));
+        }
+
+        if (player.stats.Get("trinketSlots") != 0)
+        {
+            var trinketChance = 0.004d + monster.MaxHealth * 0.00001d;
+            if (monster.isGlider.Value && monster.MaxHealth >= 150)
+            {
+                trinketChance += 0.002d;
+            }
+            if (monster is Leaper)
+            {
+                trinketChance -= 0.005d;
+            }
+            trinketChance = Math.Min(0.025d, trinketChance);
+            trinketChance += player.DailyLuck / 25d;
+            trinketChance += player.LuckLevel * 0.00133d;
+            trinketChance = EffectiveChance(trinketChance);
+            var trinketCount = NaturalTrinketQualifiedItemIds().Length;
+            rules.Add(ProbabilityRule(
+                "natural_trinket",
+                Array.Empty<string>(),
+                NaturalTrinketCatalogKey,
+                trinketChance,
+                baseBranchChance * trinketChance,
+                trinketCount > 0 ? baseBranchChance * trinketChance / trinketCount : null,
+                trinketCount > 0 ? "uniform_active_catalog_identity_selection" : "active_catalog_empty",
+                "GameLocation.monsterDrop/Trinket.TrySpawnTrinket/GetRandomTrinket"));
+        }
+
+        return rules.ToArray();
+    }
+
+    private static void AddMonsterDataRingProbabilityRules(
+        Monster monster,
+        Farmer player,
+        double baseBranchChance,
+        List<MiningMonsterDropProbabilityRule> rules)
+    {
+        if (!player.isWearingRing("526") || !DataLoader.Monsters(Game1.content).TryGetValue(monster.Name, out var data))
+        {
+            return;
+        }
+        var fields = data.Split('/');
+        if (fields.Length <= 6)
+        {
+            return;
+        }
+        var tokens = ArgUtility.SplitBySpace(fields[6]);
+        for (var i = 0; i + 1 < tokens.Length; i += 2)
+        {
+            if (!TryReadDataChance(tokens[i + 1], out var chance))
+            {
+                continue;
+            }
+            chance = EffectiveChance(chance);
+            rules.Add(ProbabilityRule(
+                "burglar_ring_monster_data_" + (i / 2),
+                new[] { QualifyDropId(tokens[i]) },
+                string.Empty,
+                chance,
+                baseBranchChance * chance,
+                baseBranchChance * chance,
+                "fixed_identity_independent_data_roll",
+                "GameLocation.monsterDrop/Data/Monsters"));
+        }
+    }
+
+    private static void AddFixedProbabilityRule(
+        List<MiningMonsterDropProbabilityRule> rules,
+        string key,
+        string qualifiedItemId,
+        double eventChance,
+        double baseBranchChance,
+        string source)
+    {
+        rules.Add(ProbabilityRule(
+            key,
+            new[] { qualifiedItemId },
+            string.Empty,
+            eventChance,
+            baseBranchChance * eventChance,
+            baseBranchChance * eventChance,
+            "fixed_identity",
+            source));
+    }
+
+    private static MiningMonsterDropProbabilityRule ProbabilityRule(
+        string key,
+        string[] qualifiedItemIds,
+        string catalogKey,
+        double eventChance,
+        double effectivePerKillChance,
+        double? perIdentityChance,
+        string itemSelectionStatus,
+        string source)
+    {
+        return new MiningMonsterDropProbabilityRule
+        {
+            Key = key,
+            QualifiedItemIds = Ordered(qualifiedItemIds),
+            CatalogKey = catalogKey,
+            EventChance = eventChance,
+            EffectivePerKillChance = effectivePerKillChance,
+            PerIdentityChance = perIdentityChance,
+            ProbabilityStatus = "exact_current_state_formula",
+            ItemSelectionStatus = itemSelectionStatus,
+            Source = source
+        };
+    }
+
+    private static double EffectiveChance(double chance)
+    {
+        return Math.Clamp(chance, 0d, 1d);
+    }
+
+    private static bool TryReadDataChance(string value, out double chance)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out chance) ||
+            double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out chance);
     }
 
     public static MiningDropCatalogProjection[] ReadSharedCatalogs(Farmer player)
@@ -663,11 +929,36 @@ internal sealed class MiningMonsterDropProjection
 
     public string RuntimeExtraDropRuleCompleteness { get; set; } = string.Empty;
 
+    public MiningMonsterDropProbabilityRule[] DropProbabilityRules { get; set; } = Array.Empty<MiningMonsterDropProbabilityRule>();
+
+    public string DropProbabilityCompleteness { get; set; } = string.Empty;
+
     public string PrimaryDropStatus { get; set; } = string.Empty;
 
     public string ItemIdentityCompleteness { get; set; } = string.Empty;
 
     public string[] UnresolvedDynamicRules { get; set; } = Array.Empty<string>();
+
+    public string Source { get; set; } = string.Empty;
+}
+
+internal sealed class MiningMonsterDropProbabilityRule
+{
+    public string Key { get; set; } = string.Empty;
+
+    public string[] QualifiedItemIds { get; set; } = Array.Empty<string>();
+
+    public string CatalogKey { get; set; } = string.Empty;
+
+    public double EventChance { get; set; }
+
+    public double EffectivePerKillChance { get; set; }
+
+    public double? PerIdentityChance { get; set; }
+
+    public string ProbabilityStatus { get; set; } = string.Empty;
+
+    public string ItemSelectionStatus { get; set; } = string.Empty;
 
     public string Source { get; set; } = string.Empty;
 }

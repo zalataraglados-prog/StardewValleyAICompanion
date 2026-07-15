@@ -213,6 +213,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 current_death_tile_preview_status = drops.CurrentDeathTilePreviewStatus,
                 runtime_extra_drop_rule_inputs = drops.RuntimeExtraDropRuleInputs,
                 runtime_extra_drop_rule_completeness = drops.RuntimeExtraDropRuleCompleteness,
+                drop_probability_rules = drops.DropProbabilityRules,
+                drop_probability_completeness = drops.DropProbabilityCompleteness,
                 primary_drop_status = drops.PrimaryDropStatus,
                 drop_item_identity_completeness = drops.ItemIdentityCompleteness,
                 unresolved_dynamic_drop_rules = drops.UnresolvedDynamicRules,
