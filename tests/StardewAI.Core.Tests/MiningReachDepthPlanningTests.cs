@@ -166,6 +166,73 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Equal(expected, MiningReadAdapter.ActionTokenEquals(action, token));
     }
 
+    [Theory]
+    [InlineData(0, 0, 1)]
+    [InlineData(1, 0, 2)]
+    [InlineData(4, 0, 5)]
+    [InlineData(4, 2, 7)]
+    public void MiningPickaxeDamageMatchesDecompiledDoFunction(int upgradeLevel, int additionalPower, int expected)
+    {
+        Assert.Equal(expected, MiningReadAdapter.PickaxeDamagePerHit(upgradeLevel, additionalPower));
+    }
+
+    [Theory]
+    [InlineData(16, 1, 16)]
+    [InlineData(16, 2, 8)]
+    [InlineData(16, 5, 4)]
+    [InlineData(0, 5, 0)]
+    public void MiningRemainingHitsUsesLiveStoneMinutesUntilReady(int health, int damage, int expected)
+    {
+        Assert.Equal(expected, MiningReadAdapter.RemainingHits(health, damage));
+    }
+
+    [Fact]
+    public void MiningLadderChanceMatchesDecompiledFormula()
+    {
+        var chance = MiningReadAdapter.LadderChanceAfterBreak(
+            stonesBeforeBreak: 11,
+            luckLevel: 3,
+            dailyLuck: 0.1,
+            enemyCount: 0,
+            dwarfStatueBuff: false);
+
+        Assert.Equal(0.21, chance, precision: 10);
+        Assert.Equal(1.3875, MiningReadAdapter.LadderChanceAfterBreak(1, 3, 0.1, 0, true), precision: 10);
+    }
+
+    [Fact]
+    public void MiningAdapterNoLongerPublishesKnownRequiredFactsAsUnavailable()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "MiningReadAdapter.cs"));
+
+        Assert.DoesNotContain("map_collision_passability_unavailable", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("object_classification_incomplete", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("floor_constraints_incomplete", source, StringComparison.Ordinal);
+        Assert.Contains("Object.IsBreakableStone/MinutesUntilReady", source, StringComparison.Ordinal);
+        Assert.Contains("MineShaft.checkStoneForItems exact seed", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TransparentBridgeHasPurposeLimitedMiningSnapshotProfile()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "StardewAI.TransparentBridge",
+            "ModEntry.cs"));
+
+        Assert.Contains("or \"mining\" or \"full\"", source, StringComparison.Ordinal);
+        Assert.Contains("if (profile is \"mining\")", source, StringComparison.Ordinal);
+        Assert.Contains("domains.Add(\"mining\")", source, StringComparison.Ordinal);
+        Assert.Contains("domains.Add(\"current_location\")", source, StringComparison.Ordinal);
+        Assert.Contains("domains.Add(\"locations\")", source, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ElevatorStartUsesDeepestMineLevelInsteadOfTargetProgress()
     {
@@ -274,4 +341,18 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
+            {
+                return directory.FullName;
+            }
+            directory = directory.Parent;
+        }
+        throw new DirectoryNotFoundException("Repository root not found.");
+    }
 }

@@ -20,3 +20,11 @@
 
 - Not run by instruction and active user-play constraint.
 - Pending command list is recorded in `test-results.txt`.
+
+## 2026-07-15 Controller Closure
+
+- The original worker state above is historical. Codex subsequently replaced the unavailable collision/object/floor placeholders with decompile-backed loaded-floor reads.
+- Collision rows now cover map geometry, objects, characters, terrain features, resource clumps, large terrain features, furniture, animals, and other farmers while excluding the controlled farmer. The cache is purpose-limited and refreshes no later than 30 ticks.
+- Breakable stone/container durability, best-pickaxe hit counts, stone ladder previews, treasure-room state, floor gates, and current monster facts are available on a loaded `MineShaft`.
+- `profile=mining` limits snapshot work to baseline, route/current-location, and mining domains.
+- Offline validation passed. The remaining gate is an isolated E: serialization/performance smoke followed by the dynamic perfect mining executor; no runtime capability is claimed yet.

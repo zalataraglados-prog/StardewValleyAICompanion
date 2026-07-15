@@ -1,15 +1,26 @@
 using Microsoft.Xna.Framework;
+using Netcode;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Monsters;
+using StardewValley.Objects;
 using StardewValley.Tools;
 using StardewAI.Contracts.State;
+using System.Reflection;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed class MiningReadAdapter : ReadAdapterBase
 {
+    private static readonly FieldInfo? BreakableContainerHealthField = typeof(BreakableContainer)
+        .GetField("health", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+    private static readonly FieldInfo? TreasureRoomField = typeof(MineShaft)
+        .GetField("netIsTreasureRoom", BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private string? cachedCollisionSignature;
+    private object? cachedCollisionContext;
+
     public override string Domain => "mining";
     public override int Priority => 55;
 
@@ -34,30 +45,22 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         var fields = new Dictionary<string, object>
         {
             ["current_mine"] = Field(ReadCurrentMine(mine), "MineShaft.mineLevel/getMineArea/GetAdditionalDifficulty and flags", tick, "mining_read_adapter"),
-            ["tiles"] = Partial(ReadTiles(mine), "GameLocation.map loaded field, MineShaft tileBeneathLadder/tileBeneathElevator", tick, "map_collision_passability_unavailable"),
-            ["objects"] = Partial(ReadObjects(mine), "MineShaft.objects live dictionary; classification intentionally unavailable", tick, "object_classification_incomplete"),
+            ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free GameLocation.IsTileBlockedBy reads", tick, "mining_read_adapter"),
+            ["objects"] = Field(ReadObjects(mine, Game1.player), "MineShaft.objects, Object.IsBreakableStone/MinutesUntilReady, and BreakableContainer live fields", tick, "mining_read_adapter"),
             ["monsters"] = Field(ReadMonsters(mine), "MineShaft.characters filtered to Monster", tick, "mining_read_adapter"),
-            ["floor_objectives"] = Partial(ReadFloorObjectives(mine), "MineShaft flags and mustKillAllMonstersToAdvance", tick, "floor_constraints_incomplete"),
+            ["floor_objectives"] = Field(ReadFloorObjectives(mine), "MineShaft live flags, ladder rule, and deterministic per-stone preview inputs", tick, "mining_read_adapter"),
             ["player_resources"] = Field(ReadPlayerResources(Game1.player), "Game1.player resources and inventory", tick, "mining_read_adapter"),
             ["completeness"] = Field(new
             {
-                status = "incomplete",
+                status = "complete",
                 source = "live_loaded_mineshaft_only",
-                unavailable_reasons = new[] { "map_collision_passability_unavailable", "object_classification_incomplete", "floor_constraints_incomplete" },
+                unavailable_reasons = Array.Empty<string>(),
+                read_only_methods = new[] { "GameLocation.IsTileBlockedBy", "Object.IsBreakableStone", "Utility.CreateDaySaveRandom" },
                 forbidden_calls = new[] { "MineShaft.findLadder", "MineShaft.loadLevel", "MineShaft.createLadderDown", "MineShaft.checkStoneForItems", "monster_ai_update" }
             }, "MiningReadAdapter static live reads", tick, "mining_read_adapter")
         };
 
-        return Section("mining", fields, new[]
-        {
-            "mining.tiles.value.collision_context",
-            "mining.objects.value[*].is_ore_or_resource_node",
-            "mining.objects.value[*].is_container",
-            "mining.objects.value[*].health_or_hits_remaining",
-            "mining.floor_objectives.value.ladder_creation_rule",
-            "mining.floor_objectives.value.water_or_bridge_constraints",
-            "mining.floor_objectives.value.ladder_probability_preview"
-        }, "partial");
+        return Section("mining", fields, Array.Empty<string>(), "complete");
     }
 
     private static object ReadCurrentMine(MineShaft mine)
@@ -83,7 +86,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         };
     }
 
-    private static object ReadTiles(MineShaft mine)
+    private object ReadTiles(MineShaft mine)
     {
         var loadedMap = mine.map;
         var buildings = loadedMap?.GetLayer("Buildings");
@@ -98,17 +101,29 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             shafts = ActionTiles(buildings, "Shaft").Concat(ActionTiles(buildings, "MineShaft")).ToArray(),
             tile_beneath_ladder = Tile(mine.tileBeneathLadder),
             tile_beneath_elevator = Tile(mine.tileBeneathElevator),
-            collision_context = new { source = "GameLocation.isTilePassable/isCollidingPosition not invoked", status = "unavailable", reason = "no side-effect-free complete passability projection in this slice" },
-            action_tile_status = loadedMap is null ? "unavailable_loaded_map_field_null" : "partial_exact_action_tokens_only"
+            collision_context = CollisionContext(mine, loadedMap),
+            action_tile_status = loadedMap is null ? "unavailable_loaded_map_field_null" : "complete_exact_action_tokens"
         };
     }
 
-    private static object[] ReadObjects(MineShaft mine)
+    private static object[] ReadObjects(MineShaft mine, Farmer player)
     {
+        var bestPickaxe = player.Items.OfType<Pickaxe>()
+            .OrderByDescending(pickaxe => PickaxeDamagePerHit(pickaxe.UpgradeLevel, pickaxe.additionalPower.Value))
+            .FirstOrDefault();
+        var pickaxeDamage = bestPickaxe is null
+            ? 0
+            : PickaxeDamagePerHit(bestPickaxe.UpgradeLevel, bestPickaxe.additionalPower.Value);
+
         return mine.objects.Pairs.Select(pair =>
         {
             var obj = pair.Value;
             var qualifiedId = obj.QualifiedItemId;
+            var breakableStone = obj.IsBreakableStone();
+            var container = obj is BreakableContainer;
+            var remainingHealth = breakableStone
+                ? obj.MinutesUntilReady
+                : container ? ReadBreakableContainerHealth((BreakableContainer)obj) : null;
             return new
             {
                 tile_x = (int)pair.Key.X,
@@ -123,13 +138,19 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 fragility = obj.Fragility,
                 can_be_grabbed = obj.CanBeGrabbed,
                 minutes_until_ready = obj.MinutesUntilReady,
-                is_breakable_stone = obj.IsBreakableStone(),
-                is_ore_or_resource_node = new { status = "unavailable", reason = "no complete decompile-backed mine resource ID table in this slice" },
-                is_container = new { status = "unavailable", reason = "crate/barrel/container classification not complete from live object fields alone" },
+                is_breakable_stone = breakableStone,
+                is_ore_or_resource_node = breakableStone,
+                mining_node_kind = breakableStone ? "breakable_stone_or_resource_node" : "none",
+                is_container = container,
                 is_placed_staircase = qualifiedId == "(O)71",
-                tool_requirement = obj.IsBreakableStone() ? "pickaxe" : qualifiedId == "(O)71" ? "none_staircase" : "unknown_or_interact",
-                health_or_hits_remaining = new { status = "unavailable", reason = "MinutesUntilReady is not stone health/hits remaining" },
-                source = "StardewValley.Object live fields; no break/drop methods called"
+                tool_requirement = breakableStone ? "pickaxe" : container ? "heavy_hitter" : qualifiedId == "(O)71" ? "none_staircase" : "unknown_or_interact",
+                health_or_hits_remaining = remainingHealth,
+                best_pickaxe_damage_per_hit = breakableStone ? pickaxeDamage : 0,
+                best_pickaxe_hits_remaining = breakableStone && remainingHealth.HasValue && pickaxeDamage > 0
+                    ? RemainingHits(remainingHealth.Value, pickaxeDamage)
+                    : (int?)null,
+                ladder_preview = breakableStone ? ReadLadderPreview(mine, pair.Key, player) : null,
+                source = "Object.IsBreakableStone/MinutesUntilReady; Pickaxe.DoFunction; BreakableContainer.health read-only reflection"
             };
         }).ToArray();
     }
@@ -154,8 +175,13 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 is_monster = monster.IsMonster,
                 slipperiness = monster.Slipperiness,
                 contact_damage_readable = true,
-                ranged_or_special_behavior = new { status = "unavailable", reason = "no complete decompile-backed monster behavior table in this slice" },
-                source = "Monster live fields; no MovePosition/AI/drop methods called"
+                behavior_observation = new
+                {
+                    runtime_type = monster.GetType().FullName,
+                    dynamic_replan_required = true,
+                    future_ai_path_not_predicted = true
+                },
+                source = "Monster live fields; future AI is handled by after-snapshot replanning, not guessed"
             };
         }).ToArray();
     }
@@ -168,13 +194,30 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             enemy_count = mine.EnemyCount,
             stones_left_on_level = mine.stonesLeftOnThisLevel,
             ladder_has_spawned = mine.ladderHasSpawned,
-            ladder_creation_rule = new { status = "unavailable", reason = "future ladder creation is executor/game progression, not an observed tile" },
-            treasure_room = ReadBoolProperty(mine, "isTreasureRoom"),
+            ladder_creation_rule = new
+            {
+                should_create_ladder_on_level = mine.shouldCreateLadderOnThisLevel(),
+                source = "MineShaft.shouldCreateLadderOnThisLevel/checkStoneForItems/monsterDrop",
+                stone_rule = "decrement_stones_then_seeded_roll_or_zero_stones",
+                monster_rule = mine.mustKillAllMonstersToAdvance() ? "kill_all_monsters" : "possible_monster_drop_ladder"
+            },
+            treasure_room = ReadPrivateNetBool(mine, TreasureRoomField),
             slime_area = mine.isSlimeArea,
             dino_area = mine.isDinoArea,
             quarry_area = mine.isQuarryArea,
-            water_or_bridge_constraints = new { status = "unavailable", reason = "no non-mutating vanilla aggregate property; inspect map tiles only" },
-            ladder_probability_preview = new { status = "unavailable", reason = "would require RNG/drop progression or future stone break state" },
+            water_or_bridge_constraints = new { status = "derived", source = "mining.tiles.collision_context", blocked_tiles_include_non_passable_map_geometry = true },
+            ladder_probability_preview = new
+            {
+                status = "derived",
+                next_stone_chance = LadderChanceAfterBreak(
+                    mine.stonesLeftOnThisLevel,
+                    Game1.player.LuckLevel,
+                    Game1.player.DailyLuck,
+                    mine.EnemyCount,
+                    Game1.player.hasBuff("dwarfStatue_1")),
+                exact_seeded_rolls_recorded_per_breakable_stone = true,
+                source = "MineShaft.checkStoneForItems"
+            },
             source = "MineShaft flags and simple methods only"
         };
     }
@@ -220,7 +263,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                     : tile?.TileIndexProperties.TryGetValue("Action", out property) == true ? property.ToString() : null;
                 if (ActionTokenEquals(action, actionToken))
                 {
-                    tiles.Add(new { tile_x = x, tile_y = y, action, present = true, usable = new { status = "unavailable", reason = "vanilla interaction path not proven by appearance alone" } });
+                    tiles.Add(new { tile_x = x, tile_y = y, action, present = true, usable = new { status = "derived", reason = "exact_action_token_on_loaded_map" } });
                 }
             }
         }
@@ -241,10 +284,31 @@ public sealed class MiningReadAdapter : ReadAdapterBase
 
     private static object Tile(Vector2 tile) => new { tile_x = (int)tile.X, tile_y = (int)tile.Y };
 
-    private static bool? ReadBoolProperty(object target, string name)
+    public static int PickaxeDamagePerHit(int upgradeLevel, int additionalPower)
     {
-        var property = target.GetType().GetProperty(name);
-        return property?.PropertyType == typeof(bool) ? (bool?)property.GetValue(target) : null;
+        return Math.Max(1, upgradeLevel + 1) + Math.Max(0, additionalPower);
+    }
+
+    public static int RemainingHits(int remainingHealth, int damagePerHit)
+    {
+        return damagePerHit <= 0 || remainingHealth <= 0
+            ? 0
+            : (int)Math.Ceiling(remainingHealth / (double)damagePerHit);
+    }
+
+    public static double LadderChanceAfterBreak(int stonesBeforeBreak, int luckLevel, double dailyLuck, int enemyCount, bool dwarfStatueBuff)
+    {
+        var stonesAfterBreak = Math.Max(0, stonesBeforeBreak - 1);
+        var chance = 0.02 + 1.0 / Math.Max(1, stonesAfterBreak) + luckLevel / 100.0 + dailyLuck / 5.0;
+        if (enemyCount == 0)
+        {
+            chance += 0.04;
+        }
+        if (dwarfStatueBuff)
+        {
+            chance *= 1.25;
+        }
+        return chance;
     }
 
     private static object?[] ToolSlots<TTool>(Farmer player) where TTool : Tool
@@ -267,17 +331,147 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         return player.Items.Where(item => item?.QualifiedItemId == qualifiedId).Sum(item => item?.Stack ?? 0);
     }
 
-    private static FieldEnvelope<object> Partial(object value, string source, long readAtTick, string reason)
+    private object CollisionContext(MineShaft mine, xTile.Map? loadedMap)
     {
-        return new FieldEnvelope<object>
+        if (loadedMap is null || loadedMap.Layers.Count == 0)
         {
-            Value = value,
-            Status = FieldStatus.Available,
-            Source = new SourceRef { Kind = "game_object_partial", Path = source },
-            Adapter = "mining_read_adapter",
-            ReadAtTick = readAtTick,
-            Confidence = 1.0,
-            Reason = reason
+            return new { status = "unavailable", reason = "loaded_map_field_null" };
+        }
+
+        var width = loadedMap.Layers[0].LayerWidth;
+        var height = loadedMap.Layers[0].LayerHeight;
+        var signature = CollisionSignature(mine, width, height);
+        if (cachedCollisionContext is not null && string.Equals(signature, cachedCollisionSignature, StringComparison.Ordinal))
+        {
+            return cachedCollisionContext;
+        }
+
+        var rows = new string[height];
+        var collisionMask = CollisionMask.All & ~CollisionMask.Farmers;
+        for (var y = 0; y < height; y++)
+        {
+            var row = new char[width];
+            for (var x = 0; x < width; x++)
+            {
+                var blocked = mine.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
+                    mine.farmers.Any(farmer => farmer != Game1.player && FarmerBlocksTile(farmer, x, y));
+                row[x] = blocked ? '1' : '0';
+            }
+            rows[y] = new string(row);
+        }
+
+        cachedCollisionSignature = signature;
+        cachedCollisionContext = new
+        {
+            status = "available",
+            width,
+            height,
+            encoding = "row_major_strings_1_blocked_0_passable",
+            blocked_rows = rows,
+            excludes_current_player = true,
+            includes_map_objects_characters_terrain_and_other_farmers = true,
+            source = "GameLocation.IsTileBlockedBy; decompiled method is read-only"
         };
+        return cachedCollisionContext;
+    }
+
+    private static string CollisionSignature(MineShaft mine, int width, int height)
+    {
+        var hash = new HashCode();
+        hash.Add(mine.mineLevel);
+        hash.Add(mine.loadedMapNumber);
+        hash.Add(width);
+        hash.Add(height);
+        hash.Add(mine.ladderHasSpawned);
+        hash.Add(Game1.ticks / 30);
+        foreach (var pair in mine.objects.Pairs.OrderBy(pair => pair.Key.Y).ThenBy(pair => pair.Key.X))
+        {
+            hash.Add(pair.Key);
+            hash.Add(pair.Value.QualifiedItemId);
+            hash.Add(pair.Value.MinutesUntilReady);
+        }
+        foreach (var character in mine.characters.OrderBy(character => character.Name, StringComparer.Ordinal).ThenBy(character => character.Position.Y).ThenBy(character => character.Position.X))
+        {
+            hash.Add(character.GetType().FullName);
+            hash.Add(character.Position);
+            hash.Add(character.GetBoundingBox());
+        }
+        foreach (var pair in mine.terrainFeatures.Pairs.OrderBy(pair => pair.Key.Y).ThenBy(pair => pair.Key.X))
+        {
+            hash.Add(pair.Key);
+            hash.Add(pair.Value.GetType().FullName);
+            hash.Add(pair.Value.getBoundingBox());
+            hash.Add(pair.Value.isPassable());
+            hash.Add(pair.Value.isTemporarilyInvisible);
+        }
+        foreach (var clump in mine.resourceClumps.OrderBy(clump => clump.Tile.Y).ThenBy(clump => clump.Tile.X))
+        {
+            hash.Add(clump.GetType().FullName);
+            hash.Add(clump.Tile);
+            hash.Add(clump.getBoundingBox());
+            hash.Add(clump.health.Value);
+        }
+        foreach (var feature in mine.largeTerrainFeatures.OrderBy(feature => feature.Tile.Y).ThenBy(feature => feature.Tile.X))
+        {
+            hash.Add(feature.GetType().FullName);
+            hash.Add(feature.Tile);
+            hash.Add(feature.getBoundingBox());
+            hash.Add(feature.isPassable());
+            hash.Add(feature.isTemporarilyInvisible);
+        }
+        foreach (var furniture in mine.furniture.OrderBy(furniture => furniture.GetBoundingBox().Y).ThenBy(furniture => furniture.GetBoundingBox().X))
+        {
+            hash.Add(furniture.GetType().FullName);
+            hash.Add(furniture.GetBoundingBox());
+            hash.Add(furniture.isPassable());
+        }
+        foreach (var pair in mine.animals.Pairs.OrderBy(pair => pair.Key))
+        {
+            hash.Add(pair.Key);
+            hash.Add(pair.Value.GetType().FullName);
+            hash.Add(pair.Value.GetBoundingBox());
+            hash.Add(pair.Value.farmerPassesThrough);
+        }
+        foreach (var farmer in mine.farmers.Where(farmer => farmer != Game1.player).OrderBy(farmer => farmer.UniqueMultiplayerID))
+        {
+            hash.Add(farmer.UniqueMultiplayerID);
+            hash.Add(farmer.GetBoundingBox());
+        }
+        return hash.ToHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static bool FarmerBlocksTile(Farmer farmer, int tileX, int tileY)
+    {
+        return farmer.GetBoundingBox().Intersects(new Rectangle(tileX * Game1.tileSize, tileY * Game1.tileSize, Game1.tileSize, Game1.tileSize));
+    }
+
+    private static object ReadLadderPreview(MineShaft mine, Vector2 tile, Farmer player)
+    {
+        var stonesAfterBreak = Math.Max(0, mine.stonesLeftOnThisLevel - 1);
+        var chance = LadderChanceAfterBreak(mine.stonesLeftOnThisLevel, player.LuckLevel, player.DailyLuck, mine.EnemyCount, player.hasBuff("dwarfStatue_1"));
+        var random = Utility.CreateDaySaveRandom((int)tile.X * 1000, (int)tile.Y, mine.mineLevel);
+        _ = random.NextDouble();
+        var roll = random.NextDouble();
+        var eligible = !mine.ladderHasSpawned && !mine.mustKillAllMonstersToAdvance() && mine.shouldCreateLadderOnThisLevel();
+        return new
+        {
+            eligible,
+            stones_after_break = stonesAfterBreak,
+            chance,
+            seeded_roll = roll,
+            guaranteed_by_last_stone = stonesAfterBreak == 0,
+            creates_ladder = eligible && (stonesAfterBreak == 0 || roll < chance),
+            source = "MineShaft.checkStoneForItems exact seed and comparison"
+        };
+    }
+
+    private static int? ReadBreakableContainerHealth(BreakableContainer container)
+    {
+        return BreakableContainerHealthField?.GetValue(container) is NetInt health ? health.Value : null;
+    }
+
+    private static bool? ReadPrivateNetBool(object target, FieldInfo? field)
+    {
+        return field?.GetValue(target) is NetBool value ? value.Value : null;
     }
 }

@@ -23,6 +23,7 @@ The implementation chain is:
 - `LiveTrainingLoop` can compile a daily plan from ranked candidates and execute all queue items sequentially through the real runtime executor.
 - **`social.talk_npc`/`social.gift_npc` -> `executor.social_interact`** — social talk/gift candidates compile to `move_to_social_stand` + `social_interact` plan steps; the native `executor.social_interact` validates all preconditions and calls `Game1.currentLocation.checkAction` as the only state-changing social call; all blocked results use `executor_calibration` scope. Statically complete; remaining closure is E: runtime integration.
 - `recovery.stabilize_day` candidate-to-daily-plan chain is complete for all currently emitted candidates.
+- **Mining transparent input foundation** — a loaded MineShaft now exports compact collision rows, exact breakable-stone/container classification, live durability and best-pickaxe remaining hits, current monster facts, exact per-stone ladder previews, and floor gates without invoking mutating mine methods. Focused tests pass; E: snapshot regeneration and the perfect mining executor remain pending.
 - **`strategy.grandpa_progress` direction output** — the snapshot-aware policy selects from the current `GrandpaTrainingSampleAdapter` candidates without a guessed fallback; the action compiler independently rebuilds the current candidate set, rejects stale or mismatched metadata, emits no strategy step on block, and budgets only the validated direction. Static implementation is merged; focused and full tests remain intentionally pending while the user is playing.
 
 ## Implementation Stages
@@ -61,7 +62,7 @@ Current implementation:
 - `DailyPlanCompiler` converts ranked timeline candidates into `small_model_plan.v1`.
 - `/api/v1/planner/daily-plan/compile` accepts `ranked_event_candidates[]` and can optionally compile the generated plan into an action queue when a matching snapshot is available.
 - Supported first slices: deferred waits split into compiler-valid `wait_ticks` chunks, shop/interact endpoints become `move_to_tile` plus `interact`, dialogue-shop branches add a whitelisted `choose_dialogue_response`, buy candidates become `buy_shop_item`, route connector candidates become traversal steps, all currently emitted `recovery.stabilize_day` candidates compile to bounded close-menu, refresh-plan/wait, or verified at-home sleep operations, and **social talk/gift candidates compile to `move_to_social_stand` + `social_interact`**.
-- Unsupported candidates such as mining and fishing goals are intentionally skipped until their task executors exist, so training does not treat placeholders as executable abilities.
+- Fishing candidates compile to collision-safe stand movement plus `executor.catch_fish`. Mining reach-depth remains intentionally blocked until its E: transparent snapshot is regenerated and the perfect dynamic-floor executor exists, so training cannot mistake an envelope for an executable ability.
 
 ### Stage 3: Executor Primitive Curriculum
 

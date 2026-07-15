@@ -10,6 +10,18 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Mining Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `mining.tiles.collision_context.blocked_rows` | Exact loaded-floor BFS and dynamic obstacle input | `GameLocation.isTilePassable` / `IsTileBlockedBy` | n/a | covered_for_read / needs_runtime_regen | Compact row-major `1=blocked,0=passable`; excludes the current farmer and includes other live occupants. |
+| `mining.objects[].health_or_hits_remaining` | Perfect executor mining cost and target ordering | `Object.MinutesUntilReady`, `Pickaxe.DoFunction`, `BreakableContainer.health` | n/a | covered_for_read / needs_runtime_regen | Breakable stones expose exact live durability, computed best-pickaxe damage, and remaining hits; containers expose private net health read-only. |
+| `mining.objects[].ladder_preview` | Prefer exact ladder-producing stone without guessing danger | `MineShaft.checkStoneForItems`, `Utility.CreateDaySaveRandom` | n/a | covered_for_read / needs_runtime_regen | Recreates the local seeded roll only; never advances game RNG or calls ladder creation. |
+| `mining.monsters[]` | Current combat/path replanning facts | live `Monster` type, bounds, health, damage | n/a | covered_for_read / needs_runtime_regen | Future AI path is not guessed; every dynamic change requires a new snapshot. |
+| `mining.floor_objectives` | Kill-all, ladder, treasure and descent gates | `mustKillAllMonstersToAdvance`, `shouldCreateLadderOnThisLevel`, private `netIsTreasureRoom` | n/a | covered_for_read / needs_runtime_regen | Stone ladder formula is derived exactly; monster-drop ladder remains an after-state observation. |
+| `/v1/snapshot?profile=mining` | Prevent unrelated domain scans during mining planning/training | `ModEntry.AllowedDomainsForProfile`, 30-tick profile cache | n/a | covered_for_read / needs_runtime_regen | Includes only baseline domains plus current location, route locations, and mining. |
+| `mining.reach_depth` runtime | Execute the model's high-level depth target | not implemented | n/a | blocked_for_execution | Next slice is isolated E: snapshot validation, then a dynamic perfect mining executor. |
+
 ## Runtime / Training Recording
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

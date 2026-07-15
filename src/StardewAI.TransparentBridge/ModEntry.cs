@@ -581,7 +581,7 @@ public sealed class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "full" ? value : "light";
+        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "full" ? value : "light";
     }
 
     private static ISet<string>? AllowedDomainsForProfile(string profile)
@@ -638,6 +638,13 @@ public sealed class ModEntry : Mod
             domains.Add("world_progress");
             domains.Add("mods");
             domains.Add("modded_state");
+        }
+
+        if (profile is "mining")
+        {
+            domains.Add("mining");
+            domains.Add("current_location");
+            domains.Add("locations");
         }
 
         return domains;

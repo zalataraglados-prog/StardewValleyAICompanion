@@ -2,15 +2,16 @@
 
 ## Status
 
-- Validation pending by instruction. No build, unit test, smoke test, game launch, SMAPI launch, or runtime script was executed in this slice.
-- Static review only: source/tests/docs were inspected without executing validation commands.
+- Offline validation completed on 2026-07-15.
+- `MiningReachDepthPlanningTests`: PASS 25/25.
+- Full solution: PASS Core 850/850 and Backend 49/49.
+- No game, SMAPI, or isolated E: runtime smoke was launched in this closure.
 
-## Pending Commands
+## Commands Run
 
-- `dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore --filter "MiningReachDepthPlanningTests"`
-- `dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore`
-- `dotnet test "StardewValleyAICompanion.sln" --no-restore`
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter FullyQualifiedName~MiningReachDepthPlanningTests --no-restore --verbosity minimal`
+- `dotnet test StardewValleyAICompanion.sln --no-restore --verbosity minimal`
 
 ## Runtime
 
-- Runtime validation is pending and should remain blocked until an isolated non-user-play window is available.
+- Runtime validation remains pending and should use the isolated E: environment. It must verify `profile=mining` serialization shape and snapshot latency before executor implementation consumes these fields.
