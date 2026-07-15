@@ -47,6 +47,7 @@ public sealed class ModEntry : Mod
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
     private ActiveDescendLadder? activeDescendLadder;
+    private ActiveDescendShaft? activeDescendShaft;
     private bool manualAutoCombatEnabled;
     private bool manualAutoCombatInputHeld;
     private Monster? manualAutoCombatTarget;
@@ -261,10 +262,11 @@ public sealed class ModEntry : Mod
         TickConsumeFood();
         TickPickupDebris();
         TickDescendLadder();
+        TickDescendShaft();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -323,6 +325,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.descend_ladder")
             {
                 StartDescendLadder(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.descend_shaft")
+            {
+                StartDescendShaft(pending);
                 return;
             }
 
@@ -5948,6 +5956,257 @@ public sealed class ModEntry : Mod
             : "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";mine_level=none";
     }
 
+    private void StartDescendShaft(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var requested = "mine.level=before+expected_delta;player.health=expected_after;native_dialogue=Shaft_Jump";
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), reasons.ToArray()));
+            return;
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            !request.ExpectedMineLevelDelta.HasValue || !request.ExpectedMineLevelAfter.HasValue ||
+            !request.ExpectedHealthCost.HasValue || !request.ExpectedHealthAfter.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_exact_preview_required"));
+            return;
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_requires_loaded_mineshaft"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_tool_or_menu_conflict"));
+            return;
+        }
+
+        var expectedDelta = request.ExpectedMineLevelDelta.Value;
+        var expectedCost = request.ExpectedHealthCost.Value;
+        if (expectedDelta <= 0 || expectedCost != expectedDelta * 3 ||
+            request.ExpectedMineLevelAfter.Value != mine.mineLevel + expectedDelta ||
+            request.ExpectedHealthAfter.Value != Math.Max(1, Game1.player.health - expectedCost))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_preview_mismatch_live_state"));
+            return;
+        }
+
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        if (mine.getTileIndexAt(target.X, target.Y, "Buildings", "mine") != 174)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_tile_not_live_shaft"));
+            return;
+        }
+        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_path_unavailable:" + pathReason));
+            return;
+        }
+
+        activeDescendShaft = new ActiveDescendShaft(
+            pending,
+            mine,
+            mine.mineLevel,
+            Game1.player.health,
+            target,
+            path,
+            expectedDelta,
+            request.ExpectedMineLevelAfter.Value,
+            expectedCost,
+            request.ExpectedHealthAfter.Value,
+            requested);
+    }
+
+    private void TickDescendShaft()
+    {
+        if (activeDescendShaft is null)
+        {
+            return;
+        }
+
+        var active = activeDescendShaft;
+        active.ElapsedTicks++;
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompleteDescendShaftBlocked(active, "descend_shaft_timeout");
+            return;
+        }
+
+        if (active.DialogueConfirmed)
+        {
+            if (Game1.currentLocation is MineShaft afterMine && afterMine.mineLevel == active.ExpectedMineLevelAfter)
+            {
+                if (Game1.player.health != active.ExpectedHealthAfter)
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_health_after_mismatch");
+                    return;
+                }
+                CompleteDescendShaft(active, afterMine);
+            }
+            return;
+        }
+
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.MineBefore))
+        {
+            CompleteDescendShaftBlocked(active, "descend_shaft_location_changed_before_confirmation");
+            return;
+        }
+
+        if (active.PromptOpened)
+        {
+            if (Game1.activeClickableMenu is not DialogueBox || !string.Equals(active.MineBefore.lastQuestionKey, "Shaft", StringComparison.Ordinal))
+            {
+                CompleteDescendShaftBlocked(active, "descend_shaft_prompt_drift");
+                return;
+            }
+
+            active.MineBefore.answerDialogueAction("Shaft_Jump", new[] { "Shaft", "Jump" });
+            Game1.activeClickableMenu = null;
+            Game1.dialogueUp = false;
+            active.DialogueConfirmed = true;
+            return;
+        }
+
+        if (ImmediateMiningThreat(active.MineBefore))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteDescendShaftBlocked(active, "descend_shaft_path_exhausted");
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+            if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
+            {
+                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
+                if (repaired is null)
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_replan_failed:" + repairReason);
+                    return;
+                }
+                active.Path = repaired;
+                active.PathIndex = 0;
+                return;
+            }
+
+            var beforePosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    active.Path.Clear();
+                    active.PathIndex = 0;
+                    active.StuckTicks = 0;
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.MineBefore.getTileIndexAt(active.Target.X, active.Target.Y, "Buildings", "mine") != 174)
+        {
+            CompleteDescendShaftBlocked(active, "descend_shaft_tile_drift");
+            return;
+        }
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+        var handled = active.MineBefore.checkAction(
+            new TileLocation(active.Target.X, active.Target.Y),
+            new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+            Game1.player);
+        if (!handled || Game1.activeClickableMenu is not DialogueBox || !string.Equals(active.MineBefore.lastQuestionKey, "Shaft", StringComparison.Ordinal))
+        {
+            CompleteDescendShaftBlocked(active, "descend_shaft_native_prompt_not_opened");
+            return;
+        }
+        active.PromptOpened = true;
+    }
+
+    private void CompleteDescendShaft(ActiveDescendShaft active, MineShaft afterMine)
+    {
+        StopAllMovement();
+        activeDescendShaft = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            ActualTicks = active.ElapsedTicks,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
+            PrimitiveKind = "descend_shaft",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "bfs_reached_live_shaft", "native_shaft_prompt_observed", "native_shaft_jump_answer_handled", "exact_previewed_floor_and_health_observed" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = DescendShaftObservedEffect(),
+            ShaftMineLevelBefore = active.MineLevelBefore,
+            ShaftMineLevelAfter = afterMine.mineLevel,
+            ShaftLevelDelta = afterMine.mineLevel - active.MineLevelBefore,
+            ShaftHealthBefore = active.HealthBefore,
+            ShaftHealthAfter = Game1.player.health,
+            ShaftNativeDialogueHandled = true,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.current_mine.mine_level", Before = active.MineLevelBefore.ToString(), After = afterMine.mineLevel.ToString() },
+                new SimulatedFactChange { Path = "player.health", Before = active.HealthBefore.ToString(), After = Game1.player.health.ToString() }
+            }
+        });
+    }
+
+    private void CompleteDescendShaftBlocked(ActiveDescendShaft active, string reason)
+    {
+        StopAllMovement();
+        activeDescendShaft = null;
+        var result = BlockedWithPrimitive(active.Pending.Request, "descend_shaft", active.RequestedEffect, DescendShaftObservedEffect(), reason);
+        result.ShaftMineLevelBefore = active.MineLevelBefore;
+        result.ShaftMineLevelAfter = Game1.currentLocation is MineShaft mine ? mine.mineLevel : null;
+        result.ShaftLevelDelta = result.ShaftMineLevelAfter - active.MineLevelBefore;
+        result.ShaftHealthBefore = active.HealthBefore;
+        result.ShaftHealthAfter = Game1.player.health;
+        result.ShaftNativeDialogueHandled = active.DialogueConfirmed;
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static string DescendShaftObservedEffect()
+    {
+        return Game1.currentLocation is MineShaft mine
+            ? "location=" + mine.NameOrUniqueName + ";mine_level=" + mine.mineLevel + ";health=" + Game1.player.health + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y
+            : "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";mine_level=none;health=" + Game1.player.health;
+    }
+
     private void StartConsumeFood(PendingExecution pending)
     {
         var request = pending.Request;
@@ -6321,7 +6580,8 @@ public sealed class ModEntry : Mod
     {
         var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
             activePickupDebris?.CombatInterrupted == true ||
-            activeDescendLadder?.CombatInterrupted == true;
+            activeDescendLadder?.CombatInterrupted == true ||
+            activeDescendShaft?.CombatInterrupted == true;
         var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
         if (!enabled || activeCombatMonster is not null || !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
         {
@@ -10606,6 +10866,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.combat_monster" &&
             request.OptionId != "executor.consume_food" &&
             request.OptionId != "executor.descend_ladder" &&
+            request.OptionId != "executor.descend_shaft" &&
             request.OptionId != "executor.till_soil" &&
             request.OptionId != "debug.advance_time_to" &&
             request.OptionId != "debug.setup_watering_target" &&
@@ -11069,6 +11330,56 @@ public sealed class ModEntry : Mod
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
         public bool ActionIssued { get; set; }
+    }
+
+    private sealed class ActiveDescendShaft
+    {
+        public ActiveDescendShaft(
+            PendingExecution pending,
+            MineShaft mineBefore,
+            int mineLevelBefore,
+            int healthBefore,
+            Point target,
+            List<Point> path,
+            int expectedMineLevelDelta,
+            int expectedMineLevelAfter,
+            int expectedHealthCost,
+            int expectedHealthAfter,
+            string requestedEffect)
+        {
+            Pending = pending;
+            MineBefore = mineBefore;
+            MineLevelBefore = mineLevelBefore;
+            HealthBefore = healthBefore;
+            Target = target;
+            Path = path;
+            ExpectedMineLevelDelta = expectedMineLevelDelta;
+            ExpectedMineLevelAfter = expectedMineLevelAfter;
+            ExpectedHealthCost = expectedHealthCost;
+            ExpectedHealthAfter = expectedHealthAfter;
+            RequestedEffect = requestedEffect;
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft MineBefore { get; }
+        public int MineLevelBefore { get; }
+        public int HealthBefore { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; set; }
+        public int ExpectedMineLevelDelta { get; }
+        public int ExpectedMineLevelAfter { get; }
+        public int ExpectedHealthCost { get; }
+        public int ExpectedHealthAfter { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 1800;
+        public int ElapsedTicks { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public bool PromptOpened { get; set; }
+        public bool DialogueConfirmed { get; set; }
     }
 
     private enum ConsumeFoodStage

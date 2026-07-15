@@ -2,7 +2,7 @@
 
 ## 2026-07-15 Rolling Executor Closure
 
-The blocked-executor statements below are historical. The current main branch compiles `mining.reach_depth` into one snapshot-bounded internal step and supports native stone mining, native auto-combat, natural debris pickup, native food recovery, and verified native ladder descent. The small model still emits only the high-level objective. Remaining boundaries are shaft jumping, retreat/exit policy, exhaustive source mapping, full-objective time calibration, and isolated multi-floor runtime validation.
+The blocked-executor statements below are historical. The current main branch compiles `mining.reach_depth` into one snapshot-bounded internal step and supports native stone mining, native auto-combat, natural debris pickup, native food recovery, native ladder descent, and exact-preview native Skull Cavern shaft descent. The small model still emits only the high-level objective. Remaining boundaries are retreat/exit policy, exhaustive source mapping, full-objective time calibration, and isolated multi-floor runtime validation.
 
 ## 2026-07-13 Mining Transparent Planning Foundation
 

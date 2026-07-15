@@ -196,6 +196,18 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("slot_index")]
         public int? SlotIndex { get; set; }
+
+        [JsonPropertyName("expected_mine_level_delta")]
+        public int? ExpectedMineLevelDelta { get; set; }
+
+        [JsonPropertyName("expected_mine_level_after")]
+        public int? ExpectedMineLevelAfter { get; set; }
+
+        [JsonPropertyName("expected_health_cost")]
+        public int? ExpectedHealthCost { get; set; }
+
+        [JsonPropertyName("expected_health_after")]
+        public int? ExpectedHealthAfter { get; set; }
     }
 
     public sealed class TrainingExecutionResult
@@ -343,6 +355,24 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("recovery_safety_status")]
         public string RecoverySafetyStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("shaft_mine_level_before")]
+        public int? ShaftMineLevelBefore { get; set; }
+
+        [JsonPropertyName("shaft_mine_level_after")]
+        public int? ShaftMineLevelAfter { get; set; }
+
+        [JsonPropertyName("shaft_level_delta")]
+        public int? ShaftLevelDelta { get; set; }
+
+        [JsonPropertyName("shaft_health_before")]
+        public int? ShaftHealthBefore { get; set; }
+
+        [JsonPropertyName("shaft_health_after")]
+        public int? ShaftHealthAfter { get; set; }
+
+        [JsonPropertyName("shaft_native_dialogue_handled")]
+        public bool? ShaftNativeDialogueHandled { get; set; }
 
         [JsonPropertyName("block_reasons")]
         public string[] BlockReasons { get; set; } = Array.Empty<string>();

@@ -10,6 +10,7 @@ namespace StardewAI.Core.Execution
     public static class MiningFloorStepKinds
     {
         public const string DescendLadder = "descend_ladder";
+        public const string DescendShaft = "descend_shaft";
         public const string MineStone = "mine_stone";
         public const string CombatMonster = "combat_monster";
         public const string PickupDebris = "pickup_debris";
@@ -79,6 +80,14 @@ namespace StardewAI.Core.Execution
         public int? DebrisIndex { get; set; }
 
         public int? RestoreSlotIndex { get; set; }
+
+        public int? ExpectedMineLevelDelta { get; set; }
+
+        public int? ExpectedMineLevelAfter { get; set; }
+
+        public int? ExpectedHealthCost { get; set; }
+
+        public int? ExpectedHealthAfter { get; set; }
 
         public string SafetyWindowStatus { get; set; } = "not_required";
 
@@ -165,6 +174,12 @@ namespace StardewAI.Core.Execution
                     Blocked("no_reachable_target_resource_or_artifact_source");
             }
 
+            var shaftPlan = SelectShaft(tiles, search, grid, resources, hasResources, objective.MinimumReserveHealth);
+            if (shaftPlan is not null)
+            {
+                return shaftPlan;
+            }
+
             var ladderPlan = SelectActionTile(tiles, "ladders", MiningFloorStepKinds.DescendLadder, "reachable_ladder_available", search, grid);
             if (ladderPlan is not null)
             {
@@ -185,7 +200,64 @@ namespace StardewAI.Core.Execution
             }
 
             var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster");
-            return combatPlan ?? Blocked("no_reachable_ladder_stone_or_monster");
+            if (combatPlan is not null)
+            {
+                return combatPlan;
+            }
+
+            var unsafeShaft = SelectShaft(tiles, search, grid, resources, hasResources, minimumReserveHealth: 0, requireReserve: false);
+            if (unsafeShaft is not null && hasResources)
+            {
+                var requiredHealth = (unsafeShaft.ExpectedHealthCost ?? 0) + Math.Max(1, objective.MinimumReserveHealth);
+                var maxHealth = ReadInt(resources, "max_health") ?? 0;
+                if (requiredHealth > maxHealth)
+                {
+                    return Blocked("shaft_health_reserve_unreachable_at_max_health");
+                }
+                var healing = SelectFood(resources, requiredHealth, restoreSlot);
+                if (healing is not null)
+                {
+                    healing.Reason = "shaft_health_reserve_requires_recovery";
+                    return healing;
+                }
+                return Blocked("shaft_health_reserve_not_met");
+            }
+
+            return Blocked("no_reachable_ladder_shaft_stone_or_monster");
+        }
+
+        private static MiningFloorStepPlan? SelectShaft(
+            JsonElement tiles,
+            SearchResult search,
+            bool[,] grid,
+            JsonElement resources,
+            bool hasResources,
+            int minimumReserveHealth,
+            bool requireReserve = true)
+        {
+            if (!tiles.TryGetProperty("shafts", out var shafts) || shafts.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return shafts.EnumerateArray()
+                .Select(shaft => new { Shaft = shaft, Candidate = TargetCandidate(shaft, search, grid, estimatedSwings: 0, deterministicLadder: false) })
+                .Where(row => row.Candidate is not null)
+                .Where(row => !requireReserve || (hasResources && (ReadInt(row.Shaft, "expected_health_after") ?? 0) >= Math.Max(1, minimumReserveHealth)))
+                .OrderBy(row => row.Candidate!.Distance)
+                .ThenBy(row => row.Candidate!.TargetY)
+                .ThenBy(row => row.Candidate!.TargetX)
+                .Select(row =>
+                {
+                    var plan = Build(MiningFloorStepKinds.DescendShaft, "reachable_safe_shaft_available", row.Candidate!);
+                    plan.ExpectedMineLevelDelta = ReadInt(row.Shaft, "expected_level_delta");
+                    plan.ExpectedMineLevelAfter = ReadInt(row.Shaft, "expected_mine_level_after");
+                    plan.ExpectedHealthCost = ReadInt(row.Shaft, "expected_health_cost");
+                    plan.ExpectedHealthAfter = ReadInt(row.Shaft, "expected_health_after");
+                    plan.SafetyWindowStatus = requireReserve ? "shaft_health_reserve_verified" : "shaft_requires_recovery";
+                    return plan;
+                })
+                .FirstOrDefault();
         }
 
         private static MiningFloorStepPlan? SelectActionTile(JsonElement tiles, string propertyName, string stepKind, string reason, SearchResult search, bool[,] grid)
@@ -629,6 +701,7 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.PickupDebris => "executor.pickup_debris",
                 MiningFloorStepKinds.ConsumeFood => "executor.consume_food",
                 MiningFloorStepKinds.DescendLadder => "executor.descend_ladder",
+                MiningFloorStepKinds.DescendShaft => "executor.descend_shaft",
                 _ => string.Empty
             };
         }
@@ -653,6 +726,10 @@ namespace StardewAI.Core.Execution
             Add(parameters, "debris_index", plan.DebrisIndex);
             Add(parameters, "slot_index", plan.FoodSlotIndex);
             Add(parameters, "restore_slot_index", plan.RestoreSlotIndex);
+            Add(parameters, "expected_mine_level_delta", plan.ExpectedMineLevelDelta);
+            Add(parameters, "expected_mine_level_after", plan.ExpectedMineLevelAfter);
+            Add(parameters, "expected_health_cost", plan.ExpectedHealthCost);
+            Add(parameters, "expected_health_after", plan.ExpectedHealthAfter);
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);

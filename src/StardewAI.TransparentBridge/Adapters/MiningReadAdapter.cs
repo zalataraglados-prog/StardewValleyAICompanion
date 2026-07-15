@@ -57,7 +57,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 status = "complete",
                 source = "live_loaded_mineshaft_only",
                 unavailable_reasons = Array.Empty<string>(),
-                read_only_methods = new[] { "GameLocation.IsTileBlockedBy", "Object.IsBreakableStone", "Utility.CreateDaySaveRandom" },
+                read_only_methods = new[] { "GameLocation.IsTileBlockedBy", "Object.IsBreakableStone", "Utility.CreateDaySaveRandom", "Utility.CreateRandom" },
                 forbidden_calls = new[] { "MineShaft.findLadder", "MineShaft.loadLevel", "MineShaft.createLadderDown", "MineShaft.checkStoneForItems", "monster_ai_update" }
             }, "MiningReadAdapter static live reads", tick, "mining_read_adapter")
         };
@@ -99,8 +99,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             exits = ActionTiles(buildings, "Exit"),
             entries = ActionTiles(buildings, "Mine"),
             elevators = ActionTiles(buildings, "MineElevator"),
-            ladders = ActionTiles(buildings, "Ladder").Concat(ActionTiles(buildings, "MineLadder")).ToArray(),
-            shafts = ActionTiles(buildings, "Shaft").Concat(ActionTiles(buildings, "MineShaft")).ToArray(),
+            ladders = IndexedTiles(buildings, 173, "native_mineshaft_ladder_tile"),
+            shafts = ShaftTiles(buildings, mine, Game1.player),
             tile_beneath_ladder = Tile(mine.tileBeneathLadder),
             tile_beneath_elevator = Tile(mine.tileBeneathElevator),
             collision_context = CollisionContext(mine, loadedMap),
@@ -333,6 +333,79 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         }
 
         return tiles.ToArray();
+    }
+
+    private static object[] IndexedTiles(xTile.Layers.Layer? layer, int tileIndex, string reason)
+    {
+        if (layer is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        var tiles = new List<object>();
+        for (var x = 0; x < layer.LayerWidth; x++)
+        {
+            for (var y = 0; y < layer.LayerHeight; y++)
+            {
+                if (layer.Tiles[x, y]?.TileIndex == tileIndex)
+                {
+                    tiles.Add(new { tile_x = x, tile_y = y, tile_index = tileIndex, present = true, usable = new { status = "derived", reason } });
+                }
+            }
+        }
+
+        return tiles.ToArray();
+    }
+
+    private static object[] ShaftTiles(xTile.Layers.Layer? layer, MineShaft mine, Farmer player)
+    {
+        if (layer is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        var levels = ShaftFallLevels(mine.mineLevel, Game1.uniqueIDForThisGame, Game1.Date.TotalDays);
+        var damage = levels * 3;
+        var tiles = new List<object>();
+        for (var x = 0; x < layer.LayerWidth; x++)
+        {
+            for (var y = 0; y < layer.LayerHeight; y++)
+            {
+                if (layer.Tiles[x, y]?.TileIndex == 174)
+                {
+                    tiles.Add(new
+                    {
+                        tile_x = x,
+                        tile_y = y,
+                        tile_index = 174,
+                        present = true,
+                        expected_level_delta = levels,
+                        expected_mine_level_after = mine.mineLevel + levels,
+                        expected_health_cost = damage,
+                        expected_health_after = Math.Max(1, player.health - damage),
+                        preview_source = "MineShaft.enterMineShaft deterministic local random",
+                        usable = new { status = "derived", reason = "native_mineshaft_shaft_tile" }
+                    });
+                }
+            }
+        }
+
+        return tiles.ToArray();
+    }
+
+    public static int ShaftFallLevels(int mineLevel, ulong uniqueGameId, int totalDays)
+    {
+        var random = Utility.CreateRandom(mineLevel, uniqueGameId, totalDays);
+        var levels = random.Next(3, 9);
+        if (random.NextDouble() < 0.1)
+        {
+            levels = levels * 2 - 1;
+        }
+        if (mineLevel < 220 && mineLevel + levels > 220)
+        {
+            levels = 220 - mineLevel;
+        }
+        return levels;
     }
 
     public static bool ActionTokenEquals(string? action, string expectedToken)

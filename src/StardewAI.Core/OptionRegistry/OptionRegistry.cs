@@ -236,6 +236,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches ladder interaction range", "native MineShaft ladder action loads the next floor" },
                 new[] { "block_unknown_ladder", "block_unsafe_interaction_window", "block_direct_mine_level_mutation" }));
 
+            Register(Option("executor.descend_shaft", "mining", "Descend one transparent Skull Cavern shaft",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "mining.player_resources", "menus.active_menu" },
+                new[] { "BFS reaches shaft interaction range", "native Shaft_Jump confirmation applies the exact previewed fall and health cost" },
+                new[] { "block_unknown_shaft", "block_health_reserve", "block_dialogue_mismatch", "block_direct_mine_level_mutation" }));
+
             Register(Option("executor.catch_fish", "fishing", "Execute one legal fishing attempt",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

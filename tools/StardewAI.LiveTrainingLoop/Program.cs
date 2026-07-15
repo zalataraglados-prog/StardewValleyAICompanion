@@ -509,6 +509,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
     var maxCrops = ReadQueueParameterInt(item, "max_crops") ?? ReadQueueParameterInt(item, "max_tool_swings");
     var maxMovementTiles = ReadQueueParameterInt(item, "max_movement_tiles");
+    var expectedMineLevelDelta = ReadQueueParameterInt(item, "expected_mine_level_delta");
+    var expectedMineLevelAfter = ReadQueueParameterInt(item, "expected_mine_level_after");
+    var expectedHealthCost = ReadQueueParameterInt(item, "expected_health_cost");
+    var expectedHealthAfter = ReadQueueParameterInt(item, "expected_health_after");
     var safeSlotIndex = ReadQueueParameterInt(item, "safe_slot_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
@@ -578,6 +582,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     {
         executionRequest.MaxMovementTiles = maxMovementTiles.Value;
     }
+    executionRequest.ExpectedMineLevelDelta = expectedMineLevelDelta;
+    executionRequest.ExpectedMineLevelAfter = expectedMineLevelAfter;
+    executionRequest.ExpectedHealthCost = expectedHealthCost;
+    executionRequest.ExpectedHealthAfter = expectedHealthAfter;
     if (safeSlotIndex.HasValue)
     {
         executionRequest.SafeSlotIndex = safeSlotIndex.Value;
@@ -1038,6 +1046,12 @@ static void WritePlanExecutionEpisode(
         RecoveryHealthAfter = execution["recovery_health_after"]?.GetValue<int>(),
         RecoveryRestoreSlotIndex = execution["recovery_restore_slot_index"]?.GetValue<int>(),
         RecoverySafetyStatus = ReadString(execution, "recovery_safety_status"),
+        ShaftMineLevelBefore = execution["shaft_mine_level_before"]?.GetValue<int>(),
+        ShaftMineLevelAfter = execution["shaft_mine_level_after"]?.GetValue<int>(),
+        ShaftLevelDelta = execution["shaft_level_delta"]?.GetValue<int>(),
+        ShaftHealthBefore = execution["shaft_health_before"]?.GetValue<int>(),
+        ShaftHealthAfter = execution["shaft_health_after"]?.GetValue<int>(),
+        ShaftNativeDialogueHandled = execution["shaft_native_dialogue_handled"]?.GetValue<bool>(),
         DialogueNativeHandled = execution["dialogue_native_handled"]?.GetValue<bool>(),
         DialoguePressAttempts = execution["dialogue_press_attempts"]?.GetValue<int>(),
         DialogueAdvanceTicks = execution["dialogue_advance_ticks"]?.GetValue<int>(),

@@ -136,6 +136,41 @@ public sealed class TrainingExecutionContractTests
     }
 
     [Fact]
+    public void ShaftExecutionFieldsRoundTripWithoutTextParsing()
+    {
+        var request = new TrainingExecutionRequest
+        {
+            OptionId = "executor.descend_shaft",
+            ExpectedMineLevelDelta = 7,
+            ExpectedMineLevelAfter = 128,
+            ExpectedHealthCost = 21,
+            ExpectedHealthAfter = 79
+        };
+        var requestRoundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(JsonSerializer.Serialize(request, JsonOptions), JsonOptions)!;
+        Assert.Equal(7, requestRoundTrip.ExpectedMineLevelDelta);
+        Assert.Equal(128, requestRoundTrip.ExpectedMineLevelAfter);
+        Assert.Equal(21, requestRoundTrip.ExpectedHealthCost);
+        Assert.Equal(79, requestRoundTrip.ExpectedHealthAfter);
+
+        var result = new TrainingExecutionResult
+        {
+            ShaftMineLevelBefore = 121,
+            ShaftMineLevelAfter = 128,
+            ShaftLevelDelta = 7,
+            ShaftHealthBefore = 100,
+            ShaftHealthAfter = 79,
+            ShaftNativeDialogueHandled = true
+        };
+        var resultRoundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(JsonSerializer.Serialize(result, JsonOptions), JsonOptions)!;
+        Assert.Equal(121, resultRoundTrip.ShaftMineLevelBefore);
+        Assert.Equal(128, resultRoundTrip.ShaftMineLevelAfter);
+        Assert.Equal(7, resultRoundTrip.ShaftLevelDelta);
+        Assert.Equal(100, resultRoundTrip.ShaftHealthBefore);
+        Assert.Equal(79, resultRoundTrip.ShaftHealthAfter);
+        Assert.True(resultRoundTrip.ShaftNativeDialogueHandled);
+    }
+
+    [Fact]
     public void TrainingExecutionRequestSerializesInteractSafetyFields()
     {
         var request = new TrainingExecutionRequest

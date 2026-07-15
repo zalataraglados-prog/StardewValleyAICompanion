@@ -23,6 +23,24 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void SafeShaftPrecedesLadderAndCarriesExactPreview()
+    {
+        var plan = Plan(
+            ladders: "[{\"tile_x\":5,\"tile_y\":2}]",
+            shafts: "[{\"tile_x\":4,\"tile_y\":2,\"expected_level_delta\":7,\"expected_mine_level_after\":128,\"expected_health_cost\":21,\"expected_health_after\":79}]");
+
+        Assert.Equal(MiningFloorStepKinds.DescendShaft, plan.StepKind);
+        Assert.Equal("executor.descend_shaft", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal(7, plan.ExpectedMineLevelDelta);
+        Assert.Equal(128, plan.ExpectedMineLevelAfter);
+        Assert.Equal(21, plan.ExpectedHealthCost);
+        Assert.Equal(79, plan.ExpectedHealthAfter);
+        Assert.Equal("shaft_health_reserve_verified", plan.SafetyWindowStatus);
+        Assert.Contains(MiningFloorStepCompiler.BuildExecutionParameters(plan), parameter =>
+            parameter.Name == "expected_mine_level_delta" && parameter.Value == "7");
+    }
+
+    [Fact]
     public void KillAllFloorSelectsReachableMonsterBeforeStone()
     {
         var plan = Plan(
@@ -289,7 +307,7 @@ public sealed class MiningFloorStepPlannerTests
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
 
-        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder" })
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft" })
         {
             var option = registry.GetRequired(optionId);
             Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
@@ -300,6 +318,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.combat_monster").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_shaft").BehaviorCategory);
     }
 
     [Fact]
@@ -320,29 +339,55 @@ public sealed class MiningFloorStepPlannerTests
         Assert.DoesNotMatch(@"\.mineLevel\s*=(?!=)", ladderSource);
     }
 
+    [Fact]
+    public void RuntimeShaftUsesNativePromptAndVerifiesPreviewWithoutDirectTransition()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartDescendShaft", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var shaftSource = source[start..end];
+
+        Assert.Contains("BuildAdjacentToolPath", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("getTileIndexAt(target.X, target.Y, \"Buildings\", \"mine\") != 174", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("active.MineBefore.checkAction", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("answerDialogueAction(\"Shaft_Jump\"", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("afterMine.mineLevel == active.ExpectedMineLevelAfter", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.health != active.ExpectedHealthAfter", shaftSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("enterMineShaft(", shaftSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine(", shaftSource, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\.mineLevel\s*=(?!=)", shaftSource);
+        Assert.DoesNotMatch(@"player\.health\s*=(?!=)", shaftSource);
+    }
+
     private static MiningFloorStepPlan Plan(
         string ladders = "[]",
+        string shafts = "[]",
         string objects = "[]",
         string monsters = "[]",
         bool mustKillAll = false,
-        string[]? rows = null)
+        string[]? rows = null,
+        string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}")
     {
         rows ??= new[] { "111111", "100001", "100001", "100001", "111111" };
         var rowsJson = JsonSerializer.Serialize(rows);
         var json = """
         {
           "mining": {
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
-            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL}}
+            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL}},
+            "player_resources": {"status":"available","value":RESOURCES}
           }
         }
         """
             .Replace("LADDERS", ladders, StringComparison.Ordinal)
+            .Replace("SHAFTS", shafts, StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
+            .Replace("RESOURCES", resources, StringComparison.Ordinal)
             .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json));
     }
