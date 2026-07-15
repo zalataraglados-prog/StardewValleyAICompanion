@@ -26,5 +26,6 @@
 - The original worker state above is historical. Codex subsequently replaced the unavailable collision/object/floor placeholders with decompile-backed loaded-floor reads.
 - Collision rows now cover map geometry, objects, characters, terrain features, resource clumps, large terrain features, furniture, animals, and other farmers while excluding the controlled farmer. The cache is purpose-limited and refreshes no later than 30 ticks.
 - Breakable stone/container durability, best-pickaxe hit counts, stone ladder previews, treasure-room state, floor gates, and current monster facts are available on a loaded `MineShaft`.
-- `profile=mining` limits snapshot work to baseline, route/current-location, and mining domains.
-- Offline validation passed. The remaining gate is an isolated E: serialization/performance smoke followed by the dynamic perfect mining executor; no runtime capability is claimed yet.
+- `profile=mining` limits snapshot work to baseline and mining domains. Runtime profiling showed generic `locations` duplicated loaded-floor data and dominated payload/latency, so it is excluded upstream.
+- Offline validation passed. No mining action runtime capability is claimed until the dynamic perfect executor is implemented.
+- Controller follow-up completed the isolated E: smoke on a non-empty level 99 floor. Read-side serialization and latency now pass; only the action executor remains gated.

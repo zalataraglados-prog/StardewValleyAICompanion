@@ -3,15 +3,16 @@
 ## Status
 
 - Offline validation completed on 2026-07-15.
-- `MiningReachDepthPlanningTests`: PASS 25/25.
-- Full solution: PASS Core 850/850 and Backend 49/49.
-- No game, SMAPI, or isolated E: runtime smoke was launched in this closure.
+- `MiningReachDepthPlanningTests`: PASS 26/26.
+- Full solution: PASS Core 851/851 and Backend 49/49.
+- Hidden/silent isolated E: runtime smoke PASS at level 99: 118 objects, 79 breakable stones, 17 containers, 7 monsters, 50x50 collision rows, and five snapshots at 127-164 ms / 232,759 bytes.
 
 ## Commands Run
 
 - `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter FullyQualifiedName~MiningReachDepthPlanningTests --no-restore --verbosity minimal`
 - `dotnet test StardewValleyAICompanion.sln --no-restore --verbosity minimal`
+- `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1 -MineLevel 99 -SampleCount 5 -MinimumBreakableStoneCount 1`
 
 ## Runtime
 
-- Runtime validation remains pending and should use the isolated E: environment. It must verify `profile=mining` serialization shape and snapshot latency before executor implementation consumes these fields.
+- Read-side runtime validation is complete. Action execution remains blocked until the dynamic perfect mining executor is implemented and independently verified.

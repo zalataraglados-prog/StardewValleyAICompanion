@@ -643,8 +643,6 @@ public sealed class ModEntry : Mod
         if (profile is "mining")
         {
             domains.Add("mining");
-            domains.Add("current_location");
-            domains.Add("locations");
         }
 
         return domains;

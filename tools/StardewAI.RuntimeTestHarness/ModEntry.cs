@@ -39,6 +39,7 @@ public sealed class ModEntry : Mod
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
     private ActiveMineFishingSetup? activeMineFishingSetup;
+    private ActiveMineSetup? activeMineSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveDialogueAdvance? activeDialogueAdvance;
@@ -238,11 +239,12 @@ public sealed class ModEntry : Mod
         TickWait();
         TickCatchFish();
         TickMineFishingSetup();
+        TickMineSetup();
         TickNativeFarmTool();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeNativeFarmTool is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -313,6 +315,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_mine_fishing_floor")
             {
                 StartSetupMineFishingFloor(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_mining_floor")
+            {
+                StartSetupMiningFloor(pending);
                 return;
             }
 
@@ -5416,6 +5424,27 @@ public sealed class ModEntry : Mod
         Game1.enterMine(request.MineLevel.Value);
     }
 
+    private void StartSetupMiningFloor(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        if (!request.MineLevel.HasValue || request.MineLevel.Value < 1 || request.MineLevel.Value > 120)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "debug_setup_mining_floor", "current_location.mine_level=requested", "mine_level=" + request.MineLevel, "mining_fixture_level_out_of_range"));
+            return;
+        }
+
+        var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        activeMineSetup = new ActiveMineSetup(pending, request.MineLevel.Value, beforeLocation);
+        Game1.enterMine(request.MineLevel.Value);
+    }
+
     private static MineFishingFixtureFacts EnsureMineFishingFixtureEquipment()
     {
         var player = Game1.player;
@@ -5532,6 +5561,57 @@ public sealed class ModEntry : Mod
         {
             CompleteMineFishingSetup(active, mine, fishableTileCount, verified: false);
         }
+    }
+
+    private void TickMineSetup()
+    {
+        if (activeMineSetup is null)
+        {
+            return;
+        }
+
+        var active = activeMineSetup;
+        active.ElapsedTicks++;
+        var mine = Game1.currentLocation as MineShaft;
+        var verified = mine is not null && mine.mineLevel == active.MineLevel && mine.map is not null;
+        if (verified || active.ElapsedTicks >= active.MaxTicks)
+        {
+            CompleteMineSetup(active, mine, verified);
+        }
+    }
+
+    private void CompleteMineSetup(ActiveMineSetup active, MineShaft? mine, bool verified)
+    {
+        activeMineSetup = null;
+        var request = active.Pending.Request;
+        var afterLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_mining_floor",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "native_enter_mine_completed", "mine_level_verified", "loaded_mine_map_present" }
+                : new[] { "mining_fixture_state_mismatch" },
+            RequestedEffect = "current_location.mine_level=" + active.MineLevel,
+            ObservedEffect = "location=" + afterLocation + ";mine_level=" + (mine?.mineLevel.ToString() ?? "unavailable") + ";loaded_map=" + (mine?.map is not null),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "mining_fixture_state_mismatch" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange { Path = "player.location_id", Before = active.BeforeLocation, After = afterLocation },
+                    new SimulatedFactChange { Path = "current_location.mine_level", Before = string.Empty, After = mine!.mineLevel.ToString() }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        });
     }
 
     private static int CountFishableTiles(MineShaft? mine)
@@ -9023,6 +9103,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_fish_frenzy" &&
             request.OptionId != "debug.setup_fish_pond" &&
             request.OptionId != "debug.setup_mine_fishing_floor" &&
+            request.OptionId != "debug.setup_mining_floor" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
             request.OptionId != "debug.setup_plant_seed_target" &&
             request.OptionId != "debug.setup_harvest_crop_target" &&
@@ -9269,6 +9350,23 @@ public sealed class ModEntry : Mod
         public int MineLevel { get; }
         public string BeforeLocation { get; }
         public MineFishingFixtureFacts PrerequisiteFacts { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int ElapsedTicks { get; set; }
+        public int MaxTicks { get; } = 600;
+    }
+
+    private sealed class ActiveMineSetup
+    {
+        public ActiveMineSetup(PendingExecution pending, int mineLevel, string beforeLocation)
+        {
+            Pending = pending;
+            MineLevel = mineLevel;
+            BeforeLocation = beforeLocation;
+        }
+
+        public PendingExecution Pending { get; }
+        public int MineLevel { get; }
+        public string BeforeLocation { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; } = 600;

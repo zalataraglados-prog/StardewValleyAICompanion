@@ -229,8 +229,38 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("or \"mining\" or \"full\"", source, StringComparison.Ordinal);
         Assert.Contains("if (profile is \"mining\")", source, StringComparison.Ordinal);
         Assert.Contains("domains.Add(\"mining\")", source, StringComparison.Ordinal);
-        Assert.Contains("domains.Add(\"current_location\")", source, StringComparison.Ordinal);
-        Assert.Contains("domains.Add(\"locations\")", source, StringComparison.Ordinal);
+
+        var miningBlockStart = source.IndexOf("if (profile is \"mining\")", StringComparison.Ordinal);
+        var miningBlockEnd = source.IndexOf("return domains;", miningBlockStart, StringComparison.Ordinal);
+        var miningBlock = source[miningBlockStart..miningBlockEnd];
+        Assert.DoesNotContain("domains.Add(\"current_location\")", miningBlock, StringComparison.Ordinal);
+        Assert.DoesNotContain("domains.Add(\"locations\")", miningBlock, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MiningRuntimeSmokeUsesIsolatedSilentPurposeLimitedSnapshot()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "scripts",
+            "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
+
+        Assert.Contains("E:\\StardewValleyAICompanion-runtime", source, StringComparison.Ordinal);
+        Assert.Contains("profile=mining", source, StringComparison.Ordinal);
+        Assert.Contains("debug.setup_mining_floor", source, StringComparison.Ordinal);
+        Assert.Contains("-WindowStyle Hidden", source, StringComparison.Ordinal);
+        Assert.Contains("SDL_AUDIODRIVER", source, StringComparison.Ordinal);
+        Assert.Contains("Assert-MiningSnapshot", source, StringComparison.Ordinal);
+        Assert.Contains("maximum_snapshot_latency_ms", source, StringComparison.Ordinal);
+
+        var harnessSource = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs"));
+        Assert.Contains("StartSetupMiningFloor", harnessSource, StringComparison.Ordinal);
+        Assert.Contains("native_enter_mine_completed", harnessSource, StringComparison.Ordinal);
+        Assert.Contains("loaded_mine_map_present", harnessSource, StringComparison.Ordinal);
     }
 
     [Fact]
