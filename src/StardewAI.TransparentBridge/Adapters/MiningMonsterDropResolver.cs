@@ -1027,6 +1027,7 @@ internal static class MiningMonsterDropResolver
             {
                 QualifiedItemId = pair.Key,
                 ConditionalSelectionChance = pair.Value,
+                ConditionalExpectedQuantity = 1d,
                 ProbabilityStatus = "exact_decompiled_weight_with_loaded_furniture_fallback"
             })
             .ToArray();
@@ -1061,6 +1062,7 @@ internal static class MiningMonsterDropResolver
         {
             QualifiedItemId = id,
             ConditionalSelectionChance = chance,
+            ConditionalExpectedQuantity = 1d,
             ProbabilityStatus = "exact_uniform_loaded_catalog"
         }).ToArray();
     }
@@ -1169,9 +1171,51 @@ internal static class MiningMonsterDropResolver
             {
                 QualifiedItemId = pair.Key,
                 ConditionalSelectionChance = pair.Value,
+                ConditionalExpectedQuantity = HardMineTreasureConditionalExpectedQuantity(pair.Key),
                 ProbabilityStatus = "exact_decompiled_hard_mine_treasure_tree"
             })
             .ToArray();
+    }
+
+    private static double HardMineTreasureConditionalExpectedQuantity(string qualifiedItemId)
+    {
+        if (qualifiedItemId.StartsWith("(TR)", StringComparison.Ordinal))
+        {
+            return 1d;
+        }
+        if (qualifiedItemId.StartsWith("(O)", StringComparison.Ordinal) &&
+            int.TryParse(qualifiedItemId.AsSpan(3), NumberStyles.Integer, CultureInfo.InvariantCulture, out var objectId))
+        {
+            if (objectId is >= 628 and <= 633 || objectId is 74 or 265 or 437 or 439)
+            {
+                return 1d;
+            }
+            if (objectId is >= 472 and <= 498)
+            {
+                return 12.5d;
+            }
+            if (objectId is >= 235 and <= 244 || objectId is 226 or 275 or 688 or 732)
+            {
+                return 5d;
+            }
+            return objectId switch
+            {
+                288 => 5d,
+                287 => 10d,
+                848 => 15d,
+                773 => 3d,
+                749 => 6.25d,
+                681 => 2d,
+                645 => 1.5d,
+                621 => 4d,
+                802 => 15d,
+                286 => 15d,
+                349 => 3d,
+                337 => 2.5d,
+                _ => 1d
+            };
+        }
+        return qualifiedItemId is "(O)MysteryBox" or "(O)GoldenMysteryBox" ? 5d : 1d;
     }
 
     private static string? PreviewSpecialItem(MineShaft mine, int x, int y)
@@ -1387,6 +1431,8 @@ internal sealed class MiningDropCatalogEntryProjection
     public string QualifiedItemId { get; set; } = string.Empty;
 
     public double ConditionalSelectionChance { get; set; }
+
+    public double ConditionalExpectedQuantity { get; set; } = 1d;
 
     public string ProbabilityStatus { get; set; } = string.Empty;
 }

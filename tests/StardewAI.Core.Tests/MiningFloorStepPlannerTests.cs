@@ -242,11 +242,12 @@ public sealed class MiningFloorStepPlannerTests
             [{"runtime_identity":"hard-treasure-source","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":[],"conditional_drop_catalog_keys":["mine_hard_special_treasure_room"],"drop_probability_rules":[{"catalog_key":"mine_hard_special_treasure_room","effective_per_kill_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"global_rng_catalog_selection_not_consumed"}]}]
             """,
             dropCatalogs: """
-            [{"key":"mine_hard_special_treasure_room","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(O)288","(O)287"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(O)288","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_hard_mine_treasure_tree"},{"qualified_item_id":"(O)287","conditional_selection_chance":0.75,"probability_status":"exact_decompiled_hard_mine_treasure_tree"}]}]
+            [{"key":"mine_hard_special_treasure_room","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(O)288","(O)287"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(O)288","conditional_selection_chance":0.25,"conditional_expected_quantity":5.0,"probability_status":"exact_decompiled_hard_mine_treasure_tree"},{"qualified_item_id":"(O)287","conditional_selection_chance":0.75,"conditional_expected_quantity":10.0,"probability_status":"exact_decompiled_hard_mine_treasure_tree"}]}]
             """);
 
         Assert.Equal("hard-treasure-source", plan.TargetRuntimeIdentity);
         Assert.Equal(0.25d, plan.TargetDropChancePreview);
+        Assert.Equal(1.25d, plan.TargetExpectedQuantityPerKill);
         Assert.Equal("exact_current_snapshot", plan.TargetDropProbabilityStatus);
     }
 

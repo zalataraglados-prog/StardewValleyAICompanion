@@ -503,16 +503,16 @@ namespace StardewAI.Core.Execution
                 var directMatch = ReadStrings(rule, "qualified_item_ids").Contains(target, StringComparer.OrdinalIgnoreCase);
                 var catalogKey = ReadString(rule, "catalog_key");
                 var catalogMatch = false;
-                double? catalogSelectionChance = null;
+                MonsterDropCatalogEntryInfo? catalogEntry = null;
                 if (!string.IsNullOrWhiteSpace(catalogKey) &&
                     dropCatalogs is not null &&
                     dropCatalogs.TryGetValue(catalogKey, out var catalog) &&
                     catalog.Ids.Contains(target, StringComparer.OrdinalIgnoreCase))
                 {
                     catalogMatch = true;
-                    if (catalog.ConditionalSelectionChances.TryGetValue(target, out var parsedSelectionChance))
+                    if (catalog.SelectionEntries.TryGetValue(target, out var parsedEntry))
                     {
-                        catalogSelectionChance = parsedSelectionChance;
+                        catalogEntry = parsedEntry;
                     }
                 }
                 if (!directMatch && !catalogMatch)
@@ -521,13 +521,14 @@ namespace StardewAI.Core.Execution
                 }
                 var chance = ReadDouble(rule, "per_identity_chance");
                 double? expectedQuantity = ReadDouble(rule, "expected_quantity_per_kill");
-                if (!chance.HasValue && catalogMatch && catalogSelectionChance.HasValue)
+                if (!chance.HasValue && catalogMatch && catalogEntry is not null)
                 {
                     var eventChance = ReadDouble(rule, "effective_per_kill_chance");
                     if (eventChance.HasValue)
                     {
-                        chance = eventChance.Value * catalogSelectionChance.Value;
-                        expectedQuantity = chance;
+                        chance = eventChance.Value * catalogEntry.ConditionalSelectionChance;
+                        var expectedEvents = ReadDouble(rule, "expected_events_per_kill") ?? eventChance.Value;
+                        expectedQuantity = expectedEvents * catalogEntry.ConditionalSelectionChance * catalogEntry.ConditionalExpectedQuantity;
                     }
                 }
                 if (!chance.HasValue)
@@ -575,7 +576,7 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
                 var ids = ReadStrings(catalog, "possible_qualified_item_ids");
-                var selectionChances = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                var selectionEntries = new Dictionary<string, MonsterDropCatalogEntryInfo>(StringComparer.OrdinalIgnoreCase);
                 var probabilityCompleteness = ReadString(catalog, "selection_probability_completeness");
                 if (probabilityCompleteness.StartsWith("complete", StringComparison.Ordinal) &&
                     catalog.TryGetProperty("selection_probability_entries", out var entries) &&
@@ -585,25 +586,26 @@ namespace StardewAI.Core.Execution
                     {
                         var id = ReadString(entry, "qualified_item_id");
                         var chance = ReadDouble(entry, "conditional_selection_chance");
+                        var expectedQuantity = ReadDouble(entry, "conditional_expected_quantity") ?? 1d;
                         var status = ReadString(entry, "probability_status");
-                        if (!string.IsNullOrWhiteSpace(id) && chance.HasValue && chance.Value >= 0d && chance.Value <= 1d &&
+                        if (!string.IsNullOrWhiteSpace(id) && chance.HasValue && chance.Value >= 0d && chance.Value <= 1d && expectedQuantity > 0d &&
                             (string.Equals(status, "exact_decompiled_weight_with_loaded_furniture_fallback", StringComparison.Ordinal) ||
                              string.Equals(status, "exact_uniform_loaded_catalog", StringComparison.Ordinal) ||
                              string.Equals(status, "exact_decompiled_hard_mine_treasure_tree", StringComparison.Ordinal)))
                         {
-                            selectionChances[id] = chance.Value;
+                            selectionEntries[id] = new MonsterDropCatalogEntryInfo(chance.Value, expectedQuantity);
                         }
                     }
                 }
                 var idSet = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                var probabilityMass = selectionChances.Values.Sum();
-                if (selectionChances.Count != idSet.Count ||
-                    selectionChances.Keys.Any(id => !idSet.Contains(id)) ||
+                var probabilityMass = selectionEntries.Values.Sum(entry => entry.ConditionalSelectionChance);
+                if (selectionEntries.Count != idSet.Count ||
+                    selectionEntries.Keys.Any(id => !idSet.Contains(id)) ||
                     Math.Abs(probabilityMass - 1d) > 0.000000001d)
                 {
-                    selectionChances.Clear();
+                    selectionEntries.Clear();
                 }
-                result[key] = new MonsterDropCatalogInfo(ids, selectionChances);
+                result[key] = new MonsterDropCatalogInfo(ids, selectionEntries);
             }
             return result;
         }
@@ -1038,15 +1040,28 @@ namespace StardewAI.Core.Execution
 
         private sealed class MonsterDropCatalogInfo
         {
-            public MonsterDropCatalogInfo(string[] ids, IReadOnlyDictionary<string, double> conditionalSelectionChances)
+            public MonsterDropCatalogInfo(string[] ids, IReadOnlyDictionary<string, MonsterDropCatalogEntryInfo> selectionEntries)
             {
                 Ids = ids;
-                ConditionalSelectionChances = conditionalSelectionChances;
+                SelectionEntries = selectionEntries;
             }
 
             public string[] Ids { get; }
 
-            public IReadOnlyDictionary<string, double> ConditionalSelectionChances { get; }
+            public IReadOnlyDictionary<string, MonsterDropCatalogEntryInfo> SelectionEntries { get; }
+        }
+
+        private sealed class MonsterDropCatalogEntryInfo
+        {
+            public MonsterDropCatalogEntryInfo(double conditionalSelectionChance, double conditionalExpectedQuantity)
+            {
+                ConditionalSelectionChance = conditionalSelectionChance;
+                ConditionalExpectedQuantity = conditionalExpectedQuantity;
+            }
+
+            public double ConditionalSelectionChance { get; }
+
+            public double ConditionalExpectedQuantity { get; }
         }
 
         private sealed class TargetProbabilityRule
