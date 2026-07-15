@@ -48,6 +48,7 @@ public sealed class ModEntry : Mod
     private ActivePickupDebris? activePickupDebris;
     private ActiveDescendLadder? activeDescendLadder;
     private ActiveDescendShaft? activeDescendShaft;
+    private ActiveExitMine? activeExitMine;
     private bool manualAutoCombatEnabled;
     private bool manualAutoCombatInputHeld;
     private Monster? manualAutoCombatTarget;
@@ -263,10 +264,11 @@ public sealed class ModEntry : Mod
         TickPickupDebris();
         TickDescendLadder();
         TickDescendShaft();
+        TickExitMine();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -331,6 +333,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.descend_shaft")
             {
                 StartDescendShaft(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.exit_mine")
+            {
+                StartExitMine(pending);
                 return;
             }
 
@@ -6207,6 +6215,275 @@ public sealed class ModEntry : Mod
             : "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";mine_level=none;health=" + Game1.player.health;
     }
 
+    private void StartExitMine(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var requested = "leave_loaded_mine=true;native_dialogue=ExitMine_Leave;reason=" + request.RetreatReason;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), reasons.ToArray()));
+            return;
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            string.IsNullOrWhiteSpace(request.ExpectedTargetLocation) ||
+            !request.ExpectedArrivalTileX.HasValue || !request.ExpectedArrivalTileY.HasValue ||
+            string.IsNullOrWhiteSpace(request.RetreatReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_exact_target_and_reason_required"));
+            return;
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_requires_loaded_mineshaft"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_tool_or_menu_conflict"));
+            return;
+        }
+
+        var expectedDestination = ExpectedMineExitDestination(mine.mineLevel);
+        if (!string.Equals(request.ExpectedTargetLocation, expectedDestination.LocationId, StringComparison.Ordinal) ||
+            request.ExpectedArrivalTileX.Value != expectedDestination.TileX ||
+            request.ExpectedArrivalTileY.Value != expectedDestination.TileY)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_destination_mismatch_live_mine_kind"));
+            return;
+        }
+
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        if (mine.getTileIndexAt(target.X, target.Y, "Buildings", "mine") != 115)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_tile_not_live_exit"));
+            return;
+        }
+        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_path_unavailable:" + pathReason));
+            return;
+        }
+
+        activeExitMine = new ActiveExitMine(
+            pending,
+            mine,
+            mine.mineLevel,
+            Game1.timeOfDay,
+            Game1.player.health,
+            Game1.player.Stamina,
+            Game1.player.TilePoint,
+            target,
+            path,
+            expectedDestination.LocationId,
+            expectedDestination.TileX,
+            expectedDestination.TileY,
+            request.RetreatReason,
+            requested);
+    }
+
+    private void TickExitMine()
+    {
+        if (activeExitMine is null)
+        {
+            return;
+        }
+
+        var active = activeExitMine;
+        active.ElapsedTicks++;
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompleteExitMineBlocked(active, "exit_mine_timeout");
+            return;
+        }
+
+        if (active.DialogueConfirmed)
+        {
+            if (Game1.currentLocation is not MineShaft)
+            {
+                if (!string.Equals(Game1.currentLocation?.NameOrUniqueName, active.ExpectedLocationId, StringComparison.Ordinal) ||
+                    Game1.player.TilePoint.X != active.ExpectedTileX || Game1.player.TilePoint.Y != active.ExpectedTileY)
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_destination_after_native_answer_mismatch");
+                    return;
+                }
+                CompleteExitMine(active);
+            }
+            return;
+        }
+
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.MineBefore))
+        {
+            CompleteExitMineBlocked(active, "exit_mine_location_changed_before_confirmation");
+            return;
+        }
+
+        if (active.PromptOpened)
+        {
+            if (Game1.activeClickableMenu is not DialogueBox || !string.Equals(active.MineBefore.lastQuestionKey, "ExitMine", StringComparison.Ordinal))
+            {
+                CompleteExitMineBlocked(active, "exit_mine_prompt_drift");
+                return;
+            }
+
+            active.MineBefore.answerDialogueAction("ExitMine_Leave", new[] { "ExitMine", "Leave" });
+            Game1.activeClickableMenu = null;
+            Game1.dialogueUp = false;
+            active.DialogueConfirmed = true;
+            return;
+        }
+
+        if (ImmediateMiningThreat(active.MineBefore))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteExitMineBlocked(active, "exit_mine_path_exhausted");
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+            if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
+            {
+                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
+                if (repaired is null)
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_replan_failed:" + repairReason);
+                    return;
+                }
+                active.Path = repaired;
+                active.PathIndex = 0;
+                return;
+            }
+
+            var beforePosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    active.Path.Clear();
+                    active.PathIndex = 0;
+                    active.StuckTicks = 0;
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.MineBefore.getTileIndexAt(active.Target.X, active.Target.Y, "Buildings", "mine") != 115)
+        {
+            CompleteExitMineBlocked(active, "exit_mine_tile_drift");
+            return;
+        }
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+        var handled = active.MineBefore.checkAction(
+            new TileLocation(active.Target.X, active.Target.Y),
+            new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+            Game1.player);
+        if (!handled || Game1.activeClickableMenu is not DialogueBox || !string.Equals(active.MineBefore.lastQuestionKey, "ExitMine", StringComparison.Ordinal))
+        {
+            CompleteExitMineBlocked(active, "exit_mine_native_prompt_not_opened");
+            return;
+        }
+        active.PromptOpened = true;
+    }
+
+    private void CompleteExitMine(ActiveExitMine active)
+    {
+        StopAllMovement();
+        activeExitMine = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            TargetLocation = active.ExpectedLocationId,
+            TargetTileX = active.ExpectedTileX,
+            TargetTileY = active.ExpectedTileY,
+            ActualTicks = active.ElapsedTicks,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
+            PrimitiveKind = "exit_mine",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "bfs_reached_live_exit", "native_exit_prompt_observed", "native_exit_leave_answer_handled", "exact_decompiled_destination_observed" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = ExitMineObservedEffect(),
+            RetreatReason = active.RetreatReason,
+            RetreatMineLevelBefore = active.MineLevelBefore,
+            RetreatTimeBefore = active.TimeBefore,
+            RetreatHealthBefore = active.HealthBefore,
+            RetreatEnergyBefore = active.EnergyBefore,
+            RetreatDestination = active.ExpectedLocationId + ":" + active.ExpectedTileX + "," + active.ExpectedTileY,
+            RetreatNativeDialogueHandled = true,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "player.location_id", Before = active.MineBefore.NameOrUniqueName, After = active.ExpectedLocationId },
+                new SimulatedFactChange { Path = "player.tile", Before = active.PlayerTileBefore.X + "," + active.PlayerTileBefore.Y, After = active.ExpectedTileX + "," + active.ExpectedTileY }
+            }
+        });
+    }
+
+    private void CompleteExitMineBlocked(ActiveExitMine active, string reason)
+    {
+        StopAllMovement();
+        activeExitMine = null;
+        var result = BlockedWithPrimitive(active.Pending.Request, "exit_mine", active.RequestedEffect, ExitMineObservedEffect(), reason);
+        result.RetreatReason = active.RetreatReason;
+        result.RetreatMineLevelBefore = active.MineLevelBefore;
+        result.RetreatTimeBefore = active.TimeBefore;
+        result.RetreatHealthBefore = active.HealthBefore;
+        result.RetreatEnergyBefore = active.EnergyBefore;
+        result.RetreatDestination = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        result.RetreatNativeDialogueHandled = active.DialogueConfirmed;
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static (string LocationId, int TileX, int TileY) ExpectedMineExitDestination(int mineLevel)
+    {
+        return mineLevel == 77377
+            ? ("Mine", 67, 10)
+            : mineLevel > 120 ? ("SkullCave", 3, 4) : ("Mine", 23, 8);
+    }
+
+    private static string ExitMineObservedEffect()
+    {
+        return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
+            ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y +
+            ";time=" + Game1.timeOfDay +
+            ";health=" + Game1.player.health +
+            ";energy=" + Game1.player.Stamina.ToString("0.###");
+    }
+
     private void StartConsumeFood(PendingExecution pending)
     {
         var request = pending.Request;
@@ -6581,7 +6858,8 @@ public sealed class ModEntry : Mod
         var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
             activePickupDebris?.CombatInterrupted == true ||
             activeDescendLadder?.CombatInterrupted == true ||
-            activeDescendShaft?.CombatInterrupted == true;
+            activeDescendShaft?.CombatInterrupted == true ||
+            activeExitMine?.CombatInterrupted == true;
         var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
         if (!enabled || activeCombatMonster is not null || !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
         {
@@ -10867,6 +11145,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.consume_food" &&
             request.OptionId != "executor.descend_ladder" &&
             request.OptionId != "executor.descend_shaft" &&
+            request.OptionId != "executor.exit_mine" &&
             request.OptionId != "executor.till_soil" &&
             request.OptionId != "debug.advance_time_to" &&
             request.OptionId != "debug.setup_watering_target" &&
@@ -11370,6 +11649,65 @@ public sealed class ModEntry : Mod
         public int ExpectedMineLevelAfter { get; }
         public int ExpectedHealthCost { get; }
         public int ExpectedHealthAfter { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 1800;
+        public int ElapsedTicks { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public bool PromptOpened { get; set; }
+        public bool DialogueConfirmed { get; set; }
+    }
+
+    private sealed class ActiveExitMine
+    {
+        public ActiveExitMine(
+            PendingExecution pending,
+            MineShaft mineBefore,
+            int mineLevelBefore,
+            int timeBefore,
+            int healthBefore,
+            float energyBefore,
+            Point playerTileBefore,
+            Point target,
+            List<Point> path,
+            string expectedLocationId,
+            int expectedTileX,
+            int expectedTileY,
+            string retreatReason,
+            string requestedEffect)
+        {
+            Pending = pending;
+            MineBefore = mineBefore;
+            MineLevelBefore = mineLevelBefore;
+            TimeBefore = timeBefore;
+            HealthBefore = healthBefore;
+            EnergyBefore = energyBefore;
+            PlayerTileBefore = playerTileBefore;
+            Target = target;
+            Path = path;
+            ExpectedLocationId = expectedLocationId;
+            ExpectedTileX = expectedTileX;
+            ExpectedTileY = expectedTileY;
+            RetreatReason = retreatReason;
+            RequestedEffect = requestedEffect;
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft MineBefore { get; }
+        public int MineLevelBefore { get; }
+        public int TimeBefore { get; }
+        public int HealthBefore { get; }
+        public float EnergyBefore { get; }
+        public Point PlayerTileBefore { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; set; }
+        public string ExpectedLocationId { get; }
+        public int ExpectedTileX { get; }
+        public int ExpectedTileY { get; }
+        public string RetreatReason { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 1800;

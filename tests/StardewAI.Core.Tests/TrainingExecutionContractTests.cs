@@ -171,6 +171,31 @@ public sealed class TrainingExecutionContractTests
     }
 
     [Fact]
+    public void RetreatExecutionFieldsRoundTripWithoutTextParsing()
+    {
+        var result = new TrainingExecutionResult
+        {
+            OptionId = "executor.exit_mine",
+            RetreatReason = "retreat_required:latest_exit_time_reached",
+            RetreatMineLevelBefore = 87,
+            RetreatTimeBefore = 1800,
+            RetreatHealthBefore = 43,
+            RetreatEnergyBefore = 18.5,
+            RetreatDestination = "Mine:23,8",
+            RetreatNativeDialogueHandled = true
+        };
+
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(JsonSerializer.Serialize(result, JsonOptions), JsonOptions)!;
+        Assert.Equal(result.RetreatReason, roundTrip.RetreatReason);
+        Assert.Equal(87, roundTrip.RetreatMineLevelBefore);
+        Assert.Equal(1800, roundTrip.RetreatTimeBefore);
+        Assert.Equal(43, roundTrip.RetreatHealthBefore);
+        Assert.Equal(18.5, roundTrip.RetreatEnergyBefore);
+        Assert.Equal("Mine:23,8", roundTrip.RetreatDestination);
+        Assert.True(roundTrip.RetreatNativeDialogueHandled);
+    }
+
+    [Fact]
     public void TrainingExecutionRequestSerializesInteractSafetyFields()
     {
         var request = new TrainingExecutionRequest

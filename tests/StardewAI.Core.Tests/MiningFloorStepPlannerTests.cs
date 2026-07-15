@@ -41,6 +41,23 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void ReachedLatestExitTimeSelectsNativeMineExitBeforeOtherWork()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":4,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":23,\"tile_y\":8}}]",
+            objects: "[{\"tile_x\":2,\"tile_y\":2,\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":1}]",
+            resources: "{\"health\":100,\"max_health\":100,\"energy\":100,\"current_time\":1800,\"selected_slot_index\":4,\"food_slots\":[]}",
+            objective: new MiningFloorObjective { LatestExitTime = 1800 });
+
+        Assert.Equal(MiningFloorStepKinds.ExitMine, plan.StepKind);
+        Assert.Equal("executor.exit_mine", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Contains("latest_exit_time_reached", plan.Reason, StringComparison.Ordinal);
+        Assert.Equal("Mine", plan.ExpectedTargetLocation);
+        Assert.Equal(23, plan.ExpectedArrivalTileX);
+        Assert.Equal(8, plan.ExpectedArrivalTileY);
+    }
+
+    [Fact]
     public void KillAllFloorSelectsReachableMonsterBeforeStone()
     {
         var plan = Plan(
@@ -307,7 +324,7 @@ public sealed class MiningFloorStepPlannerTests
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
 
-        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft" })
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
         {
             var option = registry.GetRequired(optionId);
             Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
@@ -319,6 +336,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_shaft").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.exit_mine").BehaviorCategory);
     }
 
     [Fact]
@@ -360,21 +378,40 @@ public sealed class MiningFloorStepPlannerTests
         Assert.DoesNotMatch(@"player\.health\s*=(?!=)", shaftSource);
     }
 
+    [Fact]
+    public void RuntimeMineExitUsesNativePromptWithoutDirectWarp()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartExitMine", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var exitSource = source[start..end];
+
+        Assert.Contains("getTileIndexAt(target.X, target.Y, \"Buildings\", \"mine\") != 115", exitSource, StringComparison.Ordinal);
+        Assert.Contains("active.MineBefore.checkAction", exitSource, StringComparison.Ordinal);
+        Assert.Contains("answerDialogueAction(\"ExitMine_Leave\"", exitSource, StringComparison.Ordinal);
+        Assert.Contains("ExpectedMineExitDestination", exitSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("warpFarmer(", exitSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine(", exitSource, StringComparison.Ordinal);
+    }
+
     private static MiningFloorStepPlan Plan(
         string ladders = "[]",
         string shafts = "[]",
+        string exits = "[]",
         string objects = "[]",
         string monsters = "[]",
         bool mustKillAll = false,
         string[]? rows = null,
-        string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}")
+        string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"food_slots\":[]}",
+        MiningFloorObjective? objective = null)
     {
         rows ??= new[] { "111111", "100001", "100001", "100001", "111111" };
         var rowsJson = JsonSerializer.Serialize(rows);
         var json = """
         {
           "mining": {
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL}},
@@ -384,12 +421,13 @@ public sealed class MiningFloorStepPlannerTests
         """
             .Replace("LADDERS", ladders, StringComparison.Ordinal)
             .Replace("SHAFTS", shafts, StringComparison.Ordinal)
+            .Replace("EXITS", exits, StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal)
             .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal);
-        return new MiningFloorStepPlanner().Plan(Snapshot(json));
+        return new MiningFloorStepPlanner().Plan(Snapshot(json), objective ?? new MiningFloorObjective());
     }
 
     private static MiningFloorStepPlan ObjectivePlan(

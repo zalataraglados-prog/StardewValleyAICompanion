@@ -939,7 +939,10 @@ namespace StardewAI.Core.Execution
             var objective = new MiningFloorObjective
             {
                 Kind = MiningObjectiveKinds.ReachDepth,
-                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0
+                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
+                MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
+                LatestExitTime = ReadIntParameter(action, "latest_exit_time"),
+                TargetDepth = ReadIntParameter(action, "target_depth")
             };
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, objective);
             parameters.AddRange(MiningFloorStepCompiler.BuildExecutionParameters(floorStep));
@@ -1479,30 +1482,17 @@ namespace StardewAI.Core.Execution
             var reasons = new List<string>(MiningReachDepthCandidateBuilder.MissingMiningGroups(snapshot));
             var targetDepth = ReadIntParameter(action, "target_depth");
             var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
-            var resources = ReadStateFieldValue(snapshot, "mining", "player_resources");
             var currentDepth = currentMine.HasValue ? ReadInt(currentMine.Value, "mine_level") : 0;
             var currentFamily = currentMine.HasValue ? ReadString(currentMine.Value, "mine_kind") : string.Empty;
             reasons.AddRange(MiningReachDepthCandidateBuilder.ValidateTarget(currentDepth, currentFamily, targetDepth, ReadParameter(action, "target_location_family")));
 
-            if (resources.HasValue)
-            {
-                var reserveEnergy = ReadIntParameter(action, "minimum_reserve_energy");
-                var latestExitTime = ReadIntParameter(action, "latest_exit_time");
-                if (reserveEnergy.HasValue && ReadDouble(resources.Value, "energy") <= reserveEnergy.Value)
-                {
-                    reasons.Add("minimum_reserve_energy_not_met");
-                }
-
-                if (latestExitTime.HasValue && ReadInt(resources.Value, "current_time") >= latestExitTime.Value)
-                {
-                    reasons.Add("latest_exit_time_already_reached");
-                }
-            }
-
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
                 Kind = MiningObjectiveKinds.ReachDepth,
-                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0
+                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
+                MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
+                LatestExitTime = ReadIntParameter(action, "latest_exit_time"),
+                TargetDepth = targetDepth
             });
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))

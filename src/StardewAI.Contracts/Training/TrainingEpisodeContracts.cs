@@ -295,6 +295,27 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("shaft_native_dialogue_handled")]
         public bool? ShaftNativeDialogueHandled { get; set; }
 
+        [JsonPropertyName("retreat_reason")]
+        public string RetreatReason { get; set; } = string.Empty;
+
+        [JsonPropertyName("retreat_mine_level_before")]
+        public int? RetreatMineLevelBefore { get; set; }
+
+        [JsonPropertyName("retreat_time_before")]
+        public int? RetreatTimeBefore { get; set; }
+
+        [JsonPropertyName("retreat_health_before")]
+        public int? RetreatHealthBefore { get; set; }
+
+        [JsonPropertyName("retreat_energy_before")]
+        public double? RetreatEnergyBefore { get; set; }
+
+        [JsonPropertyName("retreat_destination")]
+        public string RetreatDestination { get; set; } = string.Empty;
+
+        [JsonPropertyName("retreat_native_dialogue_handled")]
+        public bool? RetreatNativeDialogueHandled { get; set; }
+
         [JsonPropertyName("dialogue_native_handled")]
         public bool? DialogueNativeHandled { get; set; }
 

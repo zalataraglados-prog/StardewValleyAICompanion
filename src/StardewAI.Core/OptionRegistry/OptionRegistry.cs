@@ -244,6 +244,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches shaft interaction range", "native Shaft_Jump confirmation applies the exact previewed fall and health cost" },
                 new[] { "block_unknown_shaft", "block_health_reserve", "block_dialogue_mismatch", "block_direct_mine_level_mutation" }));
 
+            Register(Option("executor.exit_mine", "mining", "Leave the current mine through its native exit",
+                OptionBehaviorCategories.Recovery,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "mining.player_resources", "menus.active_menu" },
+                new[] { "BFS reaches the live mine exit", "native ExitMine_Leave reaches the exact decompiled destination" },
+                new[] { "block_unknown_exit", "block_unreachable_exit", "block_dialogue_mismatch", "block_direct_warp" }));
+
             Register(Option("executor.catch_fish", "fishing", "Execute one legal fishing attempt",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

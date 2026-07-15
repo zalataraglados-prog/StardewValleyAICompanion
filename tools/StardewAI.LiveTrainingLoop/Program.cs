@@ -513,6 +513,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var expectedMineLevelAfter = ReadQueueParameterInt(item, "expected_mine_level_after");
     var expectedHealthCost = ReadQueueParameterInt(item, "expected_health_cost");
     var expectedHealthAfter = ReadQueueParameterInt(item, "expected_health_after");
+    var miningStepReason = ReadQueueParameterString(item, "mining_step_reason");
     var safeSlotIndex = ReadQueueParameterInt(item, "safe_slot_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
@@ -586,6 +587,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     executionRequest.ExpectedMineLevelAfter = expectedMineLevelAfter;
     executionRequest.ExpectedHealthCost = expectedHealthCost;
     executionRequest.ExpectedHealthAfter = expectedHealthAfter;
+    executionRequest.RetreatReason = miningStepReason;
     if (safeSlotIndex.HasValue)
     {
         executionRequest.SafeSlotIndex = safeSlotIndex.Value;
@@ -1052,6 +1054,13 @@ static void WritePlanExecutionEpisode(
         ShaftHealthBefore = execution["shaft_health_before"]?.GetValue<int>(),
         ShaftHealthAfter = execution["shaft_health_after"]?.GetValue<int>(),
         ShaftNativeDialogueHandled = execution["shaft_native_dialogue_handled"]?.GetValue<bool>(),
+        RetreatReason = ReadString(execution, "retreat_reason"),
+        RetreatMineLevelBefore = execution["retreat_mine_level_before"]?.GetValue<int>(),
+        RetreatTimeBefore = execution["retreat_time_before"]?.GetValue<int>(),
+        RetreatHealthBefore = execution["retreat_health_before"]?.GetValue<int>(),
+        RetreatEnergyBefore = execution["retreat_energy_before"]?.GetValue<double>(),
+        RetreatDestination = ReadString(execution, "retreat_destination"),
+        RetreatNativeDialogueHandled = execution["retreat_native_dialogue_handled"]?.GetValue<bool>(),
         DialogueNativeHandled = execution["dialogue_native_handled"]?.GetValue<bool>(),
         DialoguePressAttempts = execution["dialogue_press_attempts"]?.GetValue<int>(),
         DialogueAdvanceTicks = execution["dialogue_advance_ticks"]?.GetValue<int>(),

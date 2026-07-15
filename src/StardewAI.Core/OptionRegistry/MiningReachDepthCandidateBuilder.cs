@@ -46,20 +46,13 @@ namespace StardewAI.Core.OptionRegistry
             var deepestMineLevel = ReadIntOptional(resources.Value, "deepest_mine_level");
             var blocks = ValidateTarget(currentDepth, currentFamily, targetDepth, targetFamily).ToList();
             var elevatorStart = ElevatorStartFor(currentDepth, targetDepth, currentFamily, deepestMineLevel);
-            if (minReserveEnergy.HasValue && ReadDouble(resources.Value, "energy") <= minReserveEnergy.Value)
-            {
-                blocks.Add("minimum_reserve_energy_not_met");
-            }
-
-            if (latestExitTime.HasValue && ReadInt(resources.Value, "current_time") >= latestExitTime.Value)
-            {
-                blocks.Add("latest_exit_time_already_reached");
-            }
-
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
                 Kind = MiningObjectiveKinds.ReachDepth,
-                MinimumReserveHealth = minReserveHealth ?? 0
+                MinimumReserveHealth = minReserveHealth ?? 0,
+                MinimumReserveEnergy = minReserveEnergy,
+                LatestExitTime = latestExitTime,
+                TargetDepth = targetDepth
             });
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
@@ -138,11 +131,6 @@ namespace StardewAI.Core.OptionRegistry
             {
                 blocks.Add("target_depth_required");
                 return blocks.ToArray();
-            }
-
-            if (targetDepth.Value <= currentDepth)
-            {
-                blocks.Add("target_depth_must_be_below_current_depth");
             }
 
             var family = string.IsNullOrWhiteSpace(targetFamily) ? currentFamily : targetFamily!;
@@ -271,11 +259,6 @@ namespace StardewAI.Core.OptionRegistry
         private static int? ReadIntOptional(JsonElement element, string property)
         {
             return element.TryGetProperty(property, out var value) && value.TryGetInt32(out var parsed) ? parsed : null;
-        }
-
-        private static double ReadDouble(JsonElement element, string property)
-        {
-            return element.TryGetProperty(property, out var value) && value.TryGetDouble(out var parsed) ? parsed : 0;
         }
 
         private static string ReadString(JsonElement element, string property)

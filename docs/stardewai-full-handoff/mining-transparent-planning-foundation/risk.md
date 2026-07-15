@@ -5,7 +5,7 @@ Current-status correction: combat, natural pickup, food recovery, ladder descent
 ## Risk Level
 
 - Read-side risk is low after isolated E: validation of compact collision and non-empty object/monster rows.
-- One-stone native execution risk is low after isolated E: validation; full mining runtime risk remains high because combat, descent, retreat, and the multi-floor loop are not implemented.
+- Historical foundation status: one-stone native execution was the only implemented action. Current main now includes combat, descent, and retreat; the remaining high-risk boundary is unvalidated multi-floor integration and duration calibration.
 
 ## Residual Risks
 

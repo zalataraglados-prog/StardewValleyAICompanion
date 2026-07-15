@@ -96,7 +96,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         {
             player_tile = new { tile_x = Game1.player.TilePoint.X, tile_y = Game1.player.TilePoint.Y },
             map = loadedMap is null || loadedMap.Layers.Count == 0 ? null : new { width = loadedMap.Layers[0].LayerWidth, height = loadedMap.Layers[0].LayerHeight, status = "loaded_field_only" },
-            exits = ActionTiles(buildings, "Exit"),
+            exits = MineExitTiles(buildings, mine),
             entries = ActionTiles(buildings, "Mine"),
             elevators = ActionTiles(buildings, "MineElevator"),
             ladders = IndexedTiles(buildings, 173, "native_mineshaft_ladder_tile"),
@@ -350,6 +350,43 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 if (layer.Tiles[x, y]?.TileIndex == tileIndex)
                 {
                     tiles.Add(new { tile_x = x, tile_y = y, tile_index = tileIndex, present = true, usable = new { status = "derived", reason } });
+                }
+            }
+        }
+
+        return tiles.ToArray();
+    }
+
+    private static object[] MineExitTiles(xTile.Layers.Layer? layer, MineShaft mine)
+    {
+        if (layer is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        var destination = mine.mineLevel == 77377
+            ? new { location_id = "Mine", tile_x = 67, tile_y = 10 }
+            : mine.mineLevel > 120
+                ? new { location_id = "SkullCave", tile_x = 3, tile_y = 4 }
+                : new { location_id = "Mine", tile_x = 23, tile_y = 8 };
+        var tiles = new List<object>();
+        for (var x = 0; x < layer.LayerWidth; x++)
+        {
+            for (var y = 0; y < layer.LayerHeight; y++)
+            {
+                if (layer.Tiles[x, y]?.TileIndex == 115)
+                {
+                    tiles.Add(new
+                    {
+                        tile_x = x,
+                        tile_y = y,
+                        tile_index = 115,
+                        present = true,
+                        expected_destination = destination,
+                        native_question_key = "ExitMine",
+                        native_response_key = "ExitMine_Leave",
+                        usable = new { status = "derived", reason = "native_mineshaft_exit_tile" }
+                    });
                 }
             }
         }

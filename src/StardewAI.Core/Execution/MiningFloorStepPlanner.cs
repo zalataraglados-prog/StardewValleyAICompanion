@@ -11,6 +11,7 @@ namespace StardewAI.Core.Execution
     {
         public const string DescendLadder = "descend_ladder";
         public const string DescendShaft = "descend_shaft";
+        public const string ExitMine = "exit_mine";
         public const string MineStone = "mine_stone";
         public const string CombatMonster = "combat_monster";
         public const string PickupDebris = "pickup_debris";
@@ -36,6 +37,12 @@ namespace StardewAI.Core.Execution
         public int MinimumReserveHealth { get; set; }
 
         public int ThreatRadiusTiles { get; set; } = 3;
+
+        public int? LatestExitTime { get; set; }
+
+        public int? MinimumReserveEnergy { get; set; }
+
+        public int? TargetDepth { get; set; }
     }
 
     public sealed class MiningPathTile
@@ -89,6 +96,12 @@ namespace StardewAI.Core.Execution
 
         public int? ExpectedHealthAfter { get; set; }
 
+        public string ExpectedTargetLocation { get; set; } = string.Empty;
+
+        public int? ExpectedArrivalTileX { get; set; }
+
+        public int? ExpectedArrivalTileY { get; set; }
+
         public string SafetyWindowStatus { get; set; } = "not_required";
 
         public MiningPathTile[] Path { get; set; } = Array.Empty<MiningPathTile>();
@@ -133,6 +146,16 @@ namespace StardewAI.Core.Execution
             var hasResources = TryFieldValue(mining, "player_resources", out var resources);
             var restoreSlot = hasResources ? ReadInt(resources, "selected_slot_index") : null;
 
+            var currentDepth = TryFieldValue(mining, "current_mine", out var currentMine)
+                ? ReadInt(currentMine, "mine_level")
+                : null;
+            var mandatoryRetreatReason = hasResources ? MandatoryRetreatReason(resources, objective, currentDepth) : string.Empty;
+            if (!string.IsNullOrEmpty(mandatoryRetreatReason))
+            {
+                var retreat = SelectMineExit(tiles, search, grid, mandatoryRetreatReason);
+                return retreat ?? Blocked("retreat_required_but_exit_unreachable:" + mandatoryRetreatReason);
+            }
+
             if (hasResources && NeedsHealing(resources, monsters, objective, out var healthReason))
             {
                 var healing = SelectFood(resources, objective.MinimumReserveHealth, restoreSlot);
@@ -141,7 +164,8 @@ namespace StardewAI.Core.Execution
                     healing.Reason = healthReason;
                     return healing;
                 }
-                return Blocked("unsafe_health_without_recovery_food");
+                var retreat = SelectMineExit(tiles, search, grid, "retreat_unsafe_health_without_recovery_food");
+                return retreat ?? Blocked("unsafe_health_without_recovery_food_and_exit_unreachable");
             }
 
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
@@ -258,6 +282,52 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static MiningFloorStepPlan? SelectMineExit(JsonElement tiles, SearchResult search, bool[,] grid, string reason)
+        {
+            if (!tiles.TryGetProperty("exits", out var exits) || exits.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return exits.EnumerateArray()
+                .Select(exit => new { Exit = exit, Candidate = TargetCandidate(exit, search, grid, estimatedSwings: 0, deterministicLadder: false) })
+                .Where(row => row.Candidate is not null)
+                .OrderBy(row => row.Candidate!.Distance)
+                .ThenBy(row => row.Candidate!.TargetY)
+                .ThenBy(row => row.Candidate!.TargetX)
+                .Select(row =>
+                {
+                    var plan = Build(MiningFloorStepKinds.ExitMine, reason, row.Candidate!);
+                    if (row.Exit.TryGetProperty("expected_destination", out var destination) && destination.ValueKind == JsonValueKind.Object)
+                    {
+                        plan.ExpectedTargetLocation = ReadString(destination, "location_id");
+                        plan.ExpectedArrivalTileX = ReadInt(destination, "tile_x");
+                        plan.ExpectedArrivalTileY = ReadInt(destination, "tile_y");
+                    }
+                    plan.SafetyWindowStatus = "mandatory_retreat_native_exit";
+                    return plan;
+                })
+                .FirstOrDefault();
+        }
+
+        private static string MandatoryRetreatReason(JsonElement resources, MiningFloorObjective objective, int? currentDepth)
+        {
+            var reasons = new List<string>();
+            if (objective.TargetDepth.HasValue && currentDepth.HasValue && currentDepth.Value >= objective.TargetDepth.Value)
+            {
+                reasons.Add("target_depth_reached");
+            }
+            if (objective.LatestExitTime.HasValue && (ReadInt(resources, "current_time") ?? 0) >= objective.LatestExitTime.Value)
+            {
+                reasons.Add("latest_exit_time_reached");
+            }
+            if (objective.MinimumReserveEnergy.HasValue && (ReadDouble(resources, "energy") ?? 0) <= objective.MinimumReserveEnergy.Value)
+            {
+                reasons.Add("minimum_reserve_energy_reached");
+            }
+            return reasons.Count == 0 ? string.Empty : "retreat_required:" + string.Join(",", reasons);
         }
 
         private static MiningFloorStepPlan? SelectActionTile(JsonElement tiles, string propertyName, string stepKind, string reason, SearchResult search, bool[,] grid)
@@ -608,6 +678,13 @@ namespace StardewAI.Core.Execution
                 : (int?)null;
         }
 
+        private static double? ReadDouble(JsonElement element, string property)
+        {
+            return element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out var value) && value.TryGetDouble(out var parsed)
+                ? parsed
+                : (double?)null;
+        }
+
         private static bool ReadBool(JsonElement element, string property)
         {
             return element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True;
@@ -702,6 +779,7 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.ConsumeFood => "executor.consume_food",
                 MiningFloorStepKinds.DescendLadder => "executor.descend_ladder",
                 MiningFloorStepKinds.DescendShaft => "executor.descend_shaft",
+                MiningFloorStepKinds.ExitMine => "executor.exit_mine",
                 _ => string.Empty
             };
         }
@@ -730,6 +808,9 @@ namespace StardewAI.Core.Execution
             Add(parameters, "expected_mine_level_after", plan.ExpectedMineLevelAfter);
             Add(parameters, "expected_health_cost", plan.ExpectedHealthCost);
             Add(parameters, "expected_health_after", plan.ExpectedHealthAfter);
+            Add(parameters, "expected_target_location", plan.ExpectedTargetLocation);
+            Add(parameters, "expected_arrival_tile_x", plan.ExpectedArrivalTileX);
+            Add(parameters, "expected_arrival_tile_y", plan.ExpectedArrivalTileY);
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
