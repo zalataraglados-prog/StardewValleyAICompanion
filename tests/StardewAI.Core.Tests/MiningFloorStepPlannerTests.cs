@@ -203,6 +203,53 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveRanksExactChancePerBfsDistance()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {"runtime_identity":"near-low","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":0.1,"expected_quantity_per_kill":0.1,"probability_status":"exact_current_state_formula","item_selection_status":"independent_roll_per_call"}]},
+              {"runtime_identity":"far-high","tile_x":6,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":0.8,"expected_quantity_per_kill":1.6,"probability_status":"exact_current_state_formula","item_selection_status":"independent_roll_per_call"}]}
+            ]
+            """);
+
+        Assert.Equal("far-high", plan.TargetRuntimeIdentity);
+        Assert.Equal(0.8d, plan.TargetDropChancePreview);
+        Assert.Equal(1.6d, plan.TargetExpectedQuantityPerKill);
+        Assert.Equal("exact_current_snapshot", plan.TargetDropProbabilityStatus);
+        Assert.True(plan.TargetDropEfficiencyScore > 0d);
+        var parameters = MiningFloorStepCompiler.BuildExecutionParameters(plan);
+        Assert.Contains(parameters, parameter => parameter.Name == "target_drop_chance_preview" && parameter.Value == "0.8");
+        Assert.Contains(parameters, parameter => parameter.Name == "target_expected_quantity_per_kill" && parameter.Value == "1.6");
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveDoesNotRankCurrentPositionSeedAsStableProbability()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)553" }
+            },
+            monsters: """
+            [
+              {"runtime_identity":"near-position-seeded","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":["(O)553"],"drop_probability_rules":[{"qualified_item_ids":["(O)553"],"per_identity_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"fixed_current_position_seed_preview_recomputed_each_call"}]},
+              {"runtime_identity":"far-stable","tile_x":6,"tile_y":2,"possible_drop_qualified_item_ids":["(O)553"],"drop_probability_rules":[{"qualified_item_ids":["(O)553"],"per_identity_chance":0.05,"expected_quantity_per_kill":0.05,"probability_status":"exact_current_state_formula","item_selection_status":"independent_roll_per_call"}]}
+            ]
+            """);
+
+        Assert.Equal("far-stable", plan.TargetRuntimeIdentity);
+        Assert.Equal(0.05d, plan.TargetDropChancePreview);
+        Assert.Equal("exact_current_snapshot", plan.TargetDropProbabilityStatus);
+    }
+
+    [Fact]
     public void ResourceObjectivePicksExistingTargetDebrisBeforeSourceNode()
     {
         var plan = ObjectivePlan(

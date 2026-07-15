@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
@@ -85,6 +86,14 @@ namespace StardewAI.Core.Execution
         public string[] ExpectedDropQualifiedItemIds { get; set; } = Array.Empty<string>();
 
         public string SourceMatchStatus { get; set; } = string.Empty;
+
+        public double? TargetDropChancePreview { get; set; }
+
+        public string TargetDropProbabilityStatus { get; set; } = string.Empty;
+
+        public double? TargetExpectedQuantityPerKill { get; set; }
+
+        public double? TargetDropEfficiencyScore { get; set; }
 
         public int? FoodSlotIndex { get; set; }
 
@@ -371,16 +380,21 @@ namespace StardewAI.Core.Execution
                 ? new HashSet<string>(targetDropIds, StringComparer.OrdinalIgnoreCase)
                 : null;
             return monsters.EnumerateArray()
-                .Select(monster => new
+                .Select(monster =>
                 {
-                    Monster = monster,
-                    Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
-                    Guaranteed = ReadStrings(monster, "guaranteed_drop_qualified_item_ids"),
-                    Possible = ExpandMonsterPossibleDrops(monster, dropCatalogs)
+                    var possible = ExpandMonsterPossibleDrops(monster, dropCatalogs);
+                    return new
+                    {
+                        Monster = monster,
+                        Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
+                        Match = BuildMonsterDropMatch(monster, targets, possible, dropCatalogs)
+                    };
                 })
-                .Where(row => targets is null || row.Possible.Any(targets.Contains))
+                .Where(row => targets is null || row.Match.MatchedIds.Length > 0)
                 .Where(row => row.Candidate is not null)
-                .OrderBy(row => targets is null || row.Guaranteed.Any(targets.Contains) ? 0 : 1)
+                .OrderBy(row => targets is null || row.Match.IsGuaranteed ? 0 : row.Match.ChanceKnown ? 1 : 2)
+                .ThenByDescending(row => row.Match.IsGuaranteed ? 1d : row.Match.Efficiency(row.Candidate!.Distance))
+                .ThenByDescending(row => row.Match.ExpectedQuantityPerKill ?? -1d)
                 .ThenBy(row => row.Candidate!.Distance)
                 .ThenBy(row => row.Candidate!.TargetY)
                 .ThenBy(row => row.Candidate!.TargetX)
@@ -390,18 +404,119 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeIdentity = ReadString(row.Monster, "runtime_identity");
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
-                    plan.TargetQualifiedItemId = targets is null
-                        ? string.Empty
-                        : row.Possible.FirstOrDefault(targets.Contains) ?? string.Empty;
-                    plan.ExpectedDropQualifiedItemIds = targets is null
-                        ? Array.Empty<string>()
-                        : row.Possible.Where(targets.Contains).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+                    plan.TargetQualifiedItemId = targets is null ? string.Empty : row.Match.TargetId;
+                    plan.ExpectedDropQualifiedItemIds = targets is null ? Array.Empty<string>() : row.Match.MatchedIds;
                     plan.SourceMatchStatus = targets is null
                         ? string.Empty
-                        : row.Guaranteed.Any(targets.Contains) ? "guaranteed_monster_drop" : "conditional_monster_drop";
+                        : row.Match.IsGuaranteed ? "guaranteed_monster_drop" : "conditional_monster_drop";
+                    plan.TargetDropChancePreview = targets is null ? null : row.Match.Chance;
+                    plan.TargetDropProbabilityStatus = targets is null ? string.Empty : row.Match.ProbabilityStatus;
+                    plan.TargetExpectedQuantityPerKill = targets is null ? null : row.Match.ExpectedQuantityPerKill;
+                    plan.TargetDropEfficiencyScore = targets is null || !row.Match.ChanceKnown
+                        ? null
+                        : row.Match.Efficiency(row.Candidate!.Distance);
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static MonsterDropMatch BuildMonsterDropMatch(
+            JsonElement monster,
+            HashSet<string>? targets,
+            string[] possible,
+            IReadOnlyDictionary<string, string[]>? dropCatalogs)
+        {
+            if (targets is null)
+            {
+                return new MonsterDropMatch();
+            }
+            var matched = possible.Where(targets.Contains).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+            var guaranteed = new HashSet<string>(ReadStrings(monster, "guaranteed_drop_qualified_item_ids"), StringComparer.OrdinalIgnoreCase);
+            var guaranteedTarget = matched.FirstOrDefault(guaranteed.Contains);
+            if (!string.IsNullOrWhiteSpace(guaranteedTarget))
+            {
+                return new MonsterDropMatch
+                {
+                    MatchedIds = matched,
+                    TargetId = guaranteedTarget,
+                    IsGuaranteed = true,
+                    Chance = 1d,
+                    ProbabilityStatus = "guaranteed_from_live_projection"
+                };
+            }
+
+            var bestTarget = string.Empty;
+            double? bestChance = null;
+            double? bestExpectedQuantity = null;
+            var bestMatchingRuleCount = 0;
+            foreach (var target in matched)
+            {
+                var targetRules = ReadExactTargetProbabilityRules(monster, target, dropCatalogs).ToArray();
+                if (targetRules.Length == 0)
+                {
+                    continue;
+                }
+                var chance = targetRules.Max(rule => rule.Chance);
+                var expectedQuantity = targetRules.All(rule => rule.ExpectedQuantity.HasValue)
+                    ? targetRules.Sum(rule => rule.ExpectedQuantity!.Value)
+                    : (double?)null;
+                if (!bestChance.HasValue || chance > bestChance.Value ||
+                    chance == bestChance.Value && (expectedQuantity ?? -1d) > (bestExpectedQuantity ?? -1d))
+                {
+                    bestTarget = target;
+                    bestChance = chance;
+                    bestExpectedQuantity = expectedQuantity;
+                    bestMatchingRuleCount = targetRules.Length;
+                }
+            }
+
+            return new MonsterDropMatch
+            {
+                MatchedIds = matched,
+                TargetId = !string.IsNullOrWhiteSpace(bestTarget) ? bestTarget : matched.FirstOrDefault() ?? string.Empty,
+                Chance = bestChance,
+                ExpectedQuantityPerKill = bestExpectedQuantity,
+                ProbabilityStatus = bestChance.HasValue
+                    ? bestMatchingRuleCount == 1 ? "exact_current_snapshot" : "best_exact_rule_lower_bound_multiple_sources"
+                    : "unavailable_no_stable_per_identity_probability"
+            };
+        }
+
+        private static IEnumerable<TargetProbabilityRule> ReadExactTargetProbabilityRules(
+            JsonElement monster,
+            string target,
+            IReadOnlyDictionary<string, string[]>? dropCatalogs)
+        {
+            if (!monster.TryGetProperty("drop_probability_rules", out var rules) || rules.ValueKind != JsonValueKind.Array)
+            {
+                yield break;
+            }
+            foreach (var rule in rules.EnumerateArray())
+            {
+                var itemSelectionStatus = ReadString(rule, "item_selection_status");
+                if (!string.Equals(ReadString(rule, "probability_status"), "exact_current_state_formula", StringComparison.Ordinal) ||
+                    itemSelectionStatus.Contains("current_position", StringComparison.Ordinal) ||
+                    itemSelectionStatus.Contains("current_death_tile", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                var directMatch = ReadStrings(rule, "qualified_item_ids").Contains(target, StringComparer.OrdinalIgnoreCase);
+                var catalogKey = ReadString(rule, "catalog_key");
+                var catalogMatch = !string.IsNullOrWhiteSpace(catalogKey) &&
+                    dropCatalogs is not null &&
+                    dropCatalogs.TryGetValue(catalogKey, out var catalogIds) &&
+                    catalogIds.Contains(target, StringComparer.OrdinalIgnoreCase);
+                if (!directMatch && !catalogMatch)
+                {
+                    continue;
+                }
+                var chance = ReadDouble(rule, "per_identity_chance");
+                if (!chance.HasValue)
+                {
+                    continue;
+                }
+                yield return new TargetProbabilityRule(chance.Value, ReadDouble(rule, "expected_quantity_per_kill"));
+            }
         }
 
         private static string[] ExpandMonsterPossibleDrops(JsonElement monster, IReadOnlyDictionary<string, string[]>? dropCatalogs)
@@ -851,6 +966,41 @@ namespace StardewAI.Core.Execution
             public string[] MatchedDropIds { get; set; } = Array.Empty<string>();
         }
 
+        private sealed class MonsterDropMatch
+        {
+            public string[] MatchedIds { get; set; } = Array.Empty<string>();
+
+            public string TargetId { get; set; } = string.Empty;
+
+            public bool IsGuaranteed { get; set; }
+
+            public double? Chance { get; set; }
+
+            public bool ChanceKnown => Chance.HasValue;
+
+            public double? ExpectedQuantityPerKill { get; set; }
+
+            public string ProbabilityStatus { get; set; } = string.Empty;
+
+            public double Efficiency(int distance)
+            {
+                return Chance.HasValue ? Chance.Value / (Math.Max(0, distance) + 1d) : -1d;
+            }
+        }
+
+        private sealed class TargetProbabilityRule
+        {
+            public TargetProbabilityRule(double chance, double? expectedQuantity)
+            {
+                Chance = chance;
+                ExpectedQuantity = expectedQuantity;
+            }
+
+            public double Chance { get; }
+
+            public double? ExpectedQuantity { get; }
+        }
+
         private sealed class SearchResult
         {
             private readonly (int X, int Y) start;
@@ -961,6 +1111,10 @@ namespace StardewAI.Core.Execution
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
             Add(parameters, "expected_drop_qualified_item_ids", string.Join(",", plan.ExpectedDropQualifiedItemIds));
             Add(parameters, "source_match_status", plan.SourceMatchStatus);
+            Add(parameters, "target_drop_chance_preview", plan.TargetDropChancePreview);
+            Add(parameters, "target_drop_probability_status", plan.TargetDropProbabilityStatus);
+            Add(parameters, "target_expected_quantity_per_kill", plan.TargetExpectedQuantityPerKill);
+            Add(parameters, "target_drop_efficiency_score", plan.TargetDropEfficiencyScore);
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
             Add(parameters, "target_name", plan.TargetName);
@@ -980,6 +1134,14 @@ namespace StardewAI.Core.Execution
             if (!string.IsNullOrWhiteSpace(value))
             {
                 parameters.Add(Parameter(name, value));
+            }
+        }
+
+        private static void Add(List<SmallModelActionParameter> parameters, string name, double? value)
+        {
+            if (value.HasValue)
+            {
+                parameters.Add(Parameter(name, value.Value.ToString("R", CultureInfo.InvariantCulture)));
             }
         }
 
