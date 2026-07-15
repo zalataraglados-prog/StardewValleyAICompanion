@@ -71,7 +71,8 @@ namespace StardewAI.Core.Training
                     ResourceCosts = transition.ResourceCosts,
                     DurationItems = timeBudget.Items,
                     CalibrationNotes = ExtractCalibrationNotes(timeBudget)
-                }
+                },
+                CandidateAudit = queue.CandidateAudit
             };
         }
 
@@ -91,10 +92,6 @@ namespace StardewAI.Core.Training
         {
             return timeBudget.Items
                 .SelectMany(item => item.Notes)
-                .Where(note =>
-                    note.Contains("calibration", StringComparison.Ordinal) ||
-                    note.StartsWith("assumption_domain:", StringComparison.Ordinal) ||
-                    note.StartsWith("decompile_evidence:", StringComparison.Ordinal))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
         }

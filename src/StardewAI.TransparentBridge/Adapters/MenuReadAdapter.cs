@@ -11,9 +11,12 @@ public sealed class MenuReadAdapter : ReadAdapterBase
     private static readonly string[] MenuFields =
     {
         "active_menu",
+        "sleep_prompt_context",
         "identity",
         "screen_bounds",
         "public_state",
+        "shop_stock",
+        "sell_context",
         "menu_specific_state"
     };
 
@@ -31,8 +34,11 @@ public sealed class MenuReadAdapter : ReadAdapterBase
                 {
                     is_open = false,
                     type = "none",
-                    full_type = (string?)null
+                    full_type = (string?)null,
+                    last_question_key = Game1.currentLocation?.lastQuestionKey,
+                    is_sleep_prompt = false
                 }, "Game1.activeClickableMenu", tick, AdapterId),
+                ["sleep_prompt_context"] = Field(ReadSleepPromptContext(null), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
                 ["identity"] = Field(new
                 {
                     is_applicable = false,
@@ -48,6 +54,16 @@ public sealed class MenuReadAdapter : ReadAdapterBase
                     is_applicable = false,
                     reason = "no_active_clickable_menu"
                 }, "Game1.activeClickableMenu", tick, AdapterId),
+                ["shop_stock"] = Unavailable(
+                    "no_shop_menu_open",
+                    "Game1.activeClickableMenu as ShopMenu",
+                    tick,
+                    AdapterId),
+                ["sell_context"] = Unavailable(
+                    "no_shop_menu_open",
+                    "Game1.activeClickableMenu as ShopMenu",
+                    tick,
+                    AdapterId),
                 ["menu_specific_state"] = Field(new
                 {
                     is_applicable = false,
@@ -71,9 +87,24 @@ public sealed class MenuReadAdapter : ReadAdapterBase
         return Section("menus", new Dictionary<string, object>
         {
             ["active_menu"] = Field(ReadActiveMenu(menu), "Game1.activeClickableMenu", tick, AdapterId),
+            ["sleep_prompt_context"] = Field(ReadSleepPromptContext(menu), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
             ["identity"] = Field(ReadIdentity(menu), "Game1.activeClickableMenu.GetType()", tick, AdapterId),
             ["screen_bounds"] = ReadScreenBounds(menu, tick),
             ["public_state"] = ReadPublicState(menu, tick),
+            ["shop_stock"] = menu is ShopMenu shopMenu
+                ? (object)Field(ReadShopStock(shopMenu), "ShopMenu.itemPriceAndStock", tick, AdapterId)
+                : (object)Unavailable(
+                    "active_menu_is_not_shop",
+                    "Game1.activeClickableMenu as ShopMenu",
+                    tick,
+                    AdapterId),
+            ["sell_context"] = menu is ShopMenu sellMenu
+                ? (object)Field(ReadSellContext(sellMenu), "ShopMenu categoriesToSellHere/tagsToSellHere/sellPercentage", tick, AdapterId)
+                : (object)Unavailable(
+                    "active_menu_is_not_shop",
+                    "Game1.activeClickableMenu as ShopMenu",
+                    tick,
+                    AdapterId),
             ["menu_specific_state"] = menuSpecificState
         }, unavailableFields.ToArray(), "partial");
     }
@@ -85,7 +116,27 @@ public sealed class MenuReadAdapter : ReadAdapterBase
         {
             is_open = true,
             type = type.Name,
-            full_type = type.FullName
+            full_type = type.FullName,
+            last_question_key = Game1.currentLocation?.lastQuestionKey,
+            is_sleep_prompt = menu is DialogueBox && string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal)
+        };
+    }
+
+    private static object ReadSleepPromptContext(IClickableMenu? menu)
+    {
+        var lastQuestionKey = Game1.currentLocation?.lastQuestionKey;
+        var promptOpen = menu is DialogueBox && string.Equals(lastQuestionKey, "Sleep", StringComparison.Ordinal);
+        return new
+        {
+            prompt_open = promptOpen,
+            active_menu_open = menu is not null,
+            active_menu_type = menu?.GetType().Name ?? "none",
+            last_question_key = lastQuestionKey,
+            expected_question_key = "Sleep",
+            can_confirm_sleep = false,
+            confirm_executor_enabled = false,
+            confirm_action_key = "Sleep_Yes",
+            block_reason = promptOpen ? "sleep_confirm_executor_disabled" : "sleep_prompt_not_open"
         };
     }
 
@@ -268,6 +319,178 @@ public sealed class MenuReadAdapter : ReadAdapterBase
         };
     }
 
+    private static object ReadShopStock(ShopMenu menu)
+    {
+        var entries = menu.itemPriceAndStock
+            .OrderBy(entry => entry.Key.QualifiedItemId, StringComparer.Ordinal)
+            .ThenBy(entry => entry.Key.DisplayName, StringComparer.Ordinal)
+            .Select(entry => new
+            {
+                item_id = entry.Key is Item item ? item.ItemId : entry.Key.QualifiedItemId,
+                qualified_item_id = entry.Key.QualifiedItemId,
+                display_name = entry.Key.DisplayName,
+                name = entry.Key.Name,
+                stack = entry.Key.Stack,
+                quality = entry.Key.Quality,
+                is_recipe = entry.Key.IsRecipe,
+                price = entry.Value.Price,
+                stock = entry.Value.Stock,
+                infinite_stock = entry.Value.Stock == ShopMenu.infiniteStock,
+                trade_item = entry.Value.TradeItem,
+                trade_item_count = entry.Value.TradeItemCount,
+                effective_trade_item_count = entry.Value.TradeItem is null ? (int?)null : entry.Value.TradeItemCount ?? 5,
+                limited_stock_mode = entry.Value.LimitedStockMode.ToString(),
+                synced_key = entry.Value.SyncedKey,
+                action_on_purchase_count = entry.Value.ActionsOnPurchase?.Count ?? 0,
+                can_buy_item = entry.Key.CanBuyItem(Game1.player),
+                total_price_for_one_purchase = entry.Value.Price,
+                currency_balance = ReadCurrencyBalance(menu.currency),
+                can_afford_one_with_currency = ReadCurrencyBalance(menu.currency) >= entry.Value.Price,
+                trade_item_available_count = entry.Value.TradeItem is null ? (int?)null : CountAvailableTradeItem(entry.Value.TradeItem),
+                can_afford_one_with_trade_item = entry.Value.TradeItem is null || CountAvailableTradeItem(entry.Value.TradeItem) >= (entry.Value.TradeItemCount ?? 5),
+                could_inventory_accept = entry.Key.GetSalableInstance() is Item salableItem && Game1.player.couldInventoryAcceptThisItem(salableItem),
+                action_when_purchased_may_discard_or_mutate = entry.Key.IsRecipe || entry.Value.ActionsOnPurchase?.Count > 0 || entry.Key.GetType() != typeof(StardewValley.Object),
+                executor_purchase_enabled = PurchaseExecutorBlockReasons(menu, entry.Key, entry.Value).Length == 0,
+                executor_block_reasons = PurchaseExecutorBlockReasons(menu, entry.Key, entry.Value)
+            })
+            .ToArray();
+        var anyEnabled = entries.Any(entry => entry.executor_purchase_enabled);
+
+        return new
+        {
+            kind = "shop_stock",
+            shop_id = menu.ShopId,
+            shop_data_present = menu.ShopData is not null,
+            currency = menu.currency,
+            read_only = menu.readOnly,
+            safety_timer = menu.safetyTimer,
+            held_item_present = menu.heldItem is not null,
+            shop_on_purchase_present = menu.onPurchase is not null,
+            executor_purchase_enabled = anyEnabled,
+            executor_block_reason = anyEnabled ? "" : "no_safe_executor_purchase_candidate",
+            entry_count = entries.Length,
+            entries
+        };
+    }
+
+    private static string[] PurchaseExecutorBlockReasons(ShopMenu menu, ISalable item, ItemStockInformation stock)
+    {
+        var reasons = new List<string>();
+
+        if (menu.readOnly)
+        {
+            reasons.Add("shop_menu_read_only");
+        }
+
+        if (menu.safetyTimer > 0)
+        {
+            reasons.Add("shop_menu_safety_timer_active");
+        }
+
+        if (menu.heldItem is not null)
+        {
+            reasons.Add("shop_menu_held_item_present");
+        }
+
+        if (menu.currency != 0)
+        {
+            reasons.Add("non_money_currency_purchase_requires_audit");
+        }
+
+        if (menu.onPurchase is not null)
+        {
+            reasons.Add("shop_on_purchase_callback_present");
+        }
+
+        if (stock.TradeItem is not null)
+        {
+            reasons.Add("trade_item_purchase_requires_consumption_audit");
+        }
+
+        if (stock.ActionsOnPurchase?.Count > 0)
+        {
+            reasons.Add("actions_on_purchase_present");
+        }
+
+        if (item.IsRecipe)
+        {
+            reasons.Add("recipe_purchase_discards_item_and_learns_recipe");
+        }
+
+        if (item.GetType() != typeof(StardewValley.Object))
+        {
+            reasons.Add("non_plain_object_purchase_side_effects_unmodeled");
+        }
+
+        if (stock.Stock != ShopMenu.infiniteStock && (stock.LimitedStockMode.ToString() != "None" || stock.SyncedKey is not null))
+        {
+            reasons.Add("synchronized_or_limited_stock_requires_post_state_audit");
+        }
+
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static object ReadSellContext(ShopMenu menu)
+    {
+        return new
+        {
+            kind = "shop_sell_context",
+            shop_id = menu.ShopId,
+            currency = menu.currency,
+            read_only = menu.readOnly,
+            safety_timer = menu.safetyTimer,
+            held_item_present = menu.heldItem is not null,
+            storage_shop = ReadPrivateBool(menu, "_isStorageShop"),
+            sell_percentage = ReadPrivateFloat(menu, "sellPercentage"),
+            custom_on_sell_present = menu.onSell is not null,
+            can_buyback = menu.CanBuyback(),
+            categories_to_sell = menu.categoriesToSellHere.OrderBy(category => category).ToArray(),
+            tag_groups_to_sell = menu.tagsToSellHere
+                .Select(group => group.OrderBy(tag => tag, StringComparer.Ordinal).ToArray())
+                .ToArray(),
+            buy_back_item_count = menu.buyBackItems?.Count ?? 0,
+            buy_back_resell_tomorrow_count = menu.buyBackItemsToResellTomorrow?.Count ?? 0
+        };
+    }
+
+    private static bool? ReadPrivateBool(object source, string fieldName)
+    {
+        return source.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(source) as bool?;
+    }
+
+    private static float? ReadPrivateFloat(object source, string fieldName)
+    {
+        return source.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(source) as float?;
+    }
+
+    private static int ReadCurrencyBalance(int currency)
+    {
+        return currency switch
+        {
+            0 => Game1.player.Money,
+            1 => Game1.player.festivalScore,
+            2 => Game1.player.clubCoins,
+            4 => Game1.player.QiGems,
+            _ => 0
+        };
+    }
+
+    private static int CountAvailableTradeItem(string itemId)
+    {
+        var qualifiedItemId = ItemRegistry.QualifyItemId(itemId) ?? itemId;
+        if (qualifiedItemId == "(O)858")
+        {
+            return Game1.player.QiGems;
+        }
+
+        if (qualifiedItemId == "(O)73")
+        {
+            return Game1.netWorldState.Value.GoldenWalnuts;
+        }
+
+        return Game1.player.Items.CountId(qualifiedItemId);
+    }
+
     private static object ReadDialogueState(DialogueBox menu, long tick)
     {
         return new
@@ -277,6 +500,14 @@ public sealed class MenuReadAdapter : ReadAdapterBase
             character_dialogue_present = menu.characterDialogue is not null,
             broken_up_dialogue_count = menu.characterDialoguesBrokenUp?.Count,
             response_count = menu.responses?.Length,
+            responses = menu.responses?
+                .Select((response, index) => new
+                {
+                    index,
+                    response_key = response.responseKey,
+                    response_text = response.responseText
+                })
+                .ToArray() ?? Array.Empty<object>(),
             response_component_count = menu.responseCC?.Count,
             is_question = menu.isQuestion,
             selected_response = menu.selectedResponse,

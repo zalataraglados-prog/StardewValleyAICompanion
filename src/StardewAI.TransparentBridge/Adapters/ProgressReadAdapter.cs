@@ -1,13 +1,30 @@
+using System.Linq;
 using StardewAI.Contracts.State;
 using StardewValley.Network;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Quests;
+using StardewValley.SpecialOrders;
+using StardewValley.SpecialOrders.Objectives;
+using StardewValley.SpecialOrders.Rewards;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed class ProgressQuestReadAdapter : ReadAdapterBase
 {
+    private readonly IQuestProgressMapper mapper;
+
+    public ProgressQuestReadAdapter()
+        : this(new ReadQuestProgressMapper())
+    {
+    }
+
+    public ProgressQuestReadAdapter(IQuestProgressMapper mapper)
+    {
+        this.mapper = mapper;
+    }
+
     public override string Domain => "quests_progress";
     public override int Priority => 60;
 
@@ -31,67 +48,23 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
         return Section("quests", fields, Array.Empty<string>());
     }
 
-    private static QuestProgressRef[]? ReadActiveQuests(Farmer? player)
+    private QuestProgressRef[]? ReadActiveQuests(Farmer? player)
     {
         return player?.questLog
-            .Select(quest => new QuestProgressRef
-            {
-                Id = quest.id.Value,
-                Title = quest.questTitle,
-                Description = quest.questDescription,
-                CurrentObjective = quest.currentObjective,
-                QuestType = quest.questType.Value,
-                Accepted = quest.accepted.Value,
-                Completed = quest.completed.Value,
-                DailyQuest = quest.dailyQuest.Value,
-                DaysLeft = quest.daysLeft.Value,
-                MoneyReward = quest.moneyReward.Value
-            })
+            .Select(quest => mapper.MapQuest(quest))
             .OrderBy(quest => quest.Id, StringComparer.Ordinal)
             .ToArray();
     }
 
-    private static CompletedQuestProgressRef? ReadCompletedQuests(Farmer? player)
+    private CompletedQuestProgressRef? ReadCompletedQuests(Farmer? player)
     {
-        if (player is null)
-        {
-            return null;
-        }
-
-        return new CompletedQuestProgressRef
-        {
-            TotalCount = Game1.stats.QuestsCompleted,
-            RetainedCompletedQuests = ReadActiveQuests(player)?
-                .Where(quest => quest.Completed)
-                .OrderBy(quest => quest.Id, StringComparer.Ordinal)
-                .ToArray() ?? Array.Empty<QuestProgressRef>(),
-            HistoryIdentityAvailable = false,
-            HistoryIdentitySource = "No verified global completed quest ID collection; Game1.stats.QuestsCompleted is the verified total count."
-        };
+        return mapper.MapCompletedQuests(player);
     }
 
-    private static SpecialOrderProgressRef[]? ReadSpecialOrders(FarmerTeam? team)
+    private SpecialOrderProgressRef[]? ReadSpecialOrders(FarmerTeam? team)
     {
         return team?.specialOrders
-            .Select(order => new SpecialOrderProgressRef
-            {
-                QuestKey = order.questKey.Value,
-                QuestName = order.questName.Value,
-                QuestDescription = order.questDescription.Value,
-                Requester = order.requester.Value,
-                OrderType = order.orderType.Value,
-                QuestState = order.questState.Value.ToString(),
-                DueDate = order.dueDate.Value,
-                Duration = order.questDuration.Value.ToString(),
-                Objectives = order.objectives
-                    .Select(objective => new SpecialOrderObjectiveProgressRef
-                    {
-                        Description = objective.description.Value,
-                        CurrentCount = objective.currentCount.Value,
-                        MaxCount = objective.maxCount.Value
-                    })
-                    .ToArray()
-            })
+            .Select(order => mapper.MapSpecialOrder(order))
             .OrderBy(order => order.QuestKey, StringComparer.Ordinal)
             .ToArray();
     }
@@ -124,7 +97,8 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             ["crafting_recipes"] = Field(ToSortedDictionary(master?.craftingRecipes), "Game1.MasterPlayer.craftingRecipes", tick),
             ["achievements"] = Field(master?.achievements.OrderBy(id => id).ToArray(), "Game1.MasterPlayer.achievements", tick),
             ["perfection"] = Field(ReadPerfection(world), "StardewValley.Utility.percentGameComplete(); Game1.netWorldState.Value.PerfectionWaivers", tick),
-            ["golden_walnuts"] = Field(ReadGoldenWalnuts(world), "Game1.netWorldState.Value.GoldenWalnuts/GoldenWalnutsFound", tick)
+            ["golden_walnuts"] = Field(ReadGoldenWalnuts(world), "Game1.netWorldState.Value.GoldenWalnuts/GoldenWalnutsFound", tick),
+            ["full_shipment_progress"] = Field(ReadFullShipmentProgress(master), "Game1.objectData raw parse; Game1.MasterPlayer.basicShipped; Object.isPotentialBasicShipped(itemId, category, objectType); category != -7 && category != -2", tick)
         };
 
         return Section("world_progress", fields, Array.Empty<string>());
@@ -232,5 +206,79 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
         return source?.Pairs
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
             .ToDictionary(pair => pair.Key, pair => pair.Value.ToArray());
+    }
+
+    private static FullShipmentProgressRef? ReadFullShipmentProgress(Farmer? master)
+    {
+        if (master is null || !Context.IsWorldReady)
+        {
+            return null;
+        }
+
+        var shipped = master.basicShipped;
+
+        var eligibleItems = new List<FullShipmentItemProgressRef>();
+        var objectData = Game1.objectData;
+        if (objectData is null)
+        {
+            return null;
+        }
+
+        foreach (var kv in objectData)
+        {
+            var itemId = kv.Key;
+            var data = kv.Value;
+            if (data is null)
+            {
+                continue;
+            }
+
+            var category = data.Category;
+            var objectType = data.Type;
+
+            if (!IsEligibleForFullShipment(itemId, category, objectType))
+            {
+                continue;
+            }
+
+            var qualifiedItemId = ItemRegistry.QualifyItemId(itemId) ?? "(O)" + itemId;
+            var itemShippedCount = shipped.TryGetValue(itemId, out var count) ? count : 0;
+
+            eligibleItems.Add(new FullShipmentItemProgressRef
+            {
+                ItemId = itemId,
+                QualifiedItemId = qualifiedItemId,
+                DisplayName = data.DisplayName ?? data.Name ?? itemId,
+                Category = category,
+                ObjectType = objectType ?? string.Empty,
+                CurrentShippedCount = itemShippedCount,
+                Shipped = itemShippedCount > 0
+            });
+        }
+
+        var sorted = eligibleItems
+            .OrderBy(item => item.ItemId, StringComparer.Ordinal)
+            .ThenBy(item => item.QualifiedItemId, StringComparer.Ordinal)
+            .ToArray();
+
+        var shippedEligibleCount = sorted.Count(item => item.Shipped);
+        var totalCount = sorted.Length;
+        var missing = sorted.Where(item => !item.Shipped).Select(item => item.ItemId).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+
+        return new FullShipmentProgressRef
+        {
+            EligibleItemCount = totalCount,
+            ShippedEligibleItemCount = shippedEligibleCount,
+            MissingItemCount = totalCount - shippedEligibleCount,
+            CompletionRatio = totalCount > 0 ? (double)shippedEligibleCount / totalCount : 0,
+            Complete = shippedEligibleCount == totalCount && totalCount > 0,
+            Items = sorted,
+            MissingItemIds = missing
+        };
+    }
+
+    private static bool IsEligibleForFullShipment(string itemId, int category, string objectType)
+    {
+        return category != -7 && category != -2 && StardewValley.Object.isPotentialBasicShipped(itemId, category, objectType);
     }
 }

@@ -1,0 +1,20 @@
+Controller-run main-repo validation on 2026-07-14:
+
+- focused social tests: 163/163
+- Core: 462/462
+- Backend: 49/49
+- RuntimeTestHarness build: 0 warnings, 0 errors
+
+Test files:
+  - tests/StardewAI.Core.Tests/SocialNativeSourceGuardTests.cs (27 tests)
+  - tests/StardewAI.Core.Tests/SocialTransparentPlanningTests.cs
+  - tests/StardewAI.Core.Tests/TimeBudgetValidatorTests.cs
+
+No game was launched. Validation was build + test only.
+
+Remaining runtime tests (isolated E: runtime environment):
+  - talk smoke
+  - ordinary gift smoke (including one-item-to-null)
+  - blocked/replan cases
+  - output artifact audit
+  - duration calibration

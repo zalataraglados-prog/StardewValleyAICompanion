@@ -72,6 +72,21 @@ namespace StardewAI.Core.Training
             var behaviorCategory = BehaviorCategory(firstOption);
             var trainingRole = TrainingRole(behaviorCategory);
             var excludeFromPolicyTraining = trainingRole == TrainingRoles.ExecutorCalibration;
+            var candidateAudit = episode.CandidateAudit ?? Array.Empty<StardewAI.Contracts.Execution.SmallModelPlanCandidateAudit>();
+            var skippedAudits = candidateAudit
+                .Where(item => string.Equals(item.Decision, "skipped", StringComparison.Ordinal))
+                .ToArray();
+            var acceptedAudits = candidateAudit
+                .Where(item => string.Equals(item.Decision, "accepted", StringComparison.Ordinal))
+                .ToArray();
+            var skipReasons = skippedAudits
+                .SelectMany(item => item.Reasons)
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(item => item, StringComparer.Ordinal)
+                .ToArray();
+            var hasTimeBudgetSkip = skipReasons.Contains("aggregate_time_budget_exceeded", StringComparer.Ordinal);
+            var hasEnergyBudgetSkip = skipReasons.Contains("aggregate_energy_budget_exceeded", StringComparer.Ordinal);
 
             return new ActionFeatureVector
             {
@@ -85,7 +100,15 @@ namespace StardewAI.Core.Training
                     {
                         Number("action.option_count", optionIds.Length),
                         Number("action.required_minutes", episode.HardFeasibility.TimeBudget.RequiredMinutes),
-                        Number("action.optional_minutes", episode.HardFeasibility.TimeBudget.OptionalMinutes)
+                        Number("action.optional_minutes", episode.HardFeasibility.TimeBudget.OptionalMinutes),
+                        Number("candidate_audit.accepted_count", acceptedAudits.Length),
+                        Number("candidate_audit.skipped_count", skippedAudits.Length),
+                        Number("candidate_audit.skipped_time_budget_count", CountSkipReason(skippedAudits, "aggregate_time_budget_exceeded")),
+                        Number("candidate_audit.skipped_energy_budget_count", CountSkipReason(skippedAudits, "aggregate_energy_budget_exceeded")),
+                        Number("candidate_audit.skipped_max_candidates_count", CountSkipReason(skippedAudits, "max_candidates_reached")),
+                        Number("candidate_audit.skipped_unsupported_count", CountSkipReason(skippedAudits, "unsupported_candidate_kind_or_missing_required_candidate_fields")),
+                        Number("candidate_audit.skipped_candidate_minutes_sum", skippedAudits.Sum(item => item.CandidateMinutes)),
+                        Number("candidate_audit.skipped_candidate_energy_sum", skippedAudits.Sum(item => item.CandidateEnergyCost))
                     },
                     Categorical = new[]
                     {
@@ -96,15 +119,26 @@ namespace StardewAI.Core.Training
                         Category("action.learning_scope", excludeFromPolicyTraining ? "calibration_only" : "policy_ranker"),
                         Category("action.execution_mode", episode.ActionSummary.ExecutionMode),
                         Category("action.actor_type", episode.ActionSummary.Actor.ActorType),
-                        Category("action.execution_profile", episode.ExecutorCalibration.ExecutionProfile)
+                        Category("action.execution_profile", episode.ExecutorCalibration.ExecutionProfile),
+                        Category("candidate_audit.primary_skip_reason", skipReasons.FirstOrDefault() ?? "none"),
+                        Category("candidate_audit.skip_reasons", skipReasons.Length == 0 ? "none" : string.Join("|", skipReasons))
                     },
                     Boolean = new[]
                     {
                         Flag("action.hard_blocked", episode.HardFeasibility.Blocked),
-                        Flag("action.exclude_from_policy_training", excludeFromPolicyTraining)
+                        Flag("action.exclude_from_policy_training", excludeFromPolicyTraining),
+                        Flag("candidate_audit.present", candidateAudit.Length > 0),
+                        Flag("candidate_audit.has_budget_skip", hasTimeBudgetSkip || hasEnergyBudgetSkip),
+                        Flag("candidate_audit.has_time_budget_skip", hasTimeBudgetSkip),
+                        Flag("candidate_audit.has_energy_budget_skip", hasEnergyBudgetSkip)
                     }
                 }
             };
+        }
+
+        private static int CountSkipReason(IEnumerable<StardewAI.Contracts.Execution.SmallModelPlanCandidateAudit> audits, string reason)
+        {
+            return audits.Count(item => item.Reasons.Contains(reason, StringComparer.Ordinal));
         }
 
         private static TrainingLabelVector BuildLabels(TrainingEpisodeEnvelope episode)
@@ -181,13 +215,16 @@ namespace StardewAI.Core.Training
             {
                 case "farm.maintain_crops":
                 case "farm.process_machines":
+                case "executor.catch_fish":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":
+                case "fishing.catch_fish":
                     return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":
                 case "economy.sell_items":
                 case "quest.advance":
                     return OptionBehaviorCategories.EconomicStrategic;
+                case "social.talk_npc":
                 case "social.gift_npc":
                     return OptionBehaviorCategories.SocialStrategic;
                 case "strategy.grandpa_progress":

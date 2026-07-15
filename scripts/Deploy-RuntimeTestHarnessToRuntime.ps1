@@ -1,6 +1,8 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string]$RuntimeModsDir = "E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods",
+    [string]$RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
+    [string]$RuntimeModsDir = (Join-Path $RuntimeRoot "Stardew Valley\Mods"),
+    [switch]$NoBuild,
     [switch]$DryRun
 )
 
@@ -14,6 +16,13 @@ $requiredFiles = @(
     "StardewAI.RuntimeTestHarness.dll",
     "StardewAI.RuntimeTestHarness.deps.json"
 )
+
+if (-not $NoBuild -and -not $DryRun) {
+    & dotnet build (Join-Path $ProjectRoot "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj") -c Debug --nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "RuntimeTestHarness Debug build failed with exit code $LASTEXITCODE."
+    }
+}
 
 if (-not (Test-Path -LiteralPath $sourceDir)) {
     throw "RuntimeTestHarness build output not found: $sourceDir"

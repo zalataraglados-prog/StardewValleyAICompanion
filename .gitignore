@@ -5,6 +5,8 @@ obj/
 __pycache__/
 .pytest_cache/
 artifacts/
+.worker-tasks/
+/test-results.txt
 *.user
 *.suo
 *.log

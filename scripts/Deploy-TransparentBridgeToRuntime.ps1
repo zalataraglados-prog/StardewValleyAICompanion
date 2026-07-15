@@ -1,6 +1,8 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string]$RuntimeModsDir = "E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods",
+    [string]$RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
+    [string]$RuntimeModsDir = (Join-Path $RuntimeRoot "Stardew Valley\Mods"),
+    [switch]$NoBuild,
     [switch]$DryRun
 )
 
@@ -14,6 +16,13 @@ $requiredFiles = @(
     "StardewAI.TransparentBridge.deps.json",
     "StardewAI.Contracts.dll"
 )
+
+if (-not $NoBuild -and -not $DryRun) {
+    & dotnet build (Join-Path $ProjectRoot "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj") -c Debug --nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "TransparentBridge Debug build failed with exit code $LASTEXITCODE."
+    }
+}
 
 if (-not (Test-Path -LiteralPath $sourceDir)) {
     throw "TransparentBridge build output not found: $sourceDir"

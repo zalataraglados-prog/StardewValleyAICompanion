@@ -1,0 +1,162 @@
+# StardewAI Full-Chain Task Planning Roadmap
+
+## Target Chain
+
+The implementation chain is:
+
+1. TransparentBridge reads verified game state.
+2. Backend projects snapshot into canonical/world-model facts.
+3. Small model emits `small_model_plan.v1` with structured task steps.
+4. ActionQueueCompiler validates and compiles plan steps into executor queue items.
+5. Runtime executor performs player-like behavior through safe, auditable primitives.
+6. TransparentBridge reads after-state.
+7. LiveTrainingLoop writes `plan_execution_episode.v1` and feature rows.
+8. Training separates planner/model feedback from executor calibration.
+
+## Current Proven Slice
+
+- `move_to_tile` plan step compiles to `executor.move_to_tile`.
+- Runtime movement is collision-safe and returns `applied` or `blocked`.
+- Applied and blocked movement produce `plan_execution_episode.v1` artifacts.
+- Executor calibration rows are excluded from policy/strategy training.
+- `interact_endpoint -> dialogue shop response -> buy_shop_item` is now proven for one safe Blacksmith purchase in the isolated runtime.
+- `LiveTrainingLoop` can compile a daily plan from ranked candidates and execute all queue items sequentially through the real runtime executor.
+- **`social.talk_npc`/`social.gift_npc` -> `executor.social_interact`** — social talk/gift candidates compile to `move_to_social_stand` + `social_interact` plan steps; the native `executor.social_interact` validates all preconditions and calls `Game1.currentLocation.checkAction` as the only state-changing social call; all blocked results use `executor_calibration` scope. Statically complete; remaining closure is E: runtime integration.
+- `recovery.stabilize_day` candidate-to-daily-plan chain is complete for all currently emitted candidates.
+- **`strategy.grandpa_progress` direction output** — the snapshot-aware policy selects from the current `GrandpaTrainingSampleAdapter` candidates without a guessed fallback; the action compiler independently rebuilds the current candidate set, rejects stale or mismatched metadata, emits no strategy step on block, and budgets only the validated direction. Static implementation is merged; focused and full tests remain intentionally pending while the user is playing.
+
+## Implementation Stages
+
+### Stage 1: Plan Contract Foundation
+
+Goal: every model plan step carries enough planning metadata for validation, execution, and training.
+
+Required plan step fields:
+
+- `kind`
+- `target_location`
+- `target_tile_x`, `target_tile_y`
+- `estimated_minutes`
+- `preconditions`
+- `expected_effects`
+- `safety_constraints`
+- `failure_policy`
+
+Acceptance:
+
+- Compiler preserves metadata in normalized command parameters.
+- Episode artifacts preserve model plan, compiled queue, execution result, and labels.
+
+### Stage 2: Planner Output Surface
+
+Goal: replace temporary local plan smoke source with a real small-model plan provider boundary.
+
+Acceptance:
+
+- Backend can accept or produce `small_model_plan.v1` without natural-language dependency.
+- Plan source is swappable: local smoke, trained model, or future LLM-derived high-level objective adapter.
+
+Current implementation:
+
+- `DailyPlanCompiler` converts ranked timeline candidates into `small_model_plan.v1`.
+- `/api/v1/planner/daily-plan/compile` accepts `ranked_event_candidates[]` and can optionally compile the generated plan into an action queue when a matching snapshot is available.
+- Supported first slices: deferred waits split into compiler-valid `wait_ticks` chunks, shop/interact endpoints become `move_to_tile` plus `interact`, dialogue-shop branches add a whitelisted `choose_dialogue_response`, buy candidates become `buy_shop_item`, route connector candidates become traversal steps, all currently emitted `recovery.stabilize_day` candidates compile to bounded close-menu, refresh-plan/wait, or verified at-home sleep operations, and **social talk/gift candidates compile to `move_to_social_stand` + `social_interact`**.
+- Unsupported candidates such as mining and fishing goals are intentionally skipped until their task executors exist, so training does not treat placeholders as executable abilities.
+
+### Stage 3: Executor Primitive Curriculum
+
+Goal: expand player-like primitives in safe order.
+
+Order:
+
+1. `executor.move_to_tile`
+2. `executor.face_direction`
+3. `executor.interact`
+4. `executor.wait_ticks`
+5. menu-safe primitives: `executor.choose_dialogue_response`, `executor.close_menu`, `executor.buy_shop_item`
+6. `executor.use_tool` / resource clearing and tool-target verification
+7. **`executor.social_interact`** — native social interaction via `Game1.currentLocation.checkAction` only; all blocked results are `executor_calibration`.
+
+Acceptance:
+
+- Each primitive has applied and blocked `plan_execution_episode.v1` samples.
+- Blocked executor failures are calibration-only.
+- Menu-opening and purchase steps must remain bracketed by transparent menu state, not inferred from model memory.
+
+### Stage 4: Task-Level Options
+
+Goal: compile higher-level plan steps into primitive executor sequences.
+
+Initial options:
+
+- maintain crops
+- exit farmhouse / enter farmhouse
+- navigate within current location
+- sleep to next day
+
+Acceptance:
+
+- A task plan compiles to multiple executor queue items.
+- Each item has preconditions, expected effects, safety constraints, and failure policy.
+
+### Stage 5: Daily Closed Loop
+
+Goal: run a minimal autonomous day loop with execution feedback.
+
+Initial loop:
+
+- read state
+- plan safe movement / simple farm maintenance
+- execute white-listed primitives
+- write episodes
+- stop on blocked or unknown state
+
+Acceptance:
+
+- No manual feedback is required for training samples.
+- Every iteration writes before snapshot, plan, queue, execution, after snapshot, episode, and row.
+
+### Stage 6: Perfect-Policy Training And Freeze
+
+Goal: train and benchmark the strongest policy against transparent state and a mechanically perfect executor, without teaching the strategy layer to avoid goals because of low-level executor failures.
+
+Acceptance:
+
+- The best policy checkpoint, feature schema, option vocabulary, compiler version, executor version, and evaluation corpus are frozen as a reproducible baseline.
+- Executor calibration failures remain separated from policy reward.
+- The frozen baseline remains selectable as the non-adapted reference policy.
+
+### Stage 7: Post-Training Human Adaptation
+
+Goal: after the perfect-policy baseline is frozen, add a separate, reversible companion adaptation layer for human play preferences. This is a required product stage; its detailed behavior is intentionally still to be designed with the user.
+
+Design backlog (TBD, not implementation commitments yet):
+
+- cooperation, role division, initiative, pacing, and interruption preferences;
+- player-specific resource ownership, goal reservation, and non-interference rules;
+- human-like timing or bounded intentional suboptimality without corrupting the perfect baseline;
+- communication/personality/voice behavior and consent controls;
+- privacy-bounded learning of player habits;
+- separate evaluation of optimality, human-likeness, usefulness, and disruption.
+
+Hard boundaries:
+
+- Human adaptation must be a configurable policy/output wrapper, profile, or separately trained checkpoint; it must not destructively relabel or overwrite perfect-policy data.
+- Transparency, legality, safety checks, output recording, and executor correctness cannot be weakened for human-likeness.
+- The perfect baseline and every adaptation profile must be independently selectable and disableable.
+- Multiplayer companion execution must not steal keyboard focus, physical input, resources, or player-reserved goals.
+
+Exit conditions:
+
+- The frozen perfect baseline is reproducible and still passes its benchmark.
+- Adaptation profiles are versioned, reversible, and covered by separate evaluation data.
+- Human play tests show that the selected profile is useful and non-disruptive while executor and transparency invariants remain intact.
+- All still-TBD adaptation decisions are resolved and recorded before this stage can be declared complete.
+
+## Non-Goals For This Chain
+
+- No direct LLM control of executor.
+- No guessed map coordinates.
+- No direct coordinate teleport.
+- No irreversible purchases/sales without later safety policy.
+- No visual/keyboard end-to-end model as a first implementation path.

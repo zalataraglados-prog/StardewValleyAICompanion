@@ -116,6 +116,248 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task OptionAvailabilityEndpointReturnsMissingFieldsAndExecutorBlocks()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var response = await client.PostAsJsonAsync("/api/v1/planner/options/availability", new
+            {
+                candidate_option_ids = new[] { "economy.buy_supplies" }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("option_availability.v1", root.GetProperty("schema_version").GetString());
+            var option = root.GetProperty("options")[0];
+            Assert.Equal("economy.buy_supplies", option.GetProperty("option_id").GetString());
+            Assert.False(option.GetProperty("available").GetBoolean());
+            Assert.Equal("blocked", option.GetProperty("status").GetString());
+            Assert.Contains(option.GetProperty("missing_state_factors").EnumerateArray(), item => item.GetString() == "player.seed_inventory");
+            Assert.Contains(option.GetProperty("missing_state_factors").EnumerateArray(), item => item.GetString() == "farm.crop_catalog");
+            Assert.Contains(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "missing_required_state");
+        }
+
+        [Fact]
+        public async Task RankOptionsWithStateHashFiltersUnavailableCandidatesBeforeScoring()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var response = await client.PostAsJsonAsync("/api/v1/planner/baseline/rank-options", new
+            {
+                state_hash = stateHash,
+                candidate_option_ids = new[] { "economy.buy_supplies", "strategy.grandpa_progress" },
+                training_report = new
+                {
+                    schema_version = "baseline_training_report.v1",
+                    dataset_path = "test.jsonl",
+                    row_count = 2,
+                    included_row_count = 2,
+                    excluded_calibration_row_count = 0,
+                    option_scores = new[]
+                    {
+                        new
+                        {
+                            option_id = "economy.buy_supplies",
+                            example_count = 10,
+                            average_goal_progress_delta = 10.0,
+                            average_total_reward = 10.0,
+                            hard_block_rate = 0.0
+                        },
+                        new
+                        {
+                            option_id = "strategy.grandpa_progress",
+                            example_count = 1,
+                            average_goal_progress_delta = 0.1,
+                            average_total_reward = 0.1,
+                            hard_block_rate = 0.0
+                        }
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("availability_policy_prediction.v1", root.GetProperty("schema_version").GetString());
+            var ranked = root.GetProperty("prediction").GetProperty("ranked_options").EnumerateArray().ToArray();
+            Assert.DoesNotContain(ranked, item => item.GetProperty("option_id").GetString() == "economy.buy_supplies");
+            Assert.Contains(ranked, item => item.GetProperty("option_id").GetString() == "strategy.grandpa_progress");
+            var availability = root.GetProperty("availability").GetProperty("options").EnumerateArray().ToArray();
+            Assert.Contains(availability, item => item.GetProperty("option_id").GetString() == "economy.buy_supplies" && !item.GetProperty("available").GetBoolean());
+        }
+
+        [Fact]
+        public async Task DailyPlanCompileEndpointReturnsSmallModelPlanFromRankedCandidates()
+        {
+            using var client = factory.CreateClient();
+
+            var response = await client.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new
+            {
+                state_hash = "state.test",
+                goal_id = "daily.shop",
+                ranked_event_candidates = new[]
+                {
+                    new
+                    {
+                        candidate_id = "interact:Town:11,10:OpenShop:SeedShop",
+                        kind = "interact_endpoint",
+                        rank = 1,
+                        timeline_status = "deferred",
+                        scheduled_wait_cost = 1200,
+                        location_id = "Town",
+                        tile_x = 11,
+                        tile_y = 10,
+                        expected_effect = "move_to_adjacent=10,10;preview_interact=OpenShop",
+                        estimated_ticks = 90
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            Assert.Equal("daily_plan_compile_response.v1", root.GetProperty("schema_version").GetString());
+            var plan = root.GetProperty("plan");
+            Assert.Equal("small_model_plan.v1", plan.GetProperty("schema_version").GetString());
+            Assert.Equal("daily_candidate_plan", plan.GetProperty("plan_type").GetString());
+            var steps = plan.GetProperty("steps").EnumerateArray().ToArray();
+            Assert.Equal(4, steps.Length);
+            Assert.Equal("wait_ticks", steps[0].GetProperty("kind").GetString());
+            Assert.Equal(600, steps[0].GetProperty("wait_ticks").GetInt32());
+            Assert.Equal("move_to_tile", steps[2].GetProperty("kind").GetString());
+            Assert.Equal("interact", steps[3].GetProperty("kind").GetString());
+        }
+
+        [Fact]
+        public async Task DailyPlanCompileActionQueuePreservesCandidateAuditThroughTrainingFeatureRow()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var response = await client.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new
+            {
+                state_hash = stateHash,
+                goal_id = "daily.audit",
+                compile_action_queue = true,
+                max_candidates = 4,
+                ranked_event_candidates = new[]
+                {
+                    new
+                    {
+                        candidate_id = "water:Farm:1,2",
+                        kind = "water_crop_tile",
+                        rank = 1,
+                        timeline_status = "ready_now",
+                        location_id = "Farm",
+                        tile_x = 1,
+                        tile_y = 2,
+                        expected_effect = "farm.crops[1,2].needs_watering=false",
+                        estimated_ticks = 60,
+                        energy_cost = 2
+                    },
+                    new
+                    {
+                        candidate_id = "water:Farm:3,4",
+                        kind = "water_crop_tile",
+                        rank = 2,
+                        timeline_status = "ready_now",
+                        location_id = "Farm",
+                        tile_x = 3,
+                        tile_y = 4,
+                        expected_effect = "farm.crops[3,4].needs_watering=false",
+                        estimated_ticks = 100000,
+                        energy_cost = 2
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            var plan = root.GetProperty("plan");
+            var audit = plan.GetProperty("candidate_audit").EnumerateArray().ToArray();
+            Assert.Equal(2, audit.Length);
+            Assert.Equal("accepted", audit[0].GetProperty("decision").GetString());
+            Assert.Equal("skipped", audit[1].GetProperty("decision").GetString());
+            Assert.Contains(audit[1].GetProperty("reasons").EnumerateArray(), item =>
+                item.GetString() == "aggregate_time_budget_exceeded");
+
+            var queue = root.GetProperty("action_queue");
+            Assert.Equal("action_queue.v1", queue.GetProperty("schema_version").GetString());
+            var queueAudit = queue.GetProperty("candidate_audit").EnumerateArray().ToArray();
+            Assert.Equal(2, queueAudit.Length);
+            Assert.Equal("aggregate_time_budget_exceeded", queueAudit[1].GetProperty("reasons")[0].GetString());
+            var queueId = queue.GetProperty("queue_id").GetString();
+
+            var episodeResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-episode");
+            Assert.Equal(HttpStatusCode.OK, episodeResponse.StatusCode);
+            using var episodeJson = JsonDocument.Parse(await episodeResponse.Content.ReadAsStringAsync());
+            var episodeAudit = episodeJson.RootElement.GetProperty("candidate_audit").EnumerateArray().ToArray();
+            Assert.Equal(2, episodeAudit.Length);
+            Assert.Equal("skipped", episodeAudit[1].GetProperty("decision").GetString());
+
+            var featureResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-feature-row");
+            Assert.Equal(HttpStatusCode.OK, featureResponse.StatusCode);
+            using var featureJson = JsonDocument.Parse(await featureResponse.Content.ReadAsStringAsync());
+            var actionFeatureVector = featureJson.RootElement
+                .GetProperty("action_features")
+                .GetProperty("features");
+            Assert.Contains(actionFeatureVector.GetProperty("numeric").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "candidate_audit.accepted_count" &&
+                item.GetProperty("value").GetDouble() == 1);
+            Assert.Contains(actionFeatureVector.GetProperty("numeric").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "candidate_audit.skipped_time_budget_count" &&
+                item.GetProperty("value").GetDouble() == 1);
+            Assert.Contains(actionFeatureVector.GetProperty("categorical").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "candidate_audit.primary_skip_reason" &&
+                item.GetProperty("value").GetString() == "aggregate_time_budget_exceeded");
+            Assert.Contains(actionFeatureVector.GetProperty("boolean").EnumerateArray(), item =>
+                item.GetProperty("name").GetString() == "candidate_audit.has_time_budget_skip" &&
+                item.GetProperty("value").GetBoolean());
+        }
+
+        [Fact]
+        public async Task OptionAvailabilityEndpointAcceptsBoundCandidatesAndReturnsCompilerBlockReasons()
+        {
+            using var client = factory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+
+            var response = await client.PostAsJsonAsync("/api/v1/planner/options/availability", new
+            {
+                candidates = new[]
+                {
+                    new
+                    {
+                        option_id = "executor.interact",
+                        parameters = Array.Empty<object>()
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var option = json.RootElement.GetProperty("options")[0];
+            Assert.Equal("executor.interact", option.GetProperty("option_id").GetString());
+            Assert.False(option.GetProperty("available").GetBoolean());
+            Assert.Equal("blocked", option.GetProperty("status").GetString());
+            Assert.Contains(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "interact_target_tile_required");
+            Assert.DoesNotContain(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "interact_executor_disabled");
+            Assert.DoesNotContain(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "queue_global_compiler_block");
+            Assert.Equal(0, option.GetProperty("parameters").GetArrayLength());
+        }
+
+        [Fact]
         public async Task SmallModelActionQueueCompilesAndDryRunExecutes()
         {
             using var client = factory.CreateClient();
@@ -684,6 +926,7 @@ namespace StardewAI.Backend.Tests
               },
               "world_progress": {
                 "community_center": {{FieldJson("{\"location_accessible\":true,\"completed\":true,\"bundles\":{},\"bundle_rewards\":{},\"completed_area_mail_flags\":[]}", raw: true)}},
+                "joja_membership": {{FieldJson(false)}},
                 "achievements": {{FieldJson("[5,26,34]", raw: true)}},
                 "perfection": {{UnavailableFieldJson("perfection_fields_not_verified_in_this_slice")}},
                 "golden_walnuts": {{UnavailableFieldJson("golden_walnut_progress_not_verified_in_this_slice")}}

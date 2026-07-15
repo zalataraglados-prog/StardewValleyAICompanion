@@ -1,5 +1,8 @@
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Characters;
+using StardewValley.Monsters;
+using SObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -16,8 +19,10 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             {
                 ["positions"] = Unavailable("world_not_ready", "Game1.currentLocation.characters", tick, "vanilla_1_6_npc"),
                 ["friendships"] = Unavailable("world_not_ready", "Game1.player.friendshipData", tick, "vanilla_1_6_npc"),
-                ["schedules"] = Unavailable("world_not_ready", "Game1.currentLocation.characters[].Schedule", tick, "vanilla_1_6_npc")
-            }, new[] { "npcs.positions", "npcs.friendships", "npcs.schedules" }, "unavailable");
+                ["schedules"] = Unavailable("world_not_ready", "Game1.currentLocation.characters[].Schedule", tick, "vanilla_1_6_npc"),
+                ["social_interaction"] = Unavailable("world_not_ready", "Game1.currentLocation.characters social fields", tick, "vanilla_1_6_npc"),
+                ["gift_tastes"] = Unavailable("world_not_ready", "transparent gift taste derivation unavailable", tick, "vanilla_1_6_npc")
+            }, new[] { "npcs.positions", "npcs.friendships", "npcs.schedules", "npcs.social_interaction", "npcs.gift_tastes" }, "unavailable");
         }
 
         var location = Game1.currentLocation;
@@ -39,7 +44,8 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                     facing_direction = npc.FacingDirection,
                     visible_on_screen = visibleOnScreen,
                     is_villager = npc.IsVillager,
-                    is_monster = npc.IsMonster
+                    is_monster = npc.IsMonster,
+                    monster = npc is Monster monster ? ReadMonster(monster) : null
                 };
             })
             .OrderBy(npc => npc.name, StringComparer.Ordinal)
@@ -75,11 +81,13 @@ public sealed class NpcReadAdapter : ReadAdapterBase
 
         var fields = new Dictionary<string, object>
         {
-            ["positions"] = Field(npcs, "Game1.currentLocation.characters[].Name/displayName/TilePoint/FacingDirection/currentLocation; Utility.isOnScreen(TilePoint, 128, Game1.currentLocation)", tick, "vanilla_1_6_npc"),
+            ["positions"] = Field(npcs, "Game1.currentLocation.characters[].Name/displayName/TilePoint/FacingDirection/currentLocation; Utility.isOnScreen(TilePoint, 128, Game1.currentLocation); Monster Health/MaxHealth/DamageToFarmer/resilience", tick, "vanilla_1_6_npc"),
             ["friendships"] = friendships is null
                 ? (object)Unavailable("player_unavailable", "Game1.player.friendshipData", tick, "vanilla_1_6_npc")
                 : Field(friendships, "Game1.player.friendshipData.Pairs[].Key/Value Points/GiftsThisWeek/GiftsToday/TalkedToToday/Status/ProposalRejected/RoommateMarriage/LastGiftDate/WeddingDate/NextBirthingDate/Proposer", tick, "vanilla_1_6_npc"),
-            ["schedules"] = Field(ReadLoadedSchedules(location.characters), "Game1.currentLocation.characters[].Schedule/ScheduleKey/followSchedule/ignoreScheduleToday", tick, "vanilla_1_6_npc")
+            ["schedules"] = Field(ReadLoadedSchedules(location.characters), "Game1.currentLocation.characters[].Schedule/ScheduleKey/followSchedule/ignoreScheduleToday", tick, "vanilla_1_6_npc"),
+            ["social_interaction"] = Field(ReadSocialInteractions(location.characters, locationId), "Game1.currentLocation.characters raw fields plus NPC.CanSocialize/CanReceiveGifts when runtime type uses vanilla non-overridden query paths", tick, "vanilla_1_6_npc"),
+            ["gift_tastes"] = Field(ReadGiftTastes(location.characters, Game1.player), "NPC.getGiftTasteForThisItem(current owned Object items) for supported vanilla NPC query paths; expected delta only when Farmer.changeFriendship deterministic modifiers and cap are transparent", tick, "vanilla_1_6_npc")
         };
 
         var unavailable = friendships is null
@@ -87,6 +95,23 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             : Array.Empty<string>();
 
         return Section("npcs", fields, unavailable, unavailable.Length == 0 ? "complete" : "partial");
+    }
+
+    private static object ReadMonster(Monster monster)
+    {
+        return new
+        {
+            type = monster.GetType().FullName,
+            health = monster.Health,
+            max_health = monster.MaxHealth,
+            damage_to_farmer = monster.DamageToFarmer,
+            resilience = monster.resilience.Value,
+            is_glider = monster.isGlider.Value,
+            ignore_damage_los = monster.ignoreDamageLOS.Value,
+            focused_on_farmers = monster.focusedOnFarmers,
+            invisible = monster.IsInvisible,
+            invincible = monster.isInvincible()
+        };
     }
 
     private static object[] ReadLoadedSchedules(IEnumerable<NPC> npcs)
@@ -120,5 +145,191 @@ public sealed class NpcReadAdapter : ReadAdapterBase
             })
             .OrderBy(schedule => schedule.name, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static object[] ReadSocialInteractions(IEnumerable<NPC> npcs, string currentLocationId)
+    {
+        return npcs
+            .Where(npc => npc is not null)
+            .Select(npc =>
+            {
+                var tile = npc.TilePoint;
+                var bounds = npc.GetBoundingBox();
+                var socialQuerySupported = SupportsVanillaSocialQueries(npc);
+                var masterDataPresent = NPC.TryGetData(npc.Name, out var data);
+                var giftTastePresent = Game1.NPCGiftTastes?.ContainsKey(npc.Name) == true;
+                var canSocialize = socialQuerySupported && npc.CanSocialize;
+                var canReceiveGifts = socialQuerySupported && npc.CanReceiveGifts();
+                return new
+                {
+                    name = npc.Name,
+                    display_name = npc.displayName,
+                    runtime_type = npc.GetType().FullName,
+                    vanilla_social_query_supported = socialQuerySupported,
+                    master_data_present = masterDataPresent,
+                    gift_taste_master_data_present = giftTastePresent,
+                    current_instance_loaded = ReferenceEquals(npc.currentLocation, Game1.currentLocation),
+                    location_id = npc.currentLocation?.NameOrUniqueName ?? currentLocationId,
+                    tile_x = tile.X,
+                    tile_y = tile.Y,
+                    bounding_box_x = bounds.X,
+                    bounding_box_y = bounds.Y,
+                    bounding_box_width = bounds.Width,
+                    bounding_box_height = bounds.Height,
+                    facing_direction = npc.FacingDirection,
+                    is_villager = npc.IsVillager,
+                    is_child = npc is Child,
+                    is_datably_flagged = npc.datable.Value,
+                    simple_non_villager_npc = npc.SimpleNonVillagerNPC,
+                    is_invisible = npc.IsInvisible,
+                    is_sleeping = npc.isSleeping.Value,
+                    has_controller = npc.controller is not null,
+                    is_busy = npc.isMoving() || npc.IsEmoting || npc.shouldPlayRobinHammerAnimation.Value || npc.shouldPlaySpousePatioAnimation.Value,
+                    follow_schedule = npc.followSchedule,
+                    ignore_schedule_today = npc.ignoreScheduleToday,
+                    schedule_loaded = npc.Schedule is not null,
+                    schedule_key = npc.ScheduleKey,
+                    can_socialize = canSocialize,
+                    can_socialize_complete = socialQuerySupported,
+                    can_socialize_status = socialQuerySupported ? "complete_live_vanilla_query" : "unavailable_runtime_type_or_override_not_proven_pure",
+                    can_receive_gifts = canReceiveGifts,
+                    can_receive_gifts_complete = socialQuerySupported,
+                    can_receive_gifts_status = socialQuerySupported ? "complete_live_vanilla_query" : "unavailable_runtime_type_or_override_not_proven_pure",
+                    character_can_receive_gifts_data = data?.CanReceiveGifts,
+                    birthday_season = npc.Birthday_Season,
+                    birthday_day = npc.Birthday_Day,
+                    is_birthday = npc.isBirthday(),
+                    current_route_window_complete = true,
+                    current_route_window_status = "current_position_only_from_loaded_instance; future_schedule_projection_not_emitted"
+                };
+            })
+            .OrderBy(npc => npc.name, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static object[] ReadGiftTastes(IEnumerable<NPC> npcs, Farmer? player)
+    {
+        if (player is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        return npcs
+            .Where(npc => npc is not null)
+            .SelectMany(npc => player.Items.Select((item, index) => ReadGiftTaste(npc, item, index, player)))
+            .Where(row => row is not null)
+            .Cast<object>()
+            .OrderBy(row => row.GetType().GetProperty("npc_name")?.GetValue(row)?.ToString(), StringComparer.Ordinal)
+            .ThenBy(row => (int)(row.GetType().GetProperty("slot_index")?.GetValue(row) ?? 0))
+            .ToArray();
+    }
+
+    private static object? ReadGiftTaste(NPC npc, Item? item, int slotIndex, Farmer player)
+    {
+        if (item is not SObject obj)
+        {
+            return null;
+        }
+
+        var supported = SupportsVanillaSocialQueries(npc);
+        if (!supported || !npc.CanReceiveGifts())
+        {
+            return new
+            {
+                npc_name = npc.Name,
+                slot_index = slotIndex,
+                qualified_item_id = item.QualifiedItemId,
+                quality = item.Quality,
+                complete = false,
+                status = supported ? "npc_cannot_receive_gifts" : "runtime_type_or_override_not_proven_pure"
+            };
+        }
+
+        var taste = npc.getGiftTasteForThisItem(item);
+        var delta = ExpectedGiftDelta(npc, obj, player, taste);
+        return new
+        {
+            npc_name = npc.Name,
+            slot_index = slotIndex,
+            qualified_item_id = item.QualifiedItemId,
+            quality = item.Quality,
+            taste_code = taste,
+            taste = TasteLabel(taste),
+            expected_friendship_delta = delta?.ToString(),
+            expected_friendship_delta_complete = delta.HasValue,
+            complete = delta.HasValue,
+            status = delta.HasValue ? "complete_live_vanilla_taste_and_delta" : "taste_complete_delta_incomplete_due_to_modifier_or_cap"
+        };
+    }
+
+    private static int? ExpectedGiftDelta(NPC npc, SObject obj, Farmer player, int taste)
+    {
+        var friendshipPoints = player.friendshipData.TryGetValue(npc.Name, out var friendship) ? friendship.Points : 0;
+
+        var friendshipMultiplier = npc.isBirthday() ? 8f : 1f;
+        if (npc.getSpouse()?.Equals(player) == true)
+        {
+            friendshipMultiplier /= 2f;
+        }
+
+        var qualityMultiplier = obj.Quality switch
+        {
+            1 => 1.1f,
+            2 => 1.25f,
+            4 => 1.5f,
+            _ => 1f
+        };
+
+        var raw = taste switch
+        {
+            7 => Math.Min(750, (int)(250f * friendshipMultiplier)),
+            0 => (int)(80f * friendshipMultiplier * qualityMultiplier),
+            6 => (int)(-40f * friendshipMultiplier),
+            2 => (int)(45f * friendshipMultiplier * qualityMultiplier),
+            4 => (int)(-20f * friendshipMultiplier),
+            _ => (int)(20f * friendshipMultiplier)
+        };
+
+        if (raw > 0 && npc.isDivorcedFrom(player))
+        {
+            raw = 0;
+        }
+        if (raw > 0 && player.stats.Get("Book_Friendship") != 0)
+        {
+            raw = (int)(raw * 1.1f);
+        }
+        if (raw > 0 && npc.SpeaksDwarvish() && !player.canUnderstandDwarves)
+        {
+            raw = 0;
+        }
+        if (raw > 0 && npc.Equals(player.getSpouse()))
+        {
+            raw = (int)(raw * 0.66f);
+        }
+
+        var maxPoints = (Utility.GetMaximumHeartsForCharacter(npc) + 1) * NPC.friendshipPointsPerHeartLevel - 1;
+        return Math.Max(0, Math.Min(friendshipPoints + raw, maxPoints)) - friendshipPoints;
+    }
+
+    private static string TasteLabel(int taste)
+    {
+        return taste switch
+        {
+            7 => "stardrop_tea",
+            0 => "love",
+            2 => "like",
+            4 => "dislike",
+            6 => "hate",
+            _ => "neutral"
+        };
+    }
+
+    private static bool SupportsVanillaSocialQueries(NPC npc)
+    {
+        return npc.GetType().Assembly == typeof(NPC).Assembly &&
+            npc.GetType().GetProperty(nameof(NPC.CanSocialize))?.GetMethod?.DeclaringType == typeof(NPC) &&
+            npc.GetType().GetMethod(nameof(NPC.CheckTasteContextTags))?.DeclaringType == typeof(NPC) &&
+            npc.GetType().GetMethod(nameof(NPC.receiveGift))?.DeclaringType == typeof(NPC) &&
+            npc.GetType().GetMethod(nameof(NPC.tryToReceiveActiveObject))?.DeclaringType == typeof(NPC);
     }
 }

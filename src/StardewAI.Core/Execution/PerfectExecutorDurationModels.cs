@@ -18,48 +18,17 @@ namespace StardewAI.Core.Execution
     {
         public DurationEstimate Estimate(ActionQueueItem item)
         {
-            var targetDepth = ParseInt(Parameter(item, "target_depth"));
-            var startingDepth = ParseInt(Parameter(item, "start_depth")) ?? ElevatorStartFor(targetDepth);
-            var levels = targetDepth.HasValue
-                ? Math.Max(1, targetDepth.Value - startingDepth)
-                : 15;
-            var elevatorAdjustedLevels = Math.Max(1, Math.Min(levels, 5 + levels % 5));
-            var minutes = 45 + elevatorAdjustedLevels * 8;
-
             return new DurationEstimate
             {
-                Minutes = minutes,
-                Estimator = "mining_perfect_executor.v1",
+                Minutes = 0,
+                Estimator = "mining_perfect_executor.unimplemented",
                 Notes = new[]
                 {
-                    "execution_profile_assumes_perfect_human_player_inputs",
-                    "random_mine_layout_affects_calibration_not_low_level_failure_penalty",
-                    "uses_elevator_adjusted_level_delta_when_target_depth_is_known",
-                    "decompile_evidence:MineShaft.mineLevel, MineShaft.mineRandom, MineShaft.findLadder"
+                    "mining_perfect_executor_not_implemented",
+                    "duration_and_energy_unknown_until_decompile_backed_executor_model_exists",
+                    "no arbitrary timing, ladder probability, or energy constants applied"
                 }
             };
-        }
-
-        private static int ElevatorStartFor(int? targetDepth)
-        {
-            if (!targetDepth.HasValue || targetDepth.Value <= 5)
-            {
-                return 0;
-            }
-
-            return Math.Max(0, ((targetDepth.Value - 1) / 5) * 5);
-        }
-
-        private static string? Parameter(ActionQueueItem item, string name)
-        {
-            return item.NormalizedCommand.Parameters
-                .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
-                ?.Value;
-        }
-
-        private static int? ParseInt(string? value)
-        {
-            return int.TryParse(value, out var parsed) ? parsed : (int?)null;
         }
     }
 

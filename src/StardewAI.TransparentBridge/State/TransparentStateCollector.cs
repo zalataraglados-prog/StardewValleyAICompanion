@@ -19,7 +19,7 @@ public sealed class TransparentStateCollector
         this.adapters = adapters.OrderBy(adapter => adapter.Priority).ToArray();
     }
 
-    public SnapshotEnvelope BuildSnapshot()
+    public SnapshotEnvelope BuildSnapshot(ISet<string>? allowedDomains = null)
     {
         var tick = unchecked((long)Game1.ticks);
         var player = Context.IsWorldReady ? Game1.player : null;
@@ -28,6 +28,11 @@ public sealed class TransparentStateCollector
 
         foreach (var adapter in adapters)
         {
+            if (allowedDomains is not null && !allowedDomains.Contains(adapter.Domain))
+            {
+                continue;
+            }
+
             var result = adapter.Collect(tick);
             if (sections.TryGetValue(result.SectionName, out var existing) &&
                 existing is Dictionary<string, object> existingFields)

@@ -174,7 +174,7 @@ namespace StardewAI.Core.Training
                 WorkingDirectory = manifest.GameWorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Minimized
+                WindowStyle = ResolveWindowStyle(manifest.WindowStyle)
             };
 
             foreach (var item in manifest.EnvironmentOverrides)
@@ -189,6 +189,13 @@ namespace StardewAI.Core.Training
             }
 
             return process;
+        }
+
+        private static ProcessWindowStyle ResolveWindowStyle(string? value)
+        {
+            return string.Equals(value, "hidden", StringComparison.OrdinalIgnoreCase)
+                ? ProcessWindowStyle.Hidden
+                : ProcessWindowStyle.Minimized;
         }
 
         private static void WriteManifest(TrainingRunManifest manifest)

@@ -1,0 +1,3005 @@
+2026-07-14 fishing runtime regression status
+
+- Core full regression PASS: 399/399.
+- Backend full regression PASS: 48/48.
+- Visible isolated Lava Eel run `runtime-lava-eel-visible-20260714-1348` FAILED
+  before execution with Backend 422 due invalid MineShaft partial envelope semantics.
+  The envelope issue was fixed and covered by Backend tests.
+- Visible isolated Lava Eel run `runtime-lava-eel-visible-20260714-1405` passed
+  snapshot ingest, planning, compilation, and verified `move_to_tile`, then FAILED
+  on the first cast frame. SMAPI repeatedly threw `InvalidCastException` because
+  RuntimeTestHarness replaced `Game1.input` with `ControlledInputState`, while SMAPI
+  4.5.2 requires its internal `SInputState`.
+- The run was stopped manually. Game, Backend, and LiveTrainingLoop processes were
+  terminated and ports 5129/8765/8767 released.
+- Fishing runtime readiness is BLOCKED until global input replacement is removed,
+  native cast/BobberBar input dispatch is implemented, and hidden/silent ordinary
+  plus Lava Eel runtime smokes pass.
+
+2026-07-07 StardewAI sandbox validation
+
+2026-07-09 sleep runtime macro pass
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 121 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- Completed the interrupted `executor.sleep` runtime macro implementation slice in RuntimeTestHarness.
+- The macro moves to a verified bed-adjacent stand tile, invokes the bed `TouchAction=Sleep`, confirms `Sleep_Yes`, and waits for a new day before returning verified success.
+- 2026-07-09 recovery runtime smoke PASS:
+  - Added `scripts\Invoke-RecoveryRuntimeSmoke.ps1` to deploy mods, hidden-start E: isolated SMAPI with sound-disabled environment variables, wait for a world-ready transparent snapshot, run `executor.close_menu`, run `executor.sleep`, write artifacts, and close the process by default.
+  - Fixed RuntimeTestHarness executor request timeout to be configurable (`ExecutorRequestTimeoutSeconds`, default 90s) so terminal macros are not cut off by a 10s HTTP wait.
+  - Fixed `executor.sleep` runtime macro to step onto the bed `TouchAction=Sleep` tile before triggering the sleep prompt; this satisfies the decompiled `Game1.player.hasMoved` gate.
+  - Fixed sleep verification to require year/season/day transition, not merely `time.time == 600`.
+  - Fixed sleep completion to wait until the post-sleep save menu closes before returning verified.
+  - Artifact: `artifacts\runtime-recovery-smoke\runtime-recovery-smoke-20260709-192758\summary.json`.
+  - Result: `close_menu status=no_op verification=verified_no_active_menu`; `sleep status=applied verification=verified`; sleep changed `time.day` 9->10 and ended with `menus.active_menu.is_open=false`.
+  - Verification: `dotnet test "StardewValleyAICompanion.sln" --no-restore` PASS with Backend 34 and Core 121.
+
+- 2026-07-09 minimal interact executor shell:
+  - Added `interaction_kind` and `expected_action_type` to `training_execution_request.v1`, with backward-compatible empty defaults for old JSON.
+  - LiveTrainingLoop now forwards those normalized command parameters into runtime execution requests.
+  - RuntimeTestHarness now has a narrow `executor.interact` branch: adjacent `map_action`, clear active menu, target tile `Buildings.Action`, first action token must match expected action type, whitelist currently `OpenShop` and `Buy`.
+  - Generic `checkAction`, `TouchAction`, purchase clicks, menu item selection, and non-whitelisted branches remain blocked.
+  - Hidden/silent E: isolated blocked runtime smoke PASS: `artifacts\runtime-interact-smoke\runtime-interact-blocked-smoke-20260709-195250\summary.json`.
+  - Added `scripts\Invoke-RuntimeInteractPositiveSmoke.ps1` for current-map adjacent `OpenShop`/`Buy` positive smoke.
+  - Hidden/silent positive smoke wrapper ran but skipped safely because the current isolated save loaded in `FarmHouse` and `current_location.shop_action_tiles` had no adjacent `OpenShop`/`Buy` endpoint: `artifacts\runtime-interact-positive-smoke\runtime-interact-positive-smoke-20260709-200059\summary.json`.
+  - Verification: `dotnet test "StardewValleyAICompanion.sln" --no-restore` PASS with Backend 34 and Core 123.
+
+- Earlier note: `scripts\Invoke-RuntimeSleepSmoke.ps1` was added before the hidden/silent isolated runtime smoke existed. This is superseded by the 2026-07-09 recovery runtime smoke PASS above.
+- No player live save, broad training, purchase/sell/shop execution, generic interact, or UI click executor was enabled.
+
+2026-07-08 close menu primitive pass
+
+Correction: active menu bracket compiler gate
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 121 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 121 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- Corrected the sleep/recovery model: `close_menu` is not automatically inserted before sleep.
+- If `menus.active_menu.is_open=true`, recovery/sleep blocks with `sleep_prompt_menu_must_be_clear` and emits no bed movement or sleep touch-tile steps.
+- Added a compiler-wide active menu bracket gate: any non-`executor.close_menu` full-action executor blocks with `active_menu_must_be_closed_before_action` while a menu is open.
+- Plan compiler tracks `compiler_context.active_menu_open_before_step`; an explicit `close_menu` step clears the compiler menu state for following actions.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 114 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 114 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- Added `executor.close_menu` option/compiler/runtime harness primitive.
+- Compiler allows no-menu no-op and whitelisted menu close, blocks sleep prompts and unknown/non-whitelisted menu types.
+- Runtime harness rejects `DialogueBox`, checks the safe whitelist, requires `menu.readyToClose()`, then calls `Game1.exitActiveMenu()`.
+- No hidden/silent runtime smoke was run in this pass.
+- No broad training, active-item executor, purchase/sell/shop execution, runtime sleep, or `Sleep_Yes` was enabled.
+
+2026-07-08 select safe item slot primitive pass
+
+Runtime smoke follow-up:
+
+Commands:
+- Built and deployed `StardewAI.TransparentBridge` to isolated runtime `E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods\StardewAI.TransparentBridge`.
+- Built and deployed `StardewAI.RuntimeTestHarness` to isolated runtime `E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods\StardewAI.RuntimeTestHarness`.
+- Started backend detached with WMI/CIM and logs at `artifacts\backend-select-safe-slot.*.log`.
+- Launched hidden/silent SMAPI through `/api/v1/training/session/launch` with sound disabled.
+- Captured before snapshot, executed `executor.select_safe_item_slot`, captured after snapshot, and wrote `artifacts\runtime-select-safe-slot-summary.json`.
+
+Result: PASS
+
+Summary:
+- Run id: `train.20260708122242.1c773dc0`
+- Manifest: `E:\StardewAITraining\runs\train.20260708122242.1c773dc0\training-run-manifest.json`
+- Launch response: `artifacts\runtime-select-safe-slot-launch-response.json`
+- Before snapshot: `artifacts\runtime-select-safe-slot-before-snapshot.json`
+- Execution result: `artifacts\runtime-select-safe-slot-execution.json`
+- After snapshot: `artifacts\runtime-select-safe-slot-after-snapshot.json`
+- Summary: `artifacts\runtime-select-safe-slot-summary.json`
+- `execution_status=applied`
+- `primitive_kind=select_safe_item_slot`
+- `primitive_verification_status=verified`
+- `primitive_verification_reasons=current_tool_index_matches_safe_slot, active_object_cleared`
+- `before_current_tool_index=0`
+- `after_current_tool_index=10`
+- `before_active_object_qualified_id=null`
+- `after_active_object_qualified_id=null`
+- `state_hash_changed=true`
+
+Notes:
+- No broad training, active-item click/place/consume executor, runtime sleep, or `Sleep_Yes` was run.
+- The runtime state already had no active object selected; this smoke verifies safe slot selection and active-object-null post-state, not a real active-object use path.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 110 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 110 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- Added `executor.select_safe_item_slot` compiler and runtime harness primitive.
+- Compiler derives `safe_slot_index` from transparent `player.safe_item_context` and blocks when unavailable or out of range.
+- Runtime harness sets only `Game1.player.CurrentToolIndex` and verifies `player.active_object_qualified_id=null` via `Game1.player.ActiveObject`.
+- No active-item click/place/consume executor, runtime sleep, `Sleep_Yes`, or broad training was enabled.
+
+2026-07-08 AI control options transparency pass
+
+Runtime smoke follow-up:
+
+Commands:
+- Deployed current `StardewAI.TransparentBridge` build to isolated runtime `E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods\StardewAI.TransparentBridge`.
+- Set isolated runtime Bridge config `ApplyAiControlSettings=true`.
+- Launched backend with WMI/CIM `Win32_Process.Create` and stdout/stderr redirected to `artifacts\backend-options-smoke-2.*.log`.
+- Launched hidden/silent SMAPI through `/api/v1/training/session/launch` with sound disabled.
+- Captured Bridge snapshot to `artifacts\runtime-options-snapshot-2.json`.
+- Wrote summary to `artifacts\runtime-options-field-summary-2.json`.
+- Stopped backend/SMAPI and confirmed ports `5108`/`8765` clear.
+
+Result: PASS
+
+Summary:
+- Launch manifest: `E:\StardewAITraining\runs\train.20260708120147.2fc7d67c\training-run-manifest.json`
+- `options.ai_control_settings.requested=true`
+- `options.auto_run=true`
+- `options.stowing_mode=Off`
+- `options.allow_stowing=false`
+- `options.gamepad_mode=ForceOff`
+- `options.gamepad_controls=false`
+- `options.snappy_menus=false`
+- `options.snappy_menus_effective=false`
+- `options.invert_toolbar_scroll_direction=false`
+- `options.pause_when_out_of_focus=false`
+- `player.location_id=FarmHouse`
+- `player.current_tool_index=0`
+- `player.safe_item_context.safe_slot_available=true`
+- `player.safe_item_context.safe_slot_index=10`
+- `player.safe_item_context.safe_slot_kind=empty`
+
+Notes:
+- First runtime attempt showed config was read but some options were still default after load (`gamepad_mode=Auto`, `snappy_menus=true`, `pause_when_out_of_focus=true`). Fixed by reapplying opt-in AI settings periodically on `UpdateTicked` only when values drift.
+- No broad training, sleep execution, click execution, active-item action, or `Sleep_Yes` was run.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 108 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `OptionsReadAdapter` with transparent `options.auto_run`, `stowing_mode`, `allow_stowing`, `gamepad_mode`, `gamepad_controls`, `snappy_menus`, `snappy_menus_effective`, `invert_toolbar_scroll_direction`, `pause_when_out_of_focus`, and `options.ai_control_settings`.
+- Added opt-in `BridgeConfig.ApplyAiControlSettings`, default `false`.
+- When explicitly enabled, AI settings apply auto-run true, stowing off, gamepad ForceOff, snappy menus false, invert toolbar scroll false, and pause when out of focus false.
+- Wiki secondary evidence: Options and Controls pages. Local decompile evidence: `Options`, `Game1`, `InputState`, and toolbar/current-tool-index paths.
+- Runtime validation of applied options is pending.
+
+2026-07-08 sleep touch-action correction and safe item context pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 108 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 108 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Corrected normal bed sleep macro from action-button `interact_sleep_bed` to movement-triggered `step_onto_sleep_touch_tile` based on local `TouchAction=Sleep` decompile evidence.
+- Removed active object as a sleep/recovery gate; normal bed prompt is triggered by walking onto the bed sleep tile, not pressing action with the held object.
+- Added `player.current_tool_index` and `player.safe_item_context` to support future active-item executors appending `select_safe_item_slot` immediately after click/place/consume actions.
+- Historical note: runtime sleep execution and `Sleep_Yes` day-transition recording were pending in this pass; both are superseded by the 2026-07-09 recovery runtime smoke PASS above. Active-item executor safe-slot switching remains pending.
+
+2026-07-08 recovery auto sleep macro and Tent Kit evidence pass
+
+Follow-up safety gate validation:
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 108 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 108 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added recovery auto-sleep compiler safety tests for held active object and already-open sleep prompt.
+- `recovery.stabilize_day` blocks with `sleep_interact_active_object_must_be_clear` when the player holds an active object.
+- `recovery.stabilize_day` blocks with `sleep_confirm_executor_requires_compiler_terminal_macro` when a sleep prompt is already open.
+- Historical note: runtime sleep execution and `Sleep_Yes` day-transition recording were pending in this pass; both are superseded by the 2026-07-09 recovery runtime smoke PASS above.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 106 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 106 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Late-night `recovery.stabilize_day` now compiles to `close_blocking_menu` followed by the compiler-owned normal home-bed sleep macro when transparent fields prove the target.
+- Recovery compile blocks with `sleep_target_unavailable` when the current snapshot cannot prove a safe normal home-bed target.
+- Tent Kit / temporary-bed sleep was researched with local decompile plus Wiki secondary evidence and remains explicitly blocked as a separate special-case path.
+
+2026-07-08 terminal sleep macro compiler pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 104 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 104 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `executor.sleep` as a compiler-owned terminal semantic macro.
+- Plan step `kind=sleep` compiles to `move_to_bed_adjacent`, `interact_sleep_bed`, and `confirm_sleep_yes`.
+- Sleep must be the final plan step; non-terminal or direct sleep without terminal context blocks with `sleep_action_must_be_terminal`.
+- Historical note: runtime full sleep macro execution and day-transition recording were pending in this pass; both are superseded by the 2026-07-09 recovery runtime smoke PASS above.
+
+2026-07-08 sleep prompt context transparency pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 101 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 101 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `menus.sleep_prompt_context` as a dedicated prompt status and disabled confirmation contract.
+- `recovery_return_home` now blocks with `sleep_confirm_executor_disabled` if the sleep prompt is already open.
+- No `Sleep_Yes` confirmation executor or day transition was enabled.
+- Runtime backend/SMAPI processes from the previous validation were stopped before tests to avoid build output locks.
+
+2026-07-08 runtime home/menu sleep field validation
+
+Commands:
+- WMI/CIM backend launch with `Win32_Process.Create`, stdout/stderr redirected to `artifacts\backend-wmi.*.log`.
+- Backend launcher hidden/silent SMAPI launch via `/api/v1/training/session/launch`.
+- Bridge snapshot capture from `http://127.0.0.1:8765/api/v1/snapshot`.
+- Raw snapshot ingest into backend `/api/v1/snapshots`.
+- Runtime availability request for `recovery.stabilize_day`.
+
+Result: PASS for field-shape validation
+
+Summary:
+- Backend listener confirmed on port `5108`, owning process `24620`.
+- Hidden/silent SMAPI launch succeeded with sound disabled and hidden window.
+- World snapshot captured at `artifacts\runtime-home-menu-world-snapshot.json`.
+- Field summary written to `artifacts\runtime-home-menu-field-summary.json`.
+- `current_location.home_context.home_available=true`.
+- `current_location.home_context.current_location_is_home=true`.
+- `current_location.home_context.bed_tile_has_bed=true`.
+- `current_location.home_context.sleep_executor_enabled=false`.
+- `menus.active_menu.last_question_key` property present.
+- `menus.active_menu.is_sleep_prompt` property present and currently `false`.
+- `player.active_object_qualified_id=null`.
+- Raw snapshot ingest accepted state hash `d34227e975124b6eb2e7650ee8bd3d88fd2f33f6c656d82914192c6bc576bc2a`.
+
+Notes:
+- Runtime time was not late-night, so `recovery.stabilize_day` emitted `recovery_refresh_plan` rather than bed-return candidates. Late-night bed candidate gates remain covered by unit tests.
+- No sleep executor was enabled. No `Sleep_Yes` was executed.
+- `cmd.exe /c start /b ...` was rejected as a reliable OpenCode background-service pattern after it still leaked output to the tool pipe. WMI/CIM process creation with file redirection is the recorded safe pattern.
+- A duplicate isolated SMAPI process created by launch retries was stopped; one isolated SMAPI process remains.
+
+2026-07-08 home/bed recovery target transparency pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 100 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 100 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added sleep precondition gates to `recovery_return_home`: active menu must be clear and active object must be empty before bed interaction preview is available.
+- Added `menus.active_menu.last_question_key` and `menus.active_menu.is_sleep_prompt` for future prompt verification.
+- No `Sleep_Yes` execution or day transition was enabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 98 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 98 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added facing/prompt metadata to the already-home bed preview expected effect.
+- Expected effect now includes `move_to_bed_adjacent=x,y;face_direction=d;interact_bed_tile=bedX,bedY;sleep_prompt_expected;Sleep_Yes_not_executed`.
+- Local decompile evidence shows `Action Sleep` opens a `Sleep` question dialogue and `Sleep_Yes` calls `startSleep()`; this pass does not execute `Sleep_Yes`.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 98 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 98 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Corrected bed-route gating: the bed tile itself is not treated as an ordinary walk target, because a furniture/map bed tile can be collision-blocked while still being the only valid sleep target.
+- `recovery_return_home` now confirms `bed_tile_has_bed=true`, finds a reachable adjacent stand tile, and route/collision dry-runs the stand tile.
+- If the bed tile is blocked but an adjacent stand tile is reachable, the candidate remains available with `move_to_bed_adjacent=x,y;bed_tile=bedX,bedY;sleep_not_executed`.
+- If no adjacent stand tile is available, the candidate is blocked with `recovery_bed_adjacent_stand_tile_unavailable`.
+- No sleep executor or cross-map return-home executor was enabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 97 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 97 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added route/collision dry-run gating for the already-home `recovery_return_home` bed preview.
+- If the transparent current-map collision grid marks the bed tile blocked, the candidate remains blocked with `route_path_target_blocked_by_collision_grid`.
+- No sleep executor or cross-map return-home executor was enabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 96 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+- Note: build emitted one transient MSB3026 copy retry while backend and solution tests were running concurrently; the retry succeeded and tests passed.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 96 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `current_location.home_context` using `Utility.getHomeOfFarmer`, `FarmHouse.getEntryLocation`, `FarmHouse.GetPlayerBedSpot`, and `BedFurniture.IsBedHere`.
+- `recovery_return_home` can now use an already-home bed tile preview with `sleep_not_executed`.
+- Cross-map return-home and sleep execution remain blocked.
+
+2026-07-08 recovery stabilize event candidates pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 95 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 95 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `recovery.stabilize_day` event candidates.
+- `recovery_refresh_plan` is available when no menu blocks execution and uses wait/refresh semantics.
+- Close-menu, return-home, and sleep candidates remain blocked with explicit executor-disabled or target-unavailable reasons.
+
+2026-07-08 interact endpoint event candidates pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 92 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 92 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `interact_endpoint` candidates from `current_location.shop_action_tiles[]`.
+- Candidates check menu state, route action branch coverage, expected action type, adjacent stand tile, and route-to-adjacent compiler dry-run reasons.
+- Historical note: `executor.interact` remained disabled in this pass; this is superseded by the later minimal runtime shell in EVD-057. Candidates still only become trainable after positive OpenShop/Buy smoke.
+
+2026-07-08 route connector event candidates pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 89 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 89 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Corrected movement executor boundary: `executor.move_to_tile` exists and supports collision-checked current-map tile movement with NPC soft-obstacle replan/wait and removable-obstacle clearance accounting.
+- Added `route_connector_tile` candidates from `locations.route_connectors.connectors[]`.
+- Route connector candidates keep compiler dry-run route block reasons at candidate level.
+- Movement to connector tile may be controlled by existing safe movement executor; cross-map/warp/door/shop/interact execution remains blocked/controlled.
+
+2026-07-08 non-economic watering event candidates pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 86 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 86 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `event_candidates[]` to `OptionAvailability` for non-economic concrete event scoring.
+- Added `water_crop_tile` candidates from transparent `farm.crops[].needs_watering`.
+- `ranked_event_candidates[]` now includes available generic event candidates as well as economic candidates.
+- This is scoring/preview only; broad policy/value training remains paused.
+
+2026-07-07 candidate availability before model scoring pass
+
+2026-07-07 economic candidate value gates pass
+
+2026-07-07 item-level economic candidates pass
+
+2026-07-07 event-level economic candidate ranking pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 84 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 84 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `ranked_event_candidates[]` to `availability_policy_prediction.v1`.
+- Added baseline `EventCandidateRanker` that ranks available `economic_candidates[]` by option score plus item value signal.
+- Blocked economic candidates are skipped by event ranking.
+- This is still scoring/preview only; economic executors remain disabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 82 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 82 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `economic_candidates[]` to `OptionAvailability`.
+- Buy candidates are emitted from `menus.shop_stock.entries[]` with item id, price, stock, availability, and block reasons.
+- Sell/shipping candidates are emitted from `player.inventory[]` with slot, item id, value, shop/shipping flags, availability, and block reasons.
+- This is still scoring/preview only; purchase, sell, and shipping executors remain disabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 82 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 82 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added value-aware candidate gates for `economy.buy_supplies` and `economy.sell_items`.
+- Buy availability now blocks when no shop stock entry is buyable, in stock, affordable by currency/trade item, and inventory-acceptable.
+- Sell availability now blocks when inventory has no unprotected positive-value shop-sell or shipping candidate under current sell context/bin fields.
+- Purchase, sell, and shipping executors remain disabled.
+
+2026-07-07 parameter-bound candidate availability pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 78 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 34 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 78 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 34 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `OptionAvailabilityRequest.candidates[]` and `BaselinePredictionRequest.candidates[]` using `SmallModelActionParameter[]`.
+- `CandidateOptionAvailabilityEvaluator` now uses a synthetic non-executing `ActionQueueCompiler` dry-run probe for bound candidates.
+- Tests verify route/interact compiler block reasons appear before model scoring and `queue_global_compiler_block` does not leak into availability.
+- Runtime route/interact execution remains disabled.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 75 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj"
+Result: PASS
+Summary:
+- 33 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 75 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 33 passed, 0 failed, 0 skipped
+
+Notes:
+- Added `option_availability.v1` and `CandidateOptionAvailabilityEvaluator`.
+- Added `/api/v1/planner/options/availability`.
+- `POST /api/v1/planner/baseline/rank-options` now filters candidates through availability when `state_hash` is provided and returns `availability_policy_prediction.v1`.
+- Default model scoring now excludes missing-field, preview-only, and executor-disabled options unless `include_blocked_options=true`.
+- Compiler remains the second-pass hard-rule authority for parameter-bound route/interact gates.
+
+2026-07-07 runtime primitive verification contract pass
+
+2026-07-07 hidden/silent runtime primitive verification regeneration
+
+Command: process guard check
+Result: PASS
+Summary:
+- Before launch: backend listeners 0, SMAPI count 0.
+
+Command: deploy TransparentBridge and RuntimeTestHarness to isolated runtime
+Result: PASS
+Summary:
+- TransparentBridge deployed to `E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods\StardewAI.TransparentBridge`.
+- RuntimeTestHarness deployed to `E:\StardewValleyAICompanion-runtime\Stardew Valley\Mods\StardewAI.RuntimeTestHarness`.
+
+Command: hidden/silent backend launcher `/api/v1/training/session/launch`
+Result: PASS
+Summary:
+- run_id: train.20260707152832.4e767523
+- SMAPI process id: 30064
+- sound: disabled
+- window_style: hidden
+- manifest: E:\StardewAITraining\runs\train.20260707152832.4e767523\training-run-manifest.json
+
+Command: raw Bridge snapshot ingest and ready probe
+Result: PASS
+Summary:
+- Bridge became world-ready after polling.
+- Initial available player state: location FarmHouse, tile 42,23.
+- executor health: ok.
+
+Command: LiveTrainingLoop applied primitive verification regeneration
+Result: PASS
+Summary:
+- root: `artifacts\hidden-training-primitive-verification-applied`
+- status: applied
+- primitive_kind: move_to_tile
+- primitive_verification_status: verified
+- primitive_verification_reasons: target_tile_reached
+- requested_effect: player.tile=41,23
+- observed_effect: player.tile=41,23
+- after_snapshot_fresh: true
+- state_hash_changed: true
+- dataset_lines: 1
+- artifact: `artifacts\hidden-training-primitive-verification-applied\runs\train.20260707152832.4e767523\live-snapshots\plan-execution-episode-0001.json`
+
+Command: LiveTrainingLoop blocked primitive verification regeneration
+Result: PASS
+Summary:
+- root: `artifacts\hidden-training-primitive-verification-blocked`
+- status: blocked
+- primitive_kind: executor.move_to_tile
+- primitive_verification_status: blocked
+- primitive_verification_reasons: target_tile_blocked:999,999
+- requested_effect: executor.move_to_tile
+- observed_effect: blocked
+- after_snapshot_fresh: true
+- state_hash_changed: true
+- dataset_lines: 1
+- artifact: `artifacts\hidden-training-primitive-verification-blocked\runs\train.20260707152832.4e767523\live-snapshots\plan-execution-episode-0001.json`
+
+Command: stop runtime/backend after regeneration
+Result: PASS
+Summary:
+- stopped SMAPI pid: 30064
+- stopped backend pid: 11452
+- backend_count: 0
+- smapi_count: 0
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 70 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Note:
+- A first regeneration attempt with `--manifest-path` wrote snapshots under `E:\StardewAITraining\runs\...`; final referenced artifacts use `--no-manifest` and clean local roots under `artifacts\hidden-training-primitive-verification-*`.
+
+Command: dotnet build "src\StardewAI.Contracts\StardewAI.Contracts.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 70 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 70 passed, 0 failed, 0 skipped
+- StardewAI.Backend.Tests: 31 passed, 0 failed, 0 skipped
+
+Note:
+- An earlier parallel build attempt failed with CS2012 because multiple builds tried to write the same `StardewAI.Contracts` output simultaneously. Sequential builds passed.
+- No SMAPI/runtime process was started in this pass.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests: 31 passed, 0 failed, 0 skipped
+- StardewAI.Core.Tests: 50 passed, 0 failed, 0 skipped
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Runtime note:
+- This pass did not restart or drive the E: visible SMAPI runtime.
+- Historical runtime artifacts were inspected for before/after snapshot behavior.
+- New after-snapshot freshness fields are compile-tested and must be regenerated in a live runtime episode before model training.
+
+2026-07-07 hidden/silent runtime training start
+
+Command: backend /api/v1/training/session/launch
+Result: PASS
+Summary:
+- run_id: train.20260707074805.c3677324
+- process_id: 28472
+- mode: stardew_windowed
+- executable_kind: smapi
+- window_style: hidden
+- sound: disabled
+- environment overrides include SDL_AUDIODRIVER=dummy and ALSOFT_DRIVERS=null
+- manifest: E:\StardewAITraining\runs\train.20260707074805.c3677324\training-run-manifest.json
+
+Command: Bridge snapshot ingest and manifest-bound ready probe
+Result: PASS
+Summary:
+- bridge location: FarmHouse
+- executor health: ok
+- snapshot_run_id: train.20260707074805.c3677324
+- ready probe: true
+
+Command: dotnet run --project "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" -- --root "artifacts\hidden-training-final-applied" ... --target-tile-x 40 --target-tile-y 23
+Result: PASS
+Summary:
+- status: applied
+- changed_facts: player.tile 41,23 -> 40,23
+- after_snapshot_fresh: true
+- state_hash_changed: true
+- rows_appended: 1
+- artifact: artifacts\hidden-training-final-applied\runs\train.20260707074805.c3677324\live-snapshots\plan-execution-episode-0001.json
+
+Command: dotnet run --project "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" -- --root "artifacts\hidden-training-final-blocked" ... --target-tile-x 999 --target-tile-y 999
+Result: PASS
+Summary:
+- status: blocked
+- block_reason: target_tile_blocked:999,999
+- after_snapshot_fresh: true
+- state_hash_changed: true
+- rows_appended: 1
+- artifact: artifacts\hidden-training-final-blocked\runs\train.20260707074805.c3677324\live-snapshots\plan-execution-episode-0001.json
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+Result: PASS
+Summary:
+- Re-run after fixing execution artifact write order.
+- 0 warnings
+- 0 errors
+
+2026-07-07 Wiki/field hard-rule pass
+
+Command: Wiki cross-check for `Seasons`, `Weather`, and `Crops`
+Result: PASS
+Summary:
+- Seasons page confirms four 28-day seasons and season-limited crops/fish/forage plus season transition crop withering.
+- Weather page confirms daily weather changes and weather effects; snow note says Winter Seeds and Powdermelon still need watering even when snowing.
+- Crops page confirms crops are generally seasonal, unwatered crops do not grow, and crop watering/growth timing is a hard game rule.
+
+Command: local decompile evidence check
+Result: PASS
+Summary:
+- `Game1.currentSeason` and weather booleans are present in local decompile.
+- `HoeDirt.needsWatering()`, `isWatered()`, and `readyForHarvest()` are present in local decompile.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- 51 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: INITIAL PASS BLOCKED BY RUNNING BACKEND, THEN PASS AFTER APPROVED RESTART
+Summary:
+- Core tests initially ran and exposed fixture updates that were fixed.
+- Full solution build/test was blocked by the currently running backend process locking `src\StardewAI.Backend\bin\Debug\net8.0\StardewAI.Core.dll`.
+- The user approved restarting backend only. SMAPI stayed running.
+- After stopping backend pid `23752`, full solution test passed: `StardewAI.Core.Tests` 51 passed and `StardewAI.Backend.Tests` 31 passed.
+
+Command: hidden restart backend on localhost:5108
+Result: PASS
+Summary:
+- stopped old backend pid: 23752
+- new backend pid: 10764
+- one backend listener on 5108
+- one SMAPI process: 28472
+- backend log: `artifacts\backend-hidden-restart.out.log`
+
+Command: ingest current Bridge snapshot into restarted backend and ready probe
+Result: PASS
+Summary:
+- Bridge snapshot run id: train.20260707074805.c3677324
+- Bridge location: FarmHouse
+- Bridge season/weather: winter/snow
+- backend ready: true
+- snapshot_run_id matches manifest run id
+
+Command: crop-maintenance compiler hard-rule smoke on live snapshot
+Result: PASS
+Summary:
+- queue_status: pending
+- option: farm.maintain_crops
+- compiler_context.season: winter
+- compiler_context.weather: snow
+- hard_rule.crop_watering_source: HoeDirt.needsWatering
+- compiler_context.watering_candidate_count: 0
+
+Command: dotnet run --project "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" -- --root "artifacts\hardrule-backend-restart-smoke" ... --target-tile-x 41 --target-tile-y 23
+Result: PASS
+Summary:
+- rows_appended: 1
+- status: applied
+- changed_facts: player.tile 42,23 -> 41,23
+- after_snapshot_fresh: true
+- state_hash_changed: true
+- artifact: E:\StardewAITraining\runs\train.20260707074805.c3677324\live-snapshots\plan-execution-episode-0001.json
+
+Command: pause training for full hard-rule transparency audit
+Result: PASS
+Summary:
+- stopped backend pid 10764
+- stopped SMAPI pid 28472
+- backend listeners on 5108 after stop: 0
+- SMAPI process count after stop: 0
+- added hard-rule-transparency-audit.md
+- broad behavior/policy training is gated until hard-rule fields have transparent coverage, local decompile evidence, Wiki secondary confirmation, compiler gates, and tests
+
+2026-07-07 crop catalog transparency pass
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Added `farm.crop_catalog` transparent field sourced from `Game1.cropData (Data\Crops)`.
+- Added `economy.buy_supplies` hard dependency on `farm.crop_catalog`.
+- Added regression test: buy supplies is blocked when crop catalog is missing.
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-12 debris pickup transparency and executor
+
+Command: dotnet test "StardewValleyAICompanion.sln" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 197 passed
+- StardewAI.Backend.Tests: 36 passed
+- Added `farm.debris` item/chunk transparency fields, `pickup_debris_item` candidates, `pickup_debris` daily-plan expansion, `executor.pickup_debris` compiler gates, `debris_index` request mapping, and RuntimeTestHarness setup/pickup paths.
+- New unit coverage verifies candidate emission from transparent debris, daily-plan move-then-pickup expansion, compiler success for valid debris, and compiler block when inventory cannot accept the item.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\Invoke-RuntimePickupDebrisSmoke.ps1"
+Result: PASS
+Artifact:
+- `artifacts\runtime-pickup-debris-smoke\runtime-pickup-debris-smoke-20260712-185126\summary.json`
+Summary:
+- Hidden/silent isolated runtime launched from `E:\StardewValleyAICompanion-runtime`.
+- Fixture placed `(O)388`; transparent bridge reported actual debris chunk tile `64,16` after Stardew debris physics.
+- `executor.pickup_debris` returned `status=applied`, `primitive_verification_status=verified`.
+- Verification reasons: `target_debris_collected`, `inventory_updated`, `qualified_item_id=(O)388`.
+- Transparent after-state: debris present before, absent after, debris count `1 -> 0`, state hash changed.
+- The smoke intentionally follows the transparent chunk tile rather than the requested source tile, because Stardew debris bounce/landing can shift the collectible tile.
+
+2026-07-12 ready machine output collection
+
+Command: dotnet test "StardewValleyAICompanion.sln" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 201 passed
+- StardewAI.Backend.Tests: 36 passed
+- Added `collect_machine_output_tile` candidates from transparent `farm.machines`, daily-plan move-to-adjacent plus `collect_machine_output` expansion, `executor.collect_machine_output` compiler gates, and RuntimeTestHarness setup/collect paths.
+- New unit coverage verifies candidate emission from transparent ready machine output, daily-plan move-then-collect expansion, compiler success for valid output, and compiler block when inventory cannot accept the item.
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\Invoke-RuntimeMachineOutputSmoke.ps1"
+Result: PASS
+Artifact:
+- `artifacts\runtime-machine-output-smoke\runtime-machine-output-smoke-20260712-194224\summary.json`
+Summary:
+- Hidden/silent isolated runtime launched from `E:\StardewValleyAICompanion-runtime`.
+- Fixture produced ready machine output `(O)388` at `64,15`.
+- `executor.collect_machine_output` returned `status=applied`, `primitive_verification_status=verified`.
+- Verification reasons: `machine_output_collected`, `inventory_updated`, `qualified_item_id=(O)388`.
+- Transparent after-state: machine held item cleared and state hash changed.
+- This closes ready output collection only; machine input/loading recipes and processing-time strategy remain blocked.
+
+2026-07-12 single machine input loading
+
+Command: dotnet test "StardewValleyAICompanion.sln" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 205 passed
+- StardewAI.Backend.Tests: 36 passed
+- Added transparent `farm.machines[].loadable_inputs[]` from `Object.performObjectDropInAction(probe:true)`, `load_machine_input_tile` candidates, daily-plan move-then-load expansion, `executor.load_machine_input` compiler gates, `input_slot_index` request mapping, and RuntimeTestHarness setup/load paths.
+- New unit coverage verifies candidate emission from transparent probe input, daily-plan move-then-load expansion, compiler success for valid input, and compiler block when the transparent probe input is missing.
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\Invoke-RuntimeMachineInputSmoke.ps1"
+Result: PASS
+Artifact:
+- `artifacts\runtime-machine-input-smoke\runtime-machine-input-smoke-20260712-200049\summary.json`
+Summary:
+- Hidden/silent isolated runtime launched from `E:\StardewValleyAICompanion-runtime`.
+- Fixture produced an idle Keg and transparent loadable input `(O)262` at inventory slot `10`.
+- `executor.load_machine_input` returned `status=applied`, `primitive_verification_status=verified`.
+- Verification reasons: `machine_input_loaded`, `machine_processing_started_or_output_ready`, `inventory_updated`, `qualified_item_id=(O)262`.
+- Transparent after-state: machine `held_item=(O)346`, `minutes_until_ready=1750`, `ready_for_harvest=false`, and state hash changed.
+- This closes one verified input load slice. Broad recipe/value strategy, multi-machine scheduling, and Wiki secondary machine coverage remain pending.
+
+2026-07-12 giant crop transparency boundary
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Decompile check: `Crop.TryGrowGiantCrop` creates `GiantCrop` resource clumps, and `GiantCrop.performToolAction` requires Axe hits until clump health reaches zero.
+- Extended `farm.resource_clumps` with `runtime_type`, `is_giant_crop`, `giant_crop_id`, `required_tool`, and `executor_status`.
+- Giant crops remain blocked for execution with `blocked_requires_giant_crop_executor`; they are not treated as normal single-tile `harvest_crop` actions.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 188 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 giant crop executor runtime smoke
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests|TrainingExecutionContractTests"
+Result: PASS
+Summary:
+- 152 passed
+- Added `executor.harvest_giant_crop`, `harvest_giant_crop_tile` candidates, daily-plan compile support, `giant_crop_id` execution request field, and RuntimeTestHarness giant crop setup/execution paths.
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Note: an earlier parallel build hit a transient file-lock on `StardewAI.Contracts.dll`; the single rerun passed.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeGiantCropSmoke.ps1
+Result: PASS
+Artifact:
+- `artifacts\runtime-giant-crop-smoke\runtime-giant-crop-smoke-20260712-182314\summary.json`
+Summary:
+- Setup verified a giant pumpkin clump at `64,15`; fixture resolved numeric crop id `276` to giant crop key `Pumpkin`.
+- `executor.harvest_giant_crop` returned `applied/verified`.
+- Verification reasons: `target_giant_crop_removed`, `target_giant_crop_debris_created`, `tool=Axe`, `swings=2`.
+- Transparent after-state: giant crop absent, debris count `0 -> 28`, state hash changed.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 193 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-11 crop regrow season-value edit
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 72 passed after the later harvest-preview edit; the regrow season-value assertions remain covered in the same filtered test set.
+- Added `regrow_days`, `estimated_regrow_harvest_count`, `estimated_total_harvest_count`, conservative/estimated season harvest value, and season net value diagnostics to `plant_seed_tile` expected effects when transparent crop catalog/timing data exists.
+- Daily-plan `plant_seed` steps now carry the regrow and season-value diagnostics as parameters.
+- Ranker now prefers `estimated_season_harvest_net_value` before first-harvest value so regrow crops are not under-ranked purely by the first harvest.
+- This is still an estimated planning signal, not a realized output label; quality multipliers, farming-level scaling, fertilizer, crop loss, and sale timing remain unverified.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 181 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 crop harvest preview candidate edit
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- Superseded later the same day by runtime-verified harvest execution.
+- `harvest_crop_tile` candidates are now available for transparent `farm.crops[].ready_for_harvest=true`.
+- Ranker includes harvest candidates, and daily-plan compiler emits `harvest_crop`.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 181 passed
+- StardewAI.Backend.Tests: 36 passed
+- No runtime/game smoke was run in this pass.
+
+2026-07-12 harvest crop compiler gate edit
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- Superseded later the same day by runtime-verified harvest execution.
+- Registered `executor.harvest_crop` as a mechanical executor-calibration option.
+- Action queue compiler now recognizes `harvest_crop` plan/action steps, validates exact target tile against transparent `farm.crops[].ready_for_harvest=true`, and emits a bounded `harvest_crop` compiled step.
+- RuntimeTestHarness now implements and verifies the actual single-tile Grab harvest primitive.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 183 passed
+- StardewAI.Backend.Tests: 36 passed
+- No runtime/game smoke was run in this pass.
+
+2026-07-12 harvest crop runtime executor edit
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "ActionQueueCompilerTests|TrainingExecutionContractTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 145 passed
+- Added `harvest_method` to `training_execution_request.v1` and fixed `seed_id` propagation from compiled queue parameters into LiveTrainingLoop execution requests.
+- RuntimeTestHarness implements `executor.harvest_crop` for exact ready crop tiles, with method match, post-state verification, and changed-fact recording.
+- Added hidden/silent harvest smoke script `scripts\Invoke-RuntimeHarvestCropSmoke.ps1`.
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 188 passed
+- StardewAI.Backend.Tests: 36 passed
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1
+Result: PASS
+Summary:
+- Latest one-shot artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-160028\summary.json`
+- Setup fixture applied and verified a mature `(O)472` crop at tile `64,15`.
+- `executor.harvest_crop` returned `status=applied`, `primitive_verification_status=verified`, reason `target_crop_removed_or_no_longer_ready`.
+- After snapshot had `crop_present_after=false`, `ready_for_harvest_after=false`, and `state_hash_changed=true`.
+- The game was launched hidden/silent and closed by the script.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 473
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-160102\summary.json`
+- Setup fixture applied and verified a mature regrow `(O)473` crop at tile `64,15`.
+- `executor.harvest_crop` returned `status=applied`, `primitive_verification_status=verified`, reason `target_crop_regrow_state_updated`.
+- After snapshot had `crop_present_after=true`, `ready_for_harvest_after=false`, and `state_hash_changed=true`.
+- The game was launched hidden/silent and closed by the script.
+
+2026-07-12 crop catalog runtime field repair and Scythe harvest smoke
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- `FarmReadAdapter` crop catalog reflection now reads public properties and public fields so Stardew `CropData` member-shape changes do not silently erase harvest fields.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 472
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-162723\summary.json`
+- `initial-snapshot.json` verified `farm.crop_catalog` has populated vanilla harvest fields again: 45 `Grab` entries and 5 `Scythe` entries were observed.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 273 -HarvestMethod Scythe
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-163006\summary.json`
+- Setup fixture applied and verified a mature Scythe `(O)273` crop at tile `64,15`.
+- `executor.harvest_crop` returned `status=applied`, `primitive_verification_status=verified`, reason `target_crop_removed_or_no_longer_ready`.
+- After snapshot had `crop_present_after=false`, `ready_for_harvest_after=false`, and `state_hash_changed=true`.
+- The game was launched hidden/silent and closed by the script.
+
+2026-07-12 harvest crop inventory-full block
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "ActionQueueCompilerTests|TrainingExecutionContractTests"
+Result: PASS
+Summary:
+- 76 passed
+- Added `player.inventory_capacity` transparent field.
+- ActionQueueCompiler blocks `executor.harvest_crop` for Grab crops when transparent inventory capacity cannot accept the harvest yield.
+- Scythe harvest is not blocked by inventory capacity because Stardew creates debris instead of directly adding the crop to inventory.
+- `TrainingExecutionRequest` now has debug-only `debug_fill_inventory` for isolated runtime fixtures.
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- RuntimeTestHarness rechecks Grab harvest capacity with Stardew `Farmer.couldInventoryAcceptThisItem` before calling `Crop.harvest`.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 472 -HarvestMethod Grab -FillInventoryBeforeHarvest
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-171936\summary.json`
+- Setup fixture filled inventory and verified a mature Grab `(O)472` crop at tile `64,15`.
+- `executor.harvest_crop` returned `status=blocked`, `primitive_verification_status=blocked`, reason `harvest_crop_inventory_cannot_accept_grab_yield`.
+- After snapshot had `crop_present_after=true`, `ready_for_harvest_after=true`; the crop was not consumed and no applied training sample should be produced.
+- The game was launched hidden/silent and closed by the script.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 472 -HarvestMethod Grab
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-172013\summary.json`
+- Normal Grab harvest still returned `status=applied`, `primitive_verification_status=verified`, reason `target_crop_removed_or_no_longer_ready`.
+
+2026-07-12 Scythe harvest debris-output verification
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- RuntimeTestHarness now verifies Scythe harvest output by counting transparent target item debris before and after `Crop.harvest`.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeHarvestCropSmoke.ps1 -SeedId 273 -HarvestMethod Scythe
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-harvest-crop-smoke\runtime-harvest-crop-smoke-20260712-180404\summary.json`
+- Setup fixture applied and verified a mature Scythe `(O)273` crop at tile `64,15`.
+- `executor.harvest_crop` returned `status=applied`, `primitive_verification_status=verified`, reasons `target_crop_removed_or_no_longer_ready` and `target_harvest_debris_created`.
+- Transparent harvest output `(O)271` debris increased from 0 to 2.
+- The game was launched hidden/silent and closed by the script.
+
+2026-07-11 planting candidate and daily-plan offline pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests|DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 126 passed
+- Added `plant_seed_tile` event candidates from transparent `current_location.planting_context`.
+- Candidate gate requires exact tile/seed hard-rule approval and blocks negative mature-before-season-end preview.
+- `DailyPlanCompiler` emits one `plant_seed` step with `seed_id`, optional qualified id, and optional seed slot.
+- No runtime/game smoke was run in this pass because the user requested no testing while playing.
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 planting daily-plan reservation edit
+
+Command: not run by user request
+Result: NOT RUN
+Summary:
+- Added daily-plan reservation rules for `plant_seed_tile`:
+  - one accepted seed candidate may claim a planting tile;
+  - accepted planting candidates reserve one seed from the transparent seed stack;
+  - later candidates for the same tile or exhausted seed stack are skipped with candidate-audit reasons.
+- Added test cases for same-tile planting conflict and seed-stack reservation, but did not execute them in this pass.
+- Added grow-day diagnostics to planting candidate expected effects.
+
+2026-07-11 planting maturity-risk ranking edit
+
+Command: not run by user request
+Result: NOT RUN
+Summary:
+- Replaced fixed `plant_seed_tile` urgency with a transparent timing signal derived from `adjusted_grow_days` and `days_remaining_in_season`.
+- Daily-plan `plant_seed` steps now carry `adjusted_grow_days`, `days_remaining_in_season`, and `maturity_slack_days` when candidate effects expose them.
+- Added a ranker regression case for tighter maturity slack, but did not execute it in this pass.
+- This is not an economic crop-profit model; crop value, seed acquisition, fertilizer choice, and layout policy remain pending.
+
+2026-07-11 planting conservative value signal edit
+
+Command: not run by user request
+Result: NOT RUN
+Summary:
+- Extended `farm.crop_catalog` with `harvest_item_qualified_id` and `harvest_unit_sale_price`.
+- `plant_seed_tile` expected effects now carry `harvest_item_id`, `harvest_item_qualified_id`, `harvest_unit_sale_price`, and `expected_first_harvest_value` when transparent catalog data is present.
+- Event ranking adds a capped weak value signal from `expected_first_harvest_value`.
+- Daily-plan `plant_seed` steps carry harvest value diagnostics and mark the basis as `single_base_harvest_unit_only`.
+- Added test cases for value propagation and ranker value signal, but did not execute them in this pass.
+- This is not realized profit: quality, multi-yield, extra harvests, regrow cycles, seed cost, fertilizer, and end-of-day sale/output labels remain pending.
+
+2026-07-11 crop harvest structure field edit
+
+Command: not run by user request
+Result: NOT RUN
+Summary:
+- Extended `farm.crop_catalog` with harvest structure fields used by decompiled `Crop.harvest`:
+  `harvest_min_stack`, `harvest_max_stack`, `harvest_max_increase_per_farming_level`, `extra_harvest_chance`, `harvest_min_quality`, `harvest_max_quality`, and `harvest_method`.
+- `plant_seed_tile` expected effects and daily-plan parameters now carry those harvest diagnostics when present.
+- Conservative candidate value now uses `harvest_min_stack * harvest_unit_sale_price` and marks `expected_first_harvest_value_basis=conservative_min_stack_only`.
+- Added test assertions for harvest structure propagation, but did not execute them in this pass.
+- Stochastic extra harvest, quality value, farming-level scaling, regrow cycles, seed cost, and realized output labels remain pending.
+
+2026-07-11 crop first-harvest estimated value edit
+
+Command: not run by user request
+Result: NOT RUN
+Summary:
+- Added `estimated_first_harvest_quantity` and `estimated_first_harvest_value` beside the conservative `expected_first_harvest_value`.
+- Estimated quantity uses mean min/max harvest stack plus the geometric expected value of `extra_harvest_chance` capped by the game at 0.9.
+- Ranker now prefers `estimated_first_harvest_value` for the weak planting value signal and falls back to the conservative value if absent.
+- Daily-plan `plant_seed` steps carry the estimated value fields and `estimated_first_harvest_value_basis=mean_stack_plus_extra_chance_quality0_no_farming_scaling`.
+- Added test assertions for estimated value propagation, but did not execute them in this pass.
+- Estimate excludes quality multipliers, farming-level max-stack scaling, regrow cycles, seed cost, fertilizer, and realized sale/output labels; it is not ground truth.
+
+2026-07-11 planting seed cost and net value edit
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests|DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- Added transparent seed unit cost lookup from active `menus.shop_stock` and `locations.shops.stock_preview`.
+- `plant_seed_tile` expected effects now carry `seed_unit_cost`, `expected_first_harvest_net_value`, `estimated_first_harvest_net_value`, and `net_value_basis=transparent_seed_unit_cost_subtracted` when a transparent price exists.
+- Ranker prefers estimated net value for the weak planting value signal, falling back to gross estimated/conservative value when no cost is visible.
+- Daily-plan `plant_seed` steps carry the cost/net diagnostics.
+- StardewAI.Core.Tests filtered run: 131 passed.
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 daily plan post-purchase close-menu chain pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests filtered suite: 72 passed
+- Daily plan buy candidate now compiles to open/interact, buy_shop_item, then close_menu.
+- Action queue compiler accepts interact -> buy_shop_item -> close_menu when the inferred active menu is ShopMenu.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests BackendEndpointTests: 22 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 runtime route-to-shop purchase cleanup smoke pass
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeRouteToShopSmoke.ps1 -RuntimeRoot "E:\StardewValleyAICompanion-runtime" -TargetLocation "Blacksmith" -ExpectedShopId "Blacksmith" -BuyFirstSafeItem
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-route-to-shop-smoke\runtime-route-to-shop-smoke-20260711-192207\summary.json`
+- Isolated hidden runtime reached Blacksmith with 4 route steps.
+- `interact_status=applied`, `interact_verification=verified`
+- `dialogue_status=applied`, `dialogue_verification=verified`
+- Bought `(O)378` copper ore for 150g with `buy_status=applied`, `buy_verification=verified`
+- Closed the shop menu with `close_menu_status=applied`, `close_menu_verification=verified`
+- Final state had `active_menu.is_open=false`, `active_menu.type=none`, and `final_menu_closed=true`
+
+2026-07-11 route-to-shop smoke post-buy close-menu gate pass
+
+Command: PowerShell parser over scripts\Invoke-RuntimeRouteToShopSmoke.ps1
+Result: PASS
+Summary:
+- Route-to-shop smoke now sends `executor.close_menu` after a safe buy.
+- The smoke writes `snapshot-after-buy-before-close.json`, records `close_menu_status`, `close_menu_verification`, and requires `final_menu_closed=true` for pass when `-BuyFirstSafeItem` is used.
+- No runtime game test was run in this pass.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests filtered suite: 73 passed
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests BackendEndpointTests: 22 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 shop purchase safety contract alignment pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests filtered suite: 73 passed
+- Daily plan buy candidates now emit a one-item safe purchase slice and preserve larger requested quantities as `requested_quantity` audit context.
+- Action queue compiler now blocks `executor.buy_shop_item` when `expected_shop_id` does not match the open `ShopMenu` stock.
+- Handoff docs updated: buy execution status is controlled safe single-purchase, not globally disabled.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests BackendEndpointTests: 22 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 move route repair time and energy budget pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 111 passed
+- Move-to-tile compiler repair now rejects clear-obstacle insertion when route repair time budget is insufficient.
+- Move-to-tile compiler repair now rejects clear-obstacle insertion when transparent player energy is insufficient for required obstacle clears.
+- Inserted route-repair clear steps carry clear kind, energy cost, minutes budget, and energy budget metadata.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 daily plan offline loop smoke pass
+
+Command: powershell -ExecutionPolicy Bypass -File scripts\Invoke-DailyPlanOfflineSmoke.ps1
+Result: PASS
+Summary:
+- No game process or bridge process was launched.
+- Local backend was started on a temporary localhost port and stopped after the smoke.
+- `StardewAI.LiveTrainingLoop` now supports `--snapshot-file` for offline transparent-snapshot smoke tests.
+- One daily-plan loop iteration appended 1 JSONL row at `artifacts\daily-plan-offline-smoke\datasets\live-training-feature-rows.jsonl`.
+- Candidate audit feature check passed: `candidate_audit.accepted_count=1`, `candidate_audit.skipped_max_candidates_count=1`, `candidate_audit.primary_skip_reason=max_candidates_reached`.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 22 passed
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|DailyPlanCompilerTests|TrainingEpisodeAdapterTests|TrainingFeatureRowExporterTests"
+Result: PASS
+Summary:
+- 75 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 candidate audit HTTP end-to-end pass
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 22 passed
+- `/api/v1/planner/daily-plan/compile` now stores compiled action queues when `compile_action_queue=true`, matching the other compile endpoints.
+- HTTP regression verifies candidate audit is present in daily plan response, compiled action queue, training episode, and training feature row.
+- Feature-row response includes candidate audit accepted/skipped counts, time-budget skip count, primary skip reason, and budget-skip boolean.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|DailyPlanCompilerTests|TrainingEpisodeAdapterTests|TrainingFeatureRowExporterTests"
+Result: PASS
+Summary:
+- 75 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 candidate audit training feature export pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|DailyPlanCompilerTests|TrainingEpisodeAdapterTests|TrainingFeatureRowExporterTests|TrainingExecutionContractTests"
+Result: PASS
+Summary:
+- 81 passed
+- Plan `candidate_audit` is now preserved on compiled action queues.
+- `TrainingEpisodeAdapter` carries action-queue candidate audit into `training_episode.v1`.
+- `TrainingFeatureRowExporter` emits compact candidate-audit features: accepted/skipped counts, skip reason counts, skipped time/energy sums, primary skip reason, and budget-skip booleans.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 daily plan skipped-candidate audit pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 119 passed
+- `SmallModelPlanEnvelope` now includes structured `candidate_audit` entries for accepted and skipped ranked event candidates.
+- Daily-plan audit records unsupported candidate kinds, aggregate time budget skips, aggregate energy budget skips, and max-candidate-limit skips.
+- Audit rows include candidate minutes, energy cost, and remaining time/energy before and after the decision.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 daily plan budget annotation pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 118 passed
+- Accepted daily-plan steps now carry `budget.accepted_candidate_index`, `budget.candidate_minutes`, `budget.candidate_energy_cost`, and remaining time/energy before/after when aggregate budgets are provided.
+- Accepted steps now carry safety constraints for aggregate budget, time budget, and energy budget checks.
+- These plan parameters are preserved by the action queue compiler as normalized command parameters for downstream training records.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 daily plan aggregate time and energy budget pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 117 passed
+- `DailyPlanCompiler` now supports aggregate `availableMinutes` and `energyBudget` gates before adding candidates to a plan.
+- Candidates are counted toward `maxCandidates` only after they produce executable plan steps and fit the remaining time/energy budget.
+- Backend daily-plan compile endpoint now reads transparent `time.time` and `player.energy` from the selected/latest snapshot and passes those budgets into plan compilation.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 clear-obstacle upstream resource and day-budget gating pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests|DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 114 passed
+- Clear-obstacle candidates are now blocked before ranking when transparent `player.energy` is below required clear cost.
+- Clear-obstacle candidates are now blocked before ranking when estimated work would exceed the 2600 day boundary.
+- Route-repair candidates inherit this filter because they are derived only from available clear-obstacle candidates.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 budgeted multi-obstacle move route repair pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 109 passed
+- `move_to_tile` route repair now supports multiple compiler-inserted clear-obstacle repairs within a bounded budget.
+- Default route-repair budget is 2 clear actions, with a hard cap of 4 and an optional plan-step parameter `max_route_repair_clears`.
+- The compiler only inserts the repair sequence when the selected repairs make the original movement target reachable; otherwise it leaves the original move intact and avoids partial repair churn.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 move-to-tile route-repair clear-obstacle insertion pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- 107 passed
+- `ActionQueueCompiler.Compile(plan, snapshot)` now expands blocked `move_to_tile` plan steps by inserting compiler-owned route repair actions before the original move when a transparent clearable obstacle repairs the path.
+- The inserted sequence is `move_to_tile` to a reachable adjacent stand tile, `clear_obstacle` on the obstacle tile, then the original `move_to_tile`.
+- The small model contract remains unchanged: model output can stay as a normal move intent while the compiler handles mechanical route repair.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 route path-segment repair clear-obstacle pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 106 passed
+- Route repair now tests each transparent available clear-obstacle candidate by removing its blocked tile from the collision grid and rerunning BFS to the route target.
+- `exploration.visit_location` can now emit route-repair `clear_obstacle_tile` candidates when a clearable obstacle blocks the path segment before the connector, not only when the connector tile itself is blocked.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 route-repair clear-obstacle candidate integration pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 105 passed
+- `exploration.visit_location` now preserves blocked route connector diagnostics while adding a `route-repair` `clear_obstacle_tile` candidate when the blocked connector tile has a transparent clearable obstacle.
+- Route repair candidates reuse the existing `move_to_adjacent` + `clear_obstacle` downstream expansion path, so the small model still emits candidate-level intent rather than low-level key input.
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+- An initial parallel run hit a Backend DLL file lock from concurrent build/test; stale dotnet processes were stopped and the isolated retry passed.
+
+2026-07-11 farm maintenance clear-obstacle candidate integration pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 104 passed
+- `farm.maintain_crops` now emits normal watering candidates plus farm-maintenance clear-obstacle candidates when transparent current-location object/terrain state is available.
+- The new clear candidates retain `farm_maintenance_clear_obstacle=true` in expected effects while preserving downstream `move_to_adjacent` parsing.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- First run hit a stale dotnet file lock on `src\StardewAI.Backend\obj\Debug\net8.0\StardewAI.Backend.dll`; stale dotnet processes were stopped.
+- Retry passed with 0 warnings and 0 errors.
+
+2026-07-11 clear obstacle route-to-adjacent planning pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 103 passed
+- Non-adjacent `clear_obstacle_tile` candidates now select a transparent collision-checked adjacent stand tile and expose it as `move_to_adjacent=x,y`.
+- `DailyPlanCompiler` expands such candidates into `move_to_tile` followed by `clear_obstacle`, preserving the small-model contract that mechanical action expansion belongs downstream.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 clear obstacle candidate/planner integration pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests|DailyPlanCompilerTests|ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- 102 passed
+- `executor.clear_obstacle` now emits transparent `clear_obstacle_tile` event candidates from current-location objects and terrain features.
+- Adjacent clearable obstacles can enter ranking/planning; non-adjacent clear candidates are blocked upstream with `clear_obstacle_target_not_adjacent` until route-to-adjacent support is added.
+- Daily planning compiles ranked clear-obstacle candidates into `clear_obstacle` plan steps with explicit target tile and `max_tool_swings`.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-09 route-to-shop connector pass
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added boundary/off-map warp support for `executor.traverse_connector`.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeRouteToShopSmoke.ps1 -TargetLocation JojaMart -OpenTimeWaitSeconds 10
+Result: EXPECTED BLOCK
+Summary:
+- Artifact: `artifacts\runtime-route-to-shop-smoke\runtime-route-to-shop-smoke-20260709-205532\summary.json`.
+- Verified route segments: `FarmHouse -> Farm`, `Farm -> BusStop`, `BusStop -> Town`.
+- Blocked before entering JojaMart because transparent door action `LockedDoorWarp 13 29 JojaMart 900 2300` was not open in the 6:00 hidden test run.
+- Positive shop menu open still requires a 9:00+ isolated save or reliable background time advancement.
+
+2026-07-09 controlled connector traversal runtime pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 125 passed
+- Added connector execution request fields and compiler coverage for `executor.traverse_connector`.
+
+Command: dotnet test "tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests: 34 passed
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Runtime harness supports controlled location change only for `executor.traverse_connector`.
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeRouteConnectorSmoke.ps1
+Result: PASS
+Summary:
+- Hidden/silent E: isolated runtime smoke artifact: `artifacts\runtime-route-connector-smoke\runtime-route-connector-smoke-20260709-202610\summary.json`.
+- Verified first route-to-endpoint segment: `FarmHouse` connector tile `(27,31)` -> `Farm` arrival `(64,15)`.
+- Result `status=applied`, `primitive_verification_status=verified`, no block reasons.
+
+2026-07-07 compressed collision grid transparency pass
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Added `locations.collision_grid` with compressed current-map blocked/action/warp/door/interior-door tiles using `GameLocation.isCollidingPosition`.
+- No route planner, shop-opening executor, or broad training was enabled.
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Note:
+- An initial parallel `dotnet build` collided with the concurrent full solution test writing the same TransparentBridge obj DLL. The full solution test passed and a sequential Bridge build then passed cleanly.
+
+2026-07-07 route connector index transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_connectors` as a normalized current-map index for warps, doors, interior doors, action warps, and shop action endpoints.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route planner and shop-opening executor remain disabled.
+
+2026-07-07 route action branch coverage transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_action_branch_coverage` current-map `Action`/`TouchAction` audit for route/shop branch coverage and unsupported branch blocking.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Unsupported action branches remain blocked for route/shop-opening training.
+
+2026-07-07 route unsupported action branch compiler gate pass
+
+Command: dotnet build "src\StardewAI.Core\StardewAI.Core.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-07 current-map route path gate pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 57 passed
+- Added current-map path gate tests for unsupported branch on required path and avoidable unsupported branch.
+
+Command: dotnet build "src\StardewAI.Core\StardewAI.Core.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added compiler-side current-map BFS over `locations.collision_grid` to avoid unsupported route action branches before blocking.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 57 passed
+- StardewAI.Backend.Tests: 31 passed
+- No route executor or broad training was enabled.
+
+Documentation:
+- Added `field-dictionary.md` with scoped full-spectrum field dictionary across runtime/training, crops, shops, selling/shipping, route/movement, and strategy/value context.
+
+2026-07-07 loaded-location route graph preview pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_graph` read-side preview over loaded `Game1.locations`, warps, doors, action warps, locked-door warps, and shop endpoints.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 59 passed
+- Added cross-map graph gate tests for resolved and unresolved route graph paths.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 59 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route executor and broad training remain disabled.
+
+2026-07-07 cross-map route start-segment gate pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 61 passed
+- Added tests for cross-map first connector reachable and blocked by current-map collision grid.
+
+Command: dotnet build "src\StardewAI.Core\StardewAI.Core.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added compiler validation from player tile to first resolved route graph connector tile.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 61 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route executor remains disabled.
+
+2026-07-07 per-location route map summaries pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_map_summaries` with loaded location dimensions, connector/action counts, unsupported branch counts, and segment validation status.
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 62 passed
+- Added normalized command context for target-location segment validation status.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 62 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route executor remains disabled.
+
+2026-07-07 interact primitive compiler contract pass
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 65 passed
+- Added `executor.interact` compiler tests for valid transparent map action, missing target tile, and unsupported action branch target.
+
+Command: dotnet build "src\StardewAI.Core\StardewAI.Core.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added narrow `executor.interact` OptionSpec and compiler gate.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 65 passed
+- StardewAI.Backend.Tests: 31 passed
+- Historical note: interact runtime execution was disabled in this pass; this is superseded by the 2026-07-09 minimal interact executor shell above.
+- Added `locations.route_action_branch_coverage` as a required state factor for `exploration.visit_location`.
+- Added compiler block `unsupported_route_action_branch_present` when route action branch coverage reports unsupported branches.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 54 passed
+- StardewAI.Backend.Tests: 31 passed
+- Added tests for blocked and allowed `exploration.visit_location` route action branch coverage.
+
+Note:
+- An initial parallel Core build collided with the concurrent Core test writing the same Core obj DLL. The sequential Core build and full solution test passed cleanly.
+
+2026-07-07 route unsupported action branch gate scope correction
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 55 passed
+- StardewAI.Backend.Tests: 31 passed
+- Narrowed the unsupported route action branch compiler gate to block only when the requested target tile has `route_training_blocked=true`.
+- Added regression coverage proving unrelated unsupported branches elsewhere on the map do not block `exploration.visit_location`.
+
+Command: dotnet build "src\StardewAI.Core\StardewAI.Core.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-07 route blocker classes transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_blockers` current-map collision participants grouped by characters, objects, terrain features, large terrain features, resource clumps, and furniture.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route planner remains disabled; candidates must still use Stardew `GameLocation.isCollidingPosition`.
+
+Correction note:
+- First build attempt for this pass failed because `TerrainFeature.getBoundingBox` has no one-argument overload in the referenced assembly. The code was corrected to call the local API signature and the follow-up build passed cleanly.
+
+2026-07-07 route gate context transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.route_gate_context` read-only gate preview for map `BuildConditions`, `LockedDoorWarp`, `ConditionalDoor`, `Warp`, `Door`, festival closure, Town Key, time/friendship gates, Green Rain override, and mail-gated touch warps.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Route planner and shop-opening executor remain disabled.
+
+2026-07-07 current-location planting context transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added read-only `current_location.planting_context` sourced from `GameLocation` planting APIs and `HoeDirt` tile state.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- `current_location.planting_context` remains read-only; no planting executor or broad training was enabled.
+
+2026-07-07 crop growth timing transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Extended read-only `current_location.planting_context` with current day, days remaining in season, base grow days, Speed-Gro/Agriculturist-adjusted grow days without paddy acceleration, and mature-before-season-end preview.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No planting executor or broad training was enabled.
+
+2026-07-07 shop stock transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `menus.shop_stock` transparent field sourced from active `ShopMenu.itemPriceAndStock` and `ItemStockInformation`.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Added `economy.buy_supplies` hard dependency on `menus.shop_stock`.
+- No shop-opening executor, purchase executor, planting executor, or broad training was enabled.
+
+2026-07-07 shop access context transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `locations.shops` transparent field sourced from `DataLoader.Shops`, `ShopBuilder.GetCurrentOwners`, current-location NPCs, and festival closure APIs.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No shop-opening executor, purchase executor, planting executor, or broad training was enabled.
+
+2026-07-07 purchase audit and paddy transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Extended `menus.shop_stock` with affordability, trade-item availability, inventory acceptance, and side-effect risk fields.
+- Extended `farm.crop_catalog` and `current_location.planting_context` with paddy crop/water/speed fields.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No purchase executor, planting executor, shop-opening executor, or broad training was enabled.
+
+2026-07-07 selling inventory audit transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Extended `player.inventory` item summaries with category, maximum stack size, `canBeShipped`, `canBeTrashed`, `sellToStorePrice(-1L)`, and `salePrice()`.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No sell/shipping executor or broad training was enabled.
+
+2026-07-07 purchase executor explicit block pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `executor_purchase_enabled=false` and executor block reasons to `menus.shop_stock` and shop entries.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Purchase executor remains disabled.
+
+2026-07-11 daily-plan shop purchase closed-loop pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|DailyPlanCompilerTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 94 passed
+- Covers shop preview candidates before menu open, dialogue-shop response planning, plan-context menu inference, and runtime shop-stock recheck gates.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests: 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 targeted watering runtime smoke pass
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeTargetedWateringSmoke.ps1 -ProjectRoot I:\StardewValleyAICompanion -RuntimeRoot E:\StardewValleyAICompanion-runtime
+Result: PASS
+Summary:
+- Run `runtime-targeted-watering-smoke-20260711-152436`.
+- Current isolated save had no natural `needs_watering=true` crop, so the script used explicit non-training fixture action `debug.setup_watering_target`.
+- Setup verified `farm.crops[64,15].needs_watering=true`.
+- Targeted executor `farm.maintain_crops` applied only tile `64,15`, `watered_count=1`, `primitive_verification_status=verified`, reason `target_crop_water_state_updated`.
+- Artifacts: `artifacts\runtime-targeted-watering-smoke\runtime-targeted-watering-smoke-20260711-152436\summary.json`.
+
+2026-07-11 explicit clear-obstacle runtime smoke pass
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeClearObstacleSmoke.ps1 -ProjectRoot I:\StardewValleyAICompanion -RuntimeRoot E:\StardewValleyAICompanion-runtime
+Result: PASS
+Summary:
+- Run `runtime-clear-obstacle-smoke-20260711-154213`.
+- Added `executor.clear_obstacle` as a current-location, adjacent-target tool primitive with compiler target-tile validation.
+- Fixture `debug.setup_clear_obstacle` is explicit non-training setup; it placed a removable Grass terrain feature on Farm tile `64,15` and moved the isolated farmer adjacent to it.
+- Runtime `executor.clear_obstacle` selected `MeleeWeapon`, called the terrain feature tool-action path, and verified `before=terrain_feature:Grass;after=clear`.
+- Artifacts: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-obstacle-smoke-20260711-154213\summary.json`.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests|DailyPlanCompilerTests|CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 98 passed
+- Covers `executor.clear_obstacle` target-tile requirement and compiled `clear_obstacle` step.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests: 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Runtime: scripts\Invoke-DailyPlanLiveTrainingLoop.ps1 -RunId runtime-route-to-shop-smoke-20260711-145308 -BridgeSnapshotUrl http://127.0.0.1:8765/api/v1/snapshot?profile=full -CandidateOptions economy.buy_supplies,executor.interact -MaxCandidates 2
+Result: PASS
+Summary:
+- `rows_appended=1`, `execution=real_runtime_executor`, `queue_execution_mode=sequential_queue_items`.
+- Executed queue: already-at-target `move_to_tile`, `interact` Blacksmith map action, `choose_dialogue_response` Blacksmith/Shop, `buy_shop_item`.
+- Purchase verified: `(O)378` copper ore, money `144749 -> 144599`, inventory `(O)378.count 0 -> 1`.
+- Artifacts: `artifacts\daily-plan-live-loop\runs\runtime-route-to-shop-smoke-20260711-145308\live-snapshots\execution-0001.json`.
+
+2026-07-11 targeted watering runtime smoke pass refresh
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeTargetedWateringSmoke.ps1 -RuntimeRoot "E:\StardewValleyAICompanion-runtime"
+Result: PASS
+Summary:
+- Run `runtime-targeted-watering-smoke-20260711-192559`.
+- Current isolated save had no natural `needs_watering=true` crop, so explicit non-training fixture `debug.setup_watering_target` created one at `64,15`.
+- Setup verified `farm.crops[64,15].needs_watering=true`.
+- Targeted executor `farm.maintain_crops` applied only tile `64,15`.
+- `watering_status=applied`, `watering_verification=verified`, `watering_reasons=target_crop_water_state_updated`, `watered_count=1`.
+- `bridge_state_hash_before` and `bridge_state_hash_after` differ, confirming the bridge observed the state mutation.
+- Artifact: `artifacts\runtime-targeted-watering-smoke\runtime-targeted-watering-smoke-20260711-192559\summary.json`.
+
+2026-07-11 single-tile planting runtime smoke pass
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimePlantSeedSmoke.ps1 -RuntimeRoot "E:\StardewValleyAICompanion-runtime"
+Result: PASS
+Summary:
+- Artifact: `artifacts\runtime-plant-seed-smoke\runtime-plant-seed-smoke-20260711-194339\summary.json`
+- Added `executor.plant_seed` as a narrow single-tile planting executor.
+- Added explicit non-training fixture `debug.setup_plant_seed_target`; it prepares an isolated spring Farm HoeDirt tile and seed inventory so runtime can verify the planting primitive independent of the current save season.
+- Transparent `current_location.planting_context` reported `planting_context_allowed_before=true` for tile `64,15` and seed `472`.
+- Runtime `executor.plant_seed` called the game planting path and reported `plant_status=applied`, `plant_verification=verified`.
+- Verification reasons: `target_tile_crop_created`, `seed_stack_decreased`.
+- `bridge_state_hash_before` and `bridge_state_hash_after` differ, confirming the bridge observed the state mutation.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests ActionQueueCompilerTests: 63 passed
+- Covers `executor.plant_seed` target/seed validation and transparent planting-context block.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests BackendEndpointTests: 22 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-11 targeted watering candidate compile pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "DailyPlanCompilerTests|ActionQueueCompilerTests|CandidateOptionAvailabilityEvaluatorTests|EventCandidateRankerTests"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 96 passed
+- `water_crop_tile` daily-plan candidates compile to `maintain_crops` with `target_tile_x/y` and `max_crops=1`.
+- `ActionQueueCompiler` filters crop-maintenance expansion to the requested tile when the plan provides a target crop tile.
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Runtime `ExecuteMaintainCrops` honors optional `target_tile_x/y`, so targeted crop training no longer waters an arbitrary first crop.
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore --filter BackendEndpointTests
+Result: PASS
+Summary:
+- StardewAI.Backend.Tests: 21 passed
+
+Command: dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-07 auto-sell protection reasons pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `protected_from_auto_sell` and `auto_sell_protection_reasons` to `player.inventory` rows.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Sell/shipping executor remains disabled.
+
+2026-07-07 door connector transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `current_location.doors` and `current_location.interior_doors` fields.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No route planner or door executor was enabled.
+
+2026-07-07 protected item audit transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Extended `player.inventory` rows with runtime type, `specialItem`, object type, quest item, big craftable, furniture, and wallpaper flags.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No sell/shipping executor or broad training was enabled.
+
+2026-07-07 local route context transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `current_location.route_context` with local radius collision probes around the player using `GameLocation.isCollidingPosition`.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No route planner, shop-opening executor, or broad training was enabled.
+
+2026-07-07 shop sell context and shipping-bin transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `menus.sell_context` from active `ShopMenu` sell filters and buyback context.
+- Added `farm.shipping_bins` from farm `ShippingBin` buildings and player range checks.
+- `economy.sell_items` now requires `menus.sell_context` and `farm.shipping_bins`.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No sell/shipping executor or broad training was enabled.
+
+2026-07-07 shop action tile transparency pass
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `current_location.shop_action_tiles` transparent field sourced from current map `Action` properties parsed for `OpenShop` and legacy `Buy` shop actions.
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- No shop-opening executor, purchase executor, planting executor, or broad training was enabled.
+
+2026-07-07 seed inventory transparency pass
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 52 passed
+- StardewAI.Backend.Tests: 31 passed
+- Added `player.seed_inventory` transparent field sourced from `Game1.player.Items`, `Object.SeedsCategory`, `Crop.ResolveSeedId`, and `Game1.cropData`.
+- Added `economy.buy_supplies` hard dependency on `player.seed_inventory`.
+- Updated regression test: buy supplies is blocked when crop catalog or seed inventory is missing.
+
+Command: dotnet build "src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+2026-07-12 machine value diagnostics and input reservation pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 207 passed
+- Added transparent machine output/input value diagnostics to candidates, daily-plan parameters, and baseline ranking.
+- Added daily-plan reservation for machine input slots so accepted `load_machine_input_tile` candidates cannot exceed the transparent stack from one inventory slot.
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Bridge item summaries now include `sale_price` for held machine outputs and loadable machine inputs.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 207 passed
+- StardewAI.Backend.Tests: 36 passed
+- No runtime/game smoke was run in this pass; previous machine output/input runtime smokes remain the executor evidence.
+
+2026-07-12 machine data rule-summary transparency pass
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `farm.machines[].machine_data` summary from `Object.GetMachineData()`, including output-rule counts and capped output-rule item summaries where readable.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 207 passed
+- `load_machine_input_tile` candidates now preserve `machine_output_rule_count`, `machine_has_output_rule`, and `machine_output_prediction_status=machine_data_summary_not_input_specific`.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 207 passed
+- StardewAI.Backend.Tests: 36 passed
+- This is rule-summary transparency only; input-specific output prediction remains blocked.
+
+2026-07-12 conservative machine exact-rule prediction pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 208 passed
+- `load_machine_input_tile` candidates now emit predicted output id/stack/sale price/total value when a summarized machine output rule has an exact `required_item_id` match for the transparent input.
+- Ranker uses predicted output net value when present; otherwise it keeps the opportunity-cost fallback.
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 208 passed
+- StardewAI.Backend.Tests: 36 passed
+- Conservative exact-rule prediction only; conditional/copy/preserve/random/additional-consumption machine rules remain blocked.
+
+2026-07-12 conservative machine prediction guard pass
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Machine rule summaries include `minutes_until_ready` when readable.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 209 passed
+- Exact-rule prediction now refuses conditional rules, additional consumed item rules, and copy/preserve derived pricing before emitting predicted value.
+- Conditional-rule regression verifies `machine_data_exact_required_item_match_condition_not_evaluated` and no `predicted_output_total_value`.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 209 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 machine additional-consumed cost pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 210 passed
+- Machine rule summaries now include `additional_consumed_items[]` with item id, amount, sale price, and total value when readable.
+- Exact-rule prediction subtracts `machine_additional_consumed_total_value` and emits `predicted_output_net_value`.
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 210 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 machine copy-price prediction pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 211 passed
+- `copy_price=true` machine output rules now use the transparent input `sale_price` as predicted output sale price.
+- Candidates emit `predicted_output_price_source=copy_price_from_transparent_input_sale_price`.
+- `copy_quality`, `copy_color`, preserve-derived pricing, conditional rules, and random/broad machine strategy remain blocked until explicitly evaluated from game rules.
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 211 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 machine additional-consumed reservation pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 212 passed
+- Exact-rule machine predictions now emit `machine_additional_consumed_items` and `machine_additional_consumed_available` when additional consumed items are transparent and priced.
+- Daily planning reserves those additional consumed stacks so multiple machine-input candidates cannot exceed the transparent available inventory.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 212 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 machine derived-pricing block status split
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 215 passed
+- `copy_quality`, `copy_color`, and preserve-derived output prices now emit separate unavailable statuses instead of one generic copy/preserve block.
+- This is anti-hallucination metadata only; the derived pricing formulas are still not predicted.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 215 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-12 machine native output probe pass
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- Transparent bridge now exposes deterministic `loadable_inputs[].predicted_output` from `MachineDataUtility.GetOutputItem(probe:true)`.
+- Core uses `machine_native_probe_available` outputs before summary-based machine prediction and preserves native sale price, preserve metadata, matched rule id, additional-consumed cost, and net value.
+- Random multi-output and custom output methods remain blocked rather than probed.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-13 fishing transparent candidate/compiler/runtime-executor static closure
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- 259 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- 41 passed
+- 0 failed
+- 0 skipped
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet build tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- `fishing.rod_contexts` feeds rod-bound normal and deterministic special catch candidates through ranking, daily-plan expansion, and queue validation.
+- Mine special fish, area-80 cave-jelly/trash, training-rod trash, ordinary-rule fallback weighting, and base tutorial/trash fallthrough are represented without consuming catch RNG.
+- Higher-priority location override, fish pond, and fish frenzy paths are rechecked by the queue compiler; an exhausted Stardrop Pool reserves its null-result tiles.
+- Unknown item resolvers, unknown/modded location overrides, and the active unresolved Farm redirect distribution fail closed upstream.
+- Runtime catch code uses native casting plus legal BobberBar input state and records the actual caught qualified item.
+- No game process was launched. Isolated E: runtime fishing smoke remains pending and the controller is not yet claimed perfect-human or runtime-verified.
+
+2026-07-13 machine main-thread cache native-probe runtime pass
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Machine input/native output probes now run through a SMAPI main-thread cache rather than inside HTTP snapshot requests.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+
+Command: powershell -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeMachineInputSmoke.ps1 -ProjectRoot I:\StardewValleyAICompanion -RuntimeRoot E:\StardewValleyAICompanion-runtime -StartupTimeoutSeconds 240 -RequireTransparentLoadableInput -RequireNativePredictedOutput
+Result: PASS
+Artifact: artifacts\runtime-machine-input-smoke\runtime-machine-input-smoke-20260713-105444\summary.json
+Summary:
+- setup_status=applied
+- setup_verification=verified
+- machine_present_before=true
+- loadable_input_before=true
+- native_predicted_output_status=available
+- native_predicted_output_source=MachineDataUtility.GetOutputItem(probe:true)
+- native_predicted_output_item_id=(O)346
+- native_predicted_output_sale_price=400
+- native_predicted_output_rule_id=Default_Wheat
+- native_predicted_output_effective_minutes=1750
+- load_status=applied
+- load_verification=verified
+- machine_minutes_after=1750
+- machine_held_after=(O)346
+- state_hash_changed=true
+
+2026-07-13 machine daily-plan input planning boundary smoke
+
+Command: dotnet build tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Runtime fixture now refreshes the transparent machine probe cache after debug setup/load so hidden-window tests do not depend on focus/tick timing.
+
+Command: powershell -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeMachineInputSmoke.ps1 -ProjectRoot I:\StardewValleyAICompanion -RuntimeRoot E:\StardewValleyAICompanion-runtime -StartupTimeoutSeconds 240 -RequireTransparentLoadableInput -RequireNativePredictedOutput
+Result: PASS
+Artifact: artifacts\runtime-machine-input-smoke\runtime-machine-input-smoke-20260713-122831\summary.json
+Summary:
+- setup_status=applied
+- setup_verification=verified
+- loadable_input_before=true
+- native_predicted_output_status=available
+- native_predicted_output_source=MachineDataUtility.GetOutputItem(probe:true)
+- native_predicted_output_rule_id=Default_Wheat
+- load_status=applied
+- load_verification=verified
+- machine_minutes_after=1750
+- machine_held_after=(O)346
+- state_hash_changed=true
+
+Command: powershell -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeMachineDailyPlanSmoke.ps1 -ProjectRoot I:\StardewValleyAICompanion -RuntimeRoot E:\StardewValleyAICompanion-runtime -StartupTimeoutSeconds 240
+Result: PASS
+Artifact: artifacts\runtime-machine-daily-plan-smoke\runtime-machine-daily-plan-smoke-20260713-124008\summary.json
+Summary:
+- profile=training_machine snapshot contained target machine loadable input/native prediction.
+- LiveTrainingLoop wrote one feature row and compiled a pending action queue containing `executor.load_machine_input`.
+- LiveTrainingLoop ran with `--continue-after-blocked-queue-items`, attempted all 12 queue items, and reached the compiled load item even though earlier candidates could block.
+- The compiled load item executed through the real runtime executor with `status=applied` and `primitive_verification_status=verified`.
+- Verification reasons: `machine_input_loaded`, `machine_processing_started_or_output_ready`, `inventory_updated`, `qualified_item_id=(O)262`.
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+
+2026-07-13 refreshed full-handoff A-D slice
+
+Commit A: sleep runtime edge fixes
+
+Command: dotnet test "StardewValleyAICompanion.sln"
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj"
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test "StardewValleyAICompanion.sln" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+
+Command: dotnet build "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Runtime smoke: hidden/silent isolated `executor.sleep`
+Result: PASS
+Artifacts:
+- `artifacts\runtime-sleep-edge-a-launch-response.json`
+- `artifacts\runtime-sleep-edge-a-before-snapshot.json`
+- `artifacts\runtime-sleep-edge-a-execution.json`
+- `artifacts\runtime-sleep-edge-a-after-snapshot.json`
+- `artifacts\runtime-sleep-edge-a-summary.json`
+Summary:
+- Run id: `train.20260713051929.9d61f935`
+- Manifest: `E:\StardewAITraining\runs\train.20260713051929.9d61f935\training-run-manifest.json`
+- `execution_status=applied`
+- `primitive_kind=sleep`
+- `primitive_verification_status=verified`
+- reasons: `sleep_yes_confirmed`, `new_day_observed`, `post_sleep_menu_closed`
+- day `11 -> 12`
+- `state_hash_changed=true`
+- after active menu: `none`
+- cleanup confirmed ports `5108`, `8765`, and `8767` clear
+
+Commit B: machine candidate ordering
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore --filter EventCandidateRankerTests
+Result: PASS
+Summary:
+- 18 passed
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore
+Result: PASS
+Summary:
+- 217 passed
+
+Commit C: after-snapshot daily-plan queue replan
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test "StardewValleyAICompanion.sln" --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 217 passed
+- StardewAI.Backend.Tests: 36 passed
+
+Notes:
+- B raises transparent profitable machine-input ranking enough to beat lower-value ready output while preserving known output over unknown input.
+- C recompiles daily-plan queues from the after snapshot for subsequent real-runtime queue items and records replan artifacts; runtime smoke for this new replan branch is still pending.
+
+2026-07-13 controller rework for B/C
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore --filter CandidateOptionAvailabilityEvaluatorTests
+Result: PASS
+Summary:
+- 54 passed
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore --filter LiveTrainingLoopQueueReplanFilterTests
+Result: PASS
+Summary:
+- 1 passed
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore
+Result: PASS
+Summary:
+- 220 passed
+
+Notes:
+- B rework fixes the controller-observed blocker: machine stand-tile selection excludes every `farm.machines[]` occupied tile and output/input candidates share the same execution-aware selector.
+- Added adjacent-machine row test proving `move_to_adjacent` does not select an occupied machine tile.
+- Added all-adjacent-machine-blocked test proving both output and input candidates become unavailable upstream with `machine_adjacent_stand_tile_occupied_by_machine`.
+- C rework now replans only after blocked/non-continuable items when `--continue-after-blocked-queue-items`, daily-plan mode, and a fresh after snapshot are all present.
+- Added deterministic semantic-identity filter test proving regenerated blocked/completed effects are not duplicated and a different valid remaining item survives.
+
+2026-07-13 controller review 2 C1/C2 and B route-preview correction
+
+Command: dotnet test "tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj" --no-restore --filter "CandidateOptionAvailabilityEvaluatorTests|LiveTrainingLoopQueueReplanFilterTests"
+Result: PASS
+Summary:
+- 62 passed
+
+Command: dotnet build "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+
+Notes:
+- C1: blocked/non-continuable daily-plan items stop the iteration on stale after snapshot instead of continuing the old queue.
+- C2: execution results now persist effective queue id/item and effective before state hash/path/snapshot; training rows and episodes prefer those effective fields.
+- Replan decision tests cover blocked+fresh, blocked+stale, continuable, continue-disabled, non-daily-plan, and executor override cases.
+- B wording/behavior: machine stand-tile selector uses `exploration.visit_location` route path preview when collision-grid route data exists, with lightweight movement probe fallback only when route preview data is unavailable.
+- Added test where nearest unoccupied stand tile is route-unreachable and another adjacent stand tile is selected.
+
+2026-07-13 machine snapshot safety correction and runtime input smoke
+
+Command: dotnet build src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj --no-restore
+Result: PASS
+Summary:
+- 0 warnings
+- 0 errors
+- Added `profile=machine` and narrowed farm reads for that profile to minimal machine rows.
+- Snapshot machine `loadable_inputs[]` is intentionally disabled with `loadable_input_probe_status` because runtime testing showed HTTP read-path probes can time out.
+
+Command: powershell -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeMachineInputSmoke.ps1 -StartupTimeoutSeconds 240
+Result: PASS
+Artifact: artifacts\runtime-machine-input-smoke\runtime-machine-input-smoke-20260713-030848\summary.json
+Summary:
+- setup_status=applied
+- setup_verification=verified
+- load_status=applied
+- load_verification=verified
+- input_slot_index=10
+- machine_minutes_after=1750
+- machine_held_after=(O)346
+- state_hash_changed=true
+- native_predicted_output_required=false
+
+Command: dotnet test StardewValleyAICompanion.sln --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 216 passed
+- StardewAI.Backend.Tests: 36 passed
+2026-07-13 fishing daily-plan real-runtime closure
+
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Invoke-RuntimeFishingDailyPlanSmoke.ps1 -StartupTimeoutSeconds 300
+Result: PASS
+Artifact: artifacts\runtime-fishing-daily-plan-smoke\runtime-fishing-daily-plan-smoke-20260713-170624\summary.json
+Summary:
+- Hidden/silent isolated E: save `自动化_442159967`; no user game process was used.
+- Legal setup route: FarmHouse -> Farm -> BusStop -> Town -> Beach.
+- `executor.move_to_tile` moved Beach `(38,0) -> (44,25)` and returned applied/verified.
+- Native cast reached fishable bobber tile `(44,29)`; BobberBar and fish-hold states were observed.
+- `executor.catch_fish` returned applied/verified and recorded observed `(O)152`.
+- Inventory gained `(O)152`; stamina changed `338 -> 330.1`; one training feature row was written.
+- The stochastic compiled candidate carried `(O)167`; result retained `candidate_item_match=false` and used the observed item as the label.
+
+Command: dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj -c Release --no-restore
+Result: PASS (260 passed)
+
+Command: dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj -c Release --no-restore
+Result: PASS (41 passed)
+
+Commands: Release builds for TransparentBridge, RuntimeTestHarness, and LiveTrainingLoop
+Result: PASS (0 warnings, 0 errors for all three)
+
+Command: PowerShell parser over Invoke-RuntimeFishingDailyPlanSmoke.ps1 and both runtime deployment scripts
+Result: PASS
+
+2026-07-13 fishing aggregate stochastic action closure
+
+Runtime command: `scripts\Invoke-RuntimeFishingDailyPlanSmoke.ps1`
+Result: PASS
+Artifact: `artifacts\runtime-fishing-daily-plan-smoke\runtime-fishing-daily-plan-smoke-20260713-174813\summary.json`
+Summary:
+- One compiler-approved mechanical cast candidate carried a complete canonical distribution of 17 possible qualified item ids.
+- `expected_qualified_item_id` was empty; the model/executor did not preselect a fish.
+- Native runtime observed `(O)152`; the executor itself verified distribution membership and recorded `observed_outcome_in_compiled_distribution` plus `candidate_item_match=unconstrained`.
+- Execution returned `applied/verified`; one training feature row was written.
+- The JSONL row preserves normalized compiler parameters, including the outcome distribution, plus verification reasons, requested/observed effects, and changed facts containing actual `(O)152`.
+
+Command: `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj -c Release --no-restore`
+Result: PASS (261 passed)
+
+Command: `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj -c Release --no-restore`
+Result: PASS (42 passed)
+
+Commands: Release builds for Core, LiveTrainingLoop, and RuntimeTestHarness
+Result: PASS (0 warnings, 0 errors)
+
+2026-07-13 special fishing runtime closure
+
+Runtime: `artifacts\runtime-fishing-frenzy-smoke\runtime-fishing-frenzy-smoke-20260713103210\summary.json`
+Result: PASS; active frenzy `(O)128`, BobberBar observed, singleton distribution, JSONL input/output recorded.
+
+Runtime: `artifacts\runtime-fishing-pond-smoke\runtime-fishing-pond-smoke-20260713104128\summary.json`
+Result: PASS; native-safe pond placement `(70,18)`, no BobberBar, occupants `1 -> 0`, observed `(O)128`.
+
+Runtime: `artifacts\runtime-fishing-mine-area80-smoke\runtime-fishing-mine-area80-smoke-20260713104810\summary.json`
+Result: PASS; native asynchronous entry to `UndergroundMine100`, mine area 80, exact 8-item compiled distribution, observed `(O)168` without BobberBar. Lava Eel branch remains runtime-pending.
+
+Command: `dotnet test StardewValleyAICompanion.sln --no-restore --verbosity minimal`
+Result: PASS; StardewAI.Core.Tests 261, StardewAI.Backend.Tests 42.
+
+Commands: Release builds for TransparentBridge, RuntimeTestHarness, and LiveTrainingLoop
+Result: PASS; 0 warnings, 0 errors for all three.
+
+2026-07-14 SMAPI-native fishing input and main-thread snapshot closure
+
+Commands:
+- dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore
+- dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-restore
+Result: PASS
+Summary:
+- StardewAI.Core.Tests: 399 passed.
+- StardewAI.Backend.Tests: 49 passed.
+- Runtime catch-fish source/contract slice: 9 passed.
+- RuntimeTestHarness and TransparentBridge Debug builds: 0 warnings, 0 errors.
+
+Runtime: artifacts\runtime-fishing-daily-plan-smoke\runtime-fishing-hidden-contract-20260714-153000\summary.json
+Result: PASS
+Summary:
+- Hidden/silent ordinary fishing used native SMAPI input override without replacing `Game1.input`.
+- MAX cast observed: target=1, peak=1, release=1.
+- One hook attempt, native BobberBar success, observed `(O)151`, and idle cleanup verified.
+- Training JSONL preserved the observed item and compiler-approved complete outcome distribution.
+
+Runtime: artifacts\runtime-fishing-daily-plan-smoke\runtime-lava-eel-hidden-hybrid-20260714-155946\summary.json
+Result: PASS
+Summary:
+- Hidden/silent MineShaft 100 fixture used a legal Advanced Iridium Rod with Specific Bait, Curiosity Lure, and Cork Bobber.
+- Native Lava Eel `(O)162` BobberBar succeeded in 567 ticks with in-bar ratio 0.861 and terminal progress 1.
+- The 12-attempt run kept junk/special pulls on the no-BobberBar branch and mapped sparse verified rows back to their exact queue/execution artifacts.
+- SMAPI log remained approximately 7.4 KB with zero ERROR, `InvalidCastException`, `ControlledInputState`, concurrent-collection, or input-dispatch failures.
+
+Runtime safety correction:
+- `/api/v1/snapshot` no longer collects game objects on HTTP worker threads. Requests are queued and collected on SMAPI `UpdateTicked`; HTTP threads only serialize detached snapshots.
+- Fishing smoke uses a purpose-scoped `profile=fishing` containing Backend-required training domains instead of an unrelated full-domain read.

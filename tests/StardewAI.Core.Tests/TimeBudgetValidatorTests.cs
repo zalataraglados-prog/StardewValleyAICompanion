@@ -22,8 +22,9 @@ public sealed class TimeBudgetValidatorTests
         Assert.Equal("perfect_human_player", report.ExecutionProfile);
         Assert.True(report.FitsRequired);
         Assert.Equal("exploration.visit_location", report.Items[0].OptionId);
-        Assert.Equal("mining_perfect_executor.v1", report.Items[0].Estimator);
-        Assert.Contains(report.Items[0].Notes, item => item == "execution_profile_assumes_perfect_human_player_inputs");
+        Assert.Equal("mining_perfect_executor.unimplemented", report.Items[0].Estimator);
+        Assert.Equal(0, report.Items[0].EstimatedMinutes);
+        Assert.Contains(report.Items[0].Notes, item => item == "mining_perfect_executor_not_implemented");
         Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:mining_and_combat"));
         Assert.DoesNotContain(report.BlockReasons, item => item.Contains("danger"));
     }
@@ -90,7 +91,7 @@ public sealed class TimeBudgetValidatorTests
     }
 
     [Fact]
-    public void BlocksRequiredWorkWhenPastUsableDayBudget()
+    public void MiningUnknownDurationDoesNotFabricatePastBudgetBlock()
     {
         var snapshot = Snapshot(2500);
         var output = new MockSmallModelPolicy().Generate(snapshot, "mine to level 40", "training_singleplayer");
@@ -99,8 +100,9 @@ public sealed class TimeBudgetValidatorTests
 
         var report = new TimeBudgetValidator().Validate(model, queue);
 
-        Assert.False(report.FitsRequired);
-        Assert.Contains("required_work_exceeds_time_budget", report.BlockReasons);
+        Assert.True(report.FitsRequired);
+        Assert.DoesNotContain("required_work_exceeds_time_budget", report.BlockReasons);
+        Assert.Equal("mining_perfect_executor.unimplemented", report.Items[0].Estimator);
     }
 
     [Fact]
@@ -132,7 +134,7 @@ public sealed class TimeBudgetValidatorTests
         Assert.True(report.FitsRequired);
         Assert.False(report.FitsRequiredPlusOptional);
         Assert.DoesNotContain("required_work_exceeds_time_budget", report.BlockReasons);
-        Assert.Contains("required_plus_optional_exceeds_time_budget", report.BlockReasons);
+        Assert.Contains("time_budget_contains_unknown_optional_duration", report.BlockReasons);
     }
 
     [Fact]
@@ -195,6 +197,33 @@ public sealed class TimeBudgetValidatorTests
             item.EstimatedMinutes == 20);
     }
 
+    [Fact]
+    public void SocialOptionsUseUnknownDurationSentinelInsteadOfFreeZeroCost()
+    {
+        var snapshot = Snapshot(610);
+        var model = new WorldModelProjector().Project(snapshot, "social plan", "training");
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.social",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            },
+            Items = new[] { Item("social.gift_npc", "required") }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.False(report.FitsRequired);
+        Assert.Equal(-1, Assert.Single(report.Items).EstimatedMinutes);
+        Assert.Contains("time_budget_contains_unknown_duration", report.BlockReasons);
+    }
+
     private static ActionQueueItem Item(string optionId, string role)
     {
         return new ActionQueueItem
@@ -247,7 +276,8 @@ public sealed class TimeBudgetValidatorTests
             "event_stream_websocket": {"value":{"endpoint":"ws://127.0.0.1:8766/api/v1/events/ws"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "collision_grid": {"value":{"Farm":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "collision_grid": {"value":{"Farm":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"unsupported_for_route_training_count":0,"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """, JsonOptions)!;

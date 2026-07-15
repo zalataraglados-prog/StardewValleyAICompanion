@@ -1,5 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 
 namespace StardewAI.Contracts.Training
 {
@@ -85,6 +87,21 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("exclude_from_policy_training")]
         public bool ExcludeFromPolicyTraining { get; set; }
+
+        [JsonPropertyName("normalized_parameters")]
+        public SmallModelActionParameter[] NormalizedParameters { get; set; } = Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("primitive_verification_reasons")]
+        public string[] PrimitiveVerificationReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("requested_effect")]
+        public string RequestedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("observed_effect")]
+        public string ObservedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("changed_facts")]
+        public SimulatedFactChange[] ChangedFacts { get; set; } = Array.Empty<SimulatedFactChange>();
 
         [JsonPropertyName("features")]
         public FeatureVector Features { get; set; } = new();
@@ -203,11 +220,185 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("dataset_path")]
         public string? DatasetPath { get; set; }
 
+        [JsonPropertyName("state_hash")]
+        public string? StateHash { get; set; }
+
+        [JsonPropertyName("include_blocked_options")]
+        public bool IncludeBlockedOptions { get; set; }
+
         [JsonPropertyName("candidate_option_ids")]
         public string[] CandidateOptionIds { get; set; } = Array.Empty<string>();
 
+        [JsonPropertyName("candidates")]
+        public OptionAvailabilityCandidate[] Candidates { get; set; } = Array.Empty<OptionAvailabilityCandidate>();
+
         [JsonPropertyName("training_report")]
         public BaselineTrainingReport? TrainingReport { get; set; }
+    }
+
+    public sealed class AvailabilityAwarePolicyPredictionEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "availability_policy_prediction.v1";
+
+        [JsonPropertyName("prediction")]
+        public PolicyPredictionEnvelope Prediction { get; set; } = new();
+
+        [JsonPropertyName("availability")]
+        public OptionAvailabilityEnvelope Availability { get; set; } = new();
+
+        [JsonPropertyName("ranked_event_candidates")]
+        public PolicyEventCandidatePrediction[] RankedEventCandidates { get; set; } = Array.Empty<PolicyEventCandidatePrediction>();
+    }
+
+    public sealed class DailyPlanCompileRequest
+    {
+        [JsonPropertyName("state_hash")]
+        public string StateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("goal_id")]
+        public string GoalId { get; set; } = "daily.closed_loop";
+
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
+
+        [JsonPropertyName("max_candidates")]
+        public int MaxCandidates { get; set; } = 4;
+
+        [JsonPropertyName("compile_action_queue")]
+        public bool CompileActionQueue { get; set; }
+
+        [JsonPropertyName("ranked_event_candidates")]
+        public PolicyEventCandidatePrediction[] RankedEventCandidates { get; set; } = Array.Empty<PolicyEventCandidatePrediction>();
+    }
+
+    public sealed class PolicyEventCandidatePrediction
+    {
+        [JsonPropertyName("candidate_id")]
+        public string CandidateId { get; set; } = string.Empty;
+
+        [JsonPropertyName("option_id")]
+        public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("kind")]
+        public string Kind { get; set; } = string.Empty;
+
+        [JsonPropertyName("rank")]
+        public int Rank { get; set; }
+
+        [JsonPropertyName("score")]
+        public double Score { get; set; }
+
+        [JsonPropertyName("expected_reward")]
+        public double ExpectedReward { get; set; }
+
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("shop_id")]
+        public string ShopId { get; set; } = string.Empty;
+
+        [JsonPropertyName("slot_index")]
+        public int? SlotIndex { get; set; }
+
+        [JsonPropertyName("quantity")]
+        public int Quantity { get; set; }
+
+        [JsonPropertyName("unit_price")]
+        public int UnitPrice { get; set; }
+
+        [JsonPropertyName("total_value")]
+        public int TotalValue { get; set; }
+
+        [JsonPropertyName("can_ship")]
+        public bool CanShip { get; set; }
+
+        [JsonPropertyName("can_shop_sell")]
+        public bool CanShopSell { get; set; }
+
+        [JsonPropertyName("full_shipment_known")]
+        public bool? FullShipmentKnown { get; set; }
+
+        [JsonPropertyName("full_shipment_eligible")]
+        public bool? FullShipmentEligible { get; set; }
+
+        [JsonPropertyName("full_shipment_current_shipped_count")]
+        public int? FullShipmentCurrentShippedCount { get; set; }
+
+        [JsonPropertyName("full_shipment_already_shipped")]
+        public bool? FullShipmentAlreadyShipped { get; set; }
+
+        [JsonPropertyName("full_shipment_contributes")]
+        public bool? FullShipmentContributes { get; set; }
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tile_x")]
+        public int? TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int? TileY { get; set; }
+
+        [JsonPropertyName("expected_effect")]
+        public string ExpectedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("estimated_ticks")]
+        public int EstimatedTicks { get; set; }
+
+        [JsonPropertyName("energy_cost")]
+        public int EnergyCost { get; set; }
+
+        [JsonPropertyName("availability_class")]
+        public string AvailabilityClass { get; set; } = string.Empty;
+
+        [JsonPropertyName("allowed_now")]
+        public bool? AllowedNow { get; set; }
+
+        [JsonPropertyName("allowed_today")]
+        public bool? AllowedToday { get; set; }
+
+        [JsonPropertyName("next_open_time")]
+        public int? NextOpenTime { get; set; }
+
+        [JsonPropertyName("effective_open_time")]
+        public int? EffectiveOpenTime { get; set; }
+
+        [JsonPropertyName("closes_at")]
+        public int? ClosesAt { get; set; }
+
+        [JsonPropertyName("wait_cost")]
+        public int? WaitCost { get; set; }
+
+        [JsonPropertyName("gate_reasons")]
+        public string[] GateReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("timeline_status")]
+        public string TimelineStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("scheduled_start_time")]
+        public int? ScheduledStartTime { get; set; }
+
+        [JsonPropertyName("scheduled_wait_cost")]
+        public int? ScheduledWaitCost { get; set; }
+
+        [JsonPropertyName("timeline_reasons")]
+        public string[] TimelineReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("block_reasons")]
+        public string[] BlockReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("parameters")]
+        public SmallModelActionParameter[] Parameters { get; set; } = Array.Empty<SmallModelActionParameter>();
     }
 
     public sealed class PolicyPredictionEnvelope

@@ -41,7 +41,7 @@ namespace StardewAI.Core.Execution
                 new[] { "VolcanoDungeon", "Monster", "GameLocation.warps" }),
             Assumption(
                 "fishing",
-                new[] { "exploration.visit_location", "quest.advance" },
+                new[] { "exploration.visit_location", "quest.advance", "fishing.catch_fish", "executor.catch_fish" },
                 new[] { "time_budget", "energy_floor", "fishable_tile", "rod_and_bait_tackle" },
                 new[] { "bite_time", "fish_selection", "fish_difficulty", "treasure_chance", "weather_season_time" },
                 new[] { "missed_bite", "bad_bobber_control", "failed_perfect_catch_due_to_inputs" },

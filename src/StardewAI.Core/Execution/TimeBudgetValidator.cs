@@ -47,11 +47,23 @@ namespace StardewAI.Core.Execution
                 .ToArray();
             var required = items
                 .Where(item => item.ScheduleRole != "optional")
+                .Where(item => item.EstimatedMinutes >= 0)
                 .Sum(item => item.EstimatedMinutes);
             var optional = items
                 .Where(item => item.ScheduleRole == "optional")
+                .Where(item => item.EstimatedMinutes >= 0)
                 .Sum(item => item.EstimatedMinutes);
             var blockReasons = new List<string>();
+            var hasUnknownRequiredDuration = items.Any(item => item.ScheduleRole != "optional" && item.EstimatedMinutes < 0);
+            var hasUnknownOptionalDuration = items.Any(item => item.ScheduleRole == "optional" && item.EstimatedMinutes < 0);
+            if (hasUnknownRequiredDuration)
+            {
+                blockReasons.Add("time_budget_contains_unknown_duration");
+            }
+            if (hasUnknownOptionalDuration)
+            {
+                blockReasons.Add("time_budget_contains_unknown_optional_duration");
+            }
             if (required > available)
             {
                 blockReasons.Add("required_work_exceeds_time_budget");
@@ -71,8 +83,8 @@ namespace StardewAI.Core.Execution
                 AvailableMinutes = available,
                 RequiredMinutes = required,
                 OptionalMinutes = optional,
-                FitsRequired = required <= available,
-                FitsRequiredPlusOptional = required + optional <= available,
+                FitsRequired = !hasUnknownRequiredDuration && required <= available,
+                FitsRequiredPlusOptional = !hasUnknownRequiredDuration && !hasUnknownOptionalDuration && required + optional <= available,
                 ExecutionProfile = PerfectHumanProfile,
                 Items = items,
                 BlockReasons = blockReasons.ToArray()
@@ -85,12 +97,9 @@ namespace StardewAI.Core.Execution
             {
                 foreach (var plan in item.NormalizedCommand.StrategyPlan)
                 {
-                    if (plan.RequiredMinutes > 0)
-                    {
-                        yield return StrategyItem(item, plan, "required", plan.RequiredMinutes);
-                    }
+                    yield return StrategyItem(item, plan, "required", plan.RequiredMinutes);
 
-                    if (plan.OptionalMinutes > 0)
+                    if (plan.OptionalMinutes != 0)
                     {
                         yield return StrategyItem(item, plan, "optional", plan.OptionalMinutes);
                     }
@@ -158,14 +167,18 @@ namespace StardewAI.Core.Execution
                     return Fixed(90, "shop_menu_rule.v1");
                 case "economy.sell_items":
                     return Fixed(30, "shop_menu_rule.v1");
+                case "social.talk_npc":
                 case "social.gift_npc":
-                    return Fixed(90, "navigation_social_rule.v1");
+                    return Unknown("social_duration_unknown_until_route_and_native_executor.v1");
                 case "quest.advance":
-                    return Fixed(120, "quest_rule.v1");
+                    return Unknown("quest_duration_unknown_until_route_and_native_executor_timing");
                 case "recovery.stabilize_day":
                     return Fixed(30, "recovery_rule.v1");
                 case "exploration.visit_location":
                     return EstimateExploration(item);
+                case "fishing.catch_fish":
+                case "executor.catch_fish":
+                    return fishingModel.Estimate(item);
                 default:
                     return Fixed(120, "unknown_option_rule.v1");
             }
@@ -196,6 +209,16 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static DurationEstimate Unknown(string estimator)
+        {
+            return new DurationEstimate
+            {
+                Minutes = -1,
+                Estimator = estimator,
+                Notes = new[] { "duration_unknown_not_rankable_until_route_and_native_executor_timing" }
+            };
+        }
+
         private IEnumerable<string> NotesFor(ActionQueueItem item, DurationEstimate estimate)
         {
             foreach (var note in estimate.Notes)
@@ -222,6 +245,11 @@ namespace StardewAI.Core.Execution
             }
 
             if (activity == "fishing")
+            {
+                return assumptionRegistry.GetRequired("fishing");
+            }
+
+            if (item.OptionId is "fishing.catch_fish" or "executor.catch_fish")
             {
                 return assumptionRegistry.GetRequired("fishing");
             }

@@ -7,6 +7,11 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+
+    <EnableGameDebugging>false</EnableGameDebugging>
+    <EnableModDeploy>false</EnableModDeploy>
+    <EnableModZip>false</EnableModZip>
+    <BundleExtraAssemblies>All</BundleExtraAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +19,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.*" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +30,7 @@
     <ProjectReference Include="..\..\src\StardewAI.Contracts\StardewAI.Contracts.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.Core\StardewAI.Core.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
+    <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
   </ItemGroup>
 
 </Project>

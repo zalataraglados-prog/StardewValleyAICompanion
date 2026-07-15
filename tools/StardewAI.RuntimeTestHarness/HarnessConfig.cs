@@ -15,4 +15,10 @@ public sealed class HarnessConfig
     public string ExecutorHost { get; set; } = "127.0.0.1";
 
     public int ExecutorPort { get; set; } = 8767;
+
+    public int ExecutorRequestTimeoutSeconds { get; set; } = 600;
+
+    public bool UseDirectValidatedMovement { get; set; } = true;
+
+    public bool DisableMovementTimeouts { get; set; }
 }

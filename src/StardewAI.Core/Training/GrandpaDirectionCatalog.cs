@@ -1,0 +1,149 @@
+using System;
+
+namespace StardewAI.Core.Training
+{
+    public sealed class GrandpaDirectionCatalogEntry
+    {
+        public string DirectionId { get; set; } = string.Empty;
+
+        public string BindingRuleId { get; set; } = string.Empty;
+
+        public bool DirectBindingEnabled { get; set; }
+
+        public string[] PermittedOptionIds { get; set; } = Array.Empty<string>();
+
+        public string[] PermittedCandidateKinds { get; set; } = Array.Empty<string>();
+
+        public string[] RequiredTransparentFields { get; set; } = Array.Empty<string>();
+
+        public string[] CoveredTransparentFields { get; set; } = Array.Empty<string>();
+
+        public string[] RequiredCapabilities { get; set; } = Array.Empty<string>();
+
+        public string BlockReasonTemplate { get; set; } = string.Empty;
+
+        public bool CcJojaSensitive { get; set; }
+    }
+
+    public sealed class GrandpaDirectionCatalog
+    {
+        public static readonly GrandpaDirectionCatalogEntry[] Entries = new[]
+        {
+            CreateDirect("earn_money",
+                "grandpa.direct.earn_money",
+                new[] { "economy.sell_items", "economy.ship_items" },
+                new[] { "sell_shop_item", "ship_inventory_item_to_bin" },
+                "Cannot bind sell/ship candidates because required transparent sell/ship fields are unavailable."),
+            CreateDirect("raise_friendships",
+                "grandpa.direct.raise_friendships",
+                new[] { "social.talk_npc", "social.gift_npc" },
+                new[] { "social_talk_current", "social_gift_current" },
+                "Cannot bind social talk/gift candidates because required transparent social fields are unavailable."),
+            CreateDirect("complete_master_angler",
+                "grandpa.direct.complete_master_angler",
+                new[] { "fishing.catch_fish" },
+                new[] { "catch_fish" },
+                "Cannot bind catch_fish candidates because required transparent fishing fields are unavailable."),
+            CreateBlocked("complete_full_shipment",
+                "grandpa.blocked.complete_full_shipment",
+                Array.Empty<string>(),
+                new[] { "NativeShippingCompilerCapability", "NativeInputShippingExecutorCapability", "EndOfDayBasicShippedPostconditionRecorderCapability" },
+                "complete_full_shipment blocked: transparent full_shipment_progress is readable as static typed input; direct binding is disabled until native-input shipping compiler, executor, and end-of-day basicShipped update postcondition recorder exist.",
+                false,
+                new[] { "world_progress.shipping_collection", "world_progress.full_shipment_progress" }),
+            CreateBlocked("raise_skill_levels",
+                "grandpa.blocked.raise_skill_levels",
+                new[] { "player.level", "player.skills_detail" },
+                new[] { "SkillLevelTrackingCapability" },
+                "raise_skill_levels blocked: planned contract gap. Requires transparent skill-level tracking.",
+                false),
+            CreateBlocked("obtain_skull_key",
+                "grandpa.blocked.obtain_skull_key",
+                new[] { "player.has_skull_key", "world_progress.mine_level" },
+                new[] { "SkullKeyAcquisitionCapability" },
+                "obtain_skull_key blocked: planned contract gap. Requires transparent mine-level-120 tracking.",
+                false),
+            CreateBlocked("complete_museum_collection",
+                "grandpa.blocked.complete_museum_collection",
+                new[] { "world_progress.achievements.[5]", "world_progress.museum_items" },
+                new[] { "MuseumCollectionTrackingCapability" },
+                "complete_museum_collection blocked: planned contract gap. Requires transparent museum-items-tracking.",
+                false),
+            CreateBlocked("obtain_rusty_key",
+                "grandpa.blocked.obtain_rusty_key",
+                new[] { "player.has_rusty_key", "world_progress.museum_items" },
+                new[] { "RustyKeyAcquisitionCapability" },
+                "obtain_rusty_key blocked: planned contract gap. Requires transparent museum-donation-tracking.",
+                false),
+            CreateBlocked("complete_community_center",
+                "grandpa.blocked.complete_community_center",
+                new[] { "world_progress.community_center.bundles", "world_progress.community_center.completed" },
+                new[] { "CommunityCenterBundleTrackingCapability" },
+                "complete_community_center blocked: planned contract gap. CC/Joja route commitment is unresolved from transparent state.",
+                true),
+            CreateBlocked("complete_joja_development",
+                "grandpa.blocked.complete_joja_development",
+                new[] { "world_progress.joja_membership", "world_progress.joja_development_progress" },
+                new[] { "JojaDevelopmentTrackingCapability" },
+                "complete_joja_development blocked: planned contract gap. CC/Joja route commitment is unresolved from transparent state.",
+                true),
+            CreateBlocked("marriage_and_house_upgrade",
+                "grandpa.blocked.marriage_and_house_upgrade",
+                new[] { "player.married_or_roommate", "player.farmhouse_upgrade_level", "player.spouse", "npcs.friendships" },
+                new[] { "MarriageEligibilityCapability", "HouseUpgradeTrackingCapability" },
+                "marriage_and_house_upgrade blocked: planned contract gap. Requires transparent spouse/roommate and farmhouse-upgrade tracking.",
+                false),
+            CreateBlocked("earn_pet_love",
+                "grandpa.blocked.earn_pet_love",
+                new[] { "quests.mail_received", "farm.pet", "npcs.pet_friendship" },
+                new[] { "PetLoveTrackingCapability" },
+                "earn_pet_love blocked: planned contract gap. Requires transparent pet-friendship tracking.",
+                false)
+        };
+
+        private static GrandpaDirectionCatalogEntry CreateDirect(
+            string directionId,
+            string bindingRuleId,
+            string[] permittedOptionIds,
+            string[] permittedCandidateKinds,
+            string blockReasonTemplate)
+        {
+            return new GrandpaDirectionCatalogEntry
+            {
+                DirectionId = directionId,
+                BindingRuleId = bindingRuleId,
+                DirectBindingEnabled = true,
+                PermittedOptionIds = permittedOptionIds,
+                PermittedCandidateKinds = permittedCandidateKinds,
+                RequiredTransparentFields = Array.Empty<string>(),
+                RequiredCapabilities = Array.Empty<string>(),
+                BlockReasonTemplate = blockReasonTemplate,
+                CcJojaSensitive = false
+            };
+        }
+
+        private static GrandpaDirectionCatalogEntry CreateBlocked(
+            string directionId,
+            string bindingRuleId,
+            string[] requiredTransparentFields,
+            string[] requiredCapabilities,
+            string blockReasonTemplate,
+            bool ccJojaSensitive,
+            string[]? coveredTransparentFields = null)
+        {
+            return new GrandpaDirectionCatalogEntry
+            {
+                DirectionId = directionId,
+                BindingRuleId = bindingRuleId,
+                DirectBindingEnabled = false,
+                PermittedOptionIds = Array.Empty<string>(),
+                PermittedCandidateKinds = Array.Empty<string>(),
+                RequiredTransparentFields = requiredTransparentFields,
+                CoveredTransparentFields = coveredTransparentFields ?? Array.Empty<string>(),
+                RequiredCapabilities = requiredCapabilities,
+                BlockReasonTemplate = blockReasonTemplate,
+                CcJojaSensitive = ccJojaSensitive
+            };
+        }
+    }
+}

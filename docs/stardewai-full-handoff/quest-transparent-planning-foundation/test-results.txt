@@ -1,0 +1,39 @@
+# Test Results
+
+Validation completed on 2026-07-14 after runtime-test permission was granted.
+
+## Passed Results
+
+- Solution build: passed, 0 errors, 3 existing nullable warnings.
+- Quest contract subset: 81/81 passed.
+- Mining focused regression: 14/14 passed.
+- Core full regression: 399/399 passed.
+- Backend full regression: 46/46 passed.
+- Isolated Bridge runtime acceptance: passed in observer/read-only mode.
+- Live full-profile Quest snapshot: 12 active quests, all mapped fields available.
+- Executor endpoint remained disabled and no action was executed.
+
+TRX artifacts:
+
+- `artifacts/test-results/quest-20260714/quest-contracts-rerun.trx`
+- `artifacts/test-results/full-20260714/mining-final-main.trx`
+- `artifacts/test-results/full-20260714/core-final2.trx`
+- `artifacts/test-results/full-20260714/backend-final2.trx`
+
+Runtime artifacts:
+
+- `artifacts/runtime-quest-read-20260714/`
+- `artifacts/runtime-quest-read-20260714/bridge-acceptance/20260714-131252/`
+
+## Static Review
+
+- Re-read `TASK.md`, `ACCEPTANCE.md`, `APPROVED_QUEST_AUDIT.md`, and `CONTROLLER_REVIEW.md` before implementation.
+- Reviewed decompiled `Quest`, all 11 `Quest` subclasses, `SpecialOrder`, all 9 `OrderObjective` subclasses, all 6 `OrderReward` subclasses under `I:\StardewValleyAICompanion-decompile`.
+- Reviewed code changes statically only.
+- Added focused static tests for runtime-type disambiguation, type-9 subclasses, base Quest, ordinary/special-order separation, missing-field fail-closed behavior, blocked diagnostics, unknown cost, compiler envelope, and quest_plan NormalizedCommand serialization. Tests were not executed.
+
+## Remaining Live Sample
+
+The tested save had zero active special orders. Direct object tests cover populated
+special-order objective/reward mapping, but one future read-only runtime sample with
+an active special order remains useful. No executable quest-action test is implied.

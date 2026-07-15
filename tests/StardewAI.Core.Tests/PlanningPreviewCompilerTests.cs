@@ -33,6 +33,7 @@ namespace StardewAI.Core.Tests
         {
             var snapshot = Snapshot(new[]
             {
+                Fields("time", ("season", "\"spring\""), ("weather", "\"sun\"")),
                 Fields("player", ("location_id", "\"Farm\""), ("energy", "270")),
                 Field("farm", "crops", "[]")
             });

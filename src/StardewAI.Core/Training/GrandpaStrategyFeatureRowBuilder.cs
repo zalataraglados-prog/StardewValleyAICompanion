@@ -138,7 +138,7 @@ namespace StardewAI.Core.Training
             };
         }
 
-        private static int EstimateRequiredMinutes(CandidateDirection direction)
+        public static int EstimateRequiredMinutes(CandidateDirection direction)
         {
             switch (direction.Domain)
             {

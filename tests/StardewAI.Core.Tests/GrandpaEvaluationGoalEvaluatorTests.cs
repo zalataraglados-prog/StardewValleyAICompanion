@@ -24,7 +24,8 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
             worldProgress: """
             {
               "achievements": [5, 26, 34],
-              "community_center": { "location_accessible": true, "completed": true }
+              "community_center": { "location_accessible": true, "completed": true },
+              "joja_membership": false
             }
             """,
             npcs: """

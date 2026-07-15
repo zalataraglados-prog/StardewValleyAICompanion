@@ -1,0 +1,56 @@
+TESTS NOT RUN
+
+Build: NOT RUN
+Test Runner: NOT RUN
+All test definitions below are unrun, pending dotnet test on a real repo with SMAPI-loaded Stardew assemblies.
+
+Per task constraint, no build, test, dotnet, game, or SMAPI command was executed.
+
+Expected test coverage (26 test definitions in FullShipmentContributionTests):
+
+Evaluator snapshot tests (CandidateOptionAvailabilityEvaluator.Evaluate):
+ 1. ShippingCapableMissingEligibleItemHasKnownTrueAndContributesTrue
+ 2. ShippingCapableAlreadyShippedItemDoesNotContribute
+ 3. ShopSellOnlyCandidateNeverContributes
+ 4. KnownIneligibleItemHasEligibleFalseAndContributesFalse
+ 5. MissingFullShipmentProgressFieldYieldsKnownFalseAndContributesFalse
+ 6. MissingCurrentShippedCountYieldsKnownFalse
+ 7. NonnumericCurrentShippedCountYieldsKnownFalse
+ 8. NonpositiveSalePriceProducesCanShipFalseAndContributesFalse
+ 9. StaleOrUnavailableStatusYieldsKnownFalse
+10. MalformedItemsArrayYieldsKnownFalse
+11. DuplicateItemIdsYieldsKnownFalse
+12. EligibleItemCountMismatchYieldsKnownFalse
+13. ShippedBoolMustBeConsistentWithCountOrKnownFalse
+
+Pipeline tests (ranker + binder clone):
+14. EventCandidateRankerCopiesFullShipmentFieldsFromEconomicCandidate
+15. EventCandidateRankerPreservesCanShipAndCanShopSellCorrectly
+16. CloneCandidatePreservesFullShipmentFields
+17. ShopSellOnlyCandidateRankedOnValueSignalButFullShipmentContributesFalse
+
+Static source-guard test (adapter):
+18. AdapterUsesStaticIsPotentialBasicShippedAndNoItemRegistryCreateOrInstanceCall
+
+Catalog and binding tests (CoveredTransparentFields semantics):
+19. FullShipmentDirectionBlockedHasEmptyMissingTransparentFieldsAndCoveredFieldsCatalogued
+20. CatalogCompleteFullShipmentEntryHasCoveredTransparentFieldsAndHonestBlocker
+21. CatalogHas12EntriesAndFullShipmentIsBlocked
+22. CoveredTransparentFieldsResultIsNotAliasedToCatalog
+
+Contract arithmetic / DTO sorting tests:
+23. FullShipmentItemsSortedByItemIdThenQualifiedItemId
+24. FullShipmentProgressCompleteWhenAllEligibleItemsShipped
+25. FullShipmentProgressEmptyWhenNoEligibleItems
+26. MissingItemIdsSortedOrdinally
+
+Total: 26 test definitions (5 added in final correction pass). No Minerals/category -2 "eligible" examples remain.
+All evaluator tests use synthetic snapshots with full_shipment_progress embedded in a field envelope; no SMAPI or game runtime required.
+
+Also updated 1 existing test (BindBlocksUnsupportedDirectionAsPlannedContractGap) to match the corrected catalog message.
+
+Expected command to run after real repo update:
+  dotnet test StardewValleyAICompanion.sln --filter "FullyQualifiedName~FullShipmentContributionTests"
+
+Expected command to run all relevant tests:
+  dotnet test StardewValleyAICompanion.sln

@@ -11,11 +11,20 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("title")]
         public string? Title { get; set; }
 
+        [JsonPropertyName("title_available")]
+        public bool TitleAvailable { get; set; }
+
         [JsonPropertyName("description")]
         public string? Description { get; set; }
 
+        [JsonPropertyName("description_available")]
+        public bool DescriptionAvailable { get; set; }
+
         [JsonPropertyName("current_objective")]
         public string? CurrentObjective { get; set; }
+
+        [JsonPropertyName("current_objective_available")]
+        public bool CurrentObjectiveAvailable { get; set; }
 
         [JsonPropertyName("quest_type")]
         public int QuestType { get; set; }
@@ -34,6 +43,126 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("money_reward")]
         public int MoneyReward { get; set; }
+
+        [JsonPropertyName("reward_description")]
+        public string RewardDescription { get; set; } = string.Empty;
+
+        [JsonPropertyName("show_new")]
+        public bool ShowNew { get; set; }
+
+        [JsonPropertyName("destroy")]
+        public bool Destroy { get; set; }
+
+        [JsonPropertyName("next_quests")]
+        public string[] NextQuests { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("can_be_cancelled")]
+        public bool CanBeCancelled { get; set; }
+
+        [JsonPropertyName("day_quest_accepted")]
+        public int DayQuestAccepted { get; set; }
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("mod_data")]
+        public Dictionary<string, string> ModData { get; set; } = new();
+
+        [JsonPropertyName("obsolete_completion_string")]
+        public string ObsoleteCompletionString { get; set; } = string.Empty;
+
+        [JsonPropertyName("per_type_fields")]
+        public PerTypeQuestFields PerTypeFields { get; set; } = new();
+    }
+
+    public sealed class PerTypeQuestFields
+    {
+        [JsonPropertyName("is_base_quest")]
+        public bool IsBaseQuest { get; set; }
+
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("unavailable_reason")]
+        public string UnavailableReason { get; set; } = string.Empty;
+
+        [JsonPropertyName("unsupported_subtype")]
+        public string UnsupportedSubtype { get; set; } = string.Empty;
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_npc")]
+        public string TargetNpc { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_location")]
+        public string TargetLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_count")]
+        public int TargetCount { get; set; }
+
+        [JsonPropertyName("current_count")]
+        public int CurrentCount { get; set; }
+
+        [JsonPropertyName("monster_name")]
+        public string MonsterName { get; set; } = string.Empty;
+
+        [JsonPropertyName("ignore_farm_monsters")]
+        public bool IgnoreFarmMonsters { get; set; }
+
+        [JsonPropertyName("who_to_greet")]
+        public string[] WhoToGreet { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("total_to_greet")]
+        public int TotalToGreet { get; set; }
+
+        [JsonPropertyName("building_type")]
+        public string BuildingType { get; set; } = string.Empty;
+
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("item_found")]
+        public bool ItemFound { get; set; }
+
+        [JsonPropertyName("friendship_reward")]
+        public int FriendshipReward { get; set; }
+
+        [JsonPropertyName("exclusive_quest_id")]
+        public string ExclusiveQuestId { get; set; } = string.Empty;
+
+        [JsonPropertyName("npc_name")]
+        public string NpcName { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_of_item")]
+        public string LocationOfItem { get; set; } = string.Empty;
+
+        [JsonPropertyName("number_to_kill")]
+        public int NumberToKill { get; set; }
+
+        [JsonPropertyName("number_killed")]
+        public int NumberKilled { get; set; }
+
+        [JsonPropertyName("number_to_fish")]
+        public int NumberToFish { get; set; }
+
+        [JsonPropertyName("number_fished")]
+        public int NumberFished { get; set; }
+
+        [JsonPropertyName("number_collected")]
+        public int NumberCollected { get; set; }
+
+        [JsonPropertyName("number_required")]
+        public int NumberRequired { get; set; }
+
+        [JsonPropertyName("reward")]
+        public int Reward { get; set; }
+
+        [JsonPropertyName("target_message")]
+        public string TargetMessage { get; set; } = string.Empty;
     }
 
     public sealed class CompletedQuestProgressRef
@@ -77,8 +206,71 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("duration")]
         public string? Duration { get; set; }
 
+        [JsonPropertyName("special_rule")]
+        public string SpecialRule { get; set; } = string.Empty;
+
+        [JsonPropertyName("is_island_order")]
+        public int IsIslandOrder { get; set; }
+
+        [JsonPropertyName("applied_special_rules")]
+        public bool AppliedSpecialRules { get; set; }
+
+        [JsonPropertyName("participants")]
+        public Dictionary<long, bool> Participants { get; set; } = new();
+
+        [JsonPropertyName("seen_participants")]
+        public Dictionary<long, bool> SeenParticipants { get; set; } = new();
+
+        [JsonPropertyName("unclaimed_rewards")]
+        public Dictionary<long, bool> UnclaimedRewards { get; set; } = new();
+
+        [JsonPropertyName("donated_items")]
+        public SpecialOrderDonatedItemRef[] DonatedItems { get; set; } = new SpecialOrderDonatedItemRef[0];
+
+        [JsonPropertyName("pre_selected_items")]
+        public Dictionary<string, string> PreSelectedItems { get; set; } = new();
+
+        [JsonPropertyName("selected_random_elements")]
+        public Dictionary<string, int> SelectedRandomElements { get; set; } = new();
+
+        [JsonPropertyName("generation_seed")]
+        public int GenerationSeed { get; set; }
+
+        [JsonPropertyName("ready_for_removal")]
+        public bool ReadyForRemoval { get; set; }
+
+        [JsonPropertyName("item_to_remove_on_end")]
+        public string ItemToRemoveOnEnd { get; set; } = string.Empty;
+
+        [JsonPropertyName("mail_to_remove_on_end")]
+        public string MailToRemoveOnEnd { get; set; } = string.Empty;
+
         [JsonPropertyName("objectives")]
         public SpecialOrderObjectiveProgressRef[] Objectives { get; set; } = new SpecialOrderObjectiveProgressRef[0];
+
+        [JsonPropertyName("rewards")]
+        public SpecialOrderRewardProgressRef[] Rewards { get; set; } = new SpecialOrderRewardProgressRef[0];
+    }
+
+    public sealed class SpecialOrderDonatedItemRef
+    {
+        [JsonPropertyName("is_null_entry")]
+        public bool IsNullEntry { get; set; }
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("stack")]
+        public int Stack { get; set; }
+
+        [JsonPropertyName("quality")]
+        public int Quality { get; set; }
+
+        [JsonPropertyName("mod_data")]
+        public Dictionary<string, string> ModData { get; set; } = new();
     }
 
     public sealed class SpecialOrderObjectiveProgressRef
@@ -91,6 +283,259 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("max_count")]
         public int MaxCount { get; set; }
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("fail_on_completion")]
+        public bool FailOnCompletion { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("per_type_fields")]
+        public PerTypeObjectiveFields PerTypeFields { get; set; } = new();
+    }
+
+    public sealed class PerTypeObjectiveFields
+    {
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("unavailable_reason")]
+        public string UnavailableReason { get; set; } = string.Empty;
+
+        [JsonPropertyName("acceptable_context_tag_sets")]
+        public string[] AcceptableContextTagSets { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("target_name")]
+        public string TargetName { get; set; } = string.Empty;
+
+        [JsonPropertyName("message")]
+        public string Message { get; set; } = string.Empty;
+
+        [JsonPropertyName("drop_box")]
+        public string DropBox { get; set; } = string.Empty;
+
+        [JsonPropertyName("drop_box_game_location")]
+        public string DropBoxGameLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("drop_box_tile_x")]
+        public float DropBoxTileX { get; set; }
+
+        [JsonPropertyName("drop_box_tile_y")]
+        public float DropBoxTileY { get; set; }
+
+        [JsonPropertyName("minimum_capacity")]
+        public int MinimumCapacity { get; set; }
+
+        [JsonPropertyName("confirmed")]
+        public bool Confirmed { get; set; }
+
+        [JsonPropertyName("minimum_like_level")]
+        public string MinimumLikeLevel { get; set; } = string.Empty;
+
+        [JsonPropertyName("skull_cave")]
+        public bool SkullCave { get; set; }
+
+        [JsonPropertyName("use_shipment_value")]
+        public bool UseShipmentValue { get; set; }
+
+        [JsonPropertyName("target_names")]
+        public string[] TargetNames { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("ignore_farm_monsters")]
+        public bool IgnoreFarmMonsters { get; set; }
+    }
+
+    public sealed class SpecialOrderRewardProgressRef
+    {
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("unavailable_reason")]
+        public string UnavailableReason { get; set; } = string.Empty;
+
+        [JsonPropertyName("amount")]
+        public int Amount { get; set; }
+
+        [JsonPropertyName("multiplier")]
+        public float Multiplier { get; set; }
+
+        [JsonPropertyName("target_name")]
+        public string TargetName { get; set; } = string.Empty;
+
+        [JsonPropertyName("no_letter")]
+        public bool NoLetter { get; set; }
+
+        [JsonPropertyName("granted_mails")]
+        public string[] GrantedMails { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("host")]
+        public bool Host { get; set; }
+
+        [JsonPropertyName("item_key")]
+        public string ItemKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("reset_events")]
+        public string[] ResetEvents { get; set; } = System.Array.Empty<string>();
+    }
+
+    public sealed class QuestCandidateRef
+    {
+        [JsonPropertyName("candidate_id")]
+        public string CandidateId { get; set; } = string.Empty;
+
+        [JsonPropertyName("family")]
+        public string Family { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_id")]
+        public string QuestId { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_key")]
+        public string QuestKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("next_action_category")]
+        public string NextActionCategory { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_location")]
+        public string RequiredTargetLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_npc")]
+        public string RequiredTargetNpc { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_item_id")]
+        public string RequiredItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_count")]
+        public int RequiredTargetCount { get; set; }
+
+        [JsonPropertyName("current_progress_count")]
+        public int CurrentProgressCount { get; set; }
+
+        [JsonPropertyName("is_complete")]
+        public bool IsComplete { get; set; }
+
+        [JsonPropertyName("days_remaining")]
+        public int DaysRemaining { get; set; }
+
+        [JsonPropertyName("due_date")]
+        public int DueDate { get; set; }
+
+        [JsonPropertyName("time_cost_unknown")]
+        public bool TimeCostUnknown { get; set; }
+
+        [JsonPropertyName("energy_cost_unknown")]
+        public bool EnergyCostUnknown { get; set; }
+
+        [JsonPropertyName("selected_objective_index")]
+        public int SelectedObjectiveIndex { get; set; } = -1;
+
+        [JsonPropertyName("provenance")]
+        public string Provenance { get; set; } = string.Empty;
+
+        [JsonPropertyName("planning_eligible")]
+        public bool PlanningEligible { get; set; }
+    }
+
+    public sealed class QuestCompilerEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "quest_compiler.v1";
+
+        [JsonPropertyName("selected_candidate_id")]
+        public string SelectedCandidateId { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_quest_id")]
+        public string SelectedQuestId { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_quest_key")]
+        public string SelectedQuestKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_runtime_type")]
+        public string SelectedRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("family")]
+        public string Family { get; set; } = string.Empty;
+
+        [JsonPropertyName("next_action_category")]
+        public string NextActionCategory { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_npc")]
+        public string RequiredTargetNpc { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_location")]
+        public string RequiredTargetLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_item_id")]
+        public string RequiredItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_count")]
+        public int RequiredTargetCount { get; set; }
+
+        [JsonPropertyName("current_progress_count")]
+        public int CurrentProgressCount { get; set; }
+
+        [JsonPropertyName("selected_objective_index")]
+        public int SelectedObjectiveIndex { get; set; } = -1;
+
+        [JsonPropertyName("time_estimate")]
+        public string TimeEstimate { get; set; } = "unknown";
+
+        [JsonPropertyName("energy_cost")]
+        public string EnergyCost { get; set; } = "unknown";
+
+        [JsonPropertyName("executor_block_reason")]
+        public string ExecutorBlockReason { get; set; } = "quest_native_executor_not_implemented";
+
+        [JsonPropertyName("live_evidence")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public QuestCompilerEvidence? LiveEvidence { get; set; }
+    }
+
+    public sealed class QuestCompilerEvidence
+    {
+        [JsonPropertyName("candidate")]
+        public QuestCandidateRef Candidate { get; set; } = new();
+
+        [JsonPropertyName("raw_active_quests")]
+        public QuestProgressRef[] RawActiveQuests { get; set; } = System.Array.Empty<QuestProgressRef>();
+
+        [JsonPropertyName("raw_special_orders")]
+        public SpecialOrderProgressRef[] RawSpecialOrders { get; set; } = System.Array.Empty<SpecialOrderProgressRef>();
+    }
+
+    public sealed class QuestProgressSnapshot
+    {
+        [JsonPropertyName("active_quests")]
+        public QuestProgressRef[] ActiveQuests { get; set; } = System.Array.Empty<QuestProgressRef>();
+
+        [JsonPropertyName("special_orders")]
+        public SpecialOrderProgressRef[] SpecialOrders { get; set; } = System.Array.Empty<SpecialOrderProgressRef>();
+
+        [JsonPropertyName("quest_candidates")]
+        public QuestCandidateRef[] QuestCandidates { get; set; } = System.Array.Empty<QuestCandidateRef>();
+
+        [JsonPropertyName("special_order_candidates")]
+        public QuestCandidateRef[] SpecialOrderCandidates { get; set; } = System.Array.Empty<QuestCandidateRef>();
+
+        [JsonPropertyName("compiler_envelope")]
+        public QuestCompilerEnvelope CompilerEnvelope { get; set; } = new();
     }
 
     public sealed class CommunityCenterProgressRef
@@ -196,5 +641,53 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("qi_room_unlocked")]
         public bool QiRoomUnlocked { get; set; }
+    }
+
+    public sealed class FullShipmentProgressRef
+    {
+        [JsonPropertyName("eligible_item_count")]
+        public int EligibleItemCount { get; set; }
+
+        [JsonPropertyName("shipped_eligible_item_count")]
+        public int ShippedEligibleItemCount { get; set; }
+
+        [JsonPropertyName("missing_item_count")]
+        public int MissingItemCount { get; set; }
+
+        [JsonPropertyName("completion_ratio")]
+        public double CompletionRatio { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("items")]
+        public FullShipmentItemProgressRef[] Items { get; set; } = System.Array.Empty<FullShipmentItemProgressRef>();
+
+        [JsonPropertyName("missing_item_ids")]
+        public string[] MissingItemIds { get; set; } = System.Array.Empty<string>();
+    }
+
+    public sealed class FullShipmentItemProgressRef
+    {
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("category")]
+        public int Category { get; set; }
+
+        [JsonPropertyName("object_type")]
+        public string ObjectType { get; set; } = string.Empty;
+
+        [JsonPropertyName("current_shipped_count")]
+        public int CurrentShippedCount { get; set; }
+
+        [JsonPropertyName("shipped")]
+        public bool Shipped { get; set; }
     }
 }

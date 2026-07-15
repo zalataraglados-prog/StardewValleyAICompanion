@@ -66,6 +66,27 @@ namespace StardewAI.Core.Tests
                 ExecutorCalibration = new ExecutorCalibrationFeedback
                 {
                     ExecutionProfile = "perfect_human_player"
+                },
+                CandidateAudit = new[]
+                {
+                    new SmallModelPlanCandidateAudit
+                    {
+                        CandidateId = "water:Farm:1,2",
+                        Kind = "water_crop_tile",
+                        Decision = "accepted",
+                        Reasons = new[] { "fits_aggregate_budget" },
+                        CandidateMinutes = 1,
+                        CandidateEnergyCost = 2
+                    },
+                    new SmallModelPlanCandidateAudit
+                    {
+                        CandidateId = "water:Farm:3,4",
+                        Kind = "water_crop_tile",
+                        Decision = "skipped",
+                        Reasons = new[] { "aggregate_time_budget_exceeded" },
+                        CandidateMinutes = 1,
+                        CandidateEnergyCost = 2
+                    }
                 }
             };
 
@@ -81,8 +102,15 @@ namespace StardewAI.Core.Tests
             Assert.Equal("calibration_only", row.ActionFeatures.LearningScope);
             Assert.True(row.ActionFeatures.ExcludeFromPolicyTraining);
             Assert.Contains(row.ActionFeatures.Features.Categorical, item => item.Name == "action.training_role" && item.Value == "executor_calibration");
+            Assert.Contains(row.ActionFeatures.Features.Categorical, item => item.Name == "candidate_audit.primary_skip_reason" && item.Value == "aggregate_time_budget_exceeded");
+            Assert.Contains(row.ActionFeatures.Features.Numeric, item => item.Name == "candidate_audit.accepted_count" && item.Value == 1);
+            Assert.Contains(row.ActionFeatures.Features.Numeric, item => item.Name == "candidate_audit.skipped_count" && item.Value == 1);
+            Assert.Contains(row.ActionFeatures.Features.Numeric, item => item.Name == "candidate_audit.skipped_time_budget_count" && item.Value == 1);
+            Assert.Contains(row.ActionFeatures.Features.Numeric, item => item.Name == "candidate_audit.skipped_candidate_minutes_sum" && item.Value == 1);
             Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "action.exclude_from_policy_training" && item.Value);
             Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "action.hard_blocked" && item.Value == false);
+            Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "candidate_audit.present" && item.Value);
+            Assert.Contains(row.ActionFeatures.Features.Boolean, item => item.Name == "candidate_audit.has_time_budget_skip" && item.Value);
             Assert.Equal(0.09, row.Labels.GoalProgressDelta);
             Assert.Equal(0.09, row.Labels.TotalReward, 4);
             Assert.Equal(30, row.Labels.RequiredMinutes);

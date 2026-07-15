@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Concurrent;
 using StardewAI.Contracts.Audit;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Events;
@@ -17,6 +18,9 @@ namespace StardewAI.TransparentBridge;
 
 public sealed class ModEntry : Mod
 {
+    private const uint SnapshotRefreshTickInterval = 120;
+    private const long SnapshotProfileMaxAgeTicks = 30;
+
     private readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -29,12 +33,15 @@ public sealed class ModEntry : Mod
     private readonly List<GameEvent> events = new();
     private readonly object eventLock = new();
     private readonly object snapshotLock = new();
+    private readonly ConcurrentQueue<PendingSnapshotRequest> pendingSnapshotRequests = new();
     private BridgeConfig config = new();
     private TransparentStateCollector? stateCollector;
     private SnapshotEnvelope? latestSnapshot;
+    private readonly Dictionary<string, SnapshotEnvelope> profileSnapshots = new(StringComparer.OrdinalIgnoreCase);
     private string currentStateHash = "unavailable";
     private long nextEventSequence = 1;
     private string latestEventHash = "genesis";
+    private long latestGameTick;
 
     public override void Entry(IModHelper helper)
     {
@@ -42,7 +49,11 @@ public sealed class ModEntry : Mod
         stateCollector = CreateStateCollector(helper);
 
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-        helper.Events.GameLoop.SaveLoaded += (_, _) => PublishEvent("SaveLoaded", new[] { "identity.save_id", "identity.player_id" });
+        helper.Events.GameLoop.SaveLoaded += (_, _) =>
+        {
+            ApplyAiControlSettingsIfConfigured("SaveLoaded");
+            PublishEvent("SaveLoaded", new[] { "identity.save_id", "identity.player_id", "options.ai_control_settings" });
+        };
         helper.Events.GameLoop.DayStarted += (_, _) => PublishEvent("DayStarted", new[] { "time.season", "time.day", "time.weather" });
         helper.Events.GameLoop.TimeChanged += (_, e) => PublishEvent("TimeChanged", new[] { "time.time" }, new { e.OldTime }, new { e.NewTime });
         helper.Events.Player.Warped += (_, e) =>
@@ -67,6 +78,7 @@ public sealed class ModEntry : Mod
                         new_size = change.NewSize
                     }).ToArray()
                 });
+                FarmReadAdapter.RefreshMachineProbeCache();
             }
         };
         helper.Events.Display.MenuChanged += (_, e) => PublishEvent("MenuChanged", new[] { "player.active_menu" }, MenuSummary(e.OldMenu), MenuSummary(e.NewMenu));
@@ -78,7 +90,20 @@ public sealed class ModEntry : Mod
 
     private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
-        if (e.IsMultipleOf(15))
+        Interlocked.Exchange(ref latestGameTick, unchecked((long)Game1.ticks));
+        ProcessPendingSnapshotRequests();
+
+        if (e.IsMultipleOf(60))
+        {
+            ApplyAiControlSettingsIfConfigured("UpdateTicked");
+        }
+
+        if (e.IsMultipleOf(10))
+        {
+            FarmReadAdapter.RefreshMachineProbeCache();
+        }
+
+        if (e.IsMultipleOf(SnapshotRefreshTickInterval))
         {
             RefreshSnapshotCache(publishSnapshotEvent: false);
         }
@@ -86,11 +111,50 @@ public sealed class ModEntry : Mod
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
+        ApplyAiControlSettingsIfConfigured("GameLaunched");
         AddAudit("GameLaunched", new
         {
             Mode = config.PermissionMode,
             config.Host,
-            config.Port
+            config.Port,
+            config.ApplyAiControlSettings
+        });
+    }
+
+    private void ApplyAiControlSettingsIfConfigured(string reason)
+    {
+        if (!config.ApplyAiControlSettings || Game1.options is null)
+        {
+            return;
+        }
+
+        var changed = Game1.options.autoRun != true ||
+            Game1.options.stowingMode != Options.ItemStowingModes.Off ||
+            Game1.options.gamepadMode != Options.GamepadModes.ForceOff ||
+            Game1.options.snappyMenus != false ||
+            Game1.options.invertScrollDirection != false ||
+            Game1.options.pauseWhenOutOfFocus != false;
+
+        Game1.options.autoRun = true;
+        Game1.options.stowingMode = Options.ItemStowingModes.Off;
+        Game1.options.gamepadMode = Options.GamepadModes.ForceOff;
+        Game1.options.snappyMenus = false;
+        Game1.options.invertScrollDirection = false;
+        Game1.options.pauseWhenOutOfFocus = false;
+        if (!changed)
+        {
+            return;
+        }
+
+        AddAudit("AiControlSettingsApplied", new
+        {
+            reason,
+            auto_run = Game1.options.autoRun,
+            stowing_mode = Game1.options.stowingMode.ToString(),
+            gamepad_mode = Game1.options.gamepadMode.ToString(),
+            snappy_menus = Game1.options.snappyMenus,
+            invert_toolbar_scroll_direction = Game1.options.invertScrollDirection,
+            pause_when_out_of_focus = Game1.options.pauseWhenOutOfFocus
         });
     }
 
@@ -154,21 +218,28 @@ public sealed class ModEntry : Mod
     {
         var path = context.Request.Url?.AbsolutePath.TrimEnd('/') ?? "/";
 
-        object response = path switch
+        object response;
+        if (path == "/api/v1/snapshot")
         {
-            "/api/v1/snapshot" => GetLatestSnapshot(),
-            "/api/v1/capabilities" => BuildCapabilities(),
-            "/api/v1/events" => BuildEventStreamResponse(context.Request),
-            "/api/v1/events/ws" => new
+            response = await GetLatestSnapshotAsync(context.Request);
+        }
+        else
+        {
+            response = path switch
             {
-                error = "use_websocket_endpoint",
-                endpoint = $"ws://{config.Host}:{config.WebSocketPort}/api/v1/events/ws",
-                schema_version = "event_stream.v1"
-            },
-            "/api/v1/audit" => audit.TakeLast(200).ToArray(),
-            "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
-            _ => new { error = "not_found", path }
-        };
+                "/api/v1/capabilities" => BuildCapabilities(),
+                "/api/v1/events" => BuildEventStreamResponse(context.Request),
+                "/api/v1/events/ws" => new
+                {
+                    error = "use_websocket_endpoint",
+                    endpoint = $"ws://{config.Host}:{config.WebSocketPort}/api/v1/events/ws",
+                    schema_version = "event_stream.v1"
+                },
+                "/api/v1/audit" => ReadAuditTail(),
+                "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
+                _ => new { error = "not_found", path }
+            };
+        }
 
         context.Response.StatusCode = path is "/api/v1/snapshot" or "/api/v1/capabilities" or "/api/v1/events" or "/api/v1/events/ws" or "/api/v1/audit" or "/" ? 200 : 404;
         context.Response.ContentType = "application/json; charset=utf-8";
@@ -311,17 +382,76 @@ public sealed class ModEntry : Mod
         return header;
     }
 
-    private SnapshotEnvelope GetLatestSnapshot()
+    private async Task<SnapshotEnvelope> GetLatestSnapshotAsync(HttpListenerRequest request)
     {
+        var profile = SnapshotProfile(request);
         lock (snapshotLock)
         {
-            if (latestSnapshot is not null)
+            if (profileSnapshots.TryGetValue(profile, out var cached) && IsSnapshotFresh(cached, Interlocked.Read(ref latestGameTick)))
             {
-                return latestSnapshot;
+                return cached;
             }
         }
 
-        return RefreshSnapshotCache(publishSnapshotEvent: true);
+        var completion = new TaskCompletionSource<SnapshotEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
+        pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(profile, completion));
+        return await completion.Task.WaitAsync(TimeSpan.FromSeconds(180));
+    }
+
+    private static bool IsSnapshotFresh(SnapshotEnvelope snapshot, long currentGameTick)
+    {
+        if (snapshot.State.TryGetValue("player", out var playerElement) &&
+            playerElement.TryGetProperty("location_id", out var locationElement) &&
+            locationElement.TryGetProperty("value", out var valueElement) &&
+            valueElement.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(valueElement.GetString()))
+        {
+            return currentGameTick - snapshot.GameTick <= SnapshotProfileMaxAgeTicks;
+        }
+
+        return currentGameTick - snapshot.GameTick <= SnapshotProfileMaxAgeTicks;
+    }
+
+    private void ProcessPendingSnapshotRequests()
+    {
+        if (pendingSnapshotRequests.IsEmpty)
+        {
+            return;
+        }
+
+        var requests = new List<PendingSnapshotRequest>();
+        while (pendingSnapshotRequests.TryDequeue(out var request))
+        {
+            requests.Add(request);
+        }
+
+        foreach (var group in requests.GroupBy(item => item.Profile, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var currentGameTick = Interlocked.Read(ref latestGameTick);
+                SnapshotEnvelope snapshot;
+                lock (snapshotLock)
+                {
+                    snapshot = profileSnapshots.TryGetValue(group.Key, out var cached) && IsSnapshotFresh(cached, currentGameTick)
+                        ? cached
+                        : RefreshSnapshotCache(group.Key, publishSnapshotEvent: true);
+                }
+
+                foreach (var request in group)
+                {
+                    request.Completion.TrySetResult(snapshot);
+                }
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"Main-thread snapshot collection failed for profile '{group.Key}': {ex}", LogLevel.Error);
+                foreach (var request in group)
+                {
+                    request.Completion.TrySetException(ex);
+                }
+            }
+        }
     }
 
     private CapabilityManifest BuildCapabilities() => new()
@@ -339,7 +469,7 @@ public sealed class ModEntry : Mod
             Capability("read.time", "read", "available", "Game1.currentSeason/dayOfMonth/timeOfDay/weather flags", "vanilla fields only"),
             Capability("read.player", "read", "available", "Game1.player location/tile/facing/money/health/stamina/tool/menu", "local player only"),
             Capability("read.inventory", "read", "available", "Game1.player.Items", "slot summaries only"),
-            Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields", "farm domain summaries; no indoor building traversal"),
+            Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields; live building-door/indoor traversal reads via Building.humanDoor, Building.GetIndoors(), and Building.GetIndoors().warps[0]", "farm domain summaries including transparent building-door connectors and indoor warp arrival tiles"),
             Capability("read.current_location", "read", "available", "Game1.currentLocation public read-only fields", "metadata summaries only; no pathing graph"),
             Capability("read.npcs", "read", "available", "Game1.currentLocation.characters; Game1.player.friendshipData; NPC.Schedule", "current-location NPC positions, friendships, and already-loaded schedules only"),
             Capability("read.quests", "read", "available", "Game1.player.questLog/mail/team special orders; Game1.stats.QuestsCompleted", "completed quest total count is available; historical completed quest ID collection is not present in vanilla state"),
@@ -363,21 +493,30 @@ public sealed class ModEntry : Mod
 
     private void AddAudit(string eventType, object? details = null)
     {
-        audit.Add(new AuditRecord
+        lock (eventLock)
         {
-            EventId = Guid.NewGuid().ToString("N"),
-            EventType = eventType,
-            GameTick = unchecked((long)Game1.ticks),
-            StateHash = currentStateHash,
-            Details = details
-        });
+            audit.Add(new AuditRecord
+            {
+                EventId = Guid.NewGuid().ToString("N"),
+                EventType = eventType,
+                GameTick = unchecked((long)Game1.ticks),
+                StateHash = currentStateHash,
+                Details = details
+            });
+        }
+    }
+
+    private AuditRecord[] ReadAuditTail()
+    {
+        lock (eventLock)
+        {
+            return audit.TakeLast(200).ToArray();
+        }
     }
 
     private void PublishEvent(string eventType, string[] changedFields, object? before = null, object? after = null)
     {
         var beforeHash = currentStateHash;
-        var snapshot = BuildSnapshotWithoutEvent();
-        CacheSnapshot(snapshot, publishSnapshotEvent: false);
         AppendEvent(new GameEvent
         {
             EventId = Guid.NewGuid().ToString("N"),
@@ -388,7 +527,7 @@ public sealed class ModEntry : Mod
             RealTimestamp = DateTimeOffset.UtcNow.ToString("O"),
             Source = "SMAPI event subscription",
             StateHashBefore = beforeHash,
-            StateHashAfter = snapshot.StateHash,
+            StateHashAfter = currentStateHash,
             ChangedFields = changedFields,
             Before = before is null ? null : JsonSerializer.SerializeToElement(before, jsonOptions),
             After = after is null ? null : JsonSerializer.SerializeToElement(after, jsonOptions)
@@ -396,19 +535,33 @@ public sealed class ModEntry : Mod
         AddAudit(eventType, after);
     }
 
-    private SnapshotEnvelope BuildSnapshotWithoutEvent()
+    private SnapshotEnvelope BuildSnapshotWithoutEvent(string profile = "light")
     {
-        return (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot();
+        var previousProfile = SnapshotProfileContext.Current;
+        try
+        {
+            SnapshotProfileContext.Current = profile;
+            return (stateCollector ?? CreateStateCollector(Helper)).BuildSnapshot(AllowedDomainsForProfile(profile));
+        }
+        finally
+        {
+            SnapshotProfileContext.Current = previousProfile;
+        }
     }
 
     private SnapshotEnvelope RefreshSnapshotCache(bool publishSnapshotEvent)
     {
-        var snapshot = BuildSnapshotWithoutEvent();
-        CacheSnapshot(snapshot, publishSnapshotEvent);
+        return RefreshSnapshotCache("light", publishSnapshotEvent);
+    }
+
+    private SnapshotEnvelope RefreshSnapshotCache(string profile, bool publishSnapshotEvent)
+    {
+        var snapshot = BuildSnapshotWithoutEvent(profile);
+        CacheSnapshot(profile, snapshot, publishSnapshotEvent);
         return snapshot;
     }
 
-    private void CacheSnapshot(SnapshotEnvelope snapshot, bool publishSnapshotEvent)
+    private void CacheSnapshot(string profile, SnapshotEnvelope snapshot, bool publishSnapshotEvent)
     {
         if (publishSnapshotEvent)
         {
@@ -419,7 +572,75 @@ public sealed class ModEntry : Mod
         lock (snapshotLock)
         {
             latestSnapshot = snapshot;
+            profileSnapshots[profile] = snapshot;
         }
+    }
+
+    private static string SnapshotProfile(HttpListenerRequest request)
+    {
+        var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
+            ? profile
+            : "light";
+        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "full" ? value : "light";
+    }
+
+    private static ISet<string>? AllowedDomainsForProfile(string profile)
+    {
+        if (string.Equals(profile, "full", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "world",
+            "player",
+            "menus",
+            "options",
+            "unavailable_fields"
+        };
+
+        if (profile is "route" or "shop" or "machine")
+        {
+            domains.Add("current_location");
+            domains.Add("locations");
+        }
+
+        if (profile is "route" or "shop")
+        {
+            domains.Add("npcs");
+        }
+
+        if (profile is "machine")
+        {
+            domains.Add("farm");
+        }
+
+        if (profile is "training_machine")
+        {
+            domains.Add("farm");
+            domains.Add("current_location");
+            domains.Add("npcs");
+            domains.Add("quests_progress");
+            domains.Add("world_progress");
+            domains.Add("mods");
+            domains.Add("modded_state");
+        }
+
+        if (profile is "fishing")
+        {
+            domains.Add("fishing");
+            domains.Add("current_location");
+            domains.Add("locations");
+            domains.Add("farm");
+            domains.Add("npcs");
+            domains.Add("quests_progress");
+            domains.Add("world_progress");
+            domains.Add("mods");
+            domains.Add("modded_state");
+        }
+
+        return domains;
     }
 
     private void PublishSnapshotEvent(SnapshotEnvelope snapshot)
@@ -614,8 +835,12 @@ public sealed class ModEntry : Mod
         {
             new WorldReadAdapter(),
             new PlayerReadAdapter(),
+            new OptionsReadAdapter(config.ApplyAiControlSettings),
             new FarmReadAdapter(),
             new CurrentLocationReadAdapter(),
+            new MiningReadAdapter(),
+            new FishingReadAdapter(),
+            new ShopAccessReadAdapter(),
             new NpcReadAdapter(),
             new ProgressQuestReadAdapter(),
             new WorldProgressReadAdapter(),
@@ -624,4 +849,8 @@ public sealed class ModEntry : Mod
             new ModdedStateReadAdapter(helper.ModRegistry),
             new UnavailableFieldsAdapter(config.Host, config.WebSocketPort)
         });
+
+    private sealed record PendingSnapshotRequest(
+        string Profile,
+        TaskCompletionSource<SnapshotEnvelope> Completion);
 }

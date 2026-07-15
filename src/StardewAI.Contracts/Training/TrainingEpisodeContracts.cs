@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 
@@ -35,6 +36,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("executor_calibration")]
         public ExecutorCalibrationFeedback ExecutorCalibration { get; set; } = new();
+
+        [JsonPropertyName("candidate_audit")]
+        public SmallModelPlanCandidateAudit[] CandidateAudit { get; set; } = Array.Empty<SmallModelPlanCandidateAudit>();
 
         [JsonPropertyName("audit")]
         public TrainingEpisodeAudit Audit { get; set; } = new();
@@ -122,5 +126,116 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("policy")]
         public string Policy { get; set; } = "Strategy value, hard feasibility, and executor calibration are separated to avoid training preference from low-level executor errors.";
+    }
+
+    public sealed class PlanExecutionEpisodeEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "plan_execution_episode.v1";
+
+        [JsonPropertyName("episode_id")]
+        public string EpisodeId { get; set; } = string.Empty;
+
+        [JsonPropertyName("run_id")]
+        public string RunId { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_state_hash")]
+        public string SourceStateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("after_state_hash")]
+        public string AfterStateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("state_hash_changed")]
+        public bool StateHashChanged { get; set; }
+
+        [JsonPropertyName("before_game_tick")]
+        public long BeforeGameTick { get; set; }
+
+        [JsonPropertyName("after_game_tick")]
+        public long AfterGameTick { get; set; }
+
+        [JsonPropertyName("after_snapshot_fresh")]
+        public bool AfterSnapshotFresh { get; set; }
+
+        [JsonPropertyName("after_snapshot_note")]
+        public string AfterSnapshotNote { get; set; } = string.Empty;
+
+        [JsonPropertyName("model_plan_path")]
+        public string ModelPlanPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("compiled_queue_path")]
+        public string CompiledQueuePath { get; set; } = string.Empty;
+
+        [JsonPropertyName("execution_result_path")]
+        public string ExecutionResultPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("before_snapshot_path")]
+        public string BeforeSnapshotPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("after_snapshot_path")]
+        public string AfterSnapshotPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("dataset_path")]
+        public string DatasetPath { get; set; } = string.Empty;
+
+        [JsonPropertyName("row_id")]
+        public string RowId { get; set; } = string.Empty;
+
+        [JsonPropertyName("queue_id")]
+        public string QueueId { get; set; } = string.Empty;
+
+        [JsonPropertyName("option_id")]
+        public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("success")]
+        public bool Success { get; set; }
+
+        [JsonPropertyName("reward")]
+        public double Reward { get; set; }
+
+        [JsonPropertyName("training_role")]
+        public string TrainingRole { get; set; } = "executor_calibration";
+
+        [JsonPropertyName("failure_attribution")]
+        public string FailureAttribution { get; set; } = string.Empty;
+
+        [JsonPropertyName("block_reasons")]
+        public string[] BlockReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("effective_queue_item")]
+        public JsonElement? EffectiveQueueItem { get; set; }
+
+        [JsonPropertyName("primitive_kind")]
+        public string PrimitiveKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("primitive_verification_status")]
+        public string PrimitiveVerificationStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("primitive_verification_reasons")]
+        public string[] PrimitiveVerificationReasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("requested_effect")]
+        public string RequestedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("observed_effect")]
+        public string ObservedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("changed_facts")]
+        public JsonElement ChangedFacts { get; set; }
+
+        [JsonPropertyName("audit")]
+        public PlanExecutionEpisodeAudit Audit { get; set; } = new();
+    }
+
+    public sealed class PlanExecutionEpisodeAudit
+    {
+        [JsonPropertyName("writer")]
+        public string Writer { get; set; } = "StardewAI.LiveTrainingLoop";
+
+        [JsonPropertyName("policy")]
+        public string Policy { get; set; } = "Plan execution episodes preserve model plan, compiled queue, runtime execution result, before/after snapshots, and labels so model training is grounded in execution feedback.";
     }
 }

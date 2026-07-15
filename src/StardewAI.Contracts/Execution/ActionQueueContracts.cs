@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Contracts.Execution
 {
@@ -66,6 +67,114 @@ namespace StardewAI.Contracts.Execution
         public string Value { get; set; } = string.Empty;
     }
 
+    public sealed class SmallModelPlanEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "small_model_plan.v1";
+
+        [JsonPropertyName("plan_id")]
+        public string PlanId { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_model")]
+        public string SourceModel { get; set; } = string.Empty;
+
+        [JsonPropertyName("state_hash")]
+        public string StateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("goal_id")]
+        public string GoalId { get; set; } = string.Empty;
+
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
+
+        [JsonPropertyName("actor")]
+        public ActionActorRef Actor { get; set; } = new();
+
+        [JsonPropertyName("plan_type")]
+        public string PlanType { get; set; } = "mechanical_plan";
+
+        [JsonPropertyName("steps")]
+        public SmallModelPlanStep[] Steps { get; set; } = Array.Empty<SmallModelPlanStep>();
+
+        [JsonPropertyName("candidate_audit")]
+        public SmallModelPlanCandidateAudit[] CandidateAudit { get; set; } = Array.Empty<SmallModelPlanCandidateAudit>();
+    }
+
+    public sealed class SmallModelPlanCandidateAudit
+    {
+        [JsonPropertyName("candidate_id")]
+        public string CandidateId { get; set; } = string.Empty;
+
+        [JsonPropertyName("kind")]
+        public string Kind { get; set; } = string.Empty;
+
+        [JsonPropertyName("decision")]
+        public string Decision { get; set; } = string.Empty;
+
+        [JsonPropertyName("reasons")]
+        public string[] Reasons { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("candidate_minutes")]
+        public int CandidateMinutes { get; set; }
+
+        [JsonPropertyName("candidate_energy_cost")]
+        public int CandidateEnergyCost { get; set; }
+
+        [JsonPropertyName("remaining_minutes_before")]
+        public int? RemainingMinutesBefore { get; set; }
+
+        [JsonPropertyName("remaining_minutes_after")]
+        public int? RemainingMinutesAfter { get; set; }
+
+        [JsonPropertyName("remaining_energy_before")]
+        public int? RemainingEnergyBefore { get; set; }
+
+        [JsonPropertyName("remaining_energy_after")]
+        public int? RemainingEnergyAfter { get; set; }
+    }
+
+    public sealed class SmallModelPlanStep
+    {
+        [JsonPropertyName("step_id")]
+        public string StepId { get; set; } = string.Empty;
+
+        [JsonPropertyName("kind")]
+        public string Kind { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_location")]
+        public string TargetLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_tile_x")]
+        public int? TargetTileX { get; set; }
+
+        [JsonPropertyName("target_tile_y")]
+        public int? TargetTileY { get; set; }
+
+        [JsonPropertyName("direction")]
+        public int? Direction { get; set; }
+
+        [JsonPropertyName("wait_ticks")]
+        public int? WaitTicks { get; set; }
+
+        [JsonPropertyName("estimated_minutes")]
+        public int? EstimatedMinutes { get; set; }
+
+        [JsonPropertyName("preconditions")]
+        public string[] Preconditions { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("expected_effects")]
+        public string[] ExpectedEffects { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("safety_constraints")]
+        public string[] SafetyConstraints { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("failure_policy")]
+        public string[] FailurePolicy { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("parameters")]
+        public SmallModelActionParameter[] Parameters { get; set; } = Array.Empty<SmallModelActionParameter>();
+    }
+
     public sealed class ActionQueueEnvelope
     {
         [JsonPropertyName("schema_version")]
@@ -100,6 +209,9 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("compiler_diagnostics")]
         public string[] CompilerDiagnostics { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("candidate_audit")]
+        public SmallModelPlanCandidateAudit[] CandidateAudit { get; set; } = Array.Empty<SmallModelPlanCandidateAudit>();
 
         [JsonPropertyName("audit")]
         public ActionQueueAudit Audit { get; set; } = new();
@@ -193,6 +305,99 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("strategy_plan")]
         public StrategyPlanStep[] StrategyPlan { get; set; } = Array.Empty<StrategyPlanStep>();
+
+        [JsonPropertyName("social_plan")]
+        public SocialPlanEnvelope? SocialPlan { get; set; }
+
+        [JsonPropertyName("quest_plan")]
+        public QuestPlanEnvelope? QuestPlan { get; set; }
+    }
+
+    public sealed class QuestPlanEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "quest_compiler.v1";
+
+        [JsonPropertyName("selected_candidate_id")]
+        public string SelectedCandidateId { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_quest_id")]
+        public string SelectedQuestId { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_quest_key")]
+        public string SelectedQuestKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("selected_runtime_type")]
+        public string SelectedRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("family")]
+        public string Family { get; set; } = string.Empty;
+
+        [JsonPropertyName("next_action_category")]
+        public string NextActionCategory { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_npc")]
+        public string RequiredTargetNpc { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_location")]
+        public string RequiredTargetLocation { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_item_id")]
+        public string RequiredItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_target_count")]
+        public int RequiredTargetCount { get; set; }
+
+        [JsonPropertyName("current_progress_count")]
+        public int CurrentProgressCount { get; set; }
+
+        [JsonPropertyName("selected_objective_index")]
+        public int SelectedObjectiveIndex { get; set; } = -1;
+
+        [JsonPropertyName("time_estimate")]
+        public string TimeEstimate { get; set; } = "unknown";
+
+        [JsonPropertyName("energy_cost")]
+        public string EnergyCost { get; set; } = "unknown";
+
+        [JsonPropertyName("executor_block_reason")]
+        public string ExecutorBlockReason { get; set; } = "quest_native_executor_not_implemented";
+
+        [JsonPropertyName("live_evidence")]
+        public QuestCompilerEvidence? LiveEvidence { get; set; }
+    }
+
+    public sealed class SocialPlanEnvelope
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "social_plan.v1";
+
+        [JsonPropertyName("action_kind")]
+        public string ActionKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("requested_npc_name")]
+        public string RequestedNpcName { get; set; } = string.Empty;
+
+        [JsonPropertyName("requested_slot_index")]
+        public int? RequestedSlotIndex { get; set; }
+
+        [JsonPropertyName("requested_qualified_item_id")]
+        public string RequestedQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("live_legality_evidence")]
+        public SmallModelActionParameter[] LiveLegalityEvidence { get; set; } = Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("time_route_constraints")]
+        public SmallModelActionParameter[] TimeRouteConstraints { get; set; } = Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("expected_deterministic_outcome")]
+        public SmallModelActionParameter[] ExpectedDeterministicOutcome { get; set; } = Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("required_executor_profile")]
+        public string RequiredExecutorProfile { get; set; } = "social_native_executor.v1";
+
+        [JsonPropertyName("training_recording_contract")]
+        public string[] TrainingRecordingContract { get; set; } = Array.Empty<string>();
     }
 
     public sealed class CompiledActionStep

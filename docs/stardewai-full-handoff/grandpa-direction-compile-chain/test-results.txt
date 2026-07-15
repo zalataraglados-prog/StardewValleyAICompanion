@@ -1,0 +1,46 @@
+# Test Results
+
+## Grandpa Direction Compile Chain - Controller Audit Remediation (2026-07-14)
+
+- Tests were NOT RUN because the user is actively playing (task constraint #9).
+- 25 tests in `GrandpaDirectionCompileChainTests.cs` (rewritten from 16; old tests removed/replaced; 3 added for strategic_goal and optional_minutes validation).
+- Tests are all deterministic; no conditional branches.
+- Tamper tests validate one field mismatch at a time with precise block reason and empty `StrategyPlan`.
+
+## Test Inventory
+
+1. ClassifierDoesNotOutputAutoSelectBestDirection
+2. PolicySelectsKnownUnblockedPositivePotentialDirection
+3. PolicyFailsClosedWhenTargetAlreadyComplete (deterministic)
+4. CompilerRejectsAutoSelectBestDirection (asserts empty StrategyPlan)
+5. CompilerRejectsEmptyDirectionId (asserts empty StrategyPlan)
+6. CompilerRejectsStaleDirectionFromOldSnapshot (asserts empty StrategyPlan)
+7. CompilerRejectsDirectionAbsentFromSnapshotCandidateSet (target-complete snapshot)
+8. ValidPolicyOutputCompilesToStepMatchingRecomputedCandidate (end-to-end equality)
+9. CompilerRejectsDomainMismatch (tamper)
+10. CompilerRejectsPotentialPointsMismatch (tamper)
+11. CompilerRejectsPriorityScoreMismatch (tamper)
+12. CompilerRejectsFeedbackKeyMismatch (tamper)
+13. CompilerRejectsRequiredMinutesMismatch (tamper)
+14. CompilerRejectsOptionalMinutesNonzero (tamper)
+15. CompilerRejectsMissingStrategicGoal (asserts empty StrategyPlan)
+16. CompilerRejectsWrongStrategicGoal (asserts empty StrategyPlan)
+17. CompilerRejectsMissingOptionalMinutes (asserts empty StrategyPlan)
+18. CompilerRejectsHardPreconditionsValue (tamper)
+19. CompilerRejectsResourceBudgetValue (tamper)
+20. CompilerRejectsExecutorHandoffValue (tamper)
+21. All12DirectionIdsAreCoveredByAdapter
+22. DirectionWithUnknownFactorIsNotSelected
+23. BlockedItemHasEmptyStrategyPlan
+24. AllDirectionsPresentInValidSnapshotAreCoveredByAdapter
+25. NonStrategyOptionDoesNotRebuildCandidateSet
+
+## Pending Validation Commands
+
+```powershell
+dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "GrandpaDirectionCompileChainTests"
+dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "MockSmallModelPolicyTests"
+dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "TimeBudgetValidatorTests"
+dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-restore --filter "ActionQueueCompilerTests"
+dotnet test StardewValleyAICompanion.sln --no-restore
+```

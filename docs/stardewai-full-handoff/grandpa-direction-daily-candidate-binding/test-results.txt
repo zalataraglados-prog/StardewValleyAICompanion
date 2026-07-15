@@ -1,0 +1,114 @@
+# test-results.txt - Grandpa Direction Daily Candidate Binding (Final)
+
+## Status: TESTS NOT RUN, BUILD NOT RUN
+
+No test or build was authorized for this revision. Static text edits only.
+
+## Test Inventory
+
+### Catalog Tests
+- [ ] CatalogHas12NonOverlappingEntries
+- [ ] CatalogEntriesArePlanPolicyOnlyNoScoreMetadata
+- [ ] OnlyThreeDirectionsHaveDirectBindingEnabled
+
+### State-Hash Fail-Closed Tests
+- [ ] BindRejectsEmptyStateHash
+- [ ] BindRejectsNullSnapshotWithKnownStateHash
+- [ ] BindRejectsStateHashMismatch
+
+### Rejection/Absence Tests
+- [ ] BindRejectsEmptyDirectionId
+- [ ] BindRejectsUnknownDirectionId
+- [ ] BindRejectsStaleDirectionWhenTargetAlreadyComplete
+- [ ] BindRejectsDirectionAbsentFromCandidateSetWhenTargetComplete
+
+### Blocked Direction Tests (9 non-direct-binding directions)
+- [ ] BindBlocksUnsupportedDirectionAsPlannedContractGap
+- [ ] BindBlocksRaiseSkillLevelsAsPlannedContractGap
+- [ ] BindBlocksObtainSkullKeyAsPlannedContractGap
+- [ ] BindBlocksCompleteMuseumCollectionAsPlannedContractGap
+- [ ] BindBlocksObtainRustyKeyAsPlannedContractGap
+- [ ] BindBlocksCompleteCommunityCenterWithUnresolvedRouteCommitment
+- [ ] BindBlocksCompleteJojaDevelopmentWithUnresolvedRouteCommitment
+- [ ] BindBlocksMarriageAndHouseUpgradeAsPlannedContractGap
+- [ ] BindBlocksEarnPetLoveAsPlannedContractGap
+- [ ] BindNineNonDirectDirectionsAllReturnBlockedWithPlannedRequirements
+
+### CC/Joja Unresolved Tests
+- [ ] BindCcJojaRowsAlwaysReportUnresolvedRouteCommitment
+
+### Direct Binding Tests (earn_money)
+- [ ] BindEarnMoneyNeedsSellOrShipCandidates
+- [ ] BindEarnMoneyBindsSellShipCandidatesWithProvenance
+- [ ] BindEarnMoneyDoesNotClaimGrandpaThresholdReached
+- [ ] BindEarnMoneyRejectsNonSellKinds
+- [ ] BindBlocksNonSellKindsForEarnMoney
+
+### Direct Binding Tests (raise_friendships)
+- [ ] BindRaiseFriendshipsBindsSocialCandidatesWithProvenance
+- [ ] BindRaiseFriendshipsDoesNotPromiseFriendshipPoints
+- [ ] BindHandlesGiftCandidateForRaiseFriendships
+
+### Direct Binding Tests (complete_master_angler)
+- [ ] BindCompleteMasterAnglerBindsCatchFishCandidatesWithProvenance
+- [ ] BindCompleteMasterAnglerDoesNotPromiseSpecificCatchOrAchievement
+
+### Availability Gate Tests
+- [ ] BindSkipsCandidatesWhereAllowedNowIsFalse
+- [ ] BindSkipsCandidatesWhereAllowedTodayIsNotTrue
+- [ ] BindSkipsUnavailableCandidates
+- [ ] BindSkipsBlockedCandidates
+- [ ] BindProvidesRejectionDetailForBlockedCandidate
+
+### BlockReasons Rejection Test
+- [ ] BindRejectsCandidateWithBlockReasonsEvenWhenTimelineNotBlocked
+
+### Candidate Preservation Test
+- [ ] BindPreservesCandidateIdScoreRankExpectedRewardAndActions
+
+### Readiness Tests
+- [ ] BindSingleCandidateIsReadyNotFull
+- [ ] BindHandlesMultipleCandidatesForSameDirection
+
+### Safety Tests
+- [ ] BindPreservesAllSourceCandidateFields
+- [ ] BindDoesNotOverwriteSourceParametersWithProvenance
+- [ ] BindDoesNotFabricateTileItemShopTimeEnergyQuantity
+- [ ] BindEarnMoneyCandidateBindsSourceFieldsWithoutOverwriting
+- [ ] BindClonesCandidateArraysToPreventAliasing
+
+### Provenance Tests
+- [ ] BindDoesNotIncludeDuplicateGrandpaProvenanceParams
+- [ ] BindDoesNotAddProvenanceIfAlreadyPresentOnSourceCandidate
+- [ ] BindPreservesMatchingExistingProvenance
+- [ ] BindRejectsCandidateWithConflictingProvenance
+- [ ] BindRejectsCandidateWithConflictingDirectionIdProvenance
+- [ ] BindRejectsDuplicateMatchingProvenance
+- [ ] BindRejectsDuplicateConflictingProvenance
+- [ ] BindReturnsProvenanceFieldsInResult
+- [ ] BindAuditHasProvenance
+- [ ] BindDirectionMetadataIsSourcedFromAdapterNotCatalog
+
+### Filtering Tests
+- [ ] BindBlocksCandidateWhenOptionIdNotPermitted
+- [ ] BindFarmingCandidateDoesNotMatchAnyDirectBinding
+- [ ] BindMiningCandidateDoesNotMatchEarnMoney
+- [ ] BindQuestCandidateDoesNotMatchEarnMoneyOrRaiseFriendships
+- [ ] BindPurchaseCandidateDoesNotMatchEarnMoney
+- [ ] BindCatchFishCandidateMatchesMasterAnglerButNotEarnMoney
+
+### Handoff Tests
+- [ ] BindBoundCandidateHandoffToDailyPlanCompilerDoesNotFail
+- [ ] BindRejectsStaleStateHashInSourceStateHashPreservation
+- [ ] All12DirectionsExistInCatalogAndCorrespondToAdapter
+
+## Recommended Test Commands
+
+```powershell
+dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBindingTests"
+dotnet test StardewValleyAICompanion.sln --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBinding"
+```
+
+## Build Status
+
+- NOT RUN per task constraints.

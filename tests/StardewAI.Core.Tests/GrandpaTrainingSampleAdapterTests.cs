@@ -138,6 +138,49 @@ public sealed class GrandpaTrainingSampleAdapterTests
         Assert.Equal(1, score.ExampleCount);
     }
 
+    [Fact]
+    public void BuildCoversAllRequiredGrandpaDirections()
+    {
+        var report = new GrandpaEvaluationGoalReport
+        {
+            TargetMet = false,
+            Factors = new[]
+            {
+                Factor("community_center_access_or_completion", "world_progress", known: true, satisfied: false, maxPoints: 1),
+                Factor("community_center_accessible_bonus", "world_progress", known: true, satisfied: false, maxPoints: 2),
+                Factor("joja_development_completed", "world_progress", known: true, satisfied: false, maxPoints: 1),
+                Factor("friendships_5", "social", known: true, satisfied: false, maxPoints: 1),
+                Factor("friendships_10", "social", known: true, satisfied: false, maxPoints: 1),
+                Factor("achievement_full_shipment", "economy", known: true, satisfied: false, maxPoints: 1),
+                Factor("player_level_15", "skills", known: true, satisfied: false, maxPoints: 1),
+                Factor("player_level_25", "skills", known: true, satisfied: false, maxPoints: 1),
+                Factor("married_or_roommate_house_2", "social", known: true, satisfied: false, maxPoints: 1),
+                Factor("achievement_master_angler", "world_progress", known: true, satisfied: false, maxPoints: 1),
+                Factor("achievement_complete_collection", "world_progress", known: true, satisfied: false, maxPoints: 1),
+                Factor("rusty_key", "world_progress", known: true, satisfied: false, maxPoints: 1),
+                Factor("skull_key", "exploration", known: true, satisfied: false, maxPoints: 1),
+                Factor("money_50000", "economy", known: true, satisfied: false, maxPoints: 1),
+                Factor("pet_love", "farm", known: true, satisfied: false, maxPoints: 1)
+            }
+        };
+
+        var sample = new GrandpaTrainingSampleAdapter().Build(new WorldModelEnvelope(), report);
+
+        var directionIds = sample.CandidateDirections.Select(direction => direction.DirectionId).ToArray();
+        Assert.Contains("complete_community_center", directionIds);
+        Assert.Contains("complete_joja_development", directionIds);
+        Assert.Contains("raise_friendships", directionIds);
+        Assert.Contains("complete_full_shipment", directionIds);
+        Assert.Contains("raise_skill_levels", directionIds);
+        Assert.Contains("marriage_and_house_upgrade", directionIds);
+        Assert.Contains("complete_master_angler", directionIds);
+        Assert.Contains("complete_museum_collection", directionIds);
+        Assert.Contains("obtain_rusty_key", directionIds);
+        Assert.Contains("obtain_skull_key", directionIds);
+        Assert.Contains("earn_money", directionIds);
+        Assert.Contains("earn_pet_love", directionIds);
+    }
+
     private static GrandpaEvaluationFactor Factor(string id, string domain, bool known, bool satisfied, int maxPoints)
     {
         return new GrandpaEvaluationFactor
