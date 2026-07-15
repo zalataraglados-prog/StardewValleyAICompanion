@@ -1,4 +1,5 @@
 using StardewValley;
+using StardewValley.Extensions;
 using StardewValley.Locations;
 using SObject = StardewValley.Object;
 

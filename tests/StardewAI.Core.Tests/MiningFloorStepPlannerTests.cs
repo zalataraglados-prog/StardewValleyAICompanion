@@ -139,6 +139,37 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveRespectsExplicitlyEmptyEffectiveDropList()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: "[{\"runtime_identity\":\"special\",\"tile_x\":3,\"tile_y\":2,\"selected_drop_qualified_item_ids\":[\"(O)768\"],\"guaranteed_drop_qualified_item_ids\":[],\"possible_drop_qualified_item_ids\":[],\"has_special_item\":true}]");
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("no_reachable_monster_with_possible_target_drop", plan.Reason);
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveUsesExactSpecialItemPreview()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(W)24" }
+            },
+            monsters: "[{\"runtime_identity\":\"special\",\"tile_x\":3,\"tile_y\":2,\"selected_drop_qualified_item_ids\":[\"(O)768\"],\"guaranteed_drop_qualified_item_ids\":[],\"possible_drop_qualified_item_ids\":[\"(W)24\"],\"current_death_tile_preview_qualified_item_id\":\"(W)24\",\"has_special_item\":true}]");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("(W)24", plan.TargetQualifiedItemId);
+        Assert.Equal("conditional_monster_drop", plan.SourceMatchStatus);
+    }
+
+    [Fact]
     public void ResourceObjectivePicksExistingTargetDebrisBeforeSourceNode()
     {
         var plan = ObjectivePlan(

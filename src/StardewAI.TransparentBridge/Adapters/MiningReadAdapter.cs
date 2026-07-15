@@ -172,6 +172,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         return mine.characters.OfType<Monster>().Select(monster =>
         {
             var box = monster.GetBoundingBox();
+            var drops = MiningMonsterDropResolver.Resolve(mine, monster, Game1.player, box.Center.X / Game1.tileSize, box.Center.Y / Game1.tileSize);
             return new
             {
                 runtime_identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"),
@@ -200,7 +201,14 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
                 center_distance_pixels = Vector2.Distance(box.Center.ToVector2(), Game1.player.GetBoundingBox().Center.ToVector2()),
                 selected_drop_item_ids = monster.objectsToDrop.ToArray(),
-                selected_drop_qualified_item_ids = monster.objectsToDrop.Select(itemId => ItemRegistry.QualifyItemId(itemId) ?? "(O)" + itemId).ToArray(),
+                selected_drop_qualified_item_ids = drops.SelectedBaseDropQualifiedItemIds,
+                guaranteed_drop_qualified_item_ids = drops.GuaranteedDropQualifiedItemIds,
+                conditional_drop_qualified_item_ids = drops.ConditionalDropQualifiedItemIds,
+                possible_drop_qualified_item_ids = drops.PossibleDropQualifiedItemIds,
+                current_death_tile_preview_qualified_item_id = drops.CurrentDeathTilePreviewQualifiedItemId,
+                primary_drop_status = drops.PrimaryDropStatus,
+                drop_item_identity_completeness = drops.ItemIdentityCompleteness,
+                unresolved_dynamic_drop_rules = drops.UnresolvedDynamicRules,
                 has_special_item = monster.hasSpecialItem.Value,
                 contact_damage_readable = true,
                 behavior_observation = new
@@ -209,7 +217,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                     dynamic_replan_required = true,
                     future_ai_path_not_predicted = true
                 },
-                source = "Monster live fields; future AI is handled by after-snapshot replanning, not guessed"
+                source = "Monster live fields; " + drops.Source + "; future AI is handled by after-snapshot replanning, not guessed"
             };
         }).ToArray();
     }

@@ -175,7 +175,7 @@ namespace StardewAI.Core.Execution
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
             {
                 return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds) ??
-                    Blocked("no_reachable_monster_with_selected_target_drop");
+                    Blocked("no_reachable_monster_with_possible_target_drop");
             }
 
             if (objective.Kind == MiningObjectiveKinds.CollectResourceOrArtifact)
@@ -362,10 +362,17 @@ namespace StardewAI.Core.Execution
                 ? new HashSet<string>(targetDropIds, StringComparer.OrdinalIgnoreCase)
                 : null;
             return monsters.EnumerateArray()
-                .Where(monster => targets is null || ReadStrings(monster, "selected_drop_qualified_item_ids").Any(targets.Contains))
-                .Select(monster => new { Monster = monster, Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false) })
+                .Select(monster => new
+                {
+                    Monster = monster,
+                    Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
+                    Guaranteed = ReadStrings(monster, "guaranteed_drop_qualified_item_ids"),
+                    Possible = ReadStringsWithLegacyFallback(monster, "possible_drop_qualified_item_ids", "selected_drop_qualified_item_ids")
+                })
+                .Where(row => targets is null || row.Possible.Any(targets.Contains))
                 .Where(row => row.Candidate is not null)
-                .OrderBy(row => row.Candidate!.Distance)
+                .OrderBy(row => targets is null || row.Guaranteed.Any(targets.Contains) ? 0 : 1)
+                .ThenBy(row => row.Candidate!.Distance)
                 .ThenBy(row => row.Candidate!.TargetY)
                 .ThenBy(row => row.Candidate!.TargetX)
                 .Select(row =>
@@ -376,7 +383,13 @@ namespace StardewAI.Core.Execution
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.TargetQualifiedItemId = targets is null
                         ? string.Empty
-                        : ReadStrings(row.Monster, "selected_drop_qualified_item_ids").FirstOrDefault(targets.Contains) ?? string.Empty;
+                        : row.Possible.FirstOrDefault(targets.Contains) ?? string.Empty;
+                    plan.ExpectedDropQualifiedItemIds = targets is null
+                        ? Array.Empty<string>()
+                        : row.Possible.Where(targets.Contains).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+                    plan.SourceMatchStatus = targets is null
+                        ? string.Empty
+                        : row.Guaranteed.Any(targets.Contains) ? "guaranteed_monster_drop" : "conditional_monster_drop";
                     return plan;
                 })
                 .FirstOrDefault();
@@ -764,6 +777,15 @@ namespace StardewAI.Core.Execution
             return element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Array
                 ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
                 : Array.Empty<string>();
+        }
+
+        private static string[] ReadStringsWithLegacyFallback(JsonElement element, string property, string fallbackProperty)
+        {
+            return element.ValueKind == JsonValueKind.Object &&
+                element.TryGetProperty(property, out var value) &&
+                value.ValueKind == JsonValueKind.Array
+                    ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
+                    : ReadStrings(element, fallbackProperty);
         }
 
         private sealed class ObjectSourceMatch
