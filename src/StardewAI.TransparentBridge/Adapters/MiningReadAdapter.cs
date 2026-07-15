@@ -306,6 +306,10 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             max_energy = player.MaxStamina,
             mining_level = player.MiningLevel,
             combat_level = player.CombatLevel,
+            attack = player.Attack,
+            luck_level = player.LuckLevel,
+            added_speed = player.addedSpeed,
+            professions = player.professions.OrderBy(id => id).ToArray(),
             current_time = Game1.timeOfDay,
             deepest_mine_level = player.deepestMineLevel,
             selected_slot_index = player.CurrentToolIndex,
@@ -315,6 +319,23 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             inventory_capacity = new { max_items = player.maxItems.Value, empty_slots = Math.Max(0, player.maxItems.Value - player.Items.Take(player.maxItems.Value).Count(item => item is not null)) },
             pickaxe_slots = ToolSlots<Pickaxe>(player),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
+            combat_damage_modifiers = new
+            {
+                statue_of_blessings_5_active = player.hasBuff("statue_of_blessings_5"),
+                player_enchantments = player.enchantments.Select(enchantment => new
+                {
+                    runtime_type = enchantment.GetType().FullName,
+                    level = enchantment.Level
+                }).ToArray(),
+                equipped_trinkets = player.trinketItems.Select((trinket, index) => trinket is null ? null : new
+                {
+                    slot_index = index,
+                    item_id = trinket.ItemId,
+                    qualified_item_id = trinket.QualifiedItemId,
+                    runtime_type = trinket.GetType().FullName
+                }).Where(trinket => trinket is not null).ToArray(),
+                formula_status = "raw_live_inputs_for_decompiled_melee_damage_and_on_hit_effects"
+            },
             bomb_counts = CountItems(player, new[] { "(O)286", "(O)287", "(O)288" }),
             staircase_count = CountItem(player, "(O)71"),
             food_slots = player.Items.Select((item, index) => item is StardewValley.Object obj && obj.Edibility > 0 ? FoodSlot(index, obj) : null).Where(item => item is not null).ToArray(),

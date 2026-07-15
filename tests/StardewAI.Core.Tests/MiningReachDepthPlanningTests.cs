@@ -225,6 +225,11 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("min_damage = weapon.minDamage.Value", source, StringComparison.Ordinal);
         Assert.Contains("critical_chance = weapon.critChance.Value", source, StringComparison.Ordinal);
         Assert.Contains("attack_multiplier = player.buffs.AttackMultiplier", source, StringComparison.Ordinal);
+        Assert.Contains("attack = player.Attack", source, StringComparison.Ordinal);
+        Assert.Contains("luck_level = player.LuckLevel", source, StringComparison.Ordinal);
+        Assert.Contains("professions = player.professions.OrderBy", source, StringComparison.Ordinal);
+        Assert.Contains("player_enchantments = player.enchantments.Select", source, StringComparison.Ordinal);
+        Assert.Contains("equipped_trinkets = player.trinketItems.Select", source, StringComparison.Ordinal);
     }
 
     [Fact]
