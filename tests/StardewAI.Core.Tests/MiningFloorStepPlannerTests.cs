@@ -158,6 +158,39 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void ResourceObjectiveInfersSourceFromTransparentGuaranteedDrops()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
+                TargetQualifiedItemIds = new[] { "(O)378" }
+            },
+            objects: "[{\"tile_x\":5,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2,\"guaranteed_drop_qualified_item_ids\":[\"(O)378\"],\"possible_drop_qualified_item_ids\":[\"(O)378\"]}]");
+
+        Assert.Equal(MiningFloorStepKinds.MineStone, plan.StepKind);
+        Assert.Equal("(O)751", plan.TargetQualifiedItemId);
+        Assert.Equal(new[] { "(O)378" }, plan.ExpectedDropQualifiedItemIds);
+        Assert.Equal("guaranteed_drop", plan.SourceMatchStatus);
+    }
+
+    [Fact]
+    public void ResourceObjectivePrefersGuaranteedNodeOverNearerConditionalStone()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
+                TargetQualifiedItemIds = new[] { "(O)378" }
+            },
+            objects: "[{\"tile_x\":2,\"tile_y\":2,\"qualified_item_id\":\"(O)40\",\"best_pickaxe_hits_remaining\":1,\"guaranteed_drop_qualified_item_ids\":[],\"possible_drop_qualified_item_ids\":[\"(O)378\"]},{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2,\"guaranteed_drop_qualified_item_ids\":[\"(O)378\"],\"possible_drop_qualified_item_ids\":[\"(O)378\"]}]");
+
+        Assert.Equal(MiningFloorStepKinds.MineStone, plan.StepKind);
+        Assert.Equal(6, plan.TargetTileX);
+        Assert.Equal("guaranteed_drop", plan.SourceMatchStatus);
+    }
+
+    [Fact]
     public void ResourceToolActionIsInterruptedByImmediateMonsterThreat()
     {
         var plan = ObjectivePlan(

@@ -82,6 +82,10 @@ namespace StardewAI.Core.Execution
 
         public string TargetQualifiedItemId { get; set; } = string.Empty;
 
+        public string[] ExpectedDropQualifiedItemIds { get; set; } = Array.Empty<string>();
+
+        public string SourceMatchStatus { get; set; } = string.Empty;
+
         public int? FoodSlotIndex { get; set; }
 
         public int? DebrisIndex { get; set; }
@@ -194,7 +198,7 @@ namespace StardewAI.Core.Execution
                     return threat;
                 }
 
-                return SelectTargetObject(objects, search, grid, objective.TargetSourceQualifiedItemIds, restoreSlot) ??
+                return SelectTargetObject(objects, search, grid, objective.TargetQualifiedItemIds, objective.TargetSourceQualifiedItemIds, restoreSlot) ??
                     Blocked("no_reachable_target_resource_or_artifact_source");
             }
 
@@ -401,28 +405,86 @@ namespace StardewAI.Core.Execution
                 .FirstOrDefault();
         }
 
-        private static MiningFloorStepPlan? SelectTargetObject(JsonElement objects, SearchResult search, bool[,] grid, string[] sourceIds, int? restoreSlot)
+        private static MiningFloorStepPlan? SelectTargetObject(
+            JsonElement objects,
+            SearchResult search,
+            bool[,] grid,
+            string[] targetDropIds,
+            string[] sourceIds,
+            int? restoreSlot)
         {
-            var targets = new HashSet<string>(sourceIds, StringComparer.OrdinalIgnoreCase);
-            if (targets.Count == 0)
+            var requestedDrops = new HashSet<string>(targetDropIds, StringComparer.OrdinalIgnoreCase);
+            var explicitSources = new HashSet<string>(sourceIds, StringComparer.OrdinalIgnoreCase);
+            if (requestedDrops.Count == 0 && explicitSources.Count == 0)
             {
                 return null;
             }
 
             return objects.EnumerateArray()
-                .Where(obj => targets.Contains(ReadString(obj, "qualified_item_id")))
-                .Select(obj => new { Object = obj, Candidate = TargetCandidate(obj, search, grid, Math.Max(1, ReadInt(obj, "best_pickaxe_hits_remaining") ?? 1), false) })
-                .Where(row => row.Candidate is not null)
-                .OrderBy(row => row.Candidate!.Distance + row.Candidate.Swings)
+                .Select(obj => BuildObjectSourceMatch(obj, requestedDrops, explicitSources, search, grid))
+                .Where(row => row is not null && row.Candidate is not null)
+                .OrderBy(row => row!.MatchRank)
+                .ThenBy(row => row!.Candidate!.Distance + row.Candidate.Swings)
                 .Select(row =>
                 {
-                    var plan = Build(MiningFloorStepKinds.MineStone, "target_resource_or_artifact_source_reachable", row.Candidate!);
+                    var plan = Build(MiningFloorStepKinds.MineStone, "target_resource_or_artifact_source_reachable", row!.Candidate!);
                     plan.TargetQualifiedItemId = ReadString(row.Object, "qualified_item_id");
+                    plan.ExpectedDropQualifiedItemIds = row.MatchedDropIds;
+                    plan.SourceMatchStatus = row.MatchStatus;
                     plan.RestoreSlotIndex = restoreSlot;
                     plan.SafetyWindowStatus = "clear_at_snapshot";
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static ObjectSourceMatch? BuildObjectSourceMatch(
+            JsonElement obj,
+            HashSet<string> requestedDrops,
+            HashSet<string> explicitSources,
+            SearchResult search,
+            bool[,] grid)
+        {
+            var sourceId = ReadString(obj, "qualified_item_id");
+            var guaranteed = new HashSet<string>(ReadStrings(obj, "guaranteed_drop_qualified_item_ids"), StringComparer.OrdinalIgnoreCase);
+            var possible = new HashSet<string>(ReadStrings(obj, "possible_drop_qualified_item_ids"), StringComparer.OrdinalIgnoreCase);
+            var matchedGuaranteed = requestedDrops.Where(guaranteed.Contains).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+            var matchedPossible = requestedDrops.Where(possible.Contains).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+
+            string matchStatus;
+            int matchRank;
+            string[] matchedDropIds;
+            if (explicitSources.Contains(sourceId))
+            {
+                matchStatus = "explicit_source_id";
+                matchRank = 0;
+                matchedDropIds = matchedPossible;
+            }
+            else if (matchedGuaranteed.Length > 0)
+            {
+                matchStatus = "guaranteed_drop";
+                matchRank = 0;
+                matchedDropIds = matchedGuaranteed;
+            }
+            else if (matchedPossible.Length > 0)
+            {
+                matchStatus = "conditional_drop";
+                matchRank = 1;
+                matchedDropIds = matchedPossible;
+            }
+            else
+            {
+                return null;
+            }
+
+            return new ObjectSourceMatch
+            {
+                Object = obj,
+                Candidate = TargetCandidate(obj, search, grid, Math.Max(1, ReadInt(obj, "best_pickaxe_hits_remaining") ?? 1), false),
+                MatchRank = matchRank,
+                MatchStatus = matchStatus,
+                MatchedDropIds = matchedDropIds
+            };
         }
 
         private static MiningFloorStepPlan? SelectDebris(JsonElement debris, SearchResult search, bool[,] grid, string[] targetIds, int? restoreSlot)
@@ -704,6 +766,19 @@ namespace StardewAI.Core.Execution
                 : Array.Empty<string>();
         }
 
+        private sealed class ObjectSourceMatch
+        {
+            public JsonElement Object { get; set; }
+
+            public Candidate? Candidate { get; set; }
+
+            public int MatchRank { get; set; }
+
+            public string MatchStatus { get; set; } = string.Empty;
+
+            public string[] MatchedDropIds { get; set; } = Array.Empty<string>();
+        }
+
         private sealed class SearchResult
         {
             private readonly (int X, int Y) start;
@@ -812,6 +887,8 @@ namespace StardewAI.Core.Execution
             Add(parameters, "expected_arrival_tile_x", plan.ExpectedArrivalTileX);
             Add(parameters, "expected_arrival_tile_y", plan.ExpectedArrivalTileY);
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
+            Add(parameters, "expected_drop_qualified_item_ids", string.Join(",", plan.ExpectedDropQualifiedItemIds));
+            Add(parameters, "source_match_status", plan.SourceMatchStatus);
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
             Add(parameters, "target_name", plan.TargetName);

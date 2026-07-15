@@ -126,6 +126,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             var remainingHealth = breakableStone
                 ? obj.MinutesUntilReady
                 : container ? ReadBreakableContainerHealth((BreakableContainer)obj) : null;
+            var dropProjection = breakableStone ? MiningStoneDropResolver.Resolve(mine, obj, player) : null;
             return new
             {
                 tile_x = (int)pair.Key.X,
@@ -151,8 +152,17 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 best_pickaxe_hits_remaining = breakableStone && remainingHealth.HasValue && pickaxeDamage > 0
                     ? RemainingHits(remainingHealth.Value, pickaxeDamage)
                     : (int?)null,
+                guaranteed_drop_qualified_item_ids = dropProjection?.GuaranteedDropQualifiedItemIds ?? Array.Empty<string>(),
+                conditional_drop_qualified_item_ids = dropProjection?.ConditionalDropQualifiedItemIds ?? Array.Empty<string>(),
+                guaranteed_one_of_qualified_item_id_groups = dropProjection?.GuaranteedOneOfQualifiedItemIdGroups ?? Array.Empty<string[]>(),
+                possible_drop_qualified_item_ids = dropProjection?.PossibleDropQualifiedItemIds ?? Array.Empty<string>(),
+                drop_rule_branch = dropProjection?.RuleBranch ?? "not_breakable_stone",
+                drop_item_identity_completeness = dropProjection?.ItemIdentityCompleteness ?? "not_applicable",
+                drop_probability_status = dropProjection?.ProbabilityStatus ?? "not_applicable",
+                drop_rule_conditions = dropProjection?.AppliedRuleConditions ?? Array.Empty<string>(),
                 ladder_preview = breakableStone ? ReadLadderPreview(mine, pair.Key, player) : null,
-                source = "Object.IsBreakableStone/MinutesUntilReady; Pickaxe.DoFunction; BreakableContainer.health read-only reflection"
+                source = "Object.IsBreakableStone/MinutesUntilReady; Pickaxe.DoFunction; BreakableContainer.health read-only reflection; " +
+                    (dropProjection?.Source ?? "no_stone_drop_projection")
             };
         }).ToArray();
     }
