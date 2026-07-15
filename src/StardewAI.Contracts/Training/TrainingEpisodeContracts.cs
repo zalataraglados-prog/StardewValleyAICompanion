@@ -226,6 +226,57 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("changed_facts")]
         public JsonElement ChangedFacts { get; set; }
 
+        [JsonPropertyName("combat_target_runtime_type")]
+        public string CombatTargetRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_target_runtime_identity")]
+        public string CombatTargetRuntimeIdentity { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_target_name")]
+        public string CombatTargetName { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_attack_count")]
+        public int? CombatAttackCount { get; set; }
+
+        [JsonPropertyName("combat_hit_count")]
+        public int? CombatHitCount { get; set; }
+
+        [JsonPropertyName("combat_target_health_sequence")]
+        public int[] CombatTargetHealthSequence { get; set; } = Array.Empty<int>();
+
+        [JsonPropertyName("combat_player_health_sequence")]
+        public int[] CombatPlayerHealthSequence { get; set; } = Array.Empty<int>();
+
+        [JsonPropertyName("combat_damage_taken")]
+        public int? CombatDamageTaken { get; set; }
+
+        [JsonPropertyName("combat_target_defeated")]
+        public bool? CombatTargetDefeated { get; set; }
+
+        [JsonPropertyName("recovery_food_slot_index")]
+        public int? RecoveryFoodSlotIndex { get; set; }
+
+        [JsonPropertyName("recovery_food_qualified_item_id")]
+        public string RecoveryFoodQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("recovery_food_stack_before")]
+        public int? RecoveryFoodStackBefore { get; set; }
+
+        [JsonPropertyName("recovery_food_stack_after")]
+        public int? RecoveryFoodStackAfter { get; set; }
+
+        [JsonPropertyName("recovery_health_before")]
+        public int? RecoveryHealthBefore { get; set; }
+
+        [JsonPropertyName("recovery_health_after")]
+        public int? RecoveryHealthAfter { get; set; }
+
+        [JsonPropertyName("recovery_restore_slot_index")]
+        public int? RecoveryRestoreSlotIndex { get; set; }
+
+        [JsonPropertyName("recovery_safety_status")]
+        public string RecoverySafetyStatus { get; set; } = string.Empty;
+
         [JsonPropertyName("dialogue_native_handled")]
         public bool? DialogueNativeHandled { get; set; }
 

@@ -174,6 +174,8 @@ namespace StardewAI.Core.Execution
                     return Unknown("quest_duration_unknown_until_route_and_native_executor_timing");
                 case "recovery.stabilize_day":
                     return Fixed(30, "recovery_rule.v1");
+                case "mining.reach_depth":
+                    return miningModel.Estimate(item);
                 case "exploration.visit_location":
                     return EstimateExploration(item);
                 case "fishing.catch_fish":

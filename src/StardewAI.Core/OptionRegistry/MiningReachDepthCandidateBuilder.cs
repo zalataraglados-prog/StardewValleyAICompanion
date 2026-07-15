@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.OptionRegistry
 {
@@ -45,26 +46,35 @@ namespace StardewAI.Core.OptionRegistry
             var deepestMineLevel = ReadIntOptional(resources.Value, "deepest_mine_level");
             var blocks = ValidateTarget(currentDepth, currentFamily, targetDepth, targetFamily).ToList();
             var elevatorStart = ElevatorStartFor(currentDepth, targetDepth, currentFamily, deepestMineLevel);
-            if (!elevatorStart.HasValue)
-            {
-                blocks.Add("elevator_unlock_state_unavailable_or_inapplicable");
-            }
-            if (minReserveHealth.HasValue && ReadInt(resources.Value, "health") <= minReserveHealth.Value)
-            {
-                blocks.Add("minimum_reserve_health_not_met");
-            }
-
             if (minReserveEnergy.HasValue && ReadDouble(resources.Value, "energy") <= minReserveEnergy.Value)
             {
                 blocks.Add("minimum_reserve_energy_not_met");
             }
 
-            blocks.Add("mining_cost_estimate_unavailable");
-
             if (latestExitTime.HasValue && ReadInt(resources.Value, "current_time") >= latestExitTime.Value)
             {
                 blocks.Add("latest_exit_time_already_reached");
             }
+
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.ReachDepth,
+                MinimumReserveHealth = minReserveHealth ?? 0
+            });
+            var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
+            if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
+            {
+                blocks.Add(floorStep.Reason);
+            }
+            else if (string.IsNullOrWhiteSpace(executionOptionId))
+            {
+                blocks.Add(floorStep.StepKind == MiningFloorStepKinds.DescendLadder
+                    ? "mining_descend_ladder_executor_not_implemented"
+                    : "mining_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
+
+            var available = blocks.Count == 0;
+            var executionParameters = MiningFloorStepCompiler.BuildExecutionParameters(floorStep);
 
             return new[]
             {
@@ -72,12 +82,12 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     CandidateId = "mining:reach_depth:" + (targetDepth?.ToString() ?? "missing"),
                     Kind = "mining_reach_depth_plan_envelope",
-                    Available = false,
+                    Available = available,
                     LocationId = ReadString(currentMine.Value, "location_id"),
-                    ExpectedEffect = "current_depth=" + currentDepth + ";target_depth=" + (targetDepth?.ToString() ?? "missing") + ";cost_estimate=unknown;runtime_queue_blocked=mining_perfect_executor_not_implemented",
+                    ExpectedEffect = "current_depth=" + currentDepth + ";target_depth=" + (targetDepth?.ToString() ?? "missing") + ";rolling_floor_step=" + floorStep.StepKind + ";execution_option_id=" + executionOptionId,
                     EstimatedTicks = -1,
                     EnergyCost = -1,
-                    AvailabilityClass = "blocked_cost_unknown_runtime_boundary",
+                    AvailabilityClass = available ? "available_rolling_horizon_floor_step" : "blocked_current_floor_step",
                     BlockReasons = blocks.Distinct(StringComparer.Ordinal).ToArray(),
                     Parameters = new[]
                     {
@@ -88,10 +98,10 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("latest_exit_time", latestExitTime?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_health", minReserveHealth?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_energy", minReserveEnergy?.ToString() ?? string.Empty),
-                        Parameter("estimate_status", "unknown_until_mining_perfect_executor"),
+                        Parameter("estimate_status", "rolling_horizon_current_floor_step"),
                         Parameter("required_executor_profile", "mining_perfect_executor"),
-                        Parameter("runtime_boundary", "mining_perfect_executor_not_implemented")
-                    }
+                        Parameter("runtime_boundary", available ? "current_floor_step_executable" : floorStep.Reason)
+                    }.Concat(executionParameters).ToArray()
                 }
             };
         }

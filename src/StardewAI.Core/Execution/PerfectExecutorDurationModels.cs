@@ -20,12 +20,12 @@ namespace StardewAI.Core.Execution
         {
             return new DurationEstimate
             {
-                Minutes = 0,
-                Estimator = "mining_perfect_executor.unimplemented",
+                Minutes = -1,
+                Estimator = "mining_perfect_executor.runtime_calibration_pending",
                 Notes = new[]
                 {
-                    "mining_perfect_executor_not_implemented",
-                    "duration_and_energy_unknown_until_decompile_backed_executor_model_exists",
+                    "rolling_floor_step_executor_implemented",
+                    "full_objective_duration_unknown_until_multi_floor_runtime_calibration_exists",
                     "no arbitrary timing, ladder probability, or energy constants applied"
                 }
             };

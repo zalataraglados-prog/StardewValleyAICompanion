@@ -474,8 +474,9 @@ static TrainingExecutionRequest BuildExecutionRequest(
     string stateHash,
     string queueId)
 {
+    var compiledExecutionOptionId = ReadQueueParameterString(item, "execution_option_id");
     var optionId = string.IsNullOrWhiteSpace(options.ExecutorOptionId)
-        ? ReadStringOrEmpty(item, "option_id")
+        ? string.IsNullOrWhiteSpace(compiledExecutionOptionId) ? ReadStringOrEmpty(item, "option_id") : compiledExecutionOptionId
         : options.ExecutorOptionId;
     var queueItemId = ReadStringOrEmpty(item, "queue_item_id");
     if (string.IsNullOrWhiteSpace(queueItemId))
@@ -500,6 +501,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
 
     var targetTileX = options.TargetTileX ?? ReadQueueParameterInt(item, "target_tile_x");
     var targetTileY = options.TargetTileY ?? ReadQueueParameterInt(item, "target_tile_y");
+    var targetRuntimeType = ReadQueueParameterString(item, "target_runtime_type");
+    var targetRuntimeIdentity = ReadQueueParameterString(item, "target_runtime_identity");
+    var targetName = ReadQueueParameterString(item, "target_name");
+    var maxAttacks = ReadQueueParameterInt(item, "max_attacks");
     var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
     var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
     var maxCrops = ReadQueueParameterInt(item, "max_crops") ?? ReadQueueParameterInt(item, "max_tool_swings");
@@ -540,6 +545,22 @@ static TrainingExecutionRequest BuildExecutionRequest(
     {
         executionRequest.TargetTileX = targetTileX.Value;
         executionRequest.TargetTileY = targetTileY.Value;
+    }
+    if (!string.IsNullOrWhiteSpace(targetRuntimeType))
+    {
+        executionRequest.TargetRuntimeType = targetRuntimeType;
+    }
+    if (!string.IsNullOrWhiteSpace(targetRuntimeIdentity))
+    {
+        executionRequest.TargetRuntimeIdentity = targetRuntimeIdentity;
+    }
+    if (!string.IsNullOrWhiteSpace(targetName))
+    {
+        executionRequest.TargetName = targetName;
+    }
+    if (maxAttacks.HasValue)
+    {
+        executionRequest.MaxAttacks = maxAttacks.Value;
     }
     if (direction.HasValue)
     {
@@ -860,6 +881,9 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
                     Number("execution.water_after", ReadInt(execution, "water_after")),
                     Number("execution.estimated_ticks", ReadInt(execution, "estimated_ticks")),
                     Number("execution.actual_ticks", ReadInt(execution, "actual_ticks")),
+                    Number("combat.attack_count", ReadInt(execution, "combat_attack_count")),
+                    Number("combat.hit_count", ReadInt(execution, "combat_hit_count")),
+                    Number("combat.damage_taken", ReadInt(execution, "combat_damage_taken")),
                     Number("fishing.target_casting_power", ReadChangedFactDouble(execution, "fishing.target_casting_power")),
                     Number("fishing.observed_peak_casting_power", ReadChangedFactDouble(execution, "fishing.observed_peak_casting_power")),
                     Number("fishing.observed_release_casting_power", ReadChangedFactDouble(execution, "fishing.observed_release_casting_power")),
@@ -893,6 +917,7 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
                     Flag("action.exclude_from_policy_training", true),
                     Flag("execution.primitive_verified", primitiveVerified),
                     Flag("execution.after_snapshot_fresh", afterSnapshotFresh),
+                    Flag("combat.target_defeated", execution["combat_target_defeated"]?.GetValue<bool>() == true),
                     Flag("fishing.max_cast_requested", ReadChangedFactBool(execution, "fishing.max_cast_requested")),
                     Flag("fishing.max_cast_observed", ReadChangedFactBool(execution, "fishing.max_cast_observed")),
                     Flag("fishing.action_idle_cleanup_complete", ReadChangedFactBool(execution, "fishing.action_idle_cleanup_complete"))
@@ -996,6 +1021,23 @@ static void WritePlanExecutionEpisode(
         ChangedFacts = execution["changed_facts"] is null
             ? JsonDocument.Parse("[]").RootElement.Clone()
             : JsonSerializer.Deserialize<JsonElement>(execution["changed_facts"]!.ToJsonString()),
+        CombatTargetRuntimeType = ReadString(execution, "combat_target_runtime_type"),
+        CombatTargetRuntimeIdentity = ReadString(execution, "combat_target_runtime_identity"),
+        CombatTargetName = ReadString(execution, "combat_target_name"),
+        CombatAttackCount = execution["combat_attack_count"]?.GetValue<int>(),
+        CombatHitCount = execution["combat_hit_count"]?.GetValue<int>(),
+        CombatTargetHealthSequence = ReadArrayInts(execution, "combat_target_health_sequence"),
+        CombatPlayerHealthSequence = ReadArrayInts(execution, "combat_player_health_sequence"),
+        CombatDamageTaken = execution["combat_damage_taken"]?.GetValue<int>(),
+        CombatTargetDefeated = execution["combat_target_defeated"]?.GetValue<bool>(),
+        RecoveryFoodSlotIndex = execution["recovery_food_slot_index"]?.GetValue<int>(),
+        RecoveryFoodQualifiedItemId = ReadString(execution, "recovery_food_qualified_item_id"),
+        RecoveryFoodStackBefore = execution["recovery_food_stack_before"]?.GetValue<int>(),
+        RecoveryFoodStackAfter = execution["recovery_food_stack_after"]?.GetValue<int>(),
+        RecoveryHealthBefore = execution["recovery_health_before"]?.GetValue<int>(),
+        RecoveryHealthAfter = execution["recovery_health_after"]?.GetValue<int>(),
+        RecoveryRestoreSlotIndex = execution["recovery_restore_slot_index"]?.GetValue<int>(),
+        RecoverySafetyStatus = ReadString(execution, "recovery_safety_status"),
         DialogueNativeHandled = execution["dialogue_native_handled"]?.GetValue<bool>(),
         DialoguePressAttempts = execution["dialogue_press_attempts"]?.GetValue<int>(),
         DialogueAdvanceTicks = execution["dialogue_advance_ticks"]?.GetValue<int>(),
@@ -1278,6 +1320,14 @@ static string[] ReadArrayStrings(JsonObject value, string property)
         .Select(item => item?.GetValue<string>() ?? string.Empty)
         .Where(item => item.Length > 0)
         .ToArray();
+}
+
+static int[] ReadArrayInts(JsonObject value, string property)
+{
+    var array = value[property]?.AsArray();
+    return array is null
+        ? Array.Empty<int>()
+        : array.Select(item => item?.GetValue<int>() ?? 0).ToArray();
 }
 
 static NumericFeature Number(string name, double value)

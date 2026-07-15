@@ -1,5 +1,7 @@
 # Risk
 
+Current-status correction: combat, natural pickup, food recovery, ladder descent, and after-snapshot rolling compilation are now implemented. The older blocked-executor statements below describe the foundation slice, not current main.
+
 ## Risk Level
 
 - Read-side risk is low after isolated E: validation of compact collision and non-empty object/monster rows.
@@ -17,5 +19,5 @@
 
 - Candidate generation fails closed when any required mining group or nested required fact is missing, stale, errored, or unavailable.
 - Known impossible target depths and family mismatches are rejected before runtime.
-- Compiler always returns `mining_cost_estimate_unavailable` and `mining_perfect_executor_not_implemented`, keeps mining timing/energy unknown, and emits no fake low-level actions.
+- The compiler emits only a snapshot-bounded internal primitive and never guesses full-objective duration. Day planning fails closed until multi-floor runtime timing is calibrated.
 - Focused mining tests and E: read/action smokes pass. `mining.reach_depth` remains disabled until every semantic loop component is present; internal `executor.mine_stone` cannot be selected by the small model.

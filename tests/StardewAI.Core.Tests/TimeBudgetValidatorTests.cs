@@ -20,11 +20,12 @@ public sealed class TimeBudgetValidatorTests
         var report = new TimeBudgetValidator().Validate(model, queue);
 
         Assert.Equal("perfect_human_player", report.ExecutionProfile);
-        Assert.True(report.FitsRequired);
+        Assert.False(report.FitsRequired);
         Assert.Equal("exploration.visit_location", report.Items[0].OptionId);
-        Assert.Equal("mining_perfect_executor.unimplemented", report.Items[0].Estimator);
-        Assert.Equal(0, report.Items[0].EstimatedMinutes);
-        Assert.Contains(report.Items[0].Notes, item => item == "mining_perfect_executor_not_implemented");
+        Assert.Equal("mining_perfect_executor.runtime_calibration_pending", report.Items[0].Estimator);
+        Assert.Equal(-1, report.Items[0].EstimatedMinutes);
+        Assert.Contains(report.Items[0].Notes, item => item == "rolling_floor_step_executor_implemented");
+        Assert.Contains(report.BlockReasons, item => item == "time_budget_contains_unknown_duration");
         Assert.Contains(report.Items[0].Notes, item => item.StartsWith("assumption_domain:mining_and_combat"));
         Assert.DoesNotContain(report.BlockReasons, item => item.Contains("danger"));
     }
@@ -91,7 +92,7 @@ public sealed class TimeBudgetValidatorTests
     }
 
     [Fact]
-    public void MiningUnknownDurationDoesNotFabricatePastBudgetBlock()
+    public void MiningUnknownDurationBlocksWithoutFabricatingPastBudgetCost()
     {
         var snapshot = Snapshot(2500);
         var output = new MockSmallModelPolicy().Generate(snapshot, "mine to level 40", "training_singleplayer");
@@ -100,9 +101,10 @@ public sealed class TimeBudgetValidatorTests
 
         var report = new TimeBudgetValidator().Validate(model, queue);
 
-        Assert.True(report.FitsRequired);
+        Assert.False(report.FitsRequired);
+        Assert.Contains("time_budget_contains_unknown_duration", report.BlockReasons);
         Assert.DoesNotContain("required_work_exceeds_time_budget", report.BlockReasons);
-        Assert.Equal("mining_perfect_executor.unimplemented", report.Items[0].Estimator);
+        Assert.Equal("mining_perfect_executor.runtime_calibration_pending", report.Items[0].Estimator);
     }
 
     [Fact]

@@ -1,5 +1,7 @@
 # Transparency Coverage
 
+Current main-branch status: the model-facing `mining.reach_depth` objective now compiles one internal step from each fresh snapshot. Stone mining, auto-combat, natural debris pickup, food recovery, and ladder descent are implemented. Full-objective duration remains unknown and therefore fails the day time-budget gate instead of using a guessed constant.
+
 | required input/output | snapshot/contract path | source/status | completeness gate | missing/runtime boundary |
 |---|---|---|---|---|
 | Mine kind, level, area, generated/loaded identity, ordinary/Skull/quarry/dangerous classification | `mining.current_mine` | live `MineShaft.mineLevel`, `getMineArea()`, `GetAdditionalDifficulty()`, area flags | required by `mining.reach_depth` | unavailable outside loaded `MineShaft` |
@@ -12,9 +14,9 @@
 | Purpose-limited snapshot | `/v1/snapshot?profile=mining` | profile cache plus `world/player/menus/options/mining` domains | required for mining runtime/training | avoids unrelated farm/social/fishing and generic location scans; mining itself supplies loaded-floor collision and occupants; cached for the existing 30-tick profile window |
 | Model option surface | `mining.reach_depth` parameters | target depth/location family, latest exit time, reserve health/energy, resource policy | compiler validates | model does not emit low-level mining/combat actions |
 | Candidate generation | availability `event_candidates[]` | `MiningReachDepthCandidateBuilder` | requires all mining groups recursively complete | missing nested groups, invalid target, missing elevator unlock facts, and unknown mining cost fail closed; negative ticks/energy are blocked unknown-cost sentinels, not estimates |
-| Compiled queue envelope | `action_queue.items[].normalized_command.parameters` | `ActionQueueCompiler` | preserves current depth, read elevator start, target, supplied resource/time constraints, executor profile | queue item blocked with `mining_cost_estimate_unavailable` and `mining_perfect_executor_not_implemented`; timing/energy unknown |
+| Compiled queue envelope | `action_queue.items[].normalized_command.parameters` | `ActionQueueCompiler` | preserves the high-level objective and adds the current internal `execution_option_id` plus exact targets | executable one step at a time; full-objective timing remains unknown and blocked by the day budget |
 | Per-floor mechanical selection | `MiningFloorStepPlan` | exact compact-grid BFS over the transparent snapshot | covered offline | selects ladder, required monster, or stone; does not predict future monster movement |
 | Native stone execution | internal `executor.mine_stone` result | collision-safe walking plus native `BeginUsingTool`/`EndUsingTool` | one-stone E: covered | records positive native swing count and terminal health zero; not exposed to the small model |
-| Semantic reach-depth execution | `mining.reach_depth` | not implemented end to end | blocked | combat, ladder/shaft interaction, descent confirmation, retreat, and repeated after-snapshot replanning remain pending |
+| Semantic reach-depth execution | `mining.reach_depth` | rolling-horizon current-floor execution | statically covered | shaft interaction, retreat/exit policy, full-objective timing, and isolated multi-floor runtime validation remain pending |
 
 Validation status: full solution PASS Core 858 / Backend 49; `MiningFloorStepPlannerTests` PASS 7/7. Hidden/silent isolated E: `runtime-mining-snapshot-smoke-20260715-203940` verified level 99 target `(4,6)`, two native swings, health `8 -> 4 -> 0`, transparent object removal, and a 155 ms snapshot. Full semantic reach-depth execution remains blocked.

@@ -17,6 +17,7 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
     [InlineData("executor.pickup_debris")]
     [InlineData("executor.collect_machine_output")]
     [InlineData("executor.load_machine_input")]
+    [InlineData("mining.reach_depth")]
     public void ExecutorEnabledTrueForReconciledIds(string optionId)
     {
         var option = new CandidateOptionAvailabilityEvaluator()
@@ -31,7 +32,6 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
     [InlineData("social.talk_npc")]
     [InlineData("social.gift_npc")]
     [InlineData("quest.advance")]
-    [InlineData("mining.reach_depth")]
     public void ExecutorEnabledFalseForIncompleteHighLevelIds(string optionId)
     {
         var option = new CandidateOptionAvailabilityEvaluator()

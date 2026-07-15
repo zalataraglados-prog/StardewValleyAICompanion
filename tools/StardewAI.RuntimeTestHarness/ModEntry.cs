@@ -12,6 +12,7 @@ using StardewValley.Buildings;
 using StardewValley.GameData.Crops;
 using StardewValley.Locations;
 using StardewValley.Menus;
+using StardewValley.Monsters;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
@@ -42,6 +43,17 @@ public sealed class ModEntry : Mod
     private ActiveMineSetup? activeMineSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
+    private ActiveCombatMonster? activeCombatMonster;
+    private ActiveConsumeFood? activeConsumeFood;
+    private ActivePickupDebris? activePickupDebris;
+    private ActiveDescendLadder? activeDescendLadder;
+    private bool manualAutoCombatEnabled;
+    private bool manualAutoCombatInputHeld;
+    private Monster? manualAutoCombatTarget;
+    private int manualAutoCombatTargetHealth;
+    private int manualAutoCombatAttackCount;
+    private int manualAutoCombatHitCount;
+    private int? manualAutoCombatRestoreSlotIndex;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveDialogueAdvance? activeDialogueAdvance;
 
@@ -49,6 +61,7 @@ public sealed class ModEntry : Mod
     {
         config = helper.ReadConfig<HarnessConfig>();
         ApplyEnvironmentOverrides();
+        manualAutoCombatEnabled = string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal);
 
         if (string.IsNullOrWhiteSpace(config.SavesPath))
         {
@@ -243,10 +256,15 @@ public sealed class ModEntry : Mod
         TickMineSetup();
         TickNativeFarmTool();
         TickMineStone();
+        TickCombatMonster();
+        TickManualAutoCombat();
+        TickConsumeFood();
+        TickPickupDebris();
+        TickDescendLadder();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -287,6 +305,24 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.mine_stone")
             {
                 StartMineStone(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.combat_monster")
+            {
+                StartCombatMonster(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.consume_food")
+            {
+                StartConsumeFood(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.descend_ladder")
+            {
+                StartDescendLadder(pending);
                 return;
             }
 
@@ -436,7 +472,7 @@ public sealed class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.pickup_debris")
             {
-                pending.Completion.SetResult(ExecutePickupDebris(pending.Request));
+                StartPickupDebris(pending);
                 return;
             }
 
@@ -5525,7 +5561,7 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        if (active.ElapsedTicks > active.MaxTicks)
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
         {
             CompleteMineStoneBlocked(active, "mine_stone_timeout");
             return;
@@ -5547,6 +5583,14 @@ public sealed class ModEntry : Mod
             CompleteMineStoneBlocked(active, "mine_stone_runtime_target_drift");
             return;
         }
+
+        if (!active.BeginIssued && ImmediateMiningThreat(mine))
+        {
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
 
         if (!active.BeginIssued && !AreAdjacent(Game1.player.TilePoint, active.Target))
         {
@@ -5696,6 +5740,1064 @@ public sealed class ModEntry : Mod
             ? obj.QualifiedItemId + ":breakable=" + obj.IsBreakableStone().ToString().ToLowerInvariant() + ":health=" + obj.MinutesUntilReady
             : "removed_or_missing";
         return "location=" + (location?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";stone=" + state;
+    }
+
+    private static bool ImmediateMiningThreat(MineShaft mine)
+    {
+        var playerTile = Game1.player.TilePoint;
+        return mine.characters.OfType<Monster>()
+            .Any(monster => monster.Health > 0 && ManhattanDistance(playerTile, monster.TilePoint) <= 3);
+    }
+
+    private void StartDescendLadder(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var requested = "mine.level=before+1;native_action=MineShaft.checkAction(ladder)";
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), reasons.ToArray()));
+            return;
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_target_required"));
+            return;
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_requires_loaded_mineshaft"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_tool_or_menu_conflict"));
+            return;
+        }
+
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        if (mine.getTileIndexAt(target.X, target.Y, "Buildings", "mine") != 173)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_tile_not_live_ladder"));
+            return;
+        }
+        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_path_unavailable:" + pathReason));
+            return;
+        }
+
+        activeDescendLadder = new ActiveDescendLadder(pending, mine, mine.mineLevel, target, path, requested);
+    }
+
+    private void TickDescendLadder()
+    {
+        if (activeDescendLadder is null)
+        {
+            return;
+        }
+
+        var active = activeDescendLadder;
+        active.ElapsedTicks++;
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompleteDescendLadderBlocked(active, "descend_ladder_timeout");
+            return;
+        }
+
+        if (active.ActionIssued)
+        {
+            if (Game1.currentLocation is MineShaft afterMine && afterMine.mineLevel == active.MineLevelBefore + 1)
+            {
+                CompleteDescendLadder(active, afterMine);
+                return;
+            }
+            if (!ReferenceEquals(Game1.currentLocation, active.MineBefore) && Game1.currentLocation is not MineShaft)
+            {
+                CompleteDescendLadderBlocked(active, "descend_ladder_unexpected_location_after_action");
+            }
+            return;
+        }
+
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.MineBefore))
+        {
+            CompleteDescendLadderBlocked(active, "descend_ladder_location_changed_before_action");
+            return;
+        }
+        if (ImmediateMiningThreat(active.MineBefore))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteDescendLadderBlocked(active, "descend_ladder_path_exhausted");
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+            if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
+            {
+                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
+                if (repaired is null)
+                {
+                    CompleteDescendLadderBlocked(active, "descend_ladder_replan_failed:" + repairReason);
+                    return;
+                }
+                active.Path = repaired;
+                active.PathIndex = 0;
+                return;
+            }
+
+            var beforePosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    active.Path.Clear();
+                    active.PathIndex = 0;
+                    active.StuckTicks = 0;
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.MineBefore.getTileIndexAt(active.Target.X, active.Target.Y, "Buildings", "mine") != 173)
+        {
+            CompleteDescendLadderBlocked(active, "descend_ladder_tile_drift");
+            return;
+        }
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+        var handled = active.MineBefore.checkAction(
+            new TileLocation(active.Target.X, active.Target.Y),
+            new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+            Game1.player);
+        if (!handled)
+        {
+            CompleteDescendLadderBlocked(active, "descend_ladder_native_action_not_handled");
+            return;
+        }
+        active.ActionIssued = true;
+    }
+
+    private void CompleteDescendLadder(ActiveDescendLadder active, MineShaft afterMine)
+    {
+        StopAllMovement();
+        activeDescendLadder = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            ActualTicks = active.ElapsedTicks,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
+            PrimitiveKind = "descend_ladder",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "bfs_reached_live_ladder", "native_mineshaft_check_action_handled", "exact_next_mine_level_loaded", "no_direct_enter_mine_call" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = DescendLadderObservedEffect(),
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.current_mine.mine_level", Before = active.MineLevelBefore.ToString(), After = afterMine.mineLevel.ToString() },
+                new SimulatedFactChange { Path = "player.location_id", Before = active.MineBefore.NameOrUniqueName, After = afterMine.NameOrUniqueName }
+            }
+        });
+    }
+
+    private void CompleteDescendLadderBlocked(ActiveDescendLadder active, string reason)
+    {
+        StopAllMovement();
+        activeDescendLadder = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "descend_ladder", active.RequestedEffect, DescendLadderObservedEffect(), reason));
+    }
+
+    private static string DescendLadderObservedEffect()
+    {
+        return Game1.currentLocation is MineShaft mine
+            ? "location=" + mine.NameOrUniqueName + ";mine_level=" + mine.mineLevel + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y
+            : "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";mine_level=none";
+    }
+
+    private void StartConsumeFood(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var requested = "inventory[" + (request.SlotIndex?.ToString() ?? "missing") + "].stack-=1;player.health>before;native_dialogue=Eat_Yes";
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), reasons.ToArray()));
+            return;
+        }
+
+        if (activeConsumeFood is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_executor_busy"));
+            return;
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_requires_loaded_mineshaft"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_active_menu_must_be_closed"));
+            return;
+        }
+        if (Game1.player.UsingTool || Game1.player.isEating || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_tool_or_animation_conflict"));
+            return;
+        }
+        if (!request.SlotIndex.HasValue || request.SlotIndex.Value < 0 || request.SlotIndex.Value >= Game1.player.Items.Count)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_slot_out_of_range"));
+            return;
+        }
+
+        var slotIndex = request.SlotIndex.Value;
+        if (Game1.player.Items[slotIndex] is not StardewValley.Object food || food.Edibility <= 0 || food.healthRecoveredOnConsumption() <= 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_slot_not_healing_food"));
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(request.QualifiedItemId) || !string.Equals(food.QualifiedItemId, request.QualifiedItemId, StringComparison.Ordinal))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_item_identity_mismatch"));
+            return;
+        }
+        if (Game1.player.health >= Game1.player.maxHealth)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_health_already_full"));
+            return;
+        }
+        if (Game1.player.hasBuff("25") && !food.HasContextTag("ginger_item"))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_nauseous"));
+            return;
+        }
+        if (Game1.player.hasBuff("6"))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_food_fullness_active"));
+            return;
+        }
+        if (Game1.player.team.SpecialOrderRuleActive("SC_NO_FOOD") && mine.getMineArea() == 121)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_special_order_forbids_food"));
+            return;
+        }
+
+        activeConsumeFood = new ActiveConsumeFood(
+            pending,
+            mine.NameOrUniqueName,
+            slotIndex,
+            food.QualifiedItemId,
+            food.Stack,
+            Game1.player.CurrentToolIndex,
+            Game1.player.health,
+            Game1.player.Stamina,
+            requested);
+    }
+
+    private void TickConsumeFood()
+    {
+        if (activeConsumeFood is null)
+        {
+            return;
+        }
+
+        var active = activeConsumeFood;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || Game1.currentLocation is not MineShaft mine ||
+            !string.Equals(mine.NameOrUniqueName, active.LocationId, StringComparison.Ordinal))
+        {
+            CompleteConsumeFoodBlocked(active, "consume_food_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteConsumeFoodBlocked(active, "consume_food_native_lifecycle_timeout");
+            return;
+        }
+
+        switch (active.Stage)
+        {
+            case ConsumeFoodStage.PressUse:
+                if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || Game1.player.isEating || !Game1.player.CanMove)
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_pre_input_state_drift");
+                    return;
+                }
+                if (!ConsumeFoodSlotMatches(active))
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_slot_drift_before_input");
+                    return;
+                }
+
+                Game1.player.CurrentToolIndex = active.FoodSlotIndex;
+                if (!TryApplySmapiRightButtonOverride(pressed: true, out var pressReason))
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_right_press_failed:" + pressReason);
+                    return;
+                }
+                active.RightButtonHeld = true;
+                active.Stage = ConsumeFoodStage.ReleaseUse;
+                return;
+
+            case ConsumeFoodStage.ReleaseUse:
+                ReleaseConsumeFoodRightButton(active);
+                active.Stage = ConsumeFoodStage.WaitForPrompt;
+                return;
+
+            case ConsumeFoodStage.WaitForPrompt:
+                if (Game1.activeClickableMenu is DialogueBox && string.Equals(Game1.currentLocation.lastQuestionKey, "Eat", StringComparison.Ordinal))
+                {
+                    active.Stage = ConsumeFoodStage.ConfirmPrompt;
+                    return;
+                }
+                if (active.ElapsedTicks > 120)
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_eat_prompt_not_observed");
+                }
+                return;
+
+            case ConsumeFoodStage.ConfirmPrompt:
+                if (Game1.activeClickableMenu is not DialogueBox || !string.Equals(Game1.currentLocation.lastQuestionKey, "Eat", StringComparison.Ordinal))
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_eat_prompt_drift");
+                    return;
+                }
+
+                Game1.currentLocation.answerDialogueAction("Eat_Yes", new[] { "Eat" });
+                Game1.activeClickableMenu = null;
+                Game1.dialogueUp = false;
+                active.NativeConfirmationIssued = true;
+                active.Stage = ConsumeFoodStage.WaitForCompletion;
+                return;
+
+            case ConsumeFoodStage.WaitForCompletion:
+                active.EatingObserved |= Game1.player.isEating;
+                if (Game1.player.isEating || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
+                {
+                    return;
+                }
+                if (!active.EatingObserved)
+                {
+                    return;
+                }
+
+                var stackAfter = ConsumeFoodStackAt(active.FoodSlotIndex, active.FoodQualifiedItemId);
+                if (stackAfter != active.FoodStackBefore - 1)
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_stack_delta_mismatch");
+                    return;
+                }
+                if (Game1.player.health <= active.HealthBefore)
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_health_not_recovered");
+                    return;
+                }
+
+                CompleteConsumeFood(active, stackAfter);
+                return;
+        }
+    }
+
+    private static bool ConsumeFoodSlotMatches(ActiveConsumeFood active)
+    {
+        return active.FoodSlotIndex >= 0 && active.FoodSlotIndex < Game1.player.Items.Count &&
+            Game1.player.Items[active.FoodSlotIndex] is StardewValley.Object food &&
+            string.Equals(food.QualifiedItemId, active.FoodQualifiedItemId, StringComparison.Ordinal) &&
+            food.Stack == active.FoodStackBefore;
+    }
+
+    private static int ConsumeFoodStackAt(int slotIndex, string qualifiedItemId)
+    {
+        if (slotIndex < 0 || slotIndex >= Game1.player.Items.Count || Game1.player.Items[slotIndex] is not Item item)
+        {
+            return 0;
+        }
+        return string.Equals(item.QualifiedItemId, qualifiedItemId, StringComparison.Ordinal) ? item.Stack : 0;
+    }
+
+    private void CompleteConsumeFood(ActiveConsumeFood active, int stackAfter)
+    {
+        ReleaseConsumeFoodRightButton(active);
+        RestoreConsumeFoodSlot(active);
+        activeConsumeFood = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            EnergyBefore = active.EnergyBefore,
+            EnergyAfter = Game1.player.Stamina,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "consume_food",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "native_right_click_opened_eat_prompt", "native_eat_yes_completed", "exact_food_stack_decremented", "health_recovery_observed", "previous_toolbar_slot_restored" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = ConsumeFoodObservedEffect(active.FoodSlotIndex),
+            RecoveryFoodSlotIndex = active.FoodSlotIndex,
+            RecoveryFoodQualifiedItemId = active.FoodQualifiedItemId,
+            RecoveryFoodStackBefore = active.FoodStackBefore,
+            RecoveryFoodStackAfter = stackAfter,
+            RecoveryHealthBefore = active.HealthBefore,
+            RecoveryHealthAfter = Game1.player.health,
+            RecoveryRestoreSlotIndex = active.RestoreSlotIndex,
+            RecoverySafetyStatus = "native_eating_lifecycle_verified",
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "player.inventory[" + active.FoodSlotIndex + "].stack", Before = active.FoodStackBefore.ToString(), After = stackAfter.ToString() },
+                new SimulatedFactChange { Path = "player.health", Before = active.HealthBefore.ToString(), After = Game1.player.health.ToString() },
+                new SimulatedFactChange { Path = "player.energy", Before = active.EnergyBefore.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") }
+            }
+        });
+    }
+
+    private void CompleteConsumeFoodBlocked(ActiveConsumeFood active, string reason)
+    {
+        ReleaseConsumeFoodRightButton(active);
+        RestoreConsumeFoodSlot(active);
+        activeConsumeFood = null;
+        var result = BlockedWithPrimitive(active.Pending.Request, "consume_food", active.RequestedEffect, ConsumeFoodObservedEffect(active.FoodSlotIndex), reason);
+        result.RecoveryFoodSlotIndex = active.FoodSlotIndex;
+        result.RecoveryFoodQualifiedItemId = active.FoodQualifiedItemId;
+        result.RecoveryFoodStackBefore = active.FoodStackBefore;
+        result.RecoveryFoodStackAfter = ConsumeFoodStackAt(active.FoodSlotIndex, active.FoodQualifiedItemId);
+        result.RecoveryHealthBefore = active.HealthBefore;
+        result.RecoveryHealthAfter = Game1.player.health;
+        result.RecoveryRestoreSlotIndex = active.RestoreSlotIndex;
+        result.RecoverySafetyStatus = "blocked_or_drifted";
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private void ReleaseConsumeFoodRightButton(ActiveConsumeFood active)
+    {
+        if (!active.RightButtonHeld)
+        {
+            return;
+        }
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
+        active.RightButtonHeld = false;
+    }
+
+    private static void RestoreConsumeFoodSlot(ActiveConsumeFood active)
+    {
+        if (active.RestoreSlotIndex >= 0 && active.RestoreSlotIndex < Game1.player.Items.Count)
+        {
+            Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
+        }
+    }
+
+    private static string ConsumeFoodObservedEffect(int? slotIndex)
+    {
+        var slot = "missing";
+        if (slotIndex.HasValue && slotIndex.Value >= 0 && slotIndex.Value < Game1.player.Items.Count && Game1.player.Items[slotIndex.Value] is Item item)
+        {
+            slot = item.QualifiedItemId + ":stack=" + item.Stack;
+        }
+        return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
+            ";slot=" + (slotIndex?.ToString() ?? "missing") + ":" + slot +
+            ";health=" + Game1.player.health + ";energy=" + Game1.player.Stamina.ToString("0.###") +
+            ";is_eating=" + Game1.player.isEating.ToString().ToLowerInvariant() +
+            ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
+    }
+
+    private void StartCombatMonster(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        var requested = "target_monster.defeated=true;native_input=Farmer.FireTool";
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
+            string.IsNullOrWhiteSpace(request.TargetRuntimeType) || string.IsNullOrWhiteSpace(request.TargetName))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "target=missing_or_incomplete", "combat_target_identity_required"));
+            return;
+        }
+
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "location=not_loaded_mineshaft", "combat_requires_loaded_mineshaft"));
+            return;
+        }
+
+        var targets = mine.characters.OfType<Monster>()
+            .Where(monster => monster.Health > 0)
+            .Where(monster => string.Equals(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"), request.TargetRuntimeIdentity, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.GetType().FullName, request.TargetRuntimeType, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.Name, request.TargetName, StringComparison.Ordinal))
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "matching_target_count=" + targets.Length, targets.Length == 0 ? "combat_target_not_found_or_moved" : "combat_target_ambiguous"));
+            return;
+        }
+
+        var target = targets[0];
+        var weapon = BestCombatWeapon(target);
+        if (weapon is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "weapon=missing", "combat_melee_weapon_unavailable"));
+            return;
+        }
+
+        activeCombatMonster = new ActiveCombatMonster(
+            pending,
+            mine.NameOrUniqueName,
+            target,
+            weapon,
+            Math.Clamp(request.MaxAttacks, 1, 256),
+            Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
+            string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal),
+            requested);
+        Monitor.Log($"Combat lock: {target.Name} [{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target):X8}], health={target.Health}, manual_movement={activeCombatMonster.ManualMovement}.", LogLevel.Info);
+    }
+
+    private void TickCombatMonster()
+    {
+        if (activeCombatMonster is null)
+        {
+            return;
+        }
+
+        var active = activeCombatMonster;
+        try
+        {
+            TickCombatMonsterCore(active);
+        }
+        catch (Exception ex)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickManualAutoCombat()
+    {
+        var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
+            activePickupDebris?.CombatInterrupted == true ||
+            activeDescendLadder?.CombatInterrupted == true;
+        var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
+        if (!enabled || activeCombatMonster is not null || !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
+        {
+            ReleaseManualAutoCombatInput();
+            RestoreManualAutoCombatTool();
+            manualAutoCombatTarget = null;
+            return;
+        }
+
+        if (manualAutoCombatInputHeld)
+        {
+            ReleaseManualAutoCombatInput();
+            return;
+        }
+
+        var target = mine.characters.OfType<Monster>()
+            .Where(monster => monster.Health > 0)
+            .OrderBy(monster => Vector2.DistanceSquared(
+                Game1.player.GetBoundingBox().Center.ToVector2(),
+                monster.GetBoundingBox().Center.ToVector2()))
+            .FirstOrDefault();
+        if (target is null)
+        {
+            manualAutoCombatTarget = null;
+            return;
+        }
+
+        if (!ReferenceEquals(target, manualAutoCombatTarget))
+        {
+            manualAutoCombatTarget = target;
+            manualAutoCombatTargetHealth = target.Health;
+            Monitor.Log($"Manual auto-combat target: {target.Name} [{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target):X8}], health={target.Health}.", LogLevel.Info);
+        }
+        else if (target.Health < manualAutoCombatTargetHealth)
+        {
+            manualAutoCombatHitCount++;
+            Monitor.Log($"Manual auto-combat hit {manualAutoCombatHitCount}: {target.Name} health {manualAutoCombatTargetHealth}->{target.Health}.", LogLevel.Info);
+            manualAutoCombatTargetHealth = target.Health;
+        }
+
+        var weapon = BestCombatWeapon(target);
+        if (weapon is null)
+        {
+            RestoreManualAutoCombatTool();
+            return;
+        }
+        if (!IsMonsterWithinCombatReach(target, weapon))
+        {
+            RestoreManualAutoCombatTool();
+            if (executorCombatInterrupt && !manualAutoCombatEnabled)
+            {
+                MoveTowardCombatTarget(mine, target);
+            }
+            return;
+        }
+        if (target.isInvincible() || Game1.player.UsingTool)
+        {
+            return;
+        }
+
+        var targetCenter = target.GetBoundingBox().Center;
+        manualAutoCombatRestoreSlotIndex ??= Game1.player.CurrentToolIndex;
+        SelectTool(weapon);
+        Game1.player.faceDirection(DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection));
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var reason))
+        {
+            Monitor.Log($"Manual auto-combat input failed: {reason}.", LogLevel.Error);
+            manualAutoCombatEnabled = false;
+            return;
+        }
+
+        manualAutoCombatInputHeld = true;
+        manualAutoCombatAttackCount++;
+        Monitor.Log($"Manual auto-combat attack {manualAutoCombatAttackCount}: {target.Name} health={target.Health}.", LogLevel.Info);
+    }
+
+    private static void MoveTowardCombatTarget(MineShaft mine, Monster target)
+    {
+        var path = BuildAdjacentToolPath(mine, target.TilePoint, 512, out _);
+        if (path is null)
+        {
+            return;
+        }
+
+        var nextIndex = path.FindIndex(tile => tile != Game1.player.TilePoint);
+        if (nextIndex < 0)
+        {
+            return;
+        }
+
+        var next = path[nextIndex];
+        if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+        {
+            return;
+        }
+
+        StartMoving(DirectionTo(Game1.player.TilePoint, next));
+        MovePlayerForTick();
+    }
+
+    private void ReleaseManualAutoCombatInput()
+    {
+        if (!manualAutoCombatInputHeld)
+        {
+            return;
+        }
+
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        manualAutoCombatInputHeld = false;
+    }
+
+    private void RestoreManualAutoCombatTool()
+    {
+        if (!manualAutoCombatRestoreSlotIndex.HasValue || Game1.player.UsingTool)
+        {
+            return;
+        }
+
+        Game1.player.CurrentToolIndex = manualAutoCombatRestoreSlotIndex.Value;
+        manualAutoCombatRestoreSlotIndex = null;
+    }
+
+    private void TickCombatMonsterCore(ActiveCombatMonster active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || Game1.currentLocation is not MineShaft mine ||
+            !string.Equals(mine.NameOrUniqueName, active.LocationId, StringComparison.Ordinal))
+        {
+            CompleteCombatMonsterBlocked(active, "combat_location_changed_or_world_unavailable");
+            return;
+        }
+
+        RecordCombatHealth(active);
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_timeout");
+            return;
+        }
+
+        if (Game1.player.health <= 0)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_player_defeated");
+            return;
+        }
+
+        if (active.ManualMovement && active.Target.Health > 0)
+        {
+            var nearestTarget = mine.characters.OfType<Monster>()
+                .Where(monster => monster.Health > 0)
+                .OrderBy(monster => Vector2.DistanceSquared(
+                    Game1.player.GetBoundingBox().Center.ToVector2(),
+                    monster.GetBoundingBox().Center.ToVector2()))
+                .FirstOrDefault();
+            if (nearestTarget is not null && !ReferenceEquals(nearestTarget, active.Target))
+            {
+                active.Retarget(nearestTarget);
+                Monitor.Log($"Combat retarget: {nearestTarget.Name} [{active.TargetRuntimeIdentity}], health={nearestTarget.Health}.", LogLevel.Info);
+            }
+        }
+
+        var targetPresent = mine.characters.Contains(active.Target);
+        if (active.Target.Health <= 0 || !targetPresent)
+        {
+            if (active.Target.Health <= 0)
+            {
+                CompleteCombatMonster(active);
+            }
+            else
+            {
+                CompleteCombatMonsterBlocked(active, "combat_target_disappeared_without_defeat");
+            }
+            return;
+        }
+
+        var releasedAttackThisTick = false;
+        if (active.AttackButtonHeld)
+        {
+            if (!TryApplySmapiButtonOverride(SButton.C, pressed: false, out var releaseReason))
+            {
+                CompleteCombatMonsterBlocked(active, releaseReason);
+                return;
+            }
+            active.AttackButtonHeld = false;
+            releasedAttackThisTick = true;
+        }
+
+        var targetTile = active.Target.TilePoint;
+        if (!IsMonsterWithinCombatReach(active.Target, active.Weapon))
+        {
+            if (active.ManualMovement)
+            {
+                return;
+            }
+
+            if (AreAdjacent(Game1.player.TilePoint, targetTile))
+            {
+                var adjacentBeforePosition = Game1.player.Position;
+                var adjacentTargetCenter = active.Target.GetBoundingBox().Center;
+                StartMoving(DirectionToPixel(Game1.player.GetBoundingBox().Center, adjacentTargetCenter, Game1.player.FacingDirection));
+                MovePlayerForTick();
+                if (Vector2.DistanceSquared(adjacentBeforePosition, Game1.player.Position) < 0.01f)
+                {
+                    active.StuckTicks++;
+                }
+                else
+                {
+                    active.StuckTicks = 0;
+                }
+                return;
+            }
+
+            if (active.PathIndex >= active.Path.Count || ManhattanDistance(active.PathTarget, targetTile) > 4)
+            {
+                var path = BuildAdjacentToolPath(mine, targetTile, Math.Max(1, active.MaxMovementTiles - active.MovementTiles), out var pathReason);
+                if (path is null)
+                {
+                    active.PathFailures++;
+                    if (active.PathFailures > 120)
+                    {
+                        CompleteCombatMonsterBlocked(active, "combat_dynamic_path_unavailable:" + pathReason);
+                    }
+                    return;
+                }
+
+                active.Path = path;
+                active.PathIndex = 0;
+                active.PathTarget = targetTile;
+                active.PathFailures = 0;
+            }
+
+            if (active.PathIndex >= active.Path.Count)
+            {
+                return;
+            }
+
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+
+            if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                return;
+            }
+
+            var beforeTile = Game1.player.TilePoint;
+            var beforePosition = Game1.player.Position;
+            StartMoving(DirectionTo(beforeTile, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint != beforeTile)
+            {
+                active.MovementTiles++;
+                if (active.MovementTiles > active.MaxMovementTiles)
+                {
+                    CompleteCombatMonsterBlocked(active, "combat_movement_budget_exceeded");
+                    return;
+                }
+            }
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+
+            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    active.Path.Clear();
+                    active.PathIndex = 0;
+                    active.StuckTicks = 0;
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        var targetCenter = active.Target.GetBoundingBox().Center;
+        var attackDirection = DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection);
+        if (active.Target.isInvincible())
+        {
+            return;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return;
+        }
+        if (active.AttackCount >= active.MaxAttacks)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_attack_budget_exceeded");
+            return;
+        }
+        if (releasedAttackThisTick || Game1.activeClickableMenu is not null || Game1.eventUp)
+        {
+            return;
+        }
+
+        SelectTool(active.Weapon);
+        Game1.player.faceDirection(attackDirection);
+        Game1.player.lastClick = new Vector2(targetCenter.X, targetCenter.Y);
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        {
+            CompleteCombatMonsterBlocked(active, inputReason);
+            return;
+        }
+        active.AttackButtonHeld = true;
+        active.AttackCount++;
+    }
+
+    private static bool IsMonsterWithinCombatReach(Monster target, MeleeWeapon weapon)
+    {
+        var playerCenter = Game1.player.GetBoundingBox().Center;
+        var targetBox = target.GetBoundingBox();
+        var targetCenter = targetBox.Center;
+        var reach = weapon.type.Value == MeleeWeapon.dagger ? 64 : 96 + Math.Max(0, weapon.addedAreaOfEffect.Value);
+        var deltaX = targetCenter.X - playerCenter.X;
+        var deltaY = targetCenter.Y - playerCenter.Y;
+        return targetBox.Intersects(Game1.player.GetBoundingBox()) ||
+            deltaX * deltaX + deltaY * deltaY <= reach * reach;
+    }
+
+    private static int DirectionToPixel(Point from, Point to, int fallback)
+    {
+        var deltaX = to.X - from.X;
+        var deltaY = to.Y - from.Y;
+        if (deltaX == 0 && deltaY == 0)
+        {
+            return fallback;
+        }
+        if (Math.Abs(deltaY) >= Math.Abs(deltaX))
+        {
+            return deltaY < 0 ? 0 : 2;
+        }
+        return deltaX > 0 ? 1 : 3;
+    }
+
+    private void RecordCombatHealth(ActiveCombatMonster active)
+    {
+        if (active.TargetHealthSequence.Count == 0 || active.TargetHealthSequence[^1] != active.Target.Health)
+        {
+            var previousHealth = active.TargetHealthSequence.Count > 0 ? active.TargetHealthSequence[^1] : active.Target.Health;
+            if (active.TargetHealthSequence.Count > 0 && active.Target.Health < active.TargetHealthSequence[^1])
+            {
+                active.HitCount++;
+                Monitor.Log($"Combat hit {active.HitCount}: {active.TargetName} health {previousHealth}->{active.Target.Health}; attacks={active.AttackCount}.", LogLevel.Info);
+            }
+            active.TargetHealthSequence.Add(active.Target.Health);
+        }
+        if (active.PlayerHealthSequence.Count == 0 || active.PlayerHealthSequence[^1] != Game1.player.health)
+        {
+            Monitor.Log($"Combat player health: {active.PlayerHealthSequence[^1]}->{Game1.player.health}.", LogLevel.Info);
+            active.PlayerHealthSequence.Add(Game1.player.health);
+        }
+    }
+
+    private static MeleeWeapon? BestCombatWeapon(Monster target)
+    {
+        return Game1.player.Items.OfType<MeleeWeapon>()
+            .Where(weapon => !weapon.isScythe())
+            .OrderByDescending(weapon => CombatWeaponScore(weapon, target))
+            .ThenByDescending(weapon => weapon.maxDamage.Value)
+            .ThenBy(weapon => weapon.QualifiedItemId, StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
+    private static double CombatWeaponScore(MeleeWeapon weapon, Monster target)
+    {
+        var attackMultiplier = 1d + Game1.player.buffs.AttackMultiplier;
+        var averageDamage = ((weapon.minDamage.Value + weapon.maxDamage.Value) / 2d) * attackMultiplier;
+        var postResilience = Math.Max(1d, averageDamage - target.resilience.Value);
+        var precision = weapon.addedPrecision.Value * (1d + Game1.player.buffs.WeaponPrecisionMultiplier);
+        var hitChance = 1d - Math.Max(0d, target.missChance.Value - target.missChance.Value * precision);
+        double criticalChance = weapon.critChance.Value;
+        if (weapon.type.Value == MeleeWeapon.dagger)
+        {
+            criticalChance = (criticalChance + 0.005f) * 1.12f;
+        }
+        criticalChance = Math.Clamp(criticalChance * (1d + Game1.player.buffs.CriticalChanceMultiplier), 0d, 1d);
+        var criticalMultiplier = weapon.critMultiplier.Value * (1d + Game1.player.buffs.CriticalPowerMultiplier);
+        var expectedDamage = postResilience * hitChance * (1d + criticalChance * Math.Max(0d, criticalMultiplier - 1d));
+        var swipeSpeed = Math.Max(40d, (400d - weapon.speed.Value * 40d) * (1d - Game1.player.buffs.WeaponSpeedMultiplier));
+        var animationFactor = weapon.type.Value == MeleeWeapon.dagger ? 0.5d : weapon.type.Value == MeleeWeapon.club ? 1.6d : 0.75d;
+        return expectedDamage / Math.Max(40d, swipeSpeed * animationFactor);
+    }
+
+    private void CompleteCombatMonster(ActiveCombatMonster active)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        activeCombatMonster = null;
+        RecordCombatHealth(active);
+        var request = active.Pending.Request;
+        var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            TargetLocation = active.LocationId,
+            TargetTileX = request.TargetTileX,
+            TargetTileY = request.TargetTileY,
+            ToolQualifiedItemId = active.Weapon.QualifiedItemId,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "combat_monster",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = damageTaken == 0
+                ? new[] { "native_fire_tool_defeated_target", "player_health_unchanged" }
+                : new[] { "native_fire_tool_defeated_target", "player_damage_observed=" + damageTaken },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = CombatObservedEffect(active),
+            CombatTargetRuntimeType = active.TargetRuntimeType,
+            CombatTargetRuntimeIdentity = active.TargetRuntimeIdentity,
+            CombatTargetName = active.TargetName,
+            CombatAttackCount = active.AttackCount,
+            CombatHitCount = active.HitCount,
+            CombatTargetHealthSequence = active.TargetHealthSequence.ToArray(),
+            CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray(),
+            CombatDamageTaken = damageTaken,
+            CombatTargetDefeated = true,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
+                new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() }
+            }
+        });
+    }
+
+    private void CompleteCombatMonsterBlocked(ActiveCombatMonster active, string reason)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        if (ReferenceEquals(Game1.player.CurrentTool, active.Weapon))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+        activeCombatMonster = null;
+        RecordCombatHealth(active);
+        var result = BlockedWithPrimitive(active.Pending.Request, "combat_monster", active.RequestedEffect, CombatObservedEffect(active), reason);
+        result.ToolQualifiedItemId = active.Weapon.QualifiedItemId;
+        result.ActualTicks = active.ElapsedTicks;
+        result.TrainingImpactScope = "executor_calibration";
+        result.CombatTargetRuntimeType = active.TargetRuntimeType;
+        result.CombatTargetRuntimeIdentity = active.TargetRuntimeIdentity;
+        result.CombatTargetName = active.TargetName;
+        result.CombatAttackCount = active.AttackCount;
+        result.CombatHitCount = active.HitCount;
+        result.CombatTargetHealthSequence = active.TargetHealthSequence.ToArray();
+        result.CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray();
+        result.CombatDamageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        result.CombatTargetDefeated = active.Target.Health <= 0;
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static string CombatObservedEffect(ActiveCombatMonster active)
+    {
+        return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
+            ";target_type=" + active.TargetRuntimeType +
+            ";target_name=" + active.TargetName +
+            ";target_health=" + active.Target.Health +
+            ";player_health=" + Game1.player.health +
+            ";attacks=" + active.AttackCount +
+            ";hits=" + active.HitCount;
     }
 
     private void StartSetupMiningFloor(PendingExecution pending)
@@ -6746,113 +7848,238 @@ public sealed class ModEntry : Mod
         };
     }
 
-    private TrainingExecutionResult ExecutePickupDebris(TrainingExecutionRequest request)
+    private void StartPickupDebris(PendingExecution pending)
     {
+        var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
         {
-            return Blocked(request, reasons.ToArray());
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
         }
-
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
         {
-            return BlockedWithPrimitive(request, "pickup_debris", "farm.debris[target].chunk_count_decreases_or_removed=true", "target_tile=missing", "target_tile_required");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", "location.debris[target].chunk_count_decreases_or_removed=true", "target_tile=missing", "target_tile_required"));
+            return;
+        }
+        if (activePickupDebris is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "executor=busy", "pickup_debris_executor_busy"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "player=busy_or_menu_open", "pickup_debris_tool_or_menu_conflict"));
+            return;
         }
 
-        var started = DateTimeOffset.UtcNow.ToString("O");
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
-        var requested = DebrisRequestedEffect(request);
         var beforeObserved = DebrisObservedEffect(location, target, request.DebrisIndex);
         var debris = DebrisAt(location, target, request.DebrisIndex);
-        if (debris is null)
+        var chunk = debris is null ? null : DebrisChunkAt(debris, target);
+        if (debris is null || chunk is null)
         {
-            return BlockedWithPrimitive(request, "pickup_debris", requested, beforeObserved, "pickup_debris_target_not_found");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_target_not_found"));
+            return;
         }
 
-        var chunk = DebrisChunkAt(debris, target);
-        if (chunk is null)
+        var itemId = debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value;
+        if (string.IsNullOrWhiteSpace(request.QualifiedItemId) || !string.Equals(itemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
         {
-            return BlockedWithPrimitive(request, "pickup_debris", requested, beforeObserved, "pickup_debris_chunk_not_found");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_mismatch"));
+            return;
         }
-
-        var itemId = debris.item?.QualifiedItemId ?? debris.itemId.Value;
-        if (!string.IsNullOrWhiteSpace(request.QualifiedItemId) &&
-            !string.Equals(itemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
-        {
-            return BlockedWithPrimitive(request, "pickup_debris", requested, beforeObserved, "pickup_debris_item_mismatch");
-        }
-
         if (!Game1.player.couldInventoryAcceptThisItem(debris.item ?? ItemRegistry.Create(itemId, 1, debris.itemQuality)))
         {
-            return BlockedWithPrimitive(request, "pickup_debris", requested, beforeObserved, "pickup_debris_inventory_cannot_accept_item");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_inventory_cannot_accept_item"));
+            return;
+        }
+        activePickupDebris = new ActivePickupDebris(
+            pending,
+            location,
+            debris,
+            chunk,
+            target,
+            itemId,
+            location.debris.Count,
+            debris.Chunks.Count,
+            CountInventoryItem(itemId),
+            InventoryStackSignature(),
+            DebrisRequestedEffect(request));
+    }
+
+    private void TickPickupDebris()
+    {
+        if (activePickupDebris is null)
+        {
+            return;
         }
 
-        var playerTile = Game1.player.TilePoint;
-        if (Math.Abs(playerTile.X - target.X) + Math.Abs(playerTile.Y - target.Y) > 2)
+        var active = activePickupDebris;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
         {
-            return BlockedWithPrimitive(request, "pickup_debris", requested, beforeObserved, "pickup_debris_player_not_near_target");
+            CompletePickupDebrisBlocked(active, "pickup_debris_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_natural_collection_timeout");
+            return;
         }
 
-        var beforeInventory = InventoryStackSignature();
-        var beforeDebrisCount = location.debris.Count;
-        var beforeChunkCount = debris.Chunks.Count;
-        var beforeItemCount = CountInventoryItem(itemId);
-        var collected = debris.collect(Game1.player, chunk);
-        if (collected)
+        var debrisStillPresent = active.Location.debris.Contains(active.Debris);
+        var chunkStillPresent = debrisStillPresent && active.Debris.Chunks.Contains(active.Chunk);
+        var itemCountAfter = CountInventoryItem(active.QualifiedItemId);
+        if ((!debrisStillPresent || !chunkStillPresent) && itemCountAfter > active.ItemCountBefore)
         {
-            debris.Chunks.Remove(chunk);
-            if (debris.Chunks.Count == 0)
+            CompletePickupDebris(active, itemCountAfter);
+            return;
+        }
+
+        if (active.Location is MineShaft mine && ImmediateMiningThreat(mine))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!chunkStillPresent)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_removed_without_inventory_gain");
+            return;
+        }
+        if (Game1.player.UsingTool || Game1.activeClickableMenu is not null || Game1.dialogueUp)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_tool_or_menu_conflict_during_move");
+            return;
+        }
+
+        var target = DebrisChunkTile(active.Chunk);
+        if (Game1.player.TilePoint == target)
+        {
+            StopAllMovement();
+            active.WaitAtTargetTicks++;
+            if (active.WaitAtTargetTicks > 120)
             {
-                location.debris.Remove(debris);
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.WaitAtTargetTicks = 0;
+            }
+            return;
+        }
+
+        if (active.PathIndex >= active.Path.Count || active.PathTarget != target)
+        {
+            var path = TryBuildTilePath(active.Location, Game1.player.TilePoint, target, 512, out var pathReason, avoidSoftObstacles: true);
+            if (path is null)
+            {
+                active.PathFailures++;
+                if (active.PathFailures > 90)
+                {
+                    CompletePickupDebrisBlocked(active, "pickup_debris_dynamic_path_unavailable:" + pathReason);
+                }
+                return;
+            }
+            active.Path = path;
+            active.PathIndex = 0;
+            active.PathTarget = target;
+            active.PathFailures = 0;
+        }
+
+        if (active.PathIndex >= active.Path.Count)
+        {
+            return;
+        }
+        var next = active.Path[active.PathIndex];
+        if (Game1.player.TilePoint == next)
+        {
+            active.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return;
+        }
+
+        var beforePosition = Game1.player.Position;
+        StartMoving(DirectionTo(Game1.player.TilePoint, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+        {
+            active.PathIndex++;
+        }
+        if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+        {
+            active.StuckTicks++;
+            if (active.StuckTicks > 45)
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.StuckTicks = 0;
             }
         }
+        else
+        {
+            active.StuckTicks = 0;
+        }
+    }
 
-        var afterInventory = InventoryStackSignature();
-        var afterDebrisCount = location.debris.Count;
-        var afterChunkCount = debris.Chunks.Count;
-        var afterItemCount = CountInventoryItem(itemId);
-        var inventoryChanged = !string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal);
-        var debrisReduced = afterDebrisCount < beforeDebrisCount || afterChunkCount < beforeChunkCount;
-        var verified = collected && debrisReduced && (inventoryChanged || afterItemCount > beforeItemCount);
-
-        return new TrainingExecutionResult
+    private void CompletePickupDebris(ActivePickupDebris active, int itemCountAfter)
+    {
+        StopAllMovement();
+        activePickupDebris = null;
+        var request = active.Pending.Request;
+        var inventoryAfter = InventoryStackSignature();
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
             QueueItemId = request.QueueItemId,
             BeforeStateHash = request.BeforeStateHash,
             OptionId = request.OptionId,
-            Status = verified ? "applied" : "blocked",
+            Status = "applied",
             FeedbackAvailable = true,
-            StartedAt = started,
+            ActualTicks = active.ElapsedTicks,
+            StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "pickup_debris",
-            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
-            PrimitiveVerificationReasons = verified
-                ? new[] { "target_debris_collected", "inventory_updated", "qualified_item_id=" + itemId }
-                : new[] { collected ? "collect_returned_true" : "collect_returned_false", debrisReduced ? "debris_reduced" : "debris_not_reduced", inventoryChanged ? "inventory_changed" : "inventory_not_changed" },
-            RequestedEffect = requested,
-            ObservedEffect = DebrisObservedEffect(location, target, request.DebrisIndex),
-            BlockReasons = verified ? Array.Empty<string>() : new[] { collected ? "pickup_debris_post_state_mismatch" : "pickup_debris_collect_failed" },
-            ChangedFacts = verified
-                ? new[]
-                {
-                    new SimulatedFactChange
-                    {
-                        Path = "farm.debris.count",
-                        Before = beforeDebrisCount.ToString(),
-                        After = afterDebrisCount.ToString()
-                    },
-                    new SimulatedFactChange
-                    {
-                        Path = "player.inventory.stack_signature",
-                        Before = beforeInventory,
-                        After = afterInventory
-                    }
-                }
-                : Array.Empty<SimulatedFactChange>()
-        };
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "bfs_reached_live_debris", "game_update_naturally_collected_chunk", "inventory_item_count_increased", "no_direct_debris_collect_call" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = "debris_present=" + active.Location.debris.Contains(active.Debris).ToString().ToLowerInvariant() + ";item_count=" + itemCountAfter + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "locations[" + active.LocationId + "].debris.count", Before = active.DebrisCountBefore.ToString(), After = active.Location.debris.Count.ToString() },
+                new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter },
+                new SimulatedFactChange { Path = "player.inventory.count[" + active.QualifiedItemId + "]", Before = active.ItemCountBefore.ToString(), After = itemCountAfter.ToString() }
+            }
+        });
+    }
+
+    private void CompletePickupDebrisBlocked(ActivePickupDebris active, string reason)
+    {
+        StopAllMovement();
+        activePickupDebris = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(
+            active.Pending.Request,
+            "pickup_debris",
+            active.RequestedEffect,
+            "debris_present=" + active.Location.debris.Contains(active.Debris).ToString().ToLowerInvariant() + ";item_count=" + CountInventoryItem(active.QualifiedItemId),
+            reason));
+    }
+
+    private static Point DebrisChunkTile(Chunk chunk)
+    {
+        return new Point(
+            (int)((chunk.position.X + 32f) / Game1.tileSize),
+            (int)((chunk.position.Y + 32f) / Game1.tileSize));
     }
 
     private static Debris? DebrisAt(GameLocation location, Point target, int? debrisIndex)
@@ -6883,7 +8110,7 @@ public sealed class ModEntry : Mod
 
     private static string DebrisRequestedEffect(TrainingExecutionRequest request)
     {
-        return "farm.debris[" + (request.DebrisIndex.HasValue ? request.DebrisIndex.Value.ToString() : request.TargetTileX + "," + request.TargetTileY) + "].chunk_count_decreases_or_removed=true;player.inventory.updated";
+        return "location.debris[" + (request.DebrisIndex.HasValue ? request.DebrisIndex.Value.ToString() : request.TargetTileX + "," + request.TargetTileY) + "].chunk_count_decreases_or_removed=true;player.inventory.updated;collection=native_proximity";
     }
 
     private static string DebrisObservedEffect(GameLocation location, Point target, int? debrisIndex)
@@ -7350,6 +8577,11 @@ public sealed class ModEntry : Mod
 
     private bool TryApplySmapiLeftButtonOverride(bool pressed, out string reason)
     {
+        return TryApplySmapiButtonOverride(SButton.MouseLeft, pressed, out reason);
+    }
+
+    private bool TryApplySmapiButtonOverride(SButton button, bool pressed, out string reason)
+    {
         reason = string.Empty;
         var input = Game1.input;
         if (input is null)
@@ -7378,7 +8610,7 @@ public sealed class ModEntry : Mod
 
         try
         {
-            smapiOverrideButtonMethod.Invoke(input, new object[] { SButton.MouseLeft, pressed });
+            smapiOverrideButtonMethod.Invoke(input, new object[] { button, pressed });
             return true;
         }
         catch (Exception ex)
@@ -9371,6 +10603,9 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.wait_ticks" &&
             request.OptionId != "executor.clear_obstacle" &&
             request.OptionId != "executor.mine_stone" &&
+            request.OptionId != "executor.combat_monster" &&
+            request.OptionId != "executor.consume_food" &&
+            request.OptionId != "executor.descend_ladder" &&
             request.OptionId != "executor.till_soil" &&
             request.OptionId != "debug.advance_time_to" &&
             request.OptionId != "debug.setup_watering_target" &&
@@ -9666,7 +10901,183 @@ public sealed class ModEntry : Mod
         public int SwingCount { get; set; }
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();
+    }
+
+    private sealed class ActiveCombatMonster
+    {
+        public ActiveCombatMonster(PendingExecution pending, string locationId, Monster target, MeleeWeapon weapon, int maxAttacks, int maxMovementTiles, bool manualMovement, string requestedEffect)
+        {
+            Pending = pending;
+            LocationId = locationId;
+            Target = target;
+            Weapon = weapon;
+            TargetRuntimeType = target.GetType().FullName ?? target.GetType().Name;
+            TargetRuntimeIdentity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target).ToString("X8");
+            TargetName = target.Name;
+            TargetHealthBefore = target.Health;
+            PlayerHealthBefore = Game1.player.health;
+            MaxAttacks = maxAttacks;
+            MaxMovementTiles = maxMovementTiles;
+            ManualMovement = manualMovement;
+            RequestedEffect = requestedEffect;
+            MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
+            TargetHealthSequence.Add(target.Health);
+            PlayerHealthSequence.Add(Game1.player.health);
+        }
+
+        public PendingExecution Pending { get; }
+        public string LocationId { get; }
+        public Monster Target { get; private set; }
+        public MeleeWeapon Weapon { get; }
+        public string TargetRuntimeType { get; private set; }
+        public string TargetRuntimeIdentity { get; private set; }
+        public string TargetName { get; private set; }
+        public int TargetHealthBefore { get; private set; }
+        public int PlayerHealthBefore { get; }
+        public int MaxAttacks { get; }
+        public int MaxMovementTiles { get; }
+        public bool ManualMovement { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int MovementTiles { get; set; }
+        public List<Point> Path { get; set; } = new();
+        public int PathIndex { get; set; }
+        public Point PathTarget { get; set; } = new(-1, -1);
+        public int PathFailures { get; set; }
+        public int StuckTicks { get; set; }
+        public bool AttackButtonHeld { get; set; }
+        public int AttackCount { get; set; }
+        public int HitCount { get; set; }
+        public List<int> TargetHealthSequence { get; } = new();
+        public List<int> PlayerHealthSequence { get; } = new();
+
+        public void Retarget(Monster target)
+        {
+            Target = target;
+            TargetRuntimeType = target.GetType().FullName ?? target.GetType().Name;
+            TargetRuntimeIdentity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target).ToString("X8");
+            TargetName = target.Name;
+            TargetHealthBefore = target.Health;
+            TargetHealthSequence.Clear();
+            TargetHealthSequence.Add(target.Health);
+        }
+    }
+
+    private sealed class ActiveConsumeFood
+    {
+        public ActiveConsumeFood(PendingExecution pending, string locationId, int foodSlotIndex, string foodQualifiedItemId, int foodStackBefore, int restoreSlotIndex, int healthBefore, double energyBefore, string requestedEffect)
+        {
+            Pending = pending;
+            LocationId = locationId;
+            FoodSlotIndex = foodSlotIndex;
+            FoodQualifiedItemId = foodQualifiedItemId;
+            FoodStackBefore = foodStackBefore;
+            RestoreSlotIndex = restoreSlotIndex;
+            HealthBefore = healthBefore;
+            EnergyBefore = energyBefore;
+            RequestedEffect = requestedEffect;
+        }
+
+        public PendingExecution Pending { get; }
+        public string LocationId { get; }
+        public int FoodSlotIndex { get; }
+        public string FoodQualifiedItemId { get; }
+        public int FoodStackBefore { get; }
+        public int RestoreSlotIndex { get; }
+        public int HealthBefore { get; }
+        public double EnergyBefore { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 900;
+        public int ElapsedTicks { get; set; }
+        public ConsumeFoodStage Stage { get; set; }
+        public bool RightButtonHeld { get; set; }
+        public bool NativeConfirmationIssued { get; set; }
+        public bool EatingObserved { get; set; }
+    }
+
+    private sealed class ActivePickupDebris
+    {
+        public ActivePickupDebris(PendingExecution pending, GameLocation location, Debris debris, Chunk chunk, Point initialTarget, string qualifiedItemId, int debrisCountBefore, int chunkCountBefore, int itemCountBefore, string inventoryBefore, string requestedEffect)
+        {
+            Pending = pending;
+            Location = location;
+            LocationId = location.NameOrUniqueName;
+            Debris = debris;
+            Chunk = chunk;
+            PathTarget = initialTarget;
+            QualifiedItemId = qualifiedItemId;
+            DebrisCountBefore = debrisCountBefore;
+            ChunkCountBefore = chunkCountBefore;
+            ItemCountBefore = itemCountBefore;
+            InventoryBefore = inventoryBefore;
+            RequestedEffect = requestedEffect;
+        }
+
+        public PendingExecution Pending { get; }
+        public GameLocation Location { get; }
+        public string LocationId { get; }
+        public Debris Debris { get; }
+        public Chunk Chunk { get; }
+        public string QualifiedItemId { get; }
+        public int DebrisCountBefore { get; }
+        public int ChunkCountBefore { get; }
+        public int ItemCountBefore { get; }
+        public string InventoryBefore { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 3600;
+        public int ElapsedTicks { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public List<Point> Path { get; set; } = new();
+        public int PathIndex { get; set; }
+        public Point PathTarget { get; set; }
+        public int PathFailures { get; set; }
+        public int StuckTicks { get; set; }
+        public int WaitAtTargetTicks { get; set; }
+    }
+
+    private sealed class ActiveDescendLadder
+    {
+        public ActiveDescendLadder(PendingExecution pending, MineShaft mineBefore, int mineLevelBefore, Point target, List<Point> path, string requestedEffect)
+        {
+            Pending = pending;
+            MineBefore = mineBefore;
+            MineLevelBefore = mineLevelBefore;
+            Target = target;
+            Path = path;
+            RequestedEffect = requestedEffect;
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft MineBefore { get; }
+        public int MineLevelBefore { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; set; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 1800;
+        public int ElapsedTicks { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public bool ActionIssued { get; set; }
+    }
+
+    private enum ConsumeFoodStage
+    {
+        PressUse,
+        ReleaseUse,
+        WaitForPrompt,
+        ConfirmPrompt,
+        WaitForCompletion
     }
 
     private sealed class ActiveMineSetup

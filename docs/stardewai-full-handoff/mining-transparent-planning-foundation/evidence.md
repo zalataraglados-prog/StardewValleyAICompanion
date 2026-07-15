@@ -1,5 +1,7 @@
 # Evidence
 
+Current-status correction: the repository anchors near the end of this historical slice predate the rolling executor. Current main adds native combat, natural debris pickup, native food recovery, native ladder descent, and one-step replanning while preserving `mining.reach_depth` as the only model-facing action.
+
 ## Decompile Anchors
 
 - EVD-MIN-001 `I:\StardewValleyAICompanion-decompile\StardewValley\StardewValley.Locations\MineShaft.cs:207-217` exposes `MineShaft.mineLevel` as a live net field property.
@@ -28,7 +30,7 @@
 - `src\StardewAI.TransparentBridge\ModEntry.cs` registers `MiningReadAdapter` in the transparent snapshot collector.
 - `src\StardewAI.Core\OptionRegistry\OptionRegistry.cs` registers `mining.reach_depth` as `parameterized_mechanical` with transparent mining state requirements.
 - `src\StardewAI.Core\OptionRegistry\MiningReachDepthCandidateBuilder.cs` fails closed on recursive required mining incompleteness, rejects known impossible target depths before runtime, keeps optional reserve constraints absent unless supplied, blocks unknown cost with `mining_cost_estimate_unavailable`, and uses read elevator unlock progress without moving backward from the live floor.
-- `src\StardewAI.Core\Execution\ActionQueueCompiler.cs` preserves target/resource/retreat parameters, keeps cost estimates unknown, and always blocks `mining.reach_depth` with `mining_cost_estimate_unavailable` and `mining_perfect_executor_not_implemented`.
+- Historical boundary: this statement was true for the foundation slice. Current main compiles one current-floor primitive and fails closed only when the latest snapshot has no safe executable step.
 - `tests\StardewAI.Core.Tests\MiningReachDepthPlanningTests.cs` covers option/recursive completeness, exact action parsing, elevator boundaries, pickaxe damage/hits, ladder formula, compiler blocking, source guards, the purpose-limited profile, and the isolated runtime smoke contract. PASS 26/26; full solution PASS Core 851 / Backend 49 on 2026-07-15.
 - `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1` and the dedicated `debug.setup_mining_floor` harness path use native `Game1.enterMine` only in the isolated E: fixture. Run `runtime-mining-snapshot-smoke-20260715-201518` passed on level 99 with 118 objects, 79 breakable stones, 17 containers, 7 monsters, a 50x50 collision grid, and five snapshots at 127-164 ms / 232,759 bytes.
 - `src\StardewAI.Core\Execution\MiningFloorStepPlanner.cs` decodes the compact collision rows and performs deterministic BFS without consulting documentation examples or guessed future state. It returns one internal floor step: descend an already reachable ladder, engage a required reachable monster, mine a reachable stone, or fail closed.

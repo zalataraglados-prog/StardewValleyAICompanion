@@ -258,7 +258,8 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("inputType.GetMethod(", source);
         Assert.Contains("\"OverrideButton\"", source);
         Assert.Contains("types: new[] { typeof(SButton), typeof(bool) }", source);
-        Assert.Contains("smapiOverrideButtonMethod.Invoke(input, new object[] { SButton.MouseLeft, pressed });", source);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.MouseLeft, pressed, out reason)", source);
+        Assert.Contains("smapiOverrideButtonMethod.Invoke(input, new object[] { button, pressed });", source);
         Assert.Contains("ApplyBobberBarInput(shouldPress, out reason)", source);
         Assert.Contains("ReleaseSmapiLeftButtonOverride();", source);
         Assert.Contains("Fishing input dispatch failed once and was blocked", source);

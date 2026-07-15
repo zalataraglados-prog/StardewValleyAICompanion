@@ -3812,12 +3812,17 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.maintain_crops" ||
                 optionId == "farm.process_machines" ||
                 optionId == "fishing.catch_fish" ||
+                optionId == "mining.reach_depth" ||
                 optionId == "economy.buy_supplies" ||
                 optionId == "exploration.visit_location" ||
                 optionId == "executor.move_to_tile" ||
                 optionId == "executor.traverse_connector" ||
                 optionId == "executor.face_direction" ||
                 optionId == "executor.wait_ticks" ||
+                optionId == "executor.mine_stone" ||
+                optionId == "executor.combat_monster" ||
+                optionId == "executor.consume_food" ||
+                optionId == "executor.descend_ladder" ||
                 optionId == "executor.select_safe_item_slot" ||
                 optionId == "executor.close_menu" ||
                 optionId == "executor.buy_shop_item" ||
@@ -3865,11 +3870,6 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "quest.advance")
             {
                 return "quest_native_executor_not_implemented";
-            }
-
-            if (optionId == "mining.reach_depth")
-            {
-                return "mining_perfect_executor_not_implemented";
             }
 
             if (optionId == "executor.harvest_crop")

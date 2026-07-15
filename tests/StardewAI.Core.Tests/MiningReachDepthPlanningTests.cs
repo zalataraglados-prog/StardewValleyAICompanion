@@ -36,19 +36,19 @@ public sealed class MiningReachDepthPlanningTests
         });
 
         var option = Assert.Single(availability.Options);
-        Assert.False(option.Available);
-        Assert.Equal("blocked", option.Status);
-        Assert.Contains("mining_perfect_executor_not_implemented", option.BlockingReasons);
+        Assert.True(option.Available);
+        Assert.Equal("available", option.Status);
         var candidate = Assert.Single(option.EventCandidates);
-        Assert.False(candidate.Available);
+        Assert.True(candidate.Available);
         Assert.Equal("mining_reach_depth_plan_envelope", candidate.Kind);
         Assert.Equal(-1, candidate.EstimatedTicks);
         Assert.Equal(-1, candidate.EnergyCost);
-        Assert.Equal("blocked_cost_unknown_runtime_boundary", candidate.AvailabilityClass);
-        Assert.Contains("mining_cost_estimate_unavailable", candidate.BlockReasons);
+        Assert.Equal("available_rolling_horizon_floor_step", candidate.AvailabilityClass);
+        Assert.Empty(candidate.BlockReasons);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "elevator_start_depth" && parameter.Value == "45");
-        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "estimate_status" && parameter.Value == "unknown_until_mining_perfect_executor");
-        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "runtime_boundary" && parameter.Value == "mining_perfect_executor_not_implemented");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "estimate_status" && parameter.Value == "rolling_horizon_current_floor_step");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "runtime_boundary" && parameter.Value == "current_floor_step_executable");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.mine_stone");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "minimum_reserve_health" && parameter.Value == string.Empty);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "minimum_reserve_energy" && parameter.Value == string.Empty);
     }
@@ -74,7 +74,7 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
-    public void CompilerPreservesReachDepthEnvelopeAndBlocksAtExecutorBoundary()
+    public void CompilerPreservesReachDepthGoalAndExpandsCurrentFloorPrimitive()
     {
         var snapshot = MiningSnapshot(currentDepth: 40, targetFamily: "ordinary_mines");
         var request = Request(snapshot.StateHash);
@@ -90,15 +90,18 @@ public sealed class MiningReachDepthPlanningTests
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
 
-        Assert.Equal("blocked", queue.Status);
+        Assert.Equal("pending", queue.Status);
         var item = Assert.Single(queue.Items);
         Assert.Equal("mining.reach_depth", item.OptionId);
         Assert.Equal("option_request", item.NormalizedCommand.CommandType);
         Assert.Empty(item.NormalizedCommand.Steps);
-        Assert.Contains("mining_perfect_executor_not_implemented", item.BlockingReasons);
+        Assert.Empty(item.BlockingReasons);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_depth" && parameter.Value == "45");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "current_depth" && parameter.Value == "40");
-        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "runtime_boundary" && parameter.Value == "mining_perfect_executor_not_implemented");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "runtime_boundary" && parameter.Value == "current_floor_step_executable");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.mine_stone");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_x" && parameter.Value == "3");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_y" && parameter.Value == "2");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "resource_preservation_policy" && parameter.Value == "preserve_staircases");
     }
 
@@ -113,7 +116,6 @@ public sealed class MiningReachDepthPlanningTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains("ordinary_mine_target_depth_out_of_range", queue.Items[0].BlockingReasons);
-        Assert.Contains("mining_perfect_executor_not_implemented", queue.Items[0].BlockingReasons);
     }
 
     [Fact]
@@ -215,6 +217,14 @@ public sealed class MiningReachDepthPlanningTests
         Assert.DoesNotContain("floor_constraints_incomplete", source, StringComparison.Ordinal);
         Assert.Contains("Object.IsBreakableStone/MinutesUntilReady", source, StringComparison.Ordinal);
         Assert.Contains("MineShaft.checkStoneForItems exact seed", source, StringComparison.Ordinal);
+        Assert.Contains("resilience = monster.resilience.Value", source, StringComparison.Ordinal);
+        Assert.Contains("runtime_identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster)", source, StringComparison.Ordinal);
+        Assert.Contains("miss_chance = monster.missChance.Value", source, StringComparison.Ordinal);
+        Assert.Contains("is_invincible = monster.isInvincible()", source, StringComparison.Ordinal);
+        Assert.Contains("weapon_slots = player.Items.Select", source, StringComparison.Ordinal);
+        Assert.Contains("min_damage = weapon.minDamage.Value", source, StringComparison.Ordinal);
+        Assert.Contains("critical_chance = weapon.critChance.Value", source, StringComparison.Ordinal);
+        Assert.Contains("attack_multiplier = player.buffs.AttackMultiplier", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -248,7 +258,7 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("E:\\StardewValleyAICompanion-runtime", source, StringComparison.Ordinal);
         Assert.Contains("profile=mining", source, StringComparison.Ordinal);
         Assert.Contains("debug.setup_mining_floor", source, StringComparison.Ordinal);
-        Assert.Contains("-WindowStyle Hidden", source, StringComparison.Ordinal);
+        Assert.Contains("$gameWindowStyle = if ($VisibleGame) { \"Normal\" } else { \"Hidden\" }", source, StringComparison.Ordinal);
         Assert.Contains("SDL_AUDIODRIVER", source, StringComparison.Ordinal);
         Assert.Contains("Assert-MiningSnapshot", source, StringComparison.Ordinal);
         Assert.Contains("maximum_snapshot_latency_ms", source, StringComparison.Ordinal);
@@ -261,6 +271,23 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("StartSetupMiningFloor", harnessSource, StringComparison.Ordinal);
         Assert.Contains("native_enter_mine_completed", harnessSource, StringComparison.Ordinal);
         Assert.Contains("loaded_mine_map_present", harnessSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LiveRuntimeUsesCompilerSelectedPrimitiveAndTypedCombatIdentity()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+
+        Assert.Contains("ReadQueueParameterString(item, \"execution_option_id\")", source, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.TargetRuntimeIdentity = targetRuntimeIdentity", source, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.TargetRuntimeType = targetRuntimeType", source, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.TargetName = targetName", source, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.DebrisIndex = debrisIndex.Value", source, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.SlotIndex = slotIndex.Value", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -287,7 +314,8 @@ public sealed class MiningReachDepthPlanningTests
 
         Assert.DoesNotContain("minimum_reserve_health_not_met", candidate.BlockReasons);
         Assert.DoesNotContain("minimum_reserve_energy_not_met", candidate.BlockReasons);
-        Assert.Contains("mining_cost_estimate_unavailable", candidate.BlockReasons);
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
     }
 
     [Fact]
@@ -303,7 +331,7 @@ public sealed class MiningReachDepthPlanningTests
             Parameter("minimum_reserve_energy", "10")
         }));
 
-        Assert.Contains("minimum_reserve_health_not_met", candidate.BlockReasons);
+        Assert.Contains("unsafe_health_without_recovery_food", candidate.BlockReasons);
         Assert.Contains("minimum_reserve_energy_not_met", candidate.BlockReasons);
     }
 
@@ -313,11 +341,11 @@ public sealed class MiningReachDepthPlanningTests
         {
           "mining": {
             "current_mine": {"value":{"location_id":"UndergroundMine","mine_level":CURRENT_DEPTH,"mine_area":40,"mine_kind":"TARGET_FAMILY","is_loaded_current_location":true,"is_skull_cavern":false,"is_quarry_mine":false,"is_dangerous":false,"additional_difficulty":0},"status":"available","source":{"kind":"game_object","path":"MineShaft.mineLevel"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tiles": {"value":{"player_tile":{"tile_x":10,"tile_y":10},"collision_context":{"status":"COLLISION_STATUS"},"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "objects": {"value":[],"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "objects": {"value":[{"tile_x":3,"tile_y":2,"qualified_item_id":"(O)32","is_breakable_stone":true,"best_pickaxe_hits_remaining":2}],"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
             "monsters": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.characters"},"adapter":"test","read_at_tick":1,"confidence":1},
             "floor_objectives": {"value":{"must_kill_all_monsters_to_advance":false,"enemy_count":0,"ladder_has_spawned":false},"status":"available","source":{"kind":"game_object","path":"MineShaft.mustKillAllMonstersToAdvance"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "player_resources": {"value":{"health":HEALTH,"max_health":100,"energy":ENERGY,"max_energy":270,"mining_level":5,"combat_level":4,"current_time":1200,                "deepest_mine_level":DEEPEST_MINE_LEVEL,"staircase_count":2},"status":"available","source":{"kind":"game_object","path":"Game1.player"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "player_resources": {"value":{"health":HEALTH,"max_health":100,"energy":ENERGY,"max_energy":270,"mining_level":5,"combat_level":4,"current_time":1200,"deepest_mine_level":DEEPEST_MINE_LEVEL,"staircase_count":2,"selected_slot_index":1,"food_slots":[]},"status":"available","source":{"kind":"game_object","path":"Game1.player"},"adapter":"test","read_at_tick":1,"confidence":1},
             "completeness": {"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }

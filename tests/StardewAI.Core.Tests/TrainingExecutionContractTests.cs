@@ -67,6 +67,75 @@ public sealed class TrainingExecutionContractTests
     }
 
     [Fact]
+    public void CombatExecutionFieldsRoundTripWithoutTextParsing()
+    {
+        var request = new TrainingExecutionRequest
+        {
+            OptionId = "executor.combat_monster",
+            TargetTileX = 4,
+            TargetTileY = 6,
+            TargetRuntimeType = "StardewValley.Monsters.GreenSlime",
+            TargetRuntimeIdentity = "0000BEEF",
+            TargetName = "Green Slime",
+            MaxAttacks = 12
+        };
+        var requestJson = JsonSerializer.Serialize(request, JsonOptions);
+        var requestRoundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(requestJson, JsonOptions)!;
+        Assert.Equal(12, requestRoundTrip.MaxAttacks);
+        Assert.Equal("Green Slime", requestRoundTrip.TargetName);
+        Assert.Equal("0000BEEF", requestRoundTrip.TargetRuntimeIdentity);
+
+        var result = new TrainingExecutionResult
+        {
+            CombatTargetRuntimeType = request.TargetRuntimeType,
+            CombatTargetRuntimeIdentity = request.TargetRuntimeIdentity,
+            CombatTargetName = request.TargetName,
+            CombatAttackCount = 3,
+            CombatHitCount = 2,
+            CombatTargetHealthSequence = new[] { 24, 12, 0 },
+            CombatPlayerHealthSequence = new[] { 100, 100 },
+            CombatDamageTaken = 0,
+            CombatTargetDefeated = true
+        };
+        var resultJson = JsonSerializer.Serialize(result, JsonOptions);
+        var resultRoundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(resultJson, JsonOptions)!;
+        Assert.Equal(new[] { 24, 12, 0 }, resultRoundTrip.CombatTargetHealthSequence);
+        Assert.True(resultRoundTrip.CombatTargetDefeated);
+        Assert.Equal(0, resultRoundTrip.CombatDamageTaken);
+    }
+
+    [Fact]
+    public void RecoveryExecutionFieldsRoundTripWithoutTextParsing()
+    {
+        var result = new TrainingExecutionResult
+        {
+            OptionId = "executor.consume_food",
+            RecoveryFoodSlotIndex = 5,
+            RecoveryFoodQualifiedItemId = "(O)194",
+            RecoveryFoodStackBefore = 3,
+            RecoveryFoodStackAfter = 2,
+            RecoveryHealthBefore = 18,
+            RecoveryHealthAfter = 51,
+            RecoveryRestoreSlotIndex = 1,
+            RecoverySafetyStatus = "native_eating_lifecycle_verified",
+            EnergyBefore = 42,
+            EnergyAfter = 77
+        };
+
+        var json = JsonSerializer.Serialize(result, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(json, JsonOptions)!;
+
+        Assert.Equal(5, roundTrip.RecoveryFoodSlotIndex);
+        Assert.Equal("(O)194", roundTrip.RecoveryFoodQualifiedItemId);
+        Assert.Equal(3, roundTrip.RecoveryFoodStackBefore);
+        Assert.Equal(2, roundTrip.RecoveryFoodStackAfter);
+        Assert.Equal(18, roundTrip.RecoveryHealthBefore);
+        Assert.Equal(51, roundTrip.RecoveryHealthAfter);
+        Assert.Equal(1, roundTrip.RecoveryRestoreSlotIndex);
+        Assert.Equal("native_eating_lifecycle_verified", roundTrip.RecoverySafetyStatus);
+    }
+
+    [Fact]
     public void TrainingExecutionRequestSerializesInteractSafetyFields()
     {
         var request = new TrainingExecutionRequest

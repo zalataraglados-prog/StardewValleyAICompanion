@@ -67,13 +67,13 @@ namespace StardewAI.Core.Tests
                     {
                         OptionId = "exploration.visit_location",
                         EstimatedMinutes = 0,
-                        Estimator = "mining_perfect_executor.unimplemented",
+                        Estimator = "mining_perfect_executor.runtime_calibration_pending",
                         Notes = new[]
                         {
                             "assumption_domain:mining_and_combat",
                             "preference_penalty_exclusions:bad_dodging,poor_path_micro",
-                            "mining_perfect_executor_not_implemented",
-                            "duration_and_energy_unknown_until_decompile_backed_executor_model_exists"
+                            "rolling_floor_step_executor_implemented",
+                            "full_objective_duration_unknown_until_multi_floor_runtime_calibration_exists"
                         }
                     }
                 }
@@ -103,8 +103,8 @@ namespace StardewAI.Core.Tests
             Assert.Equal("hash.after", episode.ExecutorCalibration.AfterStateHash);
             Assert.Contains("exploration.visit_location", episode.ExecutorCalibration.AppliedOptionIds);
             Assert.Contains(episode.ExecutorCalibration.CalibrationNotes, note => note == "assumption_domain:mining_and_combat");
-            Assert.Contains(episode.ExecutorCalibration.CalibrationNotes, note => note == "mining_perfect_executor_not_implemented");
-            Assert.Contains(episode.ExecutorCalibration.CalibrationNotes, note => note == "duration_and_energy_unknown_until_decompile_backed_executor_model_exists");
+            Assert.Contains(episode.ExecutorCalibration.CalibrationNotes, note => note == "rolling_floor_step_executor_implemented");
+            Assert.Contains(episode.ExecutorCalibration.CalibrationNotes, note => note == "full_objective_duration_unknown_until_multi_floor_runtime_calibration_exists");
             Assert.Equal(2, episode.CandidateAudit.Length);
             Assert.Contains(episode.CandidateAudit, item =>
                 item.CandidateId == "water:Farm:3,4" &&

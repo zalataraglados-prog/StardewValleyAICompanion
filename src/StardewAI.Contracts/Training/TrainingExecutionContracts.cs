@@ -50,6 +50,18 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("target_tile_y")]
         public int? TargetTileY { get; set; }
 
+        [JsonPropertyName("target_runtime_type")]
+        public string TargetRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_runtime_identity")]
+        public string TargetRuntimeIdentity { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_name")]
+        public string TargetName { get; set; } = string.Empty;
+
+        [JsonPropertyName("max_attacks")]
+        public int MaxAttacks { get; set; } = 256;
+
         [JsonPropertyName("direction")]
         public int? Direction { get; set; }
 
@@ -280,6 +292,57 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("observed_effect")]
         public string ObservedEffect { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_target_runtime_type")]
+        public string CombatTargetRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_target_runtime_identity")]
+        public string CombatTargetRuntimeIdentity { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_target_name")]
+        public string CombatTargetName { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_attack_count")]
+        public int? CombatAttackCount { get; set; }
+
+        [JsonPropertyName("combat_hit_count")]
+        public int? CombatHitCount { get; set; }
+
+        [JsonPropertyName("combat_target_health_sequence")]
+        public int[] CombatTargetHealthSequence { get; set; } = Array.Empty<int>();
+
+        [JsonPropertyName("combat_player_health_sequence")]
+        public int[] CombatPlayerHealthSequence { get; set; } = Array.Empty<int>();
+
+        [JsonPropertyName("combat_damage_taken")]
+        public int? CombatDamageTaken { get; set; }
+
+        [JsonPropertyName("combat_target_defeated")]
+        public bool? CombatTargetDefeated { get; set; }
+
+        [JsonPropertyName("recovery_food_slot_index")]
+        public int? RecoveryFoodSlotIndex { get; set; }
+
+        [JsonPropertyName("recovery_food_qualified_item_id")]
+        public string RecoveryFoodQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("recovery_food_stack_before")]
+        public int? RecoveryFoodStackBefore { get; set; }
+
+        [JsonPropertyName("recovery_food_stack_after")]
+        public int? RecoveryFoodStackAfter { get; set; }
+
+        [JsonPropertyName("recovery_health_before")]
+        public int? RecoveryHealthBefore { get; set; }
+
+        [JsonPropertyName("recovery_health_after")]
+        public int? RecoveryHealthAfter { get; set; }
+
+        [JsonPropertyName("recovery_restore_slot_index")]
+        public int? RecoveryRestoreSlotIndex { get; set; }
+
+        [JsonPropertyName("recovery_safety_status")]
+        public string RecoverySafetyStatus { get; set; } = string.Empty;
 
         [JsonPropertyName("block_reasons")]
         public string[] BlockReasons { get; set; } = Array.Empty<string>();

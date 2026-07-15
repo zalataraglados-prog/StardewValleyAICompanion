@@ -1,5 +1,9 @@
 # Worker Notes
 
+## 2026-07-15 Rolling Executor Closure
+
+The blocked-executor statements below are historical. The current main branch compiles `mining.reach_depth` into one snapshot-bounded internal step and supports native stone mining, native auto-combat, natural debris pickup, native food recovery, and verified native ladder descent. The small model still emits only the high-level objective. Remaining boundaries are shaft jumping, retreat/exit policy, exhaustive source mapping, full-objective time calibration, and isolated multi-floor runtime validation.
+
 ## 2026-07-13 Mining Transparent Planning Foundation
 
 - Branch: `worker/mining-transparent-planning-foundation`.
@@ -12,7 +16,7 @@
 - Reworked `MiningReadAdapter` to avoid the mutating `Map` getter, read only already-loaded live fields, and mark incomplete map/collision/object/floor groups unavailable instead of complete.
 - Registered `mining.reach_depth` as a parameterized mechanical option with bounded model parameters.
 - Added reach-depth candidate generation gated on recursive transparent mining completeness, known target-depth validity, read elevator unlock progress, and an explicit unknown-cost block.
-- Updated queue compilation to preserve mining target/resource/retreat envelope fields, keep timing/energy unknown, avoid hard-coded reserve defaults, and block at `mining_cost_estimate_unavailable` plus `mining_perfect_executor_not_implemented`.
+- At foundation-slice time, queue compilation preserved the target/resource/retreat envelope but intentionally blocked execution because cost and runtime support were unavailable. This historical boundary is superseded above.
 - Added focused unit tests for option registration, recursive completeness, incomplete collision/object groups, exact action parsing, elevator unlock/continuation boundaries, optional reserve constraints, compiler boundary, and impossible target rejection.
 - Replaced prior-slice handoff files with this slice's evidence, coverage, risk, and pending validation status.
 
@@ -36,4 +40,4 @@
 - Added internal `executor.mine_stone`; it walks through the existing collision-safe input path and swings the equipped pickaxe through the native farmer tool lifecycle. It never invokes `Pickaxe.DoFunction` or removes a mine object directly.
 - Runtime smoke `runtime-mining-snapshot-smoke-20260715-203940` verified two GoldPickaxe swings, health sequence `8,4,0`, natural object removal, and a matching after snapshot. A discovered feedback-order bug that initially recorded zero swings was fixed and rerun; the smoke now rejects non-positive swing counts or a health sequence without terminal zero.
 - Do not expose `executor.mine_stone` to the small model. The model still emits `mining.reach_depth`; the generated executor owns mechanical floor steps and must re-read after each dynamic change.
-- Keep `mining.reach_depth` blocked until combat, ladder/shaft interaction, descent confirmation, retreat/resource policy, and the repeated multi-floor loop are complete.
+- This was the boundary at the time of this slice. It is superseded by the rolling executor closure note above.

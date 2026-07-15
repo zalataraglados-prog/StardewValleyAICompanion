@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 
@@ -18,6 +19,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Equal(MiningFloorStepKinds.DescendLadder, plan.StepKind);
         Assert.Equal(4, plan.TargetTileX);
         Assert.Equal("reachable_ladder_available", plan.Reason);
+        Assert.Equal("executor.descend_ladder", MiningFloorStepCompiler.ExecutionOptionId(plan));
     }
 
     [Fact]
@@ -78,6 +80,86 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveBfsTargetsMonsterWithSelectedDrop()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {"runtime_identity":"near","tile_x":2,"tile_y":2,"health":20,"damage_to_farmer":2,"selected_drop_qualified_item_ids":["(O)766"]},
+              {"runtime_identity":"target","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Green Slime","tile_x":5,"tile_y":2,"health":20,"damage_to_farmer":2,"selected_drop_qualified_item_ids":["(O)768"]}
+            ]
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("target", plan.TargetRuntimeIdentity);
+        Assert.Equal("StardewValley.Monsters.GreenSlime", plan.TargetRuntimeType);
+        Assert.Equal("Green Slime", plan.TargetName);
+        Assert.Equal("(O)768", plan.TargetQualifiedItemId);
+        Assert.Equal(5, plan.TargetTileX);
+    }
+
+    [Fact]
+    public void ResourceObjectivePicksExistingTargetDebrisBeforeSourceNode()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
+                TargetQualifiedItemIds = new[] { "(O)390" },
+                TargetSourceQualifiedItemIds = new[] { "(O)751" }
+            },
+            objects: "[{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2}]",
+            debris: "[{\"debris_index\":6,\"qualified_item_id\":\"(O)390\",\"chunks\":[{\"tile_x\":3,\"tile_y\":2}]}]");
+
+        Assert.Equal(MiningFloorStepKinds.PickupDebris, plan.StepKind);
+        Assert.Equal("(O)390", plan.TargetQualifiedItemId);
+        Assert.Equal(6, plan.DebrisIndex);
+        Assert.Equal(3, plan.TargetTileX);
+    }
+
+    [Fact]
+    public void ResourceToolActionIsInterruptedByImmediateMonsterThreat()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
+                TargetSourceQualifiedItemIds = new[] { "(O)751" }
+            },
+            objects: "[{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2}]",
+            monsters: "[{\"runtime_identity\":\"threat\",\"tile_x\":2,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":2,\"selected_drop_qualified_item_ids\":[]}]");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("unsafe_tool_window_combat_interrupt", plan.Reason);
+        Assert.Equal("blocked_by_immediate_monster_threat", plan.SafetyWindowStatus);
+        Assert.Equal(4, plan.RestoreSlotIndex);
+    }
+
+    [Fact]
+    public void LowHealthSelectsCheapestAdequateFoodBeforeCombat()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" },
+                MinimumReserveHealth = 20
+            },
+            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":3,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":8,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
+            resources: "{\"health\":10,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[{\"slot_index\":7,\"qualified_item_id\":\"(O)194\",\"health_recovery\":25,\"sell_price\":120}]}");
+
+        Assert.Equal(MiningFloorStepKinds.ConsumeFood, plan.StepKind);
+        Assert.Equal(7, plan.FoodSlotIndex);
+        Assert.Equal(4, plan.RestoreSlotIndex);
+        Assert.Equal("health_below_two_hit_or_configured_reserve", plan.Reason);
+    }
+
+    [Fact]
     public void MissingCollisionFailsClosed()
     {
         var snapshot = Snapshot("""
@@ -107,6 +189,11 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("Game1.player.EndUsingTool()", mineStoneSource, StringComparison.Ordinal);
         Assert.Contains("RecordMineStoneCompletedSwing(active, 0);", mineStoneSource, StringComparison.Ordinal);
         Assert.Contains("native_pickaxe_lifecycle_removed_breakable_stone", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("ImmediateMiningThreat(mine)", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.CombatInterrupted = true", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.ElapsedTicks - active.CombatInterruptedTicks", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("activeMineStone?.CombatInterrupted == true", source, StringComparison.Ordinal);
+        Assert.Contains("RestoreManualAutoCombatTool()", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".DoFunction(", mineStoneSource, StringComparison.Ordinal);
         Assert.DoesNotContain("objects.Remove", mineStoneSource, StringComparison.Ordinal);
 
@@ -119,6 +206,118 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("mine_stone_native_swing_count", smoke, StringComparison.Ordinal);
         Assert.Contains("terminal zero-health observation", smoke, StringComparison.Ordinal);
         Assert.Contains("mine_stone_removed", smoke, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeCombatUsesFarmerInputAndPreservesTypedFeedback()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartCombatMonster", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var combatSource = source[start..end];
+
+        Assert.Contains("executor.combat_monster", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: true", combatSource, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: false", combatSource, StringComparison.Ordinal);
+        Assert.Contains("RuntimeHelpers.GetHashCode(monster)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("CombatTargetHealthSequence", combatSource, StringComparison.Ordinal);
+        Assert.Contains("CombatPlayerHealthSequence", combatSource, StringComparison.Ordinal);
+        Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
+        Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("damageMonster(", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("takeDamage(", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("characters.Remove", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Target.Health =", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.FireTool()", combatSource, StringComparison.Ordinal);
+
+        var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
+        Assert.Contains("[switch] $CombatOneMonster", smoke, StringComparison.Ordinal);
+        Assert.Contains("target_runtime_identity", smoke, StringComparison.Ordinal);
+        Assert.Contains("combat_target_health_sequence", smoke, StringComparison.Ordinal);
+        Assert.Contains("combat_target_removed", smoke, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeRecoveryUsesNativeEatLifecycleWithoutDirectHealthOrInventoryMutation()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartConsumeFood", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartCombatMonster", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var recoverySource = source[start..end];
+
+        Assert.Contains("executor.consume_food", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ImmediateMiningThreat(mine)", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("answerDialogueAction(\"Eat_Yes\"", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.isEating", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("consume_food_health_not_recovered", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("RestoreConsumeFoodSlot(active)", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("eatHeldObject(", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("eatObject(", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.health =", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.health +=", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("reduceActiveItemByOne", recoverySource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimePickupWalksIntoNaturalCollectionAndCombatInterruptsWithoutDirectCollect()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartPickupDebris", StringComparison.Ordinal);
+        var end = source.IndexOf("private static Debris? DebrisAt", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var pickupSource = source[start..end];
+
+        Assert.Contains("TryBuildTilePath", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("MovePlayerForTick()", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("ImmediateMiningThreat(mine)", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("active.CombatInterrupted = true", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("activePickupDebris?.CombatInterrupted == true", source, StringComparison.Ordinal);
+        Assert.Contains("game_update_naturally_collected_chunk", pickupSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(".collect(", pickupSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Chunks.Remove", pickupSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("debris.Remove", pickupSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RegistrySeparatesMiningMechanicalPrimitivesFromSmallModelGoal()
+    {
+        var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
+
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder" })
+        {
+            var option = registry.GetRequired(optionId);
+            Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
+            Assert.Equal(TrainingRoles.ExecutorCalibration, option.TrainingRole);
+        }
+
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.mine_stone").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.combat_monster").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
+    }
+
+    [Fact]
+    public void RuntimeLadderUsesBfsAndNativeCheckActionWithoutDirectMineTransition()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartDescendLadder", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var ladderSource = source[start..end];
+
+        Assert.Contains("BuildAdjacentToolPath", ladderSource, StringComparison.Ordinal);
+        Assert.Contains("MovePlayerForTick()", ladderSource, StringComparison.Ordinal);
+        Assert.Contains("getTileIndexAt(active.Target.X, active.Target.Y, \"Buildings\", \"mine\") != 173", ladderSource, StringComparison.Ordinal);
+        Assert.Contains("active.MineBefore.checkAction", ladderSource, StringComparison.Ordinal);
+        Assert.Contains("afterMine.mineLevel == active.MineLevelBefore + 1", ladderSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine(", ladderSource, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\.mineLevel\s*=(?!=)", ladderSource);
     }
 
     private static MiningFloorStepPlan Plan(
@@ -146,6 +345,32 @@ public sealed class MiningFloorStepPlannerTests
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json));
+    }
+
+    private static MiningFloorStepPlan ObjectivePlan(
+        MiningFloorObjective objective,
+        string objects = "[]",
+        string monsters = "[]",
+        string debris = "[]",
+        string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}")
+    {
+        var json = """
+        {
+          "mining": {
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":[],"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":8,"height":5,"blocked_rows":["11111111","10000001","10000001","10000001","11111111"]}}},
+            "objects": {"status":"available","value":OBJECTS},
+            "monsters": {"status":"available","value":MONSTERS},
+            "debris": {"status":"available","value":DEBRIS},
+            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":false}},
+            "player_resources": {"status":"available","value":RESOURCES}
+          }
+        }
+        """
+            .Replace("OBJECTS", objects, StringComparison.Ordinal)
+            .Replace("MONSTERS", monsters, StringComparison.Ordinal)
+            .Replace("DEBRIS", debris, StringComparison.Ordinal)
+            .Replace("RESOURCES", resources, StringComparison.Ordinal);
+        return new MiningFloorStepPlanner().Plan(Snapshot(json), objective);
     }
 
     private static SnapshotEnvelope Snapshot(string stateJson)

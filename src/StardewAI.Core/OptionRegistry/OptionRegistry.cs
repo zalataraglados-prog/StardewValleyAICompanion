@@ -121,8 +121,8 @@ namespace StardewAI.Core.OptionRegistry
                     "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters",
                     "mining.floor_objectives", "mining.player_resources"
                 },
-                new[] { "reach-depth envelope compiled", "runtime queue blocked until mining perfect executor exists" },
-                new[] { "block_unavailable_required_state", "block_impossible_target_depth", "mining_perfect_executor_not_implemented" }));
+                new[] { "rolling-horizon current-floor action compiled", "after-state replanning continues until target depth" },
+                new[] { "block_unavailable_required_state", "block_impossible_target_depth", "block_unsupported_current_floor_step" }));
 
             Register(Option("recovery.stabilize_day", "recovery", "Stabilize current day",
                 OptionBehaviorCategories.Recovery,
@@ -203,6 +203,38 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "time.time" },
                 new[] { "execution waits without mutation" },
                 new[] { "block_unbounded_wait" }));
+
+            Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "native pickaxe input removes the exact target stone", "combat threats interrupt and resume the tool action" },
+                new[] { "block_unknown_stone", "block_missing_pickaxe", "block_unsafe_tool_window", "block_direct_object_mutation" }));
+
+            Register(Option("executor.combat_monster", "mining", "Defeat one transparent live monster",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS pursuit reaches melee range", "native attack input defeats the exact runtime monster" },
+                new[] { "block_unknown_runtime_identity", "block_missing_melee_weapon", "block_direct_monster_damage" }));
+
+            Register(Option("executor.consume_food", "recovery", "Consume one transparent healing food",
+                OptionBehaviorCategories.Recovery,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.monsters", "mining.player_resources", "player.inventory", "player.health", "player.energy", "menus.active_menu" },
+                new[] { "native Eat confirmation consumes one exact food", "health and energy recovery are observed", "previous toolbar slot is restored" },
+                new[] { "block_unknown_food", "block_tool_or_menu_conflict", "block_direct_health_mutation" }));
+
+            Register(Option("executor.descend_ladder", "mining", "Descend one transparent mine ladder",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "menus.active_menu" },
+                new[] { "BFS reaches ladder interaction range", "native MineShaft ladder action loads the next floor" },
+                new[] { "block_unknown_ladder", "block_unsafe_interaction_window", "block_direct_mine_level_mutation" }));
 
             Register(Option("executor.catch_fish", "fishing", "Execute one legal fishing attempt",
                 OptionBehaviorCategories.Mechanical,

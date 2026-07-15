@@ -34,6 +34,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 "mining.tiles",
                 "mining.objects",
                 "mining.monsters",
+                "mining.debris",
                 "mining.floor_objectives",
                 "mining.player_resources"
             };
@@ -48,6 +49,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free GameLocation.IsTileBlockedBy reads", tick, "mining_read_adapter"),
             ["objects"] = Field(ReadObjects(mine, Game1.player), "MineShaft.objects, Object.IsBreakableStone/MinutesUntilReady, and BreakableContainer live fields", tick, "mining_read_adapter"),
             ["monsters"] = Field(ReadMonsters(mine), "MineShaft.characters filtered to Monster", tick, "mining_read_adapter"),
+            ["debris"] = Field(ReadDebris(mine), "MineShaft.debris live item and chunk fields", tick, "mining_read_adapter"),
             ["floor_objectives"] = Field(ReadFloorObjectives(mine), "MineShaft live flags, ladder rule, and deterministic per-stone preview inputs", tick, "mining_read_adapter"),
             ["player_resources"] = Field(ReadPlayerResources(Game1.player), "Game1.player resources and inventory", tick, "mining_read_adapter"),
             ["completeness"] = Field(new
@@ -162,6 +164,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             var box = monster.GetBoundingBox();
             return new
             {
+                runtime_identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"),
                 runtime_type = monster.GetType().FullName,
                 name = monster.Name,
                 tile_x = monster.TilePoint.X,
@@ -172,8 +175,23 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 health = monster.Health,
                 max_health = monster.MaxHealth,
                 damage_to_farmer = monster.DamageToFarmer,
+                resilience = monster.resilience.Value,
+                miss_chance = monster.missChance.Value,
                 is_monster = monster.IsMonster,
                 slipperiness = monster.Slipperiness,
+                is_glider = monster.isGlider.Value,
+                ignore_damage_line_of_sight = monster.ignoreDamageLOS.Value,
+                is_invisible = monster.IsInvisible,
+                is_invincible = monster.isInvincible(),
+                invincible_countdown_ms = monster.invincibleCountdown,
+                stun_time_ms = monster.stunTime.Value,
+                is_hard_mode_monster = monster.isHardModeMonster.Value,
+                movement_speed = monster.Speed,
+                tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
+                center_distance_pixels = Vector2.Distance(box.Center.ToVector2(), Game1.player.GetBoundingBox().Center.ToVector2()),
+                selected_drop_item_ids = monster.objectsToDrop.ToArray(),
+                selected_drop_qualified_item_ids = monster.objectsToDrop.Select(itemId => ItemRegistry.QualifyItemId(itemId) ?? "(O)" + itemId).ToArray(),
+                has_special_item = monster.hasSpecialItem.Value,
                 contact_damage_readable = true,
                 behavior_observation = new
                 {
@@ -183,6 +201,35 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 },
                 source = "Monster live fields; future AI is handled by after-snapshot replanning, not guessed"
             };
+        }).ToArray();
+    }
+
+    private static object[] ReadDebris(MineShaft mine)
+    {
+        return mine.debris.Select((debris, index) => new
+        {
+            debris_index = index,
+            debris_type = debris.debrisType.Value.ToString(),
+            chunk_type = debris.chunkType.Value,
+            item_id = debris.itemId.Value,
+            qualified_item_id = debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value,
+            item_quality = debris.itemQuality,
+            chunk_count = debris.Chunks.Count,
+            is_sinking = debris.isSinking.Value,
+            is_essential_item = debris.isEssentialItem(),
+            chunks = debris.Chunks.Select((chunk, chunkIndex) => new
+            {
+                chunk_index = chunkIndex,
+                pixel_x = (int)MathF.Round(chunk.position.X),
+                pixel_y = (int)MathF.Round(chunk.position.Y),
+                tile_x = (int)((chunk.position.X + 32f) / Game1.tileSize),
+                tile_y = (int)((chunk.position.Y + 32f) / Game1.tileSize),
+                x_velocity = chunk.xVelocity.Value,
+                y_velocity = chunk.yVelocity.Value,
+                bounces = chunk.bounces,
+                alpha = chunk.alpha
+            }).ToArray(),
+            source = "MineShaft.debris and Debris.Chunks live fields"
         }).ToArray();
     }
 
@@ -234,13 +281,30 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             combat_level = player.CombatLevel,
             current_time = Game1.timeOfDay,
             deepest_mine_level = player.deepestMineLevel,
+            selected_slot_index = player.CurrentToolIndex,
+            selected_item_id = player.CurrentItem?.ItemId ?? string.Empty,
+            selected_qualified_item_id = player.CurrentItem?.QualifiedItemId ?? string.Empty,
+            selected_item_runtime_type = player.CurrentItem?.GetType().FullName ?? string.Empty,
             inventory_capacity = new { max_items = player.maxItems.Value, empty_slots = Math.Max(0, player.maxItems.Value - player.Items.Take(player.maxItems.Value).Count(item => item is not null)) },
             pickaxe_slots = ToolSlots<Pickaxe>(player),
-            weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon ? Slot(index, item) : null).Where(item => item is not null).ToArray(),
+            weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
             bomb_counts = CountItems(player, new[] { "(O)286", "(O)287", "(O)288" }),
             staircase_count = CountItem(player, "(O)71"),
-            food_slots = player.Items.Select((item, index) => item is StardewValley.Object obj && obj.Edibility > 0 ? Slot(index, item) : null).Where(item => item is not null).ToArray(),
-            buffs = new { status = "available", mining_level = player.buffs.MiningLevel, combat_level = player.buffs.CombatLevel, speed = player.buffs.Speed, defense = player.buffs.Defense },
+            food_slots = player.Items.Select((item, index) => item is StardewValley.Object obj && obj.Edibility > 0 ? FoodSlot(index, obj) : null).Where(item => item is not null).ToArray(),
+            buffs = new
+            {
+                status = "available",
+                mining_level = player.buffs.MiningLevel,
+                combat_level = player.buffs.CombatLevel,
+                speed = player.buffs.Speed,
+                defense = player.buffs.Defense,
+                attack_multiplier = player.buffs.AttackMultiplier,
+                knockback_multiplier = player.buffs.KnockbackMultiplier,
+                weapon_speed_multiplier = player.buffs.WeaponSpeedMultiplier,
+                critical_chance_multiplier = player.buffs.CriticalChanceMultiplier,
+                critical_power_multiplier = player.buffs.CriticalPowerMultiplier,
+                weapon_precision_multiplier = player.buffs.WeaponPrecisionMultiplier
+            },
             source = "Game1.player live resource fields"
         };
     }
@@ -319,6 +383,56 @@ public sealed class MiningReadAdapter : ReadAdapterBase
     private static object Slot(int index, Item item)
     {
         return new { slot_index = index, item_id = item.ItemId, qualified_item_id = item.QualifiedItemId, display_name = item.DisplayName, stack = item.Stack, runtime_type = item.GetType().FullName };
+    }
+
+    private static object WeaponSlot(int index, MeleeWeapon weapon)
+    {
+        var type = weapon.type.Value;
+        return new
+        {
+            slot_index = index,
+            item_id = weapon.ItemId,
+            qualified_item_id = weapon.QualifiedItemId,
+            display_name = weapon.DisplayName,
+            runtime_type = weapon.GetType().FullName,
+            weapon_type = type,
+            weapon_type_name = type == MeleeWeapon.dagger ? "dagger" : type == MeleeWeapon.club ? "club" : type == MeleeWeapon.defenseSword ? "sword" : "stabbing_sword",
+            is_scythe = weapon.isScythe(),
+            min_damage = weapon.minDamage.Value,
+            max_damage = weapon.maxDamage.Value,
+            speed = weapon.speed.Value,
+            precision = weapon.addedPrecision.Value,
+            defense = weapon.addedDefense.Value,
+            area_of_effect = weapon.addedAreaOfEffect.Value,
+            knockback = weapon.knockback.Value,
+            critical_chance = weapon.critChance.Value,
+            critical_multiplier = weapon.critMultiplier.Value,
+            is_on_special = weapon.isOnSpecial,
+            special_cooldown_remaining_ms = type == MeleeWeapon.dagger
+                ? MeleeWeapon.daggerCooldown
+                : type == MeleeWeapon.club ? MeleeWeapon.clubCooldown : MeleeWeapon.defenseCooldown,
+            enchantments = weapon.enchantments.Select(enchantment => new { runtime_type = enchantment.GetType().FullName, level = enchantment.Level }).ToArray(),
+            source = "live MeleeWeapon net fields and active enchantments"
+        };
+    }
+
+    private static object FoodSlot(int index, StardewValley.Object food)
+    {
+        return new
+        {
+            slot_index = index,
+            item_id = food.ItemId,
+            qualified_item_id = food.QualifiedItemId,
+            display_name = food.DisplayName,
+            stack = food.Stack,
+            quality = food.Quality,
+            edibility = food.Edibility,
+            health_recovery = food.healthRecoveredOnConsumption(),
+            energy_recovery = food.staminaRecoveredOnConsumption(),
+            sell_price = food.sellToStorePrice(),
+            runtime_type = food.GetType().FullName,
+            source = "Object live fields and healthRecoveredOnConsumption/staminaRecoveredOnConsumption"
+        };
     }
 
     private static object[] CountItems(Farmer player, string[] qualifiedIds)

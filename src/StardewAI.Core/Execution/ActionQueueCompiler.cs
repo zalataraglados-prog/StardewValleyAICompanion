@@ -936,9 +936,16 @@ namespace StardewAI.Core.Execution
 
             var elevatorStart = MiningReachDepthCandidateBuilder.ElevatorStartFor(currentDepth, ReadIntParameter(action, "target_depth"), family, deepestMineLevel);
             parameters.Add(Parameter("elevator_start_depth", elevatorStart?.ToString() ?? string.Empty));
-            parameters.Add(Parameter("estimate_status", "unknown_until_mining_perfect_executor"));
+            var objective = new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.ReachDepth,
+                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0
+            };
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, objective);
+            parameters.AddRange(MiningFloorStepCompiler.BuildExecutionParameters(floorStep));
+            parameters.Add(Parameter("estimate_status", "rolling_horizon_current_floor_step"));
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
-            parameters.Add(Parameter("runtime_boundary", "mining_perfect_executor_not_implemented"));
+            parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
             parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.floor_objectives,mining.player_resources"));
             return parameters.ToArray();
         }
@@ -1479,19 +1486,8 @@ namespace StardewAI.Core.Execution
 
             if (resources.HasValue)
             {
-                if (!MiningReachDepthCandidateBuilder.ElevatorStartFor(currentDepth, targetDepth, currentFamily, ReadNullableInt(resources.Value, "deepest_mine_level")).HasValue)
-                {
-                    reasons.Add("elevator_unlock_state_unavailable_or_inapplicable");
-                }
-
-                var reserveHealth = ReadIntParameter(action, "minimum_reserve_health");
                 var reserveEnergy = ReadIntParameter(action, "minimum_reserve_energy");
                 var latestExitTime = ReadIntParameter(action, "latest_exit_time");
-                if (reserveHealth.HasValue && ReadInt(resources.Value, "health") <= reserveHealth.Value)
-                {
-                    reasons.Add("minimum_reserve_health_not_met");
-                }
-
                 if (reserveEnergy.HasValue && ReadDouble(resources.Value, "energy") <= reserveEnergy.Value)
                 {
                     reasons.Add("minimum_reserve_energy_not_met");
@@ -1503,8 +1499,22 @@ namespace StardewAI.Core.Execution
                 }
             }
 
-            reasons.Add("mining_cost_estimate_unavailable");
-            reasons.Add("mining_perfect_executor_not_implemented");
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.ReachDepth,
+                MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0
+            });
+            var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
+            if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
+            {
+                reasons.Add(floorStep.Reason);
+            }
+            else if (string.IsNullOrWhiteSpace(executionOptionId))
+            {
+                reasons.Add(floorStep.StepKind == MiningFloorStepKinds.DescendLadder
+                    ? "mining_descend_ladder_executor_not_implemented"
+                    : "mining_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 

@@ -10,6 +10,9 @@ param(
     [string] $RunId = ("runtime-mining-snapshot-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-mining-snapshot-smoke",
     [switch] $MineOneStone,
+    [switch] $CombatOneMonster,
+    [switch] $ManualCombatMovement,
+    [switch] $VisibleGame,
     [switch] $KeepGameRunning
 )
 
@@ -125,6 +128,16 @@ function Assert-MiningSnapshot {
     if ($breakableStoneCount -lt $RequiredBreakableStoneCount) {
         throw "Mining snapshot has $breakableStoneCount breakable stones, expected at least $RequiredBreakableStoneCount."
     }
+    foreach ($monster in @($mining.monsters.value)) {
+        foreach ($property in @("runtime_identity", "runtime_type", "health", "resilience", "miss_chance", "is_invincible", "invincible_countdown_ms", "is_glider", "ignore_damage_line_of_sight")) {
+            if ($null -eq $monster.$property) { throw "Mining monster row omitted combat field '$property'." }
+        }
+    }
+    foreach ($weapon in @($mining.player_resources.value.weapon_slots)) {
+        foreach ($property in @("weapon_type", "is_scythe", "min_damage", "max_damage", "speed", "precision", "area_of_effect", "knockback", "critical_chance", "critical_multiplier", "enchantments")) {
+            if ($null -eq $weapon.$property) { throw "Mining weapon row omitted combat field '$property'." }
+        }
+    }
 }
 
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
@@ -155,6 +168,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_COMBAT_MANUAL_MOVEMENT = $env:STARDEWAI_COMBAT_MANUAL_MOVEMENT
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
 }
@@ -166,10 +180,12 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_COMBAT_MANUAL_MOVEMENT = if ($ManualCombatMovement) { "1" } else { "0" }
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
 
-    $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle Hidden -PassThru
+    $gameWindowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }
+    $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle $gameWindowStyle -PassThru
     $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
     Start-Sleep -Seconds 20
     $worldSnapshot = Wait-WorldSnapshot -Url $worldSnapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
@@ -252,6 +268,64 @@ try {
         $snapshot = $afterMineSnapshot
     }
 
+    $combatResult = $null
+    $combatTarget = $null
+    $combatTargetRemoved = $null
+    if ($CombatOneMonster) {
+        $playerX = [int]$snapshot.state.mining.tiles.value.player_tile.tile_x
+        $playerY = [int]$snapshot.state.mining.tiles.value.player_tile.tile_y
+        $combatTarget = @($snapshot.state.mining.monsters.value | Sort-Object `
+            @{ Expression = { [Math]::Abs([int]$_.tile_x - $playerX) + [Math]::Abs([int]$_.tile_y - $playerY) } }, `
+            @{ Expression = { [int]$_.health } }, `
+            @{ Expression = { [string]$_.runtime_identity } }) | Select-Object -First 1
+        if ($null -eq $combatTarget) { throw "No monster was available for the native combat smoke." }
+        if (@($snapshot.state.mining.player_resources.value.weapon_slots | Where-Object { -not $_.is_scythe }).Count -eq 0) {
+            throw "No non-scythe melee weapon was available for the native combat smoke."
+        }
+
+        $combatRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-mining-snapshot-smoke"
+            queue_item_id = "runtime-mining-snapshot-smoke.combat-monster"
+            before_state_hash = $snapshot.state_hash
+            option_id = "executor.combat_monster"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$combatTarget.tile_x
+            target_tile_y = [int]$combatTarget.tile_y
+            target_runtime_identity = [string]$combatTarget.runtime_identity
+            target_runtime_type = [string]$combatTarget.runtime_type
+            target_name = [string]$combatTarget.name
+            max_attacks = 64
+            max_movement_tiles = 512
+        }
+        $combatResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $combatRequest
+        Write-JsonFile (Join-Path $runDirectory "combat-monster-result.json") $combatResult
+        if ($combatResult.status -ne "applied" -or $combatResult.primitive_verification_status -ne "verified" -or -not $combatResult.combat_target_defeated) {
+            throw "Native combat lifecycle failed: status=$($combatResult.status); reasons=$(@($combatResult.block_reasons) -join ',')"
+        }
+        if ([int]$combatResult.combat_attack_count -le 0 -or [int]$combatResult.combat_hit_count -le 0) {
+            throw "Native combat lifecycle did not record positive attack and hit counts."
+        }
+        $combatHealth = @($combatResult.combat_target_health_sequence)
+        if ($combatHealth.Count -lt 2 -or [int]$combatHealth[-1] -gt 0) {
+            throw "Native combat lifecycle did not record a terminal defeated-health observation."
+        }
+
+        Start-Sleep -Milliseconds 500
+        $afterCombatSnapshot = Wait-MiningSnapshot -Url $miningSnapshotUrl -ExpectedMineLevel $MineLevel -TimeoutSeconds 30
+        $combatTargetRemoved = $null -eq (@($afterCombatSnapshot.state.mining.monsters.value | Where-Object {
+            [string]$_.runtime_identity -eq [string]$combatTarget.runtime_identity
+        }) | Select-Object -First 1)
+        Write-JsonFile (Join-Path $runDirectory "after-combat-snapshot.json") $afterCombatSnapshot
+        if (-not $combatTargetRemoved) { throw "Native combat reported defeat but the transparent monster row remained." }
+        $snapshot = $afterCombatSnapshot
+    }
+
     $latencies = @()
     $serializedBytes = @()
     for ($sample = 1; $sample -le $SampleCount; $sample++) {
@@ -288,6 +362,19 @@ try {
         mine_stone_native_swing_count = $nativeSwingCount
         mine_stone_health_sequence = $healthSequence
         mine_stone_removed = $stoneRemoved
+        combat_one_monster_requested = [bool]$CombatOneMonster
+        combat_target_identity = if ($null -ne $combatTarget) { [string]$combatTarget.runtime_identity } else { "" }
+        combat_target_type = if ($null -ne $combatTarget) { [string]$combatTarget.runtime_type } else { "" }
+        combat_target_name = if ($null -ne $combatTarget) { [string]$combatTarget.name } else { "" }
+        combat_target_health_before = if ($null -ne $combatTarget) { [int]$combatTarget.health } else { $null }
+        combat_status = if ($null -ne $combatResult) { [string]$combatResult.status } else { "not_requested" }
+        combat_verification = if ($null -ne $combatResult) { [string]$combatResult.primitive_verification_status } else { "not_requested" }
+        combat_attack_count = if ($null -ne $combatResult) { [int]$combatResult.combat_attack_count } else { $null }
+        combat_hit_count = if ($null -ne $combatResult) { [int]$combatResult.combat_hit_count } else { $null }
+        combat_target_health_sequence = if ($null -ne $combatResult) { @($combatResult.combat_target_health_sequence) } else { @() }
+        combat_player_health_sequence = if ($null -ne $combatResult) { @($combatResult.combat_player_health_sequence) } else { @() }
+        combat_damage_taken = if ($null -ne $combatResult) { [int]$combatResult.combat_damage_taken } else { $null }
+        combat_target_removed = $combatTargetRemoved
         sample_count = $SampleCount
         snapshot_latency_ms = $latencies
         maximum_snapshot_latency_ms = $maximumLatency
