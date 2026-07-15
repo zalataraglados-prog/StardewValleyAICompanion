@@ -8,6 +8,14 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 internal static class MiningMonsterDropResolver
 {
+    public const string RandomCosmeticCatalogKey = "utility_random_cosmetic_item";
+
+    public const string HardMineTreasureCatalogKey = "mine_hard_special_treasure_room";
+
+    public const string NaturalTrinketCatalogKey = "natural_monster_trinkets";
+
+    private static readonly string[] RandomCosmeticCatalog = BuildRandomCosmeticQualifiedItemIds();
+
     public static MiningMonsterDropProjection Resolve(MineShaft mine, Monster monster, Farmer player, int deathTileX, int deathTileY)
     {
         var selected = monster.objectsToDrop.Select(QualifyDropId)
@@ -17,6 +25,7 @@ internal static class MiningMonsterDropResolver
         var guaranteed = new HashSet<string>(StringComparer.Ordinal);
         var conditional = new HashSet<string>(StringComparer.Ordinal);
         var guaranteedOneOf = new List<string[]>();
+        var conditionalCatalogKeys = new HashSet<string>(StringComparer.Ordinal);
         var unresolved = new List<string>();
         var primaryStatus = "base_selected_drops";
 
@@ -24,10 +33,13 @@ internal static class MiningMonsterDropResolver
         {
             var special = PreviewSpecialItem(mine, deathTileX, deathTileY);
             conditional.UnionWith(PossibleSpecialItems(mine));
+            if (Game1.mine is not null && Game1.mine.GetAdditionalDifficulty() > 0)
+            {
+                conditionalCatalogKeys.Add(HardMineTreasureCatalogKey);
+            }
             if (string.IsNullOrWhiteSpace(special))
             {
-                primaryStatus = "special_item_replaces_base_drops_unresolved_global_rng_treasure_branch";
-                unresolved.Add("MineShaft.getTreasureRoomItem_consumes_global_rng");
+                primaryStatus = "special_item_replaces_base_drops_current_tile_uses_shared_treasure_catalog";
             }
             else
             {
@@ -40,12 +52,14 @@ internal static class MiningMonsterDropResolver
                 guaranteed,
                 conditional,
                 guaranteedOneOf,
+                conditionalCatalogKeys,
                 primaryStatus,
-                Game1.mine is null || Game1.mine.GetAdditionalDifficulty() <= 0
-                    ? "complete_possible_identity_set_for_mineshaft_special_item"
-                    : "partial_hard_mine_special_item_treasure_branch",
+                "complete_possible_identity_set_with_shared_catalogs",
                 unresolved);
             projection.CurrentDeathTilePreviewQualifiedItemId = special ?? string.Empty;
+            projection.CurrentDeathTilePreviewStatus = string.IsNullOrWhiteSpace(special)
+                ? "unavailable_global_rng_not_consumed"
+                : "available_for_current_death_tile";
             projection.RuntimeExtraDropRuleInputs = ReadRuntimeExtraDropRuleInputs(monster, player);
             projection.RuntimeExtraDropRuleCompleteness = "not_executed_special_item_override";
             return projection;
@@ -78,12 +92,13 @@ internal static class MiningMonsterDropResolver
             }
             guaranteedOneOf.Clear();
         }
-        AddBaseMonsterDropPossibilities(monster, player, conditional, unresolved);
+        AddBaseMonsterDropPossibilities(monster, player, conditional, conditionalCatalogKeys);
         var result = Build(
             selected,
             guaranteed,
             conditional,
             guaranteedOneOf,
+            conditionalCatalogKeys,
             primaryStatus,
             unresolved.Count == 0 ? "complete_possible_identity_set_for_vanilla_mineshaft_monster" : "partial_death_time_dynamic_sources",
             unresolved);
@@ -99,6 +114,7 @@ internal static class MiningMonsterDropResolver
         HashSet<string> guaranteed,
         HashSet<string> conditional,
         List<string[]> guaranteedOneOf,
+        HashSet<string> conditionalCatalogKeys,
         string primaryStatus,
         string completeness,
         List<string> unresolved)
@@ -109,6 +125,7 @@ internal static class MiningMonsterDropResolver
             GuaranteedDropQualifiedItemIds = Ordered(guaranteed),
             ConditionalDropQualifiedItemIds = Ordered(conditional),
             GuaranteedOneOfQualifiedItemIdGroups = guaranteedOneOf.Select(Ordered).ToArray(),
+            ConditionalDropCatalogKeys = Ordered(conditionalCatalogKeys),
             PossibleDropQualifiedItemIds = Ordered(guaranteed.Concat(conditional).Concat(guaranteedOneOf.SelectMany(group => group))),
             PrimaryDropStatus = primaryStatus,
             ItemIdentityCompleteness = completeness,
@@ -329,7 +346,7 @@ internal static class MiningMonsterDropResolver
         Monster monster,
         Farmer player,
         HashSet<string> conditional,
-        List<string> unresolved)
+        HashSet<string> conditionalCatalogKeys)
     {
         if (player.isWearingRing("526") && DataLoader.Monsters(Game1.content).TryGetValue(monster.Name, out var data))
         {
@@ -374,15 +391,129 @@ internal static class MiningMonsterDropResolver
             {
                 conditional.Add("(O)SkillBook_" + i);
             }
-            unresolved.Add("Utility.getRandomCosmeticItem_identity_set_not_yet_projected");
+            conditionalCatalogKeys.Add(RandomCosmeticCatalogKey);
         }
 
         if (player.stats.Get("trinketSlots") != 0)
         {
-            conditional.UnionWith(DataLoader.Trinkets(Game1.content)
+            conditionalCatalogKeys.Add(NaturalTrinketCatalogKey);
+        }
+    }
+
+    public static MiningDropCatalogProjection[] ReadSharedCatalogs(Farmer player)
+    {
+        return new[]
+        {
+            new MiningDropCatalogProjection
+            {
+                Key = RandomCosmeticCatalogKey,
+                PossibleQualifiedItemIds = RandomCosmeticCatalog,
+                Active = Game1.stats.DaysPlayed > 2,
+                ItemIdentityCompleteness = "complete",
+                Source = "Utility.getRandomCosmeticItem/getRandomSingleTileFurniture"
+            },
+            new MiningDropCatalogProjection
+            {
+                Key = HardMineTreasureCatalogKey,
+                PossibleQualifiedItemIds = HardMineTreasureQualifiedItemIds(player),
+                Active = true,
+                ItemIdentityCompleteness = "complete_for_current_player_gates",
+                Source = "MineShaft.getTreasureRoomItem; DataLoader.Trinkets"
+            },
+            new MiningDropCatalogProjection
+            {
+                Key = NaturalTrinketCatalogKey,
+                PossibleQualifiedItemIds = NaturalTrinketQualifiedItemIds(),
+                Active = player.stats.Get("trinketSlots") != 0,
+                ItemIdentityCompleteness = "complete_for_loaded_trinket_data",
+                Source = "Trinket.TrySpawnTrinket/GetRandomTrinket; DataLoader.Trinkets"
+            }
+        };
+    }
+
+    private static string[] BuildRandomCosmeticQualifiedItemIds()
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal) { "(F)1369" };
+        for (var id = 0; id < 30; id += 3)
+        {
+            ids.Add("(F)" + id);
+        }
+        for (var id = 1362; id < 1370; id++)
+        {
+            ids.Add("(F)" + id);
+        }
+        for (var id = 1376; id < 1391; id++)
+        {
+            ids.Add("(F)" + id);
+        }
+        for (var id = 1391; id <= 1401; id += 2)
+        {
+            ids.Add("(F)" + id);
+        }
+        foreach (var id in new[] { 45, 46, 47, 49, 52, 53, 54, 55, 57, 58, 59, 62, 63, 68, 69, 70, 84, 85, 87, 88, 89, 90 })
+        {
+            ids.Add("(H)" + id);
+        }
+        var excludedShirts = new HashSet<int> { 1127, 1129, 1130, 1132, 1133, 1136, 1152, 1176, 1177, 1201, 1202 };
+        for (var id = 1112; id < 1291; id++)
+        {
+            if (!excludedShirts.Contains(id))
+            {
+                ids.Add("(S)" + id);
+            }
+        }
+        return Ordered(ids);
+    }
+
+    private static string[] NaturalTrinketQualifiedItemIds()
+    {
+        return DataLoader.Trinkets(Game1.content)
+            .Where(pair => pair.Value.DropsNaturally)
+            .Select(pair => "(TR)" + pair.Key)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static string[] HardMineTreasureQualifiedItemIds(Farmer player)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "(O)288", "(O)287", "(O)275", "(O)773", "(O)749", "(O)688", "(O)681", "(O)645",
+            "(O)621", "(O)802", "(O)286", "(O)437", "(O)265", "(O)439", "(O)349", "(O)226",
+            "(O)732", "(O)337", "(O)74", "(BC)21", "(BC)25", "(BC)165", "(H)38", "(H)37",
+            "(H)65", "(BC)272", "(H)83"
+        };
+        if (Game1.MasterPlayer.hasOrWillReceiveMail("volcanoShortcutUnlocked"))
+        {
+            ids.Add("(O)848");
+        }
+        for (var id = 628; id < 634; id++)
+        {
+            ids.Add("(O)" + id);
+        }
+        for (var id = 472; id < 499; id++)
+        {
+            ids.Add("(O)" + id);
+        }
+        for (var id = 235; id < 245; id++)
+        {
+            ids.Add("(O)" + id);
+        }
+        if (player.stats.Get(StatKeys.Mastery(0)) != 0)
+        {
+            ids.Add("(O)GoldenAnimalCracker");
+        }
+        if (player.stats.Get("trinketSlots") != 0)
+        {
+            ids.UnionWith(DataLoader.Trinkets(Game1.content)
                 .Where(pair => pair.Value.DropsNaturally)
                 .Select(pair => "(TR)" + pair.Key));
         }
+        if (player.mailReceived.Contains("sawQiPlane"))
+        {
+            ids.Add(player.stats.Get(StatKeys.Mastery(2)) != 0 ? "(O)GoldenMysteryBox" : "(O)MysteryBox");
+        }
+        return Ordered(ids);
     }
 
     private static string? PreviewSpecialItem(MineShaft mine, int x, int y)
@@ -520,9 +651,13 @@ internal sealed class MiningMonsterDropProjection
 
     public string[][] GuaranteedOneOfQualifiedItemIdGroups { get; set; } = Array.Empty<string[]>();
 
+    public string[] ConditionalDropCatalogKeys { get; set; } = Array.Empty<string>();
+
     public string[] PossibleDropQualifiedItemIds { get; set; } = Array.Empty<string>();
 
     public string CurrentDeathTilePreviewQualifiedItemId { get; set; } = string.Empty;
+
+    public string CurrentDeathTilePreviewStatus { get; set; } = "not_applicable";
 
     public object RuntimeExtraDropRuleInputs { get; set; } = new { };
 
@@ -533,6 +668,19 @@ internal sealed class MiningMonsterDropProjection
     public string ItemIdentityCompleteness { get; set; } = string.Empty;
 
     public string[] UnresolvedDynamicRules { get; set; } = Array.Empty<string>();
+
+    public string Source { get; set; } = string.Empty;
+}
+
+internal sealed class MiningDropCatalogProjection
+{
+    public string Key { get; set; } = string.Empty;
+
+    public string[] PossibleQualifiedItemIds { get; set; } = Array.Empty<string>();
+
+    public bool Active { get; set; }
+
+    public string ItemIdentityCompleteness { get; set; } = string.Empty;
 
     public string Source { get; set; } = string.Empty;
 }

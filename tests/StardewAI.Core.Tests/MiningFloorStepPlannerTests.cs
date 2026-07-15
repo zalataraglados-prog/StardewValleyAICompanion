@@ -170,6 +170,39 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveExpandsActiveSharedCatalogOnce()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(S)1200" }
+            },
+            monsters: "[{\"runtime_identity\":\"catalog-source\",\"tile_x\":3,\"tile_y\":2,\"possible_drop_qualified_item_ids\":[],\"conditional_drop_catalog_keys\":[\"utility_random_cosmetic_item\"]}]",
+            dropCatalogs: "[{\"key\":\"utility_random_cosmetic_item\",\"active\":true,\"item_identity_completeness\":\"complete\",\"possible_qualified_item_ids\":[\"(S)1200\"]}]");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("(S)1200", plan.TargetQualifiedItemId);
+        Assert.Equal("conditional_monster_drop", plan.SourceMatchStatus);
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveRejectsIncompleteSharedCatalog()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(S)1200" }
+            },
+            monsters: "[{\"runtime_identity\":\"catalog-source\",\"tile_x\":3,\"tile_y\":2,\"possible_drop_qualified_item_ids\":[],\"conditional_drop_catalog_keys\":[\"utility_random_cosmetic_item\"]}]",
+            dropCatalogs: "[{\"key\":\"utility_random_cosmetic_item\",\"active\":true,\"item_identity_completeness\":\"partial\",\"possible_qualified_item_ids\":[\"(S)1200\"]}]");
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("no_reachable_monster_with_possible_target_drop", plan.Reason);
+    }
+
+    [Fact]
     public void ResourceObjectivePicksExistingTargetDebrisBeforeSourceNode()
     {
         var plan = ObjectivePlan(
@@ -499,7 +532,8 @@ public sealed class MiningFloorStepPlannerTests
         string objects = "[]",
         string monsters = "[]",
         string debris = "[]",
-        string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}")
+        string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}",
+        string dropCatalogs = "[]")
     {
         var json = """
         {
@@ -507,6 +541,7 @@ public sealed class MiningFloorStepPlannerTests
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":[],"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":8,"height":5,"blocked_rows":["11111111","10000001","10000001","10000001","11111111"]}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
+            "monster_drop_catalogs": {"status":"available","value":DROP_CATALOGS},
             "debris": {"status":"available","value":DEBRIS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":false}},
             "player_resources": {"status":"available","value":RESOURCES}
@@ -515,6 +550,7 @@ public sealed class MiningFloorStepPlannerTests
         """
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
+            .Replace("DROP_CATALOGS", dropCatalogs, StringComparison.Ordinal)
             .Replace("DEBRIS", debris, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json), objective);

@@ -149,6 +149,9 @@ namespace StardewAI.Core.Execution
             var search = Search(grid, start);
             var hasResources = TryFieldValue(mining, "player_resources", out var resources);
             var restoreSlot = hasResources ? ReadInt(resources, "selected_slot_index") : null;
+            var monsterDropCatalogs = objective.Kind == MiningObjectiveKinds.CollectMonsterDrop
+                ? ReadMonsterDropCatalogs(mining)
+                : null;
 
             var currentDepth = TryFieldValue(mining, "current_mine", out var currentMine)
                 ? ReadInt(currentMine, "mine_level")
@@ -174,7 +177,7 @@ namespace StardewAI.Core.Execution
 
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
             {
-                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds) ??
+                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs) ??
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
 
@@ -351,7 +354,13 @@ namespace StardewAI.Core.Execution
                 .FirstOrDefault();
         }
 
-        private static MiningFloorStepPlan? SelectMonster(JsonElement monsters, SearchResult search, bool[,] grid, string reason, string[]? targetDropIds = null)
+        private static MiningFloorStepPlan? SelectMonster(
+            JsonElement monsters,
+            SearchResult search,
+            bool[,] grid,
+            string reason,
+            string[]? targetDropIds = null,
+            IReadOnlyDictionary<string, string[]>? dropCatalogs = null)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -367,7 +376,7 @@ namespace StardewAI.Core.Execution
                     Monster = monster,
                     Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
                     Guaranteed = ReadStrings(monster, "guaranteed_drop_qualified_item_ids"),
-                    Possible = ReadStringsWithLegacyFallback(monster, "possible_drop_qualified_item_ids", "selected_drop_qualified_item_ids")
+                    Possible = ExpandMonsterPossibleDrops(monster, dropCatalogs)
                 })
                 .Where(row => targets is null || row.Possible.Any(targets.Contains))
                 .Where(row => row.Candidate is not null)
@@ -393,6 +402,47 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static string[] ExpandMonsterPossibleDrops(JsonElement monster, IReadOnlyDictionary<string, string[]>? dropCatalogs)
+        {
+            var possible = new HashSet<string>(
+                ReadStringsWithLegacyFallback(monster, "possible_drop_qualified_item_ids", "selected_drop_qualified_item_ids"),
+                StringComparer.OrdinalIgnoreCase);
+            if (dropCatalogs is null)
+            {
+                return possible.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+            }
+            foreach (var key in ReadStrings(monster, "conditional_drop_catalog_keys"))
+            {
+                if (dropCatalogs.TryGetValue(key, out var ids))
+                {
+                    possible.UnionWith(ids);
+                }
+            }
+            return possible.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        }
+
+        private static IReadOnlyDictionary<string, string[]> ReadMonsterDropCatalogs(JsonElement mining)
+        {
+            var result = new Dictionary<string, string[]>(StringComparer.Ordinal);
+            if (!TryFieldValue(mining, "monster_drop_catalogs", out var catalogs) || catalogs.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+            foreach (var catalog in catalogs.EnumerateArray())
+            {
+                var key = ReadString(catalog, "key");
+                var completeness = ReadString(catalog, "item_identity_completeness");
+                if (string.IsNullOrWhiteSpace(key) ||
+                    !ReadBool(catalog, "active") ||
+                    !completeness.StartsWith("complete", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                result[key] = ReadStrings(catalog, "possible_qualified_item_ids");
+            }
+            return result;
         }
 
         private static MiningFloorStepPlan? SelectImmediateThreat(JsonElement monsters, SearchResult search, bool[,] grid, (int X, int Y) start, int radiusTiles)

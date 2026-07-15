@@ -949,7 +949,7 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("estimate_status", "rolling_horizon_current_floor_step"));
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
             parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
-            parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.floor_objectives,mining.player_resources"));
+            parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.monster_drop_catalogs,mining.floor_objectives,mining.player_resources"));
             return parameters.ToArray();
         }
 

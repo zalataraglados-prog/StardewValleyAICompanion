@@ -34,6 +34,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 "mining.tiles",
                 "mining.objects",
                 "mining.monsters",
+                "mining.monster_drop_catalogs",
                 "mining.debris",
                 "mining.floor_objectives",
                 "mining.player_resources"
@@ -49,6 +50,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free GameLocation.IsTileBlockedBy reads", tick, "mining_read_adapter"),
             ["objects"] = Field(ReadObjects(mine, Game1.player), "MineShaft.objects, Object.IsBreakableStone/MinutesUntilReady, and BreakableContainer live fields", tick, "mining_read_adapter"),
             ["monsters"] = Field(ReadMonsters(mine), "MineShaft.characters filtered to Monster", tick, "mining_read_adapter"),
+            ["monster_drop_catalogs"] = Field(MiningMonsterDropResolver.ReadSharedCatalogs(Game1.player), "shared decompile-derived monster drop identity catalogs", tick, "mining_read_adapter"),
             ["debris"] = Field(ReadDebris(mine), "MineShaft.debris live item and chunk fields", tick, "mining_read_adapter"),
             ["floor_objectives"] = Field(ReadFloorObjectives(mine), "MineShaft live flags, ladder rule, and deterministic per-stone preview inputs", tick, "mining_read_adapter"),
             ["player_resources"] = Field(ReadPlayerResources(Game1.player), "Game1.player resources and inventory", tick, "mining_read_adapter"),
@@ -58,7 +60,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 source = "live_loaded_mineshaft_only",
                 unavailable_reasons = Array.Empty<string>(),
                 read_only_methods = new[] { "GameLocation.IsTileBlockedBy", "Object.IsBreakableStone", "Utility.CreateDaySaveRandom", "Utility.CreateRandom" },
-                forbidden_calls = new[] { "MineShaft.findLadder", "MineShaft.loadLevel", "MineShaft.createLadderDown", "MineShaft.checkStoneForItems", "monster_ai_update" }
+                forbidden_calls = new[] { "MineShaft.findLadder", "MineShaft.loadLevel", "MineShaft.createLadderDown", "MineShaft.checkStoneForItems", "Monster.getExtraDropItems", "MineShaft.getTreasureRoomItem", "Trinket.TrySpawnTrinket", "monster_ai_update" }
             }, "MiningReadAdapter static live reads", tick, "mining_read_adapter")
         };
 
@@ -205,8 +207,10 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 guaranteed_drop_qualified_item_ids = drops.GuaranteedDropQualifiedItemIds,
                 conditional_drop_qualified_item_ids = drops.ConditionalDropQualifiedItemIds,
                 guaranteed_one_of_qualified_item_id_groups = drops.GuaranteedOneOfQualifiedItemIdGroups,
+                conditional_drop_catalog_keys = drops.ConditionalDropCatalogKeys,
                 possible_drop_qualified_item_ids = drops.PossibleDropQualifiedItemIds,
                 current_death_tile_preview_qualified_item_id = drops.CurrentDeathTilePreviewQualifiedItemId,
+                current_death_tile_preview_status = drops.CurrentDeathTilePreviewStatus,
                 runtime_extra_drop_rule_inputs = drops.RuntimeExtraDropRuleInputs,
                 runtime_extra_drop_rule_completeness = drops.RuntimeExtraDropRuleCompleteness,
                 primary_drop_status = drops.PrimaryDropStatus,
