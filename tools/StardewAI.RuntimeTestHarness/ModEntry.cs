@@ -41,6 +41,7 @@ public sealed class ModEntry : Mod
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveMineSetup? activeMineSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
+    private ActiveMineStone? activeMineStone;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveDialogueAdvance? activeDialogueAdvance;
 
@@ -241,10 +242,11 @@ public sealed class ModEntry : Mod
         TickMineFishingSetup();
         TickMineSetup();
         TickNativeFarmTool();
+        TickMineStone();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -279,6 +281,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.clear_obstacle")
             {
                 pending.Completion.SetResult(ExecuteClearObstacle(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.mine_stone")
+            {
+                StartMineStone(pending);
                 return;
             }
 
@@ -5424,6 +5432,272 @@ public sealed class ModEntry : Mod
         Game1.enterMine(request.MineLevel.Value);
     }
 
+    private void StartMineStone(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", "mining.objects[target].is_breakable_stone=false", "target=missing", "mine_stone_target_tile_required"));
+            return;
+        }
+
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var mine = Game1.currentLocation as MineShaft;
+        var pickaxe = FindTool<Pickaxe>();
+        var requested = "mining.objects[" + target.X + "," + target.Y + "].is_breakable_stone=false;native_tool=Pickaxe";
+        if (mine is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), "mine_stone_requires_loaded_mineshaft"));
+            return;
+        }
+
+        var tile = new Vector2(target.X, target.Y);
+        if (!mine.objects.TryGetValue(tile, out var stone) || !stone.IsBreakableStone())
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), "mine_stone_target_not_breakable_stone"));
+            return;
+        }
+
+        if (pickaxe is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), "mine_stone_pickaxe_unavailable"));
+            return;
+        }
+
+        if (Game1.player.Stamina <= 0f)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), "mine_stone_energy_exhausted"));
+            return;
+        }
+
+        var path = BuildAdjacentToolPath(mine, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), moveReason));
+            return;
+        }
+
+        activeMineStone = new ActiveMineStone(
+            pending,
+            mine.NameOrUniqueName,
+            target,
+            path,
+            pickaxe,
+            stone.QualifiedItemId,
+            stone.MinutesUntilReady,
+            Game1.player.Stamina,
+            Math.Clamp(request.MaxCrops, 1, 64),
+            requested);
+    }
+
+    private void TickMineStone()
+    {
+        if (activeMineStone is null)
+        {
+            return;
+        }
+
+        var active = activeMineStone;
+        try
+        {
+            TickMineStoneCore(active);
+        }
+        catch (Exception ex)
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickMineStoneCore(ActiveMineStone active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || Game1.currentLocation is not MineShaft mine ||
+            !string.Equals(mine.NameOrUniqueName, active.LocationId, StringComparison.Ordinal))
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_location_changed_or_world_unavailable");
+            return;
+        }
+
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_timeout");
+            return;
+        }
+
+        var targetVector = new Vector2(active.Target.X, active.Target.Y);
+        if (!mine.objects.TryGetValue(targetVector, out var current))
+        {
+            if (active.BeginIssued)
+            {
+                RecordMineStoneCompletedSwing(active, 0);
+            }
+            CompleteMineStone(active);
+            return;
+        }
+
+        if (!current.IsBreakableStone() || !string.Equals(current.QualifiedItemId, active.QualifiedItemId, StringComparison.Ordinal))
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_runtime_target_drift");
+            return;
+        }
+
+        if (!active.BeginIssued && !AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteMineStoneBlocked(active, "mine_stone_unreachable_target");
+                return;
+            }
+
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                active.StuckTicks = 0;
+                return;
+            }
+
+            if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+            {
+                CompleteMineStoneBlocked(active, "mine_stone_path_changed");
+                return;
+            }
+
+            var beforePosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+
+            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    CompleteMineStoneBlocked(active, "mine_stone_movement_stuck");
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.SwingCount >= active.MaxSwings)
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_max_swings_exceeded");
+            return;
+        }
+
+        if (Game1.player.Stamina <= 0f)
+        {
+            CompleteMineStoneBlocked(active, "mine_stone_energy_exhausted");
+            return;
+        }
+
+        if (!active.BeginIssued)
+        {
+            SelectTool(active.Pickaxe);
+            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+            Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize);
+            Game1.player.BeginUsingTool();
+            active.BeginIssued = true;
+            return;
+        }
+
+        if (!active.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
+        {
+            Game1.player.EndUsingTool();
+            active.ReleaseIssued = true;
+            return;
+        }
+
+        if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
+        {
+            return;
+        }
+
+        RecordMineStoneCompletedSwing(active, mine.objects.TryGetValue(targetVector, out var afterSwing) ? afterSwing.MinutesUntilReady : 0);
+    }
+
+    private static void RecordMineStoneCompletedSwing(ActiveMineStone active, int remainingHealth)
+    {
+        active.SwingCount++;
+        active.ObservedHealth.Add(remainingHealth);
+        active.BeginIssued = false;
+        active.ReleaseIssued = false;
+    }
+
+    private void CompleteMineStone(ActiveMineStone active)
+    {
+        StopAllMovement();
+        activeMineStone = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            EnergyBefore = active.StaminaBefore,
+            EnergyAfter = Game1.player.Stamina,
+            TargetLocation = active.LocationId,
+            TargetTileX = active.Target.X,
+            TargetTileY = active.Target.Y,
+            ToolQualifiedItemId = active.Pickaxe.QualifiedItemId,
+            ToolUpgradeLevel = active.Pickaxe.UpgradeLevel,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "mine_stone",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "native_pickaxe_lifecycle_removed_breakable_stone", "native_swing_count=" + active.SwingCount },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = MineStoneObservedEffect(active.Target) + ";health_sequence=" + string.Join(",", active.ObservedHealth) + ";native_swings=" + active.SwingCount,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.objects[" + active.Target.X + "," + active.Target.Y + "]", Before = active.QualifiedItemId + ":health=" + active.HealthBefore, After = "removed" },
+                new SimulatedFactChange { Path = "player.energy", Before = active.StaminaBefore.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") }
+            }
+        });
+    }
+
+    private void CompleteMineStoneBlocked(ActiveMineStone active, string reason)
+    {
+        StopAllMovement();
+        if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Pickaxe))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+        activeMineStone = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "mine_stone", active.RequestedEffect, MineStoneObservedEffect(active.Target) + ";native_swings=" + active.SwingCount, reason));
+    }
+
+    private static string MineStoneObservedEffect(Point target)
+    {
+        var location = Game1.currentLocation as MineShaft;
+        var tile = new Vector2(target.X, target.Y);
+        var state = location?.objects.TryGetValue(tile, out var obj) == true
+            ? obj.QualifiedItemId + ":breakable=" + obj.IsBreakableStone().ToString().ToLowerInvariant() + ":health=" + obj.MinutesUntilReady
+            : "removed_or_missing";
+        return "location=" + (location?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";stone=" + state;
+    }
+
     private void StartSetupMiningFloor(PendingExecution pending)
     {
         var request = pending.Request;
@@ -9096,6 +9370,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.face_direction" &&
             request.OptionId != "executor.wait_ticks" &&
             request.OptionId != "executor.clear_obstacle" &&
+            request.OptionId != "executor.mine_stone" &&
             request.OptionId != "executor.till_soil" &&
             request.OptionId != "debug.advance_time_to" &&
             request.OptionId != "debug.setup_watering_target" &&
@@ -9353,6 +9628,45 @@ public sealed class ModEntry : Mod
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; } = 600;
+    }
+
+    private sealed class ActiveMineStone
+    {
+        public ActiveMineStone(PendingExecution pending, string locationId, Point target, List<Point> path, Pickaxe pickaxe, string qualifiedItemId, int healthBefore, double staminaBefore, int maxSwings, string requestedEffect)
+        {
+            Pending = pending;
+            LocationId = locationId;
+            Target = target;
+            Path = path;
+            Pickaxe = pickaxe;
+            QualifiedItemId = qualifiedItemId;
+            HealthBefore = healthBefore;
+            StaminaBefore = staminaBefore;
+            MaxSwings = maxSwings;
+            RequestedEffect = requestedEffect;
+            MaxTicks = Math.Max(180, path.Count * 90) + maxSwings * 240;
+            ObservedHealth.Add(healthBefore);
+        }
+
+        public PendingExecution Pending { get; }
+        public string LocationId { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; }
+        public Pickaxe Pickaxe { get; }
+        public string QualifiedItemId { get; }
+        public int HealthBefore { get; }
+        public double StaminaBefore { get; }
+        public int MaxSwings { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public int SwingCount { get; set; }
+        public bool BeginIssued { get; set; }
+        public bool ReleaseIssued { get; set; }
+        public List<int> ObservedHealth { get; } = new();
     }
 
     private sealed class ActiveMineSetup

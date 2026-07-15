@@ -29,3 +29,11 @@
 - `profile=mining` limits snapshot work to baseline and mining domains. Runtime profiling showed generic `locations` duplicated loaded-floor data and dominated payload/latency, so it is excluded upstream.
 - Offline validation passed. No mining action runtime capability is claimed until the dynamic perfect executor is implemented.
 - Controller follow-up completed the isolated E: smoke on a non-empty level 99 floor. Read-side serialization and latency now pass; only the action executor remains gated.
+
+## 2026-07-15 Native Floor-Step Follow-up
+
+- Added `MiningFloorStepPlanner`, which consumes only transparent mining groups and exact compact collision rows. It deterministically chooses a reachable ladder, kill-all monster, or stone and prefers a known ladder-producing stone.
+- Added internal `executor.mine_stone`; it walks through the existing collision-safe input path and swings the equipped pickaxe through the native farmer tool lifecycle. It never invokes `Pickaxe.DoFunction` or removes a mine object directly.
+- Runtime smoke `runtime-mining-snapshot-smoke-20260715-203940` verified two GoldPickaxe swings, health sequence `8,4,0`, natural object removal, and a matching after snapshot. A discovered feedback-order bug that initially recorded zero swings was fixed and rerun; the smoke now rejects non-positive swing counts or a health sequence without terminal zero.
+- Do not expose `executor.mine_stone` to the small model. The model still emits `mining.reach_depth`; the generated executor owns mechanical floor steps and must re-read after each dynamic change.
+- Keep `mining.reach_depth` blocked until combat, ladder/shaft interaction, descent confirmation, retreat/resource policy, and the repeated multi-floor loop are complete.

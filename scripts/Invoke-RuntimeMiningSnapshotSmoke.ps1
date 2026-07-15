@@ -9,6 +9,7 @@ param(
     [int] $StartupTimeoutSeconds = 120,
     [string] $RunId = ("runtime-mining-snapshot-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-mining-snapshot-smoke",
+    [switch] $MineOneStone,
     [switch] $KeepGameRunning
 )
 
@@ -193,6 +194,64 @@ try {
     Assert-MiningSnapshot -Snapshot $snapshot -ExpectedMineLevel $MineLevel -RequiredBreakableStoneCount $MinimumBreakableStoneCount
     Write-JsonFile (Join-Path $runDirectory "mining-snapshot.json") $snapshot
 
+    $mineStoneResult = $null
+    $stoneTarget = $null
+    $stoneRemoved = $null
+    $nativeSwingCount = $null
+    $healthSequence = ""
+    if ($MineOneStone) {
+        $playerX = [int]$snapshot.state.mining.tiles.value.player_tile.tile_x
+        $playerY = [int]$snapshot.state.mining.tiles.value.player_tile.tile_y
+        $stoneTarget = @($snapshot.state.mining.objects.value | Where-Object { $_.is_breakable_stone } | Sort-Object `
+            @{ Expression = { [Math]::Abs([int]$_.tile_x - $playerX) + [Math]::Abs([int]$_.tile_y - $playerY) } }, `
+            @{ Expression = { [int]$_.best_pickaxe_hits_remaining } }, `
+            @{ Expression = { [int]$_.tile_y } }, `
+            @{ Expression = { [int]$_.tile_x } }) | Select-Object -First 1
+        if ($null -eq $stoneTarget) { throw "No breakable stone was available for the native lifecycle smoke." }
+
+        $mineStoneRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-mining-snapshot-smoke"
+            queue_item_id = "runtime-mining-snapshot-smoke.mine-stone"
+            before_state_hash = $snapshot.state_hash
+            option_id = "executor.mine_stone"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$stoneTarget.tile_x
+            target_tile_y = [int]$stoneTarget.tile_y
+            max_crops = [Math]::Min(64, [Math]::Max(2, [int]$stoneTarget.best_pickaxe_hits_remaining + 2))
+            max_movement_tiles = 512
+        }
+        $mineStoneResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $mineStoneRequest
+        Write-JsonFile (Join-Path $runDirectory "mine-stone-result.json") $mineStoneResult
+        if ($mineStoneResult.status -ne "applied" -or $mineStoneResult.primitive_verification_status -ne "verified") {
+            throw "Native mine stone lifecycle failed: status=$($mineStoneResult.status); reasons=$(@($mineStoneResult.block_reasons) -join ',')"
+        }
+        $swingMatch = [regex]::Match((@($mineStoneResult.primitive_verification_reasons) -join ";"), "(?:^|;)native_swing_count=(\d+)(?:;|$)")
+        if (-not $swingMatch.Success -or [int]$swingMatch.Groups[1].Value -le 0) {
+            throw "Native mine stone lifecycle did not record a positive native swing count."
+        }
+        $nativeSwingCount = [int]$swingMatch.Groups[1].Value
+        $healthMatch = [regex]::Match([string]$mineStoneResult.observed_effect, "(?:^|;)health_sequence=([^;]+)")
+        if (-not $healthMatch.Success -or $healthMatch.Groups[1].Value -notmatch "(?:^|,)0$") {
+            throw "Native mine stone lifecycle did not record a terminal zero-health observation."
+        }
+        $healthSequence = $healthMatch.Groups[1].Value
+
+        Start-Sleep -Milliseconds 500
+        $afterMineSnapshot = Wait-MiningSnapshot -Url $miningSnapshotUrl -ExpectedMineLevel $MineLevel -TimeoutSeconds 30
+        $stoneRemoved = $null -eq (@($afterMineSnapshot.state.mining.objects.value | Where-Object {
+            [int]$_.tile_x -eq [int]$stoneTarget.tile_x -and [int]$_.tile_y -eq [int]$stoneTarget.tile_y
+        }) | Select-Object -First 1)
+        Write-JsonFile (Join-Path $runDirectory "after-mine-snapshot.json") $afterMineSnapshot
+        if (-not $stoneRemoved) { throw "Native mine stone lifecycle reported success but the transparent object row remained." }
+        $snapshot = $afterMineSnapshot
+    }
+
     $latencies = @()
     $serializedBytes = @()
     for ($sample = 1; $sample -le $SampleCount; $sample++) {
@@ -219,6 +278,16 @@ try {
         object_count = @($snapshot.state.mining.objects.value).Count
         breakable_stone_count = @($snapshot.state.mining.objects.value | Where-Object { $_.is_breakable_stone }).Count
         monster_count = @($snapshot.state.mining.monsters.value).Count
+        mine_one_stone_requested = [bool]$MineOneStone
+        mine_stone_target = if ($null -ne $stoneTarget) { "$($stoneTarget.tile_x),$($stoneTarget.tile_y)" } else { "" }
+        mine_stone_health_before = if ($null -ne $stoneTarget) { [int]$stoneTarget.health_or_hits_remaining } else { $null }
+        mine_stone_expected_swings = if ($null -ne $stoneTarget) { [int]$stoneTarget.best_pickaxe_hits_remaining } else { $null }
+        mine_stone_status = if ($null -ne $mineStoneResult) { [string]$mineStoneResult.status } else { "not_requested" }
+        mine_stone_verification = if ($null -ne $mineStoneResult) { [string]$mineStoneResult.primitive_verification_status } else { "not_requested" }
+        mine_stone_actual_ticks = if ($null -ne $mineStoneResult) { [int]$mineStoneResult.actual_ticks } else { $null }
+        mine_stone_native_swing_count = $nativeSwingCount
+        mine_stone_health_sequence = $healthSequence
+        mine_stone_removed = $stoneRemoved
         sample_count = $SampleCount
         snapshot_latency_ms = $latencies
         maximum_snapshot_latency_ms = $maximumLatency
