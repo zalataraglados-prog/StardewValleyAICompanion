@@ -230,6 +230,48 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveAcceptsExactHardMineTreasureCatalogStatus()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)288" }
+            },
+            monsters: """
+            [{"runtime_identity":"hard-treasure-source","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":[],"conditional_drop_catalog_keys":["mine_hard_special_treasure_room"],"drop_probability_rules":[{"catalog_key":"mine_hard_special_treasure_room","effective_per_kill_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"global_rng_catalog_selection_not_consumed"}]}]
+            """,
+            dropCatalogs: """
+            [{"key":"mine_hard_special_treasure_room","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(O)288","(O)287"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(O)288","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_hard_mine_treasure_tree"},{"qualified_item_id":"(O)287","conditional_selection_chance":0.75,"probability_status":"exact_decompiled_hard_mine_treasure_tree"}]}]
+            """);
+
+        Assert.Equal("hard-treasure-source", plan.TargetRuntimeIdentity);
+        Assert.Equal(0.25d, plan.TargetDropChancePreview);
+        Assert.Equal("exact_current_snapshot", plan.TargetDropProbabilityStatus);
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveDoesNotRankCurrentDeathTileTreasureCatalogAsStableProbability()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)288" }
+            },
+            monsters: """
+            [{"runtime_identity":"moving-hard-treasure-source","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":[],"conditional_drop_catalog_keys":["mine_hard_special_treasure_room"],"drop_probability_rules":[{"catalog_key":"mine_hard_special_treasure_room","effective_per_kill_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"current_death_tile_global_rng_catalog_selection_not_consumed"}]}]
+            """,
+            dropCatalogs: """
+            [{"key":"mine_hard_special_treasure_room","active":true,"item_identity_completeness":"complete","possible_qualified_item_ids":["(O)288","(O)287"],"selection_probability_completeness":"complete","selection_probability_entries":[{"qualified_item_id":"(O)288","conditional_selection_chance":0.25,"probability_status":"exact_decompiled_hard_mine_treasure_tree"},{"qualified_item_id":"(O)287","conditional_selection_chance":0.75,"probability_status":"exact_decompiled_hard_mine_treasure_tree"}]}]
+            """);
+
+        Assert.Equal("moving-hard-treasure-source", plan.TargetRuntimeIdentity);
+        Assert.Null(plan.TargetDropChancePreview);
+        Assert.Equal("unavailable_no_stable_per_identity_probability", plan.TargetDropProbabilityStatus);
+    }
+
+    [Fact]
     public void MonsterDropObjectiveRejectsIncompleteSharedCatalog()
     {
         var plan = ObjectivePlan(

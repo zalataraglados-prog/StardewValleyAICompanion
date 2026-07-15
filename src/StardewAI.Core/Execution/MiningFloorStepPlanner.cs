@@ -588,7 +588,8 @@ namespace StardewAI.Core.Execution
                         var status = ReadString(entry, "probability_status");
                         if (!string.IsNullOrWhiteSpace(id) && chance.HasValue && chance.Value >= 0d && chance.Value <= 1d &&
                             (string.Equals(status, "exact_decompiled_weight_with_loaded_furniture_fallback", StringComparison.Ordinal) ||
-                             string.Equals(status, "exact_uniform_loaded_catalog", StringComparison.Ordinal)))
+                             string.Equals(status, "exact_uniform_loaded_catalog", StringComparison.Ordinal) ||
+                             string.Equals(status, "exact_decompiled_hard_mine_treasure_tree", StringComparison.Ordinal)))
                         {
                             selectionChances[id] = chance.Value;
                         }

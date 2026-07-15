@@ -421,7 +421,7 @@ internal static class MiningMonsterDropResolver
                     1d,
                     1d,
                     null,
-                    "global_rng_catalog_selection_not_consumed",
+                    "current_death_tile_global_rng_catalog_selection_not_consumed",
                     "MineShaft.monsterDrop/getSpecialItemForThisMineLevel")
             }
             : new[]
@@ -951,6 +951,7 @@ internal static class MiningMonsterDropResolver
     {
         var cosmeticEntries = BuildRandomCosmeticSelectionEntries();
         var naturalTrinkets = NaturalTrinketQualifiedItemIds();
+        var hardMineTreasureEntries = BuildHardMineTreasureSelectionEntries(player, naturalTrinkets, out var hardMineTreasureCompleteness);
         return new[]
         {
             new MiningDropCatalogProjection
@@ -966,10 +967,11 @@ internal static class MiningMonsterDropResolver
             new MiningDropCatalogProjection
             {
                 Key = HardMineTreasureCatalogKey,
-                PossibleQualifiedItemIds = HardMineTreasureQualifiedItemIds(player),
+                PossibleQualifiedItemIds = hardMineTreasureEntries.Select(entry => entry.QualifiedItemId).ToArray(),
+                SelectionProbabilityEntries = hardMineTreasureEntries,
                 Active = true,
-                ItemIdentityCompleteness = "complete_for_current_player_gates",
-                SelectionProbabilityCompleteness = "not_projected_global_rng_branch_tree",
+                ItemIdentityCompleteness = hardMineTreasureCompleteness,
+                SelectionProbabilityCompleteness = hardMineTreasureCompleteness,
                 Source = "MineShaft.getTreasureRoomItem; DataLoader.Trinkets"
             },
             new MiningDropCatalogProjection
@@ -1072,46 +1074,104 @@ internal static class MiningMonsterDropResolver
             .ToArray();
     }
 
-    private static string[] HardMineTreasureQualifiedItemIds(Farmer player)
+    private static MiningDropCatalogEntryProjection[] BuildHardMineTreasureSelectionEntries(
+        Farmer player,
+        string[] naturalTrinkets,
+        out string completeness)
     {
-        var ids = new HashSet<string>(StringComparer.Ordinal)
+        var weights = new Dictionary<string, double>(StringComparer.Ordinal);
+        var crackerRollChance = player.stats.Get(StatKeys.Mastery(0)) != 0 ? 0.02d : 0d;
+        var trinketRollChance = player.stats.Get("trinketSlots") != 0 ? 0.045d : 0d;
+        AddSelectionWeight(weights, "(O)GoldenAnimalCracker", crackerRollChance, validateFurnitureFallback: false);
+
+        var afterCrackerMass = 1d - crackerRollChance;
+        var trinketMass = afterCrackerMass * trinketRollChance;
+        if (trinketRollChance > 0d && naturalTrinkets.Length == 0)
         {
-            "(O)288", "(O)287", "(O)275", "(O)773", "(O)749", "(O)688", "(O)681", "(O)645",
-            "(O)621", "(O)802", "(O)286", "(O)437", "(O)265", "(O)439", "(O)349", "(O)226",
-            "(O)732", "(O)337", "(O)74", "(BC)21", "(BC)25", "(BC)165", "(H)38", "(H)37",
-            "(H)65", "(BC)272", "(H)83"
-        };
+            completeness = "partial_active_trinket_gate_without_loaded_natural_entries";
+        }
+        else
+        {
+            foreach (var trinket in naturalTrinkets)
+            {
+                AddSelectionWeight(weights, trinket, trinketMass / naturalTrinkets.Length, validateFurnitureFallback: false);
+            }
+            completeness = "complete_decompiled_current_player_gate_tree";
+        }
+
+        var caseMass = afterCrackerMass * (1d - trinketRollChance) / 26d;
+        AddSelectionWeight(weights, "(O)288", caseMass, false);
+        AddSelectionWeight(weights, "(O)287", caseMass, false);
         if (Game1.MasterPlayer.hasOrWillReceiveMail("volcanoShortcutUnlocked"))
         {
-            ids.Add("(O)848");
+            AddSelectionWeight(weights, "(O)848", caseMass * 0.66d, false);
+            AddSelectionWeight(weights, "(O)275", caseMass * 0.34d, false);
         }
+        else
+        {
+            AddSelectionWeight(weights, "(O)275", caseMass, false);
+        }
+        AddSelectionWeight(weights, "(O)773", caseMass, false);
+        AddSelectionWeight(weights, "(O)749", caseMass, false);
+        AddSelectionWeight(weights, "(O)688", caseMass, false);
+        AddSelectionWeight(weights, "(O)681", caseMass, false);
         for (var id = 628; id < 634; id++)
         {
-            ids.Add("(O)" + id);
+            AddSelectionWeight(weights, "(O)" + id, caseMass / 6d, false);
         }
+        AddSelectionWeight(weights, "(O)645", caseMass, false);
+        AddSelectionWeight(weights, "(O)621", caseMass, false);
+        AddSelectionWeight(weights, "(O)802", caseMass * 0.33d, false);
         for (var id = 472; id < 499; id++)
         {
-            ids.Add("(O)" + id);
+            AddSelectionWeight(weights, "(O)" + id, caseMass * 0.67d / 27d, false);
         }
+        AddSelectionWeight(weights, "(O)286", caseMass, false);
+        AddSelectionWeight(weights, "(O)265", caseMass * 0.5d, false);
+        AddSelectionWeight(weights, "(O)437", caseMass * 0.5d, false);
+        AddSelectionWeight(weights, "(O)439", caseMass, false);
+        AddSelectionWeight(weights, "(O)349", caseMass * 0.67d, false);
+        AddSelectionWeight(weights, "(O)226", caseMass * 0.33d * 0.5d, false);
+        AddSelectionWeight(weights, "(O)732", caseMass * 0.33d * 0.5d, false);
+        AddSelectionWeight(weights, "(O)337", caseMass, false);
         for (var id = 235; id < 245; id++)
         {
-            ids.Add("(O)" + id);
+            AddSelectionWeight(weights, "(O)" + id, caseMass * 0.67d / 10d, false);
         }
-        if (player.stats.Get(StatKeys.Mastery(0)) != 0)
-        {
-            ids.Add("(O)GoldenAnimalCracker");
-        }
-        if (player.stats.Get("trinketSlots") != 0)
-        {
-            ids.UnionWith(DataLoader.Trinkets(Game1.content)
-                .Where(pair => pair.Value.DropsNaturally)
-                .Select(pair => "(TR)" + pair.Key));
-        }
+        AddSelectionWeight(weights, "(O)226", caseMass * 0.33d * 0.5d, false);
+        AddSelectionWeight(weights, "(O)732", caseMass * 0.33d * 0.5d, false);
+        AddSelectionWeight(weights, "(O)74", caseMass, false);
+        AddSelectionWeight(weights, "(BC)21", caseMass, false);
+        AddSelectionWeight(weights, "(BC)25", caseMass, false);
+        AddSelectionWeight(weights, "(BC)165", caseMass, false);
+        AddSelectionWeight(weights, "(H)38", caseMass * 0.5d, false);
+        AddSelectionWeight(weights, "(H)37", caseMass * 0.5d, false);
         if (player.mailReceived.Contains("sawQiPlane"))
         {
-            ids.Add(player.stats.Get(StatKeys.Mastery(2)) != 0 ? "(O)GoldenMysteryBox" : "(O)MysteryBox");
+            AddSelectionWeight(
+                weights,
+                player.stats.Get(StatKeys.Mastery(2)) != 0 ? "(O)GoldenMysteryBox" : "(O)MysteryBox",
+                caseMass,
+                false);
         }
-        return Ordered(ids);
+        else
+        {
+            AddSelectionWeight(weights, "(O)749", caseMass, false);
+        }
+        AddSelectionWeight(weights, "(H)65", caseMass, false);
+        AddSelectionWeight(weights, "(BC)272", caseMass, false);
+        AddSelectionWeight(weights, "(H)83", caseMass, false);
+
+        return weights
+            .Where(pair => pair.Value > 0d)
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => new MiningDropCatalogEntryProjection
+            {
+                QualifiedItemId = pair.Key,
+                ConditionalSelectionChance = pair.Value,
+                ProbabilityStatus = "exact_decompiled_hard_mine_treasure_tree"
+            })
+            .ToArray();
     }
 
     private static string? PreviewSpecialItem(MineShaft mine, int x, int y)
