@@ -199,6 +199,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 invincible_countdown_ms = monster.invincibleCountdown,
                 stun_time_ms = monster.stunTime.Value,
                 melee_damage_semantics = ReadMeleeDamageSemantics(monster, Game1.player),
+                melee_attack_projections = ReadMeleeAttackProjections(monster, Game1.player),
                 is_hard_mode_monster = monster.isHardModeMonster.Value,
                 movement_speed = monster.Speed,
                 tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
@@ -330,6 +331,237 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             weapon.enchantments.Any(enchantment => string.Equals(enchantment.GetType().Name, runtimeTypeName, StringComparison.Ordinal)));
     }
 
+    private static object[] ReadMeleeAttackProjections(Monster monster, Farmer player)
+    {
+        var hasIndependentDamageSource = player.trinketItems
+            .Where(trinket => trinket is not null)
+            .Select(trinket => DataLoader.Trinkets(Game1.content).GetValueOrDefault(trinket!.ItemId)?.TrinketEffectClass ?? string.Empty)
+            .Any(type => type.EndsWith("MagicQuiverTrinketEffect", StringComparison.Ordinal) ||
+                type.EndsWith("CompanionTrinketEffect", StringComparison.Ordinal));
+        return player.Items.Select((item, slotIndex) => item is MeleeWeapon weapon && !weapon.isScythe()
+                ? ReadMeleeAttackProjection(monster, player, weapon, slotIndex, hasIndependentDamageSource)
+                : null)
+            .Where(projection => projection is not null)
+            .ToArray()!;
+    }
+
+    private static object ReadMeleeAttackProjection(
+        Monster monster,
+        Farmer player,
+        MeleeWeapon weapon,
+        int slotIndex,
+        bool hasIndependentDamageSource)
+    {
+        var enchantmentNames = weapon.enchantments.Select(enchantment => enchantment.GetType().Name).ToArray();
+        var unknownEnchantment = weapon.enchantments.Any(enchantment =>
+            enchantment.GetType().Assembly != typeof(MeleeWeapon).Assembly);
+        var magicProjectile = enchantmentNames.Contains("MagicEnchantment", StringComparer.Ordinal);
+        var dataProjectile = weapon.GetData()?.Projectiles is { Count: > 0 };
+        var exactDirectDamage = monster.GetType().Assembly == typeof(Monster).Assembly &&
+            weapon.GetType().Assembly == typeof(MeleeWeapon).Assembly &&
+            !unknownEnchantment;
+        var currentHitCanDamage = !monster.IsInvisible && !monster.isInvincible() && monster switch
+        {
+            Spiker => false,
+            Bat bat when bat.Age == 789 => false,
+            Bug bug when bug.isArmoredBug.Value => enchantmentNames.Contains("BugKillerEnchantment", StringComparer.Ordinal),
+            Mummy mummy when mummy.reviveTimer.Value > 0 => false,
+            Grub grub when grub.pupating.Value => false,
+            LavaLurk lurk when lurk.currentState.Value == LavaLurk.State.Submerged => false,
+            RockCrab crab when crab.Sprite.currentFrame % 4 == 0 && !crab.shellGone.Value => false,
+            _ => true
+        };
+        var canDefeat = monster switch
+        {
+            Spiker => false,
+            Bat bat when bat.Age == 789 => false,
+            Bug bug when bug.isArmoredBug.Value => enchantmentNames.Contains("BugKillerEnchantment", StringComparer.Ordinal),
+            Mummy => enchantmentNames.Contains("CrusaderEnchantment", StringComparer.Ordinal),
+            _ => true
+        };
+        var distribution = exactDirectDamage && canDefeat
+            ? BuildMeleeDamageDistribution(monster, player, weapon, enchantmentNames)
+            : null;
+        double? expectedAttacks = distribution is null ? null : ExpectedAttacksToDefeat(monster.Health, distribution.Entries);
+        if (expectedAttacks.HasValue && !double.IsFinite(expectedAttacks.Value))
+        {
+            expectedAttacks = null;
+        }
+        var attackInterval = MeleeAttackIntervalMilliseconds(player, weapon);
+        var totalDamageCompleteness = hasIndependentDamageSource || magicProjectile || dataProjectile
+            ? "partial_independent_or_projectile_damage_not_composed"
+            : exactDirectDamage ? "complete_direct_melee_damage_only" : "unknown_custom_damage_semantics";
+        return new
+        {
+            slot_index = slotIndex,
+            qualified_item_id = weapon.QualifiedItemId,
+            weapon_type = weapon.type.Value,
+            enchantment_runtime_types = enchantmentNames,
+            current_hit_can_damage = currentHitCanDamage,
+            can_defeat_with_this_weapon = canDefeat,
+            hit_chance = distribution?.HitChance,
+            expected_damage_per_attack = distribution?.ExpectedDamagePerAttack,
+            expected_attacks_to_defeat = expectedAttacks,
+            attack_interval_ms = attackInterval,
+            expected_active_damage_duration_ms = expectedAttacks * attackInterval,
+            direct_damage_distribution = distribution?.Entries.Select(pair => (object)new { damage = pair.Key, probability = pair.Value }).ToArray() ?? Array.Empty<object>(),
+            direct_damage_status = distribution is null ? "unavailable" : "exact_decompiled_discrete_distribution",
+            total_damage_completeness = totalDamageCompleteness,
+            duration_status = distribution is not null && currentHitCanDamage && totalDamageCompleteness.StartsWith("complete", StringComparison.Ordinal)
+                ? "exact_active_melee_phase_excluding_movement"
+                : currentHitCanDamage ? "unavailable_incomplete_total_damage" : "unavailable_current_temporary_or_permanent_gate",
+            source = "MeleeWeapon.setFarmerAnimating/DoDamage; GameLocation.damageMonster; Monster.takeDamage"
+        };
+    }
+
+    private static MeleeDamageDistribution BuildMeleeDamageDistribution(
+        Monster monster,
+        Farmer player,
+        MeleeWeapon weapon,
+        string[] enchantmentNames)
+    {
+        var scaledMin = (int)((float)weapon.minDamage.Value * (1f + player.buffs.AttackMultiplier));
+        var scaledMax = (int)((float)weapon.maxDamage.Value * (1f + player.buffs.AttackMultiplier));
+        var baseOutcomeCount = Math.Max(1, scaledMax - scaledMin + 1);
+        var criticalChance = weapon.critChance.Value;
+        if (weapon.type.Value == MeleeWeapon.dagger)
+        {
+            criticalChance = (criticalChance + 0.005f) * 1.12f;
+        }
+        criticalChance *= 1f + player.buffs.CriticalChanceMultiplier;
+        if (player.hasBuff("statue_of_blessings_5"))
+        {
+            criticalChance += 0.1f;
+        }
+        if (player.professions.Contains(25))
+        {
+            criticalChance += criticalChance * 0.5f;
+        }
+        criticalChance += player.LuckLevel * (criticalChance / 40f);
+        var critProbability = Math.Clamp((double)criticalChance, 0d, 1d);
+        var precision = (int)((float)weapon.addedPrecision.Value * (1f + player.buffs.WeaponPrecisionMultiplier)) / 10d;
+        var missProbability = Math.Clamp(monster.missChance.Value - monster.missChance.Value * precision, 0d, 1d);
+        var entries = new SortedDictionary<int, double>();
+        AddProbability(entries, 0, missProbability);
+        for (var baseDamage = scaledMin; baseDamage <= scaledMax; baseDamage++)
+        {
+            var baseProbability = (1d - missProbability) / baseOutcomeCount;
+            AddMeleeDamageOutcome(entries, monster, player, weapon, enchantmentNames, baseDamage, false, baseProbability * (1d - critProbability));
+            AddMeleeDamageOutcome(entries, monster, player, weapon, enchantmentNames, baseDamage, true, baseProbability * critProbability);
+        }
+        return new MeleeDamageDistribution(entries);
+    }
+
+    private static void AddMeleeDamageOutcome(
+        SortedDictionary<int, double> entries,
+        Monster monster,
+        Farmer player,
+        MeleeWeapon weapon,
+        string[] enchantmentNames,
+        int baseDamage,
+        bool critical,
+        double probability)
+    {
+        if (probability <= 0d)
+        {
+            return;
+        }
+        var damage = critical
+            ? (int)((float)baseDamage * weapon.critMultiplier.Value * (1f + player.buffs.CriticalPowerMultiplier))
+            : baseDamage;
+        damage = Math.Max(1, damage + player.Attack * 3);
+        if (player.professions.Contains(24))
+        {
+            damage = (int)Math.Ceiling((float)damage * 1.1f);
+        }
+        if (player.professions.Contains(26))
+        {
+            damage = (int)Math.Ceiling((float)damage * 1.15f);
+        }
+        if (critical && player.professions.Contains(29))
+        {
+            damage = (int)((float)damage * 2f);
+        }
+        foreach (var enchantment in enchantmentNames)
+        {
+            if (enchantment == "BugKillerEnchantment" && monster is Grub or Fly or Bug or Leaper or RockCrab)
+            {
+                damage = (int)((float)damage * 2f);
+            }
+            else if (enchantment == "CrusaderEnchantment" && monster is Ghost or Skeleton or Mummy or ShadowBrute or ShadowShaman or ShadowGirl or ShadowGuy or Shooter)
+            {
+                damage = (int)((float)damage * 1.5f);
+            }
+            else if (enchantment == "SlimeSlayerEnchantment" && monster is GreenSlime)
+            {
+                damage = (int)((float)damage * 1.33f + 1f);
+            }
+        }
+        if (monster is GreenSlime slime && slime.stackedSlimes.Value > 0)
+        {
+            damage = 1;
+        }
+        damage = Math.Max(1, damage - monster.resilience.Value);
+        AddProbability(entries, damage, probability);
+    }
+
+    public static double ExpectedAttacksToDefeat(int health, IReadOnlyDictionary<int, double> damageDistribution)
+    {
+        if (health <= 0)
+        {
+            return 0d;
+        }
+        var probabilityMass = damageDistribution.Values.Sum();
+        if (damageDistribution.Any(pair => pair.Key < 0 || pair.Value < 0d) || Math.Abs(probabilityMass - 1d) > 0.000000001d)
+        {
+            throw new ArgumentException("Damage distribution must contain non-negative outcomes with probability mass one.", nameof(damageDistribution));
+        }
+        var missProbability = damageDistribution.GetValueOrDefault(0);
+        if (missProbability >= 1d)
+        {
+            return double.PositiveInfinity;
+        }
+        var expected = new double[health + 1];
+        for (var remaining = 1; remaining <= health; remaining++)
+        {
+            var continuation = damageDistribution
+                .Where(pair => pair.Key > 0)
+                .Sum(pair => pair.Value * expected[Math.Max(0, remaining - pair.Key)]);
+            expected[remaining] = (1d + continuation) / (1d - missProbability);
+        }
+        return expected[health];
+    }
+
+    private static double MeleeAttackIntervalMilliseconds(Farmer player, MeleeWeapon weapon)
+    {
+        var swipeSpeed = ((400f - weapon.speed.Value * 40f) - player.addedSpeed * 40f) * (1f - player.buffs.WeaponSpeedMultiplier);
+        return weapon.type.Value switch
+        {
+            MeleeWeapon.dagger => swipeSpeed * 0.5d,
+            MeleeWeapon.club => swipeSpeed * 2.08d,
+            _ => swipeSpeed * 0.975d
+        };
+    }
+
+    private static void AddProbability(SortedDictionary<int, double> entries, int damage, double probability)
+    {
+        entries[damage] = entries.GetValueOrDefault(damage) + probability;
+    }
+
+    private sealed class MeleeDamageDistribution
+    {
+        public MeleeDamageDistribution(SortedDictionary<int, double> entries)
+        {
+            Entries = entries;
+        }
+
+        public SortedDictionary<int, double> Entries { get; }
+
+        public double HitChance => 1d - Entries.GetValueOrDefault(0);
+
+        public double ExpectedDamagePerAttack => Entries.Sum(pair => pair.Key * pair.Value);
+    }
+
     private static object[] ReadDebris(MineShaft mine)
     {
         return mine.debris.Select((debris, index) => new
@@ -408,6 +640,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             attack = player.Attack,
             luck_level = player.LuckLevel,
             added_speed = player.addedSpeed,
+            cardinal_movement = ReadCardinalMovement(player),
             professions = player.professions.OrderBy(id => id).ToArray(),
             current_time = Game1.timeOfDay,
             deepest_mine_level = player.deepestMineLevel,
@@ -453,6 +686,25 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 weapon_precision_multiplier = player.buffs.WeaponPrecisionMultiplier
             },
             source = "Game1.player live resource fields"
+        };
+    }
+
+    private static object ReadCardinalMovement(Farmer player)
+    {
+        var immobilized = player.hasBuff("19");
+        var effectiveSpeed = player.Speed + player.addedSpeed + player.temporarySpeedBuff;
+        var pixelsPerMillisecond = effectiveSpeed * 0.066d;
+        return new
+        {
+            base_speed = player.Speed,
+            added_speed = player.addedSpeed,
+            temporary_speed_buff = player.temporarySpeedBuff,
+            immobilized,
+            effective_speed = effectiveSpeed,
+            pixels_per_millisecond = immobilized || pixelsPerMillisecond <= 0d ? (double?)null : pixelsPerMillisecond,
+            tile_duration_ms = immobilized || pixelsPerMillisecond <= 0d ? (double?)null : Game1.tileSize / pixelsPerMillisecond,
+            status = immobilized ? "blocked_by_buff_19" : "exact_mine_cardinal_input_without_collision_delay",
+            source = "Farmer.getMovementSpeed cardinal non-event non-mounted branch"
         };
     }
 

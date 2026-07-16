@@ -506,6 +506,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var targetName = ReadQueueParameterString(item, "target_name");
     var maxAttacks = ReadQueueParameterInt(item, "max_attacks");
     var requiredWeaponEnchantmentRuntimeType = ReadQueueParameterString(item, "required_weapon_enchantment_runtime_type");
+    var combatWeaponSlotIndex = ReadQueueParameterInt(item, "combat_weapon_slot_index");
     var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
     var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
     var maxCrops = ReadQueueParameterInt(item, "max_crops") ?? ReadQueueParameterInt(item, "max_tool_swings");
@@ -571,6 +572,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     if (!string.IsNullOrWhiteSpace(requiredWeaponEnchantmentRuntimeType))
     {
         executionRequest.RequiredWeaponEnchantmentRuntimeType = requiredWeaponEnchantmentRuntimeType;
+    }
+    if (combatWeaponSlotIndex.HasValue)
+    {
+        executionRequest.CombatWeaponSlotIndex = combatWeaponSlotIndex.Value;
     }
     if (direction.HasValue)
     {

@@ -6816,7 +6816,7 @@ public sealed class ModEntry : Mod
         }
 
         var target = targets[0];
-        var weapon = BestCombatWeapon(target, request.RequiredWeaponEnchantmentRuntimeType);
+        var weapon = ResolveCombatWeapon(target, request.CombatWeaponSlotIndex, request.RequiredWeaponEnchantmentRuntimeType);
         if (weapon is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "weapon=missing", "combat_melee_weapon_unavailable"));
@@ -7232,6 +7232,23 @@ public sealed class ModEntry : Mod
             .ThenByDescending(weapon => weapon.maxDamage.Value)
             .ThenBy(weapon => weapon.QualifiedItemId, StringComparer.Ordinal)
             .FirstOrDefault();
+    }
+
+    private static MeleeWeapon? ResolveCombatWeapon(Monster target, int? requestedSlotIndex, string requiredEnchantmentRuntimeType)
+    {
+        if (!requestedSlotIndex.HasValue)
+        {
+            return BestCombatWeapon(target, requiredEnchantmentRuntimeType);
+        }
+        var slot = requestedSlotIndex.Value;
+        if (slot < 0 || slot >= Game1.player.Items.Count || Game1.player.Items[slot] is not MeleeWeapon weapon || weapon.isScythe())
+        {
+            return null;
+        }
+        return string.IsNullOrWhiteSpace(requiredEnchantmentRuntimeType) ||
+            weapon.enchantments.Any(enchantment => string.Equals(enchantment.GetType().Name, requiredEnchantmentRuntimeType, StringComparison.Ordinal))
+                ? weapon
+                : null;
     }
 
     private static double CombatWeaponScore(MeleeWeapon weapon, Monster target)

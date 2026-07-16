@@ -77,11 +77,13 @@ public sealed class TrainingExecutionContractTests
             TargetRuntimeType = "StardewValley.Monsters.GreenSlime",
             TargetRuntimeIdentity = "0000BEEF",
             TargetName = "Green Slime",
-            MaxAttacks = 12
+            MaxAttacks = 12,
+            CombatWeaponSlotIndex = 3
         };
         var requestJson = JsonSerializer.Serialize(request, JsonOptions);
         var requestRoundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(requestJson, JsonOptions)!;
         Assert.Equal(12, requestRoundTrip.MaxAttacks);
+        Assert.Equal(3, requestRoundTrip.CombatWeaponSlotIndex);
         Assert.Equal("Green Slime", requestRoundTrip.TargetName);
         Assert.Equal("0000BEEF", requestRoundTrip.TargetRuntimeIdentity);
 

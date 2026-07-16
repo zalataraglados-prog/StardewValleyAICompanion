@@ -350,6 +350,31 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveRanksByMovementAndExactCombatDuration()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {"runtime_identity":"near-slow","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":0.8,"probability_status":"exact_current_state_formula","item_selection_status":"independent"}],"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":10.0,"expected_active_damage_duration_ms":5000.0,"duration_status":"exact_active_melee_phase_excluding_movement"}]},
+              {"runtime_identity":"far-fast","tile_x":6,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":0.8,"probability_status":"exact_current_state_formula","item_selection_status":"independent"}],"melee_attack_projections":[{"slot_index":2,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":500.0,"duration_status":"exact_active_melee_phase_excluding_movement"}]}
+            ]
+            """,
+            resources: """{"health":100,"max_health":100,"selected_slot_index":4,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0}}""");
+
+        Assert.Equal("far-fast", plan.TargetRuntimeIdentity);
+        Assert.Equal(2, plan.CombatWeaponSlotIndex);
+        Assert.Equal(2d, plan.ExpectedCombatAttacks);
+        Assert.Equal(500d, plan.ExpectedCombatDurationMs);
+        Assert.Equal(900d, plan.EstimatedTargetCostMs);
+        Assert.Equal("exact_active_melee_plus_unobstructed_bfs_movement", plan.CombatDurationStatus);
+    }
+
+    [Fact]
     public void MonsterDropObjectiveDoesNotRankCurrentPositionSeedAsStableProbability()
     {
         var plan = ObjectivePlan(
@@ -527,7 +552,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
         Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
         Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint", combatSource, StringComparison.Ordinal);
-        Assert.Contains("BestCombatWeapon(target, request.RequiredWeaponEnchantmentRuntimeType)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("ResolveCombatWeapon(target, request.CombatWeaponSlotIndex", combatSource, StringComparison.Ordinal);
         Assert.Contains("weapon.enchantments.Any", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("damageMonster(", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("takeDamage(", combatSource, StringComparison.Ordinal);

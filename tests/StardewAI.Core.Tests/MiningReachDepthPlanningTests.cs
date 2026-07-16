@@ -10,6 +10,32 @@ namespace StardewAI.Core.Tests;
 
 public sealed class MiningReachDepthPlanningTests
 {
+    [Theory]
+    [InlineData(25, 0.0, 10, 3.0)]
+    [InlineData(20, 0.5, 10, 4.0)]
+    public void ExpectedMeleeAttacksHandlesDeterministicDamageAndMisses(int health, double missChance, int damage, double expected)
+    {
+        var distribution = new Dictionary<int, double>
+        {
+            [0] = missChance,
+            [damage] = 1d - missChance
+        };
+
+        Assert.Equal(expected, MiningReadAdapter.ExpectedAttacksToDefeat(health, distribution), 10);
+    }
+
+    [Fact]
+    public void ExpectedMeleeAttacksUsesFullDiscreteDamageDistribution()
+    {
+        var distribution = new Dictionary<int, double>
+        {
+            [5] = 0.5d,
+            [10] = 0.5d
+        };
+
+        Assert.Equal(1.5d, MiningReadAdapter.ExpectedAttacksToDefeat(10, distribution), 10);
+    }
+
     [Fact]
     public void OptionRegistryRegistersMiningReachDepthAsParameterizedMechanical()
     {
@@ -234,6 +260,10 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("case Spiker:", source, StringComparison.Ordinal);
         Assert.Contains("requires_bug_killer_enchantment", source, StringComparison.Ordinal);
         Assert.Contains("mummy_revives_without_crusader_or_bomb", source, StringComparison.Ordinal);
+        Assert.Contains("melee_attack_projections = ReadMeleeAttackProjections", source, StringComparison.Ordinal);
+        Assert.Contains("BuildMeleeDamageDistribution", source, StringComparison.Ordinal);
+        Assert.Contains("exact_decompiled_discrete_distribution", source, StringComparison.Ordinal);
+        Assert.Contains("tile_duration_ms", source, StringComparison.Ordinal);
     }
 
     [Fact]

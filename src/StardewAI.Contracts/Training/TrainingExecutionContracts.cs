@@ -65,6 +65,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_weapon_enchantment_runtime_type")]
         public string RequiredWeaponEnchantmentRuntimeType { get; set; } = string.Empty;
 
+        [JsonPropertyName("combat_weapon_slot_index")]
+        public int? CombatWeaponSlotIndex { get; set; }
+
         [JsonPropertyName("direction")]
         public int? Direction { get; set; }
 

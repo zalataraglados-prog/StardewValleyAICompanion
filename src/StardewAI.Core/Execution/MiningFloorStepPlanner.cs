@@ -83,6 +83,16 @@ namespace StardewAI.Core.Execution
 
         public string RequiredWeaponEnchantmentRuntimeType { get; set; } = string.Empty;
 
+        public int? CombatWeaponSlotIndex { get; set; }
+
+        public double? ExpectedCombatAttacks { get; set; }
+
+        public double? ExpectedCombatDurationMs { get; set; }
+
+        public double? EstimatedTargetCostMs { get; set; }
+
+        public string CombatDurationStatus { get; set; } = string.Empty;
+
         public string TargetQualifiedItemId { get; set; } = string.Empty;
 
         public string[] ExpectedDropQualifiedItemIds { get; set; } = Array.Empty<string>();
@@ -160,6 +170,7 @@ namespace StardewAI.Core.Execution
             var search = Search(grid, start);
             var hasResources = TryFieldValue(mining, "player_resources", out var resources);
             var restoreSlot = hasResources ? ReadInt(resources, "selected_slot_index") : null;
+            var movementTileDurationMs = hasResources ? ReadMovementTileDuration(resources) : null;
             var monsterDropCatalogs = objective.Kind == MiningObjectiveKinds.CollectMonsterDrop
                 ? ReadMonsterDropCatalogs(mining)
                 : null;
@@ -188,7 +199,7 @@ namespace StardewAI.Core.Execution
 
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
             {
-                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs) ??
+                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs, movementTileDurationMs) ??
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
 
@@ -231,7 +242,7 @@ namespace StardewAI.Core.Execution
             var mustKillAll = ReadBool(objectives, "must_kill_all_monsters_to_advance");
             if (mustKillAll)
             {
-                return SelectMonster(monsters, search, grid, "kill_all_floor_requires_combat") ??
+                return SelectMonster(monsters, search, grid, "kill_all_floor_requires_combat", movementTileDurationMs: movementTileDurationMs) ??
                     Blocked("kill_all_floor_has_no_reachable_monster");
             }
 
@@ -241,7 +252,7 @@ namespace StardewAI.Core.Execution
                 return stonePlan;
             }
 
-            var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster");
+            var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster", movementTileDurationMs: movementTileDurationMs);
             if (combatPlan is not null)
             {
                 return combatPlan;
@@ -371,7 +382,8 @@ namespace StardewAI.Core.Execution
             bool[,] grid,
             string reason,
             string[]? targetDropIds = null,
-            IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs = null)
+            IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs = null,
+            double? movementTileDurationMs = null)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -389,14 +401,15 @@ namespace StardewAI.Core.Execution
                     {
                         Monster = monster,
                         Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
-                        Match = BuildMonsterDropMatch(monster, targets, possible, dropCatalogs)
+                        Match = BuildMonsterDropMatch(monster, targets, possible, dropCatalogs),
+                        Combat = ReadBestCombatProjection(monster)
                     };
                 })
                 .Where(row => targets is null || row.Match.MatchedIds.Length > 0)
                 .Where(row => CanDefeatWithAvailableMeleeWeapon(row.Monster))
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => targets is null || row.Match.IsGuaranteed ? 0 : row.Match.ChanceKnown ? 1 : 2)
-                .ThenByDescending(row => row.Match.IsGuaranteed ? 1d : row.Match.Efficiency(row.Candidate!.Distance))
+                .ThenByDescending(row => row.Match.Efficiency(row.Candidate!.Distance, row.Combat?.DurationMs, movementTileDurationMs))
                 .ThenByDescending(row => row.Match.ExpectedQuantityPerKill ?? -1d)
                 .ThenBy(row => row.Candidate!.Distance)
                 .ThenBy(row => row.Candidate!.TargetY)
@@ -408,6 +421,15 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
+                    plan.CombatWeaponSlotIndex = row.Combat?.SlotIndex;
+                    plan.ExpectedCombatAttacks = row.Combat?.ExpectedAttacks;
+                    plan.ExpectedCombatDurationMs = row.Combat?.DurationMs;
+                    plan.EstimatedTargetCostMs = row.Combat is not null && movementTileDurationMs.HasValue
+                        ? row.Combat.DurationMs + row.Candidate!.Distance * movementTileDurationMs.Value
+                        : null;
+                    plan.CombatDurationStatus = row.Combat is null
+                        ? "unavailable_no_complete_active_melee_projection"
+                        : movementTileDurationMs.HasValue ? "exact_active_melee_plus_unobstructed_bfs_movement" : "exact_active_melee_only";
                     plan.TargetQualifiedItemId = targets is null ? string.Empty : row.Match.TargetId;
                     plan.ExpectedDropQualifiedItemIds = targets is null ? Array.Empty<string>() : row.Match.MatchedIds;
                     plan.SourceMatchStatus = targets is null
@@ -418,7 +440,7 @@ namespace StardewAI.Core.Execution
                     plan.TargetExpectedQuantityPerKill = targets is null ? null : row.Match.ExpectedQuantityPerKill;
                     plan.TargetDropEfficiencyScore = targets is null || !row.Match.ChanceKnown
                         ? null
-                        : row.Match.Efficiency(row.Candidate!.Distance);
+                        : row.Match.Efficiency(row.Candidate!.Distance, row.Combat?.DurationMs, movementTileDurationMs);
                     return plan;
                 })
                 .FirstOrDefault();
@@ -437,6 +459,31 @@ namespace StardewAI.Core.Execution
             return monster.TryGetProperty("melee_damage_semantics", out var semantics) && semantics.ValueKind == JsonValueKind.Object
                 ? ReadString(semantics, "required_weapon_enchantment_runtime_type")
                 : string.Empty;
+        }
+
+        private static double? ReadMovementTileDuration(JsonElement resources)
+        {
+            return resources.TryGetProperty("cardinal_movement", out var movement) && movement.ValueKind == JsonValueKind.Object
+                ? ReadDouble(movement, "tile_duration_ms")
+                : null;
+        }
+
+        private static MonsterCombatProjectionInfo? ReadBestCombatProjection(JsonElement monster)
+        {
+            if (!monster.TryGetProperty("melee_attack_projections", out var projections) || projections.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            return projections.EnumerateArray()
+                .Where(projection => string.Equals(ReadString(projection, "duration_status"), "exact_active_melee_phase_excluding_movement", StringComparison.Ordinal))
+                .Select(projection => new MonsterCombatProjectionInfo(
+                    ReadInt(projection, "slot_index"),
+                    ReadDouble(projection, "expected_attacks_to_defeat"),
+                    ReadDouble(projection, "expected_active_damage_duration_ms")))
+                .Where(projection => projection.SlotIndex.HasValue && projection.ExpectedAttacks.HasValue && projection.DurationMs.HasValue && projection.DurationMs.Value >= 0d)
+                .OrderBy(projection => projection.DurationMs)
+                .ThenBy(projection => projection.SlotIndex)
+                .FirstOrDefault();
         }
 
         private static MonsterDropMatch BuildMonsterDropMatch(
@@ -1052,10 +1099,32 @@ namespace StardewAI.Core.Execution
 
             public string ProbabilityStatus { get; set; } = string.Empty;
 
-            public double Efficiency(int distance)
+            public double Efficiency(int distance, double? combatDurationMs = null, double? movementTileDurationMs = null)
             {
-                return Chance.HasValue ? Chance.Value / (Math.Max(0, distance) + 1d) : -1d;
+                if (!Chance.HasValue)
+                {
+                    return -1d;
+                }
+                return combatDurationMs.HasValue && movementTileDurationMs.HasValue
+                    ? Chance.Value / Math.Max(1d, combatDurationMs.Value + Math.Max(0, distance) * movementTileDurationMs.Value)
+                    : Chance.Value / (Math.Max(0, distance) + 1d);
             }
+        }
+
+        private sealed class MonsterCombatProjectionInfo
+        {
+            public MonsterCombatProjectionInfo(int? slotIndex, double? expectedAttacks, double? durationMs)
+            {
+                SlotIndex = slotIndex;
+                ExpectedAttacks = expectedAttacks;
+                DurationMs = durationMs;
+            }
+
+            public int? SlotIndex { get; }
+
+            public double? ExpectedAttacks { get; }
+
+            public double? DurationMs { get; }
         }
 
         private sealed class MonsterDropCatalogInfo
@@ -1215,6 +1284,11 @@ namespace StardewAI.Core.Execution
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
             Add(parameters, "target_name", plan.TargetName);
             Add(parameters, "required_weapon_enchantment_runtime_type", plan.RequiredWeaponEnchantmentRuntimeType);
+            Add(parameters, "combat_weapon_slot_index", plan.CombatWeaponSlotIndex);
+            Add(parameters, "expected_combat_attacks", plan.ExpectedCombatAttacks);
+            Add(parameters, "expected_combat_duration_ms", plan.ExpectedCombatDurationMs);
+            Add(parameters, "estimated_target_cost_ms", plan.EstimatedTargetCostMs);
+            Add(parameters, "combat_duration_status", plan.CombatDurationStatus);
             return parameters.ToArray();
         }
 
