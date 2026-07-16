@@ -1014,6 +1014,11 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("executor.place_bomb", source, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", bombSource, StringComparison.Ordinal);
         Assert.Contains("PlaceBombStage.AimPlacement", bombSource, StringComparison.Ordinal);
+        Assert.Contains("PrepareNativeBombPlacement", bombSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.TilePoint != active.Stand", bombSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.GetGrabTile()", bombSource, StringComparison.Ordinal);
+        Assert.Contains("BombPlacementCursorPatch.ScreenPixel", bombSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", bombSource, StringComparison.Ordinal);
         Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_escape_finished_inside_damage_square", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_target_terminal_state_not_ready", bombSource, StringComparison.Ordinal);

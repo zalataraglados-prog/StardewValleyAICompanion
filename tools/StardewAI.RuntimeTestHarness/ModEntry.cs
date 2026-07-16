@@ -86,6 +86,12 @@ public sealed class ModEntry : Mod
         harmony.Patch(
             original: AccessTools.Method(typeof(Slingshot), "updateAimPos"),
             prefix: new HarmonyMethod(typeof(SlingshotAimPatch), nameof(SlingshotAimPatch.Prefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseX), Type.EmptyTypes),
+            prefix: new HarmonyMethod(typeof(BombPlacementCursorPatch), nameof(BombPlacementCursorPatch.GetOldMouseXPrefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), Type.EmptyTypes),
+            prefix: new HarmonyMethod(typeof(BombPlacementCursorPatch), nameof(BombPlacementCursorPatch.GetOldMouseYPrefix)));
 
         Monitor.Log($"Redirected Stardew save folder to {config.SavesPath}", LogLevel.Info);
 
@@ -7743,6 +7749,7 @@ public sealed class ModEntry : Mod
             pending,
             mine,
             target,
+            stand,
             escape,
             path,
             slot,
@@ -7791,10 +7798,12 @@ public sealed class ModEntry : Mod
         if (active.Stage == PlaceBombStage.AimPlacement)
         {
             StopAllMovement();
+            if (!PrepareNativeBombPlacement(active, out var reason))
+            {
+                CompletePlaceBombBlocked(active, reason);
+                return;
+            }
             Game1.player.CurrentToolIndex = active.BombSlotIndex;
-            var pixel = new Point(active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
-                active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
-            Game1.setMousePosition(pixel.X, pixel.Y, ui_scale: false);
             active.Stage = PlaceBombStage.PressPlacement;
             return;
         }
@@ -7802,11 +7811,13 @@ public sealed class ModEntry : Mod
         if (active.Stage == PlaceBombStage.PressPlacement)
         {
             StopAllMovement();
+            if (!PrepareNativeBombPlacement(active, out var reason))
+            {
+                CompletePlaceBombBlocked(active, reason);
+                return;
+            }
             Game1.player.CurrentToolIndex = active.BombSlotIndex;
-            var pixel = new Point(active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
-                active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
-            Game1.setMousePosition(pixel.X, pixel.Y, ui_scale: false);
-            if (!TryApplySmapiRightButtonOverride(pressed: true, out var reason))
+            if (!TryApplySmapiRightButtonOverride(pressed: true, out reason))
             {
                 CompletePlaceBombBlocked(active, reason);
                 return;
@@ -7822,6 +7833,7 @@ public sealed class ModEntry : Mod
                 CompletePlaceBombBlocked(active, reason);
                 return;
             }
+            BombPlacementCursorPatch.Clear();
             var stackAfter = BombStackAt(active.BombSlotIndex, active.BombQualifiedItemId);
             if (stackAfter >= active.BombStackBefore)
             {
@@ -7871,6 +7883,41 @@ public sealed class ModEntry : Mod
         {
             CompletePlaceBomb(active);
         }
+    }
+
+    private static bool PrepareNativeBombPlacement(ActivePlaceBomb active, out string reason)
+    {
+        if (Game1.player.TilePoint != active.Stand)
+        {
+            reason = "bomb_player_not_on_planned_stand_tile";
+            return false;
+        }
+        if (!AreAdjacent(active.Stand, active.Target))
+        {
+            reason = "bomb_target_no_longer_adjacent";
+            return false;
+        }
+        if (active.Mine.objects.ContainsKey(active.Target.ToVector2()) ||
+            active.Mine.terrainFeatures.ContainsKey(active.Target.ToVector2()))
+        {
+            reason = "bomb_placement_tile_became_occupied";
+            return false;
+        }
+
+        Game1.player.faceDirection(DirectionTo(active.Stand, active.Target));
+        var grabTile = Game1.player.GetGrabTile();
+        if ((int)grabTile.X != active.Target.X || (int)grabTile.Y != active.Target.Y)
+        {
+            reason = "bomb_facing_grab_tile_mismatch";
+            return false;
+        }
+
+        BombPlacementCursorPatch.ScreenPixel = new Point(
+            active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
+            active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
+        BombPlacementCursorPatch.Active = true;
+        reason = string.Empty;
+        return true;
     }
 
     private bool TryRebuildBombEscape(ActivePlaceBomb active)
@@ -7994,6 +8041,7 @@ public sealed class ModEntry : Mod
     private void CompletePlaceBomb(ActivePlaceBomb active)
     {
         TryApplySmapiRightButtonOverride(pressed: false, out _);
+        BombPlacementCursorPatch.Clear();
         StopAllMovement();
         if (!Game1.player.UsingTool)
         {
@@ -8076,6 +8124,7 @@ public sealed class ModEntry : Mod
     private void CompletePlaceBombBlocked(ActivePlaceBomb active, string reason)
     {
         TryApplySmapiRightButtonOverride(pressed: false, out _);
+        BombPlacementCursorPatch.Clear();
         StopAllMovement();
         if (!Game1.player.UsingTool)
         {
@@ -13080,6 +13129,7 @@ public sealed class ModEntry : Mod
             PendingExecution pending,
             MineShaft mine,
             Point target,
+            Point stand,
             Point escape,
             List<Point> path,
             int bombSlotIndex,
@@ -13094,6 +13144,7 @@ public sealed class ModEntry : Mod
             Pending = pending;
             Mine = mine;
             Target = target;
+            Stand = stand;
             Escape = escape;
             Path = path;
             BombSlotIndex = bombSlotIndex;
@@ -13111,6 +13162,7 @@ public sealed class ModEntry : Mod
         public PendingExecution Pending { get; }
         public MineShaft Mine { get; }
         public Point Target { get; }
+        public Point Stand { get; }
         public Point Escape { get; }
         public List<Point> Path { get; }
         public List<Point> EscapePath { get; set; } = new();
@@ -13865,5 +13917,38 @@ internal static class SlingshotAimPatch
             ActiveSlingshot = null;
             AimWorldPixel = Point.Zero;
         }
+    }
+}
+
+internal static class BombPlacementCursorPatch
+{
+    public static bool Active { get; set; }
+
+    public static Point ScreenPixel { get; set; }
+
+    public static bool GetOldMouseXPrefix(ref int __result)
+    {
+        if (!Active)
+        {
+            return true;
+        }
+        __result = ScreenPixel.X;
+        return false;
+    }
+
+    public static bool GetOldMouseYPrefix(ref int __result)
+    {
+        if (!Active)
+        {
+            return true;
+        }
+        __result = ScreenPixel.Y;
+        return false;
+    }
+
+    public static void Clear()
+    {
+        Active = false;
+        ScreenPixel = Point.Zero;
     }
 }
