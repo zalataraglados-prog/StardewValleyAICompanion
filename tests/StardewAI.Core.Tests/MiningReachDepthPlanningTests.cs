@@ -340,6 +340,50 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void LiveRuntimeSupportsParameterizedHighLevelActions()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+
+        Assert.Contains("--use-parameterized-action", source, StringComparison.Ordinal);
+        Assert.Contains("--action-option-id", source, StringComparison.Ordinal);
+        Assert.Contains("--action-parameter", source, StringComparison.Ordinal);
+        Assert.Contains("--artifact-run-id", source, StringComparison.Ordinal);
+        Assert.Contains("BuildParameterizedActionRequest", source, StringComparison.Ordinal);
+        Assert.Contains("small_model_action.v1", source, StringComparison.Ordinal);
+        Assert.Contains("options.ActionParameters", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MultiFloorRuntimeSmokeUsesCompilerLoopAndTerminalExit()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "scripts",
+            "Invoke-RuntimeMiningReachDepthLoop.ps1"));
+
+        Assert.Contains("E:\\StardewValleyAICompanion-runtime", source, StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeMiningSnapshotSmoke.ps1", source, StringComparison.Ordinal);
+        Assert.Contains("StardewAI.LiveTrainingLoop.dll", source, StringComparison.Ordinal);
+        Assert.Contains("profile=full", source, StringComparison.Ordinal);
+        Assert.Contains("--use-parameterized-action", source, StringComparison.Ordinal);
+        Assert.Contains("--artifact-run-id", source, StringComparison.Ordinal);
+        Assert.Contains("--action-option-id\", \"mining.reach_depth", source, StringComparison.Ordinal);
+        Assert.Contains("target_depth=$TargetMineLevel", source, StringComparison.Ordinal);
+        Assert.Contains("executor.exit_mine", source, StringComparison.Ordinal);
+        Assert.Contains("after_snapshot_fresh", source, StringComparison.Ordinal);
+        Assert.Contains("live-training-feature-rows.jsonl", source, StringComparison.Ordinal);
+        Assert.Contains("$stepSummaries.ToArray()", source, StringComparison.Ordinal);
+        Assert.Contains("$visitedDepths.ToArray()", source, StringComparison.Ordinal);
+        Assert.Contains("-WindowStyle Hidden", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.mine_stone\";", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.descend_ladder\";", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ElevatorStartUsesDeepestMineLevelInsteadOfTargetProgress()
     {
         Assert.Equal(5, MiningReachDepthCandidateBuilder.ElevatorStartFor(1, 40, "ordinary_mines", 5));
@@ -408,11 +452,11 @@ public sealed class MiningReachDepthPlanningTests
         {
           "mining": {
             "current_mine": {"value":{"location_id":"UndergroundMine","mine_level":CURRENT_DEPTH,"mine_area":40,"mine_kind":"TARGET_FAMILY","is_loaded_current_location":true,"is_skull_cavern":false,"is_quarry_mine":false,"is_dangerous":false,"additional_difficulty":0},"status":"available","source":{"kind":"game_object","path":"MineShaft.mineLevel"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"exits":[{"tile_x":4,"tile_y":2,"tile_index":115,"expected_destination":{"location_id":"Mine","tile_x":23,"tile_y":8}}],"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tiles": {"value":{"player_tile":{"tile_x":1,"tile_y":2},"map":{"width":6,"height":5,"status":"loaded_field_only"},"collision_context":{"status":"COLLISION_STATUS","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100001","100001","111111"]},"exits":[{"tile_x":4,"tile_y":2,"tile_index":115,"expected_destination":{"location_id":"Mine","tile_x":23,"tile_y":8}}],"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"game_object","path":"MineShaft.map"},"adapter":"test","read_at_tick":1,"confidence":1},
             "objects": {"value":[{"tile_x":3,"tile_y":2,"qualified_item_id":"(O)32","is_breakable_stone":true,"best_pickaxe_hits_remaining":2}],"status":"OBJECTS_STATUS","source":{"kind":"game_object","path":"MineShaft.objects"},"adapter":"test","read_at_tick":1,"confidence":1},
             "monsters": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.characters"},"adapter":"test","read_at_tick":1,"confidence":1},
             "floor_objectives": {"value":{"must_kill_all_monsters_to_advance":false,"enemy_count":0,"ladder_has_spawned":false},"status":"available","source":{"kind":"game_object","path":"MineShaft.mustKillAllMonstersToAdvance"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "player_resources": {"value":{"health":HEALTH,"max_health":100,"energy":ENERGY,"max_energy":270,"mining_level":5,"combat_level":4,"current_time":1200,"deepest_mine_level":DEEPEST_MINE_LEVEL,"staircase_count":2,"selected_slot_index":1,"food_slots":[]},"status":"available","source":{"kind":"game_object","path":"Game1.player"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "player_resources": {"value":{"health":HEALTH,"max_health":100,"energy":ENERGY,"max_energy":270,"mining_level":5,"combat_level":4,"current_time":1200,"deepest_mine_level":DEEPEST_MINE_LEVEL,"staircase_count":2,"selected_slot_index":1,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0,"status":"exact_mine_cardinal_input_without_collision_delay"}},"status":"available","source":{"kind":"game_object","path":"Game1.player"},"adapter":"test","read_at_tick":1,"confidence":1},
             "completeness": {"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }

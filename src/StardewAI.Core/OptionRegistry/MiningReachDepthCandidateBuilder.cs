@@ -179,7 +179,9 @@ namespace StardewAI.Core.OptionRegistry
         {
             if (element.ValueKind == JsonValueKind.Object)
             {
-                if (element.TryGetProperty("status", out var status) && status.ValueKind == JsonValueKind.String && !ReadableStatus(status.GetString()))
+                if (element.TryGetProperty("status", out var status) &&
+                    status.ValueKind == JsonValueKind.String &&
+                    ExplicitlyUnreadableNestedStatus(status.GetString()))
                 {
                     yield return path;
                 }
@@ -205,6 +207,25 @@ namespace StardewAI.Core.OptionRegistry
                     index++;
                 }
             }
+        }
+
+        private static bool ExplicitlyUnreadableNestedStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return false;
+            }
+
+            return status == "unavailable" ||
+                status == "missing" ||
+                status == "error" ||
+                status == "failed" ||
+                status == "unreadable" ||
+                status.StartsWith("unavailable_", StringComparison.Ordinal) ||
+                status.StartsWith("missing_", StringComparison.Ordinal) ||
+                status.StartsWith("error_", StringComparison.Ordinal) ||
+                status.StartsWith("failed_", StringComparison.Ordinal) ||
+                status.StartsWith("unreadable_", StringComparison.Ordinal);
         }
 
         private static bool ReadableStatus(string? status)

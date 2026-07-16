@@ -916,30 +916,37 @@ public sealed class MiningReadAdapter : ReadAdapterBase
 
     private static object[] ReadDebris(MineShaft mine)
     {
-        return mine.debris.Select((debris, index) => new
+        return mine.debris.Select((debris, index) =>
         {
-            debris_index = index,
-            debris_type = debris.debrisType.Value.ToString(),
-            chunk_type = debris.chunkType.Value,
-            item_id = debris.itemId.Value,
-            qualified_item_id = debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value,
-            item_quality = debris.itemQuality,
-            chunk_count = debris.Chunks.Count,
-            is_sinking = debris.isSinking.Value,
-            is_essential_item = debris.isEssentialItem(),
-            chunks = debris.Chunks.Select((chunk, chunkIndex) => new
+            var qualifiedItemId = debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value;
+            var collectible = !string.IsNullOrWhiteSpace(qualifiedItemId);
+            return new
             {
-                chunk_index = chunkIndex,
-                pixel_x = (int)MathF.Round(chunk.position.X),
-                pixel_y = (int)MathF.Round(chunk.position.Y),
-                tile_x = (int)((chunk.position.X + 32f) / Game1.tileSize),
-                tile_y = (int)((chunk.position.Y + 32f) / Game1.tileSize),
-                x_velocity = chunk.xVelocity.Value,
-                y_velocity = chunk.yVelocity.Value,
-                bounces = chunk.bounces,
-                alpha = chunk.alpha
-            }).ToArray(),
-            source = "MineShaft.debris and Debris.Chunks live fields"
+                debris_index = index,
+                debris_type = debris.debrisType.Value.ToString(),
+                chunk_type = debris.chunkType.Value,
+                item_id = debris.itemId.Value,
+                qualified_item_id = qualifiedItemId,
+                item_quality = debris.itemQuality,
+                chunk_count = debris.Chunks.Count,
+                is_sinking = debris.isSinking.Value,
+                is_essential_item = debris.isEssentialItem(),
+                is_collectible_item_debris = collectible,
+                collection_identity_status = collectible ? "qualified_item_identity_available" : "non_item_visual_or_numeric_debris",
+                chunks = debris.Chunks.Select((chunk, chunkIndex) => new
+                {
+                    chunk_index = chunkIndex,
+                    pixel_x = (int)MathF.Round(chunk.position.X),
+                    pixel_y = (int)MathF.Round(chunk.position.Y),
+                    tile_x = (int)((chunk.position.X + 32f) / Game1.tileSize),
+                    tile_y = (int)((chunk.position.Y + 32f) / Game1.tileSize),
+                    x_velocity = chunk.xVelocity.Value,
+                    y_velocity = chunk.yVelocity.Value,
+                    bounces = chunk.bounces,
+                    alpha = chunk.alpha
+                }).ToArray(),
+                source = "MineShaft.debris and Debris.Chunks live fields"
+            };
         }).ToArray();
     }
 

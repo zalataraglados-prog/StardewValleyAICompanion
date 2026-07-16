@@ -5578,24 +5578,62 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        var path = BuildAdjacentToolPath(mine, target, request.MaxMovementTiles ?? 512, out var moveReason);
-        if (path is null)
-        {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "mine_stone", requested, MineStoneObservedEffect(target), moveReason));
-            return;
-        }
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var requestedStand = request.StandTileX.HasValue && request.StandTileY.HasValue
+            ? new Point(request.StandTileX.Value, request.StandTileY.Value)
+            : (Point?)null;
+        var path = BuildCompilerAdjacentPath(mine, target, requestedStand, maxMovementTiles, out var moveReason);
 
         activeMineStone = new ActiveMineStone(
             pending,
             mine.NameOrUniqueName,
             target,
-            path,
+            path ?? new List<Point>(),
             pickaxe,
             stone.QualifiedItemId,
             stone.MinutesUntilReady,
             Game1.player.Stamina,
             Math.Clamp(request.MaxCrops, 1, 64),
+            maxMovementTiles,
+            requestedStand,
             requested);
+    }
+
+    private static List<Point>? BuildCompilerAdjacentPath(
+        MineShaft mine,
+        Point target,
+        Point? requestedStand,
+        int maxMovementTiles,
+        out string blockReason)
+    {
+        blockReason = string.Empty;
+        if (requestedStand.HasValue &&
+            AreAdjacent(requestedStand.Value, target) &&
+            IsTileOnMap(mine, requestedStand.Value) &&
+            IsTileWalkable(mine, requestedStand.Value) &&
+            !IsTileOccupiedByCharacter(mine, requestedStand.Value))
+        {
+            var requestedPath = TryBuildTilePath(
+                mine,
+                Game1.player.TilePoint,
+                requestedStand.Value,
+                maxMovementTiles,
+                out blockReason,
+                avoidSoftObstacles: true,
+                allowRemovableObstacles: false);
+            if (requestedPath is not null)
+            {
+                return requestedPath;
+            }
+        }
+
+        return BuildAdjacentToolPath(
+            mine,
+            target,
+            maxMovementTiles,
+            out blockReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
     }
 
     private void TickMineStone()
@@ -5632,6 +5670,21 @@ public sealed class ModEntry : Mod
             return;
         }
 
+        var currentPlayerTile = Game1.player.TilePoint;
+        if (currentPlayerTile != active.LastObservedTile)
+        {
+            if (!active.CombatInterrupted)
+            {
+                active.MovementTiles += ManhattanDistance(active.LastObservedTile, currentPlayerTile);
+            }
+            active.LastObservedTile = currentPlayerTile;
+            if (active.MovementTiles > active.MaxMovementTiles)
+            {
+                CompleteMineStoneBlocked(active, "mine_stone_movement_budget_exceeded");
+                return;
+            }
+        }
+
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (!mine.objects.TryGetValue(targetVector, out var current))
         {
@@ -5651,6 +5704,7 @@ public sealed class ModEntry : Mod
 
         if (!active.BeginIssued && ImmediateMiningThreat(mine))
         {
+            StopAllMovement();
             active.CombatInterrupted = true;
             active.CombatInterruptedTicks++;
             return;
@@ -5661,7 +5715,10 @@ public sealed class ModEntry : Mod
         {
             if (active.PathIndex >= active.Path.Count)
             {
-                CompleteMineStoneBlocked(active, "mine_stone_unreachable_target");
+                if (!TryReplanMineStone(active, mine, out var exhaustedReason))
+                {
+                    DelayOrBlockMineStoneReplan(active, "mine_stone_dynamic_path_unavailable:" + exhaustedReason);
+                }
                 return;
             }
 
@@ -5675,10 +5732,15 @@ public sealed class ModEntry : Mod
 
             if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
             {
-                CompleteMineStoneBlocked(active, "mine_stone_path_changed");
+                StopAllMovement();
+                if (!TryReplanMineStone(active, mine, out var changedReason))
+                {
+                    DelayOrBlockMineStoneReplan(active, "mine_stone_dynamic_path_unavailable:" + changedReason);
+                }
                 return;
             }
 
+            active.PathFailureTicks = 0;
             var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
             active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
@@ -5693,7 +5755,11 @@ public sealed class ModEntry : Mod
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
                 {
-                    CompleteMineStoneBlocked(active, "mine_stone_movement_stuck");
+                    StopAllMovement();
+                    if (!TryReplanMineStone(active, mine, out var stuckReason))
+                    {
+                        DelayOrBlockMineStoneReplan(active, "mine_stone_movement_stuck:" + stuckReason);
+                    }
                 }
             }
             else
@@ -5739,6 +5805,43 @@ public sealed class ModEntry : Mod
         }
 
         RecordMineStoneCompletedSwing(active, mine.objects.TryGetValue(targetVector, out var afterSwing) ? afterSwing.MinutesUntilReady : 0);
+    }
+
+    private static bool TryReplanMineStone(ActiveMineStone active, MineShaft mine, out string blockReason)
+    {
+        var remainingMovementTiles = active.MaxMovementTiles - active.MovementTiles;
+        if (remainingMovementTiles <= 0)
+        {
+            blockReason = "movement_budget_exhausted";
+            return false;
+        }
+
+        var path = BuildCompilerAdjacentPath(
+            mine,
+            active.Target,
+            active.RequestedStand,
+            remainingMovementTiles,
+            out blockReason);
+        if (path is null)
+        {
+            return false;
+        }
+
+        active.Path = path;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.PathFailureTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
+    }
+
+    private void DelayOrBlockMineStoneReplan(ActiveMineStone active, string reason)
+    {
+        active.PathFailureTicks++;
+        if (active.PathFailureTicks > 180)
+        {
+            CompleteMineStoneBlocked(active, reason);
+        }
     }
 
     private static void RecordMineStoneCompletedSwing(ActiveMineStone active, int remainingHealth)
@@ -6367,14 +6470,26 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_tile_not_live_ladder"));
             return;
         }
-        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var requestedStand = request.StandTileX.HasValue && request.StandTileY.HasValue
+            ? new Point(request.StandTileX.Value, request.StandTileY.Value)
+            : (Point?)null;
+        var path = BuildCompilerAdjacentPath(mine, target, requestedStand, maxMovementTiles, out var pathReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_ladder", requested, DescendLadderObservedEffect(), "descend_ladder_path_unavailable:" + pathReason));
             return;
         }
 
-        activeDescendLadder = new ActiveDescendLadder(pending, mine, mine.mineLevel, target, path, requested);
+        activeDescendLadder = new ActiveDescendLadder(
+            pending,
+            mine,
+            mine.mineLevel,
+            target,
+            path,
+            maxMovementTiles,
+            requestedStand,
+            requested);
     }
 
     private void TickDescendLadder()
@@ -6424,7 +6539,10 @@ public sealed class ModEntry : Mod
         {
             if (active.PathIndex >= active.Path.Count)
             {
-                CompleteDescendLadderBlocked(active, "descend_ladder_path_exhausted");
+                if (!TryReplanDescendLadder(active, out var exhaustedReason))
+                {
+                    CompleteDescendLadderBlocked(active, "descend_ladder_path_exhausted:" + exhaustedReason);
+                }
                 return;
             }
             var next = active.Path[active.PathIndex];
@@ -6435,14 +6553,10 @@ public sealed class ModEntry : Mod
             }
             if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
             {
-                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
-                if (repaired is null)
+                if (!TryReplanDescendLadder(active, out var repairReason))
                 {
                     CompleteDescendLadderBlocked(active, "descend_ladder_replan_failed:" + repairReason);
-                    return;
                 }
-                active.Path = repaired;
-                active.PathIndex = 0;
                 return;
             }
 
@@ -6459,9 +6573,11 @@ public sealed class ModEntry : Mod
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
                 {
-                    active.Path.Clear();
-                    active.PathIndex = 0;
-                    active.StuckTicks = 0;
+                    StopAllMovement();
+                    if (!TryReplanDescendLadder(active, out var stuckReason))
+                    {
+                        CompleteDescendLadderBlocked(active, "descend_ladder_stuck_replan_failed:" + stuckReason);
+                    }
                 }
             }
             else
@@ -6488,6 +6604,25 @@ public sealed class ModEntry : Mod
             return;
         }
         active.ActionIssued = true;
+    }
+
+    private static bool TryReplanDescendLadder(ActiveDescendLadder active, out string blockReason)
+    {
+        var repaired = BuildCompilerAdjacentPath(
+            active.MineBefore,
+            active.Target,
+            active.RequestedStand,
+            active.MaxMovementTiles,
+            out blockReason);
+        if (repaired is null)
+        {
+            return false;
+        }
+        active.Path = repaired;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
     }
 
     private void CompleteDescendLadder(ActiveDescendLadder active, MineShaft afterMine)
@@ -6579,7 +6714,11 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_tile_not_live_shaft"));
             return;
         }
-        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var requestedStand = request.StandTileX.HasValue && request.StandTileY.HasValue
+            ? new Point(request.StandTileX.Value, request.StandTileY.Value)
+            : (Point?)null;
+        var path = BuildCompilerAdjacentPath(mine, target, requestedStand, maxMovementTiles, out var pathReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_path_unavailable:" + pathReason));
@@ -6593,6 +6732,8 @@ public sealed class ModEntry : Mod
             Game1.player.health,
             target,
             path,
+            maxMovementTiles,
+            requestedStand,
             expectedDelta,
             request.ExpectedMineLevelAfter.Value,
             expectedCost,
@@ -6663,7 +6804,10 @@ public sealed class ModEntry : Mod
         {
             if (active.PathIndex >= active.Path.Count)
             {
-                CompleteDescendShaftBlocked(active, "descend_shaft_path_exhausted");
+                if (!TryReplanDescendShaft(active, out var exhaustedReason))
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_path_exhausted:" + exhaustedReason);
+                }
                 return;
             }
             var next = active.Path[active.PathIndex];
@@ -6674,7 +6818,12 @@ public sealed class ModEntry : Mod
             }
             if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
             {
-                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
+                var repaired = BuildCompilerAdjacentPath(
+                    active.MineBefore,
+                    active.Target,
+                    active.RequestedStand,
+                    active.MaxMovementTiles,
+                    out var repairReason);
                 if (repaired is null)
                 {
                     CompleteDescendShaftBlocked(active, "descend_shaft_replan_failed:" + repairReason);
@@ -6698,9 +6847,11 @@ public sealed class ModEntry : Mod
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
                 {
-                    active.Path.Clear();
-                    active.PathIndex = 0;
-                    active.StuckTicks = 0;
+                    StopAllMovement();
+                    if (!TryReplanDescendShaft(active, out var stuckReason))
+                    {
+                        CompleteDescendShaftBlocked(active, "descend_shaft_stuck_replan_failed:" + stuckReason);
+                    }
                 }
             }
             else
@@ -6727,6 +6878,25 @@ public sealed class ModEntry : Mod
             return;
         }
         active.PromptOpened = true;
+    }
+
+    private static bool TryReplanDescendShaft(ActiveDescendShaft active, out string blockReason)
+    {
+        var repaired = BuildCompilerAdjacentPath(
+            active.MineBefore,
+            active.Target,
+            active.RequestedStand,
+            active.MaxMovementTiles,
+            out blockReason);
+        if (repaired is null)
+        {
+            return false;
+        }
+        active.Path = repaired;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
     }
 
     private void CompleteDescendShaft(ActiveDescendShaft active, MineShaft afterMine)
@@ -6831,7 +7001,11 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_tile_not_live_exit"));
             return;
         }
-        var path = BuildAdjacentToolPath(mine, target, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason);
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var requestedStand = request.StandTileX.HasValue && request.StandTileY.HasValue
+            ? new Point(request.StandTileX.Value, request.StandTileY.Value)
+            : (Point?)null;
+        var path = BuildCompilerAdjacentPath(mine, target, requestedStand, maxMovementTiles, out var pathReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_path_unavailable:" + pathReason));
@@ -6848,6 +7022,8 @@ public sealed class ModEntry : Mod
             Game1.player.TilePoint,
             target,
             path,
+            maxMovementTiles,
+            requestedStand,
             expectedDestination.LocationId,
             expectedDestination.TileX,
             expectedDestination.TileY,
@@ -6919,7 +7095,10 @@ public sealed class ModEntry : Mod
         {
             if (active.PathIndex >= active.Path.Count)
             {
-                CompleteExitMineBlocked(active, "exit_mine_path_exhausted");
+                if (!TryReplanExitMine(active, out var exhaustedReason))
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_path_exhausted:" + exhaustedReason);
+                }
                 return;
             }
             var next = active.Path[active.PathIndex];
@@ -6930,7 +7109,12 @@ public sealed class ModEntry : Mod
             }
             if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
             {
-                var repaired = BuildAdjacentToolPath(active.MineBefore, active.Target, 512, out var repairReason);
+                var repaired = BuildCompilerAdjacentPath(
+                    active.MineBefore,
+                    active.Target,
+                    active.RequestedStand,
+                    active.MaxMovementTiles,
+                    out var repairReason);
                 if (repaired is null)
                 {
                     CompleteExitMineBlocked(active, "exit_mine_replan_failed:" + repairReason);
@@ -6954,9 +7138,11 @@ public sealed class ModEntry : Mod
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
                 {
-                    active.Path.Clear();
-                    active.PathIndex = 0;
-                    active.StuckTicks = 0;
+                    StopAllMovement();
+                    if (!TryReplanExitMine(active, out var stuckReason))
+                    {
+                        CompleteExitMineBlocked(active, "exit_mine_stuck_replan_failed:" + stuckReason);
+                    }
                 }
             }
             else
@@ -6983,6 +7169,25 @@ public sealed class ModEntry : Mod
             return;
         }
         active.PromptOpened = true;
+    }
+
+    private static bool TryReplanExitMine(ActiveExitMine active, out string blockReason)
+    {
+        var repaired = BuildCompilerAdjacentPath(
+            active.MineBefore,
+            active.Target,
+            active.RequestedStand,
+            active.MaxMovementTiles,
+            out blockReason);
+        if (repaired is null)
+        {
+            return false;
+        }
+        active.Path = repaired;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
     }
 
     private void CompleteExitMine(ActiveExitMine active)
@@ -8241,14 +8446,21 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        var target = mine.characters.OfType<Monster>()
-            .Where(monster => monster.Health > 0)
-            .OrderBy(monster => Vector2.DistanceSquared(
-                Game1.player.GetBoundingBox().Center.ToVector2(),
-                monster.GetBoundingBox().Center.ToVector2()))
-            .FirstOrDefault();
+        var target = manualAutoCombatTarget is { Health: > 0 } lockedTarget &&
+            mine.characters.Contains(lockedTarget) &&
+            (manualAutoCombatEnabled || ManhattanDistance(Game1.player.TilePoint, lockedTarget.TilePoint) <= 4)
+                ? lockedTarget
+                : mine.characters.OfType<Monster>()
+                    .Where(monster => monster.Health > 0)
+                    .Where(monster => manualAutoCombatEnabled || ManhattanDistance(Game1.player.TilePoint, monster.TilePoint) <= 3)
+                    .OrderBy(monster => Vector2.DistanceSquared(
+                        Game1.player.GetBoundingBox().Center.ToVector2(),
+                        monster.GetBoundingBox().Center.ToVector2()))
+                    .FirstOrDefault();
         if (target is null)
         {
+            StopAllMovement();
+            RestoreManualAutoCombatTool();
             manualAutoCombatTarget = null;
             return;
         }
@@ -8286,6 +8498,7 @@ public sealed class ModEntry : Mod
             return;
         }
 
+        StopAllMovement();
         var targetCenter = target.GetBoundingBox().Center;
         manualAutoCombatRestoreSlotIndex ??= Game1.player.CurrentToolIndex;
         SelectTool(weapon);
@@ -8911,8 +9124,89 @@ public sealed class ModEntry : Mod
         }
 
         var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
-        activeMineSetup = new ActiveMineSetup(pending, request.MineLevel.Value, beforeLocation);
+        var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
+            ? EnsureMiningCalibrationLoadout()
+            : MiningCalibrationLoadoutFacts.Disabled;
+        activeMineSetup = new ActiveMineSetup(pending, request.MineLevel.Value, beforeLocation, calibrationLoadout);
         Game1.enterMine(request.MineLevel.Value);
+    }
+
+    private static MiningCalibrationLoadoutFacts EnsureMiningCalibrationLoadout()
+    {
+        var player = Game1.player;
+        EnsureFixtureInventoryCapacity(player);
+        var selectedSlot = player.CurrentToolIndex;
+        var existingBestDamage = player.Items.OfType<MeleeWeapon>()
+            .Where(weapon => !weapon.isScythe())
+            .Select(weapon => weapon.maxDamage.Value)
+            .DefaultIfEmpty(0)
+            .Max();
+        MeleeWeapon? bestRuntimeWeapon = null;
+        for (var itemId = 0; itemId <= 256; itemId++)
+        {
+            try
+            {
+                var candidate = new MeleeWeapon(itemId.ToString());
+                if (candidate.isScythe() || candidate.maxDamage.Value <= 0 || string.IsNullOrWhiteSpace(candidate.Name))
+                {
+                    continue;
+                }
+                if (bestRuntimeWeapon is null ||
+                    candidate.maxDamage.Value > bestRuntimeWeapon.maxDamage.Value ||
+                    candidate.maxDamage.Value == bestRuntimeWeapon.maxDamage.Value && candidate.speed.Value > bestRuntimeWeapon.speed.Value)
+                {
+                    bestRuntimeWeapon = candidate;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        var weaponSlot = -1;
+        if (bestRuntimeWeapon is not null && bestRuntimeWeapon.maxDamage.Value > existingBestDamage)
+        {
+            weaponSlot = InstallFixtureItem(player, bestRuntimeWeapon);
+        }
+
+        StardewValley.Object? bestRuntimeFood = null;
+        foreach (var itemId in Game1.objectData.Keys)
+        {
+            try
+            {
+                var candidate = ItemRegistry.Create<StardewValley.Object>("(O)" + itemId);
+                if (candidate.Edibility <= 0 || candidate.healthRecoveredOnConsumption() <= 0)
+                {
+                    continue;
+                }
+                if (bestRuntimeFood is null ||
+                    candidate.healthRecoveredOnConsumption() > bestRuntimeFood.healthRecoveredOnConsumption())
+                {
+                    bestRuntimeFood = candidate;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        var foodSlot = -1;
+        if (bestRuntimeFood is not null)
+        {
+            bestRuntimeFood.Stack = 50;
+            foodSlot = InstallFixtureItem(player, bestRuntimeFood);
+        }
+        player.CurrentToolIndex = selectedSlot;
+
+        return new MiningCalibrationLoadoutFacts(
+            true,
+            weaponSlot,
+            bestRuntimeWeapon?.QualifiedItemId ?? string.Empty,
+            bestRuntimeWeapon?.maxDamage.Value ?? existingBestDamage,
+            foodSlot,
+            bestRuntimeFood?.QualifiedItemId ?? string.Empty,
+            bestRuntimeFood?.healthRecoveredOnConsumption() ?? 0,
+            bestRuntimeFood?.Stack ?? 0);
     }
 
     private static MineFishingFixtureFacts EnsureMineFishingFixtureEquipment()
@@ -9069,10 +9363,24 @@ public sealed class ModEntry : Mod
             PrimitiveKind = "debug_setup_mining_floor",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "native_enter_mine_completed", "mine_level_verified", "loaded_mine_map_present" }
+                ? new[]
+                {
+                    "native_enter_mine_completed",
+                    "mine_level_verified",
+                    "loaded_mine_map_present",
+                    active.CalibrationLoadout.Enabled ? "runtime_data_calibration_loadout_installed" : "calibration_loadout_disabled"
+                }
                 : new[] { "mining_fixture_state_mismatch" },
             RequestedEffect = "current_location.mine_level=" + active.MineLevel,
-            ObservedEffect = "location=" + afterLocation + ";mine_level=" + (mine?.mineLevel.ToString() ?? "unavailable") + ";loaded_map=" + (mine?.map is not null),
+            ObservedEffect = "location=" + afterLocation +
+                ";mine_level=" + (mine?.mineLevel.ToString() ?? "unavailable") +
+                ";loaded_map=" + (mine?.map is not null) +
+                ";calibration_loadout=" + active.CalibrationLoadout.Enabled.ToString().ToLowerInvariant() +
+                ";weapon=" + active.CalibrationLoadout.WeaponQualifiedItemId +
+                ";weapon_max_damage=" + active.CalibrationLoadout.WeaponMaxDamage +
+                ";food=" + active.CalibrationLoadout.FoodQualifiedItemId +
+                ";food_health_recovery=" + active.CalibrationLoadout.FoodHealthRecovery +
+                ";food_stack=" + active.CalibrationLoadout.FoodStack,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "mining_fixture_state_mismatch" },
             ChangedFacts = verified
                 ? new[]
@@ -9986,7 +10294,12 @@ public sealed class ModEntry : Mod
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var beforeObserved = DebrisObservedEffect(location, target, request.DebrisIndex);
-        var debris = DebrisAt(location, target, request.DebrisIndex);
+        if (string.IsNullOrWhiteSpace(request.QualifiedItemId))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));
+            return;
+        }
+        var debris = DebrisAt(location, target, request.DebrisIndex, request.QualifiedItemId);
         var chunk = debris is null ? null : DebrisChunkAt(debris, target);
         if (debris is null || chunk is null)
         {
@@ -9994,8 +10307,8 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        var itemId = debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value;
-        if (string.IsNullOrWhiteSpace(request.QualifiedItemId) || !string.Equals(itemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
+        var itemId = DebrisQualifiedItemId(debris);
+        if (!string.Equals(itemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_mismatch"));
             return;
@@ -10193,23 +10506,32 @@ public sealed class ModEntry : Mod
             (int)((chunk.position.Y + 32f) / Game1.tileSize));
     }
 
-    private static Debris? DebrisAt(GameLocation location, Point target, int? debrisIndex)
+    private static Debris? DebrisAt(GameLocation location, Point target, int? debrisIndex, string qualifiedItemId = "")
     {
-        for (var index = 0; index < location.debris.Count; index++)
+        var indexes = Enumerable.Range(0, location.debris.Count);
+        if (debrisIndex.HasValue && debrisIndex.Value >= 0 && debrisIndex.Value < location.debris.Count)
         {
-            if (debrisIndex.HasValue && index != debrisIndex.Value)
-            {
-                continue;
-            }
+            indexes = new[] { debrisIndex.Value }
+                .Concat(indexes.Where(index => index != debrisIndex.Value));
+        }
 
+        foreach (var index in indexes)
+        {
             var debris = location.debris[index];
-            if (DebrisChunkAt(debris, target) is not null)
+            if (DebrisChunkAt(debris, target) is not null &&
+                (string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                 string.Equals(DebrisQualifiedItemId(debris), qualifiedItemId, StringComparison.OrdinalIgnoreCase)))
             {
                 return debris;
             }
         }
 
         return null;
+    }
+
+    private static string DebrisQualifiedItemId(Debris debris)
+    {
+        return debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value;
     }
 
     private static Chunk? DebrisChunkAt(Debris debris, Point target)
@@ -12985,7 +13307,19 @@ public sealed class ModEntry : Mod
 
     private sealed class ActiveMineStone
     {
-        public ActiveMineStone(PendingExecution pending, string locationId, Point target, List<Point> path, Pickaxe pickaxe, string qualifiedItemId, int healthBefore, double staminaBefore, int maxSwings, string requestedEffect)
+        public ActiveMineStone(
+            PendingExecution pending,
+            string locationId,
+            Point target,
+            List<Point> path,
+            Pickaxe pickaxe,
+            string qualifiedItemId,
+            int healthBefore,
+            double staminaBefore,
+            int maxSwings,
+            int maxMovementTiles,
+            Point? requestedStand,
+            string requestedEffect)
         {
             Pending = pending;
             LocationId = locationId;
@@ -12996,28 +13330,36 @@ public sealed class ModEntry : Mod
             HealthBefore = healthBefore;
             StaminaBefore = staminaBefore;
             MaxSwings = maxSwings;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedStand = requestedStand;
             RequestedEffect = requestedEffect;
-            MaxTicks = Math.Max(180, path.Count * 90) + maxSwings * 240;
+            MaxTicks = Math.Max(180, maxMovementTiles * 90) + maxSwings * 240;
             LastPosition = Game1.player.Position;
+            LastObservedTile = Game1.player.TilePoint;
             ObservedHealth.Add(healthBefore);
         }
 
         public PendingExecution Pending { get; }
         public string LocationId { get; }
         public Point Target { get; }
-        public List<Point> Path { get; }
+        public List<Point> Path { get; set; }
         public Pickaxe Pickaxe { get; }
         public string QualifiedItemId { get; }
         public int HealthBefore { get; }
         public double StaminaBefore { get; }
         public int MaxSwings { get; }
+        public int MaxMovementTiles { get; }
+        public Point? RequestedStand { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public int PathFailureTicks { get; set; }
+        public int MovementTiles { get; set; }
         public Vector2 LastPosition { get; set; }
+        public Point LastObservedTile { get; set; }
         public int SwingCount { get; set; }
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
@@ -13355,13 +13697,23 @@ public sealed class ModEntry : Mod
 
     private sealed class ActiveDescendLadder
     {
-        public ActiveDescendLadder(PendingExecution pending, MineShaft mineBefore, int mineLevelBefore, Point target, List<Point> path, string requestedEffect)
+        public ActiveDescendLadder(
+            PendingExecution pending,
+            MineShaft mineBefore,
+            int mineLevelBefore,
+            Point target,
+            List<Point> path,
+            int maxMovementTiles,
+            Point? requestedStand,
+            string requestedEffect)
         {
             Pending = pending;
             MineBefore = mineBefore;
             MineLevelBefore = mineLevelBefore;
             Target = target;
             Path = path;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedStand = requestedStand;
             RequestedEffect = requestedEffect;
             LastPosition = Game1.player.Position;
         }
@@ -13371,6 +13723,8 @@ public sealed class ModEntry : Mod
         public int MineLevelBefore { get; }
         public Point Target { get; }
         public List<Point> Path { get; set; }
+        public int MaxMovementTiles { get; }
+        public Point? RequestedStand { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 1800;
@@ -13392,6 +13746,8 @@ public sealed class ModEntry : Mod
             int healthBefore,
             Point target,
             List<Point> path,
+            int maxMovementTiles,
+            Point? requestedStand,
             int expectedMineLevelDelta,
             int expectedMineLevelAfter,
             int expectedHealthCost,
@@ -13404,6 +13760,8 @@ public sealed class ModEntry : Mod
             HealthBefore = healthBefore;
             Target = target;
             Path = path;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedStand = requestedStand;
             ExpectedMineLevelDelta = expectedMineLevelDelta;
             ExpectedMineLevelAfter = expectedMineLevelAfter;
             ExpectedHealthCost = expectedHealthCost;
@@ -13418,6 +13776,8 @@ public sealed class ModEntry : Mod
         public int HealthBefore { get; }
         public Point Target { get; }
         public List<Point> Path { get; set; }
+        public int MaxMovementTiles { get; }
+        public Point? RequestedStand { get; }
         public int ExpectedMineLevelDelta { get; }
         public int ExpectedMineLevelAfter { get; }
         public int ExpectedHealthCost { get; }
@@ -13447,6 +13807,8 @@ public sealed class ModEntry : Mod
             Point playerTileBefore,
             Point target,
             List<Point> path,
+            int maxMovementTiles,
+            Point? requestedStand,
             string expectedLocationId,
             int expectedTileX,
             int expectedTileY,
@@ -13462,6 +13824,8 @@ public sealed class ModEntry : Mod
             PlayerTileBefore = playerTileBefore;
             Target = target;
             Path = path;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedStand = requestedStand;
             ExpectedLocationId = expectedLocationId;
             ExpectedTileX = expectedTileX;
             ExpectedTileY = expectedTileY;
@@ -13479,6 +13843,8 @@ public sealed class ModEntry : Mod
         public Point PlayerTileBefore { get; }
         public Point Target { get; }
         public List<Point> Path { get; set; }
+        public int MaxMovementTiles { get; }
+        public Point? RequestedStand { get; }
         public string ExpectedLocationId { get; }
         public int ExpectedTileX { get; }
         public int ExpectedTileY { get; }
@@ -13507,19 +13873,34 @@ public sealed class ModEntry : Mod
 
     private sealed class ActiveMineSetup
     {
-        public ActiveMineSetup(PendingExecution pending, int mineLevel, string beforeLocation)
+        public ActiveMineSetup(PendingExecution pending, int mineLevel, string beforeLocation, MiningCalibrationLoadoutFacts calibrationLoadout)
         {
             Pending = pending;
             MineLevel = mineLevel;
             BeforeLocation = beforeLocation;
+            CalibrationLoadout = calibrationLoadout;
         }
 
         public PendingExecution Pending { get; }
         public int MineLevel { get; }
         public string BeforeLocation { get; }
+        public MiningCalibrationLoadoutFacts CalibrationLoadout { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; } = 600;
+    }
+
+    private sealed record MiningCalibrationLoadoutFacts(
+        bool Enabled,
+        int WeaponSlot,
+        string WeaponQualifiedItemId,
+        int WeaponMaxDamage,
+        int FoodSlot,
+        string FoodQualifiedItemId,
+        int FoodHealthRecovery,
+        int FoodStack)
+    {
+        public static MiningCalibrationLoadoutFacts Disabled { get; } = new(false, -1, string.Empty, 0, -1, string.Empty, 0, 0);
     }
 
     private sealed record MineFishingFixtureFacts(MineFishingFixtureSnapshot Before, MineFishingFixtureSnapshot After);

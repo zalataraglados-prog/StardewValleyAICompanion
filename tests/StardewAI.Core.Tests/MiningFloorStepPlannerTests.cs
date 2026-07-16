@@ -902,6 +902,78 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void RuntimeMineStoneUsesCompilerStandTileAndReplansDynamicObstacles()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs"));
+        var start = source.IndexOf("private void StartMineStone", StringComparison.Ordinal);
+        var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
+        var mineStoneSource = source[start..end];
+
+        Assert.Contains("request.StandTileX", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("BuildCompilerAdjacentPath", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("TryReplanMineStone", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("mine_stone_dynamic_path_unavailable", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("path ?? new List<Point>()", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("if (!active.CombatInterrupted)", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("StopAllMovement();", mineStoneSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("mine_stone_path_changed", mineStoneSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeMineTransitionsUseCompilerStandTilesWithoutImplicitClearance()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs"));
+        foreach (var method in new[] { "StartDescendLadder", "StartDescendShaft", "StartExitMine" })
+        {
+            var start = source.IndexOf("private void " + method, StringComparison.Ordinal);
+            var end = source.IndexOf("\n    private ", start + 1, StringComparison.Ordinal);
+            var methodSource = source[start..end];
+            Assert.Contains("request.StandTileX", methodSource, StringComparison.Ordinal);
+            Assert.Contains("BuildCompilerAdjacentPath", methodSource, StringComparison.Ordinal);
+        }
+
+        var helperStart = source.IndexOf("private static List<Point>? BuildCompilerAdjacentPath", StringComparison.Ordinal);
+        var helperEnd = source.IndexOf("\n    private void TickMineStone", helperStart, StringComparison.Ordinal);
+        var helperSource = source[helperStart..helperEnd];
+        Assert.Contains("avoidSoftObstacles: true", helperSource, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", helperSource, StringComparison.Ordinal);
+        Assert.Contains("TryReplanDescendLadder", source, StringComparison.Ordinal);
+        Assert.Contains("TryReplanDescendShaft", source, StringComparison.Ordinal);
+        Assert.Contains("TryReplanExitMine", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeMiningCalibrationLoadoutIsSandboxScopedAndRuntimeDataDriven()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
+        var loop = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningReachDepthLoop.ps1"));
+        var start = source.IndexOf("private static MiningCalibrationLoadoutFacts EnsureMiningCalibrationLoadout", StringComparison.Ordinal);
+        var end = source.IndexOf("private static MineFishingFixtureFacts EnsureMineFishingFixtureEquipment", start, StringComparison.Ordinal);
+        var loadoutSource = source[start..end];
+
+        Assert.Contains("STARDEWAI_MINING_CALIBRATION_LOADOUT", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.objectData.Keys", loadoutSource, StringComparison.Ordinal);
+        Assert.Contains("new MeleeWeapon(itemId.ToString())", loadoutSource, StringComparison.Ordinal);
+        Assert.Contains("healthRecoveredOnConsumption()", loadoutSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.health =", loadoutSource, StringComparison.Ordinal);
+        Assert.Contains("[switch] $MiningCalibrationLoadout", smoke, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_MINING_CALIBRATION_LOADOUT", smoke, StringComparison.Ordinal);
+        Assert.Contains("-MiningCalibrationLoadout", loop, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RuntimeBreakContainerUsesNativeHeavyHitterInputAndVerifiesRemoval()
     {
         var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
@@ -1099,6 +1171,22 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void OpportunisticDebrisSkipsNonItemVisualsAndRuntimeRebindsStableIdentity()
+    {
+        var root = FindRepositoryRoot();
+        var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var planner = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Execution", "MiningFloorStepPlanner.cs"));
+        var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+
+        Assert.Contains("is_collectible_item_debris", bridge, StringComparison.Ordinal);
+        Assert.Contains("non_item_visual_or_numeric_debris", bridge, StringComparison.Ordinal);
+        Assert.Contains("string.IsNullOrWhiteSpace(qualifiedItemId)", planner, StringComparison.Ordinal);
+        Assert.Contains("pickup_debris_item_identity_required", runtime, StringComparison.Ordinal);
+        Assert.Contains("DebrisAt(location, target, request.DebrisIndex, request.QualifiedItemId)", runtime, StringComparison.Ordinal);
+        Assert.Contains("Concat(indexes.Where(index => index != debrisIndex.Value))", runtime, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RegistrySeparatesMiningMechanicalPrimitivesFromSmallModelGoal()
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
@@ -1130,7 +1218,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.True(start >= 0 && end > start);
         var ladderSource = source[start..end];
 
-        Assert.Contains("BuildAdjacentToolPath", ladderSource, StringComparison.Ordinal);
+        Assert.Contains("BuildCompilerAdjacentPath", ladderSource, StringComparison.Ordinal);
         Assert.Contains("MovePlayerForTick()", ladderSource, StringComparison.Ordinal);
         Assert.Contains("getTileIndexAt(active.Target.X, active.Target.Y, \"Buildings\", \"mine\") != 173", ladderSource, StringComparison.Ordinal);
         Assert.Contains("active.MineBefore.checkAction", ladderSource, StringComparison.Ordinal);
@@ -1148,7 +1236,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.True(start >= 0 && end > start);
         var shaftSource = source[start..end];
 
-        Assert.Contains("BuildAdjacentToolPath", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("BuildCompilerAdjacentPath", shaftSource, StringComparison.Ordinal);
         Assert.Contains("getTileIndexAt(target.X, target.Y, \"Buildings\", \"mine\") != 174", shaftSource, StringComparison.Ordinal);
         Assert.Contains("active.MineBefore.checkAction", shaftSource, StringComparison.Ordinal);
         Assert.Contains("answerDialogueAction(\"Shaft_Jump\"", shaftSource, StringComparison.Ordinal);

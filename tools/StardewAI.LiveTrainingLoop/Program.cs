@@ -68,6 +68,13 @@ for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVer
         await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
         queue = dailyPlan.Queue;
     }
+    else if (options.UseParameterizedAction)
+    {
+        var modelActionJson = BuildParameterizedActionRequest(options, lastStateHash);
+        modelPlanPath = Path.Combine(options.SnapshotDir, "model-action-" + iteration.ToString("D4") + ".json");
+        await File.WriteAllTextAsync(modelPlanPath, modelActionJson, Encoding.UTF8);
+        queue = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/small-model/action-queue/compile", modelActionJson);
+    }
     else if (options.UsePlanOutput)
     {
         var modelPlanJson = BuildMovePlanRequest(options, lastStateHash);
@@ -162,6 +169,40 @@ static async Task<JsonObject> BuildQueueFromMockActionAsync(HttpClient http, Liv
     }, JsonOptions);
     var modelOutput = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/mock-model/small-model-action", mockRequest);
     return await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/small-model/action-queue/compile", modelOutput.ToJsonString(JsonOptions));
+}
+
+static string BuildParameterizedActionRequest(LiveTrainingOptions options, string stateHash)
+{
+    if (string.IsNullOrWhiteSpace(options.ActionOptionId))
+    {
+        throw new InvalidOperationException("parameterized action requires --action-option-id.");
+    }
+
+    return JsonSerializer.Serialize(new
+    {
+        schema_version = "small_model_action.v1",
+        model_output_id = "model-output.live." + Guid.NewGuid().ToString("N"),
+        source_model = "local-parameterized-action.v1",
+        state_hash = stateHash,
+        goal_id = options.Goal,
+        execution_mode = "training_singleplayer",
+        actor = new
+        {
+            actor_id = "training_farmer.main",
+            actor_type = "training_farmer",
+            control_surface = "training_sandbox"
+        },
+        actions = new[]
+        {
+            new
+            {
+                action_id = "action.live." + Guid.NewGuid().ToString("N"),
+                option_id = options.ActionOptionId,
+                rationale = "runtime parameterized action acceptance",
+                parameters = options.ActionParameters
+            }
+        }
+    }, JsonOptions);
 }
 
 static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildQueueFromDailyPlanAsync(
@@ -1429,6 +1470,7 @@ public sealed class LiveTrainingOptions
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
     public string RunId { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
+    public string ArtifactRunId { get; set; } = string.Empty;
     public string SaveIsolationPath { get; set; } = @"E:\StardewValleyAICompanion-runtime\saves";
     public string Goal { get; set; } = "grandpa_four_candles_year3";
     public int MaxAttempts { get; set; } = 3;
@@ -1448,6 +1490,9 @@ public sealed class LiveTrainingOptions
     public bool UseRealRuntimeExecutor { get; set; } = true;
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
+    public bool UseParameterizedAction { get; set; }
+    public string ActionOptionId { get; set; } = string.Empty;
+    public List<SmallModelActionParameter> ActionParameters { get; } = new();
     public bool ContinueAfterBlockedQueueItems { get; set; }
     public int MaxQueueItemAttempts { get; set; } = 24;
     public int DailyPlanMaxCandidates { get; set; } = 4;
@@ -1457,10 +1502,14 @@ public sealed class LiveTrainingOptions
         : "disabled";
 
     public string RunDir => string.IsNullOrWhiteSpace(ManifestPath)
-        ? Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId)
+        ? Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(ArtifactRunId)
+            ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
+            : ArtifactRunId)
         : !string.IsNullOrWhiteSpace(Path.GetDirectoryName(ManifestPath))
             ? Path.GetDirectoryName(ManifestPath)!
-            : Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId);
+            : Path.Combine(Root, "runs", string.IsNullOrWhiteSpace(ArtifactRunId)
+                ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
+                : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
     public string DatasetPath => Path.Combine(Root, "datasets", "live-training-feature-rows.jsonl");
     public string ProgressLogPath => Path.Combine(Root, "logs", "live-training-progress.log");
@@ -1507,6 +1556,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--run-id" && i + 1 < args.Length)
             {
                 options.RunId = args[++i];
+            }
+            else if (current == "--artifact-run-id" && i + 1 < args.Length)
+            {
+                options.ArtifactRunId = args[++i];
             }
             else if (current == "--goal" && i + 1 < args.Length)
             {
@@ -1583,6 +1636,28 @@ public sealed class LiveTrainingOptions
             else if (current == "--use-daily-plan")
             {
                 options.UseDailyPlan = true;
+            }
+            else if (current == "--use-parameterized-action")
+            {
+                options.UseParameterizedAction = true;
+            }
+            else if (current == "--action-option-id" && i + 1 < args.Length)
+            {
+                options.ActionOptionId = args[++i];
+            }
+            else if (current == "--action-parameter" && i + 1 < args.Length)
+            {
+                var pair = args[++i];
+                var separator = pair.IndexOf('=');
+                if (separator <= 0)
+                {
+                    throw new ArgumentException("--action-parameter must be formatted as name=value.");
+                }
+                options.ActionParameters.Add(new SmallModelActionParameter
+                {
+                    Name = pair[..separator],
+                    Value = pair[(separator + 1)..]
+                });
             }
             else if (current == "--continue-after-blocked-queue-items")
             {

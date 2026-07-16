@@ -2,12 +2,11 @@
 
 ## Status
 
-- Offline validation completed on 2026-07-15.
-- `MiningReachDepthPlanningTests`: PASS 26/26.
-- Full solution: PASS Core 858/858 and Backend 49/49.
+- Offline and runtime validation updated on 2026-07-16.
+- Full solution: PASS Core 914/914 and Backend 49/49.
 - Hidden/silent isolated E: runtime smoke PASS at level 99: 118 objects, 79 breakable stones, 17 containers, 7 monsters, 50x50 collision rows, and five snapshots at 127-164 ms / 232,759 bytes.
-- `MiningFloorStepPlannerTests`: PASS 7/7.
 - Hidden/silent isolated E: native one-stone smoke PASS: target `(4,6)`, health sequence `8,4,0`, two native GoldPickaxe swings, object removed, 46 ticks, and a snapshot at 155 ms / 248,761 bytes.
+- Hidden/silent isolated E: rolling reach-depth PASS: levels 96/97/98 visited, two stone steps, two ladder descents, terminal exit, five fresh changed after-states, and five training rows.
 
 ## Commands Run
 
@@ -15,7 +14,8 @@
 - `dotnet test StardewValleyAICompanion.sln --no-restore --verbosity minimal`
 - `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1 -MineLevel 99 -SampleCount 5 -MinimumBreakableStoneCount 1`
 - `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1 -MineLevel 99 -SampleCount 2 -MinimumBreakableStoneCount 1 -MineOneStone`
+- `scripts\Invoke-RuntimeMiningReachDepthLoop.ps1 -StartMineLevel 96 -TargetMineLevel 98`
 
 ## Runtime
 
-- Read-side runtime validation and one native stone lifecycle are complete. The semantic reach-depth action remains blocked until combat, ladder/shaft interaction, descent confirmation, retreat, and repeated after-snapshot replanning are independently verified.
+- Read-side validation, one native stone lifecycle, and the ordinary-mine rolling reach-depth loop are complete. Skull Cavern shaft behavior, arbitrary-depth duration calibration, and broader combat/loot combinations remain pending.

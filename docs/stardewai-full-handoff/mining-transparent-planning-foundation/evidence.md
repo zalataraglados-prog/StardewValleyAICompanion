@@ -1,6 +1,6 @@
 # Evidence
 
-Current-status correction: the repository anchors near the end of this historical slice predate the rolling executor. Current main adds native combat, natural debris pickup, native food recovery, native ladder descent, and one-step replanning while preserving `mining.reach_depth` as the only model-facing action.
+Current-status correction: the repository anchors near the end of this historical slice predate the rolling executor. Current main adds native combat, natural debris pickup, native food recovery, native ladder/shaft descent, mandatory exit, and one-step replanning while preserving `mining.reach_depth` as the only model-facing action. Hidden/silent isolated run `runtime-mining-reach-depth-20260716-183347` verified the ordinary-mine 96-to-98 loop and terminal exit.
 
 ## Decompile Anchors
 
@@ -36,3 +36,5 @@ Current-status correction: the repository anchors near the end of this historica
 - `src\StardewAI.Core\Execution\MiningFloorStepPlanner.cs` decodes the compact collision rows and performs deterministic BFS without consulting documentation examples or guessed future state. It returns one internal floor step: descend an already reachable ladder, engage a required reachable monster, mine a reachable stone, or fail closed.
 - `tools\StardewAI.RuntimeTestHarness\ModEntry.cs` implements internal `executor.mine_stone` through collision-safe movement and the native farmer pickaxe lifecycle. Source guards reject direct `DoFunction` and object removal.
 - Run `runtime-mining-snapshot-smoke-20260715-203940` passed on level 99: target `(4,6)`, health sequence `8,4,0`, two native GoldPickaxe swings, natural removal in the transparent after snapshot, 46 ticks, and a snapshot at 155 ms / 248,761 bytes.
+- `scripts\Invoke-RuntimeMiningReachDepthLoop.ps1` repeatedly submits the same high-level parameterized `mining.reach_depth` action against fresh snapshots while keeping runtime and artifact run identifiers separate. Run `runtime-mining-reach-depth-20260716-183347` passed from 96 through 98 and exit: two native stone steps, two native ladder descents, one native exit, five fresh after snapshots, five changed hashes, and five dataset rows.
+- Full regression after the multi-floor run passed Core 914/914 and Backend 49/49.

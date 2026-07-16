@@ -963,7 +963,9 @@ namespace StardewAI.Core.Execution
             foreach (var row in debris.EnumerateArray())
             {
                 var qualifiedItemId = ReadString(row, "qualified_item_id");
-                if (targets.Count > 0 && !targets.Contains(qualifiedItemId) ||
+                if (string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                    row.TryGetProperty("is_collectible_item_debris", out var collectible) && collectible.ValueKind == JsonValueKind.False ||
+                    targets.Count > 0 && !targets.Contains(qualifiedItemId) ||
                     !row.TryGetProperty("chunks", out var chunks) || chunks.ValueKind != JsonValueKind.Array)
                 {
                     continue;

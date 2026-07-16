@@ -1,6 +1,6 @@
 # Transparency Coverage
 
-Current main-branch status: the model-facing `mining.reach_depth` objective now compiles one internal step from each fresh snapshot. Stone mining, auto-combat, natural debris pickup, food recovery, and ladder descent are implemented. Full-objective duration remains unknown and therefore fails the day time-budget gate instead of using a guessed constant.
+Current main-branch status: the model-facing `mining.reach_depth` objective compiles one internal step from each fresh snapshot. Stone mining, auto-combat, natural debris pickup, food recovery, ladder/shaft descent, and mandatory exit are implemented. An isolated ordinary-mine run closed levels 96 through 98 and terminal exit with five verified rows. Arbitrary-depth full-objective duration remains unknown and therefore still fails the day time-budget gate instead of using a guessed constant.
 
 | required input/output | snapshot/contract path | source/status | completeness gate | missing/runtime boundary |
 |---|---|---|---|---|
@@ -17,6 +17,6 @@ Current main-branch status: the model-facing `mining.reach_depth` objective now 
 | Compiled queue envelope | `action_queue.items[].normalized_command.parameters` | `ActionQueueCompiler` | preserves the high-level objective and adds the current internal `execution_option_id` plus exact targets | executable one step at a time; full-objective timing remains unknown and blocked by the day budget |
 | Per-floor mechanical selection | `MiningFloorStepPlan` | exact compact-grid BFS over the transparent snapshot | covered offline | selects ladder, required monster, or stone; does not predict future monster movement |
 | Native stone execution | internal `executor.mine_stone` result | collision-safe walking plus native `BeginUsingTool`/`EndUsingTool` | one-stone E: covered | records positive native swing count and terminal health zero; not exposed to the small model |
-| Semantic reach-depth execution | `mining.reach_depth` | rolling-horizon current-floor execution | statically covered | native ladder/shaft descent and mandatory native exit are implemented; full-objective timing and isolated multi-floor runtime validation remain pending |
+| Semantic reach-depth execution | `mining.reach_depth` | rolling-horizon current-floor execution | ordinary-mine 96-to-98 loop runtime verified | two native stone steps, two native ladder descents, and terminal native exit passed with fresh changed after-states; shaft and arbitrary-depth timing coverage remain pending |
 
-Validation status: full solution PASS Core 858 / Backend 49; `MiningFloorStepPlannerTests` PASS 7/7. Hidden/silent isolated E: `runtime-mining-snapshot-smoke-20260715-203940` verified level 99 target `(4,6)`, two native swings, health `8 -> 4 -> 0`, transparent object removal, and a 155 ms snapshot. Full semantic reach-depth execution remains blocked.
+Validation status: full solution PASS Core 914 / Backend 49. Hidden/silent isolated E: `runtime-mining-reach-depth-20260716-183347` started at 96, visited 96/97/98, verified five of five compiled primitives, produced five fresh changed after-states and five training rows, then verified terminal exit. This closes the ordinary multi-floor executor-calibration slice; it does not remove the arbitrary-depth duration gate.
