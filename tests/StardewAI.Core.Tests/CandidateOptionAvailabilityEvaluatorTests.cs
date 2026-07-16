@@ -1721,6 +1721,55 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void RecoveryOutsideHomeCarriesExactNextConnectorParameters()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":2300,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Town","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":3,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":9,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"Town","current_location_is_home":false,"bed_tile_x":3,"bed_tile_y":8,"bed_tile_has_bed":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Town","width":12,"height":12,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Town","connectors":[{"kind":"warp","tile_x":5,"tile_y":9,"target_location":"Farm","target_x":10,"target_y":11,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Town","action_gates":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"Town","from_x":5,"from_y":9,"target_location":"Farm","target_x":10,"target_y":11,"resolved":true},
+              {"kind":"building_door","from_location":"Farm","from_x":6,"from_y":5,"target_location":"FarmHouse","target_x":3,"target_y":9,"resolved":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "recovery.stabilize_day" }, includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates, item => item.Kind == "recovery_return_home");
+        Assert.True(candidate.Available);
+        Assert.Equal("Town", candidate.LocationId);
+        Assert.Equal(5, candidate.TileX);
+        Assert.Equal(9, candidate.TileY);
+        Assert.True(candidate.EstimatedTicks > 0);
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Farm");
+    }
+
+    [Fact]
     public void RecoveryHighLevelEnabledAfterCandidateChainComplete()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

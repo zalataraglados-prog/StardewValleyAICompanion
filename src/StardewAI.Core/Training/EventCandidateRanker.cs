@@ -62,6 +62,18 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.04;
                     }
+                    if (candidate.Kind == "recovery_close_menu")
+                    {
+                        urgencySignal = 0.25;
+                    }
+                    if (candidate.Kind == "recovery_return_home")
+                    {
+                        urgencySignal = 0.5;
+                    }
+                    if (candidate.Kind == "recovery_sleep_immediately")
+                    {
+                        urgencySignal = 0.75;
+                    }
                     if (candidate.Kind == "plant_seed_tile")
                     {
                         urgencySignal = PlantingTimingSignal(candidate.ExpectedEffect) + PlantingValueSignal(candidate.ExpectedEffect);

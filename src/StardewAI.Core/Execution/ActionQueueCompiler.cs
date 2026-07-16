@@ -667,7 +667,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidatePickupDebrisPlan(action, snapshot));
             blocking.AddRange(ValidateCollectMachineOutputPlan(action, snapshot));
             blocking.AddRange(ValidateLoadMachineInputPlan(action, snapshot));
-            blocking.AddRange(ValidateConnectorPlan(action));
+            blocking.AddRange(ValidateConnectorPlan(action, snapshot));
             blocking.AddRange(ValidateFaceDirectionPlan(action));
             blocking.AddRange(ValidateInteractPlan(action, snapshot));
             blocking.AddRange(ValidateSleepPlan(action, snapshot));
@@ -1007,6 +1007,7 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("connector_kind", step.Edge.Kind));
             parameters.Add(Parameter("expected_target_location", step.Edge.TargetLocation));
             parameters.Add(Parameter("max_movement_tiles", Math.Max(1, step.PathTiles + 1).ToString()));
+            parameters.Add(Parameter("estimated_ticks", step.EstimatedTicks.ToString()));
             parameters.Add(Parameter("estimated_minutes", Math.Max(1, (step.EstimatedTicks + 59) / 60).ToString()));
             parameters.Add(Parameter("compiler_context.route_graph_source", "locations.route_graph"));
             parameters.Add(Parameter("compiler_context.route_connector_source", "locations.route_connectors"));
@@ -3092,7 +3093,7 @@ namespace StardewAI.Core.Execution
             return null;
         }
 
-        private static string[] ValidateConnectorPlan(SmallModelAction action)
+        private static string[] ValidateConnectorPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "executor.traverse_connector")
             {
@@ -3115,6 +3116,43 @@ namespace StardewAI.Core.Execution
             if (hasArrivalX != hasArrivalY)
             {
                 errors.Add("connector_expected_arrival_tile_pair_required");
+            }
+
+            var kind = (ReadParameter(action, "connector_kind") ?? string.Empty).ToLowerInvariant();
+            if (!IsRecoveryConnectorKind(kind))
+            {
+                errors.Add("connector_kind_unsupported");
+            }
+
+            if (errors.Count > 0)
+            {
+                return errors.Distinct(StringComparer.Ordinal).ToArray();
+            }
+
+            var edge = new RouteGraphEdge(
+                kind,
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                ReadParameter(action, "expected_target_location") ?? string.Empty,
+                ReadIntParameter(action, "target_tile_x"),
+                ReadIntParameter(action, "target_tile_y"),
+                ReadIntParameter(action, "expected_arrival_tile_x"),
+                ReadIntParameter(action, "expected_arrival_tile_y"));
+            var connector = FindMatchingCurrentRouteConnector(snapshot, edge);
+            if (!connector.HasValue)
+            {
+                errors.Add("connector_not_transparently_confirmed");
+                return errors.ToArray();
+            }
+
+            var gateBlock = RecoveryConnectorGateBlock(snapshot, edge);
+            if (!string.IsNullOrWhiteSpace(gateBlock))
+            {
+                errors.Add(gateBlock.Replace("recovery_current_connector_", "connector_", StringComparison.Ordinal));
+            }
+
+            if (!RecoveryConnectorPathTiles(snapshot, edge, connector.Value).HasValue)
+            {
+                errors.Add("connector_start_segment_unreachable");
             }
 
             return errors.ToArray();
@@ -3470,6 +3508,13 @@ namespace StardewAI.Core.Execution
                 routeConnectors.Value.ValueKind != JsonValueKind.Object ||
                 !routeConnectors.Value.TryGetProperty("connectors", out var connectors) ||
                 connectors.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var connectorLocation = ReadString(routeConnectors.Value, "location_id");
+            if (string.IsNullOrWhiteSpace(connectorLocation) ||
+                !string.Equals(connectorLocation, edge.FromLocation, StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

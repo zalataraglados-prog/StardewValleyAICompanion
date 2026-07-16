@@ -173,7 +173,15 @@ namespace StardewAI.Core.Execution
                 case "quest.advance":
                     return Unknown("quest_duration_unknown_until_route_and_native_executor_timing");
                 case "recovery.stabilize_day":
-                    return Fixed(30, "recovery_rule.v1");
+                    return EstimateRecovery(item);
+                case "executor.wait_ticks":
+                    return EstimateWait(item);
+                case "executor.close_menu":
+                    return Fixed(1, "native_close_menu_rule.v1");
+                case "executor.traverse_connector":
+                    return EstimateConnector(item);
+                case "executor.sleep":
+                    return EstimateCompiledSteps(item, "native_sleep_macro_steps.v1");
                 case "mining.reach_depth":
                     return miningModel.Estimate(item);
                 case "mining.acquire_golden_scythe":
@@ -188,6 +196,56 @@ namespace StardewAI.Core.Execution
                 default:
                     return Fixed(120, "unknown_option_rule.v1");
             }
+        }
+
+        private DurationEstimate EstimateRecovery(ActionQueueItem item)
+        {
+            return Parameter(item, "execution_option_id") switch
+            {
+                "executor.wait_ticks" => EstimateWait(item),
+                "executor.close_menu" => Fixed(1, "recovery_close_menu_rule.v2"),
+                "executor.traverse_connector" => EstimateConnector(item),
+                "executor.sleep" => EstimateCompiledSteps(item, "recovery_sleep_macro_steps.v2"),
+                _ => EstimateCompiledSteps(item, "recovery_compiled_steps.v2")
+            };
+        }
+
+        private static DurationEstimate EstimateWait(ActionQueueItem item)
+        {
+            var waitTicks = ParameterInt(item, "wait_ticks");
+            return waitTicks.HasValue && waitTicks.Value > 0
+                ? Fixed(TicksToMinutes(waitTicks.Value), "bounded_wait_ticks.v1")
+                : EstimateCompiledSteps(item, "bounded_wait_compiled_steps.v1");
+        }
+
+        private static DurationEstimate EstimateConnector(ActionQueueItem item)
+        {
+            var estimatedMinutes = ParameterInt(item, "estimated_minutes");
+            if (estimatedMinutes.HasValue && estimatedMinutes.Value > 0)
+            {
+                return Fixed(estimatedMinutes.Value, "transparent_current_connector_path.v1");
+            }
+
+            var estimatedTicks = ParameterInt(item, "estimated_ticks");
+            if (estimatedTicks.HasValue && estimatedTicks.Value > 0)
+            {
+                return Fixed(TicksToMinutes(estimatedTicks.Value), "transparent_current_connector_ticks.v1");
+            }
+
+            return EstimateCompiledSteps(item, "transparent_connector_compiled_steps.v1");
+        }
+
+        private static DurationEstimate EstimateCompiledSteps(ActionQueueItem item, string estimator)
+        {
+            if (item.NormalizedCommand.Steps.Length == 0 ||
+                item.NormalizedCommand.Steps.Any(step => step.EstimatedTicks < 0))
+            {
+                return Unknown(estimator + ".duration_unknown");
+            }
+
+            return Fixed(
+                TicksToMinutes(item.NormalizedCommand.Steps.Sum(step => Math.Max(0, step.EstimatedTicks))),
+                estimator);
         }
 
         private DurationEstimate EstimateExploration(ActionQueueItem item)
@@ -274,6 +332,16 @@ namespace StardewAI.Core.Execution
             return item.NormalizedCommand.Parameters
                 .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
                 ?.Value;
+        }
+
+        private static int? ParameterInt(ActionQueueItem item, string name)
+        {
+            return int.TryParse(Parameter(item, name), out var value) ? value : null;
+        }
+
+        private static int TicksToMinutes(int ticks)
+        {
+            return Math.Max(1, (int)Math.Ceiling(Math.Max(1, ticks) / 60d));
         }
 
         private static int ClockMinutesBetween(int start, int end)

@@ -112,6 +112,12 @@ public sealed class TimeBudgetValidatorTests
     {
         var snapshot = Snapshot(2400);
         var model = new WorldModelProjector().Project(snapshot, "required recovery plus optional quest", "training");
+        var recovery = Item("recovery.stabilize_day", "required");
+        recovery.NormalizedCommand.Parameters = recovery.NormalizedCommand.Parameters.Concat(new[]
+        {
+            new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.wait_ticks" },
+            new SmallModelActionParameter { Name = "wait_ticks", Value = "30" }
+        }).ToArray();
         var queue = new ActionQueueEnvelope
         {
             QueueId = "queue.test",
@@ -126,7 +132,7 @@ public sealed class TimeBudgetValidatorTests
             },
             Items = new[]
             {
-                Item("recovery.stabilize_day", "required"),
+                recovery,
                 Item("quest.advance", "optional")
             }
         };
@@ -224,6 +230,62 @@ public sealed class TimeBudgetValidatorTests
         Assert.False(report.FitsRequired);
         Assert.Equal(-1, Assert.Single(report.Items).EstimatedMinutes);
         Assert.Contains("time_budget_contains_unknown_duration", report.BlockReasons);
+    }
+
+    [Fact]
+    public void RecoveryConnectorUsesTransparentCurrentStepEstimate()
+    {
+        var snapshot = Snapshot(2300);
+        var model = new WorldModelProjector().Project(snapshot, "return home", "training");
+        var item = Item("recovery.stabilize_day", "required");
+        item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Concat(new[]
+        {
+            new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.traverse_connector" },
+            new SmallModelActionParameter { Name = "estimated_ticks", Value = "180" },
+            new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
+        }).ToArray();
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.recovery.route",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            Items = new[] { item }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.Equal(3, Assert.Single(report.Items).EstimatedMinutes);
+        Assert.Equal("transparent_current_connector_path.v1", report.Items[0].Estimator);
+    }
+
+    [Fact]
+    public void RecoverySleepUsesCompiledMacroStepDuration()
+    {
+        var snapshot = Snapshot(2300);
+        var model = new WorldModelProjector().Project(snapshot, "sleep", "training");
+        var item = Item("recovery.stabilize_day", "required");
+        item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Concat(new[]
+        {
+            new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }
+        }).ToArray();
+        item.NormalizedCommand.Steps = new[]
+        {
+            new CompiledActionStep { StepType = "move_to_bed_adjacent", EstimatedTicks = 120 },
+            new CompiledActionStep { StepType = "step_onto_sleep_touch_tile", EstimatedTicks = 30 },
+            new CompiledActionStep { StepType = "confirm_sleep_yes", EstimatedTicks = 120 }
+        };
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.recovery.sleep",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            Items = new[] { item }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.Equal(5, Assert.Single(report.Items).EstimatedMinutes);
+        Assert.Equal("recovery_sleep_macro_steps.v2", report.Items[0].Estimator);
     }
 
     private static ActionQueueItem Item(string optionId, string role)

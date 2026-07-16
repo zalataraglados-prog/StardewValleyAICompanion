@@ -215,6 +215,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_volcano_reach_caldera_candidates");
             }
 
+            if (optionId == "recovery.stabilize_day")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_recovery_candidates",
+                    "no_available_recovery_candidates");
+            }
+
             if (hasBoundParameters)
             {
                 return Array.Empty<string>();
@@ -402,7 +410,8 @@ namespace StardewAI.Core.OptionRegistry
                     LocationId = ReadStateFieldString(snapshot, "player", "location_id"),
                     ExpectedEffect = "menu_not_blocking_execution",
                     EstimatedTicks = 10,
-                    BlockReasons = closeMenuReasons
+                    BlockReasons = closeMenuReasons,
+                    Parameters = new[] { Parameter("execution_option_id", "executor.close_menu") }
                 });
             }
 
@@ -416,6 +425,7 @@ namespace StardewAI.Core.OptionRegistry
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
                 var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
                 var sleepImmediatelyBlocks = new List<string>();
+                ActionQueueItem? recoveryProbe = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
                 {
                     sleepImmediatelyBlocks.Add("recovery_home_route_target_unavailable");
@@ -455,24 +465,39 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, RecoveryRouteProbeCandidate()));
+                    recoveryProbe = CompilerProbeItem(snapshot, RecoveryRouteProbeCandidate());
+                    sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
                 }
 
+                var recoveryParameters = currentLocationIsHome
+                    ? new[] { Parameter("execution_option_id", "executor.sleep") }
+                    : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
+                var routeTileX = ReadParameterInt(recoveryParameters, "target_tile_x");
+                var routeTileY = ReadParameterInt(recoveryParameters, "target_tile_y");
+                var routeTargetLocation = ReadParameter(recoveryParameters, "expected_target_location");
+                var routeKind = ReadParameter(recoveryParameters, "connector_kind");
+                var routeEstimatedTicks = ReadParameterInt(recoveryParameters, "estimated_ticks") ?? 0;
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = "recovery:sleep_immediately",
                     Kind = "recovery_sleep_immediately",
                     Available = sleepImmediatelyBlocks.Count == 0,
-                    LocationId = string.IsNullOrWhiteSpace(homeLocation) ? ReadStateFieldString(snapshot, "player", "location_id") : homeLocation,
-                    TileX = currentLocationIsHome ? bedStandTile?.X : null,
-                    TileY = currentLocationIsHome ? bedStandTile?.Y : null,
+                    LocationId = currentLocationIsHome
+                        ? homeLocation
+                        : ReadStateFieldString(snapshot, "player", "location_id"),
+                    TileX = currentLocationIsHome ? bedStandTile?.X : routeTileX,
+                    TileY = currentLocationIsHome ? bedStandTile?.Y : routeTileY,
                     ExpectedEffect = currentLocationIsHome
                         ? bedStandTile is null
                             ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
                             : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
-                        : "rolling_horizon_route_to_home=" + homeLocation + ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
-                    EstimatedTicks = currentLocationIsHome ? 240 : 0,
-                    BlockReasons = sleepImmediatelyBlocks.Distinct(StringComparer.Ordinal).ToArray()
+                        : "rolling_horizon_route_to_home=" + homeLocation +
+                            ";connector_kind=" + routeKind +
+                            ";expected_target_location=" + routeTargetLocation +
+                            ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
+                    EstimatedTicks = currentLocationIsHome ? 240 : routeEstimatedTicks,
+                    BlockReasons = sleepImmediatelyBlocks.Distinct(StringComparer.Ordinal).ToArray(),
+                    Parameters = recoveryParameters
                 });
                 return candidates.ToArray();
             }
@@ -487,6 +512,7 @@ namespace StardewAI.Core.OptionRegistry
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
                 var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
                 var returnHomeBlocks = new List<string>();
+                ActionQueueItem? recoveryProbe = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
                 {
                     returnHomeBlocks.Add("recovery_home_route_target_unavailable");
@@ -526,24 +552,39 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, RecoveryRouteProbeCandidate()));
+                    recoveryProbe = CompilerProbeItem(snapshot, RecoveryRouteProbeCandidate());
+                    returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
                 }
 
+                var recoveryParameters = currentLocationIsHome
+                    ? new[] { Parameter("execution_option_id", "executor.sleep") }
+                    : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
+                var routeTileX = ReadParameterInt(recoveryParameters, "target_tile_x");
+                var routeTileY = ReadParameterInt(recoveryParameters, "target_tile_y");
+                var routeTargetLocation = ReadParameter(recoveryParameters, "expected_target_location");
+                var routeKind = ReadParameter(recoveryParameters, "connector_kind");
+                var routeEstimatedTicks = ReadParameterInt(recoveryParameters, "estimated_ticks") ?? 0;
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = "recovery:return_home",
                     Kind = "recovery_return_home",
                     Available = returnHomeBlocks.Count == 0,
-                    LocationId = string.IsNullOrWhiteSpace(homeLocation) ? ReadStateFieldString(snapshot, "player", "location_id") : homeLocation,
-                    TileX = currentLocationIsHome ? bedStandTile?.X : null,
-                    TileY = currentLocationIsHome ? bedStandTile?.Y : null,
+                    LocationId = currentLocationIsHome
+                        ? homeLocation
+                        : ReadStateFieldString(snapshot, "player", "location_id"),
+                    TileX = currentLocationIsHome ? bedStandTile?.X : routeTileX,
+                    TileY = currentLocationIsHome ? bedStandTile?.Y : routeTileY,
                     ExpectedEffect = currentLocationIsHome
                         ? bedStandTile is null
                             ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
                             : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
-                        : "rolling_horizon_route_to_home=" + homeLocation + ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
-                    EstimatedTicks = currentLocationIsHome ? 240 : 0,
-                    BlockReasons = returnHomeBlocks.Distinct(StringComparer.Ordinal).ToArray()
+                        : "rolling_horizon_route_to_home=" + homeLocation +
+                            ";connector_kind=" + routeKind +
+                            ";expected_target_location=" + routeTargetLocation +
+                            ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
+                    EstimatedTicks = currentLocationIsHome ? 240 : routeEstimatedTicks,
+                    BlockReasons = returnHomeBlocks.Distinct(StringComparer.Ordinal).ToArray(),
+                    Parameters = recoveryParameters
                 });
                 candidates.Add(new EventCandidate
                 {
@@ -567,7 +608,12 @@ namespace StardewAI.Core.OptionRegistry
                 ExpectedEffect = "executor.wait_ticks=30;urgent_risks_rechecked",
                 EstimatedTicks = 30,
                 EnergyCost = 0,
-                BlockReasons = ActiveMenuOpenForCandidate(snapshot) ? new[] { "intervening_menu_must_be_cleared_first" } : Array.Empty<string>()
+                BlockReasons = ActiveMenuOpenForCandidate(snapshot) ? new[] { "intervening_menu_must_be_cleared_first" } : Array.Empty<string>(),
+                Parameters = new[]
+                {
+                    Parameter("execution_option_id", "executor.wait_ticks"),
+                    Parameter("wait_ticks", "30")
+                }
             });
             return candidates.ToArray();
         }
@@ -3807,6 +3853,11 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<string>();
             }
 
+            return CompilerProbeBlockingReasons(CompilerProbeItem(snapshot, candidate));
+        }
+
+        private ActionQueueItem? CompilerProbeItem(SnapshotEnvelope snapshot, OptionAvailabilityCandidate candidate)
+        {
             var envelope = new SmallModelActionEnvelope
             {
                 ModelOutputId = "availability.synthetic",
@@ -3833,7 +3884,11 @@ namespace StardewAI.Core.OptionRegistry
             };
 
             var queue = compiler.Compile(envelope, snapshot);
-            var item = queue.Items.FirstOrDefault();
+            return queue.Items.FirstOrDefault();
+        }
+
+        private static string[] CompilerProbeBlockingReasons(ActionQueueItem? item)
+        {
             if (item is null)
             {
                 return Array.Empty<string>();
@@ -3842,6 +3897,18 @@ namespace StardewAI.Core.OptionRegistry
             return item.BlockingReasons
                 .Where(reason => reason != "queue_global_compiler_block")
                 .ToArray();
+        }
+
+        private static string ReadParameter(IEnumerable<SmallModelActionParameter> parameters, string name)
+        {
+            return parameters
+                .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
+                ?.Value ?? string.Empty;
+        }
+
+        private static int? ReadParameterInt(IEnumerable<SmallModelActionParameter> parameters, string name)
+        {
+            return int.TryParse(ReadParameter(parameters, name), out var value) ? value : null;
         }
 
         private static bool IsExecutorEnabled(string optionId)

@@ -1100,7 +1100,9 @@ public sealed class ActionQueueCompilerTests
             "warps": {"value":[{"x":27,"y":31,"target_location":"Farm","target_x":64,"target_y":15}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "route_connectors": {"value":[{"from_location":"FarmHouse","from_x":27,"from_y":31,"to_location":"Farm","to_x":64,"to_y":15,"kind":"warp"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":70,"height":46,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":27,"tile_y":31,"target_location":"Farm","target_x":64,"target_y":15,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -1149,6 +1151,47 @@ public sealed class ActionQueueCompilerTests
         Assert.Equal("traverse_connector", step.StepType);
         Assert.Equal("current_location(27,31)", step.Target);
         Assert.Equal("location=Farm;player.tile=64,15", step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileBlocksConnectorPlanWhenTransparentConnectorChanged()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":26,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":31,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":70,"height":46,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":27,"tile_y":31,"target_location":"Beach","target_x":20,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.stale.connector",
+                Kind = "traverse_connector",
+                TargetTileX = 27,
+                TargetTileY = 31,
+                EstimatedMinutes = 1,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Farm" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "64" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "15" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("connector_not_transparently_confirmed", Assert.Single(queue.Items).BlockingReasons);
     }
 
     [Fact]

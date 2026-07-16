@@ -10,7 +10,7 @@
 - Compiler preserves requested NPC/item and social evidence in `SocialPlanEnvelope`.
 - **Native `executor.social_interact` is implemented** — validates world/location/NPC identity/presence/tile/adjacency/action rectangle/menu/visibility/sleeping/CanSocialize/CanReceiveGifts/exact gift slot/item/stack and gift limits; only Stardrop Tea bypasses the daily limit, while spouse, birthday, or Stardrop Tea can bypass the weekly limit; calls `Game1.currentLocation.checkAction` as the only state-changing social call and records comprehensive typed before/after output.
 - All blocked social executor results record the precise runtime reason in `FailureCategory` and use `TrainingImpactScope=executor_calibration`, ensuring runtime failures do not affect strategy values.
-- `recovery.stabilize_day` candidate-to-daily-plan chain compiles to close-menu, refresh-plan/wait, or verified at-home sleep operations for all currently emitted candidates.
+- `recovery.stabilize_day` candidate-to-daily-plan chain compiles to close-menu, refresh-plan/wait, one exact current-map connector toward home, or verified at-home sleep operations for all currently emitted candidates. Connector identity, gate state, and current-map reachability are revalidated against the latest transparent snapshot, and every transition requires a fresh snapshot and replan.
 - Social talk/gift current-state candidates, daily-plan compilation (move_to_social_stand + social_interact), action queue, typed `executor.social_interact` request, and native `executor.social_interact` RuntimeTestHarness path are statically complete.
 - Direct high-level `social.talk_npc`/`social.gift_npc` remain gated through daily-plan compilation; only `executor.social_interact` is runtime enabled.
 

@@ -1,4 +1,5 @@
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.Execution;
 using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
@@ -826,7 +827,11 @@ public sealed class DailyPlanCompilerTests
             LocationId = "FarmHouse",
             TileX = 3,
             TileY = 9,
-            EstimatedTicks = 240
+            EstimatedTicks = 240,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }
+            }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
@@ -849,7 +854,11 @@ public sealed class DailyPlanCompilerTests
             LocationId = "FarmHouse",
             TileX = 3,
             TileY = 9,
-            EstimatedTicks = 120
+            EstimatedTicks = 120,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }
+            }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
@@ -868,12 +877,75 @@ public sealed class DailyPlanCompilerTests
             Rank = 1,
             TimelineStatus = "ready_now",
             LocationId = "FarmHouse",
-            EstimatedTicks = 120
+            EstimatedTicks = 120,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }
+            }
         };
 
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
 
         Assert.Equal("sleep", Assert.Single(plan.Steps).Kind);
         Assert.Equal("accepted", Assert.Single(plan.CandidateAudit).Decision);
+    }
+
+    [Fact]
+    public void CompileRecoveryOutsideHomeEmitsOneExactConnectorStep()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:return_home",
+            Kind = "recovery_return_home",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Town",
+            TileX = 43,
+            TileY = 23,
+            EstimatedTicks = 180,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.traverse_connector" },
+                new SmallModelActionParameter { Name = "connector_kind", Value = "warp" },
+                new SmallModelActionParameter { Name = "expected_target_location", Value = "Farm" },
+                new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "10" },
+                new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "11" },
+                new SmallModelActionParameter { Name = "max_movement_tiles", Value = "3" },
+                new SmallModelActionParameter { Name = "estimated_ticks", Value = "180" },
+                new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" },
+                new SmallModelActionParameter { Name = "compiler_context.remaining_connector_count", Value = "2" }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("traverse_connector", step.Kind);
+        Assert.Equal("Town", step.TargetLocation);
+        Assert.Equal(43, step.TargetTileX);
+        Assert.Equal(23, step.TargetTileY);
+        Assert.Equal(3, step.EstimatedMinutes);
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Farm");
+        Assert.Contains(step.SafetyConstraints, constraint => constraint == "one_connector_per_recovery_replan");
+    }
+
+    [Fact]
+    public void CompileRecoveryCandidateWithoutExecutionOptionFailsClosed()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:return_home",
+            Kind = "recovery_return_home",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Town",
+            EstimatedTicks = 180
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        Assert.Empty(plan.Steps);
+        Assert.Equal("skipped", Assert.Single(plan.CandidateAudit).Decision);
     }
 }
