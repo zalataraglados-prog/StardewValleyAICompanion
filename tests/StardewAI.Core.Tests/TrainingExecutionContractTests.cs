@@ -78,12 +78,27 @@ public sealed class TrainingExecutionContractTests
             TargetRuntimeIdentity = "0000BEEF",
             TargetName = "Green Slime",
             MaxAttacks = 12,
-            CombatWeaponSlotIndex = 3
+            CombatWeaponSlotIndex = 3,
+            CombatMethod = "slingshot",
+            SlingshotSlotIndex = 5,
+            SlingshotAmmoQualifiedItemId = "(O)390",
+            BombSlotIndex = 7,
+            BombQualifiedItemId = "(O)286",
+            BombRadiusTiles = 3,
+            EscapeTileX = 9,
+            EscapeTileY = 4
         };
         var requestJson = JsonSerializer.Serialize(request, JsonOptions);
         var requestRoundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(requestJson, JsonOptions)!;
         Assert.Equal(12, requestRoundTrip.MaxAttacks);
         Assert.Equal(3, requestRoundTrip.CombatWeaponSlotIndex);
+        Assert.Equal("slingshot", requestRoundTrip.CombatMethod);
+        Assert.Equal(5, requestRoundTrip.SlingshotSlotIndex);
+        Assert.Equal("(O)390", requestRoundTrip.SlingshotAmmoQualifiedItemId);
+        Assert.Equal(7, requestRoundTrip.BombSlotIndex);
+        Assert.Equal("(O)286", requestRoundTrip.BombQualifiedItemId);
+        Assert.Equal(3, requestRoundTrip.BombRadiusTiles);
+        Assert.Equal(9, requestRoundTrip.EscapeTileX);
         Assert.Equal("Green Slime", requestRoundTrip.TargetName);
         Assert.Equal("0000BEEF", requestRoundTrip.TargetRuntimeIdentity);
 
@@ -97,12 +112,18 @@ public sealed class TrainingExecutionContractTests
             CombatTargetHealthSequence = new[] { 24, 12, 0 },
             CombatPlayerHealthSequence = new[] { 100, 100 },
             CombatDamageTaken = 0,
-            CombatTargetDefeated = true
+            CombatTargetDefeated = true,
+            CombatMethod = "slingshot",
+            CombatConsumableQualifiedItemId = "(O)390",
+            CombatConsumableCountBefore = 20,
+            CombatConsumableCountAfter = 17
         };
         var resultJson = JsonSerializer.Serialize(result, JsonOptions);
         var resultRoundTrip = JsonSerializer.Deserialize<TrainingExecutionResult>(resultJson, JsonOptions)!;
         Assert.Equal(new[] { 24, 12, 0 }, resultRoundTrip.CombatTargetHealthSequence);
         Assert.True(resultRoundTrip.CombatTargetDefeated);
+        Assert.Equal("slingshot", resultRoundTrip.CombatMethod);
+        Assert.Equal(17, resultRoundTrip.CombatConsumableCountAfter);
         Assert.Equal(0, resultRoundTrip.CombatDamageTaken);
     }
 

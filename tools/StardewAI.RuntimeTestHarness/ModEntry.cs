@@ -46,6 +46,8 @@ public sealed class ModEntry : Mod
     private ActiveMineStone? activeMineStone;
     private ActiveBreakContainer? activeBreakContainer;
     private ActiveCombatMonster? activeCombatMonster;
+    private ActiveShootMonster? activeShootMonster;
+    private ActivePlaceBomb? activePlaceBomb;
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
     private ActiveDescendLadder? activeDescendLadder;
@@ -259,13 +261,15 @@ public sealed class ModEntry : Mod
         TickManualAutoCombat();
         TickConsumeFood();
         TickPickupDebris();
+        TickShootMonster();
+        TickPlaceBomb();
         TickDescendLadder();
         TickDescendShaft();
         TickExitMine();
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -318,6 +322,18 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.combat_monster")
             {
                 StartCombatMonster(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.shoot_monster")
+            {
+                StartShootMonster(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.place_bomb")
+            {
+                StartPlaceBomb(pending);
                 return;
             }
 
@@ -7110,6 +7126,606 @@ public sealed class ModEntry : Mod
             ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
     }
 
+    private void StartShootMonster(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+        const string requested = "target_monster.defeated=true;native_input=full_charge_slingshot";
+        if (Game1.currentLocation is not MineShaft mine ||
+            string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
+            string.IsNullOrWhiteSpace(request.TargetRuntimeType) ||
+            string.IsNullOrWhiteSpace(request.TargetName))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "target_or_location=missing", "slingshot_target_identity_required"));
+            return;
+        }
+        var targets = mine.characters.OfType<Monster>()
+            .Where(monster => monster.Health > 0)
+            .Where(monster => string.Equals(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"), request.TargetRuntimeIdentity, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.GetType().FullName, request.TargetRuntimeType, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.Name, request.TargetName, StringComparison.Ordinal))
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "matching_target_count=" + targets.Length, "slingshot_target_not_unique"));
+            return;
+        }
+        if (!request.SlingshotSlotIndex.HasValue ||
+            request.SlingshotSlotIndex.Value < 0 ||
+            request.SlingshotSlotIndex.Value >= Game1.player.Items.Count ||
+            Game1.player.Items[request.SlingshotSlotIndex.Value] is not Slingshot slingshot ||
+            slingshot.attachments.Count == 0 ||
+            slingshot.attachments[0] is not StardewValley.Object ammo ||
+            ammo.Stack <= 0 ||
+            !string.Equals(ammo.QualifiedItemId, request.SlingshotAmmoQualifiedItemId, StringComparison.Ordinal))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "slingshot=missing_or_ammo_drifted", "loaded_slingshot_contract_not_met"));
+            return;
+        }
+        if (!HasClearProjectilePath(mine, Game1.player.TilePoint, targets[0].TilePoint))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "projectile_path=blocked", "slingshot_projectile_path_blocked"));
+            return;
+        }
+
+        activeShootMonster = new ActiveShootMonster(
+            pending,
+            mine,
+            targets[0],
+            slingshot,
+            ammo.QualifiedItemId,
+            ammo.Stack,
+            Game1.player.CurrentToolIndex,
+            Math.Clamp(request.MaxAttacks, 1, 256),
+            requested);
+    }
+
+    private void TickShootMonster()
+    {
+        if (activeShootMonster is null)
+        {
+            return;
+        }
+        var active = activeShootMonster;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Mine))
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_timeout");
+            return;
+        }
+        if (active.Target.Health <= 0 || !active.Mine.characters.Contains(active.Target))
+        {
+            if (active.ButtonHeld)
+            {
+                TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+                active.ButtonHeld = false;
+                return;
+            }
+            if (Game1.player.UsingTool || Game1.player.usingSlingshot)
+            {
+                return;
+            }
+            CompleteShootMonster(active);
+            return;
+        }
+        if (!HasClearProjectilePath(active.Mine, Game1.player.TilePoint, active.Target.TilePoint))
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_projectile_path_drifted");
+            return;
+        }
+        if (active.Slingshot.attachments.Count == 0 ||
+            active.Slingshot.attachments[0] is not StardewValley.Object ammo ||
+            !string.Equals(ammo.QualifiedItemId, active.AmmoQualifiedItemId, StringComparison.Ordinal) ||
+            ammo.Stack <= 0)
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_ammo_exhausted_or_drifted");
+            return;
+        }
+
+        var targetCenter = active.Target.GetBoundingBox().Center;
+        Game1.setMousePosition(targetCenter.X - Game1.viewport.X, targetCenter.Y - Game1.viewport.Y, ui_scale: false);
+        if (active.ButtonHeld)
+        {
+            active.HoldTicks++;
+            if (active.HoldTicks < 20)
+            {
+                return;
+            }
+            if (!TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out var releaseReason))
+            {
+                CompleteShootMonsterBlocked(active, releaseReason);
+                return;
+            }
+            active.ButtonHeld = false;
+            active.CooldownTicks = 12;
+            active.AttackCount++;
+            return;
+        }
+        if (active.CooldownTicks > 0)
+        {
+            active.CooldownTicks--;
+            return;
+        }
+        if (Game1.player.UsingTool || Game1.player.usingSlingshot || Game1.activeClickableMenu is not null || Game1.eventUp)
+        {
+            return;
+        }
+        if (active.AttackCount >= active.MaxAttacks)
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_attack_budget_exceeded");
+            return;
+        }
+        if (active.Target.Health < active.LastTargetHealth)
+        {
+            active.HitCount++;
+            active.LastTargetHealth = active.Target.Health;
+            active.TargetHealthSequence.Add(active.Target.Health);
+        }
+        Game1.player.CurrentToolIndex = active.SlingshotSlotIndex;
+        if (!TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: true, out var pressReason))
+        {
+            CompleteShootMonsterBlocked(active, pressReason);
+            return;
+        }
+        active.ButtonHeld = true;
+        active.HoldTicks = 0;
+    }
+
+    private void CompleteShootMonster(ActiveShootMonster active)
+    {
+        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+        if (!Game1.player.UsingTool)
+        {
+            Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
+        }
+        activeShootMonster = null;
+        var ammoAfter = active.Slingshot.attachments.Count > 0 && active.Slingshot.attachments[0] is StardewValley.Object ammo
+            ? ammo.Stack
+            : 0;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = active.Pending.Request.RunId,
+            QueueId = active.Pending.Request.QueueId,
+            QueueItemId = active.Pending.Request.QueueItemId,
+            BeforeStateHash = active.Pending.Request.BeforeStateHash,
+            OptionId = active.Pending.Request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            TargetLocation = active.Mine.NameOrUniqueName,
+            ToolQualifiedItemId = active.Slingshot.QualifiedItemId,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "shoot_monster",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "native_full_charge_slingshot_defeated_target", "ammo_consumption_observed" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = "target_health=" + active.Target.Health + ";ammo_stack=" + ammoAfter,
+            CombatMethod = "slingshot",
+            CombatConsumableQualifiedItemId = active.AmmoQualifiedItemId,
+            CombatConsumableCountBefore = active.AmmoCountBefore,
+            CombatConsumableCountAfter = ammoAfter,
+            CombatTargetRuntimeType = active.Target.GetType().FullName ?? active.Target.GetType().Name,
+            CombatTargetRuntimeIdentity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(active.Target).ToString("X8"),
+            CombatTargetName = active.Target.Name,
+            CombatAttackCount = active.AttackCount,
+            CombatHitCount = active.HitCount,
+            CombatTargetHealthSequence = active.TargetHealthSequence.ToArray(),
+            CombatTargetDefeated = true,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
+                new SimulatedFactChange { Path = "player.slingshot.ammo.stack", Before = active.AmmoCountBefore.ToString(), After = ammoAfter.ToString() }
+            }
+        });
+    }
+
+    private void CompleteShootMonsterBlocked(ActiveShootMonster active, string reason)
+    {
+        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+        if (!Game1.player.UsingTool)
+        {
+            Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
+        }
+        activeShootMonster = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "shoot_monster", active.RequestedEffect,
+            "target_health=" + active.Target.Health, reason));
+    }
+
+    private static bool HasClearProjectilePath(GameLocation location, Point start, Point target)
+    {
+        var x = start.X;
+        var y = start.Y;
+        var deltaX = Math.Abs(target.X - start.X);
+        var stepX = start.X < target.X ? 1 : -1;
+        var deltaY = -Math.Abs(target.Y - start.Y);
+        var stepY = start.Y < target.Y ? 1 : -1;
+        var error = deltaX + deltaY;
+        while (x != target.X || y != target.Y)
+        {
+            var doubled = 2 * error;
+            if (doubled >= deltaY)
+            {
+                error += deltaY;
+                x += stepX;
+            }
+            if (doubled <= deltaX)
+            {
+                error += deltaX;
+                y += stepY;
+            }
+            if ((x != target.X || y != target.Y) &&
+                ((location.objects.TryGetValue(new Vector2(x, y), out var obj) && !obj.isPassable()) || location.BlocksDamageLOS(x, y)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void StartPlaceBomb(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+        const string requested = "bomb.placed=true;escape_damage_square=true;native_input=MouseRight+WASD";
+        if (Game1.currentLocation is not MineShaft mine ||
+            !request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
+            !request.EscapeTileX.HasValue || !request.EscapeTileY.HasValue ||
+            !request.BombSlotIndex.HasValue || !request.BombRadiusTiles.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "bomb_contract=missing", "bomb_target_escape_and_slot_required"));
+            return;
+        }
+        var slot = request.BombSlotIndex.Value;
+        if (slot < 0 || slot >= Game1.player.Items.Count ||
+            Game1.player.Items[slot] is not StardewValley.Object bomb ||
+            !string.Equals(bomb.QualifiedItemId, request.BombQualifiedItemId, StringComparison.Ordinal) ||
+            bomb.Stack <= 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "bomb=missing_or_drifted", "bomb_inventory_contract_not_met"));
+            return;
+        }
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
+        var escape = new Point(request.EscapeTileX.Value, request.EscapeTileY.Value);
+        if (!AreAdjacent(stand, target))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "stand_target=not_adjacent", "bomb_placement_stand_invalid"));
+            return;
+        }
+        if (mine.objects.ContainsKey(new Vector2(target.X, target.Y)))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "target=occupied", "bomb_placement_tile_not_empty"));
+            return;
+        }
+        var path = TryBuildTilePath(mine, Game1.player.TilePoint, stand, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason, avoidSoftObstacles: true);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "placement_path=blocked", pathReason));
+            return;
+        }
+        activePlaceBomb = new ActivePlaceBomb(
+            pending,
+            mine,
+            target,
+            escape,
+            path,
+            slot,
+            bomb,
+            request.BombRadiusTiles.Value,
+            Game1.player.CurrentToolIndex,
+            BombAffectedObjectCount(mine, target, request.BombRadiusTiles.Value),
+            requested);
+    }
+
+    private void TickPlaceBomb()
+    {
+        if (activePlaceBomb is null)
+        {
+            return;
+        }
+        var active = activePlaceBomb;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Mine))
+        {
+            CompletePlaceBombBlocked(active, "bomb_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompletePlaceBombBlocked(active, "bomb_timeout");
+            return;
+        }
+
+        if (active.Stage == PlaceBombStage.MoveToPlacement)
+        {
+            if (!TickBombPathMovement(active, active.Path, out var movementReason))
+            {
+                if (!string.IsNullOrEmpty(movementReason))
+                {
+                    CompletePlaceBombBlocked(active, movementReason);
+                }
+                return;
+            }
+            active.Stage = PlaceBombStage.PressPlacement;
+        }
+
+        if (active.Stage == PlaceBombStage.PressPlacement)
+        {
+            StopAllMovement();
+            Game1.player.CurrentToolIndex = active.BombSlotIndex;
+            var pixel = new Point(active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
+                active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
+            Game1.setMousePosition(pixel.X, pixel.Y, ui_scale: false);
+            if (!TryApplySmapiRightButtonOverride(pressed: true, out var reason))
+            {
+                CompletePlaceBombBlocked(active, reason);
+                return;
+            }
+            active.Stage = PlaceBombStage.ReleasePlacement;
+            return;
+        }
+
+        if (active.Stage == PlaceBombStage.ReleasePlacement)
+        {
+            if (!TryApplySmapiRightButtonOverride(pressed: false, out var reason))
+            {
+                CompletePlaceBombBlocked(active, reason);
+                return;
+            }
+            var stackAfter = BombStackAt(active.BombSlotIndex, active.BombQualifiedItemId);
+            if (stackAfter >= active.BombStackBefore)
+            {
+                CompletePlaceBombBlocked(active, "bomb_native_placement_not_observed");
+                return;
+            }
+            active.PlacedAtTick = active.ElapsedTicks;
+            active.EscapePath = TryBuildTilePath(active.Mine, Game1.player.TilePoint, active.Escape, 64, out var pathReason, avoidSoftObstacles: true, allowRemovableObstacles: false) ?? new List<Point>();
+            if (active.EscapePath.Count == 0)
+            {
+                if (!TryRebuildBombEscape(active))
+                {
+                    CompletePlaceBombBlocked(active, "bomb_escape_path_drifted:" + pathReason);
+                }
+                return;
+            }
+            active.PathIndex = 0;
+            active.Stage = PlaceBombStage.Escape;
+        }
+
+        if (active.Stage == PlaceBombStage.Escape)
+        {
+            if (!TickBombPathMovement(active, active.EscapePath, out var movementReason))
+            {
+                if (!string.IsNullOrEmpty(movementReason))
+                {
+                    if (!TryRebuildBombEscape(active))
+                    {
+                        CompletePlaceBombBlocked(active, movementReason);
+                    }
+                }
+                return;
+            }
+            if (Math.Abs(Game1.player.TilePoint.X - active.Target.X) <= active.Radius &&
+                Math.Abs(Game1.player.TilePoint.Y - active.Target.Y) <= active.Radius)
+            {
+                CompletePlaceBombBlocked(active, "bomb_escape_finished_inside_damage_square");
+                return;
+            }
+            active.Stage = PlaceBombStage.WaitForExplosion;
+        }
+
+        if (active.Stage == PlaceBombStage.WaitForExplosion &&
+            active.ElapsedTicks - active.PlacedAtTick >= 180 &&
+            !active.Mine.temporarySprites.Any(sprite => sprite.bombRadius == active.Radius &&
+                sprite.position.Equals(new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize))))
+        {
+            CompletePlaceBomb(active);
+        }
+    }
+
+    private bool TryRebuildBombEscape(ActivePlaceBomb active)
+    {
+        if (active.Mine.map?.Layers.Count is not > 0)
+        {
+            return false;
+        }
+        var layer = active.Mine.map.Layers[0];
+        List<Point>? best = null;
+        for (var x = 0; x < layer.LayerWidth; x++)
+        {
+            for (var y = 0; y < layer.LayerHeight; y++)
+            {
+                if (Math.Abs(x - active.Target.X) <= active.Radius && Math.Abs(y - active.Target.Y) <= active.Radius)
+                {
+                    continue;
+                }
+                var path = TryBuildTilePath(active.Mine, Game1.player.TilePoint, new Point(x, y), 64, out _,
+                    avoidSoftObstacles: true, allowRemovableObstacles: false);
+                if (path is not null && (best is null || path.Count < best.Count))
+                {
+                    best = path;
+                }
+            }
+        }
+        if (best is null)
+        {
+            return false;
+        }
+        active.EscapePath = best;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
+    }
+
+    private bool TickBombPathMovement(ActivePlaceBomb active, List<Point> path, out string reason)
+    {
+        reason = string.Empty;
+        while (active.PathIndex < path.Count && Game1.player.TilePoint == path[active.PathIndex])
+        {
+            active.PathIndex++;
+        }
+        if (active.PathIndex >= path.Count)
+        {
+            StopAllMovement();
+            return true;
+        }
+        var next = path[active.PathIndex];
+        if (!IsTileWalkable(active.Mine, next) || IsTileOccupiedByCharacter(active.Mine, next))
+        {
+            reason = "bomb_path_drifted";
+            StopAllMovement();
+            return false;
+        }
+        StartMoving(DirectionTo(Game1.player.TilePoint, next));
+        MovePlayerForTick();
+        if (Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) < 0.01f)
+        {
+            active.StuckTicks++;
+        }
+        else
+        {
+            active.StuckTicks = 0;
+        }
+        active.LastPosition = Game1.player.Position;
+        if (active.StuckTicks > 60)
+        {
+            reason = "bomb_path_stuck";
+        }
+        return false;
+    }
+
+    private static int BombAffectedObjectCount(MineShaft mine, Point center, int radius)
+    {
+        return BombAffectedTiles(center, radius).Count(tile =>
+            mine.objects.TryGetValue(new Vector2(tile.X, tile.Y), out var obj) &&
+            (obj.IsBreakableStone() || obj is BreakableContainer));
+    }
+
+    private static IEnumerable<Point> BombAffectedTiles(Point center, int radius)
+    {
+        var outline = Game1.getCircleOutlineGrid(radius);
+        var fill = 0;
+        for (var x = 0; x < radius * 2 + 1; x++)
+        {
+            for (var y = 0; y < radius * 2 + 1; y++)
+            {
+                var include = false;
+                if (x == 0 || y == 0 || x == radius * 2 || y == radius * 2)
+                {
+                    fill = outline[x, y] ? 1 : 0;
+                }
+                else if (outline[x, y])
+                {
+                    fill += y <= radius ? 1 : -1;
+                    include = fill <= 0;
+                }
+                if (fill >= 1)
+                {
+                    include = true;
+                }
+                if (include)
+                {
+                    yield return new Point(center.X + x - radius, center.Y + y - radius);
+                }
+            }
+        }
+    }
+
+    private static int BombStackAt(int slotIndex, string qualifiedItemId)
+    {
+        return slotIndex >= 0 && slotIndex < Game1.player.Items.Count &&
+            Game1.player.Items[slotIndex] is StardewValley.Object obj &&
+            string.Equals(obj.QualifiedItemId, qualifiedItemId, StringComparison.Ordinal)
+                ? obj.Stack
+                : 0;
+    }
+
+    private void CompletePlaceBomb(ActivePlaceBomb active)
+    {
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
+        StopAllMovement();
+        if (!Game1.player.UsingTool)
+        {
+            Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
+        }
+        activePlaceBomb = null;
+        var objectCountAfter = BombAffectedObjectCount(active.Mine, active.Target, active.Radius);
+        var stackAfter = BombStackAt(active.BombSlotIndex, active.BombQualifiedItemId);
+        var verified = objectCountAfter < active.ObjectCountBefore;
+        var result = new TrainingExecutionResult
+        {
+            RunId = active.Pending.Request.RunId,
+            QueueId = active.Pending.Request.QueueId,
+            QueueItemId = active.Pending.Request.QueueItemId,
+            BeforeStateHash = active.Pending.Request.BeforeStateHash,
+            OptionId = active.Pending.Request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            TargetLocation = active.Mine.NameOrUniqueName,
+            TargetTileX = active.Target.X,
+            TargetTileY = active.Target.Y,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "place_bomb",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "native_bomb_consumption_observed", "escape_tile_outside_damage_square", "natural_explosion_removed_breakable_objects" }
+                : new[] { "bomb_explosion_did_not_reduce_predicted_breakable_cluster" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = "bomb_stack=" + stackAfter + ";breakable_objects=" + objectCountAfter + ";player_tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
+            CombatMethod = "bomb",
+            CombatConsumableQualifiedItemId = active.BombQualifiedItemId,
+            CombatConsumableCountBefore = active.BombStackBefore,
+            CombatConsumableCountAfter = stackAfter,
+            BombRadiusTiles = active.Radius,
+            BombEscapeTileX = active.Escape.X,
+            BombEscapeTileY = active.Escape.Y,
+            BombObjectCountBefore = active.ObjectCountBefore,
+            BombObjectCountAfter = objectCountAfter,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "bomb_effect_verification_failed" },
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "player.inventory.bomb.stack", Before = active.BombStackBefore.ToString(), After = stackAfter.ToString() },
+                new SimulatedFactChange { Path = "mining.blast.breakable_object_count", Before = active.ObjectCountBefore.ToString(), After = objectCountAfter.ToString() }
+            }
+        };
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private void CompletePlaceBombBlocked(ActivePlaceBomb active, string reason)
+    {
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
+        StopAllMovement();
+        if (!Game1.player.UsingTool)
+        {
+            Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
+        }
+        activePlaceBomb = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "place_bomb", active.RequestedEffect,
+            "player_tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y, reason));
+    }
+
     private void StartCombatMonster(PendingExecution pending)
     {
         var request = pending.Request;
@@ -7194,7 +7810,8 @@ public sealed class ModEntry : Mod
             activeDescendShaft?.CombatInterrupted == true ||
             activeExitMine?.CombatInterrupted == true;
         var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
-        if (!enabled || activeCombatMonster is not null || !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
+        if (!enabled || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null ||
+            !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
         {
             ReleaseManualAutoCombatInput();
             RestoreManualAutoCombatTool();
@@ -11656,6 +12273,8 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.mine_stone" &&
             request.OptionId != "executor.break_container" &&
             request.OptionId != "executor.combat_monster" &&
+            request.OptionId != "executor.shoot_monster" &&
+            request.OptionId != "executor.place_bomb" &&
             request.OptionId != "executor.consume_food" &&
             request.OptionId != "executor.descend_ladder" &&
             request.OptionId != "executor.descend_shaft" &&
@@ -12005,6 +12624,120 @@ public sealed class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();
+    }
+
+    private sealed class ActiveShootMonster
+    {
+        public ActiveShootMonster(
+            PendingExecution pending,
+            MineShaft mine,
+            Monster target,
+            Slingshot slingshot,
+            string ammoQualifiedItemId,
+            int ammoCountBefore,
+            int restoreSlotIndex,
+            int maxAttacks,
+            string requestedEffect)
+        {
+            Pending = pending;
+            Mine = mine;
+            Target = target;
+            Slingshot = slingshot;
+            SlingshotSlotIndex = Game1.player.Items.IndexOf(slingshot);
+            AmmoQualifiedItemId = ammoQualifiedItemId;
+            AmmoCountBefore = ammoCountBefore;
+            RestoreSlotIndex = restoreSlotIndex;
+            MaxAttacks = maxAttacks;
+            RequestedEffect = requestedEffect;
+            TargetHealthBefore = target.Health;
+            LastTargetHealth = target.Health;
+            TargetHealthSequence.Add(target.Health);
+            MaxTicks = Math.Clamp(1200 + maxAttacks * 180, 1800, 7200);
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft Mine { get; }
+        public Monster Target { get; }
+        public Slingshot Slingshot { get; }
+        public int SlingshotSlotIndex { get; }
+        public string AmmoQualifiedItemId { get; }
+        public int AmmoCountBefore { get; }
+        public int RestoreSlotIndex { get; }
+        public int MaxAttacks { get; }
+        public string RequestedEffect { get; }
+        public int TargetHealthBefore { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public bool ButtonHeld { get; set; }
+        public int HoldTicks { get; set; }
+        public int CooldownTicks { get; set; }
+        public int AttackCount { get; set; }
+        public int HitCount { get; set; }
+        public int LastTargetHealth { get; set; }
+        public List<int> TargetHealthSequence { get; } = new();
+    }
+
+    private sealed class ActivePlaceBomb
+    {
+        public ActivePlaceBomb(
+            PendingExecution pending,
+            MineShaft mine,
+            Point target,
+            Point escape,
+            List<Point> path,
+            int bombSlotIndex,
+            StardewValley.Object bomb,
+            int radius,
+            int restoreSlotIndex,
+            int objectCountBefore,
+            string requestedEffect)
+        {
+            Pending = pending;
+            Mine = mine;
+            Target = target;
+            Escape = escape;
+            Path = path;
+            BombSlotIndex = bombSlotIndex;
+            BombQualifiedItemId = bomb.QualifiedItemId;
+            BombStackBefore = bomb.Stack;
+            Radius = radius;
+            RestoreSlotIndex = restoreSlotIndex;
+            ObjectCountBefore = objectCountBefore;
+            RequestedEffect = requestedEffect;
+            LastPosition = Game1.player.Position;
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft Mine { get; }
+        public Point Target { get; }
+        public Point Escape { get; }
+        public List<Point> Path { get; }
+        public List<Point> EscapePath { get; set; } = new();
+        public int BombSlotIndex { get; }
+        public string BombQualifiedItemId { get; }
+        public int BombStackBefore { get; }
+        public int Radius { get; }
+        public int RestoreSlotIndex { get; }
+        public int ObjectCountBefore { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 900;
+        public int ElapsedTicks { get; set; }
+        public int PlacedAtTick { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
+        public PlaceBombStage Stage { get; set; }
+    }
+
+    private enum PlaceBombStage
+    {
+        MoveToPlacement,
+        PressPlacement,
+        ReleasePlacement,
+        Escape,
+        WaitForExplosion
     }
 
     private sealed class ActiveCombatMonster

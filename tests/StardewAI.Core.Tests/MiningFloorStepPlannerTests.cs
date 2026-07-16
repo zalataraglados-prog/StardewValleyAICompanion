@@ -375,6 +375,88 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void DistantMonsterUsesLoadedSlingshotWhenClearAndFaster()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {
+                "runtime_identity":"ranged-target",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Green Slime",
+                "tile_x":6,
+                "tile_y":2,
+                "possible_drop_qualified_item_ids":["(O)768"],
+                "drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"independent"}],
+                "melee_attack_projections":[{"slot_index":2,"can_defeat_with_this_weapon":true,"expected_attacks_to_defeat":8.0,"expected_active_damage_duration_ms":4000.0,"duration_status":"exact_active_melee_phase_excluding_movement"}],
+                "slingshot_attack_projections":[{"slot_index":5,"ammo_qualified_item_id":"(O)390","ammo_stack":20,"can_defeat_with_this_weapon":true,"expected_shots_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"duration_status":"exact_charge_phase_excluding_projectile_travel_and_reposition"}]
+              }
+            ]
+            """,
+            resources: """{"health":100,"max_health":100,"selected_slot_index":4,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0}}""");
+
+        Assert.Equal(MiningFloorStepKinds.ShootMonster, plan.StepKind);
+        Assert.Equal("executor.shoot_monster", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal("slingshot", plan.CombatMethod);
+        Assert.Equal(5, plan.SlingshotSlotIndex);
+        Assert.Equal("(O)390", plan.SlingshotAmmoQualifiedItemId);
+        Assert.Equal(0, plan.EstimatedMovementTiles);
+    }
+
+    [Fact]
+    public void ReachDepthUsesBombOnlyForDenseClusterWithFuseEscape()
+    {
+        var rows = new[]
+        {
+            "111111111",
+            "100000001",
+            "100000001",
+            "100000001",
+            "100000001",
+            "100000001",
+            "100000001",
+            "100000001",
+            "111111111"
+        };
+        var plan = Plan(
+            rows: rows,
+            objects: """
+            [
+              {"tile_x":3,"tile_y":3,"qualified_item_id":"(O)32","is_breakable_stone":true},
+              {"tile_x":4,"tile_y":3,"qualified_item_id":"(O)32","is_breakable_stone":true},
+              {"tile_x":3,"tile_y":4,"qualified_item_id":"(O)32","is_breakable_stone":true},
+              {"tile_x":4,"tile_y":4,"qualified_item_id":"(O)32","is_breakable_stone":true}
+            ]
+            """,
+            resources: """
+            {
+              "health":100,
+              "max_health":100,
+              "energy":220,
+              "current_time":1200,
+              "selected_slot_index":4,
+              "food_slots":[],
+              "cardinal_movement":{"tile_duration_ms":150.0},
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)286","stack":3,"radius_tiles":3}]
+            }
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.PlaceBomb, plan.StepKind);
+        Assert.Equal("executor.place_bomb", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal(7, plan.BombSlotIndex);
+        Assert.Equal("(O)286", plan.BombQualifiedItemId);
+        Assert.Equal(3, plan.BombRadiusTiles);
+        Assert.True(plan.ExpectedBombObjectHits >= 4);
+        Assert.NotNull(plan.EscapeTileX);
+        Assert.NotNull(plan.EscapeTileY);
+    }
+
+    [Fact]
     public void MonsterDropObjectiveDoesNotRankCurrentPositionSeedAsStableProbability()
     {
         var plan = ObjectivePlan(
@@ -659,6 +741,33 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void RuntimeSlingshotAndBombUseNativeInputWithoutDirectDamageOrExplosionCalls()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var shootStart = source.IndexOf("private void StartShootMonster", StringComparison.Ordinal);
+        var bombStart = source.IndexOf("private void StartPlaceBomb", shootStart, StringComparison.Ordinal);
+        var meleeStart = source.IndexOf("private void StartCombatMonster", bombStart, StringComparison.Ordinal);
+        Assert.True(shootStart >= 0 && bombStart > shootStart && meleeStart > bombStart);
+        var shootSource = source[shootStart..bombStart];
+        var bombSource = source[bombStart..meleeStart];
+
+        Assert.Contains("executor.shoot_monster", source, StringComparison.Ordinal);
+        Assert.Contains("SButton.MouseLeft, pressed: true", shootSource, StringComparison.Ordinal);
+        Assert.Contains("HoldTicks < 20", shootSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.setMousePosition", shootSource, StringComparison.Ordinal);
+        Assert.Contains("HasClearProjectilePath", shootSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("damageMonster(", shootSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("takeDamage(", shootSource, StringComparison.Ordinal);
+
+        Assert.Contains("executor.place_bomb", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", bombSource, StringComparison.Ordinal);
+        Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
+        Assert.Contains("bomb_escape_finished_inside_damage_square", bombSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(".explode(", bombSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("placementAction(", bombSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RuntimeRecoveryUsesNativeEatLifecycleWithoutDirectHealthOrInventoryMutation()
     {
         var root = FindRepositoryRoot();
@@ -707,7 +816,7 @@ public sealed class MiningFloorStepPlannerTests
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
 
-        foreach (var optionId in new[] { "executor.mine_stone", "executor.break_container", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.break_container", "executor.combat_monster", "executor.shoot_monster", "executor.place_bomb", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
         {
             var option = registry.GetRequired(optionId);
             Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
@@ -716,6 +825,8 @@ public sealed class MiningFloorStepPlannerTests
 
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.mine_stone").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.combat_monster").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.shoot_monster").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.place_bomb").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.break_container").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
@@ -792,10 +903,12 @@ public sealed class MiningFloorStepPlannerTests
     {
         rows ??= new[] { "111111", "100001", "100001", "100001", "111111" };
         var rowsJson = JsonSerializer.Serialize(rows);
+        var width = rows[0].Length;
+        var height = rows.Length;
         var json = """
         {
           "mining": {
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL}},
@@ -806,6 +919,8 @@ public sealed class MiningFloorStepPlannerTests
             .Replace("LADDERS", ladders, StringComparison.Ordinal)
             .Replace("SHAFTS", shafts, StringComparison.Ordinal)
             .Replace("EXITS", exits, StringComparison.Ordinal)
+            .Replace("WIDTH", width.ToString(), StringComparison.Ordinal)
+            .Replace("HEIGHT", height.ToString(), StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)

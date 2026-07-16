@@ -68,6 +68,36 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("combat_weapon_slot_index")]
         public int? CombatWeaponSlotIndex { get; set; }
 
+        [JsonPropertyName("combat_method")]
+        public string CombatMethod { get; set; } = string.Empty;
+
+        [JsonPropertyName("slingshot_slot_index")]
+        public int? SlingshotSlotIndex { get; set; }
+
+        [JsonPropertyName("slingshot_ammo_qualified_item_id")]
+        public string SlingshotAmmoQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("bomb_slot_index")]
+        public int? BombSlotIndex { get; set; }
+
+        [JsonPropertyName("bomb_qualified_item_id")]
+        public string BombQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("bomb_radius_tiles")]
+        public int? BombRadiusTiles { get; set; }
+
+        [JsonPropertyName("escape_tile_x")]
+        public int? EscapeTileX { get; set; }
+
+        [JsonPropertyName("escape_tile_y")]
+        public int? EscapeTileY { get; set; }
+
+        [JsonPropertyName("expected_bomb_object_hits")]
+        public int? ExpectedBombObjectHits { get; set; }
+
+        [JsonPropertyName("expected_bomb_monster_hits")]
+        public int? ExpectedBombMonsterHits { get; set; }
+
         [JsonPropertyName("direction")]
         public int? Direction { get; set; }
 
@@ -343,6 +373,33 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("combat_target_defeated")]
         public bool? CombatTargetDefeated { get; set; }
+
+        [JsonPropertyName("combat_method")]
+        public string CombatMethod { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_consumable_qualified_item_id")]
+        public string CombatConsumableQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_consumable_count_before")]
+        public int? CombatConsumableCountBefore { get; set; }
+
+        [JsonPropertyName("combat_consumable_count_after")]
+        public int? CombatConsumableCountAfter { get; set; }
+
+        [JsonPropertyName("bomb_radius_tiles")]
+        public int? BombRadiusTiles { get; set; }
+
+        [JsonPropertyName("bomb_escape_tile_x")]
+        public int? BombEscapeTileX { get; set; }
+
+        [JsonPropertyName("bomb_escape_tile_y")]
+        public int? BombEscapeTileY { get; set; }
+
+        [JsonPropertyName("bomb_object_count_before")]
+        public int? BombObjectCountBefore { get; set; }
+
+        [JsonPropertyName("bomb_object_count_after")]
+        public int? BombObjectCountAfter { get; set; }
 
         [JsonPropertyName("recovery_food_slot_index")]
         public int? RecoveryFoodSlotIndex { get; set; }

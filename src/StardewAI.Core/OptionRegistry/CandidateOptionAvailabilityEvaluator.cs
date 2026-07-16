@@ -3822,6 +3822,8 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.mine_stone" ||
                 optionId == "executor.break_container" ||
                 optionId == "executor.combat_monster" ||
+                optionId == "executor.shoot_monster" ||
+                optionId == "executor.place_bomb" ||
                 optionId == "executor.consume_food" ||
                 optionId == "executor.descend_ladder" ||
                 optionId == "executor.descend_shaft" ||

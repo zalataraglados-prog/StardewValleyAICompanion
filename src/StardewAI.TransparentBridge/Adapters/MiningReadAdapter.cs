@@ -203,6 +203,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 stun_time_ms = monster.stunTime.Value,
                 melee_damage_semantics = ReadMeleeDamageSemantics(monster, Game1.player),
                 melee_attack_projections = ReadMeleeAttackProjections(monster, Game1.player),
+                slingshot_attack_projections = ReadSlingshotAttackProjections(monster, Game1.player),
                 is_hard_mode_monster = monster.isHardModeMonster.Value,
                 movement_speed = monster.Speed,
                 tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
@@ -400,6 +401,113 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 : null)
             .Where(projection => projection is not null)
             .ToArray()!;
+    }
+
+    private static object[] ReadSlingshotAttackProjections(Monster monster, Farmer player)
+    {
+        return player.Items.Select((item, slotIndex) => item is Slingshot slingshot
+                ? ReadSlingshotAttackProjection(monster, player, slingshot, slotIndex)
+                : null)
+            .Where(projection => projection is not null)
+            .ToArray()!;
+    }
+
+    private static object ReadSlingshotAttackProjection(Monster monster, Farmer player, Slingshot slingshot, int slotIndex)
+    {
+        var ammo = slingshot.attachments.Count > 0 ? slingshot.attachments[0] : null;
+        var vanillaType = monster.GetType().Assembly == typeof(Monster).Assembly;
+        var exactGlobalDamage = player.enchantments.Count == 0;
+        var currentHitCanDamage = ammo is not null && !monster.IsInvisible && !monster.isInvincible() && monster switch
+        {
+            Spiker => false,
+            Bat bat when bat.Age == 789 => false,
+            Bug bug when bug.isArmoredBug.Value => false,
+            Mummy mummy when mummy.reviveTimer.Value > 0 => false,
+            Grub grub when grub.pupating.Value => false,
+            LavaLurk lurk when lurk.currentState.Value == LavaLurk.State.Submerged => false,
+            RockCrab crab when crab.Sprite.currentFrame % 4 == 0 && !crab.shellGone.Value => false,
+            _ => true
+        };
+        var canDefeat = ammo is not null && monster switch
+        {
+            Spiker => false,
+            Bat bat when bat.Age == 789 => false,
+            Bug bug when bug.isArmoredBug.Value => false,
+            Mummy => false,
+            _ => true
+        };
+        var distribution = vanillaType && exactGlobalDamage && canDefeat
+            ? BuildSlingshotDamageDistribution(monster, player, slingshot, ammo!)
+            : null;
+        double? expectedShots = distribution is null ? null : ExpectedAttacksToDefeat(monster.Health, distribution.Entries);
+        if (expectedShots.HasValue && !double.IsFinite(expectedShots.Value))
+        {
+            expectedShots = null;
+        }
+        const double chargeMilliseconds = 300d;
+        return new
+        {
+            slot_index = slotIndex,
+            qualified_item_id = slingshot.QualifiedItemId,
+            slingshot_multiplier = SlingshotMultiplier(slingshot.ItemId),
+            ammo_qualified_item_id = ammo?.QualifiedItemId ?? string.Empty,
+            ammo_stack = ammo?.Stack ?? 0,
+            ammo_base_damage = ammo is null ? 0 : SlingshotAmmoDamage(ammo.QualifiedItemId),
+            explosive_ammo_radius = ammo?.QualifiedItemId == "(O)441" ? 2 : 0,
+            current_hit_can_damage = currentHitCanDamage,
+            can_defeat_with_this_weapon = canDefeat,
+            requires_clear_projectile_path = true,
+            full_charge_ms = chargeMilliseconds,
+            expected_damage_per_shot = distribution?.ExpectedDamagePerAttack,
+            expected_shots_to_defeat = expectedShots,
+            expected_active_damage_duration_ms = expectedShots * chargeMilliseconds,
+            direct_damage_distribution = distribution?.Entries.Select(pair => (object)new { damage = pair.Key, probability = pair.Value }).ToArray() ?? Array.Empty<object>(),
+            direct_damage_status = distribution is null ? "unavailable" : "exact_decompiled_discrete_distribution",
+            total_damage_completeness = distribution is not null
+                ? "complete_direct_projectile_damage_excluding_explosive_ammo_area_side_effects"
+                : ammo is null ? "blocked_unloaded_slingshot" : !vanillaType ? "unknown_custom_monster_takeDamage_semantics" : "unknown_custom_player_enchantment_damage_semantics",
+            duration_status = distribution is not null && currentHitCanDamage
+                ? "exact_charge_phase_excluding_projectile_travel_and_reposition"
+                : currentHitCanDamage ? "unavailable_incomplete_total_damage" : "unavailable_current_temporary_or_permanent_gate",
+            source = "Slingshot.GetRequiredChargeTime/GetAmmoDamage/PerformFire; BasicProjectile.behaviorOnCollisionWithMonster; GameLocation.damageMonster"
+        };
+    }
+
+    private static MeleeDamageDistribution BuildSlingshotDamageDistribution(
+        Monster monster,
+        Farmer player,
+        Slingshot slingshot,
+        StardewValley.Object ammo)
+    {
+        var ammoDamage = SlingshotAmmoDamage(ammo.QualifiedItemId);
+        var multiplier = SlingshotMultiplier(slingshot.ItemId);
+        var randomMinimum = -(ammoDamage / 2);
+        var randomMaximumExclusive = ammoDamage + 2;
+        var outcomeCount = Math.Max(1, randomMaximumExclusive - randomMinimum);
+        var entries = new SortedDictionary<int, double>();
+        for (var random = randomMinimum; random < randomMaximumExclusive; random++)
+        {
+            var projectileDamage = (int)(multiplier * (ammoDamage + random) * (1f + player.buffs.AttackMultiplier));
+            for (var collisionBonus = 0; collisionBonus <= 1; collisionBonus++)
+            {
+                var damage = Math.Max(1, projectileDamage + collisionBonus + player.Attack * 3);
+                if (player.professions.Contains(24))
+                {
+                    damage = (int)Math.Ceiling(damage * 1.1f);
+                }
+                if (player.professions.Contains(26))
+                {
+                    damage = (int)Math.Ceiling(damage * 1.15f);
+                }
+                if (monster is GreenSlime slime && slime.stackedSlimes.Value > 0)
+                {
+                    damage = 1;
+                }
+                damage = Math.Max(1, damage - monster.resilience.Value);
+                AddProbability(entries, damage, 0.5d / outcomeCount);
+            }
+        }
+        return new MeleeDamageDistribution(entries);
     }
 
     private static object ReadMeleeAttackProjection(
@@ -708,6 +816,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             inventory_capacity = new { max_items = player.maxItems.Value, empty_slots = Math.Max(0, player.maxItems.Value - player.Items.Take(player.maxItems.Value).Count(item => item is not null)) },
             pickaxe_slots = player.Items.Select((item, index) => item is Pickaxe pickaxe ? PickaxeSlot(index, pickaxe) : null).Where(item => item is not null).ToArray(),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
+            slingshot_slots = player.Items.Select((item, index) => item is Slingshot slingshot ? SlingshotSlot(index, slingshot) : null).Where(item => item is not null).ToArray(),
             combat_damage_modifiers = new
             {
                 statue_of_blessings_5_active = player.hasBuff("statue_of_blessings_5"),
@@ -726,6 +835,9 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 formula_status = "raw_live_inputs_for_decompiled_melee_damage_and_on_hit_effects"
             },
             bomb_counts = CountItems(player, new[] { "(O)286", "(O)287", "(O)288" }),
+            bomb_slots = player.Items.Select((item, index) => item is StardewValley.Object bomb && BombRadius(bomb.QualifiedItemId) > 0
+                ? BombSlot(index, bomb, player)
+                : null).Where(item => item is not null).ToArray(),
             staircase_count = CountItem(player, "(O)71"),
             food_slots = player.Items.Select((item, index) => item is StardewValley.Object obj && obj.Edibility > 0 ? FoodSlot(index, obj) : null).Where(item => item is not null).ToArray(),
             buffs = new
@@ -996,6 +1108,96 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 : type == MeleeWeapon.club ? MeleeWeapon.clubCooldown : MeleeWeapon.defenseCooldown,
             enchantments = weapon.enchantments.Select(enchantment => new { runtime_type = enchantment.GetType().FullName, level = enchantment.Level }).ToArray(),
             source = "live MeleeWeapon net fields and active enchantments"
+        };
+    }
+
+    private static object SlingshotSlot(int index, Slingshot slingshot)
+    {
+        var ammo = slingshot.attachments.Count > 0 ? slingshot.attachments[0] : null;
+        return new
+        {
+            slot_index = index,
+            item_id = slingshot.ItemId,
+            qualified_item_id = slingshot.QualifiedItemId,
+            display_name = slingshot.DisplayName,
+            runtime_type = slingshot.GetType().FullName,
+            multiplier = SlingshotMultiplier(slingshot.ItemId),
+            loaded = ammo is not null,
+            ammo_item_id = ammo?.ItemId ?? string.Empty,
+            ammo_qualified_item_id = ammo?.QualifiedItemId ?? string.Empty,
+            ammo_display_name = ammo?.DisplayName ?? string.Empty,
+            ammo_stack = ammo?.Stack ?? 0,
+            ammo_base_damage = ammo is null ? 0 : SlingshotAmmoDamage(ammo.QualifiedItemId),
+            explosive_ammo_radius = ammo?.QualifiedItemId == "(O)441" ? 2 : 0,
+            full_charge_ms = 300,
+            projectile_speed_pixels_per_tick_min = 19d * (1d + Game1.player.buffs.WeaponSpeedMultiplier),
+            projectile_speed_pixels_per_tick_max = 20d * (1d + Game1.player.buffs.WeaponSpeedMultiplier),
+            requires_clear_projectile_path = true,
+            source = "live Slingshot.ItemId/attachments; Slingshot.GetRequiredChargeTime/GetAmmoDamage/PerformFire"
+        };
+    }
+
+    private static object BombSlot(int index, StardewValley.Object bomb, Farmer player)
+    {
+        var radius = BombRadius(bomb.QualifiedItemId);
+        var basePlayerDamage = radius * 3;
+        var immune = player.hasBuff("dwarfStatue_3");
+        var bookReduction = player.stats.Get("Book_Bombs") != 0;
+        return new
+        {
+            slot_index = index,
+            item_id = bomb.ItemId,
+            qualified_item_id = bomb.QualifiedItemId,
+            display_name = bomb.DisplayName,
+            runtime_type = bomb.GetType().FullName,
+            stack = bomb.Stack,
+            radius_tiles = radius,
+            fuse_ms = 2400,
+            monster_damage_min = radius * 6,
+            monster_damage_max = radius * 8,
+            player_damage_before_mitigation = basePlayerDamage,
+            player_damage_after_book = immune ? 0 : bookReduction ? (int)(basePlayerDamage * 0.75f) : basePlayerDamage,
+            player_damage_immune = immune,
+            player_damage_square_side_tiles = radius * 2 + 1,
+            object_destruction_shape = "exact_getCircleOutlineGrid_fill",
+            source = "Object.placementAction; TemporaryAnimatedSprite bomb constructor; GameLocation.explode/performDamagePlayers"
+        };
+    }
+
+    private static int SlingshotAmmoDamage(string qualifiedItemId)
+    {
+        return qualifiedItemId switch
+        {
+            "(O)388" => 2,
+            "(O)390" => 5,
+            "(O)378" => 10,
+            "(O)380" => 20,
+            "(O)384" => 30,
+            "(O)382" => 15,
+            "(O)386" => 50,
+            "(O)441" => 20,
+            _ => 1
+        };
+    }
+
+    private static float SlingshotMultiplier(string itemId)
+    {
+        return itemId switch
+        {
+            "33" => 2f,
+            "34" => 4f,
+            _ => 1f
+        };
+    }
+
+    private static int BombRadius(string qualifiedItemId)
+    {
+        return qualifiedItemId switch
+        {
+            "(O)286" => 3,
+            "(O)287" => 5,
+            "(O)288" => 7,
+            _ => 0
         };
     }
 

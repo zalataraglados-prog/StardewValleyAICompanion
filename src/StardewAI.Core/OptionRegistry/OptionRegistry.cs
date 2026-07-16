@@ -228,6 +228,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS pursuit reaches melee range", "native attack input defeats the exact runtime monster" },
                 new[] { "block_unknown_runtime_identity", "block_missing_melee_weapon", "block_direct_monster_damage" }));
 
+            Register(Option("executor.shoot_monster", "mining", "Defeat one transparent live monster with a loaded slingshot",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "clear projectile line is preserved", "native full-charge slingshot input defeats the exact runtime monster", "ammo consumption is observed" },
+                new[] { "block_unknown_runtime_identity", "block_missing_loaded_slingshot", "block_projectile_path", "block_direct_monster_damage" }));
+
+            Register(Option("executor.place_bomb", "mining", "Place one transparent bomb and escape its damage square",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "native placement consumes the exact bomb", "WASD escape reaches the verified tile before detonation", "natural explosion changes the predicted cluster" },
+                new[] { "block_missing_bomb", "block_unverified_fuse_escape", "block_protected_object_in_blast", "block_direct_explosion" }));
+
             Register(Option("executor.consume_food", "recovery", "Consume one transparent healing food",
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,

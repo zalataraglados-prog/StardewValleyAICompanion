@@ -262,6 +262,13 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("mummy_revives_without_crusader_or_bomb", source, StringComparison.Ordinal);
         Assert.Contains("melee_attack_projections = ReadMeleeAttackProjections", source, StringComparison.Ordinal);
         Assert.Contains("BuildMeleeDamageDistribution", source, StringComparison.Ordinal);
+        Assert.Contains("slingshot_slots = player.Items.Select", source, StringComparison.Ordinal);
+        Assert.Contains("slingshot_attack_projections = ReadSlingshotAttackProjections", source, StringComparison.Ordinal);
+        Assert.Contains("BuildSlingshotDamageDistribution", source, StringComparison.Ordinal);
+        Assert.Contains("full_charge_ms = 300", source, StringComparison.Ordinal);
+        Assert.Contains("bomb_slots = player.Items.Select", source, StringComparison.Ordinal);
+        Assert.Contains("fuse_ms = 2400", source, StringComparison.Ordinal);
+        Assert.Contains("object_destruction_shape = \"exact_getCircleOutlineGrid_fill\"", source, StringComparison.Ordinal);
         Assert.Contains("exact_decompiled_discrete_distribution", source, StringComparison.Ordinal);
         Assert.Contains("tile_duration_ms", source, StringComparison.Ordinal);
     }

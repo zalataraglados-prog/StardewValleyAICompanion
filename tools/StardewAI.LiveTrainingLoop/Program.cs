@@ -507,6 +507,16 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var maxAttacks = ReadQueueParameterInt(item, "max_attacks");
     var requiredWeaponEnchantmentRuntimeType = ReadQueueParameterString(item, "required_weapon_enchantment_runtime_type");
     var combatWeaponSlotIndex = ReadQueueParameterInt(item, "combat_weapon_slot_index");
+    var combatMethod = ReadQueueParameterString(item, "combat_method");
+    var slingshotSlotIndex = ReadQueueParameterInt(item, "slingshot_slot_index");
+    var slingshotAmmoQualifiedItemId = ReadQueueParameterString(item, "slingshot_ammo_qualified_item_id");
+    var bombSlotIndex = ReadQueueParameterInt(item, "bomb_slot_index");
+    var bombQualifiedItemId = ReadQueueParameterString(item, "bomb_qualified_item_id");
+    var bombRadiusTiles = ReadQueueParameterInt(item, "bomb_radius_tiles");
+    var escapeTileX = ReadQueueParameterInt(item, "escape_tile_x");
+    var escapeTileY = ReadQueueParameterInt(item, "escape_tile_y");
+    var expectedBombObjectHits = ReadQueueParameterInt(item, "expected_bomb_object_hits");
+    var expectedBombMonsterHits = ReadQueueParameterInt(item, "expected_bomb_monster_hits");
     var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
     var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
     var maxCrops = ReadQueueParameterInt(item, "max_crops") ?? ReadQueueParameterInt(item, "max_tool_swings");
@@ -578,6 +588,16 @@ static TrainingExecutionRequest BuildExecutionRequest(
     {
         executionRequest.CombatWeaponSlotIndex = combatWeaponSlotIndex.Value;
     }
+    executionRequest.CombatMethod = combatMethod;
+    executionRequest.SlingshotSlotIndex = slingshotSlotIndex;
+    executionRequest.SlingshotAmmoQualifiedItemId = slingshotAmmoQualifiedItemId;
+    executionRequest.BombSlotIndex = bombSlotIndex;
+    executionRequest.BombQualifiedItemId = bombQualifiedItemId;
+    executionRequest.BombRadiusTiles = bombRadiusTiles;
+    executionRequest.EscapeTileX = escapeTileX;
+    executionRequest.EscapeTileY = escapeTileY;
+    executionRequest.ExpectedBombObjectHits = expectedBombObjectHits;
+    executionRequest.ExpectedBombMonsterHits = expectedBombMonsterHits;
     if (direction.HasValue)
     {
         executionRequest.Direction = direction.Value;
