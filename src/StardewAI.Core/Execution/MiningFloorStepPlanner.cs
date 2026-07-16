@@ -20,6 +20,8 @@ namespace StardewAI.Core.Execution
         public const string PlaceBomb = "place_bomb";
         public const string PickupDebris = "pickup_debris";
         public const string ConsumeFood = "consume_food";
+        public const string MoveToGoldenScytheAltar = "move_to_golden_scythe_altar";
+        public const string ClaimGoldenScythe = "claim_golden_scythe";
         public const string Blocked = "blocked";
     }
 
@@ -28,6 +30,7 @@ namespace StardewAI.Core.Execution
         public const string ReachDepth = "reach_depth";
         public const string CollectResourceOrArtifact = "collect_resource_or_artifact";
         public const string CollectMonsterDrop = "collect_monster_drop";
+        public const string AcquireGoldenScythe = "acquire_golden_scythe";
     }
 
     public sealed class MiningFloorObjective
@@ -227,6 +230,54 @@ namespace StardewAI.Core.Execution
                 return retreat ?? Blocked("unsafe_health_without_recovery_food_and_exit_unreachable");
             }
 
+            if (objective.Kind == MiningObjectiveKinds.AcquireGoldenScythe)
+            {
+                if (!string.Equals(currentMineKind, "quarry_mine", StringComparison.Ordinal) || currentDepth != 77377)
+                {
+                    return Blocked("golden_scythe_requires_quarry_mine_77377");
+                }
+                if (!hasResources)
+                {
+                    return Blocked("golden_scythe_player_resources_unavailable");
+                }
+                if (!ReadBool(objectives, "golden_scythe_applicable"))
+                {
+                    return Blocked("golden_scythe_not_applicable_to_loaded_floor");
+                }
+
+                var claimed = ReadBool(objectives, "golden_scythe_claimed");
+                if (claimed)
+                {
+                    return SelectMineExit(tiles, search, grid, "golden_scythe_acquired_exit_quarry_mine") ??
+                        Blocked("golden_scythe_acquired_but_native_exit_unreachable");
+                }
+                if (!claimed && ReadInventoryEmptySlots(resources) <= 0)
+                {
+                    return Blocked("golden_scythe_inventory_full");
+                }
+                if (!tiles.TryGetProperty("golden_scythe_altars", out var altars) ||
+                    altars.ValueKind != JsonValueKind.Array ||
+                    altars.GetArrayLength() == 0)
+                {
+                    return Blocked("golden_scythe_altar_action_unavailable");
+                }
+
+                var threat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
+                if (threat is not null)
+                {
+                    threat.Reason = "golden_scythe_route_interrupted_by_immediate_monster_threat";
+                    threat.SafetyWindowStatus = "blocked_by_immediate_monster_threat";
+                    threat.RestoreSlotIndex = restoreSlot;
+                    return threat;
+                }
+
+                var altarStep = SelectGoldenScytheAltarStep(altars, search, grid);
+                if (altarStep is not null)
+                {
+                    return altarStep;
+                }
+            }
+
             if (bombFinisherAvailable)
             {
                 var mummyFinisher = SelectMummyBombFinisher(
@@ -367,6 +418,62 @@ namespace StardewAI.Core.Execution
             }
 
             return Blocked("no_reachable_ladder_shaft_stone_or_monster");
+        }
+
+        private static MiningFloorStepPlan? SelectGoldenScytheAltarStep(
+            JsonElement altars,
+            SearchResult search,
+            bool[,] grid)
+        {
+            var candidate = altars.EnumerateArray()
+                .Select(altar => TargetCandidate(altar, search, grid, estimatedSwings: 0, deterministicLadder: false))
+                .Where(row => row is not null)
+                .OrderBy(row => row!.Distance)
+                .ThenBy(row => row!.TargetY)
+                .ThenBy(row => row!.TargetX)
+                .FirstOrDefault();
+            if (candidate is null)
+            {
+                return null;
+            }
+
+            if (candidate.Distance > 0)
+            {
+                return new MiningFloorStepPlan
+                {
+                    Status = "ready",
+                    StepKind = MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                    Reason = "approach_golden_scythe_altar",
+                    TargetTileX = candidate.StandX,
+                    TargetTileY = candidate.StandY,
+                    StandTileX = candidate.StandX,
+                    StandTileY = candidate.StandY,
+                    EstimatedMovementTiles = candidate.Distance,
+                    EstimatedToolSwings = 0,
+                    TargetQualifiedItemId = "(W)53",
+                    SafetyWindowStatus = "golden_scythe_route_clear",
+                    Path = candidate.Path
+                };
+            }
+
+            var step = Build(
+                MiningFloorStepKinds.ClaimGoldenScythe,
+                "golden_scythe_altar_adjacent_and_safe",
+                candidate);
+            step.TargetQualifiedItemId = "(W)53";
+            step.SafetyWindowStatus = "golden_scythe_interaction_window_clear";
+            return step;
+        }
+
+        private static int ReadInventoryEmptySlots(JsonElement resources)
+        {
+            if (!resources.TryGetProperty("inventory_capacity", out var capacity) ||
+                capacity.ValueKind != JsonValueKind.Object)
+            {
+                return 0;
+            }
+
+            return ReadInt(capacity, "empty_slots") ?? 0;
         }
 
         private static MiningFloorStepPlan? SelectShaft(
@@ -1976,6 +2083,8 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.DescendLadder => "executor.descend_ladder",
                 MiningFloorStepKinds.DescendShaft => "executor.descend_shaft",
                 MiningFloorStepKinds.ExitMine => "executor.exit_mine",
+                MiningFloorStepKinds.MoveToGoldenScytheAltar => "executor.move_to_tile",
+                MiningFloorStepKinds.ClaimGoldenScythe => "executor.interact",
                 _ => string.Empty
             };
         }
@@ -2034,6 +2143,11 @@ namespace StardewAI.Core.Execution
             Add(parameters, "expected_combat_duration_ms", plan.ExpectedCombatDurationMs);
             Add(parameters, "estimated_target_cost_ms", plan.EstimatedTargetCostMs);
             Add(parameters, "combat_duration_status", plan.CombatDurationStatus);
+            if (plan.StepKind == MiningFloorStepKinds.ClaimGoldenScythe)
+            {
+                parameters.Add(Parameter("interaction_kind", "map_action"));
+                parameters.Add(Parameter("expected_action_type", "GoldenScythe"));
+            }
             return parameters.ToArray();
         }
 

@@ -104,6 +104,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             exits = MineExitTiles(buildings, mine),
             entries = ActionTiles(buildings, "Mine"),
             elevators = ActionTiles(buildings, "MineElevator"),
+            golden_scythe_altars = ActionTiles(buildings, "GoldenScythe"),
             ladders = IndexedTiles(buildings, 173, "native_mineshaft_ladder_tile"),
             shafts = ShaftTiles(buildings, mine, Game1.player),
             tile_beneath_ladder = Tile(mine.tileBeneathLadder),
@@ -958,6 +959,10 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             enemy_count = mine.EnemyCount,
             stones_left_on_level = mine.stonesLeftOnThisLevel,
             ladder_has_spawned = mine.ladderHasSpawned,
+            golden_scythe_applicable = mine.mineLevel == 77377,
+            golden_scythe_claimed = Game1.player.mailReceived.Contains("gotGoldenScythe"),
+            golden_scythe_reward_qualified_item_id = "(W)53",
+            golden_scythe_action_token = "GoldenScythe",
             ladder_creation_rule = new
             {
                 should_create_ladder_on_level = mine.shouldCreateLadderOnThisLevel(),
@@ -1008,6 +1013,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             selected_qualified_item_id = player.CurrentItem?.QualifiedItemId ?? string.Empty,
             selected_item_runtime_type = player.CurrentItem?.GetType().FullName ?? string.Empty,
             inventory_capacity = new { max_items = player.maxItems.Value, empty_slots = Math.Max(0, player.maxItems.Value - player.Items.Take(player.maxItems.Value).Count(item => item is not null)) },
+            golden_scythe_in_inventory = player.Items.Any(item => item?.QualifiedItemId == "(W)53"),
+            golden_scythe_inventory_count = player.Items.Where(item => item?.QualifiedItemId == "(W)53").Sum(item => item?.Stack ?? 0),
             pickaxe_slots = player.Items.Select((item, index) => item is Pickaxe pickaxe ? PickaxeSlot(index, pickaxe) : null).Where(item => item is not null).ToArray(),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
             slingshot_slots = player.Items.Select((item, index) => item is Slingshot slingshot ? SlingshotSlot(index, slingshot) : null).Where(item => item is not null).ToArray(),

@@ -98,7 +98,9 @@ namespace StardewAI.Core.OptionRegistry
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(snapshot, option.OptionId, economicCandidates)
                 : Array.Empty<string>();
-            var eventCandidateReasons = option.OptionId == "mining.reach_depth" || safety.MissingStateFactors.Length == 0
+            var eventCandidateReasons = option.OptionId == "mining.reach_depth" ||
+                option.OptionId == "mining.acquire_golden_scythe" ||
+                safety.MissingStateFactors.Length == 0
                 ? EventCandidateGateBlockingReasons(option.OptionId, eventCandidates, candidate.Parameters.Length > 0)
                 : Array.Empty<string>();
             var socialCandidateReasons = safety.MissingStateFactors.Length == 0
@@ -194,6 +196,14 @@ namespace StardewAI.Core.OptionRegistry
                     eventCandidates,
                     "no_mining_reach_depth_candidates",
                     "no_available_mining_reach_depth_candidates");
+            }
+
+            if (optionId == "mining.acquire_golden_scythe")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mining_acquire_golden_scythe_candidates",
+                    "no_available_mining_acquire_golden_scythe_candidates");
             }
 
             if (hasBoundParameters)
@@ -336,6 +346,11 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "mining.reach_depth")
             {
                 return MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
+            }
+
+            if (optionId == "mining.acquire_golden_scythe")
+            {
+                return MiningGoldenScytheCandidateBuilder.Build(snapshot, parameters);
             }
 
             if (optionId == "quest.advance")
@@ -3813,6 +3828,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.process_machines" ||
                 optionId == "fishing.catch_fish" ||
                 optionId == "mining.reach_depth" ||
+                optionId == "mining.acquire_golden_scythe" ||
                 optionId == "economy.buy_supplies" ||
                 optionId == "exploration.visit_location" ||
                 optionId == "executor.move_to_tile" ||

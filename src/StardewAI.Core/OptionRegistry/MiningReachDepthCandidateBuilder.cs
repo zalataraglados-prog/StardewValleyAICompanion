@@ -144,9 +144,9 @@ namespace StardewAI.Core.OptionRegistry
                 blocks.Add("skull_cavern_target_depth_must_exceed_120");
             }
 
-            if (family == "quarry_mine" && targetDepth.Value != 77377)
+            if (family == "quarry_mine")
             {
-                blocks.Add("quarry_mine_target_depth_must_be_77377");
+                blocks.Add("quarry_mine_uses_acquire_golden_scythe_objective");
             }
 
             if (!string.Equals(family, currentFamily, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(currentFamily))

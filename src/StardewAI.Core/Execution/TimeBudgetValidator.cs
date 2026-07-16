@@ -176,6 +176,8 @@ namespace StardewAI.Core.Execution
                     return Fixed(30, "recovery_rule.v1");
                 case "mining.reach_depth":
                     return miningModel.Estimate(item);
+                case "mining.acquire_golden_scythe":
+                    return Unknown("golden_scythe_duration_unknown_until_single_floor_runtime_calibration");
                 case "exploration.visit_location":
                     return EstimateExploration(item);
                 case "fishing.catch_fish":

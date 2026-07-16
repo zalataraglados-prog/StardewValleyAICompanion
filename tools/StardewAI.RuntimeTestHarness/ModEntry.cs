@@ -3704,6 +3704,18 @@ public sealed class ModEntry : Mod
             return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "interact_expected_action_type_mismatch");
         }
 
+        var isGoldenScytheAction = string.Equals(actionType, "GoldenScythe", StringComparison.OrdinalIgnoreCase);
+        var goldenScytheClaimedBefore = isGoldenScytheAction && Game1.player.mailReceived.Contains("gotGoldenScythe");
+        var goldenScytheCountBefore = isGoldenScytheAction ? CountInventoryItems("(W)53") : 0;
+        if (isGoldenScytheAction && goldenScytheClaimedBefore)
+        {
+            return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "golden_scythe_already_claimed_use_native_mine_exit");
+        }
+        if (isGoldenScytheAction && !goldenScytheClaimedBefore && Game1.player.isInventoryFull())
+        {
+            return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "golden_scythe_inventory_full");
+        }
+
         var beforeMenuOpen = Game1.activeClickableMenu is not null;
         var beforeMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var beforeLocation = Game1.currentLocation.NameOrUniqueName;
@@ -3717,10 +3729,49 @@ public sealed class ModEntry : Mod
         var afterMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var afterLocation = Game1.currentLocation.NameOrUniqueName;
         var afterTile = Game1.player.TilePoint;
-        var verified = handled && (afterMenuOpen != beforeMenuOpen || !string.Equals(afterMenuType, beforeMenuType, StringComparison.Ordinal) || !string.Equals(afterLocation, beforeLocation, StringComparison.Ordinal) || afterTile != beforeTile);
-        var verificationReasons = verified
-            ? new[] { "map_action_handled", "observable_state_changed" }
-            : new[] { handled ? "map_action_handled_without_observable_change" : "map_action_not_handled" };
+        var goldenScytheClaimedAfter = isGoldenScytheAction && Game1.player.mailReceived.Contains("gotGoldenScythe");
+        var goldenScytheCountAfter = isGoldenScytheAction ? CountInventoryItems("(W)53") : 0;
+        var verified = handled && (afterMenuOpen != beforeMenuOpen ||
+            !string.Equals(afterMenuType, beforeMenuType, StringComparison.Ordinal) ||
+            !string.Equals(afterLocation, beforeLocation, StringComparison.Ordinal) ||
+            afterTile != beforeTile);
+        string[] verificationReasons;
+        if (isGoldenScytheAction && !goldenScytheClaimedBefore)
+        {
+            verified = handled && goldenScytheClaimedAfter && goldenScytheCountAfter > goldenScytheCountBefore;
+            verificationReasons = verified
+                ? new[] { "golden_scythe_native_action_handled", "gotGoldenScythe_mail_received", "golden_scythe_inventory_increased" }
+                : new[] { handled ? "golden_scythe_native_claim_not_observed" : "map_action_not_handled" };
+        }
+        else
+        {
+            verificationReasons = verified
+                ? new[] { "map_action_handled", "observable_state_changed" }
+                : new[] { handled ? "map_action_handled_without_observable_change" : "map_action_not_handled" };
+        }
+
+        var changedFacts = new List<SimulatedFactChange>
+        {
+            new() { Path = "menus.active_menu.is_open", Before = beforeMenuOpen.ToString().ToLowerInvariant(), After = afterMenuOpen.ToString().ToLowerInvariant() },
+            new() { Path = "menus.active_menu.type", Before = beforeMenuType, After = afterMenuType },
+            new() { Path = "player.location_id", Before = beforeLocation, After = afterLocation },
+            new() { Path = "player.tile", Before = beforeTile.X + "," + beforeTile.Y, After = afterTile.X + "," + afterTile.Y }
+        };
+        if (isGoldenScytheAction)
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.mail_received.gotGoldenScythe",
+                Before = goldenScytheClaimedBefore.ToString().ToLowerInvariant(),
+                After = goldenScytheClaimedAfter.ToString().ToLowerInvariant()
+            });
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.inventory.(W)53.count",
+                Before = goldenScytheCountBefore.ToString(),
+                After = goldenScytheCountAfter.ToString()
+            });
+        }
 
         return new TrainingExecutionResult
         {
@@ -3737,21 +3788,18 @@ public sealed class ModEntry : Mod
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verificationReasons,
             RequestedEffect = InteractRequestedEffect(request),
-            ObservedEffect = InteractObservedEffect(),
+            ObservedEffect = InteractObservedEffect() +
+                (isGoldenScytheAction
+                    ? ";gotGoldenScythe=" + goldenScytheClaimedAfter.ToString().ToLowerInvariant() + ";golden_scythe_count=" + goldenScytheCountAfter
+                    : string.Empty),
             BlockReasons = verified ? Array.Empty<string>() : verificationReasons,
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = beforeMenuOpen.ToString().ToLowerInvariant(), After = afterMenuOpen.ToString().ToLowerInvariant() },
-                new SimulatedFactChange { Path = "menus.active_menu.type", Before = beforeMenuType, After = afterMenuType },
-                new SimulatedFactChange { Path = "player.location_id", Before = beforeLocation, After = afterLocation },
-                new SimulatedFactChange { Path = "player.tile", Before = beforeTile.X + "," + beforeTile.Y, After = afterTile.X + "," + afterTile.Y }
-            }
+            ChangedFacts = changedFacts.ToArray()
         };
     }
 
     private static bool IsInteractActionTypeWhitelisted(string actionType)
     {
-        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop";
+        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe";
     }
 
     private TrainingExecutionResult ExecuteSocialInteract(TrainingExecutionRequest request)

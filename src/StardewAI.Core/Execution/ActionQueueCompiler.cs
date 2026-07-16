@@ -674,6 +674,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateWaitTicksPlan(action));
             blocking.AddRange(ValidateCatchFishPlan(action, snapshot));
             blocking.AddRange(ValidateMiningReachDepthPlan(action, snapshot));
+            blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
@@ -752,6 +753,11 @@ namespace StardewAI.Core.Execution
             if (action.OptionId == "mining.reach_depth")
             {
                 return BuildMiningReachDepthParameters(action, snapshot);
+            }
+
+            if (action.OptionId == "mining.acquire_golden_scythe")
+            {
+                return BuildMiningGoldenScytheParameters(action, snapshot);
             }
 
             if (action.OptionId == "executor.buy_shop_item")
@@ -950,6 +956,23 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
             parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
             parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.monster_drop_catalogs,mining.floor_objectives,mining.player_resources"));
+            return parameters.ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildMiningGoldenScytheParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters)
+            {
+                Parameter("target_location_family", "quarry_mine"),
+                Parameter("target_mine_level", "77377"),
+                Parameter("target_qualified_item_id", "(W)53")
+            };
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, MiningGoldenScytheCandidateBuilder.Objective(action.Parameters));
+            parameters.AddRange(MiningFloorStepCompiler.BuildExecutionParameters(floorStep));
+            parameters.Add(Parameter("estimate_status", "rolling_horizon_current_floor_step"));
+            parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
+            parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
+            parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.floor_objectives,mining.player_resources"));
             return parameters.ToArray();
         }
 
@@ -1505,6 +1528,34 @@ namespace StardewAI.Core.Execution
                     ? "mining_descend_ladder_executor_not_implemented"
                     : "mining_floor_step_executor_not_implemented:" + floorStep.StepKind);
             }
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateMiningGoldenScythePlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "mining.acquire_golden_scythe")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>(MiningReachDepthCandidateBuilder.MissingMiningGroups(snapshot));
+            var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
+            if (currentMine.HasValue)
+            {
+                reasons.AddRange(MiningGoldenScytheCandidateBuilder.ValidateCurrentMine(currentMine.Value));
+            }
+
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, MiningGoldenScytheCandidateBuilder.Objective(action.Parameters));
+            var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
+            if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
+            {
+                reasons.Add(floorStep.Reason);
+            }
+            else if (string.IsNullOrWhiteSpace(executionOptionId))
+            {
+                reasons.Add("golden_scythe_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
+
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 

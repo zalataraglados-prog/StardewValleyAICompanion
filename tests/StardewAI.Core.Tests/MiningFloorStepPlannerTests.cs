@@ -71,6 +71,69 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void GoldenScytheObjectiveMovesToReachableAltarStandTile()
+    {
+        var plan = Plan(
+            goldenScytheAltars: "[{\"tile_x\":4,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireGoldenScythe });
+
+        Assert.Equal(MiningFloorStepKinds.MoveToGoldenScytheAltar, plan.StepKind);
+        Assert.Equal("executor.move_to_tile", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal(3, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+        Assert.Equal("(W)53", plan.TargetQualifiedItemId);
+    }
+
+    [Fact]
+    public void GoldenScytheObjectiveClaimsAdjacentUnclaimedAltar()
+    {
+        var plan = Plan(
+            goldenScytheAltars: "[{\"tile_x\":2,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireGoldenScythe });
+
+        Assert.Equal(MiningFloorStepKinds.ClaimGoldenScythe, plan.StepKind);
+        Assert.Equal("executor.interact", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Contains(MiningFloorStepCompiler.BuildExecutionParameters(plan), parameter =>
+            parameter.Name == "expected_action_type" && parameter.Value == "GoldenScythe");
+    }
+
+    [Fact]
+    public void GoldenScytheObjectiveUsesNativeMineExitAfterClaim()
+    {
+        var plan = Plan(
+            goldenScytheAltars: "[{\"tile_x\":2,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            exits: "[{\"tile_x\":4,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireGoldenScythe });
+
+        Assert.Equal(MiningFloorStepKinds.ExitMine, plan.StepKind);
+        Assert.Equal("executor.exit_mine", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal("Mine", plan.ExpectedTargetLocation);
+        Assert.Equal(67, plan.ExpectedArrivalTileX);
+        Assert.Equal(10, plan.ExpectedArrivalTileY);
+    }
+
+    [Fact]
+    public void GoldenScytheObjectiveBlocksBeforeAltarWhenInventoryIsFull()
+    {
+        var plan = Plan(
+            goldenScytheAltars: "[{\"tile_x\":2,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            resources: "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"inventory_capacity\":{\"empty_slots\":0},\"food_slots\":[]}",
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireGoldenScythe });
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("golden_scythe_inventory_full", plan.Reason);
+    }
+
+    [Fact]
     public void KillAllFloorSelectsReachableMonsterBeforeStone()
     {
         var plan = Plan(
@@ -1286,11 +1349,14 @@ public sealed class MiningFloorStepPlannerTests
         string ladders = "[]",
         string shafts = "[]",
         string exits = "[]",
+        string goldenScytheAltars = "[]",
         string objects = "[]",
         string monsters = "[]",
         bool mustKillAll = false,
+        bool goldenScytheApplicable = false,
+        bool goldenScytheClaimed = false,
         string[]? rows = null,
-        string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"food_slots\":[]}",
+        string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"inventory_capacity\":{\"empty_slots\":12},\"food_slots\":[]}",
         string mineKind = "ordinary_mines",
         MiningFloorObjective? objective = null)
     {
@@ -1302,10 +1368,10 @@ public sealed class MiningFloorStepPlannerTests
         {
           "mining": {
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
-            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL}},
+            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED}},
             "player_resources": {"status":"available","value":RESOURCES}
           }
         }
@@ -1313,15 +1379,18 @@ public sealed class MiningFloorStepPlannerTests
             .Replace("LADDERS", ladders, StringComparison.Ordinal)
             .Replace("SHAFTS", shafts, StringComparison.Ordinal)
             .Replace("EXITS", exits, StringComparison.Ordinal)
+            .Replace("GOLDEN_SCYTHE_ALTARS", goldenScytheAltars, StringComparison.Ordinal)
             .Replace("WIDTH", width.ToString(), StringComparison.Ordinal)
             .Replace("HEIGHT", height.ToString(), StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal)
-            .Replace("MINE_LEVEL", mineKind == "skull_cavern" ? "121" : "40", StringComparison.Ordinal)
+            .Replace("MINE_LEVEL", mineKind == "skull_cavern" ? "121" : mineKind == "quarry_mine" ? "77377" : "40", StringComparison.Ordinal)
             .Replace("MINE_KIND", mineKind, StringComparison.Ordinal)
-            .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal);
+            .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal)
+            .Replace("GOLDEN_SCYTHE_APPLICABLE", goldenScytheApplicable.ToString().ToLowerInvariant(), StringComparison.Ordinal)
+            .Replace("GOLDEN_SCYTHE_CLAIMED", goldenScytheClaimed.ToString().ToLowerInvariant(), StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json), objective ?? new MiningFloorObjective());
     }
 
