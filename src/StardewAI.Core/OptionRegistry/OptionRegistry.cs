@@ -136,6 +136,18 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "rolling-horizon Quarry Mine action compiled", "native altar grants the Golden Scythe", "claimed altar performs the native return warp" },
                 new[] { "block_not_quarry_mine_77377", "block_missing_golden_scythe_altar", "block_full_inventory", "block_unsupported_current_floor_step" }));
 
+            Register(Option("volcano.reach_caldera", "volcano", "Reach the Caldera through the Volcano Dungeon",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[]
+                {
+                    "volcano.current_level", "volcano.tiles", "volcano.connectors", "volcano.gates",
+                    "volcano.objects", "volcano.monsters", "volcano.player_resources"
+                },
+                new[] { "rolling-horizon current-level action compiled", "native forward warps advance through levels 0 to 9", "Caldera arrival is observed" },
+                new[] { "block_unavailable_required_state", "block_unimplemented_volcano_primitive", "block_direct_warp_or_gate_mutation" }));
+
             Register(Option("recovery.stabilize_day", "recovery", "Stabilize current day",
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,

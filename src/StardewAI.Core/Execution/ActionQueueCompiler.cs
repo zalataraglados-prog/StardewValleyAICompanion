@@ -675,6 +675,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateCatchFishPlan(action, snapshot));
             blocking.AddRange(ValidateMiningReachDepthPlan(action, snapshot));
             blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));
+            blocking.AddRange(ValidateVolcanoReachCalderaPlan(action, snapshot));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
@@ -758,6 +759,11 @@ namespace StardewAI.Core.Execution
             if (action.OptionId == "mining.acquire_golden_scythe")
             {
                 return BuildMiningGoldenScytheParameters(action, snapshot);
+            }
+
+            if (action.OptionId == "volcano.reach_caldera")
+            {
+                return BuildVolcanoReachCalderaParameters(action, snapshot);
             }
 
             if (action.OptionId == "executor.buy_shop_item")
@@ -973,6 +979,28 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
             parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
             parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.monsters,mining.floor_objectives,mining.player_resources"));
+            return parameters.ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildVolcanoReachCalderaParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters)
+            {
+                Parameter("target_volcano_level", "9"),
+                Parameter("target_location", "Caldera")
+            };
+            var currentLevel = ReadStateFieldValue(snapshot, "volcano", "current_level");
+            if (currentLevel.HasValue && currentLevel.Value.ValueKind == JsonValueKind.Object)
+            {
+                parameters.Add(Parameter("current_volcano_level", ReadInt(currentLevel.Value, "level").ToString()));
+            }
+
+            var floorStep = new VolcanoFloorStepPlanner().Plan(snapshot);
+            parameters.AddRange(VolcanoFloorStepCompiler.BuildExecutionParameters(floorStep));
+            parameters.Add(Parameter("estimate_status", "rolling_horizon_current_floor_step"));
+            parameters.Add(Parameter("required_executor_profile", "volcano_perfect_executor"));
+            parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(VolcanoFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
+            parameters.Add(Parameter("compiler_context.transparent_groups", "volcano.current_level,volcano.tiles,volcano.connectors,volcano.gates,volcano.objects,volcano.monsters,volcano.player_resources"));
             return parameters.ToArray();
         }
 
@@ -1554,6 +1582,28 @@ namespace StardewAI.Core.Execution
             else if (string.IsNullOrWhiteSpace(executionOptionId))
             {
                 reasons.Add("golden_scythe_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateVolcanoReachCalderaPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "volcano.reach_caldera")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>(VolcanoReachCalderaCandidateBuilder.MissingVolcanoGroups(snapshot));
+            var floorStep = new VolcanoFloorStepPlanner().Plan(snapshot);
+            var executionOptionId = VolcanoFloorStepCompiler.ExecutionOptionId(floorStep);
+            if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
+            {
+                reasons.Add(floorStep.Reason);
+            }
+            else if (string.IsNullOrWhiteSpace(executionOptionId))
+            {
+                reasons.Add("volcano_floor_step_executor_not_implemented:" + floorStep.StepKind);
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

@@ -100,6 +100,7 @@ namespace StardewAI.Core.OptionRegistry
                 : Array.Empty<string>();
             var eventCandidateReasons = option.OptionId == "mining.reach_depth" ||
                 option.OptionId == "mining.acquire_golden_scythe" ||
+                option.OptionId == "volcano.reach_caldera" ||
                 safety.MissingStateFactors.Length == 0
                 ? EventCandidateGateBlockingReasons(option.OptionId, eventCandidates, candidate.Parameters.Length > 0)
                 : Array.Empty<string>();
@@ -204,6 +205,14 @@ namespace StardewAI.Core.OptionRegistry
                     eventCandidates,
                     "no_mining_acquire_golden_scythe_candidates",
                     "no_available_mining_acquire_golden_scythe_candidates");
+            }
+
+            if (optionId == "volcano.reach_caldera")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_volcano_reach_caldera_candidates",
+                    "no_available_volcano_reach_caldera_candidates");
             }
 
             if (hasBoundParameters)
@@ -351,6 +360,11 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "mining.acquire_golden_scythe")
             {
                 return MiningGoldenScytheCandidateBuilder.Build(snapshot, parameters);
+            }
+
+            if (optionId == "volcano.reach_caldera")
+            {
+                return VolcanoReachCalderaCandidateBuilder.Build(snapshot, parameters);
             }
 
             if (optionId == "quest.advance")
@@ -3829,6 +3843,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "fishing.catch_fish" ||
                 optionId == "mining.reach_depth" ||
                 optionId == "mining.acquire_golden_scythe" ||
+                optionId == "volcano.reach_caldera" ||
                 optionId == "economy.buy_supplies" ||
                 optionId == "exploration.visit_location" ||
                 optionId == "executor.move_to_tile" ||

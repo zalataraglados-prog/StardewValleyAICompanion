@@ -178,6 +178,8 @@ namespace StardewAI.Core.Execution
                     return miningModel.Estimate(item);
                 case "mining.acquire_golden_scythe":
                     return Unknown("golden_scythe_duration_unknown_until_single_floor_runtime_calibration");
+                case "volcano.reach_caldera":
+                    return Unknown("volcano_duration_unknown_until_native_level_loop_calibration");
                 case "exploration.visit_location":
                     return EstimateExploration(item);
                 case "fishing.catch_fish":

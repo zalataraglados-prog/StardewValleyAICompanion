@@ -9,6 +9,7 @@
 - Hidden/silent isolated E: rolling reach-depth PASS: levels 96/97/98 visited, two stone steps, two ladder descents, terminal exit, five fresh changed after-states, and five training rows.
 - Hidden/silent isolated E: Skull Cavern shaft PASS: area 121, level 130 to 134, deterministic delta 4, health 140 to 128, native prompt and post-fall dialogue handled, fresh changed after-state, and one training row.
 - Quarry Mine / Golden Scythe slice: static build PASS with deployment disabled; tests and game runtime intentionally not run while the user is playing.
+- Volcano Dungeon transparent/planning slice: Core and TransparentBridge static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 
 ## Commands Run
 
@@ -22,4 +23,4 @@
 
 ## Runtime
 
-- Read-side validation, one native stone lifecycle, the ordinary-mine rolling reach-depth loop, and one native Skull Cavern shaft lifecycle are complete. The Quarry Mine is now represented by the independent `mining.acquire_golden_scythe` objective with transparent altar/claim/inventory state and compiler-owned approach/claim/native-exit steps; runtime evidence remains pending. Ordinary mines, Skull Cavern, Quarry Mine, and Volcano Dungeon are four separate boundaries. Arbitrary-depth duration calibration, Golden Scythe duration calibration, and broader combat/loot combinations remain pending.
+- Read-side validation, one native stone lifecycle, the ordinary-mine rolling reach-depth loop, and one native Skull Cavern shaft lifecycle are complete. Quarry Mine is represented by `mining.acquire_golden_scythe`. Volcano Dungeon is represented by the separate `volcano` transparent domain and `volcano.reach_caldera` planner, with switch-touch and forward-warp compilation implemented and cooling/combat/obstacle execution still blocked. Ordinary mines, Skull Cavern, Quarry Mine, and Volcano Dungeon are four separate boundaries. Arbitrary-depth, Golden Scythe, and Volcano duration calibration remain pending.

@@ -581,7 +581,7 @@ public sealed class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "full" ? value : "light";
+        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static ISet<string>? AllowedDomainsForProfile(string profile)
@@ -643,6 +643,13 @@ public sealed class ModEntry : Mod
         if (profile is "mining")
         {
             domains.Add("mining");
+        }
+
+        if (profile is "volcano")
+        {
+            domains.Add("volcano");
+            domains.Add("current_location");
+            domains.Add("locations");
         }
 
         return domains;
@@ -844,6 +851,7 @@ public sealed class ModEntry : Mod
             new FarmReadAdapter(),
             new CurrentLocationReadAdapter(),
             new MiningReadAdapter(),
+            new VolcanoReadAdapter(),
             new FishingReadAdapter(),
             new ShopAccessReadAdapter(),
             new NpcReadAdapter(),
