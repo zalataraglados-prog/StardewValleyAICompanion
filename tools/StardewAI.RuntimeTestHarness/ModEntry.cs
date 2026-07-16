@@ -79,9 +79,13 @@ public sealed class ModEntry : Mod
         Directory.CreateDirectory(config.SavesPath);
 
         SavesFolderPatch.RedirectPath = config.SavesPath;
-        new Harmony(ModManifest.UniqueID).Patch(
+        var harmony = new Harmony(ModManifest.UniqueID);
+        harmony.Patch(
             original: AccessTools.Method("StardewValley.Program:GetSavesFolder"),
             postfix: new HarmonyMethod(typeof(SavesFolderPatch), nameof(SavesFolderPatch.Postfix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Slingshot), "updateAimPos"),
+            prefix: new HarmonyMethod(typeof(SlingshotAimPatch), nameof(SlingshotAimPatch.Prefix)));
 
         Monitor.Log($"Redirected Stardew save folder to {config.SavesPath}", LogLevel.Info);
 
@@ -406,6 +410,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_breakable_container")
             {
                 pending.Completion.SetResult(ExecuteSetupBreakableContainer(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_mining_combat_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupMiningCombatFixture(pending.Request));
                 return;
             }
 
@@ -5911,6 +5921,215 @@ public sealed class ModEntry : Mod
         };
     }
 
+    private TrainingExecutionResult ExecuteSetupMiningCombatFixture(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_mining_combat_fixture",
+                "mining.combat_fixture=ready", "location=not_mineshaft", "setup_mining_combat_fixture_requires_mineshaft");
+        }
+
+        var fixtureKind = string.Equals(request.TargetName, "explosive_ammo", StringComparison.Ordinal)
+            ? "explosive_ammo"
+            : "mummy_chain";
+        var target = FindMiningCombatFixtureTarget(
+            mine,
+            requireClearProjectilePath: fixtureKind == "explosive_ammo",
+            requireBombEscape: fixtureKind == "mummy_chain");
+        if (!target.HasValue)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_mining_combat_fixture",
+                "mining.combat_fixture=ready", "candidate=missing", "setup_mining_combat_fixture_no_reachable_tile");
+        }
+
+        foreach (var monster in mine.characters.OfType<Monster>().ToArray())
+        {
+            mine.characters.Remove(monster);
+        }
+        ClearMiningFixtureArea(mine, target.Value, radius: 4);
+        var bombEscape = fixtureKind == "mummy_chain"
+            ? FindMiningCombatFixtureBombEscape(mine, target.Value)
+            : null;
+        if (fixtureKind == "mummy_chain" && !bombEscape.HasValue)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_mining_combat_fixture",
+                "mining.combat_fixture=ready", "bomb_escape=missing", "setup_mining_combat_fixture_no_bomb_escape");
+        }
+        EnsureFixtureInventoryCapacity(Game1.player);
+
+        Monster targetMonster;
+        int weaponSlot;
+        int consumableSlot;
+        if (fixtureKind == "explosive_ammo")
+        {
+            targetMonster = new GreenSlime(target.Value.ToVector2() * Game1.tileSize, mine.mineLevel);
+            var slingshot = new Slingshot("34");
+            var ammo = new StardewValley.Object("441", 99);
+            slingshot.attach(ammo);
+            weaponSlot = InstallFixtureItem(Game1.player, slingshot);
+            consumableSlot = weaponSlot;
+            var playerTile = Game1.player.TilePoint;
+            var resourceTiles = Math.Abs(target.Value.X - playerTile.X) >= Math.Abs(target.Value.Y - playerTile.Y)
+                ? new[] { new Point(target.Value.X, target.Value.Y - 1), new Point(target.Value.X, target.Value.Y + 1) }
+                : new[] { new Point(target.Value.X - 1, target.Value.Y), new Point(target.Value.X + 1, target.Value.Y) };
+            foreach (var tile in resourceTiles.Where(tile => IsTileOnMap(mine, tile) && IsTileWalkable(mine, tile)))
+            {
+                var vector = new Vector2(tile.X, tile.Y);
+                mine.objects[vector] = new StardewValley.Object("751", 1)
+                {
+                    MinutesUntilReady = 3,
+                    TileLocation = vector
+                };
+            }
+        }
+        else
+        {
+            targetMonster = new Mummy(target.Value.ToVector2() * Game1.tileSize);
+            weaponSlot = InstallFixtureItem(Game1.player, new MeleeWeapon("9"));
+            consumableSlot = InstallFixtureItem(Game1.player, new StardewValley.Object("286", 20));
+        }
+        targetMonster.Speed = 0;
+        targetMonster.moveTowardPlayerThreshold.Value = -1;
+        mine.characters.Add(targetMonster);
+        Game1.player.health = Game1.player.maxHealth;
+        Game1.player.CurrentToolIndex = weaponSlot;
+
+        var runtimeIdentity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(targetMonster).ToString("X8");
+        var verified = mine.characters.Contains(targetMonster) &&
+            weaponSlot >= 0 &&
+            consumableSlot >= 0;
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            TargetLocation = mine.NameOrUniqueName,
+            TargetTileX = target.Value.X,
+            TargetTileY = target.Value.Y,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_mining_combat_fixture",
+            PrimitiveVerificationStatus = verified ? "verified" : "blocked",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "isolated_mining_combat_fixture_present", "fixture_kind=" + fixtureKind }
+                : new[] { "isolated_mining_combat_fixture_missing" },
+            RequestedEffect = "mining.combat_fixture=" + fixtureKind,
+            ObservedEffect = "target_identity=" + runtimeIdentity +
+                ";target_type=" + (targetMonster.GetType().FullName ?? targetMonster.GetType().Name) +
+                ";target_tile=" + target.Value.X + "," + target.Value.Y +
+                ";weapon_slot=" + weaponSlot +
+                ";consumable_slot=" + consumableSlot,
+            CombatTargetRuntimeType = targetMonster.GetType().FullName ?? targetMonster.GetType().Name,
+            CombatTargetRuntimeIdentity = runtimeIdentity,
+            CombatTargetName = targetMonster.Name,
+            BombEscapeTileX = bombEscape?.X,
+            BombEscapeTileY = bombEscape?.Y,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "setup_mining_combat_fixture_mismatch" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange { Path = "mining.monsters[" + runtimeIdentity + "].present", Before = "false", After = "true" },
+                    new SimulatedFactChange { Path = "player.current_tool_index", Before = string.Empty, After = weaponSlot.ToString() }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private static Point? FindMiningCombatFixtureTarget(
+        MineShaft mine,
+        bool requireClearProjectilePath,
+        bool requireBombEscape)
+    {
+        var start = Game1.player.TilePoint;
+        var candidates = Enumerable.Range(5, 10)
+            .SelectMany(radius => Enumerable.Range(-radius, radius * 2 + 1)
+                .SelectMany(offset => new[]
+                {
+                    new Point(start.X + offset, start.Y - radius),
+                    new Point(start.X + offset, start.Y + radius),
+                    new Point(start.X - radius, start.Y + offset),
+                    new Point(start.X + radius, start.Y + offset)
+                }))
+            .Distinct()
+            .Where(tile => IsTileOnMap(mine, tile) && IsTileWalkable(mine, tile))
+            .Where(tile => !mine.objects.ContainsKey(tile.ToVector2()) && !IsTileOccupiedByCharacter(mine, tile))
+            .Where(tile => !requireClearProjectilePath || HasClearProjectilePath(mine, start, tile))
+            .Where(tile => !requireBombEscape || FindMiningCombatFixtureBombEscape(mine, tile).HasValue)
+            .Select(tile => new
+            {
+                Tile = tile,
+                Stand = Neighbors(tile)
+                    .Where(stand => IsTileOnMap(mine, stand) && IsTileWalkable(mine, stand))
+                    .Select(stand => new
+                    {
+                        Tile = stand,
+                        Path = TryBuildTilePath(mine, start, stand, 512, out _, avoidSoftObstacles: true)
+                    })
+                    .FirstOrDefault(row => row.Path is not null)
+            })
+            .Where(row => row.Stand is not null)
+            .OrderBy(row => ManhattanDistance(start, row.Tile))
+            .ThenBy(row => row.Tile.Y)
+            .ThenBy(row => row.Tile.X)
+            .ToArray();
+        return candidates.FirstOrDefault()?.Tile;
+    }
+
+    private static Point? FindMiningCombatFixtureBombEscape(MineShaft mine, Point target)
+    {
+        const int minimumDistance = 4;
+        foreach (var direction in new[] { new Point(1, 0), new Point(-1, 0), new Point(0, 1), new Point(0, -1) })
+        {
+            var clear = true;
+            for (var distance = 1; distance <= minimumDistance; distance++)
+            {
+                var tile = new Point(target.X + direction.X * distance, target.Y + direction.Y * distance);
+                if (!IsTileOnMap(mine, tile) || !IsTileWalkable(mine, tile) || IsTileOccupiedByCharacter(mine, tile))
+                {
+                    clear = false;
+                    break;
+                }
+            }
+            if (clear)
+            {
+                return new Point(target.X + direction.X * minimumDistance, target.Y + direction.Y * minimumDistance);
+            }
+        }
+        return null;
+    }
+
+    private static void EnsureFixtureInventoryCapacity(Farmer player)
+    {
+        if (player.MaxItems < 36)
+        {
+            player.increaseBackpackSize(36 - player.MaxItems);
+        }
+        while (player.Items.Count < player.MaxItems)
+        {
+            player.Items.Add(null);
+        }
+    }
+
+    private static int InstallFixtureItem(Farmer player, Item item)
+    {
+        var slot = FirstEmptyInventorySlot(player);
+        if (slot < 0)
+        {
+            slot = Math.Max(0, Math.Min(player.Items.Count, player.MaxItems) - 1);
+        }
+        player.Items[slot] = item;
+        return slot;
+    }
+
     private void TickBreakContainer()
     {
         if (activeBreakContainer is null)
@@ -7190,6 +7409,8 @@ public sealed class ModEntry : Mod
             Game1.player.CurrentToolIndex,
             Math.Clamp(request.MaxAttacks, 1, 256),
             requested);
+        SlingshotAimPatch.ActiveSlingshot = slingshot;
+        SlingshotAimPatch.AimWorldPixel = targets[0].GetBoundingBox().Center;
     }
 
     private void TickShootMonster()
@@ -7199,6 +7420,8 @@ public sealed class ModEntry : Mod
             return;
         }
         var active = activeShootMonster;
+        SlingshotAimPatch.ActiveSlingshot = active.Slingshot;
+        SlingshotAimPatch.AimWorldPixel = active.Target.GetBoundingBox().Center;
         active.ElapsedTicks++;
         if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Mine))
         {
@@ -7214,7 +7437,7 @@ public sealed class ModEntry : Mod
         {
             if (active.ButtonHeld)
             {
-                TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+                active.Slingshot.finish();
                 active.ButtonHeld = false;
                 return;
             }
@@ -7246,7 +7469,6 @@ public sealed class ModEntry : Mod
         }
 
         var targetCenter = active.Target.GetBoundingBox().Center;
-        Game1.setMousePosition(targetCenter.X - Game1.viewport.X, targetCenter.Y - Game1.viewport.Y, ui_scale: false);
         if (active.ButtonHeld)
         {
             active.HoldTicks++;
@@ -7254,14 +7476,11 @@ public sealed class ModEntry : Mod
             {
                 return;
             }
-            if (!TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out var releaseReason))
-            {
-                CompleteShootMonsterBlocked(active, releaseReason);
-                return;
-            }
+            active.Slingshot.onRelease(active.Mine, targetCenter.X, targetCenter.Y, Game1.player);
             active.ButtonHeld = false;
             active.CooldownTicks = 12;
             active.AttackCount++;
+            active.AimPrepared = false;
             return;
         }
         if (active.CooldownTicks > 0)
@@ -7285,9 +7504,18 @@ public sealed class ModEntry : Mod
             active.TargetHealthSequence.Add(active.Target.Health);
         }
         Game1.player.CurrentToolIndex = active.SlingshotSlotIndex;
-        if (!TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: true, out var pressReason))
+        var targetDirection = active.Target.GetBoundingBox().Center.ToVector2();
+        Game1.player.faceGeneralDirection(targetDirection, 0);
+        if (!active.AimPrepared)
         {
-            CompleteShootMonsterBlocked(active, pressReason);
+            active.AimPrepared = true;
+            return;
+        }
+        Game1.player.lastClick = targetCenter.ToVector2();
+        Game1.player.BeginUsingTool();
+        if (!Game1.player.usingSlingshot)
+        {
+            CompleteShootMonsterBlocked(active, "slingshot_native_begin_using_not_observed");
             return;
         }
         active.ButtonHeld = true;
@@ -7296,7 +7524,8 @@ public sealed class ModEntry : Mod
 
     private void CompleteShootMonster(ActiveShootMonster active)
     {
-        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+        active.Slingshot.finish();
+        SlingshotAimPatch.Clear(active.Slingshot);
         if (!Game1.player.UsingTool)
         {
             Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
@@ -7346,7 +7575,8 @@ public sealed class ModEntry : Mod
 
     private void CompleteShootMonsterBlocked(ActiveShootMonster active, string reason)
     {
-        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
+        active.Slingshot.finish();
+        SlingshotAimPatch.Clear(active.Slingshot);
         if (!Game1.player.UsingTool)
         {
             Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
@@ -7396,10 +7626,20 @@ public sealed class ModEntry : Mod
             for (var offsetY = -targetMotionMargin; offsetY <= targetMotionMargin; offsetY++)
             {
                 var possibleCenter = new Point(target.TilePoint.X + offsetX, target.TilePoint.Y + offsetY);
-                if (Math.Abs(Game1.player.TilePoint.X - possibleCenter.X) <= radius &&
-                    Math.Abs(Game1.player.TilePoint.Y - possibleCenter.Y) <= radius)
+                var damageRectangle = new Rectangle(
+                    (possibleCenter.X - radius) * Game1.tileSize,
+                    (possibleCenter.Y - radius) * Game1.tileSize,
+                    (radius * 2 + 1) * Game1.tileSize,
+                    (radius * 2 + 1) * Game1.tileSize);
+                if (damageRectangle.Intersects(Game1.player.GetBoundingBox()))
                 {
                     reason = "explosive_ammo_player_inside_target_motion_envelope";
+                    return false;
+                }
+                if (mine.farmers.Any(farmer =>
+                    farmer != Game1.player && damageRectangle.Intersects(farmer.GetBoundingBox())))
+                {
+                    reason = "explosive_ammo_other_farmer_inside_target_motion_envelope";
                     return false;
                 }
                 foreach (var tile in BombAffectedTiles(possibleCenter, radius))
@@ -7409,6 +7649,11 @@ public sealed class ModEntry : Mod
                         obj is not BreakableContainer)
                     {
                         reason = "explosive_ammo_protected_object_inside_target_motion_envelope";
+                        return false;
+                    }
+                    if (mine.terrainFeatures.ContainsKey(new Vector2(tile.X, tile.Y)))
+                    {
+                        reason = "explosive_ammo_terrain_feature_inside_target_motion_envelope";
                         return false;
                     }
                 }
@@ -7476,6 +7721,17 @@ public sealed class ModEntry : Mod
                 return;
             }
             targetMonster = targetMonsters[0];
+            var damageRectangle = new Rectangle(
+                (target.X - request.BombRadiusTiles.Value) * Game1.tileSize,
+                (target.Y - request.BombRadiusTiles.Value) * Game1.tileSize,
+                (request.BombRadiusTiles.Value * 2 + 1) * Game1.tileSize,
+                (request.BombRadiusTiles.Value * 2 + 1) * Game1.tileSize);
+            if (!damageRectangle.Intersects(targetMonster.GetBoundingBox()))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested,
+                    "target_monster=outside_damage_square", "bomb_target_outside_damage_square"));
+                return;
+            }
         }
         var path = TryBuildTilePath(mine, Game1.player.TilePoint, stand, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason, avoidSoftObstacles: true);
         if (path is null)
@@ -7528,7 +7784,19 @@ public sealed class ModEntry : Mod
                 }
                 return;
             }
+            active.Stage = PlaceBombStage.AimPlacement;
+            return;
+        }
+
+        if (active.Stage == PlaceBombStage.AimPlacement)
+        {
+            StopAllMovement();
+            Game1.player.CurrentToolIndex = active.BombSlotIndex;
+            var pixel = new Point(active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
+                active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
+            Game1.setMousePosition(pixel.X, pixel.Y, ui_scale: false);
             active.Stage = PlaceBombStage.PressPlacement;
+            return;
         }
 
         if (active.Stage == PlaceBombStage.PressPlacement)
@@ -8765,6 +9033,22 @@ public sealed class ModEntry : Mod
                 }
                 : Array.Empty<SimulatedFactChange>()
         });
+    }
+
+    private static void ClearMiningFixtureArea(MineShaft mine, Point center, int radius)
+    {
+        foreach (var pair in mine.objects.Pairs.Where(pair =>
+            Math.Abs((int)pair.Key.X - center.X) <= radius &&
+            Math.Abs((int)pair.Key.Y - center.Y) <= radius).ToArray())
+        {
+            mine.objects.Remove(pair.Key);
+        }
+        foreach (var pair in mine.terrainFeatures.Pairs.Where(pair =>
+            Math.Abs((int)pair.Key.X - center.X) <= radius &&
+            Math.Abs((int)pair.Key.Y - center.Y) <= radius).ToArray())
+        {
+            mine.terrainFeatures.Remove(pair.Key);
+        }
     }
 
     private static int CountFishableTiles(MineShaft? mine)
@@ -12398,6 +12682,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
             request.OptionId != "debug.setup_breakable_container" &&
+            request.OptionId != "debug.setup_mining_combat_fixture" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
             request.OptionId != "debug.setup_plant_seed_target" &&
             request.OptionId != "debug.setup_harvest_crop_target" &&
@@ -12782,6 +13067,7 @@ public sealed class ModEntry : Mod
         public bool ButtonHeld { get; set; }
         public int HoldTicks { get; set; }
         public int CooldownTicks { get; set; }
+        public bool AimPrepared { get; set; }
         public int AttackCount { get; set; }
         public int HitCount { get; set; }
         public int LastTargetHealth { get; set; }
@@ -12850,6 +13136,7 @@ public sealed class ModEntry : Mod
     private enum PlaceBombStage
     {
         MoveToPlacement,
+        AimPlacement,
         PressPlacement,
         ReleasePlacement,
         Escape,
@@ -13552,5 +13839,31 @@ internal static class SavesFolderPatch
 
         Directory.CreateDirectory(RedirectPath);
         __result = RedirectPath;
+    }
+}
+
+internal static class SlingshotAimPatch
+{
+    public static Slingshot? ActiveSlingshot { get; set; }
+
+    public static Point AimWorldPixel { get; set; }
+
+    public static bool Prefix(Slingshot __instance)
+    {
+        if (!ReferenceEquals(__instance, ActiveSlingshot))
+        {
+            return true;
+        }
+        __instance.aimPos.Set(AimWorldPixel.X, AimWorldPixel.Y);
+        return false;
+    }
+
+    public static void Clear(Slingshot slingshot)
+    {
+        if (ReferenceEquals(slingshot, ActiveSlingshot))
+        {
+            ActiveSlingshot = null;
+            AimWorldPixel = Point.Zero;
+        }
     }
 }

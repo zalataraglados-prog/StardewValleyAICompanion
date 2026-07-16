@@ -534,7 +534,7 @@ public sealed class MiningFloorStepPlannerTests
               "selected_slot_index":4,
               "food_slots":[],
               "cardinal_movement":{"tile_duration_ms":100.0},
-              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)286","stack":2,"radius_tiles":3}]
             }
             """);
 
@@ -556,15 +556,17 @@ public sealed class MiningFloorStepPlannerTests
             mustKillAll: true,
             rows: new[]
             {
-                "111111111",
-                "100000001",
-                "100000001",
-                "100000001",
-                "100000001",
-                "100000001",
-                "100000001",
-                "100000001",
-                "111111111"
+                "11111111111",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "10000000001",
+                "11111111111"
             },
             monsters: """
             [
@@ -572,8 +574,8 @@ public sealed class MiningFloorStepPlannerTests
                 "runtime_identity":"mummy-reviving",
                 "runtime_type":"StardewValley.Monsters.Mummy",
                 "name":"Mummy",
-                "tile_x":4,
-                "tile_y":4,
+                "tile_x":5,
+                "tile_y":5,
                 "bomb_damage_semantics":{"special_effect":"bomb_finalizes_reviving_mummy"}
               }
             ]
@@ -587,7 +589,7 @@ public sealed class MiningFloorStepPlannerTests
               "selected_slot_index":4,
               "food_slots":[],
               "cardinal_movement":{"tile_duration_ms":100.0},
-              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)286","stack":2,"radius_tiles":3}]
             }
             """);
 
@@ -597,6 +599,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Equal("bomb", plan.CombatMethod);
         Assert.Equal("mummy_finalized", plan.CombatTerminalState);
         Assert.Equal(7, plan.BombSlotIndex);
+        Assert.False(plan.TargetTileX == 5 && plan.TargetTileY == 5);
         Assert.NotNull(plan.EscapeTileX);
         Assert.NotNull(plan.EscapeTileY);
         Assert.True(Math.Abs(plan.EscapeTileX!.Value - plan.TargetTileX!.Value) > plan.BombRadiusTiles ||
@@ -641,7 +644,7 @@ public sealed class MiningFloorStepPlannerTests
               "selected_slot_index":4,
               "food_slots":[],
               "cardinal_movement":{"tile_duration_ms":100.0},
-              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)286","stack":2,"radius_tiles":3}]
             }
             """);
 
@@ -993,22 +996,29 @@ public sealed class MiningFloorStepPlannerTests
         var bombSource = source[bombStart..meleeStart];
 
         Assert.Contains("executor.shoot_monster", source, StringComparison.Ordinal);
-        Assert.Contains("SButton.MouseLeft, pressed: true", shootSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.BeginUsingTool()", shootSource, StringComparison.Ordinal);
+        Assert.Contains("active.Slingshot.onRelease", shootSource, StringComparison.Ordinal);
         Assert.Contains("HoldTicks < 20", shootSource, StringComparison.Ordinal);
-        Assert.Contains("Game1.setMousePosition", shootSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", shootSource, StringComparison.Ordinal);
+        Assert.Contains("AimPrepared", shootSource, StringComparison.Ordinal);
+        Assert.Contains("SlingshotAimPatch.AimWorldPixel", shootSource, StringComparison.Ordinal);
         Assert.Contains("HasClearProjectilePath", shootSource, StringComparison.Ordinal);
         Assert.Contains("ExplosiveAmmoAreaIsSafe", shootSource, StringComparison.Ordinal);
         Assert.Contains("explosive_ammo_player_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_ammo_other_farmer_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
         Assert.Contains("explosive_ammo_protected_object_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_ammo_terrain_feature_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
         Assert.DoesNotContain("damageMonster(", shootSource, StringComparison.Ordinal);
         Assert.DoesNotContain("takeDamage(", shootSource, StringComparison.Ordinal);
 
         Assert.Contains("executor.place_bomb", source, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", bombSource, StringComparison.Ordinal);
+        Assert.Contains("PlaceBombStage.AimPlacement", bombSource, StringComparison.Ordinal);
         Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_escape_finished_inside_damage_square", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_target_terminal_state_not_ready", bombSource, StringComparison.Ordinal);
         Assert.Contains("natural_explosion_finalized_target_monster", bombSource, StringComparison.Ordinal);
+        Assert.Contains("bomb_target_outside_damage_square", bombSource, StringComparison.Ordinal);
         Assert.Contains("CombatTerminalState = active.TerminalState", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain(".explode(", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain("placementAction(", bombSource, StringComparison.Ordinal);
@@ -1033,6 +1043,8 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("explosive_area_useful_object_hits", projectionSource, StringComparison.Ordinal);
         Assert.Contains("explosive_area_additional_monster_hits", projectionSource, StringComparison.Ordinal);
         Assert.Contains("explosive_area_protected_object_hits", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_protected_terrain_feature_hits", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_other_farmer_hits", projectionSource, StringComparison.Ordinal);
         Assert.Contains("safe_across_current_target_plus_one_tile_motion_envelope", projectionSource, StringComparison.Ordinal);
         Assert.Contains("complete_direct_projectile_damage_with_exact_area_safety_and_utility_but_uncomposed_area_damage", projectionSource, StringComparison.Ordinal);
     }

@@ -533,6 +533,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             explosive_area_monster_hits = explosiveArea?.MonsterHits ?? 0,
             explosive_area_additional_monster_hits = explosiveArea?.AdditionalMonsterHits ?? 0,
             explosive_area_protected_object_hits = explosiveArea?.ProtectedObjectHits ?? 0,
+            explosive_area_protected_terrain_feature_hits = explosiveArea?.ProtectedTerrainFeatureHits ?? 0,
+            explosive_area_other_farmer_hits = explosiveArea?.OtherFarmerHits ?? 0,
             explosive_area_has_additional_value = explosiveArea?.HasAdditionalValue ?? false,
             current_hit_can_damage = currentHitCanDamage,
             can_defeat_with_this_weapon = canDefeat,
@@ -564,41 +566,62 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         var usefulObjectHits = mine.objects.Pairs.Count(pair =>
             currentMask.Contains(new Point((int)pair.Key.X, (int)pair.Key.Y)) &&
             (pair.Value.IsBreakableStone() || pair.Value is BreakableContainer));
+        var currentDamageRectangle = BlastDamageRectangle(targetTile, radius);
         var monsterHits = mine.characters.OfType<Monster>().Count(monster =>
-            Math.Abs(monster.TilePoint.X - targetTile.X) <= radius &&
-            Math.Abs(monster.TilePoint.Y - targetTile.Y) <= radius);
+            currentDamageRectangle.Intersects(monster.GetBoundingBox()));
         var protectedObjectHits = 0;
+        var protectedTerrainFeatureHits = 0;
+        var otherFarmerHits = 0;
         var playerSafe = true;
         for (var offsetX = -motionMargin; offsetX <= motionMargin; offsetX++)
         {
             for (var offsetY = -motionMargin; offsetY <= motionMargin; offsetY++)
             {
                 var possibleCenter = new Point(targetTile.X + offsetX, targetTile.Y + offsetY);
-                if (Math.Abs(player.TilePoint.X - possibleCenter.X) <= radius &&
-                    Math.Abs(player.TilePoint.Y - possibleCenter.Y) <= radius)
+                var damageRectangle = BlastDamageRectangle(possibleCenter, radius);
+                if (damageRectangle.Intersects(player.GetBoundingBox()))
                 {
                     playerSafe = false;
                 }
+                otherFarmerHits = Math.Max(otherFarmerHits, mine.farmers.Count(farmer =>
+                    farmer != player && damageRectangle.Intersects(farmer.GetBoundingBox())));
                 var mask = BombAffectedTiles(possibleCenter, radius).ToHashSet();
                 protectedObjectHits = Math.Max(protectedObjectHits, mine.objects.Pairs.Count(pair =>
                     mask.Contains(new Point((int)pair.Key.X, (int)pair.Key.Y)) &&
                     !pair.Value.IsBreakableStone() &&
                     pair.Value is not BreakableContainer));
+                protectedTerrainFeatureHits = Math.Max(protectedTerrainFeatureHits, mine.terrainFeatures.Pairs.Count(pair =>
+                    mask.Contains(new Point((int)pair.Key.X, (int)pair.Key.Y))));
             }
         }
         var additionalMonsterHits = Math.Max(0, monsterHits - 1);
         return new ExplosiveAmmoAreaProjection(
-            playerSafe && protectedObjectHits == 0,
+            playerSafe && protectedObjectHits == 0 && protectedTerrainFeatureHits == 0 && otherFarmerHits == 0,
             playerSafe
-                ? protectedObjectHits == 0
-                    ? "safe_across_current_target_plus_one_tile_motion_envelope"
-                    : "blocked_protected_object_in_target_motion_envelope"
+                ? protectedObjectHits > 0
+                    ? "blocked_protected_object_in_target_motion_envelope"
+                    : protectedTerrainFeatureHits > 0
+                        ? "blocked_terrain_feature_in_target_motion_envelope"
+                        : otherFarmerHits > 0
+                            ? "blocked_other_farmer_in_target_motion_envelope"
+                            : "safe_across_current_target_plus_one_tile_motion_envelope"
                 : "blocked_player_inside_target_motion_envelope",
             motionMargin,
             usefulObjectHits,
             monsterHits,
             additionalMonsterHits,
-            protectedObjectHits);
+            protectedObjectHits,
+            protectedTerrainFeatureHits,
+            otherFarmerHits);
+    }
+
+    private static Rectangle BlastDamageRectangle(Point center, int radius)
+    {
+        return new Rectangle(
+            (center.X - radius) * Game1.tileSize,
+            (center.Y - radius) * Game1.tileSize,
+            (radius * 2 + 1) * Game1.tileSize,
+            (radius * 2 + 1) * Game1.tileSize);
     }
 
     private static IEnumerable<Point> BombAffectedTiles(Point center, int radius)
@@ -1547,7 +1570,9 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             int usefulObjectHits,
             int monsterHits,
             int additionalMonsterHits,
-            int protectedObjectHits)
+            int protectedObjectHits,
+            int protectedTerrainFeatureHits,
+            int otherFarmerHits)
         {
             Safe = safe;
             SafetyStatus = safetyStatus;
@@ -1556,6 +1581,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             MonsterHits = monsterHits;
             AdditionalMonsterHits = additionalMonsterHits;
             ProtectedObjectHits = protectedObjectHits;
+            ProtectedTerrainFeatureHits = protectedTerrainFeatureHits;
+            OtherFarmerHits = otherFarmerHits;
         }
 
         public bool Safe { get; }
@@ -1565,6 +1592,8 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         public int MonsterHits { get; }
         public int AdditionalMonsterHits { get; }
         public int ProtectedObjectHits { get; }
+        public int ProtectedTerrainFeatureHits { get; }
+        public int OtherFarmerHits { get; }
         public bool HasAdditionalValue => UsefulObjectHits > 0 || AdditionalMonsterHits > 0;
     }
 }

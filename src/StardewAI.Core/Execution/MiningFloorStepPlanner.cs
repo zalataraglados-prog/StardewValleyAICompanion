@@ -1064,49 +1064,60 @@ namespace StardewAI.Core.Execution
                 {
                     continue;
                 }
-                var placement = TargetCandidate(targetX.Value, targetY.Value, search, grid, 0, false);
-                if (placement is null)
-                {
-                    continue;
-                }
                 foreach (var bomb in bombSlots.EnumerateArray().OrderBy(bomb => ReadInt(bomb, "radius_tiles") ?? int.MaxValue))
                 {
                     var radius = ReadInt(bomb, "radius_tiles") ?? 0;
                     var slot = ReadInt(bomb, "slot_index");
-                    if (radius <= 0 || !slot.HasValue || (ReadInt(bomb, "stack") ?? 0) <= 0 ||
-                        protectedObjects.Any(obj => ExactExplosionMask(radius).Contains((obj.X - targetX.Value, obj.Y - targetY.Value))))
+                    if (radius <= 0 || !slot.HasValue || (ReadInt(bomb, "stack") ?? 0) <= 0)
                     {
                         continue;
                     }
-                    var escapeSearch = Search(grid, (placement.StandX, placement.StandY));
-                    var escape = escapeSearch.Distance
-                        .Select(entry =>
+                    foreach (var center in MummyBombPlacementCenters(targetX.Value, targetY.Value, radius))
+                    {
+                        if (!InBounds(grid, center.X, center.Y) ||
+                            grid[center.X, center.Y] ||
+                            protectedObjects.Any(obj => obj.X == center.X && obj.Y == center.Y) ||
+                            objects.ValueKind == JsonValueKind.Array && objects.EnumerateArray().Any(obj =>
+                                ReadInt(obj, "tile_x") == center.X && ReadInt(obj, "tile_y") == center.Y))
                         {
-                            var values = entry.Key.Split(',');
-                            return new
+                            continue;
+                        }
+                        var placement = TargetCandidate(center.X, center.Y, search, grid, 0, false);
+                        if (placement is null ||
+                            protectedObjects.Any(obj => ExactExplosionMask(radius).Contains((obj.X - center.X, obj.Y - center.Y))))
+                        {
+                            continue;
+                        }
+                        var escapeSearch = Search(grid, (placement.StandX, placement.StandY));
+                        var escape = escapeSearch.Distance
+                            .Select(entry =>
                             {
-                                X = int.Parse(values[0], CultureInfo.InvariantCulture),
-                                Y = int.Parse(values[1], CultureInfo.InvariantCulture),
-                                Distance = entry.Value
-                            };
-                        })
-                        .Where(tile => Math.Abs(tile.X - targetX.Value) > radius || Math.Abs(tile.Y - targetY.Value) > radius)
-                        .OrderBy(tile => tile.Distance)
-                        .ThenBy(tile => tile.Y)
-                        .ThenBy(tile => tile.X)
-                        .FirstOrDefault();
-                    var maximumEscapeTiles = movementTileDurationMs.HasValue && movementTileDurationMs.Value > 0d
-                        ? Math.Max(2, (int)Math.Floor(1900d / movementTileDurationMs.Value))
-                        : 6;
-                    if (escape is null || escape.Distance > maximumEscapeTiles)
-                    {
-                        continue;
-                    }
-                    var candidate = new MummyBombFinisherCandidate(monster, bomb, placement, escape.X, escape.Y, escape.Distance);
-                    if (best is null || radius < best.Radius ||
-                        radius == best.Radius && candidate.TotalDistance < best.TotalDistance)
-                    {
-                        best = candidate;
+                                var values = entry.Key.Split(',');
+                                return new
+                                {
+                                    X = int.Parse(values[0], CultureInfo.InvariantCulture),
+                                    Y = int.Parse(values[1], CultureInfo.InvariantCulture),
+                                    Distance = entry.Value
+                                };
+                            })
+                            .Where(tile => Math.Abs(tile.X - center.X) > radius || Math.Abs(tile.Y - center.Y) > radius)
+                            .OrderBy(tile => tile.Distance)
+                            .ThenBy(tile => tile.Y)
+                            .ThenBy(tile => tile.X)
+                            .FirstOrDefault();
+                        var maximumEscapeTiles = movementTileDurationMs.HasValue && movementTileDurationMs.Value > 0d
+                            ? Math.Max(2, (int)Math.Floor(1900d / movementTileDurationMs.Value))
+                            : 6;
+                        if (escape is null || escape.Distance > maximumEscapeTiles)
+                        {
+                            continue;
+                        }
+                        var candidate = new MummyBombFinisherCandidate(monster, bomb, placement, escape.X, escape.Y, escape.Distance);
+                        if (best is null || radius < best.Radius ||
+                            radius == best.Radius && candidate.TotalDistance < best.TotalDistance)
+                        {
+                            best = candidate;
+                        }
                     }
                 }
             }
@@ -1128,6 +1139,19 @@ namespace StardewAI.Core.Execution
             plan.ExpectedBombMonsterHits = 1;
             plan.SafetyWindowStatus = "mummy_bomb_finish_fuse_escape_verified";
             return plan;
+        }
+
+        private static IEnumerable<(int X, int Y)> MummyBombPlacementCenters(int targetX, int targetY, int radius)
+        {
+            return Enumerable.Range(-radius, radius * 2 + 1)
+                .SelectMany(offsetX => Enumerable.Range(-radius, radius * 2 + 1)
+                    .Select(offsetY => (X: targetX + offsetX, Y: targetY + offsetY, OffsetX: offsetX, OffsetY: offsetY)))
+                .Where(row => row.OffsetX != 0 || row.OffsetY != 0)
+                .Where(row => Math.Abs(row.OffsetX) <= radius && Math.Abs(row.OffsetY) <= radius)
+                .OrderBy(row => Math.Abs(row.OffsetX) + Math.Abs(row.OffsetY))
+                .ThenBy(row => row.Y)
+                .ThenBy(row => row.X)
+                .Select(row => (row.X, row.Y));
         }
 
         private static bool MummyFinishRequired(
