@@ -931,6 +931,46 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileRouteConnectorCandidatePreservesExactTransparentConnector()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "route:Farm:12,10:warp",
+            Kind = "route_connector_tile",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "Farm",
+            TileX = 12,
+            TileY = 10,
+            EstimatedTicks = 180,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.traverse_connector" },
+                new SmallModelActionParameter { Name = "connector_kind", Value = "warp" },
+                new SmallModelActionParameter { Name = "expected_target_location", Value = "Town" },
+                new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "1" },
+                new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "2" },
+                new SmallModelActionParameter { Name = "max_movement_tiles", Value = "3" },
+                new SmallModelActionParameter { Name = "estimated_ticks", Value = "180" },
+                new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("traverse_connector", step.Kind);
+        Assert.Equal("Farm", step.TargetLocation);
+        Assert.Equal(12, step.TargetTileX);
+        Assert.Equal(10, step.TargetTileY);
+        Assert.Equal(3, step.EstimatedMinutes);
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Town");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "expected_arrival_tile_x" && parameter.Value == "1");
+        Assert.Contains(step.SafetyConstraints, constraint => constraint == "one_connector_per_replan");
+    }
+
+    [Fact]
     public void CompileRecoveryCandidateWithoutExecutionOptionFailsClosed()
     {
         var candidate = new PolicyEventCandidatePrediction

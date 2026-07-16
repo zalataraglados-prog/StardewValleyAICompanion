@@ -1801,15 +1801,43 @@ namespace StardewAI.Core.Training
 
         private static IEnumerable<SmallModelPlanStep> RouteConnectorSteps(PolicyEventCandidatePrediction candidate)
         {
-            if (!candidate.TileX.HasValue || !candidate.TileY.HasValue)
+            var targetTileX = candidate.TileX ?? CandidateInt(candidate, "target_tile_x");
+            var targetTileY = candidate.TileY ?? CandidateInt(candidate, "target_tile_y");
+            var connectorKind = CandidateParameter(candidate, "connector_kind");
+            var expectedTargetLocation = CandidateParameter(candidate, "expected_target_location");
+            if (string.IsNullOrWhiteSpace(expectedTargetLocation))
+            {
+                expectedTargetLocation = ParseValue(candidate.ExpectedEffect, "expected_target_location=");
+            }
+
+            if (!targetTileX.HasValue ||
+                !targetTileY.HasValue ||
+                string.IsNullOrWhiteSpace(candidate.LocationId) ||
+                string.IsNullOrWhiteSpace(connectorKind) ||
+                string.IsNullOrWhiteSpace(expectedTargetLocation))
             {
                 return Array.Empty<SmallModelPlanStep>();
             }
 
-            var expectedTargetLocation = ParseValue(candidate.ExpectedEffect, "expected_target_location=");
-            if (string.IsNullOrWhiteSpace(expectedTargetLocation))
+            var parameters = new List<SmallModelActionParameter>
             {
-                return Array.Empty<SmallModelPlanStep>();
+                Parameter("connector_kind", connectorKind),
+                Parameter("expected_target_location", expectedTargetLocation)
+            };
+            foreach (var name in new[]
+            {
+                "expected_arrival_tile_x",
+                "expected_arrival_tile_y",
+                "max_movement_tiles",
+                "estimated_ticks",
+                "estimated_minutes"
+            })
+            {
+                var value = CandidateParameter(candidate, name);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    parameters.Add(Parameter(name, value));
+                }
             }
 
             return new[]
@@ -1819,17 +1847,29 @@ namespace StardewAI.Core.Training
                     StepId = StepId(candidate, "traverse_connector", 0),
                     Kind = "traverse_connector",
                     TargetLocation = candidate.LocationId,
-                    TargetTileX = candidate.TileX,
-                    TargetTileY = candidate.TileY,
-                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
-                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
-                    ExpectedEffects = new[] { "player.location_id=" + expectedTargetLocation },
-                    SafetyConstraints = new[] { "connector_target_from_transparent_route_graph" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
-                    Parameters = new[]
+                    TargetTileX = targetTileX,
+                    TargetTileY = targetTileY,
+                    EstimatedMinutes = CandidateInt(candidate, "estimated_minutes") ?? TicksToMinutes(candidate.EstimatedTicks),
+                    Preconditions = new[]
                     {
-                        Parameter("expected_target_location", expectedTargetLocation)
-                    }
+                        "candidate_id:" + candidate.CandidateId,
+                        "current_location=" + candidate.LocationId,
+                        "transparent_connector_still_matches_snapshot=true"
+                    },
+                    ExpectedEffects = new[]
+                    {
+                        "player.location_id=" + expectedTargetLocation,
+                        "fresh_snapshot_replan_required=true"
+                    },
+                    SafetyConstraints = new[]
+                    {
+                        "connector_target_from_transparent_current_map_index",
+                        "connector_gate_checked_upstream",
+                        "no_direct_coordinate_teleport",
+                        "one_connector_per_replan"
+                    },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = parameters.ToArray()
                 }
             };
         }

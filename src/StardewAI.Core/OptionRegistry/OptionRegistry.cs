@@ -173,7 +173,11 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.map", "current_location.warps", "locations.route_connectors" },
+                new[]
+                {
+                    "player.location_id", "player.tile_x", "player.tile_y",
+                    "locations.collision_grid", "locations.route_action_branch_coverage", "locations.route_connectors"
+                },
                 new[] { "collision-safe connector traversal requested" },
                 new[] { "block_unverified_connector", "block_unexpected_target_location", "block_direct_coordinate_teleport" }));
 

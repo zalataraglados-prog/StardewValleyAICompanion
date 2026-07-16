@@ -743,6 +743,11 @@ namespace StardewAI.Core.Execution
                 return BuildRoutePreviewParameters(action, snapshot);
             }
 
+            if (action.OptionId == "executor.traverse_connector")
+            {
+                return BuildTraverseConnectorParameters(action, snapshot);
+            }
+
             if (action.OptionId == "executor.select_safe_item_slot")
             {
                 return BuildSelectSafeItemSlotParameters(action, snapshot);
@@ -926,6 +931,47 @@ namespace StardewAI.Core.Execution
             }
 
             return parameters.ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildTraverseConnectorParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            var kind = (ReadParameter(action, "connector_kind") ?? string.Empty).ToLowerInvariant();
+            var targetLocation = ReadParameter(action, "expected_target_location") ?? string.Empty;
+            var edge = new RouteGraphEdge(
+                kind,
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                targetLocation,
+                ReadIntParameter(action, "target_tile_x"),
+                ReadIntParameter(action, "target_tile_y"),
+                ReadIntParameter(action, "expected_arrival_tile_x"),
+                ReadIntParameter(action, "expected_arrival_tile_y"));
+            var connector = IsRecoveryConnectorKind(kind)
+                ? FindMatchingCurrentRouteConnector(snapshot, edge)
+                : null;
+            var pathTiles = connector.HasValue
+                ? RecoveryConnectorPathTiles(snapshot, edge, connector.Value)
+                : null;
+            if (pathTiles.HasValue)
+            {
+                var estimatedTicks = Math.Max(60, (pathTiles.Value + 1) * 60);
+                AddParameterIfMissing(parameters, "max_movement_tiles", Math.Max(1, pathTiles.Value + 1).ToString());
+                AddParameterIfMissing(parameters, "estimated_ticks", estimatedTicks.ToString());
+                AddParameterIfMissing(parameters, "estimated_minutes", Math.Max(1, (estimatedTicks + 59) / 60).ToString());
+            }
+
+            AddParameterIfMissing(parameters, "compiler_context.route_connector_source", "locations.route_connectors");
+            AddParameterIfMissing(parameters, "compiler_context.current_map_collision_source", "locations.collision_grid");
+            AddParameterIfMissing(parameters, "compiler_context.fresh_snapshot_replan_required", "true");
+            return parameters.ToArray();
+        }
+
+        private static void AddParameterIfMissing(List<SmallModelActionParameter> parameters, string name, string value)
+        {
+            if (!parameters.Any(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal)))
+            {
+                parameters.Add(Parameter(name, value));
+            }
         }
 
         private static SmallModelActionParameter[] BuildMiningReachDepthParameters(SmallModelAction action, SnapshotEnvelope snapshot)

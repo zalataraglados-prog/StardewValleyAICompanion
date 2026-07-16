@@ -1146,9 +1146,15 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(12, candidate.TileX);
         Assert.Equal(10, candidate.TileY);
-        Assert.Equal("player.tile=12,10;route_connector=warp", candidate.ExpectedEffect);
-        Assert.Equal(120, candidate.EstimatedTicks);
+        Assert.Equal("player.tile=12,10;route_connector=warp;expected_target_location=Town;fresh_snapshot_replan_required=true;expected_arrival_tile=1,2", candidate.ExpectedEffect);
+        Assert.Equal(180, candidate.EstimatedTicks);
         Assert.Empty(candidate.BlockReasons);
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Town");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_x" && parameter.Value == "1");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_y" && parameter.Value == "2");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "estimated_ticks" && parameter.Value == "180");
     }
 
     [Fact]

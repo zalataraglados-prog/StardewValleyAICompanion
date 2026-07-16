@@ -1338,11 +1338,9 @@ namespace StardewAI.Core.OptionRegistry
                 locationId = ReadStateFieldString(snapshot, "player", "location_id");
             }
 
-            var startX = ReadStateFieldInt(snapshot, "player", "tile_x");
-            var startY = ReadStateFieldInt(snapshot, "player", "tile_y");
             var routeCandidates = connectors.EnumerateArray()
                 .Where(connector => connector.ValueKind == JsonValueKind.Object && HasNumber(connector, "tile_x") && HasNumber(connector, "tile_y"))
-                .Select(connector => RouteConnectorCandidate(snapshot, connector, locationId, startX, startY))
+                .Select(connector => RouteConnectorCandidate(snapshot, connector, locationId))
                 .ToArray();
             return routeCandidates
                 .Concat(RouteRepairClearObstacleCandidates(snapshot, routeCandidates))
@@ -1354,28 +1352,68 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate RouteConnectorCandidate(SnapshotEnvelope snapshot, JsonElement connector, string locationId, int startX, int startY)
+        private EventCandidate RouteConnectorCandidate(SnapshotEnvelope snapshot, JsonElement connector, string locationId)
         {
             var x = ReadInt(connector, "tile_x");
             var y = ReadInt(connector, "tile_y");
-            var kind = ReadString(connector, "kind");
+            var kind = ReadString(connector, "kind").ToLowerInvariant();
             var targetLocation = ReadString(connector, "target_location");
-            var parameters = new List<SmallModelActionParameter>
+            var actionParameters = new List<SmallModelActionParameter>
+            {
+                Parameter("target_tile_x", x.ToString()),
+                Parameter("target_tile_y", y.ToString()),
+                Parameter("connector_kind", kind),
+                Parameter("expected_target_location", targetLocation)
+            };
+            var targetX = ReadNullableInt(connector, "target_x");
+            var targetY = ReadNullableInt(connector, "target_y");
+            if (targetX.HasValue && targetY.HasValue)
+            {
+                actionParameters.Add(Parameter("expected_arrival_tile_x", targetX.Value.ToString()));
+                actionParameters.Add(Parameter("expected_arrival_tile_y", targetY.Value.ToString()));
+            }
+
+            var routePreviewParameters = new List<SmallModelActionParameter>
             {
                 Parameter("target_tile_x", x.ToString()),
                 Parameter("target_tile_y", y.ToString())
             };
             if (!string.IsNullOrWhiteSpace(targetLocation))
             {
-                parameters.Add(Parameter("target_location", targetLocation));
+                routePreviewParameters.Add(Parameter("target_location", targetLocation));
             }
 
-            var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
+            var routePreviewBlocks = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
             {
                 OptionId = "exploration.visit_location",
-                Parameters = parameters.ToArray()
+                Parameters = routePreviewParameters.ToArray()
             });
-            var distance = Math.Abs(startX - x) + Math.Abs(startY - y);
+            var executionProbe = CompilerProbeItem(snapshot, new OptionAvailabilityCandidate
+            {
+                OptionId = "executor.traverse_connector",
+                Parameters = actionParameters.ToArray()
+            });
+            var blockReasons = routePreviewBlocks
+                .Concat(CompilerProbeBlockingReasons(executionProbe))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var normalizedParameters = executionProbe?.NormalizedCommand.Parameters ?? actionParameters.ToArray();
+            var candidateParameters = new[]
+                {
+                    Parameter("execution_option_id", "executor.traverse_connector")
+                }
+                .Concat(normalizedParameters)
+                .ToArray();
+            var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
+            var expectedEffect = "player.tile=" + x + "," + y +
+                ";route_connector=" + kind +
+                ";expected_target_location=" + targetLocation +
+                ";fresh_snapshot_replan_required=true";
+            if (targetX.HasValue && targetY.HasValue)
+            {
+                expectedEffect += ";expected_arrival_tile=" + targetX.Value + "," + targetY.Value;
+            }
+
             return new EventCandidate
             {
                 CandidateId = "route:" + locationId + ":" + x + "," + y + ":" + kind,
@@ -1384,10 +1422,11 @@ namespace StardewAI.Core.OptionRegistry
                 LocationId = locationId,
                 TileX = x,
                 TileY = y,
-                ExpectedEffect = "player.tile=" + x + "," + y + ";route_connector=" + kind,
-                EstimatedTicks = Math.Max(60, distance * 60),
+                ExpectedEffect = expectedEffect,
+                EstimatedTicks = estimatedTicks,
                 EnergyCost = 0,
-                BlockReasons = blockReasons
+                BlockReasons = blockReasons,
+                Parameters = candidateParameters
             };
         }
 
@@ -1463,7 +1502,8 @@ namespace StardewAI.Core.OptionRegistry
             return reason is "route_path_target_blocked_by_collision_grid" or
                 "route_path_blocked_by_collision_grid" or
                 "route_graph_start_connector_blocked_by_collision_grid" or
-                "route_graph_start_segment_blocked_by_collision_grid";
+                "route_graph_start_segment_blocked_by_collision_grid" or
+                "connector_start_segment_unreachable";
         }
 
         private static HashSet<string> ReadBlockedCollisionTileKeys(JsonElement collisionGrid)
