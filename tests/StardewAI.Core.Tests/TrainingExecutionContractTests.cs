@@ -80,6 +80,7 @@ public sealed class TrainingExecutionContractTests
             MaxAttacks = 12,
             CombatWeaponSlotIndex = 3,
             CombatMethod = "slingshot",
+            CombatTerminalState = "knockdown_requires_bomb_finish",
             SlingshotSlotIndex = 5,
             SlingshotAmmoQualifiedItemId = "(O)390",
             BombSlotIndex = 7,
@@ -93,6 +94,7 @@ public sealed class TrainingExecutionContractTests
         Assert.Equal(12, requestRoundTrip.MaxAttacks);
         Assert.Equal(3, requestRoundTrip.CombatWeaponSlotIndex);
         Assert.Equal("slingshot", requestRoundTrip.CombatMethod);
+        Assert.Equal("knockdown_requires_bomb_finish", requestRoundTrip.CombatTerminalState);
         Assert.Equal(5, requestRoundTrip.SlingshotSlotIndex);
         Assert.Equal("(O)390", requestRoundTrip.SlingshotAmmoQualifiedItemId);
         Assert.Equal(7, requestRoundTrip.BombSlotIndex);
@@ -114,6 +116,7 @@ public sealed class TrainingExecutionContractTests
             CombatDamageTaken = 0,
             CombatTargetDefeated = true,
             CombatMethod = "slingshot",
+            CombatTerminalState = "mummy_finalized",
             CombatConsumableQualifiedItemId = "(O)390",
             CombatConsumableCountBefore = 20,
             CombatConsumableCountAfter = 17
@@ -123,6 +126,7 @@ public sealed class TrainingExecutionContractTests
         Assert.Equal(new[] { 24, 12, 0 }, resultRoundTrip.CombatTargetHealthSequence);
         Assert.True(resultRoundTrip.CombatTargetDefeated);
         Assert.Equal("slingshot", resultRoundTrip.CombatMethod);
+        Assert.Equal("mummy_finalized", resultRoundTrip.CombatTerminalState);
         Assert.Equal(17, resultRoundTrip.CombatConsumableCountAfter);
         Assert.Equal(0, resultRoundTrip.CombatDamageTaken);
     }

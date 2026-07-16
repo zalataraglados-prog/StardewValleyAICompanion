@@ -90,6 +90,8 @@ namespace StardewAI.Core.Execution
 
         public string CombatMethod { get; set; } = string.Empty;
 
+        public string CombatTerminalState { get; set; } = string.Empty;
+
         public int? SlingshotSlotIndex { get; set; }
 
         public string SlingshotAmmoQualifiedItemId { get; set; } = string.Empty;
@@ -194,6 +196,8 @@ namespace StardewAI.Core.Execution
             var hasResources = TryFieldValue(mining, "player_resources", out var resources);
             var restoreSlot = hasResources ? ReadInt(resources, "selected_slot_index") : null;
             var movementTileDurationMs = hasResources ? ReadMovementTileDuration(resources) : null;
+            var bombFinisherAvailable = hasResources && HasAvailableBomb(resources);
+            var mustKillAll = ReadBool(objectives, "must_kill_all_monsters_to_advance");
             var monsterDropCatalogs = objective.Kind == MiningObjectiveKinds.CollectMonsterDrop
                 ? ReadMonsterDropCatalogs(mining)
                 : null;
@@ -220,6 +224,23 @@ namespace StardewAI.Core.Execution
                 return retreat ?? Blocked("unsafe_health_without_recovery_food_and_exit_unreachable");
             }
 
+            if (bombFinisherAvailable)
+            {
+                var mummyFinisher = SelectMummyBombFinisher(
+                    objects,
+                    monsters,
+                    resources,
+                    search,
+                    grid,
+                    movementTileDurationMs,
+                    objective,
+                    mustKillAll);
+                if (mummyFinisher is not null)
+                {
+                    return mummyFinisher;
+                }
+            }
+
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
             {
                 if (TryFieldValue(mining, "debris", out var monsterDebris))
@@ -232,7 +253,7 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
-                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs, movementTileDurationMs) ??
+                return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs, movementTileDurationMs, bombFinisherAvailable) ??
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
 
@@ -247,7 +268,7 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
-                var threat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles);
+                var threat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
                 if (threat is not null)
                 {
                     threat.Reason = "unsafe_tool_window_combat_interrupt";
@@ -261,7 +282,7 @@ namespace StardewAI.Core.Execution
             }
 
             if (TryFieldValue(mining, "debris", out var opportunisticDebris) &&
-                SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles) is null)
+                SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs) is null)
             {
                 var pickup = SelectDebris(opportunisticDebris, search, grid, Array.Empty<string>(), restoreSlot, maximumDistance: 3);
                 if (pickup is not null)
@@ -298,10 +319,9 @@ namespace StardewAI.Core.Execution
                 return containerPlan;
             }
 
-            var mustKillAll = ReadBool(objectives, "must_kill_all_monsters_to_advance");
             if (mustKillAll)
             {
-                return SelectMonster(monsters, search, grid, "kill_all_floor_requires_combat", movementTileDurationMs: movementTileDurationMs) ??
+                return SelectMonster(monsters, search, grid, "kill_all_floor_requires_combat", movementTileDurationMs: movementTileDurationMs, bombFinisherAvailable: bombFinisherAvailable) ??
                     Blocked("kill_all_floor_has_no_reachable_monster");
             }
 
@@ -311,7 +331,7 @@ namespace StardewAI.Core.Execution
                 return stonePlan;
             }
 
-            var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster", movementTileDurationMs: movementTileDurationMs);
+            var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster", movementTileDurationMs: movementTileDurationMs, bombFinisherAvailable: bombFinisherAvailable);
             if (combatPlan is not null)
             {
                 return combatPlan;
@@ -442,7 +462,8 @@ namespace StardewAI.Core.Execution
             string reason,
             string[]? targetDropIds = null,
             IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs = null,
-            double? movementTileDurationMs = null)
+            double? movementTileDurationMs = null,
+            bool bombFinisherAvailable = false)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -461,10 +482,11 @@ namespace StardewAI.Core.Execution
                         Monster = monster,
                         Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
                         Match = BuildMonsterDropMatch(monster, targets, possible, dropCatalogs),
-                        Combat = ReadBestCombatProjection(monster, search.Start, grid, movementTileDurationMs)
+                        Combat = ReadBestCombatProjection(monster, search.Start, grid, movementTileDurationMs, bombFinisherAvailable)
                     };
                 })
                 .Where(row => targets is null || row.Match.MatchedIds.Length > 0)
+                .Where(row => !IsRevivingMummy(row.Monster) || row.Combat is not null)
                 .Where(row => CanDefeatWithAvailableCombat(row.Monster, row.Combat))
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => targets is null || row.Match.IsGuaranteed ? 0 : row.Match.ChanceKnown ? 1 : 2)
@@ -482,6 +504,7 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.CombatMethod = row.Combat?.Method ?? "melee";
+                    plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
                     plan.RequiredWeaponEnchantmentRuntimeType = plan.CombatMethod == "melee" ? ReadRequiredWeaponEnchantment(row.Monster) : string.Empty;
                     plan.CombatWeaponSlotIndex = plan.CombatMethod == "melee" ? row.Combat?.SlotIndex : null;
                     plan.SlingshotSlotIndex = plan.CombatMethod == "slingshot" ? row.Combat?.SlotIndex : null;
@@ -543,13 +566,21 @@ namespace StardewAI.Core.Execution
             JsonElement monster,
             (int X, int Y) playerTile,
             bool[,] grid,
-            double? movementTileDurationMs)
+            double? movementTileDurationMs,
+            bool bombFinisherAvailable)
         {
             var melee = ReadCombatProjections(monster, "melee_attack_projections", "melee", "expected_attacks_to_defeat",
-                "exact_active_melee_phase_excluding_movement").ToArray();
+                    "exact_active_melee_phase_excluding_movement")
+                .Concat(bombFinisherAvailable
+                    ? ReadCombatProjections(monster, "melee_attack_projections", "melee", "expected_attacks_to_defeat",
+                        "exact_active_melee_phase_to_mummy_knockdown_excluding_movement")
+                    : Array.Empty<MonsterCombatProjectionInfo>())
+                .ToArray();
             var slingshot = ReadCombatProjections(monster, "slingshot_attack_projections", "slingshot", "expected_shots_to_defeat",
                     "exact_charge_phase_excluding_projectile_travel_and_reposition")
-                .Where(projection => !string.Equals(projection.AmmoQualifiedItemId, "(O)441", StringComparison.Ordinal))
+                .Where(projection =>
+                    !string.Equals(projection.AmmoQualifiedItemId, "(O)441", StringComparison.Ordinal) ||
+                    projection.ExplosiveAreaSafe && projection.ExplosiveAreaHasAdditionalValue)
                 .Where(projection => projection.AmmoStack >= Math.Ceiling(projection.ExpectedAttacks ?? double.MaxValue))
                 .Where(_ => HasClearProjectileLine(playerTile, (ReadInt(monster, "tile_x") ?? -1, ReadInt(monster, "tile_y") ?? -1), grid))
                 .ToArray();
@@ -561,7 +592,10 @@ namespace StardewAI.Core.Execution
                 .Where(projection =>
                     Math.Abs((ReadInt(monster, "tile_x") ?? playerTile.X) - playerTile.X) +
                     Math.Abs((ReadInt(monster, "tile_y") ?? playerTile.Y) - playerTile.Y) >= 4)
-                .Select(projection => projection.WithSelectionCost(projection.DurationMs));
+                .Select(projection => projection.WithSelectionCost(
+                    string.Equals(projection.AmmoQualifiedItemId, "(O)441", StringComparison.Ordinal)
+                        ? projection.DurationMs / projection.ExplosiveAreaValueMultiplier
+                        : projection.DurationMs));
             return meleeWithMovement.Concat(rangedWithPolicy)
                 .OrderBy(projection => projection.SelectionCostMs)
                 .ThenBy(projection => projection.Method == "melee" ? 0 : 1)
@@ -583,8 +617,11 @@ namespace StardewAI.Core.Execution
             foreach (var projection in projections.EnumerateArray())
             {
                 var explicitDefeatGate = projection.TryGetProperty("can_defeat_with_this_weapon", out var defeatValue);
+                var terminalEffect = ReadString(projection, "terminal_effect");
+                var acceptedTerminal = terminalEffect == "defeat" ||
+                    terminalEffect == "knockdown_requires_bomb_finish";
                 if (!string.Equals(ReadString(projection, "duration_status"), requiredDurationStatus, StringComparison.Ordinal) ||
-                    explicitDefeatGate && defeatValue.ValueKind != JsonValueKind.True)
+                    explicitDefeatGate && defeatValue.ValueKind != JsonValueKind.True && !acceptedTerminal)
                 {
                     continue;
                 }
@@ -594,7 +631,12 @@ namespace StardewAI.Core.Execution
                     ReadDouble(projection, expectedAttacksProperty),
                     ReadDouble(projection, "expected_active_damage_duration_ms"),
                     ReadString(projection, "ammo_qualified_item_id"),
-                    ReadInt(projection, "ammo_stack") ?? 0);
+                    ReadInt(projection, "ammo_stack") ?? 0,
+                    terminalEffect: string.IsNullOrWhiteSpace(terminalEffect) ? "defeat" : terminalEffect,
+                    explosiveAreaSafe: ReadBool(projection, "explosive_area_safe"),
+                    explosiveAreaHasAdditionalValue: ReadBool(projection, "explosive_area_has_additional_value"),
+                    explosiveAreaUsefulObjectHits: ReadInt(projection, "explosive_area_useful_object_hits") ?? 0,
+                    explosiveAreaAdditionalMonsterHits: ReadInt(projection, "explosive_area_additional_monster_hits") ?? 0);
                 if (parsed.SlotIndex.HasValue && parsed.ExpectedAttacks.HasValue && parsed.DurationMs.HasValue && parsed.DurationMs.Value >= 0d)
                 {
                     yield return parsed;
@@ -792,7 +834,14 @@ namespace StardewAI.Core.Execution
             return result;
         }
 
-        private static MiningFloorStepPlan? SelectImmediateThreat(JsonElement monsters, SearchResult search, bool[,] grid, (int X, int Y) start, int radiusTiles)
+        private static MiningFloorStepPlan? SelectImmediateThreat(
+            JsonElement monsters,
+            SearchResult search,
+            bool[,] grid,
+            (int X, int Y) start,
+            int radiusTiles,
+            bool bombFinisherAvailable,
+            double? movementTileDurationMs)
         {
             return monsters.EnumerateArray()
                 .Where(monster =>
@@ -801,7 +850,12 @@ namespace StardewAI.Core.Execution
                     var y = ReadInt(monster, "tile_y");
                     return x.HasValue && y.HasValue && Math.Abs(x.Value - start.X) + Math.Abs(y.Value - start.Y) <= Math.Max(1, radiusTiles);
                 })
-                .Select(monster => new { Monster = monster, Candidate = TargetCandidate(monster, search, grid, 0, false) })
+                .Select(monster => new
+                {
+                    Monster = monster,
+                    Candidate = TargetCandidate(monster, search, grid, 0, false),
+                    Combat = ReadBestCombatProjection(monster, start, grid, movementTileDurationMs, bombFinisherAvailable)
+                })
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => row.Candidate!.Distance)
                 .Select(row =>
@@ -811,7 +865,9 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.CombatMethod = "melee";
+                    plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
                     plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
+                    plan.CombatWeaponSlotIndex = row.Combat?.Method == "melee" ? row.Combat.SlotIndex : null;
                     return plan;
                 })
                 .FirstOrDefault();
@@ -952,6 +1008,153 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static bool HasAvailableBomb(JsonElement resources)
+        {
+            return resources.TryGetProperty("bomb_slots", out var bombSlots) &&
+                bombSlots.ValueKind == JsonValueKind.Array &&
+                bombSlots.EnumerateArray().Any(bomb =>
+                    (ReadInt(bomb, "stack") ?? 0) > 0 &&
+                    (ReadInt(bomb, "radius_tiles") ?? 0) > 0 &&
+                    ReadInt(bomb, "slot_index").HasValue);
+        }
+
+        private static MiningFloorStepPlan? SelectMummyBombFinisher(
+            JsonElement objects,
+            JsonElement monsters,
+            JsonElement resources,
+            SearchResult search,
+            bool[,] grid,
+            double? movementTileDurationMs,
+            MiningFloorObjective objective,
+            bool mustKillAll)
+        {
+            if (monsters.ValueKind != JsonValueKind.Array ||
+                !resources.TryGetProperty("bomb_slots", out var bombSlots) ||
+                bombSlots.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            var protectedObjects = objects.ValueKind == JsonValueKind.Array
+                ? objects.EnumerateArray()
+                    .Where(obj => ReadBool(obj, "is_placed_staircase") ||
+                        (!ReadBool(obj, "is_breakable_stone") && !ReadBool(obj, "is_container")))
+                    .Select(obj => (X: ReadInt(obj, "tile_x"), Y: ReadInt(obj, "tile_y")))
+                    .Where(row => row.X.HasValue && row.Y.HasValue)
+                    .Select(row => (X: row.X!.Value, Y: row.Y!.Value))
+                    .ToArray()
+                : Array.Empty<(int X, int Y)>();
+
+            MummyBombFinisherCandidate? best = null;
+            foreach (var monster in monsters.EnumerateArray())
+            {
+                if (!monster.TryGetProperty("bomb_damage_semantics", out var semantics) ||
+                    !string.Equals(ReadString(semantics, "special_effect"), "bomb_finalizes_reviving_mummy", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                if (!MummyFinishRequired(monster, search.Start, objective, mustKillAll))
+                {
+                    continue;
+                }
+                var targetX = ReadInt(monster, "tile_x");
+                var targetY = ReadInt(monster, "tile_y");
+                if (!targetX.HasValue || !targetY.HasValue)
+                {
+                    continue;
+                }
+                var placement = TargetCandidate(targetX.Value, targetY.Value, search, grid, 0, false);
+                if (placement is null)
+                {
+                    continue;
+                }
+                foreach (var bomb in bombSlots.EnumerateArray().OrderBy(bomb => ReadInt(bomb, "radius_tiles") ?? int.MaxValue))
+                {
+                    var radius = ReadInt(bomb, "radius_tiles") ?? 0;
+                    var slot = ReadInt(bomb, "slot_index");
+                    if (radius <= 0 || !slot.HasValue || (ReadInt(bomb, "stack") ?? 0) <= 0 ||
+                        protectedObjects.Any(obj => ExactExplosionMask(radius).Contains((obj.X - targetX.Value, obj.Y - targetY.Value))))
+                    {
+                        continue;
+                    }
+                    var escapeSearch = Search(grid, (placement.StandX, placement.StandY));
+                    var escape = escapeSearch.Distance
+                        .Select(entry =>
+                        {
+                            var values = entry.Key.Split(',');
+                            return new
+                            {
+                                X = int.Parse(values[0], CultureInfo.InvariantCulture),
+                                Y = int.Parse(values[1], CultureInfo.InvariantCulture),
+                                Distance = entry.Value
+                            };
+                        })
+                        .Where(tile => Math.Abs(tile.X - targetX.Value) > radius || Math.Abs(tile.Y - targetY.Value) > radius)
+                        .OrderBy(tile => tile.Distance)
+                        .ThenBy(tile => tile.Y)
+                        .ThenBy(tile => tile.X)
+                        .FirstOrDefault();
+                    var maximumEscapeTiles = movementTileDurationMs.HasValue && movementTileDurationMs.Value > 0d
+                        ? Math.Max(2, (int)Math.Floor(1900d / movementTileDurationMs.Value))
+                        : 6;
+                    if (escape is null || escape.Distance > maximumEscapeTiles)
+                    {
+                        continue;
+                    }
+                    var candidate = new MummyBombFinisherCandidate(monster, bomb, placement, escape.X, escape.Y, escape.Distance);
+                    if (best is null || radius < best.Radius ||
+                        radius == best.Radius && candidate.TotalDistance < best.TotalDistance)
+                    {
+                        best = candidate;
+                    }
+                }
+            }
+            if (best is null)
+            {
+                return null;
+            }
+            var plan = Build(MiningFloorStepKinds.PlaceBomb, "reviving_mummy_requires_bomb_finish", best.Placement);
+            plan.TargetRuntimeIdentity = ReadString(best.Monster, "runtime_identity");
+            plan.TargetRuntimeType = ReadString(best.Monster, "runtime_type");
+            plan.TargetName = ReadString(best.Monster, "name");
+            plan.CombatMethod = "bomb";
+            plan.CombatTerminalState = "mummy_finalized";
+            plan.BombSlotIndex = ReadInt(best.Bomb, "slot_index");
+            plan.BombQualifiedItemId = ReadString(best.Bomb, "qualified_item_id");
+            plan.BombRadiusTiles = best.Radius;
+            plan.EscapeTileX = best.EscapeX;
+            plan.EscapeTileY = best.EscapeY;
+            plan.ExpectedBombMonsterHits = 1;
+            plan.SafetyWindowStatus = "mummy_bomb_finish_fuse_escape_verified";
+            return plan;
+        }
+
+        private static bool MummyFinishRequired(
+            JsonElement monster,
+            (int X, int Y) playerTile,
+            MiningFloorObjective objective,
+            bool mustKillAll)
+        {
+            if (mustKillAll)
+            {
+                return true;
+            }
+            if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
+            {
+                var targets = new HashSet<string>(objective.TargetQualifiedItemIds ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+                return targets.Count > 0 && ReadStrings(monster, "possible_drop_qualified_item_ids").Any(targets.Contains);
+            }
+            var x = ReadInt(monster, "tile_x");
+            var y = ReadInt(monster, "tile_y");
+            return x.HasValue && y.HasValue &&
+                Math.Abs(x.Value - playerTile.X) + Math.Abs(y.Value - playerTile.Y) <= Math.Max(1, objective.ThreatRadiusTiles);
+        }
+
+        private static bool IsRevivingMummy(JsonElement monster)
+        {
+            return monster.TryGetProperty("bomb_damage_semantics", out var semantics) &&
+                string.Equals(ReadString(semantics, "special_effect"), "bomb_finalizes_reviving_mummy", StringComparison.Ordinal);
         }
 
         private static MiningFloorStepPlan? SelectBombCluster(
@@ -1498,7 +1701,12 @@ namespace StardewAI.Core.Execution
                 double? durationMs,
                 string ammoQualifiedItemId,
                 int ammoStack,
-                double? selectionCostMs = null)
+                double? selectionCostMs = null,
+                string terminalEffect = "defeat",
+                bool explosiveAreaSafe = false,
+                bool explosiveAreaHasAdditionalValue = false,
+                int explosiveAreaUsefulObjectHits = 0,
+                int explosiveAreaAdditionalMonsterHits = 0)
             {
                 Method = method;
                 SlotIndex = slotIndex;
@@ -1507,6 +1715,11 @@ namespace StardewAI.Core.Execution
                 AmmoQualifiedItemId = ammoQualifiedItemId;
                 AmmoStack = ammoStack;
                 SelectionCostMs = selectionCostMs ?? durationMs ?? double.MaxValue;
+                TerminalEffect = terminalEffect;
+                ExplosiveAreaSafe = explosiveAreaSafe;
+                ExplosiveAreaHasAdditionalValue = explosiveAreaHasAdditionalValue;
+                ExplosiveAreaUsefulObjectHits = explosiveAreaUsefulObjectHits;
+                ExplosiveAreaAdditionalMonsterHits = explosiveAreaAdditionalMonsterHits;
             }
 
             public string Method { get; }
@@ -1523,9 +1736,35 @@ namespace StardewAI.Core.Execution
 
             public double SelectionCostMs { get; }
 
+            public string TerminalEffect { get; }
+
+            public bool ExplosiveAreaSafe { get; }
+
+            public bool ExplosiveAreaHasAdditionalValue { get; }
+
+            public int ExplosiveAreaUsefulObjectHits { get; }
+
+            public int ExplosiveAreaAdditionalMonsterHits { get; }
+
+            public double ExplosiveAreaValueMultiplier => Math.Min(
+                3d,
+                1d + ExplosiveAreaAdditionalMonsterHits + ExplosiveAreaUsefulObjectHits * 0.25d);
+
             public MonsterCombatProjectionInfo WithSelectionCost(double? selectionCostMs)
             {
-                return new MonsterCombatProjectionInfo(Method, SlotIndex, ExpectedAttacks, DurationMs, AmmoQualifiedItemId, AmmoStack, selectionCostMs);
+                return new MonsterCombatProjectionInfo(
+                    Method,
+                    SlotIndex,
+                    ExpectedAttacks,
+                    DurationMs,
+                    AmmoQualifiedItemId,
+                    AmmoStack,
+                    selectionCostMs,
+                    TerminalEffect,
+                    ExplosiveAreaSafe,
+                    ExplosiveAreaHasAdditionalValue,
+                    ExplosiveAreaUsefulObjectHits,
+                    ExplosiveAreaAdditionalMonsterHits);
             }
         }
 
@@ -1553,6 +1792,28 @@ namespace StardewAI.Core.Execution
             public int ObjectHits { get; }
             public int MonsterHits { get; }
             public int Score { get; }
+        }
+
+        private sealed class MummyBombFinisherCandidate
+        {
+            public MummyBombFinisherCandidate(JsonElement monster, JsonElement bomb, Candidate placement, int escapeX, int escapeY, int escapeDistance)
+            {
+                Monster = monster;
+                Bomb = bomb;
+                Placement = placement;
+                EscapeX = escapeX;
+                EscapeY = escapeY;
+                EscapeDistance = escapeDistance;
+            }
+
+            public JsonElement Monster { get; }
+            public JsonElement Bomb { get; }
+            public Candidate Placement { get; }
+            public int Radius => ReadInt(Bomb, "radius_tiles") ?? 0;
+            public int EscapeX { get; }
+            public int EscapeY { get; }
+            public int EscapeDistance { get; }
+            public int TotalDistance => Placement.Distance + EscapeDistance;
         }
 
         private sealed class MonsterDropCatalogInfo
@@ -1719,6 +1980,7 @@ namespace StardewAI.Core.Execution
             Add(parameters, "required_weapon_enchantment_runtime_type", plan.RequiredWeaponEnchantmentRuntimeType);
             Add(parameters, "combat_weapon_slot_index", plan.CombatWeaponSlotIndex);
             Add(parameters, "combat_method", plan.CombatMethod);
+            Add(parameters, "combat_terminal_state", plan.CombatTerminalState);
             Add(parameters, "slingshot_slot_index", plan.SlingshotSlotIndex);
             Add(parameters, "slingshot_ammo_qualified_item_id", plan.SlingshotAmmoQualifiedItemId);
             Add(parameters, "bomb_slot_index", plan.BombSlotIndex);

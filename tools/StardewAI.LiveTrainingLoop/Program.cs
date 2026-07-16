@@ -508,6 +508,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var requiredWeaponEnchantmentRuntimeType = ReadQueueParameterString(item, "required_weapon_enchantment_runtime_type");
     var combatWeaponSlotIndex = ReadQueueParameterInt(item, "combat_weapon_slot_index");
     var combatMethod = ReadQueueParameterString(item, "combat_method");
+    var combatTerminalState = ReadQueueParameterString(item, "combat_terminal_state");
     var slingshotSlotIndex = ReadQueueParameterInt(item, "slingshot_slot_index");
     var slingshotAmmoQualifiedItemId = ReadQueueParameterString(item, "slingshot_ammo_qualified_item_id");
     var bombSlotIndex = ReadQueueParameterInt(item, "bomb_slot_index");
@@ -589,6 +590,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
         executionRequest.CombatWeaponSlotIndex = combatWeaponSlotIndex.Value;
     }
     executionRequest.CombatMethod = combatMethod;
+    executionRequest.CombatTerminalState = combatTerminalState;
     executionRequest.SlingshotSlotIndex = slingshotSlotIndex;
     executionRequest.SlingshotAmmoQualifiedItemId = slingshotAmmoQualifiedItemId;
     executionRequest.BombSlotIndex = bombSlotIndex;

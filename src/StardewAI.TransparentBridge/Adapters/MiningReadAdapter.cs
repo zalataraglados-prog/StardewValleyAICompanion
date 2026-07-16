@@ -203,7 +203,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 stun_time_ms = monster.stunTime.Value,
                 melee_damage_semantics = ReadMeleeDamageSemantics(monster, Game1.player),
                 melee_attack_projections = ReadMeleeAttackProjections(monster, Game1.player),
-                slingshot_attack_projections = ReadSlingshotAttackProjections(monster, Game1.player),
+                slingshot_attack_projections = ReadSlingshotAttackProjections(mine, monster, Game1.player),
                 bomb_damage_semantics = ReadBombDamageSemantics(monster),
                 is_hard_mode_monster = monster.isHardModeMonster.Value,
                 movement_speed = monster.Speed,
@@ -404,10 +404,10 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             .ToArray()!;
     }
 
-    private static object[] ReadSlingshotAttackProjections(Monster monster, Farmer player)
+    private static object[] ReadSlingshotAttackProjections(MineShaft mine, Monster monster, Farmer player)
     {
         return player.Items.Select((item, slotIndex) => item is Slingshot slingshot
-                ? ReadSlingshotAttackProjection(monster, player, slingshot, slotIndex)
+                ? ReadSlingshotAttackProjection(mine, monster, player, slingshot, slotIndex)
                 : null)
             .Where(projection => projection is not null)
             .ToArray()!;
@@ -481,9 +481,12 @@ public sealed class MiningReadAdapter : ReadAdapterBase
         };
     }
 
-    private static object ReadSlingshotAttackProjection(Monster monster, Farmer player, Slingshot slingshot, int slotIndex)
+    private static object ReadSlingshotAttackProjection(MineShaft mine, Monster monster, Farmer player, Slingshot slingshot, int slotIndex)
     {
         var ammo = slingshot.attachments.Count > 0 ? slingshot.attachments[0] : null;
+        var explosiveArea = ammo?.QualifiedItemId == "(O)441"
+            ? ReadExplosiveAmmoAreaProjection(mine, monster, player)
+            : null;
         var vanillaType = monster.GetType().Assembly == typeof(Monster).Assembly;
         var exactGlobalDamage = player.enchantments.Count == 0;
         var currentHitCanDamage = ammo is not null && !monster.IsInvisible && !monster.isInvincible() && monster switch
@@ -523,6 +526,14 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             ammo_stack = ammo?.Stack ?? 0,
             ammo_base_damage = ammo is null ? 0 : SlingshotAmmoDamage(ammo.QualifiedItemId),
             explosive_ammo_radius = ammo?.QualifiedItemId == "(O)441" ? 2 : 0,
+            explosive_area_safe = explosiveArea?.Safe,
+            explosive_area_safety_status = explosiveArea?.SafetyStatus ?? "not_applicable_non_explosive_ammo",
+            explosive_area_target_motion_margin_tiles = explosiveArea?.TargetMotionMarginTiles ?? 0,
+            explosive_area_useful_object_hits = explosiveArea?.UsefulObjectHits ?? 0,
+            explosive_area_monster_hits = explosiveArea?.MonsterHits ?? 0,
+            explosive_area_additional_monster_hits = explosiveArea?.AdditionalMonsterHits ?? 0,
+            explosive_area_protected_object_hits = explosiveArea?.ProtectedObjectHits ?? 0,
+            explosive_area_has_additional_value = explosiveArea?.HasAdditionalValue ?? false,
             current_hit_can_damage = currentHitCanDamage,
             can_defeat_with_this_weapon = canDefeat,
             requires_clear_projectile_path = true,
@@ -533,13 +544,91 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             direct_damage_distribution = distribution?.Entries.Select(pair => (object)new { damage = pair.Key, probability = pair.Value }).ToArray() ?? Array.Empty<object>(),
             direct_damage_status = distribution is null ? "unavailable" : "exact_decompiled_discrete_distribution",
             total_damage_completeness = distribution is not null
-                ? "complete_direct_projectile_damage_excluding_explosive_ammo_area_side_effects"
+                ? explosiveArea is null
+                    ? "complete_direct_projectile_damage"
+                    : "complete_direct_projectile_damage_with_exact_area_safety_and_utility_but_uncomposed_area_damage"
                 : ammo is null ? "blocked_unloaded_slingshot" : !vanillaType ? "unknown_custom_monster_takeDamage_semantics" : "unknown_custom_player_enchantment_damage_semantics",
             duration_status = distribution is not null && currentHitCanDamage
                 ? "exact_charge_phase_excluding_projectile_travel_and_reposition"
                 : currentHitCanDamage ? "unavailable_incomplete_total_damage" : "unavailable_current_temporary_or_permanent_gate",
-            source = "Slingshot.GetRequiredChargeTime/GetAmmoDamage/PerformFire; BasicProjectile.behaviorOnCollisionWithMonster; GameLocation.damageMonster"
+            source = "Slingshot.GetRequiredChargeTime/GetAmmoDamage/PerformFire; BasicProjectile.behaviorOnCollisionWithMonster/explode; GameLocation.damageMonster"
         };
+    }
+
+    private static ExplosiveAmmoAreaProjection ReadExplosiveAmmoAreaProjection(MineShaft mine, Monster target, Farmer player)
+    {
+        const int radius = 2;
+        const int motionMargin = 1;
+        var targetTile = target.TilePoint;
+        var currentMask = BombAffectedTiles(targetTile, radius).ToHashSet();
+        var usefulObjectHits = mine.objects.Pairs.Count(pair =>
+            currentMask.Contains(new Point((int)pair.Key.X, (int)pair.Key.Y)) &&
+            (pair.Value.IsBreakableStone() || pair.Value is BreakableContainer));
+        var monsterHits = mine.characters.OfType<Monster>().Count(monster =>
+            Math.Abs(monster.TilePoint.X - targetTile.X) <= radius &&
+            Math.Abs(monster.TilePoint.Y - targetTile.Y) <= radius);
+        var protectedObjectHits = 0;
+        var playerSafe = true;
+        for (var offsetX = -motionMargin; offsetX <= motionMargin; offsetX++)
+        {
+            for (var offsetY = -motionMargin; offsetY <= motionMargin; offsetY++)
+            {
+                var possibleCenter = new Point(targetTile.X + offsetX, targetTile.Y + offsetY);
+                if (Math.Abs(player.TilePoint.X - possibleCenter.X) <= radius &&
+                    Math.Abs(player.TilePoint.Y - possibleCenter.Y) <= radius)
+                {
+                    playerSafe = false;
+                }
+                var mask = BombAffectedTiles(possibleCenter, radius).ToHashSet();
+                protectedObjectHits = Math.Max(protectedObjectHits, mine.objects.Pairs.Count(pair =>
+                    mask.Contains(new Point((int)pair.Key.X, (int)pair.Key.Y)) &&
+                    !pair.Value.IsBreakableStone() &&
+                    pair.Value is not BreakableContainer));
+            }
+        }
+        var additionalMonsterHits = Math.Max(0, monsterHits - 1);
+        return new ExplosiveAmmoAreaProjection(
+            playerSafe && protectedObjectHits == 0,
+            playerSafe
+                ? protectedObjectHits == 0
+                    ? "safe_across_current_target_plus_one_tile_motion_envelope"
+                    : "blocked_protected_object_in_target_motion_envelope"
+                : "blocked_player_inside_target_motion_envelope",
+            motionMargin,
+            usefulObjectHits,
+            monsterHits,
+            additionalMonsterHits,
+            protectedObjectHits);
+    }
+
+    private static IEnumerable<Point> BombAffectedTiles(Point center, int radius)
+    {
+        var outline = Game1.getCircleOutlineGrid(radius);
+        var fill = 0;
+        for (var x = 0; x < radius * 2 + 1; x++)
+        {
+            for (var y = 0; y < radius * 2 + 1; y++)
+            {
+                var include = false;
+                if (x == 0 || y == 0 || x == radius * 2 || y == radius * 2)
+                {
+                    fill = outline[x, y] ? 1 : 0;
+                }
+                else if (outline[x, y])
+                {
+                    fill += y <= radius ? 1 : -1;
+                    include = fill <= 0;
+                }
+                if (fill >= 1)
+                {
+                    include = true;
+                }
+                if (include)
+                {
+                    yield return new Point(center.X + x - radius, center.Y + y - radius);
+                }
+            }
+        }
     }
 
     private static MeleeDamageDistribution BuildSlingshotDamageDistribution(
@@ -613,7 +702,10 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             Mummy => enchantmentNames.Contains("CrusaderEnchantment", StringComparer.Ordinal),
             _ => true
         };
-        var distribution = exactDirectDamage && canDefeat
+        var terminalEffect = monster is Mummy && !canDefeat
+            ? "knockdown_requires_bomb_finish"
+            : canDefeat ? "defeat" : "unavailable";
+        var distribution = exactDirectDamage && currentHitCanDamage && (canDefeat || terminalEffect == "knockdown_requires_bomb_finish")
             ? BuildMeleeDamageDistribution(monster, player, weapon, enchantmentNames)
             : null;
         double? expectedAttacks = distribution is null ? null : ExpectedAttacksToDefeat(monster.Health, distribution.Entries);
@@ -633,6 +725,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             enchantment_runtime_types = enchantmentNames,
             current_hit_can_damage = currentHitCanDamage,
             can_defeat_with_this_weapon = canDefeat,
+            terminal_effect = terminalEffect,
             hit_chance = distribution?.HitChance,
             expected_damage_per_attack = distribution?.ExpectedDamagePerAttack,
             expected_attacks_to_defeat = expectedAttacks,
@@ -642,7 +735,9 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             direct_damage_status = distribution is null ? "unavailable" : "exact_decompiled_discrete_distribution",
             total_damage_completeness = totalDamageCompleteness,
             duration_status = distribution is not null && currentHitCanDamage && totalDamageCompleteness.StartsWith("complete", StringComparison.Ordinal)
-                ? "exact_active_melee_phase_excluding_movement"
+                ? terminalEffect == "knockdown_requires_bomb_finish"
+                    ? "exact_active_melee_phase_to_mummy_knockdown_excluding_movement"
+                    : "exact_active_melee_phase_excluding_movement"
                 : currentHitCanDamage ? "unavailable_incomplete_total_damage" : "unavailable_current_temporary_or_permanent_gate",
             source = "MeleeWeapon.setFarmerAnimating/DoDamage; GameLocation.damageMonster; Monster.takeDamage"
         };
@@ -1441,5 +1536,35 @@ public sealed class MiningReadAdapter : ReadAdapterBase
     private static bool? ReadPrivateNetBool(object target, FieldInfo? field)
     {
         return field?.GetValue(target) is NetBool value ? value.Value : null;
+    }
+
+    private sealed class ExplosiveAmmoAreaProjection
+    {
+        public ExplosiveAmmoAreaProjection(
+            bool safe,
+            string safetyStatus,
+            int targetMotionMarginTiles,
+            int usefulObjectHits,
+            int monsterHits,
+            int additionalMonsterHits,
+            int protectedObjectHits)
+        {
+            Safe = safe;
+            SafetyStatus = safetyStatus;
+            TargetMotionMarginTiles = targetMotionMarginTiles;
+            UsefulObjectHits = usefulObjectHits;
+            MonsterHits = monsterHits;
+            AdditionalMonsterHits = additionalMonsterHits;
+            ProtectedObjectHits = protectedObjectHits;
+        }
+
+        public bool Safe { get; }
+        public string SafetyStatus { get; }
+        public int TargetMotionMarginTiles { get; }
+        public int UsefulObjectHits { get; }
+        public int MonsterHits { get; }
+        public int AdditionalMonsterHits { get; }
+        public int ProtectedObjectHits { get; }
+        public bool HasAdditionalValue => UsefulObjectHits > 0 || AdditionalMonsterHits > 0;
     }
 }

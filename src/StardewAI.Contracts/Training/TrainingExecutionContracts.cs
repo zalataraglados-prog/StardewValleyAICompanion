@@ -71,6 +71,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("combat_method")]
         public string CombatMethod { get; set; } = string.Empty;
 
+        [JsonPropertyName("combat_terminal_state")]
+        public string CombatTerminalState { get; set; } = string.Empty;
+
         [JsonPropertyName("slingshot_slot_index")]
         public int? SlingshotSlotIndex { get; set; }
 
@@ -376,6 +379,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("combat_method")]
         public string CombatMethod { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_terminal_state")]
+        public string CombatTerminalState { get; set; } = string.Empty;
 
         [JsonPropertyName("combat_consumable_qualified_item_id")]
         public string CombatConsumableQualifiedItemId { get; set; } = string.Empty;

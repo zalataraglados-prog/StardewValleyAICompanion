@@ -7172,6 +7172,13 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "projectile_path=blocked", "slingshot_projectile_path_blocked"));
             return;
         }
+        if (ammo.QualifiedItemId == "(O)441" &&
+            !ExplosiveAmmoAreaIsSafe(mine, targets[0], out var explosiveSafetyReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested,
+                "explosive_area=unsafe", explosiveSafetyReason));
+            return;
+        }
 
         activeShootMonster = new ActiveShootMonster(
             pending,
@@ -7229,6 +7236,12 @@ public sealed class ModEntry : Mod
             ammo.Stack <= 0)
         {
             CompleteShootMonsterBlocked(active, "slingshot_ammo_exhausted_or_drifted");
+            return;
+        }
+        if (active.AmmoQualifiedItemId == "(O)441" &&
+            !ExplosiveAmmoAreaIsSafe(active.Mine, active.Target, out var explosiveSafetyReason))
+        {
+            CompleteShootMonsterBlocked(active, explosiveSafetyReason);
             return;
         }
 
@@ -7374,6 +7387,37 @@ public sealed class ModEntry : Mod
         return true;
     }
 
+    private static bool ExplosiveAmmoAreaIsSafe(MineShaft mine, Monster target, out string reason)
+    {
+        const int radius = 2;
+        const int targetMotionMargin = 1;
+        for (var offsetX = -targetMotionMargin; offsetX <= targetMotionMargin; offsetX++)
+        {
+            for (var offsetY = -targetMotionMargin; offsetY <= targetMotionMargin; offsetY++)
+            {
+                var possibleCenter = new Point(target.TilePoint.X + offsetX, target.TilePoint.Y + offsetY);
+                if (Math.Abs(Game1.player.TilePoint.X - possibleCenter.X) <= radius &&
+                    Math.Abs(Game1.player.TilePoint.Y - possibleCenter.Y) <= radius)
+                {
+                    reason = "explosive_ammo_player_inside_target_motion_envelope";
+                    return false;
+                }
+                foreach (var tile in BombAffectedTiles(possibleCenter, radius))
+                {
+                    if (mine.objects.TryGetValue(new Vector2(tile.X, tile.Y), out var obj) &&
+                        !obj.IsBreakableStone() &&
+                        obj is not BreakableContainer)
+                    {
+                        reason = "explosive_ammo_protected_object_inside_target_motion_envelope";
+                        return false;
+                    }
+                }
+            }
+        }
+        reason = string.Empty;
+        return true;
+    }
+
     private void StartPlaceBomb(PendingExecution pending)
     {
         var request = pending.Request;
@@ -7415,6 +7459,24 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested, "target=occupied", "bomb_placement_tile_not_empty"));
             return;
         }
+        Monster? targetMonster = null;
+        if (!string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity))
+        {
+            var targetMonsters = mine.characters.OfType<Monster>()
+                .Where(monster => string.Equals(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"), request.TargetRuntimeIdentity, StringComparison.Ordinal))
+                .Where(monster => string.IsNullOrWhiteSpace(request.TargetRuntimeType) ||
+                    string.Equals(monster.GetType().FullName, request.TargetRuntimeType, StringComparison.Ordinal))
+                .ToArray();
+            if (targetMonsters.Length != 1 ||
+                request.CombatTerminalState == "mummy_finalized" &&
+                (targetMonsters[0] is not Mummy mummy || mummy.reviveTimer.Value <= 0))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "place_bomb", requested,
+                    "matching_target_count=" + targetMonsters.Length, "bomb_target_terminal_state_not_ready"));
+                return;
+            }
+            targetMonster = targetMonsters[0];
+        }
         var path = TryBuildTilePath(mine, Game1.player.TilePoint, stand, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512), out var pathReason, avoidSoftObstacles: true);
         if (path is null)
         {
@@ -7432,6 +7494,8 @@ public sealed class ModEntry : Mod
             request.BombRadiusTiles.Value,
             Game1.player.CurrentToolIndex,
             BombAffectedObjectCount(mine, target, request.BombRadiusTiles.Value),
+            targetMonster,
+            request.CombatTerminalState,
             requested);
     }
 
@@ -7670,7 +7734,12 @@ public sealed class ModEntry : Mod
         activePlaceBomb = null;
         var objectCountAfter = BombAffectedObjectCount(active.Mine, active.Target, active.Radius);
         var stackAfter = BombStackAt(active.BombSlotIndex, active.BombQualifiedItemId);
-        var verified = objectCountAfter < active.ObjectCountBefore;
+        var targetFinalized = active.TargetMonster is not null &&
+            (active.TargetMonster.Health <= 0 || !active.Mine.characters.Contains(active.TargetMonster));
+        var requiresTargetFinalization = active.TerminalState == "mummy_finalized";
+        var verified = requiresTargetFinalization
+            ? targetFinalized
+            : objectCountAfter < active.ObjectCountBefore;
         var result = new TrainingExecutionResult
         {
             RunId = active.Pending.Request.RunId,
@@ -7690,11 +7759,16 @@ public sealed class ModEntry : Mod
             PrimitiveKind = "place_bomb",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "native_bomb_consumption_observed", "escape_tile_outside_damage_square", "natural_explosion_removed_breakable_objects" }
-                : new[] { "bomb_explosion_did_not_reduce_predicted_breakable_cluster" },
+                ? targetFinalized
+                    ? new[] { "native_bomb_consumption_observed", "escape_tile_outside_damage_square", "natural_explosion_finalized_target_monster" }
+                    : new[] { "native_bomb_consumption_observed", "escape_tile_outside_damage_square", "natural_explosion_removed_breakable_objects" }
+                : new[] { requiresTargetFinalization ? "bomb_target_mummy_not_finalized" : "bomb_explosion_did_not_reduce_predicted_breakable_cluster" },
             RequestedEffect = active.RequestedEffect,
-            ObservedEffect = "bomb_stack=" + stackAfter + ";breakable_objects=" + objectCountAfter + ";player_tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
+            ObservedEffect = "bomb_stack=" + stackAfter + ";breakable_objects=" + objectCountAfter +
+                ";target_finalized=" + targetFinalized.ToString().ToLowerInvariant() +
+                ";player_tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
             CombatMethod = "bomb",
+            CombatTerminalState = active.TerminalState,
             CombatConsumableQualifiedItemId = active.BombQualifiedItemId,
             CombatConsumableCountBefore = active.BombStackBefore,
             CombatConsumableCountAfter = stackAfter,
@@ -7703,12 +7777,30 @@ public sealed class ModEntry : Mod
             BombEscapeTileY = active.Escape.Y,
             BombObjectCountBefore = active.ObjectCountBefore,
             BombObjectCountAfter = objectCountAfter,
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "bomb_effect_verification_failed" },
+            CombatTargetRuntimeType = active.TargetMonster?.GetType().FullName ?? string.Empty,
+            CombatTargetRuntimeIdentity = active.TargetMonster is null ? string.Empty : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(active.TargetMonster).ToString("X8"),
+            CombatTargetName = active.TargetMonster?.Name ?? string.Empty,
+            CombatTargetDefeated = active.TargetMonster is null ? null : targetFinalized,
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[] { requiresTargetFinalization ? "bomb_target_mummy_not_finalized" : "bomb_effect_verification_failed" },
             ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "player.inventory.bomb.stack", Before = active.BombStackBefore.ToString(), After = stackAfter.ToString() },
-                new SimulatedFactChange { Path = "mining.blast.breakable_object_count", Before = active.ObjectCountBefore.ToString(), After = objectCountAfter.ToString() }
-            }
+                {
+                    new SimulatedFactChange { Path = "player.inventory.bomb.stack", Before = active.BombStackBefore.ToString(), After = stackAfter.ToString() },
+                    new SimulatedFactChange { Path = "mining.blast.breakable_object_count", Before = active.ObjectCountBefore.ToString(), After = objectCountAfter.ToString() }
+                }
+                .Concat(active.TargetMonster is null
+                    ? Array.Empty<SimulatedFactChange>()
+                    : new[]
+                    {
+                        new SimulatedFactChange
+                        {
+                            Path = "mining.monsters[" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(active.TargetMonster).ToString("X8") + "].present",
+                            Before = "true",
+                            After = (!targetFinalized).ToString().ToLowerInvariant()
+                        }
+                    })
+                .ToArray()
         };
         active.Pending.Completion.SetResult(result);
     }
@@ -7736,7 +7828,8 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        var requested = "target_monster.defeated=true;native_input=Farmer.FireTool";
+        var terminalState = string.IsNullOrWhiteSpace(request.CombatTerminalState) ? "defeat" : request.CombatTerminalState;
+        var requested = "target_monster.terminal_state=" + terminalState + ";native_input=Farmer.FireTool";
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeType) || string.IsNullOrWhiteSpace(request.TargetName))
@@ -7764,6 +7857,11 @@ public sealed class ModEntry : Mod
         }
 
         var target = targets[0];
+        if (terminalState == "knockdown_requires_bomb_finish" && target is not Mummy)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "target=not_mummy", "combat_terminal_state_target_mismatch"));
+            return;
+        }
         var weapon = ResolveCombatWeapon(target, request.CombatWeaponSlotIndex, request.RequiredWeaponEnchantmentRuntimeType);
         if (weapon is null)
         {
@@ -7779,6 +7877,7 @@ public sealed class ModEntry : Mod
             Math.Clamp(request.MaxAttacks, 1, 256),
             Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
             string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal),
+            terminalState,
             requested);
         Monitor.Log($"Combat lock: {target.Name} [{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target):X8}], health={target.Health}, manual_movement={activeCombatMonster.ManualMovement}.", LogLevel.Info);
     }
@@ -7971,6 +8070,13 @@ public sealed class ModEntry : Mod
         }
 
         var targetPresent = mine.characters.Contains(active.Target);
+        if (active.TerminalState == "knockdown_requires_bomb_finish" &&
+            active.Target is Mummy mummy &&
+            mummy.reviveTimer.Value > 0)
+        {
+            CompleteCombatMonster(active, targetDefeated: false, terminalVerificationReason: "native_melee_knocked_down_mummy_for_bomb_finish");
+            return;
+        }
         if (active.Target.Health <= 0 || !targetPresent)
         {
             if (active.Target.Health <= 0)
@@ -8365,7 +8471,7 @@ public sealed class ModEntry : Mod
         return expectedDamage / Math.Max(40d, swipeSpeed * animationFactor);
     }
 
-    private void CompleteCombatMonster(ActiveCombatMonster active)
+    private void CompleteCombatMonster(ActiveCombatMonster active, bool targetDefeated = true, string terminalVerificationReason = "native_fire_tool_defeated_target")
     {
         TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
         StopAllMovement();
@@ -8403,8 +8509,8 @@ public sealed class ModEntry : Mod
             PrimitiveKind = "combat_monster",
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = (damageTaken == 0
-                ? new[] { "native_fire_tool_defeated_target", "player_health_unchanged" }
-                : new[] { "native_fire_tool_defeated_target", "player_damage_observed=" + damageTaken })
+                ? new[] { terminalVerificationReason, "player_health_unchanged" }
+                : new[] { terminalVerificationReason, "player_damage_observed=" + damageTaken })
                 .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
                     ? Array.Empty<string>()
                     : new[] { "natural_incidental_pickup_observed" })
@@ -8419,7 +8525,9 @@ public sealed class ModEntry : Mod
             CombatTargetHealthSequence = active.TargetHealthSequence.ToArray(),
             CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray(),
             CombatDamageTaken = damageTaken,
-            CombatTargetDefeated = true,
+            CombatTargetDefeated = targetDefeated,
+            CombatMethod = "melee",
+            CombatTerminalState = active.TerminalState,
             ChangedFacts = changedFacts.ToArray()
         });
     }
@@ -8447,6 +8555,8 @@ public sealed class ModEntry : Mod
         result.CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray();
         result.CombatDamageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
         result.CombatTargetDefeated = active.Target.Health <= 0;
+        result.CombatMethod = "melee";
+        result.CombatTerminalState = active.TerminalState;
         var inventoryAfter = InventoryStackSignature();
         result.ChangedFacts = active.Pending.ChangedFacts
             .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
@@ -12691,6 +12801,8 @@ public sealed class ModEntry : Mod
             int radius,
             int restoreSlotIndex,
             int objectCountBefore,
+            Monster? targetMonster,
+            string terminalState,
             string requestedEffect)
         {
             Pending = pending;
@@ -12704,6 +12816,8 @@ public sealed class ModEntry : Mod
             Radius = radius;
             RestoreSlotIndex = restoreSlotIndex;
             ObjectCountBefore = objectCountBefore;
+            TargetMonster = targetMonster;
+            TerminalState = terminalState;
             RequestedEffect = requestedEffect;
             LastPosition = Game1.player.Position;
         }
@@ -12720,6 +12834,8 @@ public sealed class ModEntry : Mod
         public int Radius { get; }
         public int RestoreSlotIndex { get; }
         public int ObjectCountBefore { get; }
+        public Monster? TargetMonster { get; }
+        public string TerminalState { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 900;
@@ -12742,7 +12858,7 @@ public sealed class ModEntry : Mod
 
     private sealed class ActiveCombatMonster
     {
-        public ActiveCombatMonster(PendingExecution pending, string locationId, Monster target, MeleeWeapon weapon, int maxAttacks, int maxMovementTiles, bool manualMovement, string requestedEffect)
+        public ActiveCombatMonster(PendingExecution pending, string locationId, Monster target, MeleeWeapon weapon, int maxAttacks, int maxMovementTiles, bool manualMovement, string terminalState, string requestedEffect)
         {
             Pending = pending;
             LocationId = locationId;
@@ -12756,6 +12872,7 @@ public sealed class ModEntry : Mod
             MaxAttacks = maxAttacks;
             MaxMovementTiles = maxMovementTiles;
             ManualMovement = manualMovement;
+            TerminalState = terminalState;
             RequestedEffect = requestedEffect;
             MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
             LastProgressPosition = Game1.player.Position;
@@ -12779,6 +12896,7 @@ public sealed class ModEntry : Mod
         public int MaxAttacks { get; }
         public int MaxMovementTiles { get; }
         public bool ManualMovement { get; }
+        public string TerminalState { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }

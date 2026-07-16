@@ -409,6 +409,247 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void SafeExplosiveAmmoWithAreaValueCanBeatMelee()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {
+                "runtime_identity":"explosive-target",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Green Slime",
+                "tile_x":6,
+                "tile_y":2,
+                "possible_drop_qualified_item_ids":["(O)768"],
+                "drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"independent"}],
+                "melee_attack_projections":[{"slot_index":2,"can_defeat_with_this_weapon":true,"expected_attacks_to_defeat":8.0,"expected_active_damage_duration_ms":4000.0,"duration_status":"exact_active_melee_phase_excluding_movement"}],
+                "slingshot_attack_projections":[
+                  {
+                    "slot_index":5,
+                    "ammo_qualified_item_id":"(O)441",
+                    "ammo_stack":20,
+                    "can_defeat_with_this_weapon":true,
+                    "expected_shots_to_defeat":4.0,
+                    "expected_active_damage_duration_ms":1200.0,
+                    "duration_status":"exact_charge_phase_excluding_projectile_travel_and_reposition",
+                    "explosive_area_safe":true,
+                    "explosive_area_has_additional_value":true,
+                    "explosive_area_useful_object_hits":2,
+                    "explosive_area_additional_monster_hits":1
+                  }
+                ]
+              }
+            ]
+            """,
+            resources: """{"health":100,"max_health":100,"selected_slot_index":4,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0}}""");
+
+        Assert.Equal(MiningFloorStepKinds.ShootMonster, plan.StepKind);
+        Assert.Equal("(O)441", plan.SlingshotAmmoQualifiedItemId);
+        Assert.Equal("slingshot", plan.CombatMethod);
+    }
+
+    [Fact]
+    public void UnsafeOrWastefulExplosiveAmmoFallsBackToMelee()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [
+              {
+                "runtime_identity":"unsafe-explosive-target",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Green Slime",
+                "tile_x":6,
+                "tile_y":2,
+                "possible_drop_qualified_item_ids":["(O)768"],
+                "drop_probability_rules":[{"qualified_item_ids":["(O)768"],"per_identity_chance":1.0,"probability_status":"exact_current_state_formula","item_selection_status":"independent"}],
+                "melee_attack_projections":[{"slot_index":2,"can_defeat_with_this_weapon":true,"expected_attacks_to_defeat":8.0,"expected_active_damage_duration_ms":4000.0,"duration_status":"exact_active_melee_phase_excluding_movement"}],
+                "slingshot_attack_projections":[
+                  {
+                    "slot_index":5,
+                    "ammo_qualified_item_id":"(O)441",
+                    "ammo_stack":20,
+                    "can_defeat_with_this_weapon":true,
+                    "expected_shots_to_defeat":1.0,
+                    "expected_active_damage_duration_ms":300.0,
+                    "duration_status":"exact_charge_phase_excluding_projectile_travel_and_reposition",
+                    "explosive_area_safe":false,
+                    "explosive_area_has_additional_value":true,
+                    "explosive_area_useful_object_hits":4,
+                    "explosive_area_additional_monster_hits":2
+                  }
+                ]
+              }
+            ]
+            """,
+            resources: """{"health":100,"max_health":100,"selected_slot_index":4,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0}}""");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("melee", plan.CombatMethod);
+        Assert.Equal(2, plan.CombatWeaponSlotIndex);
+    }
+
+    [Fact]
+    public void StandingMummyCompilesMeleeKnockdownBeforeBombFinish()
+    {
+        var plan = Plan(
+            mustKillAll: true,
+            monsters: """
+            [
+              {
+                "runtime_identity":"mummy-standing",
+                "runtime_type":"StardewValley.Monsters.Mummy",
+                "name":"Mummy",
+                "tile_x":4,
+                "tile_y":2,
+                "bomb_damage_semantics":{"special_effect":"standing_mummy_must_be_knocked_down_then_bombed"},
+                "melee_attack_projections":[
+                  {
+                    "slot_index":2,
+                    "can_defeat_with_this_weapon":false,
+                    "terminal_effect":"knockdown_requires_bomb_finish",
+                    "expected_attacks_to_defeat":3.0,
+                    "expected_active_damage_duration_ms":900.0,
+                    "duration_status":"exact_active_melee_phase_to_mummy_knockdown_excluding_movement"
+                  }
+                ]
+              }
+            ]
+            """,
+            resources: """
+            {
+              "health":100,
+              "max_health":100,
+              "energy":220,
+              "current_time":1200,
+              "selected_slot_index":4,
+              "food_slots":[],
+              "cardinal_movement":{"tile_duration_ms":100.0},
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+            }
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("mummy-standing", plan.TargetRuntimeIdentity);
+        Assert.Equal("melee", plan.CombatMethod);
+        Assert.Equal("knockdown_requires_bomb_finish", plan.CombatTerminalState);
+        Assert.Equal(2, plan.CombatWeaponSlotIndex);
+        var parameters = MiningFloorStepCompiler.BuildExecutionParameters(plan);
+        Assert.Contains(parameters, parameter =>
+            parameter.Name == "combat_terminal_state" &&
+            parameter.Value == "knockdown_requires_bomb_finish");
+    }
+
+    [Fact]
+    public void RevivingMummyCompilesTargetedBombFinishWithFuseEscape()
+    {
+        var plan = Plan(
+            mustKillAll: true,
+            rows: new[]
+            {
+                "111111111",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "111111111"
+            },
+            monsters: """
+            [
+              {
+                "runtime_identity":"mummy-reviving",
+                "runtime_type":"StardewValley.Monsters.Mummy",
+                "name":"Mummy",
+                "tile_x":4,
+                "tile_y":4,
+                "bomb_damage_semantics":{"special_effect":"bomb_finalizes_reviving_mummy"}
+              }
+            ]
+            """,
+            resources: """
+            {
+              "health":100,
+              "max_health":100,
+              "energy":220,
+              "current_time":1200,
+              "selected_slot_index":4,
+              "food_slots":[],
+              "cardinal_movement":{"tile_duration_ms":100.0},
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+            }
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.PlaceBomb, plan.StepKind);
+        Assert.Equal("mummy-reviving", plan.TargetRuntimeIdentity);
+        Assert.Equal("StardewValley.Monsters.Mummy", plan.TargetRuntimeType);
+        Assert.Equal("bomb", plan.CombatMethod);
+        Assert.Equal("mummy_finalized", plan.CombatTerminalState);
+        Assert.Equal(7, plan.BombSlotIndex);
+        Assert.NotNull(plan.EscapeTileX);
+        Assert.NotNull(plan.EscapeTileY);
+        Assert.True(Math.Abs(plan.EscapeTileX!.Value - plan.TargetTileX!.Value) > plan.BombRadiusTiles ||
+            Math.Abs(plan.EscapeTileY!.Value - plan.TargetTileY!.Value) > plan.BombRadiusTiles);
+    }
+
+    [Fact]
+    public void DistantIrrelevantRevivingMummyDoesNotConsumeBombBeforeMining()
+    {
+        var plan = Plan(
+            rows: new[]
+            {
+                "111111111",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "100000001",
+                "111111111"
+            },
+            objects: """[{"tile_x":2,"tile_y":2,"qualified_item_id":"(O)32","is_breakable_stone":true,"best_pickaxe_hits_remaining":1}]""",
+            monsters: """
+            [
+              {
+                "runtime_identity":"mummy-irrelevant",
+                "runtime_type":"StardewValley.Monsters.Mummy",
+                "name":"Mummy",
+                "tile_x":7,
+                "tile_y":7,
+                "bomb_damage_semantics":{"special_effect":"bomb_finalizes_reviving_mummy"}
+              }
+            ]
+            """,
+            resources: """
+            {
+              "health":100,
+              "max_health":100,
+              "energy":220,
+              "current_time":1200,
+              "selected_slot_index":4,
+              "food_slots":[],
+              "cardinal_movement":{"tile_duration_ms":100.0},
+              "bomb_slots":[{"slot_index":7,"qualified_item_id":"(O)287","stack":2,"radius_tiles":2}]
+            }
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.MineStone, plan.StepKind);
+        Assert.NotEqual("mummy_finalized", plan.CombatTerminalState);
+    }
+
+    [Fact]
     public void ReachDepthUsesBombOnlyForDenseClusterWithFuseEscape()
     {
         var rows = new[]
@@ -756,6 +997,9 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("HoldTicks < 20", shootSource, StringComparison.Ordinal);
         Assert.Contains("Game1.setMousePosition", shootSource, StringComparison.Ordinal);
         Assert.Contains("HasClearProjectilePath", shootSource, StringComparison.Ordinal);
+        Assert.Contains("ExplosiveAmmoAreaIsSafe", shootSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_ammo_player_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_ammo_protected_object_inside_target_motion_envelope", shootSource, StringComparison.Ordinal);
         Assert.DoesNotContain("damageMonster(", shootSource, StringComparison.Ordinal);
         Assert.DoesNotContain("takeDamage(", shootSource, StringComparison.Ordinal);
 
@@ -763,8 +1007,34 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", bombSource, StringComparison.Ordinal);
         Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_escape_finished_inside_damage_square", bombSource, StringComparison.Ordinal);
+        Assert.Contains("bomb_target_terminal_state_not_ready", bombSource, StringComparison.Ordinal);
+        Assert.Contains("natural_explosion_finalized_target_monster", bombSource, StringComparison.Ordinal);
+        Assert.Contains("CombatTerminalState = active.TerminalState", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain(".explode(", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain("placementAction(", bombSource, StringComparison.Ordinal);
+
+        var meleeSource = source[meleeStart..];
+        Assert.Contains("knockdown_requires_bomb_finish", meleeSource, StringComparison.Ordinal);
+        Assert.Contains("native_melee_knocked_down_mummy_for_bomb_finish", meleeSource, StringComparison.Ordinal);
+        Assert.Contains("mummy.reviveTimer.Value > 0", meleeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TransparentSlingshotProjectionPublishesExplosiveAreaSafetyAndUtility()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var start = source.IndexOf("private static object ReadSlingshotAttackProjection", StringComparison.Ordinal);
+        var end = source.IndexOf("private static MeleeDamageDistribution BuildSlingshotDamageDistribution", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var projectionSource = source[start..end];
+
+        Assert.Contains("ReadExplosiveAmmoAreaProjection", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_safe", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_useful_object_hits", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_additional_monster_hits", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("explosive_area_protected_object_hits", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("safe_across_current_target_plus_one_tile_motion_envelope", projectionSource, StringComparison.Ordinal);
+        Assert.Contains("complete_direct_projectile_damage_with_exact_area_safety_and_utility_but_uncomposed_area_damage", projectionSource, StringComparison.Ordinal);
     }
 
     [Fact]
