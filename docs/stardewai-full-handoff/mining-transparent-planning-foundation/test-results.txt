@@ -8,7 +8,7 @@
 - Hidden/silent isolated E: native one-stone smoke PASS: target `(4,6)`, health sequence `8,4,0`, two native GoldPickaxe swings, object removed, 46 ticks, and a snapshot at 155 ms / 248,761 bytes.
 - Hidden/silent isolated E: rolling reach-depth PASS: levels 96/97/98 visited, two stone steps, two ladder descents, terminal exit, five fresh changed after-states, and five training rows.
 - Hidden/silent isolated E: Skull Cavern shaft PASS: area 121, level 130 to 134, deterministic delta 4, health 140 to 128, native prompt and post-fall dialogue handled, fresh changed after-state, and one training row.
-- Quarry Mine / Golden Scythe slice: static build PASS with deployment disabled; tests and game runtime intentionally not run while the user is playing.
+- Quarry Mine / Golden Scythe bounded loop: RuntimeTestHarness and LiveTrainingLoop static builds PASS with deployment disabled; `Invoke-RuntimeQuarryGoldenScytheLoop.ps1` PowerShell syntax parse PASS; tests and game runtime intentionally not run by user instruction.
 - Volcano Dungeon transparent/planning slice: Core and TransparentBridge static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 - Volcano native cooling executor: Contracts, Core, LiveTrainingLoop, and RuntimeTestHarness static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 - Volcano native obstacle/combat executors: Contracts, Core, TransparentBridge, LiveTrainingLoop, and RuntimeTestHarness static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.

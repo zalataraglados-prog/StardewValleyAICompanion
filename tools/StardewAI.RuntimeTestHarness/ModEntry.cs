@@ -42,6 +42,7 @@ public sealed class ModEntry : Mod
     private int? executorMovementDirection;
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveMineSetup? activeMineSetup;
+    private ActiveQuarrySetup? activeQuarrySetup;
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
@@ -268,6 +269,7 @@ public sealed class ModEntry : Mod
         TickCatchFish();
         TickMineFishingSetup();
         TickMineSetup();
+        TickQuarrySetup();
         TickVolcanoSetup();
         TickNativeFarmTool();
         TickMineStone();
@@ -287,7 +289,7 @@ public sealed class ModEntry : Mod
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -443,6 +445,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_skull_cavern_shaft")
             {
                 StartSetupSkullCavernShaft(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_quarry_mine")
+            {
+                StartSetupQuarryMine(pending);
                 return;
             }
 
@@ -10364,6 +10372,61 @@ public sealed class ModEntry : Mod
         Game1.enterMine(request.MineLevel.Value);
     }
 
+    private void StartSetupQuarryMine(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
+            ? EnsureMiningCalibrationLoadout()
+            : MiningCalibrationLoadoutFacts.Disabled;
+        var fixture = Environment.GetEnvironmentVariable("STARDEWAI_QUARRY_RESET_GOLDEN_SCYTHE") == "1"
+            ? ResetGoldenScytheFixture()
+            : ReadGoldenScytheFixture(resetEnabled: false, claimedBefore: false, countBefore: 0);
+        activeQuarrySetup = new ActiveQuarrySetup(
+            pending,
+            beforeLocation,
+            calibrationLoadout,
+            fixture);
+        Game1.enterMine(MineShaft.quarryMineShaft);
+    }
+
+    private static GoldenScytheFixtureFacts ResetGoldenScytheFixture()
+    {
+        var player = Game1.player;
+        EnsureFixtureInventoryCapacity(player);
+        var claimedBefore = player.mailReceived.Contains("gotGoldenScythe");
+        var countBefore = CountInventoryItems("(W)53");
+        for (var index = 0; index < player.MaxItems && index < player.Items.Count; index++)
+        {
+            if (player.Items[index]?.QualifiedItemId == "(W)53")
+            {
+                player.Items[index] = null;
+            }
+        }
+        player.mailReceived.Remove("gotGoldenScythe");
+        return ReadGoldenScytheFixture(resetEnabled: true, claimedBefore, countBefore);
+    }
+
+    private static GoldenScytheFixtureFacts ReadGoldenScytheFixture(bool resetEnabled, bool claimedBefore, int countBefore)
+    {
+        var player = Game1.player;
+        EnsureFixtureInventoryCapacity(player);
+        return new GoldenScytheFixtureFacts(
+            resetEnabled,
+            claimedBefore,
+            countBefore,
+            player.mailReceived.Contains("gotGoldenScythe"),
+            CountInventoryItems("(W)53"),
+            player.Items.Take(player.MaxItems).Count(item => item is null));
+    }
+
     private void StartSetupVolcanoFloor(PendingExecution pending)
     {
         var request = pending.Request;
@@ -10695,6 +10758,153 @@ public sealed class ModEntry : Mod
         {
             CompleteMineSetup(active, mine, verified);
         }
+    }
+
+    private void TickQuarrySetup()
+    {
+        if (activeQuarrySetup is null)
+        {
+            return;
+        }
+
+        var active = activeQuarrySetup;
+        active.ElapsedTicks++;
+        var mine = Game1.currentLocation as MineShaft;
+        var loaded = mine is not null &&
+            mine.mineLevel == MineShaft.quarryMineShaft &&
+            mine.getMineArea() == MineShaft.quarryMineShaft &&
+            mine.isSideBranch() &&
+            mine.map is not null;
+        if (!loaded)
+        {
+            if (active.ElapsedTicks >= active.MaxTicks)
+            {
+                CompleteQuarrySetup(active, mine, 0, verified: false, "quarry_fixture_state_mismatch");
+            }
+            return;
+        }
+
+        var altarCount = CountMapActionTiles(mine!, "GoldenScythe");
+        var claimed = Game1.player.mailReceived.Contains("gotGoldenScythe");
+        var scytheCount = CountInventoryItems("(W)53");
+        var emptySlots = Game1.player.Items.Take(Game1.player.MaxItems).Count(item => item is null);
+        var verified = altarCount > 0 && !claimed && scytheCount == 0 && emptySlots > 0;
+        var failureReason = altarCount <= 0
+            ? "quarry_fixture_golden_scythe_altar_missing"
+            : claimed
+                ? "quarry_fixture_golden_scythe_claim_still_present"
+                : scytheCount > 0
+                    ? "quarry_fixture_golden_scythe_item_still_present"
+                    : emptySlots <= 0
+                        ? "quarry_fixture_inventory_full"
+                        : string.Empty;
+        CompleteQuarrySetup(active, mine, altarCount, verified, failureReason);
+    }
+
+    private void CompleteQuarrySetup(
+        ActiveQuarrySetup active,
+        MineShaft? mine,
+        int altarCount,
+        bool verified,
+        string failureReason)
+    {
+        activeQuarrySetup = null;
+        var request = active.Pending.Request;
+        var afterLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var claimedAfter = Game1.player.mailReceived.Contains("gotGoldenScythe");
+        var scytheCountAfter = CountInventoryItems("(W)53");
+        var emptySlotsAfter = Game1.player.Items.Take(Game1.player.MaxItems).Count(item => item is null);
+        var reasons = verified
+            ? new[]
+            {
+                "native_enter_quarry_mine_completed",
+                "quarry_mine_sentinel_verified",
+                "quarry_side_branch_verified",
+                "golden_scythe_altar_action_present",
+                "golden_scythe_unclaimed_fixture_verified",
+                "golden_scythe_inventory_slot_available",
+                active.CalibrationLoadout.Enabled ? "runtime_data_calibration_loadout_installed" : "calibration_loadout_disabled"
+            }
+            : new[] { string.IsNullOrWhiteSpace(failureReason) ? "quarry_fixture_state_mismatch" : failureReason };
+        var changedFacts = verified
+            ? new List<SimulatedFactChange>
+            {
+                new() { Path = "player.location_id", Before = active.BeforeLocation, After = afterLocation },
+                new() { Path = "current_location.mine_level", Before = string.Empty, After = MineShaft.quarryMineShaft.ToString() },
+                new() { Path = "current_location.mine_kind", Before = string.Empty, After = "quarry_mine" }
+            }
+            : new List<SimulatedFactChange>();
+        if (verified && active.Fixture.ResetEnabled)
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.mail_received.gotGoldenScythe",
+                Before = active.Fixture.ClaimedBefore.ToString().ToLowerInvariant(),
+                After = claimedAfter.ToString().ToLowerInvariant()
+            });
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.inventory.(W)53.count",
+                Before = active.Fixture.CountBefore.ToString(),
+                After = scytheCountAfter.ToString()
+            });
+        }
+
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            TargetLocation = afterLocation,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_quarry_mine",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = reasons,
+            RequestedEffect = "current_location.mine_level=" + MineShaft.quarryMineShaft +
+                ";mine_kind=quarry_mine;golden_scythe_claimed=false;golden_scythe_count=0;empty_slots>0",
+            ObservedEffect = "location=" + afterLocation +
+                ";mine_level=" + (mine?.mineLevel.ToString() ?? "unavailable") +
+                ";mine_area=" + (mine?.getMineArea().ToString() ?? "unavailable") +
+                ";is_side_branch=" + (mine?.isSideBranch().ToString().ToLowerInvariant() ?? "unavailable") +
+                ";loaded_map=" + (mine?.map is not null) +
+                ";golden_scythe_altar_count=" + altarCount +
+                ";gotGoldenScythe=" + claimedAfter.ToString().ToLowerInvariant() +
+                ";golden_scythe_count=" + scytheCountAfter +
+                ";empty_slots=" + emptySlotsAfter +
+                ";fixture=" + active.Fixture.ToAuditString() +
+                ";calibration_loadout=" + active.CalibrationLoadout.Enabled.ToString().ToLowerInvariant(),
+            BlockReasons = verified ? Array.Empty<string>() : reasons,
+            ChangedFacts = changedFacts.ToArray()
+        });
+    }
+
+    private static int CountMapActionTiles(GameLocation location, string expectedActionType)
+    {
+        var layer = location.map?.GetLayer("Buildings");
+        if (layer is null)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        for (var x = 0; x < layer.LayerWidth; x++)
+        {
+            for (var y = 0; y < layer.LayerHeight; y++)
+            {
+                var rawAction = location.doesTileHaveProperty(x, y, "Action", "Buildings");
+                var actionType = rawAction?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (string.Equals(actionType, expectedActionType, StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private void TickVolcanoSetup()
@@ -14524,6 +14734,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
             request.OptionId != "debug.setup_skull_cavern_shaft" &&
+            request.OptionId != "debug.setup_quarry_mine" &&
             request.OptionId != "debug.setup_volcano_floor" &&
             request.OptionId != "debug.setup_breakable_container" &&
             request.OptionId != "debug.setup_mining_combat_fixture" &&
@@ -15571,6 +15782,29 @@ public sealed class ModEntry : Mod
         public int MaxTicks { get; } = 600;
     }
 
+    private sealed class ActiveQuarrySetup
+    {
+        public ActiveQuarrySetup(
+            PendingExecution pending,
+            string beforeLocation,
+            MiningCalibrationLoadoutFacts calibrationLoadout,
+            GoldenScytheFixtureFacts fixture)
+        {
+            Pending = pending;
+            BeforeLocation = beforeLocation;
+            CalibrationLoadout = calibrationLoadout;
+            Fixture = fixture;
+        }
+
+        public PendingExecution Pending { get; }
+        public string BeforeLocation { get; }
+        public MiningCalibrationLoadoutFacts CalibrationLoadout { get; }
+        public GoldenScytheFixtureFacts Fixture { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int ElapsedTicks { get; set; }
+        public int MaxTicks { get; } = 1800;
+    }
+
     private sealed class ActiveVolcanoSetup
     {
         public ActiveVolcanoSetup(
@@ -15605,6 +15839,25 @@ public sealed class ModEntry : Mod
         int FoodStack)
     {
         public static MiningCalibrationLoadoutFacts Disabled { get; } = new(false, -1, string.Empty, 0, -1, string.Empty, 0, 0);
+    }
+
+    private sealed record GoldenScytheFixtureFacts(
+        bool ResetEnabled,
+        bool ClaimedBefore,
+        int CountBefore,
+        bool ClaimedAfterReset,
+        int CountAfterReset,
+        int EmptySlotsAfterReset)
+    {
+        public string ToAuditString()
+        {
+            return "reset_enabled=" + ResetEnabled.ToString().ToLowerInvariant() +
+                ";claimed_before=" + ClaimedBefore.ToString().ToLowerInvariant() +
+                ";count_before=" + CountBefore +
+                ";claimed_after_reset=" + ClaimedAfterReset.ToString().ToLowerInvariant() +
+                ";count_after_reset=" + CountAfterReset +
+                ";empty_slots_after_reset=" + EmptySlotsAfterReset;
+        }
     }
 
     private sealed record VolcanoCalibrationLoadoutFacts(
