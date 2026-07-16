@@ -1300,6 +1300,11 @@ static TrainingDatasetAppendResult AppendJsonl(string datasetPath, TrainingFeatu
 
 static async Task<(JsonObject? TrainingReport, JsonObject? Prediction)> TrainIfNeededAsync(HttpClient http, LiveTrainingOptions options, int iteration)
 {
+    if (options.SkipTraining)
+    {
+        return (null, null);
+    }
+
     if (iteration % options.TrainEvery != 0 && iteration != options.MaxAttempts)
     {
         return (null, null);
@@ -1576,6 +1581,7 @@ public sealed class LiveTrainingOptions
     public int MaxAttempts { get; set; } = 3;
     public int RequiredVerifiedActions { get; set; }
     public int TrainEvery { get; set; } = 1;
+    public bool SkipTraining { get; set; }
     public int SleepMs { get; set; } = 1000;
     public int MaxCropsPerExecution { get; set; } = 16;
     public string ExecutorOptionId { get; set; } = string.Empty;
@@ -1680,6 +1686,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--train-every" && i + 1 < args.Length && int.TryParse(args[++i], out var trainEvery))
             {
                 options.TrainEvery = Math.Max(1, trainEvery);
+            }
+            else if (current == "--skip-training")
+            {
+                options.SkipTraining = true;
             }
             else if (current == "--sleep-ms" && i + 1 < args.Length && int.TryParse(args[++i], out var sleepMs))
             {

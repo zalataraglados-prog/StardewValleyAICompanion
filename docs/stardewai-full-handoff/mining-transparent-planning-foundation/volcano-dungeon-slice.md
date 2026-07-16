@@ -33,4 +33,8 @@ The three new executors have independent Volcano state machines. They do not reu
 
 ## Current Exit Condition
 
-This slice is read/plan/compiler/executor-implementation complete for switch touch, forward connectors, lava cooling, stone removal, container removal, and supported vanilla melee combat. Static builds pass with deployment disabled, but no game runtime claim is made for these Volcano primitives yet. Runtime closure still requires isolated primitive smokes, repeated fresh-snapshot replanning through level `9` into `Caldera`, after-snapshot training-row verification, and duration calibration. Full-objective duration remains unknown and therefore fails the day time-budget gate.
+This slice is read/plan/compiler/executor-implementation complete for switch touch, forward connectors, lava cooling, stone removal, container removal, and supported vanilla melee combat. `Invoke-RuntimeVolcanoReachCalderaLoop.ps1` now defines the isolated loop without running it: load a generated Volcano level through a debug-only native warp, read `profile=volcano`, compile one `volcano.reach_caldera` step, execute exactly one compiler-owned primitive, require a fresh verified after-snapshot, and repeat.
+
+The loop succeeds only when `executor.traverse_connector` moves from level `9` to `Caldera`. It fails on stale snapshots, blocked/unverified primitives, cross-family option IDs, backward or skipped level transitions, leaving the Volcano family anywhere except Caldera, or exhausting the step limit. Per-step rows are collected without retraining; training is deferred until the run is complete.
+
+Static builds and PowerShell parsing pass, but no game runtime claim is made for these Volcano primitives or the loop yet. Runtime closure still requires isolated primitive smokes, one complete loop, after-snapshot training-row inspection, and duration calibration. Full-objective duration remains unknown and therefore fails the day time-budget gate.

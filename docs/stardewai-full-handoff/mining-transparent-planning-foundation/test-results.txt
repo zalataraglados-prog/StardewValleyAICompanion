@@ -12,6 +12,7 @@
 - Volcano Dungeon transparent/planning slice: Core and TransparentBridge static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 - Volcano native cooling executor: Contracts, Core, LiveTrainingLoop, and RuntimeTestHarness static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 - Volcano native obstacle/combat executors: Contracts, Core, TransparentBridge, LiveTrainingLoop, and RuntimeTestHarness static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
+- Volcano full-loop orchestration: LiveTrainingLoop and RuntimeTestHarness static builds PASS with deployment disabled; `Invoke-RuntimeVolcanoReachCalderaLoop.ps1` PowerShell syntax parse PASS; script was not executed by user instruction.
 
 ## Commands Run
 

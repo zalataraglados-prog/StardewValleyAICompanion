@@ -42,6 +42,7 @@ public sealed class ModEntry : Mod
     private int? executorMovementDirection;
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveMineSetup? activeMineSetup;
+    private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
     private ActiveVolcanoCoolLava? activeVolcanoCoolLava;
@@ -267,6 +268,7 @@ public sealed class ModEntry : Mod
         TickCatchFish();
         TickMineFishingSetup();
         TickMineSetup();
+        TickVolcanoSetup();
         TickNativeFarmTool();
         TickMineStone();
         TickVolcanoCoolLava();
@@ -285,7 +287,7 @@ public sealed class ModEntry : Mod
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -441,6 +443,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_skull_cavern_shaft")
             {
                 StartSetupSkullCavernShaft(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_volcano_floor")
+            {
+                StartSetupVolcanoFloor(pending);
                 return;
             }
 
@@ -10356,6 +10364,99 @@ public sealed class ModEntry : Mod
         Game1.enterMine(request.MineLevel.Value);
     }
 
+    private void StartSetupVolcanoFloor(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        if (!request.MineLevel.HasValue || request.MineLevel.Value < 0 || request.MineLevel.Value > 9)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "debug_setup_volcano_floor",
+                "current_location.runtime_type=VolcanoDungeon;volcano.level=requested",
+                "volcano_level=" + request.MineLevel,
+                "volcano_fixture_level_out_of_range"));
+            return;
+        }
+
+        var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_VOLCANO_CALIBRATION_LOADOUT") == "1"
+            ? EnsureVolcanoCalibrationLoadout()
+            : VolcanoCalibrationLoadoutFacts.Disabled;
+        activeVolcanoSetup = new ActiveVolcanoSetup(
+            pending,
+            request.MineLevel.Value,
+            beforeLocation,
+            calibrationLoadout);
+        Game1.warpFarmer(VolcanoDungeon.GetLevelName(request.MineLevel.Value), 0, 1, 2);
+    }
+
+    private static VolcanoCalibrationLoadoutFacts EnsureVolcanoCalibrationLoadout()
+    {
+        var player = Game1.player;
+        EnsureFixtureInventoryCapacity(player);
+        var selectedSlot = player.CurrentToolIndex;
+        EnsureMiningCalibrationLoadout();
+
+        var pickaxe = player.Items.OfType<Pickaxe>()
+            .OrderByDescending(tool => tool.UpgradeLevel)
+            .ThenByDescending(tool => tool.additionalPower.Value)
+            .FirstOrDefault();
+        if (pickaxe is null)
+        {
+            pickaxe = new Pickaxe { UpgradeLevel = 4 };
+            InstallFixtureItem(player, pickaxe);
+        }
+
+        var wateringCan = player.Items.OfType<WateringCan>()
+            .OrderByDescending(tool => tool.UpgradeLevel)
+            .FirstOrDefault();
+        if (wateringCan is null)
+        {
+            wateringCan = new WateringCan { UpgradeLevel = 4 };
+            InstallFixtureItem(player, wateringCan);
+        }
+        wateringCan.WaterLeft = wateringCan.waterCanMax;
+
+        var weapon = player.Items.OfType<MeleeWeapon>()
+            .Where(item => !item.isScythe())
+            .OrderByDescending(item => item.maxDamage.Value)
+            .ThenByDescending(item => item.speed.Value)
+            .FirstOrDefault();
+        var food = player.Items.OfType<StardewValley.Object>()
+            .Where(item => item.Edibility > 0 && item.healthRecoveredOnConsumption() > 0)
+            .OrderByDescending(item => item.healthRecoveredOnConsumption())
+            .FirstOrDefault();
+
+        player.health = player.maxHealth;
+        player.Stamina = player.MaxStamina;
+        if (selectedSlot >= 0 && selectedSlot < player.Items.Count)
+        {
+            player.CurrentToolIndex = selectedSlot;
+        }
+
+        return new VolcanoCalibrationLoadoutFacts(
+            true,
+            player.Items.IndexOf(pickaxe),
+            pickaxe.QualifiedItemId,
+            pickaxe.UpgradeLevel,
+            player.Items.IndexOf(wateringCan),
+            wateringCan.QualifiedItemId,
+            wateringCan.WaterLeft,
+            weapon is null ? -1 : player.Items.IndexOf(weapon),
+            weapon?.QualifiedItemId ?? string.Empty,
+            weapon?.maxDamage.Value ?? 0,
+            food is null ? -1 : player.Items.IndexOf(food),
+            food?.QualifiedItemId ?? string.Empty,
+            food?.Stack ?? 0);
+    }
+
     private static MiningCalibrationLoadoutFacts EnsureMiningCalibrationLoadout()
     {
         var player = Game1.player;
@@ -10594,6 +10695,74 @@ public sealed class ModEntry : Mod
         {
             CompleteMineSetup(active, mine, verified);
         }
+    }
+
+    private void TickVolcanoSetup()
+    {
+        if (activeVolcanoSetup is null)
+        {
+            return;
+        }
+
+        var active = activeVolcanoSetup;
+        active.ElapsedTicks++;
+        var volcano = Game1.currentLocation as VolcanoDungeon;
+        var loaded = volcano is not null &&
+            volcano.level.Value == active.Level &&
+            volcano.map is not null &&
+            volcano.startPosition.HasValue &&
+            volcano.endPosition.HasValue;
+        if (loaded || active.ElapsedTicks >= active.MaxTicks)
+        {
+            CompleteVolcanoSetup(active, volcano, loaded);
+        }
+    }
+
+    private void CompleteVolcanoSetup(ActiveVolcanoSetup active, VolcanoDungeon? volcano, bool verified)
+    {
+        activeVolcanoSetup = null;
+        var request = active.Pending.Request;
+        var afterLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            TargetLocation = afterLocation,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_volcano_floor",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[]
+                {
+                    "native_generated_volcano_location_loaded",
+                    "volcano_level_verified",
+                    "volcano_start_and_end_positions_present",
+                    active.CalibrationLoadout.Enabled ? "runtime_data_volcano_calibration_loadout_installed" : "calibration_loadout_disabled"
+                }
+                : new[] { "volcano_fixture_state_mismatch" },
+            RequestedEffect = "current_location.runtime_type=VolcanoDungeon;volcano.level=" + active.Level,
+            ObservedEffect = "location=" + afterLocation +
+                ";runtime_type=" + (Game1.currentLocation?.GetType().FullName ?? "none") +
+                ";volcano_level=" + (volcano?.level.Value.ToString() ?? "unavailable") +
+                ";loaded_map=" + (volcano?.map is not null) +
+                ";start_position=" + (volcano?.startPosition.HasValue == true ? volcano.startPosition.Value.X + "," + volcano.startPosition.Value.Y : "none") +
+                ";end_position=" + (volcano?.endPosition.HasValue == true ? volcano.endPosition.Value.X + "," + volcano.endPosition.Value.Y : "none") +
+                ";loadout=" + active.CalibrationLoadout.ToAuditString(),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "volcano_fixture_state_mismatch" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange { Path = "player.location_id", Before = active.BeforeLocation, After = afterLocation },
+                    new SimulatedFactChange { Path = "volcano.current_level.level", Before = "unavailable", After = active.Level.ToString() }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        });
     }
 
     private void CompleteMineSetup(ActiveMineSetup active, MineShaft? mine, bool verified)
@@ -14355,6 +14524,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
             request.OptionId != "debug.setup_skull_cavern_shaft" &&
+            request.OptionId != "debug.setup_volcano_floor" &&
             request.OptionId != "debug.setup_breakable_container" &&
             request.OptionId != "debug.setup_mining_combat_fixture" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
@@ -15401,6 +15571,29 @@ public sealed class ModEntry : Mod
         public int MaxTicks { get; } = 600;
     }
 
+    private sealed class ActiveVolcanoSetup
+    {
+        public ActiveVolcanoSetup(
+            PendingExecution pending,
+            int level,
+            string beforeLocation,
+            VolcanoCalibrationLoadoutFacts calibrationLoadout)
+        {
+            Pending = pending;
+            Level = level;
+            BeforeLocation = beforeLocation;
+            CalibrationLoadout = calibrationLoadout;
+        }
+
+        public PendingExecution Pending { get; }
+        public int Level { get; }
+        public string BeforeLocation { get; }
+        public VolcanoCalibrationLoadoutFacts CalibrationLoadout { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 1800;
+        public int ElapsedTicks { get; set; }
+    }
+
     private sealed record MiningCalibrationLoadoutFacts(
         bool Enabled,
         int WeaponSlot,
@@ -15412,6 +15605,54 @@ public sealed class ModEntry : Mod
         int FoodStack)
     {
         public static MiningCalibrationLoadoutFacts Disabled { get; } = new(false, -1, string.Empty, 0, -1, string.Empty, 0, 0);
+    }
+
+    private sealed record VolcanoCalibrationLoadoutFacts(
+        bool Enabled,
+        int PickaxeSlot,
+        string PickaxeQualifiedItemId,
+        int PickaxeUpgradeLevel,
+        int WateringCanSlot,
+        string WateringCanQualifiedItemId,
+        int WaterLeft,
+        int WeaponSlot,
+        string WeaponQualifiedItemId,
+        int WeaponMaximumDamage,
+        int FoodSlot,
+        string FoodQualifiedItemId,
+        int FoodStack)
+    {
+        public static VolcanoCalibrationLoadoutFacts Disabled { get; } = new(
+            false,
+            -1,
+            string.Empty,
+            0,
+            -1,
+            string.Empty,
+            0,
+            -1,
+            string.Empty,
+            0,
+            -1,
+            string.Empty,
+            0);
+
+        public string ToAuditString()
+        {
+            return "enabled=" + Enabled.ToString().ToLowerInvariant() +
+                ";pickaxe_slot=" + PickaxeSlot +
+                ";pickaxe=" + PickaxeQualifiedItemId +
+                ";pickaxe_upgrade=" + PickaxeUpgradeLevel +
+                ";watering_can_slot=" + WateringCanSlot +
+                ";watering_can=" + WateringCanQualifiedItemId +
+                ";water_left=" + WaterLeft +
+                ";weapon_slot=" + WeaponSlot +
+                ";weapon=" + WeaponQualifiedItemId +
+                ";weapon_max_damage=" + WeaponMaximumDamage +
+                ";food_slot=" + FoodSlot +
+                ";food=" + FoodQualifiedItemId +
+                ";food_stack=" + FoodStack;
+        }
     }
 
     private sealed record MineFishingFixtureFacts(MineFishingFixtureSnapshot Before, MineFishingFixtureSnapshot After);
