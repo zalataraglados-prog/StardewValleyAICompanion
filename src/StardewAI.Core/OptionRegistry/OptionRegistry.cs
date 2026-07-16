@@ -300,6 +300,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches the live mine exit", "native ExitMine_Leave reaches the exact decompiled destination" },
                 new[] { "block_unknown_exit", "block_unreachable_exit", "block_dialogue_mismatch", "block_direct_warp" }));
 
+            Register(Option("executor.cool_volcano_lava", "volcano", "Cool one transparent Volcano Dungeon tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "volcano.current_level", "volcano.tiles", "volcano.monsters", "volcano.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS reaches the verified adjacent stand tile", "native watering-can input adds the exact tile to cooledLavaTiles" },
+                new[] { "block_not_loaded_volcano", "block_level_five_cooling", "block_missing_watering_can_or_water", "block_direct_lava_mutation" }));
+
             Register(Option("executor.catch_fish", "fishing", "Execute one legal fishing attempt",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

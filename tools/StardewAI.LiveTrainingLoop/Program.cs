@@ -570,6 +570,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var miningStepReason = ReadQueueParameterString(item, "mining_step_reason");
     var safeSlotIndex = ReadQueueParameterInt(item, "safe_slot_index");
     var restoreSlotIndex = ReadQueueParameterInt(item, "restore_slot_index");
+    var wateringCanSlotIndex = ReadQueueParameterInt(item, "watering_can_slot_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
     var connectorKind = ReadQueueParameterString(item, "connector_kind");
@@ -669,6 +670,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     if (restoreSlotIndex.HasValue)
     {
         executionRequest.RestoreSlotIndex = restoreSlotIndex.Value;
+    }
+    if (wateringCanSlotIndex.HasValue)
+    {
+        executionRequest.WateringCanSlotIndex = wateringCanSlotIndex.Value;
     }
     if (!string.IsNullOrWhiteSpace(interactionKind))
     {
@@ -910,17 +915,20 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
     var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
     var isMove = string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal) ||
         string.Equals(optionId, "debug.visible_walk", StringComparison.Ordinal);
+    var isVolcanoCooling = string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal);
     var isPrimitive = isMove ||
+        isVolcanoCooling ||
         string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) ||
         string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal);
     var applied = string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal);
     var reward = isMove
         ? applied ? 0.05 : -0.05
+        : isVolcanoCooling ? applied ? 0.10 : -0.10
         : isPrimitive ? applied ? 0.02 : -0.02
         : Math.Round(watered * 0.10 - energyCost * 0.005, 4);
     var blocked = !string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal) &&
         !string.Equals(ReadString(execution, "status"), "no_op", StringComparison.Ordinal);
-    var requiredMinutes = isMove ? 1 : 30;
+    var requiredMinutes = isMove || isVolcanoCooling ? 1 : 30;
     var primitiveVerificationStatus = ReadString(execution, "primitive_verification_status");
     var primitiveVerified = string.Equals(primitiveVerificationStatus, "verified", StringComparison.Ordinal);
     var failureCategory = ReadString(execution, "failure_category");
@@ -1069,6 +1077,8 @@ static void WritePlanExecutionEpisode(
     var blocked = !applied && !string.Equals(status, "no_op", StringComparison.Ordinal);
     var reward = string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal)
         ? applied ? 0.05 : -0.05
+        : string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal)
+            ? applied ? 0.10 : -0.10
         : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)
             ? applied ? 0.02 : -0.02
         : 0;
@@ -1177,6 +1187,13 @@ static string[] RewardTerms(string optionId, bool isMove, bool applied, int wate
         return applied ? new[] { "real_wait_ticks_applied" } : new[] { "real_wait_ticks_blocked" };
     }
 
+    if (string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal))
+    {
+        return applied
+            ? new[] { "real_volcano_lava_cooled", "native_watering_can_lifecycle" }
+            : new[] { "real_volcano_lava_cooling_blocked" };
+    }
+
     return watered > 0 ? new[] { "real_crop_watered", "real_energy_spent" } : Array.Empty<string>();
 }
 
@@ -1195,6 +1212,13 @@ static FeatureVector BuildStateFeatures(JsonObject snapshot)
             Number("player.level", ReadFieldDouble(snapshot, "player", "level")),
             Number("player.total_money_earned", ReadFieldDouble(snapshot, "player", "total_money_earned")),
             Number("farm.crops_needing_watering", CountCropsNeedingWater(snapshot)),
+            Number("volcano.level", ReadNestedFieldDouble(snapshot, "volcano", "current_level", "level")),
+            Number("volcano.layout_index", ReadNestedFieldDouble(snapshot, "volcano", "current_level", "layout_index")),
+            Number("volcano.coolable_uncooled_tile_count", CountNestedArray(snapshot, "volcano", "tiles", "coolable_uncooled_tiles")),
+            Number("volcano.cooled_lava_tile_count", CountNestedArray(snapshot, "volcano", "tiles", "cooled_lava_tiles")),
+            Number("volcano.gate_count", CountFieldArray(snapshot, "volcano", "gates")),
+            Number("volcano.monster_count", CountFieldArray(snapshot, "volcano", "monsters")),
+            Number("volcano.watering_can_water_left", ReadFirstNestedArrayDouble(snapshot, "volcano", "player_resources", "watering_can_slots", "water_left")),
             Number("completeness.unavailable_count", ReadUnavailableCount(snapshot)),
             Number("completeness.required_readable_ratio", 1)
         },
@@ -1203,6 +1227,7 @@ static FeatureVector BuildStateFeatures(JsonObject snapshot)
             Category("game.season", ReadFieldString(snapshot, "time", "season")),
             Category("game.weather", ReadFieldString(snapshot, "time", "weather")),
             Category("player.location_id", ReadFieldString(snapshot, "player", "location_id")),
+            Category("volcano.level_kind", ReadNestedFieldString(snapshot, "volcano", "current_level", "level_kind")),
             Category("world.mode", "training")
         },
         Boolean = new[]
@@ -1377,6 +1402,36 @@ static string ReadFieldString(JsonObject snapshot, string section, string name)
     }
 
     return value.GetValue<string>() ?? "unknown";
+}
+
+static double ReadNestedFieldDouble(JsonObject snapshot, string section, string field, string property)
+{
+    var value = snapshot["state"]?[section]?[field]?["value"]?[property];
+    return value is not null && value.GetValueKind() == JsonValueKind.Number ? value.GetValue<double>() : 0;
+}
+
+static string ReadNestedFieldString(JsonObject snapshot, string section, string field, string property)
+{
+    var value = snapshot["state"]?[section]?[field]?["value"]?[property];
+    return value is not null && value.GetValueKind() == JsonValueKind.String
+        ? value.GetValue<string>() ?? "unknown"
+        : "unknown";
+}
+
+static int CountFieldArray(JsonObject snapshot, string section, string field)
+{
+    return snapshot["state"]?[section]?[field]?["value"]?.AsArray().Count ?? 0;
+}
+
+static int CountNestedArray(JsonObject snapshot, string section, string field, string property)
+{
+    return snapshot["state"]?[section]?[field]?["value"]?[property]?.AsArray().Count ?? 0;
+}
+
+static double ReadFirstNestedArrayDouble(JsonObject snapshot, string section, string field, string arrayProperty, string valueProperty)
+{
+    var value = snapshot["state"]?[section]?[field]?["value"]?[arrayProperty]?.AsArray().FirstOrDefault()?[valueProperty];
+    return value is not null && value.GetValueKind() == JsonValueKind.Number ? value.GetValue<double>() : 0;
 }
 
 static int CountCropsNeedingWater(JsonObject snapshot)

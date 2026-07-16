@@ -116,6 +116,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("restore_slot_index")]
         public int? RestoreSlotIndex { get; set; }
 
+        [JsonPropertyName("watering_can_slot_index")]
+        public int? WateringCanSlotIndex { get; set; }
+
         [JsonPropertyName("interaction_kind")]
         public string InteractionKind { get; set; } = string.Empty;
 

@@ -22,7 +22,7 @@ The model-facing option is `volcano.reach_caldera`. The compiler reads a fresh `
 
 - reachable unpressed switch -> `executor.move_to_tile`; native touch action remains responsible for pressing it;
 - reachable forward warp -> `executor.traverse_connector`; expected target location and arrival tile are carried explicitly;
-- lava bridge needed -> blocked with exact target/stand/watering-can slot until a native watering input executor exists;
+- lava bridge needed -> `executor.cool_volcano_lava`; runtime walks to the exact adjacent stand tile, selects the verified watering can, uses the native farmer tool lifecycle once, and accepts success only after the live target appears in `cooledLavaTiles`;
 - monster or breakable obstacle needed -> blocked with exact live identity until Volcano-specific native combat/tool lifecycle support exists;
 - unresolved topology -> fail closed.
 
@@ -30,4 +30,4 @@ No direct gate open, lava mutation, object removal, damage, level assignment, or
 
 ## Current Exit Condition
 
-This slice is read/plan/compiler complete when the affected projects compile. It is not runtime complete. Runtime closure still requires native Volcano-specific cooling, combat, obstacle, verification, and a repeated fresh-snapshot loop through level `9` into `Caldera`. Full-objective duration remains unknown and therefore fails the day time-budget gate.
+This slice is read/plan/compiler complete and includes the native cooling implementation, but no game runtime claim is made yet. Runtime closure still requires an isolated cooling smoke, Volcano-specific combat and obstacle lifecycles, and a repeated fresh-snapshot loop through level `9` into `Caldera`. Full-objective duration remains unknown and therefore fails the day time-budget gate.

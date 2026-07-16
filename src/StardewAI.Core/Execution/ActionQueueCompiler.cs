@@ -676,6 +676,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateMiningReachDepthPlan(action, snapshot));
             blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));
             blocking.AddRange(ValidateVolcanoReachCalderaPlan(action, snapshot));
+            blocking.AddRange(ValidateCoolVolcanoLavaPlan(action, snapshot));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
@@ -1604,6 +1605,72 @@ namespace StardewAI.Core.Execution
             else if (string.IsNullOrWhiteSpace(executionOptionId))
             {
                 reasons.Add("volcano_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateCoolVolcanoLavaPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "executor.cool_volcano_lava")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var standX = ReadIntParameter(action, "stand_tile_x");
+            var standY = ReadIntParameter(action, "stand_tile_y");
+            var wateringCanSlot = ReadIntParameter(action, "watering_can_slot_index");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                reasons.Add("volcano_cooling_target_tile_required");
+            }
+            if (!standX.HasValue || !standY.HasValue)
+            {
+                reasons.Add("volcano_cooling_stand_tile_required");
+            }
+            else if (targetX.HasValue && targetY.HasValue &&
+                Math.Abs(targetX.Value - standX.Value) + Math.Abs(targetY.Value - standY.Value) != 1)
+            {
+                reasons.Add("volcano_cooling_stand_tile_not_adjacent");
+            }
+            if (!wateringCanSlot.HasValue)
+            {
+                reasons.Add("volcano_cooling_watering_can_slot_required");
+            }
+
+            var currentLevel = ReadStateFieldValue(snapshot, "volcano", "current_level");
+            if (!currentLevel.HasValue || currentLevel.Value.ValueKind != JsonValueKind.Object)
+            {
+                reasons.Add("volcano_current_level_unavailable");
+            }
+            else if (ReadInt(currentLevel.Value, "level") == 5 || !ReadBool(currentLevel.Value, "lava_cooling_enabled"))
+            {
+                reasons.Add("volcano_level_five_cooling_disabled");
+            }
+
+            var tiles = ReadStateFieldValue(snapshot, "volcano", "tiles");
+            if (targetX.HasValue && targetY.HasValue &&
+                (!tiles.HasValue || tiles.Value.ValueKind != JsonValueKind.Object ||
+                 !tiles.Value.TryGetProperty("coolable_uncooled_tiles", out var coolable) ||
+                 coolable.ValueKind != JsonValueKind.Array ||
+                 !coolable.EnumerateArray().Any(tile =>
+                     ReadInt(tile, "tile_x") == targetX.Value && ReadInt(tile, "tile_y") == targetY.Value)))
+            {
+                reasons.Add("volcano_cooling_target_not_currently_coolable");
+            }
+
+            var resources = ReadStateFieldValue(snapshot, "volcano", "player_resources");
+            if (wateringCanSlot.HasValue &&
+                (!resources.HasValue || resources.Value.ValueKind != JsonValueKind.Object ||
+                 !resources.Value.TryGetProperty("watering_can_slots", out var wateringCans) ||
+                 wateringCans.ValueKind != JsonValueKind.Array ||
+                 !wateringCans.EnumerateArray().Any(slot =>
+                     ReadInt(slot, "slot_index") == wateringCanSlot.Value && ReadBool(slot, "can_cool_lava_now"))))
+            {
+                reasons.Add("volcano_cooling_watering_can_unavailable_or_empty");
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -3693,6 +3760,11 @@ namespace StardewAI.Core.Execution
                 return CompileCatchFishStep(action);
             }
 
+            if (action.OptionId == "executor.cool_volcano_lava")
+            {
+                return CompileCoolVolcanoLavaStep(action);
+            }
+
             if (action.OptionId == "executor.social_interact")
             {
                 return CompileSocialInteractStep(action);
@@ -3741,6 +3813,26 @@ namespace StardewAI.Core.Execution
                     location + ":stand(" + standX + "," + standY + "):bobber(" + bobberX + "," + bobberY + "):rod_slot=" + rodSlot,
                     "fishing_attempt_completed_with_observed_catch_or_precise_block_reason",
                      Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 30) * 60))
+            };
+        }
+
+        private static CompiledActionStep[] CompileCoolVolcanoLavaStep(SmallModelAction action)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var wateringCanSlot = ReadIntParameter(action, "watering_can_slot_index");
+            if (!targetX.HasValue || !targetY.HasValue || !wateringCanSlot.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "cool_volcano_lava",
+                    "target(" + targetX.Value + "," + targetY.Value + "):watering_can_slot=" + wateringCanSlot.Value,
+                    "volcano.tiles.cooled_lava_tiles contains target",
+                    Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
             };
         }
 

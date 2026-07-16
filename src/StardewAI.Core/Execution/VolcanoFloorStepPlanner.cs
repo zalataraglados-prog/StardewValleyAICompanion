@@ -122,8 +122,9 @@ namespace StardewAI.Core.Execution
             var lavaStep = SelectCoolableLava(tiles, resources, grid, search);
             if (lavaStep is not null)
             {
+                lavaStep.Status = lavaStep.WateringCanSlotIndex.HasValue ? "ready" : "blocked";
                 lavaStep.Reason = lavaStep.WateringCanSlotIndex.HasValue
-                    ? "volcano_cool_lava_executor_not_implemented"
+                    ? "reachable_native_cooling_target"
                     : "volcano_cooling_requires_watering_can_with_water";
                 return lavaStep;
             }
@@ -580,6 +581,7 @@ namespace StardewAI.Core.Execution
             {
                 VolcanoFloorStepKinds.PressDwarfSwitch => "executor.move_to_tile",
                 VolcanoFloorStepKinds.TraverseForwardConnector => "executor.traverse_connector",
+                VolcanoFloorStepKinds.CoolLavaTile => "executor.cool_volcano_lava",
                 _ => string.Empty
             };
         }
