@@ -81,6 +81,8 @@ namespace StardewAI.Core.Execution
 
         public string TargetName { get; set; } = string.Empty;
 
+        public string RequiredWeaponEnchantmentRuntimeType { get; set; } = string.Empty;
+
         public string TargetQualifiedItemId { get; set; } = string.Empty;
 
         public string[] ExpectedDropQualifiedItemIds { get; set; } = Array.Empty<string>();
@@ -391,6 +393,7 @@ namespace StardewAI.Core.Execution
                     };
                 })
                 .Where(row => targets is null || row.Match.MatchedIds.Length > 0)
+                .Where(row => CanDefeatWithAvailableMeleeWeapon(row.Monster))
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => targets is null || row.Match.IsGuaranteed ? 0 : row.Match.ChanceKnown ? 1 : 2)
                 .ThenByDescending(row => row.Match.IsGuaranteed ? 1d : row.Match.Efficiency(row.Candidate!.Distance))
@@ -404,6 +407,7 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeIdentity = ReadString(row.Monster, "runtime_identity");
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
+                    plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
                     plan.TargetQualifiedItemId = targets is null ? string.Empty : row.Match.TargetId;
                     plan.ExpectedDropQualifiedItemIds = targets is null ? Array.Empty<string>() : row.Match.MatchedIds;
                     plan.SourceMatchStatus = targets is null
@@ -418,6 +422,21 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static bool CanDefeatWithAvailableMeleeWeapon(JsonElement monster)
+        {
+            return !monster.TryGetProperty("melee_damage_semantics", out var semantics) ||
+                semantics.ValueKind != JsonValueKind.Object ||
+                !semantics.TryGetProperty("can_defeat_with_available_melee_weapon", out var value) ||
+                value.ValueKind != JsonValueKind.False;
+        }
+
+        private static string ReadRequiredWeaponEnchantment(JsonElement monster)
+        {
+            return monster.TryGetProperty("melee_damage_semantics", out var semantics) && semantics.ValueKind == JsonValueKind.Object
+                ? ReadString(semantics, "required_weapon_enchantment_runtime_type")
+                : string.Empty;
         }
 
         private static MonsterDropMatch BuildMonsterDropMatch(
@@ -628,6 +647,7 @@ namespace StardewAI.Core.Execution
                     plan.TargetRuntimeIdentity = ReadString(row.Monster, "runtime_identity");
                     plan.TargetRuntimeType = ReadString(row.Monster, "runtime_type");
                     plan.TargetName = ReadString(row.Monster, "name");
+                    plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
                     return plan;
                 })
                 .FirstOrDefault();
@@ -1194,6 +1214,7 @@ namespace StardewAI.Core.Execution
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
             Add(parameters, "target_name", plan.TargetName);
+            Add(parameters, "required_weapon_enchantment_runtime_type", plan.RequiredWeaponEnchantmentRuntimeType);
             return parameters.ToArray();
         }
 

@@ -154,6 +154,41 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectiveRejectsTargetThatAvailableMeleeCannotDefeat()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [{"runtime_identity":"immune","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"melee_damage_semantics":{"can_defeat_with_available_melee_weapon":false}}]
+            """);
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("no_reachable_monster_with_possible_target_drop", plan.Reason);
+    }
+
+    [Fact]
+    public void MonsterDropObjectiveCarriesRequiredWeaponEnchantmentToExecutionParameters()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: """
+            [{"runtime_identity":"armored","runtime_type":"StardewValley.Monsters.Bug","name":"Armored Bug","tile_x":3,"tile_y":2,"possible_drop_qualified_item_ids":["(O)768"],"melee_damage_semantics":{"can_defeat_with_available_melee_weapon":true,"required_weapon_enchantment_runtime_type":"BugKillerEnchantment"}}]
+            """);
+
+        Assert.Equal("BugKillerEnchantment", plan.RequiredWeaponEnchantmentRuntimeType);
+        var parameters = MiningFloorStepCompiler.BuildExecutionParameters(plan);
+        Assert.Contains(parameters, parameter => parameter.Name == "required_weapon_enchantment_runtime_type" && parameter.Value == "BugKillerEnchantment");
+    }
+
+    [Fact]
     public void MonsterDropObjectiveUsesExactSpecialItemPreview()
     {
         var plan = ObjectivePlan(
@@ -492,6 +527,8 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
         Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
         Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint", combatSource, StringComparison.Ordinal);
+        Assert.Contains("BestCombatWeapon(target, request.RequiredWeaponEnchantmentRuntimeType)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("weapon.enchantments.Any", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("damageMonster(", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("takeDamage(", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("characters.Remove", combatSource, StringComparison.Ordinal);
@@ -605,7 +642,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.DoesNotContain("enterMineShaft(", shaftSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.enterMine(", shaftSource, StringComparison.Ordinal);
         Assert.DoesNotMatch(@"\.mineLevel\s*=(?!=)", shaftSource);
-        Assert.DoesNotMatch(@"player\.health\s*=(?!=)", shaftSource);
+        Assert.DoesNotMatch(@"(?m)^\s*(?:Game1\.)?player\.health\s*=(?!=)", shaftSource);
     }
 
     [Fact]

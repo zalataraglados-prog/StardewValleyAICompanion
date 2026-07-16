@@ -230,6 +230,10 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("professions = player.professions.OrderBy", source, StringComparison.Ordinal);
         Assert.Contains("player_enchantments = player.enchantments.Select", source, StringComparison.Ordinal);
         Assert.Contains("equipped_trinkets = player.trinketItems.Select", source, StringComparison.Ordinal);
+        Assert.Contains("melee_damage_semantics = ReadMeleeDamageSemantics", source, StringComparison.Ordinal);
+        Assert.Contains("case Spiker:", source, StringComparison.Ordinal);
+        Assert.Contains("requires_bug_killer_enchantment", source, StringComparison.Ordinal);
+        Assert.Contains("mummy_revives_without_crusader_or_bomb", source, StringComparison.Ordinal);
     }
 
     [Fact]

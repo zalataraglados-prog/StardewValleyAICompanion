@@ -198,6 +198,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 is_invincible = monster.isInvincible(),
                 invincible_countdown_ms = monster.invincibleCountdown,
                 stun_time_ms = monster.stunTime.Value,
+                melee_damage_semantics = ReadMeleeDamageSemantics(monster, Game1.player),
                 is_hard_mode_monster = monster.isHardModeMonster.Value,
                 movement_speed = monster.Speed,
                 tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
@@ -229,6 +230,104 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 source = "Monster live fields; " + drops.Source + "; future AI is handled by after-snapshot replanning, not guessed"
             };
         }).ToArray();
+    }
+
+    private static object ReadMeleeDamageSemantics(Monster monster, Farmer player)
+    {
+        var vanillaType = monster.GetType().Assembly == typeof(Monster).Assembly;
+        var hasBugKiller = HasWeaponEnchantment(player, "BugKillerEnchantment");
+        var hasCrusader = HasWeaponEnchantment(player, "CrusaderEnchantment");
+        var currentHitStatus = "exact_base_resilience_and_precision_adjusted_miss_formula";
+        var gateReason = string.Empty;
+        var requiredWeaponEnchantment = string.Empty;
+        var canDamageNow = !monster.IsInvisible && !monster.isInvincible();
+        bool? canDefeatWithAvailableMelee = vanillaType ? true : null;
+        int? preResilienceDamageOverride = null;
+
+        switch (monster)
+        {
+            case Spiker:
+                currentHitStatus = "permanent_melee_immunity";
+                gateReason = "Spiker.takeDamage_always_returns_minus_one";
+                canDamageNow = false;
+                canDefeatWithAvailableMelee = false;
+                break;
+            case Bat bat when bat.Age == 789:
+                currentHitStatus = "permanent_current_variant_melee_immunity";
+                gateReason = "Bat.Age_789";
+                canDamageNow = false;
+                canDefeatWithAvailableMelee = false;
+                break;
+            case Bug bug when bug.isArmoredBug.Value:
+                requiredWeaponEnchantment = "BugKillerEnchantment";
+                currentHitStatus = hasBugKiller ? currentHitStatus : "requires_bug_killer_enchantment";
+                gateReason = "armored_bug";
+                canDamageNow &= hasBugKiller;
+                canDefeatWithAvailableMelee = hasBugKiller;
+                break;
+            case Mummy mummy:
+                requiredWeaponEnchantment = "CrusaderEnchantment";
+                canDefeatWithAvailableMelee = hasCrusader;
+                gateReason = hasCrusader ? "crusader_prevents_revive_after_lethal_hit" : "mummy_revives_without_crusader_or_bomb";
+                if (mummy.reviveTimer.Value > 0)
+                {
+                    currentHitStatus = "temporary_melee_immunity_while_reviving";
+                    canDamageNow = false;
+                }
+                break;
+            case GreenSlime slime when slime.stackedSlimes.Value > 0:
+                currentHitStatus = "exact_stacked_slime_forces_pre_resilience_damage_one";
+                gateReason = "stacked_slimes_positive";
+                preResilienceDamageOverride = 1;
+                break;
+            case Grub grub when grub.pupating.Value:
+                currentHitStatus = "temporary_melee_immunity_while_pupating";
+                gateReason = "Grub.pupating";
+                canDamageNow = false;
+                break;
+            case LavaLurk lurk when lurk.currentState.Value == LavaLurk.State.Submerged:
+                currentHitStatus = "temporary_melee_immunity_while_submerged";
+                gateReason = "LavaLurk.currentState_submerged";
+                canDamageNow = false;
+                break;
+            case RockCrab crab when crab.Sprite.currentFrame % 4 == 0 && !crab.shellGone.Value:
+                currentHitStatus = "temporary_shell_blocks_melee_damage";
+                gateReason = crab.isStickBug.Value ? "stick_bug_disguise_closed" : "rock_crab_shell_closed";
+                canDamageNow = false;
+                break;
+        }
+
+        if (!vanillaType)
+        {
+            currentHitStatus = "unknown_custom_monster_takeDamage_semantics";
+            gateReason = "runtime_type_not_from_vanilla_monster_assembly";
+        }
+        return new
+        {
+            current_hit_status = currentHitStatus,
+            current_hit_can_damage = canDamageNow,
+            can_defeat_with_available_melee_weapon = canDefeatWithAvailableMelee,
+            pre_resilience_damage_override = preResilienceDamageOverride,
+            gate_reason = gateReason,
+            required_weapon_enchantment_runtime_type = requiredWeaponEnchantment,
+            bug_killer_weapon_available = hasBugKiller,
+            crusader_weapon_available = hasCrusader,
+            formula_inputs = new
+            {
+                health = monster.Health,
+                resilience = monster.resilience.Value,
+                miss_chance = monster.missChance.Value,
+                invisible = monster.IsInvisible,
+                invincible = monster.isInvincible()
+            },
+            source = "GameLocation.damageMonster; Monster.takeDamage; vanilla runtime-type takeDamage overrides"
+        };
+    }
+
+    private static bool HasWeaponEnchantment(Farmer player, string runtimeTypeName)
+    {
+        return player.Items.OfType<MeleeWeapon>().Any(weapon =>
+            weapon.enchantments.Any(enchantment => string.Equals(enchantment.GetType().Name, runtimeTypeName, StringComparison.Ordinal)));
     }
 
     private static object[] ReadDebris(MineShaft mine)
