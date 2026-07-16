@@ -1,6 +1,7 @@
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -46,6 +47,7 @@ public sealed class ModEntry : Mod
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
+    private ActiveResourceClump? activeResourceClump;
     private ActiveVolcanoCoolLava? activeVolcanoCoolLava;
     private ActiveVolcanoObstacle? activeVolcanoObstacle;
     private ActiveVolcanoCombat? activeVolcanoCombat;
@@ -273,6 +275,7 @@ public sealed class ModEntry : Mod
         TickVolcanoSetup();
         TickNativeFarmTool();
         TickMineStone();
+        TickResourceClump();
         TickVolcanoCoolLava();
         TickVolcanoObstacle();
         TickVolcanoCombat();
@@ -289,7 +292,7 @@ public sealed class ModEntry : Mod
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -330,6 +333,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.mine_stone")
             {
                 StartMineStone(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.break_resource_clump")
+            {
+                StartResourceClump(pending);
                 return;
             }
 
@@ -6006,6 +6015,412 @@ public sealed class ModEntry : Mod
         return "location=" + (location?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";stone=" + state;
     }
 
+    private void StartResourceClump(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
+            !request.ResourceClumpTileX.HasValue || !request.ResourceClumpTileY.HasValue ||
+            !request.ResourceClumpWidth.HasValue || !request.ResourceClumpHeight.HasValue ||
+            !request.ResourceClumpParentSheetIndex.HasValue || !request.ToolSlotIndex.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "break_resource_clump",
+                "mining.resource_clumps[anchor].present=false",
+                "request=missing_typed_clump_fields",
+                "resource_clump_typed_target_fields_required"));
+            return;
+        }
+
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "break_resource_clump",
+                "mining.resource_clumps[anchor].present=false",
+                "location=not_loaded_mineshaft",
+                "resource_clump_requires_loaded_mineshaft"));
+            return;
+        }
+
+        var anchor = new Point(request.ResourceClumpTileX.Value, request.ResourceClumpTileY.Value);
+        var hitTile = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
+        var clump = mine.resourceClumps.FirstOrDefault(candidate =>
+            (int)candidate.Tile.X == anchor.X &&
+            (int)candidate.Tile.Y == anchor.Y &&
+            candidate.width.Value == request.ResourceClumpWidth.Value &&
+            candidate.height.Value == request.ResourceClumpHeight.Value &&
+            candidate.parentSheetIndex.Value == request.ResourceClumpParentSheetIndex.Value);
+        var requested = "mining.resource_clumps[" + anchor.X + "," + anchor.Y + "].present=false;native_tool=" + request.RequiredToolKind;
+        if (clump is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_target_not_found_or_drifted"));
+            return;
+        }
+        if (!ResourceClumpContainsTile(clump, hitTile) ||
+            !AreAdjacent(stand, hitTile) ||
+            ResourceClumpContainsTile(clump, stand))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_hit_or_stand_geometry_invalid"));
+            return;
+        }
+        if (!TryResourceClumpRequirement(clump.parentSheetIndex.Value, out var requiredToolKind, out var minimumUpgradeLevel) ||
+            !string.Equals(requiredToolKind, request.RequiredToolKind, StringComparison.Ordinal))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_type_unsupported_or_requirement_mismatch"));
+            return;
+        }
+        if (request.ToolSlotIndex.Value < 0 ||
+            request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
+            Game1.player.Items[request.ToolSlotIndex.Value] is not Tool tool ||
+            !ResourceClumpToolMatches(tool, requiredToolKind) ||
+            tool.UpgradeLevel < minimumUpgradeLevel)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_required_tool_or_upgrade_unavailable"));
+            return;
+        }
+        if (!IsTileOnMap(mine, stand) || !IsTileWalkable(mine, stand) || IsTileOccupiedByCharacter(mine, stand))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_compiler_stand_tile_invalid"));
+            return;
+        }
+        if (Game1.player.Stamina <= 0f)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_energy_exhausted"));
+            return;
+        }
+
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var path = TryBuildTilePath(
+            mine,
+            Game1.player.TilePoint,
+            stand,
+            maxMovementTiles,
+            out var pathReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_path_unavailable:" + pathReason));
+            return;
+        }
+
+        activeResourceClump = new ActiveResourceClump(
+            pending,
+            mine,
+            clump,
+            anchor,
+            hitTile,
+            stand,
+            path,
+            tool,
+            requiredToolKind,
+            minimumUpgradeLevel,
+            clump.health.Value,
+            Math.Clamp(request.MaxCrops, 1, 64),
+            maxMovementTiles,
+            request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
+            requested);
+    }
+
+    private void TickResourceClump()
+    {
+        if (activeResourceClump is null)
+        {
+            return;
+        }
+
+        var active = activeResourceClump;
+        try
+        {
+            TickResourceClumpCore(active);
+        }
+        catch (Exception ex)
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickResourceClumpCore(ActiveResourceClump active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || Game1.currentLocation is not MineShaft mine || !ReferenceEquals(mine, active.Mine))
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_location_changed_or_world_unavailable");
+            return;
+        }
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_timeout");
+            return;
+        }
+
+        var currentPlayerTile = Game1.player.TilePoint;
+        if (currentPlayerTile != active.LastObservedTile)
+        {
+            if (!active.CombatInterrupted)
+            {
+                active.MovementTiles += ManhattanDistance(active.LastObservedTile, currentPlayerTile);
+            }
+            active.LastObservedTile = currentPlayerTile;
+            if (active.MovementTiles > active.MaxMovementTiles)
+            {
+                CompleteResourceClumpBlocked(active, "resource_clump_movement_budget_exceeded");
+                return;
+            }
+        }
+
+        var targetPresent = mine.resourceClumps.Any(clump => ReferenceEquals(clump, active.Clump));
+        if (!targetPresent)
+        {
+            if (active.BeginIssued)
+            {
+                RecordResourceClumpSwing(active, 0f);
+            }
+            CompleteResourceClump(active);
+            return;
+        }
+        if ((int)active.Clump.Tile.X != active.Anchor.X ||
+            (int)active.Clump.Tile.Y != active.Anchor.Y ||
+            active.Clump.parentSheetIndex.Value != active.ParentSheetIndex ||
+            active.Clump.width.Value != active.Width ||
+            active.Clump.height.Value != active.Height)
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_runtime_target_drift");
+            return;
+        }
+
+        if (!active.BeginIssued && ImmediateMiningThreat(mine))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!active.BeginIssued && Game1.player.TilePoint != active.Stand)
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteResourceClumpBlocked(active, "resource_clump_path_exhausted_before_stand");
+                return;
+            }
+
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                active.StuckTicks = 0;
+                return;
+            }
+            if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+            {
+                CompleteResourceClumpBlocked(active, "resource_clump_dynamic_path_blocked");
+                return;
+            }
+
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (!movedSinceLastTick)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    CompleteResourceClumpBlocked(active, "resource_clump_movement_stuck");
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.SwingCount >= active.MaxSwings)
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_swing_budget_exceeded");
+            return;
+        }
+        if (Game1.player.Stamina <= 0f)
+        {
+            CompleteResourceClumpBlocked(active, "resource_clump_energy_exhausted");
+            return;
+        }
+        if (!active.BeginIssued)
+        {
+            SelectTool(active.Tool);
+            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.HitTile));
+            Game1.player.lastClick = new Vector2(active.HitTile.X * Game1.tileSize, active.HitTile.Y * Game1.tileSize);
+            Game1.player.BeginUsingTool();
+            active.BeginIssued = true;
+            return;
+        }
+        if (!active.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
+        {
+            Game1.player.EndUsingTool();
+            active.ReleaseIssued = true;
+            return;
+        }
+        if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
+        {
+            return;
+        }
+
+        RecordResourceClumpSwing(active, active.Clump.health.Value);
+    }
+
+    private static void RecordResourceClumpSwing(ActiveResourceClump active, float health)
+    {
+        active.SwingCount++;
+        active.ObservedHealth.Add(health);
+        active.BeginIssued = false;
+        active.ReleaseIssued = false;
+    }
+
+    private void CompleteResourceClump(ActiveResourceClump active)
+    {
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeResourceClump = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            EnergyBefore = active.StaminaBefore,
+            EnergyAfter = Game1.player.Stamina,
+            TargetLocation = active.Mine.NameOrUniqueName,
+            TargetTileX = active.Anchor.X,
+            TargetTileY = active.Anchor.Y,
+            ToolQualifiedItemId = active.Tool.QualifiedItemId,
+            ToolUpgradeLevel = active.Tool.UpgradeLevel,
+            ToolUseCount = active.SwingCount,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "break_resource_clump",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[]
+            {
+                "native_" + active.RequiredToolKind + "_lifecycle_removed_resource_clump",
+                "multi_tile_clump_identity_verified",
+                "natural_resource_clump_drops_left_as_game_debris",
+                "native_swing_count=" + active.SwingCount
+            },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = ResourceClumpObservedEffect(active.Anchor) +
+                ";parent_sheet_index=" + active.ParentSheetIndex +
+                ";size=" + active.Width + "x" + active.Height +
+                ";health_sequence=" + string.Join(",", active.ObservedHealth.Select(value => value.ToString("0.###", CultureInfo.InvariantCulture))) +
+                ";native_swings=" + active.SwingCount,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "mining.resource_clumps[" + active.Anchor.X + "," + active.Anchor.Y + "]",
+                    Before = "parent_sheet_index=" + active.ParentSheetIndex + ":health=" + active.HealthBefore.ToString("0.###", CultureInfo.InvariantCulture),
+                    After = "removed"
+                },
+                new SimulatedFactChange
+                {
+                    Path = "player.energy",
+                    Before = active.StaminaBefore.ToString("0.###", CultureInfo.InvariantCulture),
+                    After = Game1.player.Stamina.ToString("0.###", CultureInfo.InvariantCulture)
+                }
+            }
+        });
+    }
+
+    private void CompleteResourceClumpBlocked(ActiveResourceClump active, string reason)
+    {
+        StopAllMovement();
+        if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+        RestoreSlot(active.RestoreSlotIndex);
+        activeResourceClump = null;
+        var result = BlockedWithPrimitive(
+            active.Pending.Request,
+            "break_resource_clump",
+            active.RequestedEffect,
+            ResourceClumpObservedEffect(active.Anchor) + ";native_swings=" + active.SwingCount,
+            reason);
+        result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
+        result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
+        result.ToolUseCount = active.SwingCount;
+        result.ActualTicks = active.ElapsedTicks;
+        result.EnergyBefore = active.StaminaBefore;
+        result.EnergyAfter = Game1.player.Stamina;
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static bool ResourceClumpContainsTile(ResourceClump clump, Point tile)
+    {
+        var x = (int)clump.Tile.X;
+        var y = (int)clump.Tile.Y;
+        return tile.X >= x && tile.X < x + clump.width.Value &&
+            tile.Y >= y && tile.Y < y + clump.height.Value;
+    }
+
+    private static bool TryResourceClumpRequirement(int parentSheetIndex, out string requiredToolKind, out int minimumUpgradeLevel)
+    {
+        (requiredToolKind, minimumUpgradeLevel) = parentSheetIndex switch
+        {
+            ResourceClump.stumpIndex => ("axe", 1),
+            ResourceClump.hollowLogIndex => ("axe", 2),
+            ResourceClump.quarryBoulderIndex or ResourceClump.meteoriteIndex => ("pickaxe", 3),
+            ResourceClump.boulderIndex => ("pickaxe", 2),
+            ResourceClump.mineRock1Index or ResourceClump.mineRock2Index or ResourceClump.mineRock3Index or ResourceClump.mineRock4Index => ("pickaxe", 0),
+            _ => (string.Empty, 0)
+        };
+        return !string.IsNullOrWhiteSpace(requiredToolKind);
+    }
+
+    private static bool ResourceClumpToolMatches(Tool tool, string requiredToolKind)
+    {
+        return requiredToolKind == "axe" && tool is Axe ||
+            requiredToolKind == "pickaxe" && tool is Pickaxe;
+    }
+
+    private static string ResourceClumpObservedEffect(Point anchor)
+    {
+        var mine = Game1.currentLocation as MineShaft;
+        var clump = mine?.resourceClumps.FirstOrDefault(candidate =>
+            (int)candidate.Tile.X == anchor.X && (int)candidate.Tile.Y == anchor.Y);
+        return clump is null
+            ? "location=" + (mine?.NameOrUniqueName ?? "none") + ";anchor=" + anchor.X + "," + anchor.Y + ";resource_clump=removed_or_missing"
+            : "location=" + mine!.NameOrUniqueName +
+                ";anchor=" + anchor.X + "," + anchor.Y +
+                ";resource_clump=present" +
+                ";parent_sheet_index=" + clump.parentSheetIndex.Value +
+                ";size=" + clump.width.Value + "x" + clump.height.Value +
+                ";health=" + clump.health.Value.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
     private void StartVolcanoCoolLava(PendingExecution pending)
     {
         var request = pending.Request;
@@ -9623,6 +10038,7 @@ public sealed class ModEntry : Mod
     private void TickManualAutoCombat()
     {
         var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
+            activeResourceClump?.CombatInterrupted == true ||
             activeBreakContainer?.CombatInterrupted == true ||
             activePickupDebris?.CombatInterrupted == true ||
             activeDescendLadder?.CombatInterrupted == true ||
@@ -14713,6 +15129,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.wait_ticks" &&
             request.OptionId != "executor.clear_obstacle" &&
             request.OptionId != "executor.mine_stone" &&
+            request.OptionId != "executor.break_resource_clump" &&
             request.OptionId != "executor.cool_volcano_lava" &&
             request.OptionId != "executor.break_volcano_stone" &&
             request.OptionId != "executor.break_volcano_container" &&
@@ -15050,6 +15467,85 @@ public sealed class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();
+    }
+
+    private sealed class ActiveResourceClump
+    {
+        public ActiveResourceClump(
+            PendingExecution pending,
+            MineShaft mine,
+            ResourceClump clump,
+            Point anchor,
+            Point hitTile,
+            Point stand,
+            List<Point> path,
+            Tool tool,
+            string requiredToolKind,
+            int minimumUpgradeLevel,
+            float healthBefore,
+            int maxSwings,
+            int maxMovementTiles,
+            int restoreSlotIndex,
+            string requestedEffect)
+        {
+            Pending = pending;
+            Mine = mine;
+            Clump = clump;
+            Anchor = anchor;
+            HitTile = hitTile;
+            Stand = stand;
+            Path = path;
+            Tool = tool;
+            RequiredToolKind = requiredToolKind;
+            MinimumUpgradeLevel = minimumUpgradeLevel;
+            HealthBefore = healthBefore;
+            ParentSheetIndex = clump.parentSheetIndex.Value;
+            Width = clump.width.Value;
+            Height = clump.height.Value;
+            MaxSwings = maxSwings;
+            MaxMovementTiles = maxMovementTiles;
+            RestoreSlotIndex = restoreSlotIndex;
+            RequestedEffect = requestedEffect;
+            StaminaBefore = Game1.player.Stamina;
+            MaxTicks = Math.Max(300, path.Count * 90 + maxSwings * 240);
+            LastPosition = Game1.player.Position;
+            LastObservedTile = Game1.player.TilePoint;
+            ObservedHealth.Add(healthBefore);
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft Mine { get; }
+        public ResourceClump Clump { get; }
+        public Point Anchor { get; }
+        public Point HitTile { get; }
+        public Point Stand { get; }
+        public List<Point> Path { get; }
+        public Tool Tool { get; }
+        public string RequiredToolKind { get; }
+        public int MinimumUpgradeLevel { get; }
+        public float HealthBefore { get; }
+        public int ParentSheetIndex { get; }
+        public int Width { get; }
+        public int Height { get; }
+        public int MaxSwings { get; }
+        public int MaxMovementTiles { get; }
+        public int RestoreSlotIndex { get; }
+        public string RequestedEffect { get; }
+        public double StaminaBefore { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int MovementTiles { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
+        public Point LastObservedTile { get; set; }
+        public int SwingCount { get; set; }
+        public bool BeginIssued { get; set; }
+        public bool ReleaseIssued { get; set; }
+        public List<float> ObservedHealth { get; } = new();
     }
 
     private sealed class ActiveVolcanoCoolLava

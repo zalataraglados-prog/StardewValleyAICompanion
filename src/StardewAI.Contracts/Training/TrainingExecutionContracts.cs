@@ -122,6 +122,24 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("tool_slot_index")]
         public int? ToolSlotIndex { get; set; }
 
+        [JsonPropertyName("required_tool_kind")]
+        public string RequiredToolKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("resource_clump_tile_x")]
+        public int? ResourceClumpTileX { get; set; }
+
+        [JsonPropertyName("resource_clump_tile_y")]
+        public int? ResourceClumpTileY { get; set; }
+
+        [JsonPropertyName("resource_clump_width")]
+        public int? ResourceClumpWidth { get; set; }
+
+        [JsonPropertyName("resource_clump_height")]
+        public int? ResourceClumpHeight { get; set; }
+
+        [JsonPropertyName("resource_clump_parent_sheet_index")]
+        public int? ResourceClumpParentSheetIndex { get; set; }
+
         [JsonPropertyName("interaction_kind")]
         public string InteractionKind { get; set; } = string.Empty;
 

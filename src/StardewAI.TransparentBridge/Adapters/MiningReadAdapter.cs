@@ -248,12 +248,13 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             {
                 var index = clump.parentSheetIndex.Value;
                 var requirement = ResourceClumpRequirement(index);
-                var tool = requirement.ToolKind == "axe"
+                var supported = !string.IsNullOrWhiteSpace(requirement.ToolKind);
+                Tool? tool = requirement.ToolKind == "axe"
                     ? player.Items.OfType<Axe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
                     : requirement.ToolKind == "pickaxe"
                         ? player.Items.OfType<Pickaxe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
-                        : player.Items.OfType<Tool>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault();
-                var gateSatisfied = tool is not null && tool.UpgradeLevel >= requirement.MinimumUpgradeLevel;
+                        : null;
+                var gateSatisfied = supported && tool is not null && tool.UpgradeLevel >= requirement.MinimumUpgradeLevel;
                 var damagePerHit = gateSatisfied ? Math.Max(1f, (tool!.UpgradeLevel + 1) * 0.75f) : (float?)null;
                 var health = clump.health.Value;
                 return new
@@ -270,10 +271,15 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                     selected_tool_slot_index = tool is null ? (int?)null : player.Items.IndexOf(tool),
                     selected_tool_qualified_item_id = tool?.QualifiedItemId ?? string.Empty,
                     selected_tool_upgrade_level = tool?.UpgradeLevel,
+                    native_executor_supported = supported,
                     tool_gate_satisfied = gateSatisfied,
                     damage_per_hit = damagePerHit,
                     expected_hits_remaining = damagePerHit.HasValue ? (int)Math.Ceiling(health / damagePerHit.Value) : (int?)null,
-                    executor_status = gateSatisfied ? "requires_dedicated_resource_clump_native_lifecycle" : "blocked_missing_required_tool_or_upgrade",
+                    executor_status = !supported
+                        ? "blocked_unsupported_resource_clump_parent_sheet_index"
+                        : gateSatisfied
+                            ? "native_executor_available"
+                            : "blocked_missing_required_tool_or_upgrade",
                     source = "GameLocation.resourceClumps; ResourceClump.performToolAction exact parentSheetIndex tool gate and health formula"
                 };
             })
@@ -289,7 +295,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             ResourceClump.quarryBoulderIndex or ResourceClump.meteoriteIndex => ("pickaxe", 3),
             ResourceClump.boulderIndex => ("pickaxe", 2),
             ResourceClump.mineRock1Index or ResourceClump.mineRock2Index or ResourceClump.mineRock3Index or ResourceClump.mineRock4Index => ("pickaxe", 0),
-            _ => ("any_tool", 0)
+            _ => (string.Empty, 0)
         };
     }
 

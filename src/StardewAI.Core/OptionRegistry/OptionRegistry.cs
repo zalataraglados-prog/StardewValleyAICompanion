@@ -118,8 +118,8 @@ namespace StardewAI.Core.OptionRegistry
                 TrainingRoles.Mixed,
                 new[]
                 {
-                    "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters",
-                    "mining.floor_objectives", "mining.player_resources"
+                    "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
+                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
                 },
                 new[] { "rolling-horizon current-floor action compiled", "after-state replanning continues until target depth" },
                 new[] { "block_unavailable_required_state", "block_impossible_target_depth", "block_unsupported_current_floor_step" }));
@@ -130,8 +130,8 @@ namespace StardewAI.Core.OptionRegistry
                 TrainingRoles.Mixed,
                 new[]
                 {
-                    "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters",
-                    "mining.floor_objectives", "mining.player_resources"
+                    "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
+                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
                 },
                 new[] { "rolling-horizon Quarry Mine action compiled", "native altar grants the Golden Scythe", "claimed altar performs the native return warp" },
                 new[] { "block_not_quarry_mine_77377", "block_missing_golden_scythe_altar", "block_full_inventory", "block_unsupported_current_floor_step" }));
@@ -243,6 +243,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
                 new[] { "native heavy-hitter input removes the exact container", "released contents remain normal game debris" },
                 new[] { "block_unknown_container", "block_missing_heavy_hitter", "block_unsafe_tool_window", "block_direct_object_mutation" }));
+
+            Register(Option("executor.break_resource_clump", "mining", "Remove one transparent MineShaft resource clump",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.resource_clumps", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS reaches one exact perimeter stand tile", "native axe or pickaxe lifecycle removes the exact multi-tile clump", "natural drops remain game debris" },
+                new[] { "block_unknown_clump", "block_unsupported_clump_type", "block_missing_required_tool_or_upgrade", "block_unsafe_tool_window", "block_direct_resource_clump_mutation" }));
 
             Register(Option("executor.combat_monster", "mining", "Defeat one transparent live monster",
                 OptionBehaviorCategories.Mechanical,

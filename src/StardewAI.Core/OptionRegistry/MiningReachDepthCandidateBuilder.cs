@@ -16,6 +16,7 @@ namespace StardewAI.Core.OptionRegistry
             "current_mine",
             "tiles",
             "objects",
+            "resource_clumps",
             "monsters",
             "floor_objectives",
             "player_resources"

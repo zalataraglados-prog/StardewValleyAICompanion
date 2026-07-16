@@ -317,6 +317,7 @@ try {
             "executor.move_to_tile",
             "executor.mine_stone",
             "executor.break_container",
+            "executor.break_resource_clump",
             "executor.combat_monster",
             "executor.shoot_monster",
             "executor.place_bomb",

@@ -15,6 +15,7 @@ namespace StardewAI.Core.Execution
         public const string ExitMine = "exit_mine";
         public const string MineStone = "mine_stone";
         public const string BreakContainer = "break_container";
+        public const string BreakResourceClump = "break_resource_clump";
         public const string CombatMonster = "combat_monster";
         public const string ShootMonster = "shoot_monster";
         public const string PlaceBomb = "place_bomb";
@@ -141,6 +142,20 @@ namespace StardewAI.Core.Execution
 
         public int? RestoreSlotIndex { get; set; }
 
+        public int? ToolSlotIndex { get; set; }
+
+        public string RequiredToolKind { get; set; } = string.Empty;
+
+        public int? ResourceClumpTileX { get; set; }
+
+        public int? ResourceClumpTileY { get; set; }
+
+        public int? ResourceClumpWidth { get; set; }
+
+        public int? ResourceClumpHeight { get; set; }
+
+        public int? ResourceClumpParentSheetIndex { get; set; }
+
         public int? ExpectedMineLevelDelta { get; set; }
 
         public int? ExpectedMineLevelAfter { get; set; }
@@ -184,6 +199,7 @@ namespace StardewAI.Core.Execution
 
             if (!TryFieldValue(mining, "tiles", out var tiles) ||
                 !TryFieldValue(mining, "objects", out var objects) ||
+                !TryFieldValue(mining, "resource_clumps", out var resourceClumps) ||
                 !TryFieldValue(mining, "monsters", out var monsters) ||
                 !TryFieldValue(mining, "floor_objectives", out var objectives))
             {
@@ -373,6 +389,13 @@ namespace StardewAI.Core.Execution
                 return containerPlan;
             }
 
+            var resourceClumpPlan = SelectResourceClump(resourceClumps, search, grid);
+            if (objective.Kind == MiningObjectiveKinds.AcquireGoldenScythe && resourceClumpPlan is not null)
+            {
+                resourceClumpPlan.Reason = "golden_scythe_route_blocked_by_removable_resource_clump";
+                return resourceClumpPlan;
+            }
+
             if (mustKillAll)
             {
                 return SelectMonster(monsters, search, grid, "kill_all_floor_requires_combat", movementTileDurationMs: movementTileDurationMs, bombFinisherAvailable: bombFinisherAvailable) ??
@@ -383,6 +406,11 @@ namespace StardewAI.Core.Execution
             if (stonePlan is not null)
             {
                 return stonePlan;
+            }
+
+            if (resourceClumpPlan is not null)
+            {
+                return resourceClumpPlan;
             }
 
             var combatPlan = SelectMonster(monsters, search, grid, "no_reachable_stone_clear_dynamic_monster", movementTileDurationMs: movementTileDurationMs, bombFinisherAvailable: bombFinisherAvailable);
@@ -1133,6 +1161,59 @@ namespace StardewAI.Core.Execution
                 .FirstOrDefault();
         }
 
+        private static MiningFloorStepPlan? SelectResourceClump(JsonElement resourceClumps, SearchResult search, bool[,] grid)
+        {
+            if (resourceClumps.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return resourceClumps.EnumerateArray()
+                .Where(clump =>
+                    ReadBool(clump, "native_executor_supported") &&
+                    ReadBool(clump, "tool_gate_satisfied") &&
+                    string.Equals(ReadString(clump, "executor_status"), "native_executor_available", StringComparison.Ordinal))
+                .Select(clump =>
+                {
+                    var tileX = ReadInt(clump, "tile_x");
+                    var tileY = ReadInt(clump, "tile_y");
+                    var width = ReadInt(clump, "width");
+                    var height = ReadInt(clump, "height");
+                    var swings = ReadInt(clump, "expected_hits_remaining");
+                    return new
+                    {
+                        Clump = clump,
+                        TileX = tileX,
+                        TileY = tileY,
+                        Width = width,
+                        Height = height,
+                        Candidate = tileX.HasValue && tileY.HasValue && width > 0 && height > 0 && swings > 0
+                            ? RectangleTargetCandidate(tileX.Value, tileY.Value, width.Value, height.Value, search, grid, swings.Value)
+                            : null
+                    };
+                })
+                .Where(row => row.Candidate is not null)
+                .OrderBy(row => row.Candidate!.Distance + row.Candidate.Swings)
+                .ThenBy(row => row.Candidate!.Swings)
+                .ThenBy(row => row.Candidate!.Distance)
+                .ThenBy(row => row.TileY)
+                .ThenBy(row => row.TileX)
+                .Select(row =>
+                {
+                    var plan = Build(MiningFloorStepKinds.BreakResourceClump, "reachable_supported_resource_clump", row.Candidate!);
+                    plan.ResourceClumpTileX = row.TileX;
+                    plan.ResourceClumpTileY = row.TileY;
+                    plan.ResourceClumpWidth = row.Width;
+                    plan.ResourceClumpHeight = row.Height;
+                    plan.ResourceClumpParentSheetIndex = ReadInt(row.Clump, "parent_sheet_index");
+                    plan.ToolSlotIndex = ReadInt(row.Clump, "selected_tool_slot_index");
+                    plan.RequiredToolKind = ReadString(row.Clump, "required_tool");
+                    plan.SafetyWindowStatus = "clear_at_snapshot";
+                    return plan;
+                })
+                .FirstOrDefault();
+        }
+
         private static bool HasAvailableBomb(JsonElement resources)
         {
             return resources.TryGetProperty("bomb_slots", out var bombSlots) &&
@@ -1595,6 +1676,59 @@ namespace StardewAI.Core.Execution
                 }
             }
 
+            return best;
+        }
+
+        private static Candidate? RectangleTargetCandidate(
+            int tileX,
+            int tileY,
+            int width,
+            int height,
+            SearchResult search,
+            bool[,] grid,
+            int estimatedSwings)
+        {
+            Candidate? best = null;
+            for (var targetX = tileX; targetX < tileX + width; targetX++)
+            {
+                for (var targetY = tileY; targetY < tileY + height; targetY++)
+                {
+                    foreach (var direction in Directions)
+                    {
+                        var standX = targetX + direction.X;
+                        var standY = targetY + direction.Y;
+                        if (standX >= tileX && standX < tileX + width &&
+                            standY >= tileY && standY < tileY + height)
+                        {
+                            continue;
+                        }
+                        if (!InBounds(grid, standX, standY) ||
+                            grid[standX, standY] ||
+                            !search.Distance.TryGetValue(Key(standX, standY), out var distance))
+                        {
+                            continue;
+                        }
+
+                        var candidate = new Candidate(
+                            targetX,
+                            targetY,
+                            standX,
+                            standY,
+                            distance,
+                            estimatedSwings,
+                            deterministicLadder: false,
+                            search.PathTo(standX, standY));
+                        if (best is null ||
+                            candidate.Distance < best.Distance ||
+                            candidate.Distance == best.Distance &&
+                            (candidate.TargetY < best.TargetY ||
+                                candidate.TargetY == best.TargetY && candidate.TargetX < best.TargetX))
+                        {
+                            best = candidate;
+                        }
+                    }
+                }
+            }
             return best;
         }
 
@@ -2075,6 +2209,7 @@ namespace StardewAI.Core.Execution
             {
                 MiningFloorStepKinds.MineStone => "executor.mine_stone",
                 MiningFloorStepKinds.BreakContainer => "executor.break_container",
+                MiningFloorStepKinds.BreakResourceClump => "executor.break_resource_clump",
                 MiningFloorStepKinds.CombatMonster => "executor.combat_monster",
                 MiningFloorStepKinds.ShootMonster => "executor.shoot_monster",
                 MiningFloorStepKinds.PlaceBomb => "executor.place_bomb",
@@ -2109,6 +2244,13 @@ namespace StardewAI.Core.Execution
             Add(parameters, "debris_index", plan.DebrisIndex);
             Add(parameters, "slot_index", plan.FoodSlotIndex);
             Add(parameters, "restore_slot_index", plan.RestoreSlotIndex);
+            Add(parameters, "tool_slot_index", plan.ToolSlotIndex);
+            Add(parameters, "required_tool_kind", plan.RequiredToolKind);
+            Add(parameters, "resource_clump_tile_x", plan.ResourceClumpTileX);
+            Add(parameters, "resource_clump_tile_y", plan.ResourceClumpTileY);
+            Add(parameters, "resource_clump_width", plan.ResourceClumpWidth);
+            Add(parameters, "resource_clump_height", plan.ResourceClumpHeight);
+            Add(parameters, "resource_clump_parent_sheet_index", plan.ResourceClumpParentSheetIndex);
             Add(parameters, "expected_mine_level_delta", plan.ExpectedMineLevelDelta);
             Add(parameters, "expected_mine_level_after", plan.ExpectedMineLevelAfter);
             Add(parameters, "expected_health_cost", plan.ExpectedHealthCost);

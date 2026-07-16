@@ -22,7 +22,7 @@ The model-facing command is `mining.acquire_golden_scythe`. `mining.reach_depth`
 1. Apply deadline, health, energy, and immediate-threat gates.
 2. If the reward is unclaimed and inventory has no empty slot, block upstream.
 3. If a monster makes the route unsafe, compile the existing perfect combat primitive.
-4. If the altar is not yet reachable, continue the existing bomb/container/stone/combat clearance loop. Do not descend.
+4. If the altar is not yet reachable, continue the existing bomb/container/stone/supported-resource-clump/combat clearance loop. Do not descend.
 5. If the altar stand tile is reachable but not adjacent, compile `executor.move_to_tile`.
 6. When adjacent and unclaimed, compile `executor.interact` with `interaction_kind=map_action` and `expected_action_type=GoldenScythe`.
 7. Verify native claim through both `gotGoldenScythe` and increased `(W)53` inventory count.
@@ -41,4 +41,6 @@ The model-facing command is `mining.acquire_golden_scythe`. `mining.reach_depth`
 
 The loop reads only `profile=mining`, compiles one high-level `mining.acquire_golden_scythe` action per fresh snapshot, and records one verified executor row per step without fitting during collection. Before the reward is claimed, an exit is a terminal failure. After the native altar interaction is verified through both mail and inventory increase, any further clearance action is a terminal failure; only `executor.exit_mine` reaching `Mine(67,10)` succeeds. Ladder, shaft, Volcano, stale snapshot, blocked primitive, and step-limit paths fail closed.
 
-RuntimeTestHarness and LiveTrainingLoop Release builds pass with `EnableModDeploy=false`, and the loop passes PowerShell parsing. Unit and runtime tests were intentionally not executed. No runtime-complete claim is made until an isolated save verifies approach, native claim, fresh after-state, native return, training-row contents, and duration.
+Supported MineShaft resource clumps now compile to `executor.break_resource_clump` with exact anchor, footprint, parent-sheet index, perimeter stand tile, hit tile, and Axe/Pickaxe slot. The executor uses native movement and tool input and verifies natural clump removal; unsupported indexes and insufficient tool upgrades fail closed.
+
+RuntimeTestHarness and LiveTrainingLoop Release builds pass with `EnableModDeploy=false`, and the loop passes PowerShell parsing. Unit and runtime tests were intentionally not executed. No runtime-complete claim is made until an isolated save verifies approach, native resource-clump clearance where present, native claim, fresh after-state, native return, training-row contents, and duration.

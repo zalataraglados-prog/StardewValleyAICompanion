@@ -572,6 +572,12 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var restoreSlotIndex = ReadQueueParameterInt(item, "restore_slot_index");
     var wateringCanSlotIndex = ReadQueueParameterInt(item, "watering_can_slot_index");
     var toolSlotIndex = ReadQueueParameterInt(item, "tool_slot_index");
+    var requiredToolKind = ReadQueueParameterString(item, "required_tool_kind");
+    var resourceClumpTileX = ReadQueueParameterInt(item, "resource_clump_tile_x");
+    var resourceClumpTileY = ReadQueueParameterInt(item, "resource_clump_tile_y");
+    var resourceClumpWidth = ReadQueueParameterInt(item, "resource_clump_width");
+    var resourceClumpHeight = ReadQueueParameterInt(item, "resource_clump_height");
+    var resourceClumpParentSheetIndex = ReadQueueParameterInt(item, "resource_clump_parent_sheet_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
     var connectorKind = ReadQueueParameterString(item, "connector_kind");
@@ -680,6 +686,12 @@ static TrainingExecutionRequest BuildExecutionRequest(
     {
         executionRequest.ToolSlotIndex = toolSlotIndex.Value;
     }
+    executionRequest.RequiredToolKind = requiredToolKind;
+    executionRequest.ResourceClumpTileX = resourceClumpTileX;
+    executionRequest.ResourceClumpTileY = resourceClumpTileY;
+    executionRequest.ResourceClumpWidth = resourceClumpWidth;
+    executionRequest.ResourceClumpHeight = resourceClumpHeight;
+    executionRequest.ResourceClumpParentSheetIndex = resourceClumpParentSheetIndex;
     if (!string.IsNullOrWhiteSpace(interactionKind))
     {
         executionRequest.InteractionKind = interactionKind;
@@ -1096,6 +1108,8 @@ static void WritePlanExecutionEpisode(
             ? applied ? 0.10 : -0.10
         : string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
           string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal)
+            ? applied ? 0.08 : -0.08
+        : string.Equals(optionId, "executor.break_resource_clump", StringComparison.Ordinal)
             ? applied ? 0.08 : -0.08
         : string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal)
             ? applied ? 0.12 : -0.12
