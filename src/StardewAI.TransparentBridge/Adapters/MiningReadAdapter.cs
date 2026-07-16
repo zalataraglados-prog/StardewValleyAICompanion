@@ -5,6 +5,7 @@ using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Monsters;
 using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using StardewAI.Contracts.State;
 using System.Reflection;
@@ -33,6 +34,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 "mining.current_mine",
                 "mining.tiles",
                 "mining.objects",
+                "mining.resource_clumps",
                 "mining.monsters",
                 "mining.monster_drop_catalogs",
                 "mining.debris",
@@ -49,6 +51,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             ["current_mine"] = Field(ReadCurrentMine(mine), "MineShaft.mineLevel/getMineArea/GetAdditionalDifficulty and flags", tick, "mining_read_adapter"),
             ["tiles"] = Field(ReadTiles(mine), "loaded GameLocation.map plus side-effect-free GameLocation.IsTileBlockedBy reads", tick, "mining_read_adapter"),
             ["objects"] = Field(ReadObjects(mine, Game1.player), "MineShaft.objects, Object.IsBreakableStone/MinutesUntilReady, and BreakableContainer live fields", tick, "mining_read_adapter"),
+            ["resource_clumps"] = Field(ReadResourceClumps(mine, Game1.player), "MineShaft.resourceClumps live type, footprint, health, and decompiled tool gates", tick, "mining_read_adapter"),
             ["monsters"] = Field(ReadMonsters(mine), "MineShaft.characters filtered to Monster", tick, "mining_read_adapter"),
             ["monster_drop_catalogs"] = Field(MiningMonsterDropResolver.ReadSharedCatalogs(Game1.player), "shared decompile-derived monster drop identity catalogs", tick, "mining_read_adapter"),
             ["debris"] = Field(ReadDebris(mine), "MineShaft.debris live item and chunk fields", tick, "mining_read_adapter"),
@@ -231,6 +234,60 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 source = "Monster live fields; " + drops.Source + "; future AI is handled by after-snapshot replanning, not guessed"
             };
         }).ToArray();
+    }
+
+    private static object[] ReadResourceClumps(MineShaft mine, Farmer player)
+    {
+        return mine.resourceClumps
+            .OrderBy(clump => clump.Tile.Y)
+            .ThenBy(clump => clump.Tile.X)
+            .Select(clump =>
+            {
+                var index = clump.parentSheetIndex.Value;
+                var requirement = ResourceClumpRequirement(index);
+                var tool = requirement.ToolKind == "axe"
+                    ? player.Items.OfType<Axe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
+                    : requirement.ToolKind == "pickaxe"
+                        ? player.Items.OfType<Pickaxe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
+                        : player.Items.OfType<Tool>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault();
+                var gateSatisfied = tool is not null && tool.UpgradeLevel >= requirement.MinimumUpgradeLevel;
+                var damagePerHit = gateSatisfied ? Math.Max(1f, (tool!.UpgradeLevel + 1) * 0.75f) : (float?)null;
+                var health = clump.health.Value;
+                return new
+                {
+                    tile_x = (int)clump.Tile.X,
+                    tile_y = (int)clump.Tile.Y,
+                    width = clump.width.Value,
+                    height = clump.height.Value,
+                    parent_sheet_index = index,
+                    runtime_type = clump.GetType().FullName,
+                    health,
+                    required_tool = requirement.ToolKind,
+                    minimum_upgrade_level = requirement.MinimumUpgradeLevel,
+                    selected_tool_slot_index = tool is null ? (int?)null : player.Items.IndexOf(tool),
+                    selected_tool_qualified_item_id = tool?.QualifiedItemId ?? string.Empty,
+                    selected_tool_upgrade_level = tool?.UpgradeLevel,
+                    tool_gate_satisfied = gateSatisfied,
+                    damage_per_hit = damagePerHit,
+                    expected_hits_remaining = damagePerHit.HasValue ? (int)Math.Ceiling(health / damagePerHit.Value) : (int?)null,
+                    executor_status = gateSatisfied ? "requires_dedicated_resource_clump_native_lifecycle" : "blocked_missing_required_tool_or_upgrade",
+                    source = "GameLocation.resourceClumps; ResourceClump.performToolAction exact parentSheetIndex tool gate and health formula"
+                };
+            })
+            .ToArray();
+    }
+
+    private static (string ToolKind, int MinimumUpgradeLevel) ResourceClumpRequirement(int parentSheetIndex)
+    {
+        return parentSheetIndex switch
+        {
+            ResourceClump.stumpIndex => ("axe", 1),
+            ResourceClump.hollowLogIndex => ("axe", 2),
+            ResourceClump.quarryBoulderIndex or ResourceClump.meteoriteIndex => ("pickaxe", 3),
+            ResourceClump.boulderIndex => ("pickaxe", 2),
+            ResourceClump.mineRock1Index or ResourceClump.mineRock2Index or ResourceClump.mineRock3Index or ResourceClump.mineRock4Index => ("pickaxe", 0),
+            _ => ("any_tool", 0)
+        };
     }
 
     private static object ReadMeleeDamageSemantics(Monster monster, Farmer player)
@@ -649,7 +706,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             selected_qualified_item_id = player.CurrentItem?.QualifiedItemId ?? string.Empty,
             selected_item_runtime_type = player.CurrentItem?.GetType().FullName ?? string.Empty,
             inventory_capacity = new { max_items = player.maxItems.Value, empty_slots = Math.Max(0, player.maxItems.Value - player.Items.Take(player.maxItems.Value).Count(item => item is not null)) },
-            pickaxe_slots = ToolSlots<Pickaxe>(player),
+            pickaxe_slots = player.Items.Select((item, index) => item is Pickaxe pickaxe ? PickaxeSlot(index, pickaxe) : null).Where(item => item is not null).ToArray(),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? WeaponSlot(index, weapon) : null).Where(item => item is not null).ToArray(),
             combat_damage_modifiers = new
             {
@@ -892,6 +949,23 @@ public sealed class MiningReadAdapter : ReadAdapterBase
     private static object Slot(int index, Item item)
     {
         return new { slot_index = index, item_id = item.ItemId, qualified_item_id = item.QualifiedItemId, display_name = item.DisplayName, stack = item.Stack, runtime_type = item.GetType().FullName };
+    }
+
+    private static object PickaxeSlot(int index, Pickaxe pickaxe)
+    {
+        return new
+        {
+            slot_index = index,
+            item_id = pickaxe.ItemId,
+            qualified_item_id = pickaxe.QualifiedItemId,
+            display_name = pickaxe.DisplayName,
+            stack = pickaxe.Stack,
+            runtime_type = pickaxe.GetType().FullName,
+            upgrade_level = pickaxe.UpgradeLevel,
+            additional_power = pickaxe.additionalPower.Value,
+            stone_damage_per_hit = PickaxeDamagePerHit(pickaxe.UpgradeLevel, pickaxe.additionalPower.Value),
+            source = "live Pickaxe.UpgradeLevel/additionalPower fields"
+        };
     }
 
     private static object WeaponSlot(int index, MeleeWeapon weapon)

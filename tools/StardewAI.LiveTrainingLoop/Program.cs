@@ -517,6 +517,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var expectedHealthAfter = ReadQueueParameterInt(item, "expected_health_after");
     var miningStepReason = ReadQueueParameterString(item, "mining_step_reason");
     var safeSlotIndex = ReadQueueParameterInt(item, "safe_slot_index");
+    var restoreSlotIndex = ReadQueueParameterInt(item, "restore_slot_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
     var connectorKind = ReadQueueParameterString(item, "connector_kind");
@@ -601,6 +602,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     if (safeSlotIndex.HasValue)
     {
         executionRequest.SafeSlotIndex = safeSlotIndex.Value;
+    }
+    if (restoreSlotIndex.HasValue)
+    {
+        executionRequest.RestoreSlotIndex = restoreSlotIndex.Value;
     }
     if (!string.IsNullOrWhiteSpace(interactionKind))
     {

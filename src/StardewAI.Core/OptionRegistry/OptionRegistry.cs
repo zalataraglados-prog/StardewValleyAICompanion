@@ -212,6 +212,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native pickaxe input removes the exact target stone", "combat threats interrupt and resume the tool action" },
                 new[] { "block_unknown_stone", "block_missing_pickaxe", "block_unsafe_tool_window", "block_direct_object_mutation" }));
 
+            Register(Option("executor.break_container", "mining", "Break one transparent mine container",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.objects", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "native heavy-hitter input removes the exact container", "released contents remain normal game debris" },
+                new[] { "block_unknown_container", "block_missing_heavy_hitter", "block_unsafe_tool_window", "block_direct_object_mutation" }));
+
             Register(Option("executor.combat_monster", "mining", "Defeat one transparent live monster",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

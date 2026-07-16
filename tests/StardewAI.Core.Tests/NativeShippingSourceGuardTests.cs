@@ -446,21 +446,17 @@ public sealed class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void SmokeScriptDisablesDirectMovementAndTracksEnvRestore()
+    public void RuntimeHarnessHasNoDirectMovementCompatibilitySwitch()
     {
         var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
-        Assert.Contains("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT = \"false\"", script, StringComparison.Ordinal);
-        Assert.Contains("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT = $env:STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT", script, StringComparison.Ordinal);
+        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var config = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "HarnessConfig.cs"));
 
-        var falseAssignIdx = script.IndexOf("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT = \"false\"", StringComparison.Ordinal);
-        var startProcessIdx = script.IndexOf("Start-Process", StringComparison.Ordinal);
-        Assert.True(falseAssignIdx >= 0, "false assignment not found");
-        Assert.True(startProcessIdx >= 0, "Start-Process not found");
-        Assert.True(falseAssignIdx < startProcessIdx,
-            $"STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT=false (pos {falseAssignIdx}) must appear before Start-Process (pos {startProcessIdx})");
-
-        var secondFalse = script.IndexOf("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT = \"false\"", falseAssignIdx + 1, StringComparison.Ordinal);
-        Assert.True(secondFalse < 0, $"Duplicate STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT=false found at position {secondFalse}; late assignment must be removed");
+        Assert.DoesNotContain("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("UseDirectValidatedMovement", config, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.MovePosition", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Position +=", source, StringComparison.Ordinal);
     }
 
     [Fact]

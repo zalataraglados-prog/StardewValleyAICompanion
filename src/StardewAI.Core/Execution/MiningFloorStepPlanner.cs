@@ -14,6 +14,7 @@ namespace StardewAI.Core.Execution
         public const string DescendShaft = "descend_shaft";
         public const string ExitMine = "exit_mine";
         public const string MineStone = "mine_stone";
+        public const string BreakContainer = "break_container";
         public const string CombatMonster = "combat_monster";
         public const string PickupDebris = "pickup_debris";
         public const string ConsumeFood = "consume_food";
@@ -199,6 +200,16 @@ namespace StardewAI.Core.Execution
 
             if (objective.Kind == MiningObjectiveKinds.CollectMonsterDrop)
             {
+                if (TryFieldValue(mining, "debris", out var monsterDebris))
+                {
+                    var existingDrop = SelectDebris(monsterDebris, search, grid, objective.TargetQualifiedItemIds, restoreSlot);
+                    if (existingDrop is not null)
+                    {
+                        existingDrop.Reason = "target_monster_drop_already_on_floor";
+                        return existingDrop;
+                    }
+                }
+
                 return SelectMonster(monsters, search, grid, "target_drop_monster_reachable", objective.TargetQualifiedItemIds, monsterDropCatalogs, movementTileDurationMs) ??
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
@@ -227,6 +238,17 @@ namespace StardewAI.Core.Execution
                     Blocked("no_reachable_target_resource_or_artifact_source");
             }
 
+            if (TryFieldValue(mining, "debris", out var opportunisticDebris) &&
+                SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles) is null)
+            {
+                var pickup = SelectDebris(opportunisticDebris, search, grid, Array.Empty<string>(), restoreSlot, maximumDistance: 3);
+                if (pickup is not null)
+                {
+                    pickup.Reason = "opportunistic_debris_within_three_tiles";
+                    return pickup;
+                }
+            }
+
             var shaftPlan = SelectShaft(tiles, search, grid, resources, hasResources, objective.MinimumReserveHealth);
             if (shaftPlan is not null)
             {
@@ -237,6 +259,12 @@ namespace StardewAI.Core.Execution
             if (ladderPlan is not null)
             {
                 return ladderPlan;
+            }
+
+            var containerPlan = SelectContainer(objects, search, grid, maximumDistance: 4);
+            if (containerPlan is not null)
+            {
+                return containerPlan;
             }
 
             var mustKillAll = ReadBool(objectives, "must_kill_all_monsters_to_advance");
@@ -722,7 +750,8 @@ namespace StardewAI.Core.Execution
                 .ThenBy(row => row!.Candidate!.Distance + row.Candidate.Swings)
                 .Select(row =>
                 {
-                    var plan = Build(MiningFloorStepKinds.MineStone, "target_resource_or_artifact_source_reachable", row!.Candidate!);
+                    var stepKind = ReadBool(row!.Object, "is_container") ? MiningFloorStepKinds.BreakContainer : MiningFloorStepKinds.MineStone;
+                    var plan = Build(stepKind, "target_resource_or_artifact_source_reachable", row.Candidate!);
                     plan.TargetQualifiedItemId = ReadString(row.Object, "qualified_item_id");
                     plan.ExpectedDropQualifiedItemIds = row.MatchedDropIds;
                     plan.SourceMatchStatus = row.MatchStatus;
@@ -782,7 +811,7 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static MiningFloorStepPlan? SelectDebris(JsonElement debris, SearchResult search, bool[,] grid, string[] targetIds, int? restoreSlot)
+        private static MiningFloorStepPlan? SelectDebris(JsonElement debris, SearchResult search, bool[,] grid, string[] targetIds, int? restoreSlot, int? maximumDistance = null)
         {
             var targets = new HashSet<string>(targetIds, StringComparer.OrdinalIgnoreCase);
             MiningFloorStepPlan? best = null;
@@ -798,7 +827,7 @@ namespace StardewAI.Core.Execution
                 foreach (var chunk in chunks.EnumerateArray())
                 {
                     var candidate = WalkCandidate(chunk, search, grid);
-                    if (candidate is null || best is not null && candidate.Distance >= best.EstimatedMovementTiles)
+                    if (candidate is null || maximumDistance.HasValue && candidate.Distance > maximumDistance.Value || best is not null && candidate.Distance >= best.EstimatedMovementTiles)
                     {
                         continue;
                     }
@@ -811,6 +840,29 @@ namespace StardewAI.Core.Execution
                 }
             }
             return best;
+        }
+
+        private static MiningFloorStepPlan? SelectContainer(JsonElement objects, SearchResult search, bool[,] grid, int? maximumDistance = null)
+        {
+            return objects.EnumerateArray()
+                .Where(obj => ReadBool(obj, "is_container"))
+                .Select(obj => new
+                {
+                    Object = obj,
+                    Candidate = TargetCandidate(obj, search, grid, Math.Max(1, ReadInt(obj, "health_or_hits_remaining") ?? 3), false)
+                })
+                .Where(row => row.Candidate is not null && (!maximumDistance.HasValue || row.Candidate.Distance <= maximumDistance.Value))
+                .OrderBy(row => row.Candidate!.Distance + row.Candidate.Swings)
+                .ThenBy(row => ReadInt(row.Object, "tile_y") ?? int.MaxValue)
+                .ThenBy(row => ReadInt(row.Object, "tile_x") ?? int.MaxValue)
+                .Select(row =>
+                {
+                    var plan = Build(MiningFloorStepKinds.BreakContainer, "opportunistic_breakable_container_within_four_tiles", row.Candidate!);
+                    plan.TargetQualifiedItemId = ReadString(row.Object, "qualified_item_id");
+                    plan.SafetyWindowStatus = "clear_at_snapshot";
+                    return plan;
+                })
+                .FirstOrDefault();
         }
 
         private static Candidate? WalkCandidate(JsonElement element, SearchResult search, bool[,] grid)
@@ -1236,6 +1288,7 @@ namespace StardewAI.Core.Execution
             return plan.StepKind switch
             {
                 MiningFloorStepKinds.MineStone => "executor.mine_stone",
+                MiningFloorStepKinds.BreakContainer => "executor.break_container",
                 MiningFloorStepKinds.CombatMonster => "executor.combat_monster",
                 MiningFloorStepKinds.PickupDebris => "executor.pickup_debris",
                 MiningFloorStepKinds.ConsumeFood => "executor.consume_food",

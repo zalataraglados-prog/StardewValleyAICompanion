@@ -3003,3 +3003,23 @@ Summary:
 Runtime safety correction:
 - `/api/v1/snapshot` no longer collects game objects on HTTP worker threads. Requests are queued and collected on SMAPI `UpdateTicked`; HTTP threads only serialize detached snapshots.
 - Fishing smoke uses a purpose-scoped `profile=fishing` containing Backend-required training domains instead of an unrelated full-domain read.
+
+2026-07-16 native mining movement, obstacle, container, and combat closure
+
+Commands:
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj -c Release --no-restore`
+- `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj -c Release --no-restore`
+Result: PASS; Core 899, Backend 49.
+
+Runtime: `artifacts\runtime-mining-snapshot-smoke\runtime-mining-snapshot-smoke-20260716-150946\summary.json`
+Result: PASS; native W/D/S/A movement reached a breakable container, one native heavy-hitter swing removed it, and the refreshed transparent snapshot confirmed removal.
+
+Runtime: `artifacts\runtime-mining-snapshot-smoke\runtime-mining-snapshot-smoke-20260716-151043\summary.json`
+Result: PASS; native pursuit and combat defeated the selected Squid Kid with one attack and one hit, with no direct position or damage mutation.
+
+Runtime: `artifacts\runtime-mining-snapshot-smoke\runtime-mining-snapshot-smoke-20260716-151145\summary.json`
+Result: PASS; native movement and pickaxe input removed a health-4 stone in one swing and observed health sequence `4,0`.
+
+Movement regression contract:
+- No `Game1.player.MovePosition`, direct `Game1.player.Position +=`, or same-frame `beforePosition` progress checks remain in RuntimeTestHarness.
+- Stuck detection and combat movement budgets consume cross-tick observed position/tile changes, so normal walking animation and game collision remain authoritative.

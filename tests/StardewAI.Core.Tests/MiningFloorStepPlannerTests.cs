@@ -415,6 +415,48 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void MonsterDropObjectivePicksExistingDropBeforeAnotherFight()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" }
+            },
+            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":6,\"tile_y\":2,\"health\":20,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
+            debris: "[{\"debris_index\":2,\"qualified_item_id\":\"(O)768\",\"chunks\":[{\"tile_x\":3,\"tile_y\":2}]}]");
+
+        Assert.Equal(MiningFloorStepKinds.PickupDebris, plan.StepKind);
+        Assert.Equal("target_monster_drop_already_on_floor", plan.Reason);
+    }
+
+    [Fact]
+    public void ReachDepthOpportunisticallyPicksOnlyNearbyDebris()
+    {
+        var near = ObjectivePlan(
+            new MiningFloorObjective { Kind = MiningObjectiveKinds.ReachDepth },
+            debris: "[{\"debris_index\":3,\"qualified_item_id\":\"(O)390\",\"chunks\":[{\"tile_x\":3,\"tile_y\":2}]}]");
+        var far = ObjectivePlan(
+            new MiningFloorObjective { Kind = MiningObjectiveKinds.ReachDepth },
+            debris: "[{\"debris_index\":4,\"qualified_item_id\":\"(O)390\",\"chunks\":[{\"tile_x\":6,\"tile_y\":2}]}]");
+
+        Assert.Equal(MiningFloorStepKinds.PickupDebris, near.StepKind);
+        Assert.Equal("opportunistic_debris_within_three_tiles", near.Reason);
+        Assert.NotEqual(MiningFloorStepKinds.PickupDebris, far.StepKind);
+    }
+
+    [Fact]
+    public void ReachDepthCompilesNearbyBreakableContainerSeparatelyFromStone()
+    {
+        var plan = Plan(objects: "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(BC)118\",\"is_container\":true,\"health_or_hits_remaining\":3}]");
+
+        Assert.Equal(MiningFloorStepKinds.BreakContainer, plan.StepKind);
+        Assert.Equal("executor.break_container", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal(3, plan.EstimatedToolSwings);
+        Assert.Equal("(BC)118", plan.TargetQualifiedItemId);
+    }
+
+    [Fact]
     public void ResourceObjectiveInfersSourceFromTransparentGuaranteedDrops()
     {
         var plan = ObjectivePlan(
@@ -534,6 +576,30 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void RuntimeBreakContainerUsesNativeHeavyHitterInputAndVerifiesRemoval()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = source.IndexOf("private void StartBreakContainer", StringComparison.Ordinal);
+        var end = source.IndexOf("private static bool ImmediateMiningThreat", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var containerSource = source[start..end];
+
+        Assert.Contains("executor.break_container", source, StringComparison.Ordinal);
+        Assert.Contains("obj is not BreakableContainer", containerSource, StringComparison.Ordinal);
+        Assert.Contains("tool.isHeavyHitter()", containerSource, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: true", containerSource, StringComparison.Ordinal);
+        Assert.Contains("native_heavy_hitter_input_removed_container", containerSource, StringComparison.Ordinal);
+        Assert.Contains("released_contents_left_as_game_debris", containerSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("performToolAction(", containerSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("objects.Remove", containerSource, StringComparison.Ordinal);
+
+        var smoke = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
+        Assert.Contains("[switch] $BreakOneContainer", smoke, StringComparison.Ordinal);
+        Assert.Contains("option_id = \"executor.break_container\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("break_container_removed", smoke, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RuntimeCombatUsesFarmerInputAndPreservesTypedFeedback()
     {
         var root = FindRepositoryRoot();
@@ -545,6 +611,15 @@ public sealed class MiningFloorStepPlannerTests
 
         Assert.Contains("executor.combat_monster", source, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: true", combatSource, StringComparison.Ordinal);
+        Assert.Contains("PriorityQueue<Point, int>", source, StringComparison.Ordinal);
+        Assert.Contains("MovementTraversalCost(location, next)", source, StringComparison.Ordinal);
+        Assert.Contains("pickaxe.UpgradeLevel + 1", source, StringComparison.Ordinal);
+
+        var bridgeSource = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        Assert.Contains("[\"resource_clumps\"]", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("ResourceClumpRequirement", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("minimum_upgrade_level", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("stone_damage_per_hit", bridgeSource, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: false", combatSource, StringComparison.Ordinal);
         Assert.Contains("RuntimeHelpers.GetHashCode(monster)", combatSource, StringComparison.Ordinal);
         Assert.Contains("CombatTargetHealthSequence", combatSource, StringComparison.Ordinal);
@@ -554,6 +629,21 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint", combatSource, StringComparison.Ordinal);
         Assert.Contains("ResolveCombatWeapon(target, request.CombatWeaponSlotIndex", combatSource, StringComparison.Ordinal);
         Assert.Contains("weapon.enchantments.Any", combatSource, StringComparison.Ordinal);
+        Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("TrackCombatProgress(active) > 600", combatSource, StringComparison.Ordinal);
+        Assert.Contains("combat_no_movement_or_damage_progress", combatSource, StringComparison.Ordinal);
+        Assert.Contains("out var pathReason, avoidSoftObstacles: true", combatSource, StringComparison.Ordinal);
+        Assert.Contains("ApplyExecutorMovementInput", source, StringComparison.Ordinal);
+        Assert.Contains("SButton.W, SButton.D, SButton.S, SButton.A", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.MovePosition", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Position +=", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("beforePosition", source, StringComparison.Ordinal);
+        Assert.Contains("movedSinceLastTick", source, StringComparison.Ordinal);
+        Assert.Contains("ObserveCombatMovement(active)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("BeginCombatClearance(active, mine, next)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("TickCombatClearance(active, mine)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("obj is BreakableContainer", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: true", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("damageMonster(", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("takeDamage(", combatSource, StringComparison.Ordinal);
         Assert.DoesNotContain("characters.Remove", combatSource, StringComparison.Ordinal);
@@ -565,6 +655,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("target_runtime_identity", smoke, StringComparison.Ordinal);
         Assert.Contains("combat_target_health_sequence", smoke, StringComparison.Ordinal);
         Assert.Contains("combat_target_removed", smoke, StringComparison.Ordinal);
+        Assert.Contains("-TimeoutSeconds 150", smoke, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -616,7 +707,7 @@ public sealed class MiningFloorStepPlannerTests
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
 
-        foreach (var optionId in new[] { "executor.mine_stone", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.break_container", "executor.combat_monster", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
         {
             var option = registry.GetRequired(optionId);
             Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
@@ -625,6 +716,7 @@ public sealed class MiningFloorStepPlannerTests
 
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.mine_stone").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.combat_monster").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.break_container").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_shaft").BehaviorCategory);

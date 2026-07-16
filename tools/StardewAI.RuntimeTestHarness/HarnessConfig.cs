@@ -18,7 +18,5 @@ public sealed class HarnessConfig
 
     public int ExecutorRequestTimeoutSeconds { get; set; } = 600;
 
-    public bool UseDirectValidatedMovement { get; set; } = true;
-
     public bool DisableMovementTimeouts { get; set; }
 }

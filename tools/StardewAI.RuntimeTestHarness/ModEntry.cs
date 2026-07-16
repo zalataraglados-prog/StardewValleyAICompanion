@@ -24,8 +24,8 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed class ModEntry : Mod
 {
-    private const int MovementSubstepsPerTick = 12;
-
+    private static readonly FieldInfo? BreakableContainerHealthField = typeof(BreakableContainer)
+        .GetField("health", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
     private HarnessConfig config = new();
     private int ticksSeen;
     private bool loadAttempted;
@@ -39,10 +39,12 @@ public sealed class ModEntry : Mod
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
+    private int? executorMovementDirection;
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveMineSetup? activeMineSetup;
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
+    private ActiveBreakContainer? activeBreakContainer;
     private ActiveCombatMonster? activeCombatMonster;
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
@@ -115,12 +117,6 @@ public sealed class ModEntry : Mod
         if (int.TryParse(executorTimeout, out var timeoutSeconds))
         {
             config.ExecutorRequestTimeoutSeconds = timeoutSeconds;
-        }
-
-        var directMovement = Environment.GetEnvironmentVariable("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT");
-        if (bool.TryParse(directMovement, out var useDirectMovement))
-        {
-            config.UseDirectValidatedMovement = useDirectMovement;
         }
 
         var disableMovementTimeouts = Environment.GetEnvironmentVariable("STARDEWAI_DISABLE_MOVEMENT_TIMEOUTS");
@@ -258,6 +254,7 @@ public sealed class ModEntry : Mod
         TickMineSetup();
         TickNativeFarmTool();
         TickMineStone();
+        TickBreakContainer();
         TickCombatMonster();
         TickManualAutoCombat();
         TickConsumeFood();
@@ -268,7 +265,7 @@ public sealed class ModEntry : Mod
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -309,6 +306,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.mine_stone")
             {
                 StartMineStone(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.break_container")
+            {
+                StartBreakContainer(pending);
                 return;
             }
 
@@ -381,6 +384,12 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_mining_floor")
             {
                 StartSetupMiningFloor(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_breakable_container")
+            {
+                pending.Completion.SetResult(ExecuteSetupBreakableContainer(pending.Request));
                 return;
             }
 
@@ -560,6 +569,12 @@ public sealed class ModEntry : Mod
     {
         try
         {
+            if (!ApplyExecutorMovementInput(out var movementInputReason))
+            {
+                executorMovementDirection = null;
+                Monitor.Log($"Movement input dispatch failed: {movementInputReason}.", LogLevel.Error);
+            }
+
             if (activeCatchFish is not null && !ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason))
             {
                 CompleteBlockedCatchFish(activeCatchFish, castInputReason);
@@ -773,21 +788,6 @@ public sealed class ModEntry : Mod
                 "player.tile=" + targetTile.X + "," + targetTile.Y,
                 "player.tile=" + startTile.X + "," + startTile.Y,
                 blockReason));
-            return;
-        }
-
-        if (config.UseDirectValidatedMovement && pending.Request.OptionId == "executor.traverse_connector")
-        {
-            pending.Completion.SetResult(ExecuteDirectConnectorTraversal(pending.Request, startTile, requestedTargetTile, connectorActionTile));
-            return;
-        }
-
-        if (config.UseDirectValidatedMovement && pending.Request.OptionId == "executor.move_to_tile")
-        {
-            var beforeTile = Game1.player.TilePoint;
-            Game1.player.Position = new Vector2(targetTile.X * Game1.tileSize, targetTile.Y * Game1.tileSize);
-            Game1.player.Halt();
-            pending.Completion.SetResult(CompletedMove(pending, beforeTile, targetTile, Game1.player.TilePoint, Game1.player.TilePoint == targetTile ? "verified" : "observed_mismatch", Game1.player.TilePoint == targetTile ? new[] { "target_tile_reached" } : new[] { "target_tile_mismatch_after_direct_validated_move" }));
             return;
         }
 
@@ -1042,46 +1042,19 @@ public sealed class ModEntry : Mod
         }
 
         var direction = DirectionTo(currentTile, nextTile);
-        var beforePosition = Game1.player.Position;
-        if (config.UseDirectValidatedMovement)
-        {
-            Game1.player.faceDirection(direction);
-            Game1.player.Position = new Vector2(nextTile.X * Game1.tileSize, nextTile.Y * Game1.tileSize);
-            Game1.player.Halt();
-        }
-        else
-        {
-            StartMovingIfNeeded(move, direction);
-            MovePlayerForTick();
-        }
+        var movedSinceLastTick = Vector2.DistanceSquared(move.LastPosition, Game1.player.Position) >= 0.01f;
+        move.LastPosition = Game1.player.Position;
+        StartMovingIfNeeded(move, direction);
+        MovePlayerForTick();
 
         if (Game1.player.TilePoint == nextTile)
         {
             move.PathIndex++;
-            if (config.UseDirectValidatedMovement)
-            {
-                StopAllMovement();
-                move.CurrentDirection = null;
-            }
         }
 
-        if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+        if (!movedSinceLastTick)
         {
             move.StuckTicks++;
-            if (!config.UseDirectValidatedMovement && move.StuckTicks > 8)
-            {
-                SmoothStepTowardTile(nextTile);
-                if (Game1.player.TilePoint == nextTile)
-                {
-                    move.PathIndex++;
-                }
-
-                if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) >= 0.01f)
-                {
-                    move.StuckTicks = 0;
-                    move.LastPosition = Game1.player.Position;
-                }
-            }
         }
         else
         {
@@ -1315,10 +1288,11 @@ public sealed class ModEntry : Mod
 
             if (Game1.player.TilePoint != sleep.BedTile)
             {
-                var beforePosition = Game1.player.Position;
+                var movedSinceLastTick = Vector2.DistanceSquared(sleep.LastPosition, Game1.player.Position) >= 0.01f;
+                sleep.LastPosition = Game1.player.Position;
                 StartMoving(DirectionTo(Game1.player.TilePoint, sleep.BedTile));
                 MovePlayerForTick();
-                if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+                if (!movedSinceLastTick)
                 {
                     sleep.StuckTicks++;
                     if (sleep.StuckTicks > 45)
@@ -1451,7 +1425,8 @@ public sealed class ModEntry : Mod
             return false;
         }
 
-        var beforePosition = Game1.player.Position;
+        var movedSinceLastTick = Vector2.DistanceSquared(sleep.LastPosition, Game1.player.Position) >= 0.01f;
+        sleep.LastPosition = Game1.player.Position;
         StartMoving(DirectionTo(currentTile, nextTile));
         MovePlayerForTick();
         if (Game1.player.TilePoint == nextTile)
@@ -1459,7 +1434,7 @@ public sealed class ModEntry : Mod
             sleep.PathIndex++;
         }
 
-        if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+        if (!movedSinceLastTick)
         {
             sleep.StuckTicks++;
         }
@@ -1994,6 +1969,11 @@ public sealed class ModEntry : Mod
         var key = new Vector2(tile.X, tile.Y);
         if (location.objects.TryGetValue(key, out var obj))
         {
+            if (obj is BreakableContainer)
+            {
+                return FindHeavyTool();
+            }
+
             if (obj.IsBreakableStone())
             {
                 return FindTool<Pickaxe>();
@@ -2029,14 +2009,6 @@ public sealed class ModEntry : Mod
             if (largeFeature.getBoundingBox().Intersects(tileRect))
             {
                 return FindTool<Axe>();
-            }
-        }
-
-        foreach (var clump in location.resourceClumps)
-        {
-            if (clump.getBoundingBox().Intersects(tileRect))
-            {
-                return (Tool?)FindTool<Pickaxe>() ?? FindTool<Axe>();
             }
         }
 
@@ -2120,7 +2092,7 @@ public sealed class ModEntry : Mod
         return new XnaRectangle(tile.X * Game1.tileSize, tile.Y * Game1.tileSize, Game1.tileSize, Game1.tileSize);
     }
 
-    private static bool IsTileTraversableForPlan(GameLocation location, Point tile, bool avoidSoftObstacles)
+    private static bool IsTileTraversableForPlan(GameLocation location, Point tile, bool avoidSoftObstacles, bool allowRemovableObstacles = true)
     {
         if (!IsTileOnMap(location, tile))
         {
@@ -2132,7 +2104,7 @@ public sealed class ModEntry : Mod
             return false;
         }
 
-        return IsTileWalkable(location, tile) || IsRemovableObstacle(location, tile) || IsTileOccupiedByCharacter(location, tile);
+        return IsTileWalkable(location, tile) || allowRemovableObstacles && IsRemovableObstacle(location, tile) || IsTileOccupiedByCharacter(location, tile);
     }
 
     private static bool IsTileHardBlocked(GameLocation location, Point tile)
@@ -2379,7 +2351,7 @@ public sealed class ModEntry : Mod
         return new Point(startTile.X + steps, startTile.Y);
     }
 
-    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false)
+    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true)
     {
         blockReason = string.Empty;
         if (IsTileHardBlocked(location, targetTile))
@@ -2388,14 +2360,20 @@ public sealed class ModEntry : Mod
             return null;
         }
 
-        var visited = new HashSet<string>(StringComparer.Ordinal) { TileKey(startTile) };
+        var costs = new Dictionary<string, int>(StringComparer.Ordinal) { [TileKey(startTile)] = 0 };
+        var steps = new Dictionary<string, int>(StringComparer.Ordinal) { [TileKey(startTile)] = 0 };
         var previous = new Dictionary<string, Point>(StringComparer.Ordinal);
-        var queue = new Queue<Point>();
-        queue.Enqueue(startTile);
+        var queue = new PriorityQueue<Point, int>();
+        queue.Enqueue(startTile, 0);
 
         while (queue.Count > 0)
         {
-            var current = queue.Dequeue();
+            queue.TryDequeue(out var current, out var dequeuedCost);
+            var currentKey = TileKey(current);
+            if (!costs.TryGetValue(currentKey, out var currentCost) || dequeuedCost != currentCost)
+            {
+                continue;
+            }
             if (current == targetTile)
             {
                 return ReconstructPath(startTile, targetTile, previous);
@@ -2404,22 +2382,68 @@ public sealed class ModEntry : Mod
             foreach (var next in Neighbors(current))
             {
                 var key = TileKey(next);
-                if (visited.Contains(key) || !IsTileTraversableForPlan(location, next, avoidSoftObstacles))
+                if (!IsTileTraversableForPlan(location, next, avoidSoftObstacles, allowRemovableObstacles))
                 {
                     continue;
                 }
 
-                previous[key] = current;
-                visited.Add(key);
-                if (ManhattanDistance(startTile, next) <= maxTiles)
+                var nextSteps = steps[currentKey] + 1;
+                if (nextSteps > maxTiles)
                 {
-                    queue.Enqueue(next);
+                    continue;
                 }
+                var nextCost = currentCost + MovementTraversalCost(location, next);
+                if (costs.TryGetValue(key, out var knownCost) && knownCost <= nextCost)
+                {
+                    continue;
+                }
+
+                costs[key] = nextCost;
+                steps[key] = nextSteps;
+                previous[key] = current;
+                queue.Enqueue(next, nextCost);
             }
         }
 
         blockReason = "movement_no_collision_safe_path";
         return null;
+    }
+
+    private static int MovementTraversalCost(GameLocation location, Point tile)
+    {
+        if (IsTileWalkable(location, tile))
+        {
+            return 32;
+        }
+        if (IsTileOccupiedByCharacter(location, tile))
+        {
+            return 192;
+        }
+
+        var key = new Vector2(tile.X, tile.Y);
+        if (location.objects.TryGetValue(key, out var obj))
+        {
+            if (obj.IsBreakableStone() && FindTool<Pickaxe>() is Pickaxe pickaxe)
+            {
+                var damage = Math.Max(1, pickaxe.UpgradeLevel + 1) + Math.Max(0, pickaxe.additionalPower.Value);
+                var swings = Math.Max(1, (int)Math.Ceiling(obj.MinutesUntilReady / (double)damage));
+                return 32 + swings * ClearanceTickCost(pickaxe);
+            }
+            if (obj is BreakableContainer)
+            {
+                return 32 + 3 * 30;
+            }
+            if (obj.IsWeeds())
+            {
+                return 32 + 30;
+            }
+            if (obj.IsTwig())
+            {
+                return 32 + 60;
+            }
+        }
+
+        return 32 + 8 * 60;
     }
 
     private static List<Point> ReconstructPath(Point startTile, Point targetTile, Dictionary<string, Point> previous)
@@ -2490,49 +2514,40 @@ public sealed class ModEntry : Mod
         return tile.X + "," + tile.Y;
     }
 
-    private static void StartMoving(int direction)
+    private void StartMoving(int direction)
     {
         Game1.player.forceCanMove();
         Game1.player.faceDirection(direction);
-        Game1.player.SetMovingUp(direction == 0);
-        Game1.player.SetMovingRight(direction == 1);
-        Game1.player.SetMovingDown(direction == 2);
-        Game1.player.SetMovingLeft(direction == 3);
+        executorMovementDirection = direction;
     }
 
-    private static void StopAllMovement()
+    private void StopAllMovement()
     {
-        Game1.player.SetMovingUp(false);
-        Game1.player.SetMovingRight(false);
-        Game1.player.SetMovingDown(false);
-        Game1.player.SetMovingLeft(false);
+        executorMovementDirection = null;
+        ApplyExecutorMovementInput(out _);
     }
 
     private static void MovePlayerForTick()
     {
-        var gameTime = Game1.currentGameTime ?? new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(16));
-        for (var i = 0; i < MovementSubstepsPerTick; i++)
-        {
-            Game1.player.MovePosition(gameTime, Game1.viewport, Game1.currentLocation);
-        }
+        // Movement is consumed by the game's native update on the next tick.
     }
 
-    private static void SmoothStepTowardTile(Point tile)
+    private bool ApplyExecutorMovementInput(out string reason)
     {
-        var target = new Vector2(tile.X * Game1.tileSize, tile.Y * Game1.tileSize);
-        var delta = target - Game1.player.Position;
-        if (delta.LengthSquared() < 1f)
+        reason = string.Empty;
+        var buttons = new[] { SButton.W, SButton.D, SButton.S, SButton.A };
+        for (var direction = 0; direction < buttons.Length; direction++)
         {
-            Game1.player.Position = target;
-            Game1.player.Halt();
-            return;
+            if (!TryApplySmapiButtonOverride(buttons[direction], executorMovementDirection == direction, out reason))
+            {
+                return false;
+            }
         }
 
-        delta.Normalize();
-        Game1.player.Position += delta * Math.Min(8f, Vector2.Distance(Game1.player.Position, target));
+        return true;
     }
 
-    private static void StartMovingIfNeeded(ActiveTileMove move, int direction)
+    private void StartMovingIfNeeded(ActiveTileMove move, int direction)
     {
         if (move.CurrentDirection == direction)
         {
@@ -2760,7 +2775,7 @@ public sealed class ModEntry : Mod
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason)
+    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true)
     {
         blockReason = string.Empty;
         if (AreAdjacent(Game1.player.TilePoint, target))
@@ -2770,12 +2785,13 @@ public sealed class ModEntry : Mod
 
         var start = Game1.player.TilePoint;
         var standTiles = Neighbors(target)
-            .Where(tile => IsTileOnMap(location, tile) && IsTileWalkable(location, tile))
+            .Where(tile => IsTileOnMap(location, tile) && IsTileWalkable(location, tile) &&
+                (!avoidSoftObstacles || !IsTileOccupiedByCharacter(location, tile)))
             .OrderBy(tile => ManhattanDistance(start, tile))
             .ToArray();
         foreach (var standTile in standTiles)
         {
-            var path = TryBuildTilePath(location, start, standTile, Math.Clamp(maxTiles, 1, 512), out blockReason);
+            var path = TryBuildTilePath(location, start, standTile, Math.Clamp(maxTiles, 1, 512), out blockReason, avoidSoftObstacles, allowRemovableObstacles);
             if (path is null)
             {
                 continue;
@@ -2854,7 +2870,8 @@ public sealed class ModEntry : Mod
             }
 
             var direction = DirectionTo(Game1.player.TilePoint, next);
-            var beforePosition = Game1.player.Position;
+            var movedSinceLastTick = Vector2.DistanceSquared(tool.LastPosition, Game1.player.Position) >= 0.01f;
+            tool.LastPosition = Game1.player.Position;
             StartMoving(direction);
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
@@ -2862,7 +2879,7 @@ public sealed class ModEntry : Mod
                 tool.PathIndex++;
             }
 
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (!movedSinceLastTick)
             {
                 tool.StuckTicks++;
                 if (tool.StuckTicks > 45)
@@ -2922,7 +2939,7 @@ public sealed class ModEntry : Mod
         tool.Pending.Completion.SetResult(NativeToolBlocked(tool.Pending.Request, tool.PrimitiveKind, tool.Target, tool.Tool, tool.WaterBefore, tool.StaminaBefore, tool.StartedAt, tool.EstimatedTicks, reason, tool.RequestedEffect, NativeToolObservedEffect(tool), reasons, tool.ElapsedTicks));
     }
 
-    private static void CleanupBlockedNativeToolLifecycle(ActiveNativeFarmTool tool)
+    private void CleanupBlockedNativeToolLifecycle(ActiveNativeFarmTool tool)
     {
         StopAllMovement();
         if (!tool.BeginIssued || !ReferenceEquals(Game1.player.CurrentTool, tool.Tool))
@@ -5630,7 +5647,8 @@ public sealed class ModEntry : Mod
                 return;
             }
 
-            var beforePosition = Game1.player.Position;
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
@@ -5638,7 +5656,7 @@ public sealed class ModEntry : Mod
                 active.PathIndex++;
             }
 
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (!movedSinceLastTick)
             {
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
@@ -5756,6 +5774,317 @@ public sealed class ModEntry : Mod
             ? obj.QualifiedItemId + ":breakable=" + obj.IsBreakableStone().ToString().ToLowerInvariant() + ":health=" + obj.MinutesUntilReady
             : "removed_or_missing";
         return "location=" + (location?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";stone=" + state;
+    }
+
+    private void StartBreakContainer(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_container", "mining.objects[target].is_container=false", "target=missing", "break_container_target_tile_required"));
+            return;
+        }
+
+        var mine = Game1.currentLocation as MineShaft;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var targetVector = new Vector2(target.X, target.Y);
+        var requested = "mining.objects[" + target.X + "," + target.Y + "].is_container=false;native_input=use_tool";
+        if (mine is null || !mine.objects.TryGetValue(targetVector, out var obj) || obj is not BreakableContainer container)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_container", requested, BreakContainerObservedEffect(target), "break_container_target_not_found"));
+            return;
+        }
+
+        var tool = BestContainerTool();
+        if (tool is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_container", requested, BreakContainerObservedEffect(target), "break_container_heavy_hitter_unavailable"));
+            return;
+        }
+        var path = BuildAdjacentToolPath(mine, target, request.MaxMovementTiles ?? 512, out var pathReason, avoidSoftObstacles: true, allowRemovableObstacles: false);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_container", requested, BreakContainerObservedEffect(target), pathReason));
+            return;
+        }
+
+        activeBreakContainer = new ActiveBreakContainer(
+            pending,
+            mine,
+            target,
+            path,
+            container,
+            tool,
+            ReadBreakableContainerHealth(container) ?? 3,
+            Math.Clamp(request.MaxCrops, 1, 64),
+            request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
+            requested);
+    }
+
+    private TrainingExecutionResult ExecuteSetupBreakableContainer(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+        if (Game1.currentLocation is not MineShaft mine)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_breakable_container", "mining.objects[target].is_container=true", "location=not_mineshaft", "setup_breakable_container_requires_mineshaft");
+        }
+
+        var start = Game1.player.TilePoint;
+        var candidates = Enumerable.Range(1, 8)
+            .SelectMany(radius => Enumerable.Range(-radius, radius * 2 + 1)
+                .SelectMany(offset => new[]
+                {
+                    new Point(start.X + offset, start.Y - radius),
+                    new Point(start.X + offset, start.Y + radius),
+                    new Point(start.X - radius, start.Y + offset),
+                    new Point(start.X + radius, start.Y + offset)
+                }))
+            .Distinct()
+            .Where(tile => IsTileOnMap(mine, tile) && IsTileWalkable(mine, tile))
+            .Where(tile => !mine.objects.ContainsKey(new Vector2(tile.X, tile.Y)) && !IsTileOccupiedByCharacter(mine, tile))
+            .Where(tile => Neighbors(tile).Any(stand => IsTileOnMap(mine, stand) && IsTileWalkable(mine, stand)))
+            .OrderBy(tile => ManhattanDistance(start, tile))
+            .ThenBy(tile => tile.Y)
+            .ThenBy(tile => tile.X)
+            .ToArray();
+        var target = candidates.FirstOrDefault();
+        if (target == default)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_breakable_container", "mining.objects[target].is_container=true", "candidate=missing", "setup_breakable_container_no_reachable_tile");
+        }
+
+        var tileVector = new Vector2(target.X, target.Y);
+        var beforeCount = mine.objects.Count();
+        var container = BreakableContainer.GetBarrelForMines(tileVector, mine);
+        mine.objects[tileVector] = container;
+        var health = ReadBreakableContainerHealth(container);
+        var verified = mine.objects.TryGetValue(tileVector, out var observed) && ReferenceEquals(observed, container) && health.HasValue;
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            TargetLocation = mine.NameOrUniqueName,
+            TargetTileX = target.X,
+            TargetTileY = target.Y,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_breakable_container",
+            PrimitiveVerificationStatus = verified ? "verified" : "blocked",
+            PrimitiveVerificationReasons = verified ? new[] { "native_breakable_container_fixture_present", "health=" + health } : new[] { "breakable_container_fixture_missing" },
+            RequestedEffect = "mining.objects[" + target.X + "," + target.Y + "].is_container=true",
+            ObservedEffect = BreakContainerObservedEffect(target),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "setup_breakable_container_fixture_mismatch" },
+            ChangedFacts = verified
+                ? new[] { new SimulatedFactChange { Path = "mining.objects.count", Before = beforeCount.ToString(), After = mine.objects.Count().ToString() } }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private void TickBreakContainer()
+    {
+        if (activeBreakContainer is null)
+        {
+            return;
+        }
+
+        var active = activeBreakContainer;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Mine))
+        {
+            CompleteBreakContainerBlocked(active, "break_container_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompleteBreakContainerBlocked(active, "break_container_timeout");
+            return;
+        }
+
+        var targetVector = new Vector2(active.Target.X, active.Target.Y);
+        if (!active.Mine.objects.TryGetValue(targetVector, out var obj))
+        {
+            CompleteBreakContainer(active);
+            return;
+        }
+        if (!ReferenceEquals(obj, active.Container) || obj is not BreakableContainer container)
+        {
+            CompleteBreakContainerBlocked(active, "break_container_runtime_target_drift");
+            return;
+        }
+
+        if (!active.ButtonHeld && ImmediateMiningThreat(active.Mine))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteBreakContainerBlocked(active, "break_container_unreachable_target");
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+            if (!IsTileWalkable(active.Mine, next) || IsTileOccupiedByCharacter(active.Mine, next))
+            {
+                CompleteBreakContainerBlocked(active, "break_container_path_changed");
+                return;
+            }
+            if (Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) < 0.01f)
+            {
+                active.StuckTicks++;
+            }
+            else
+            {
+                active.StuckTicks = 0;
+                active.LastPosition = Game1.player.Position;
+            }
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (active.StuckTicks > 45)
+            {
+                CompleteBreakContainerBlocked(active, "break_container_movement_stuck");
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.ButtonHeld)
+        {
+            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+            active.ButtonHeld = false;
+            var health = ReadBreakableContainerHealth(container);
+            if (health.HasValue && (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != health.Value))
+            {
+                active.ObservedHealth.Add(health.Value);
+            }
+            return;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return;
+        }
+        if (active.SwingCount >= active.MaxSwings)
+        {
+            CompleteBreakContainerBlocked(active, "break_container_swing_budget_exceeded");
+            return;
+        }
+
+        SelectTool(active.Tool);
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+        Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        {
+            CompleteBreakContainerBlocked(active, "break_container_" + inputReason);
+            return;
+        }
+        active.ButtonHeld = true;
+        active.SwingCount++;
+    }
+
+    private void CompleteBreakContainer(ActiveBreakContainer active)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeBreakContainer = null;
+        var request = active.Pending.Request;
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            TargetLocation = active.Mine.NameOrUniqueName,
+            TargetTileX = active.Target.X,
+            TargetTileY = active.Target.Y,
+            ToolQualifiedItemId = active.Tool.QualifiedItemId,
+            ToolUpgradeLevel = active.Tool.UpgradeLevel,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "break_container",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "native_heavy_hitter_input_removed_container", "released_contents_left_as_game_debris", "native_swing_count=" + active.SwingCount },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = BreakContainerObservedEffect(active.Target) + ";health_sequence=" + string.Join(",", active.ObservedHealth) + ";native_swings=" + active.SwingCount,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "mining.objects[" + active.Target.X + "," + active.Target.Y + "]", Before = active.Container.QualifiedItemId + ":health=" + active.HealthBefore, After = "removed" },
+                new SimulatedFactChange { Path = "mining.debris.count", Before = active.DebrisCountBefore.ToString(), After = active.Mine.debris.Count.ToString() }
+            }
+        });
+    }
+
+    private void CompleteBreakContainerBlocked(ActiveBreakContainer active, string reason)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeBreakContainer = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "break_container", active.RequestedEffect, BreakContainerObservedEffect(active.Target) + ";native_swings=" + active.SwingCount, reason));
+    }
+
+    private static Tool? BestContainerTool()
+    {
+        return Game1.player.Items.OfType<Tool>()
+            .Where(tool => tool.isHeavyHitter())
+            .OrderByDescending(tool => tool is MeleeWeapon weapon && weapon.type.Value == MeleeWeapon.club ? 2 : 1)
+            .ThenBy(tool => tool is MeleeWeapon weapon ? Math.Max(40, 400 - weapon.speed.Value * 40) : 400)
+            .FirstOrDefault();
+    }
+
+    private static void RestoreSlot(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < Game1.player.Items.Count)
+        {
+            Game1.player.CurrentToolIndex = slotIndex;
+        }
+    }
+
+    private static int? ReadBreakableContainerHealth(BreakableContainer container)
+    {
+        var netInt = BreakableContainerHealthField?.GetValue(container);
+        return netInt?.GetType().GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)?.GetValue(netInt) as int?;
+    }
+
+    private static string BreakContainerObservedEffect(Point target)
+    {
+        var mine = Game1.currentLocation as MineShaft;
+        var exists = mine?.objects.TryGetValue(new Vector2(target.X, target.Y), out var obj) == true && obj is BreakableContainer;
+        return "location=" + (mine?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";container_present=" + exists.ToString().ToLowerInvariant();
     }
 
     private static bool ImmediateMiningThreat(MineShaft mine)
@@ -5876,14 +6205,15 @@ public sealed class ModEntry : Mod
                 return;
             }
 
-            var beforePosition = Game1.player.Position;
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
                 active.PathIndex++;
             }
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (!movedSinceLastTick)
             {
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
@@ -6114,14 +6444,15 @@ public sealed class ModEntry : Mod
                 return;
             }
 
-            var beforePosition = Game1.player.Position;
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
                 active.PathIndex++;
             }
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (!movedSinceLastTick)
             {
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
@@ -6369,14 +6700,15 @@ public sealed class ModEntry : Mod
                 return;
             }
 
-            var beforePosition = Game1.player.Position;
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
                 active.PathIndex++;
             }
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (!movedSinceLastTick)
             {
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
@@ -6856,6 +7188,7 @@ public sealed class ModEntry : Mod
     private void TickManualAutoCombat()
     {
         var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
+            activeBreakContainer?.CombatInterrupted == true ||
             activePickupDebris?.CombatInterrupted == true ||
             activeDescendLadder?.CombatInterrupted == true ||
             activeDescendShaft?.CombatInterrupted == true ||
@@ -6936,7 +7269,7 @@ public sealed class ModEntry : Mod
         Monitor.Log($"Manual auto-combat attack {manualAutoCombatAttackCount}: {target.Name} health={target.Health}.", LogLevel.Info);
     }
 
-    private static void MoveTowardCombatTarget(MineShaft mine, Monster target)
+    private void MoveTowardCombatTarget(MineShaft mine, Monster target)
     {
         var path = BuildAdjacentToolPath(mine, target.TilePoint, 512, out _);
         if (path is null)
@@ -7034,6 +7367,13 @@ public sealed class ModEntry : Mod
             return;
         }
 
+        if (TrackCombatProgress(active) > 600)
+        {
+            var detail = string.IsNullOrWhiteSpace(active.LastNoProgressReason) ? "unknown" : active.LastNoProgressReason;
+            CompleteCombatMonsterBlocked(active, "combat_no_movement_or_damage_progress:" + detail);
+            return;
+        }
+
         var releasedAttackThisTick = false;
         if (active.AttackButtonHeld)
         {
@@ -7046,6 +7386,11 @@ public sealed class ModEntry : Mod
             releasedAttackThisTick = true;
         }
 
+        if (TickCombatClearance(active, mine))
+        {
+            return;
+        }
+
         var targetTile = active.Target.TilePoint;
         if (!IsMonsterWithinCombatReach(active.Target, active.Weapon))
         {
@@ -7056,24 +7401,21 @@ public sealed class ModEntry : Mod
 
             if (AreAdjacent(Game1.player.TilePoint, targetTile))
             {
-                var adjacentBeforePosition = Game1.player.Position;
+                ObserveCombatMovement(active);
+                if (active.MovementTiles > active.MaxMovementTiles)
+                {
+                    CompleteCombatMonsterBlocked(active, "combat_movement_budget_exceeded");
+                    return;
+                }
                 var adjacentTargetCenter = active.Target.GetBoundingBox().Center;
                 StartMoving(DirectionToPixel(Game1.player.GetBoundingBox().Center, adjacentTargetCenter, Game1.player.FacingDirection));
                 MovePlayerForTick();
-                if (Vector2.DistanceSquared(adjacentBeforePosition, Game1.player.Position) < 0.01f)
-                {
-                    active.StuckTicks++;
-                }
-                else
-                {
-                    active.StuckTicks = 0;
-                }
                 return;
             }
 
             if (active.PathIndex >= active.Path.Count || ManhattanDistance(active.PathTarget, targetTile) > 4)
             {
-                var path = BuildAdjacentToolPath(mine, targetTile, Math.Max(1, active.MaxMovementTiles - active.MovementTiles), out var pathReason);
+                var path = BuildAdjacentToolPath(mine, targetTile, Math.Max(1, active.MaxMovementTiles - active.MovementTiles), out var pathReason, avoidSoftObstacles: true);
                 if (path is null)
                 {
                     active.PathFailures++;
@@ -7102,43 +7444,42 @@ public sealed class ModEntry : Mod
                 return;
             }
 
-            if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+            if (IsTileOccupiedByCharacter(mine, next))
             {
+                active.LastNoProgressReason = "combat_next_tile_soft_occupied";
+                active.Path.Clear();
+                active.PathIndex = 0;
+                return;
+            }
+            if (!IsTileWalkable(mine, next))
+            {
+                if (BeginCombatClearance(active, mine, next))
+                {
+                    return;
+                }
+
+                active.LastNoProgressReason = "combat_next_tile_hard_blocked";
                 active.Path.Clear();
                 active.PathIndex = 0;
                 return;
             }
 
-            var beforeTile = Game1.player.TilePoint;
-            var beforePosition = Game1.player.Position;
-            StartMoving(DirectionTo(beforeTile, next));
-            MovePlayerForTick();
-            if (Game1.player.TilePoint != beforeTile)
+            ObserveCombatMovement(active);
+            if (active.MovementTiles > active.MaxMovementTiles)
             {
-                active.MovementTiles++;
-                if (active.MovementTiles > active.MaxMovementTiles)
-                {
-                    CompleteCombatMonsterBlocked(active, "combat_movement_budget_exceeded");
-                    return;
-                }
+                CompleteCombatMonsterBlocked(active, "combat_movement_budget_exceeded");
+                return;
             }
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
                 active.PathIndex++;
             }
-
-            if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+            if (active.StuckTicks > 45)
             {
-                active.StuckTicks++;
-                if (active.StuckTicks > 45)
-                {
-                    active.Path.Clear();
-                    active.PathIndex = 0;
-                    active.StuckTicks = 0;
-                }
-            }
-            else
-            {
+                active.Path.Clear();
+                active.PathIndex = 0;
                 active.StuckTicks = 0;
             }
             return;
@@ -7176,8 +7517,104 @@ public sealed class ModEntry : Mod
         active.AttackCount++;
     }
 
+    private bool BeginCombatClearance(ActiveCombatMonster active, MineShaft mine, Point tile)
+    {
+        var tool = SelectClearanceTool(mine, tile);
+        if (tool is null || !AreAdjacent(Game1.player.TilePoint, tile))
+        {
+            return false;
+        }
+
+        StopAllMovement();
+        active.ClearanceTarget = tile;
+        active.ClearanceTool = tool;
+        active.ClearanceBefore = ObstacleLabel(mine, tile);
+        active.ClearanceSwings = 0;
+        active.LastNoProgressReason = "combat_clearing_route_obstacle";
+        active.Path.Clear();
+        active.PathIndex = 0;
+        Monitor.Log($"Combat clearance: {active.ClearanceBefore} at {tile.X},{tile.Y} with {tool.GetType().Name}.", LogLevel.Info);
+        return true;
+    }
+
+    private bool TickCombatClearance(ActiveCombatMonster active, MineShaft mine)
+    {
+        if (!active.ClearanceTarget.HasValue)
+        {
+            return false;
+        }
+
+        var target = active.ClearanceTarget.Value;
+        if (active.ClearanceButtonHeld)
+        {
+            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+            active.ClearanceButtonHeld = false;
+            return true;
+        }
+
+        if (string.Equals(ObstacleLabel(mine, target), "clear", StringComparison.Ordinal))
+        {
+            active.Pending.MovementClearanceActions++;
+            active.Pending.ChangedFacts.Add(new SimulatedFactChange
+            {
+                Path = "combat.route_clearance[" + target.X + "," + target.Y + "]",
+                Before = active.ClearanceBefore,
+                After = ObstacleLabel(mine, target)
+            });
+            active.ClearanceTarget = null;
+            active.ClearanceTool = null;
+            active.ClearanceBefore = string.Empty;
+            active.ClearanceSwings = 0;
+            active.LastNoProgressReason = string.Empty;
+            active.NoProgressTicks = 0;
+            return true;
+        }
+
+        if (!AreAdjacent(Game1.player.TilePoint, target))
+        {
+            CompleteCombatMonsterBlocked(active, "combat_clearance_target_no_longer_adjacent");
+            return true;
+        }
+
+        var tool = SelectClearanceTool(mine, target);
+        if (tool is null)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_route_obstacle_not_clearable");
+            return true;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return true;
+        }
+        if (active.ClearanceSwings >= 64)
+        {
+            CompleteCombatMonsterBlocked(active, "combat_clearance_swing_budget_exceeded");
+            return true;
+        }
+
+        active.ClearanceTool = tool;
+        SelectTool(tool);
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, target));
+        Game1.player.lastClick = new Vector2(target.X * Game1.tileSize, target.Y * Game1.tileSize);
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        {
+            CompleteCombatMonsterBlocked(active, "combat_clearance_" + inputReason);
+            return true;
+        }
+
+        active.ClearanceButtonHeld = true;
+        active.ClearanceSwings++;
+        active.NoProgressTicks = 0;
+        return true;
+    }
+
     private static bool IsMonsterWithinCombatReach(Monster target, MeleeWeapon weapon)
     {
+        if (AreAdjacent(Game1.player.TilePoint, target.TilePoint))
+        {
+            return true;
+        }
+
         var playerCenter = Game1.player.GetBoundingBox().Center;
         var targetBox = target.GetBoundingBox();
         var targetCenter = targetBox.Center;
@@ -7186,6 +7623,46 @@ public sealed class ModEntry : Mod
         var deltaY = targetCenter.Y - playerCenter.Y;
         return targetBox.Intersects(Game1.player.GetBoundingBox()) ||
             deltaX * deltaX + deltaY * deltaY <= reach * reach;
+    }
+
+    private static int TrackCombatProgress(ActiveCombatMonster active)
+    {
+        var playerPosition = Game1.player.Position;
+        if (Vector2.DistanceSquared(active.LastProgressPosition, playerPosition) >= 0.01f ||
+            active.Target.Health < active.LastProgressTargetHealth)
+        {
+            active.LastProgressPosition = playerPosition;
+            active.LastProgressTargetHealth = active.Target.Health;
+            active.NoProgressTicks = 0;
+        }
+        else
+        {
+            active.NoProgressTicks++;
+        }
+
+        return active.NoProgressTicks;
+    }
+
+    private static void ObserveCombatMovement(ActiveCombatMonster active)
+    {
+        var currentPosition = Game1.player.Position;
+        if (Vector2.DistanceSquared(active.LastMovementPosition, currentPosition) < 0.01f)
+        {
+            active.StuckTicks++;
+        }
+        else
+        {
+            active.StuckTicks = 0;
+        }
+
+        var currentTile = Game1.player.TilePoint;
+        if (currentTile != active.LastMovementTile)
+        {
+            active.MovementTiles += ManhattanDistance(active.LastMovementTile, currentTile);
+        }
+
+        active.LastMovementPosition = currentPosition;
+        active.LastMovementTile = currentTile;
     }
 
     private static int DirectionToPixel(Point from, Point to, int fallback)
@@ -7279,6 +7756,16 @@ public sealed class ModEntry : Mod
         RecordCombatHealth(active);
         var request = active.Pending.Request;
         var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        var inventoryAfter = InventoryStackSignature();
+        var changedFacts = active.Pending.ChangedFacts.Concat(new[]
+        {
+            new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
+            new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() }
+        }).ToList();
+        if (!string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal))
+        {
+            changedFacts.Add(new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter });
+        }
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -7298,9 +7785,13 @@ public sealed class ModEntry : Mod
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "combat_monster",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = damageTaken == 0
+            PrimitiveVerificationReasons = (damageTaken == 0
                 ? new[] { "native_fire_tool_defeated_target", "player_health_unchanged" }
-                : new[] { "native_fire_tool_defeated_target", "player_damage_observed=" + damageTaken },
+                : new[] { "native_fire_tool_defeated_target", "player_damage_observed=" + damageTaken })
+                .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
+                    ? Array.Empty<string>()
+                    : new[] { "natural_incidental_pickup_observed" })
+                .ToArray(),
             RequestedEffect = active.RequestedEffect,
             ObservedEffect = CombatObservedEffect(active),
             CombatTargetRuntimeType = active.TargetRuntimeType,
@@ -7312,11 +7803,7 @@ public sealed class ModEntry : Mod
             CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray(),
             CombatDamageTaken = damageTaken,
             CombatTargetDefeated = true,
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
-                new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() }
-            }
+            ChangedFacts = changedFacts.ToArray()
         });
     }
 
@@ -7343,6 +7830,12 @@ public sealed class ModEntry : Mod
         result.CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray();
         result.CombatDamageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
         result.CombatTargetDefeated = active.Target.Health <= 0;
+        var inventoryAfter = InventoryStackSignature();
+        result.ChangedFacts = active.Pending.ChangedFacts
+            .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
+                ? Array.Empty<SimulatedFactChange>()
+                : new[] { new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter } })
+            .ToArray();
         active.Pending.Completion.SetResult(result);
     }
 
@@ -8564,14 +9057,15 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        var beforePosition = Game1.player.Position;
+        var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+        active.LastPosition = Game1.player.Position;
         StartMoving(DirectionTo(Game1.player.TilePoint, next));
         MovePlayerForTick();
         if (Game1.player.TilePoint == next)
         {
             active.PathIndex++;
         }
-        if (Vector2.DistanceSquared(beforePosition, Game1.player.Position) < 0.01f)
+        if (!movedSinceLastTick)
         {
             active.StuckTicks++;
             if (active.StuckTicks > 45)
@@ -11160,6 +11654,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.wait_ticks" &&
             request.OptionId != "executor.clear_obstacle" &&
             request.OptionId != "executor.mine_stone" &&
+            request.OptionId != "executor.break_container" &&
             request.OptionId != "executor.combat_monster" &&
             request.OptionId != "executor.consume_food" &&
             request.OptionId != "executor.descend_ladder" &&
@@ -11173,6 +11668,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_fish_pond" &&
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
+            request.OptionId != "debug.setup_breakable_container" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
             request.OptionId != "debug.setup_plant_seed_target" &&
             request.OptionId != "debug.setup_harvest_crop_target" &&
@@ -11439,6 +11935,7 @@ public sealed class ModEntry : Mod
             MaxSwings = maxSwings;
             RequestedEffect = requestedEffect;
             MaxTicks = Math.Max(180, path.Count * 90) + maxSwings * 240;
+            LastPosition = Game1.player.Position;
             ObservedHealth.Add(healthBefore);
         }
 
@@ -11457,9 +11954,54 @@ public sealed class ModEntry : Mod
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public int SwingCount { get; set; }
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
+        public bool CombatInterrupted { get; set; }
+        public int CombatInterruptedTicks { get; set; }
+        public List<int> ObservedHealth { get; } = new();
+    }
+
+    private sealed class ActiveBreakContainer
+    {
+        public ActiveBreakContainer(PendingExecution pending, MineShaft mine, Point target, List<Point> path, BreakableContainer container, Tool tool, int healthBefore, int maxSwings, int restoreSlotIndex, string requestedEffect)
+        {
+            Pending = pending;
+            Mine = mine;
+            Target = target;
+            Path = path;
+            Container = container;
+            Tool = tool;
+            HealthBefore = healthBefore;
+            MaxSwings = maxSwings;
+            RestoreSlotIndex = restoreSlotIndex;
+            RequestedEffect = requestedEffect;
+            DebrisCountBefore = mine.debris.Count;
+            MaxTicks = Math.Max(300, path.Count * 90 + maxSwings * 180);
+            LastPosition = Game1.player.Position;
+            ObservedHealth.Add(healthBefore);
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft Mine { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; }
+        public BreakableContainer Container { get; }
+        public Tool Tool { get; }
+        public int HealthBefore { get; }
+        public int MaxSwings { get; }
+        public int RestoreSlotIndex { get; }
+        public string RequestedEffect { get; }
+        public int DebrisCountBefore { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
+        public int SwingCount { get; set; }
+        public bool ButtonHeld { get; set; }
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();
@@ -11483,6 +12025,11 @@ public sealed class ModEntry : Mod
             ManualMovement = manualMovement;
             RequestedEffect = requestedEffect;
             MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
+            LastProgressPosition = Game1.player.Position;
+            LastMovementPosition = Game1.player.Position;
+            LastMovementTile = Game1.player.TilePoint;
+            LastProgressTargetHealth = target.Health;
+            InventoryBefore = InventoryStackSignature();
             TargetHealthSequence.Add(target.Health);
             PlayerHealthSequence.Add(Game1.player.health);
         }
@@ -11512,6 +12059,18 @@ public sealed class ModEntry : Mod
         public bool AttackButtonHeld { get; set; }
         public int AttackCount { get; set; }
         public int HitCount { get; set; }
+        public Vector2 LastProgressPosition { get; set; }
+        public Vector2 LastMovementPosition { get; set; }
+        public Point LastMovementTile { get; set; }
+        public int LastProgressTargetHealth { get; set; }
+        public int NoProgressTicks { get; set; }
+        public string InventoryBefore { get; }
+        public Point? ClearanceTarget { get; set; }
+        public Tool? ClearanceTool { get; set; }
+        public string ClearanceBefore { get; set; } = string.Empty;
+        public bool ClearanceButtonHeld { get; set; }
+        public int ClearanceSwings { get; set; }
+        public string LastNoProgressReason { get; set; } = string.Empty;
         public List<int> TargetHealthSequence { get; } = new();
         public List<int> PlayerHealthSequence { get; } = new();
 
@@ -11576,6 +12135,7 @@ public sealed class ModEntry : Mod
             ItemCountBefore = itemCountBefore;
             InventoryBefore = inventoryBefore;
             RequestedEffect = requestedEffect;
+            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -11599,6 +12159,7 @@ public sealed class ModEntry : Mod
         public Point PathTarget { get; set; }
         public int PathFailures { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public int WaitAtTargetTicks { get; set; }
     }
 
@@ -11612,6 +12173,7 @@ public sealed class ModEntry : Mod
             Target = target;
             Path = path;
             RequestedEffect = requestedEffect;
+            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -11627,6 +12189,7 @@ public sealed class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public bool ActionIssued { get; set; }
     }
 
@@ -11656,6 +12219,7 @@ public sealed class ModEntry : Mod
             ExpectedHealthCost = expectedHealthCost;
             ExpectedHealthAfter = expectedHealthAfter;
             RequestedEffect = requestedEffect;
+            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -11676,6 +12240,7 @@ public sealed class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public bool PromptOpened { get; set; }
         public bool DialogueConfirmed { get; set; }
     }
@@ -11712,6 +12277,7 @@ public sealed class ModEntry : Mod
             ExpectedTileY = expectedTileY;
             RetreatReason = retreatReason;
             RequestedEffect = requestedEffect;
+            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -11735,6 +12301,7 @@ public sealed class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public bool PromptOpened { get; set; }
         public bool DialogueConfirmed { get; set; }
     }
@@ -11795,6 +12362,7 @@ public sealed class ModEntry : Mod
             StartTime = startTime;
             StartSeason = startSeason;
             MaxTicks = Math.Max(600, path.Count * 90 + 600);
+            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -11810,6 +12378,7 @@ public sealed class ModEntry : Mod
         public SleepStage Stage { get; set; } = SleepStage.MoveToStand;
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
         public int PromptWaitTicks { get; set; }
         public int PostSleepWaitTicks { get; set; }
         public int ElapsedTicks { get; set; }

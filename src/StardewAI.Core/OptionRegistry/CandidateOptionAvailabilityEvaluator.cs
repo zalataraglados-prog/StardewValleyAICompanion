@@ -3820,6 +3820,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.face_direction" ||
                 optionId == "executor.wait_ticks" ||
                 optionId == "executor.mine_stone" ||
+                optionId == "executor.break_container" ||
                 optionId == "executor.combat_monster" ||
                 optionId == "executor.consume_food" ||
                 optionId == "executor.descend_ladder" ||
