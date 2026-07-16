@@ -205,6 +205,9 @@ namespace StardewAI.Core.Execution
             var currentDepth = TryFieldValue(mining, "current_mine", out var currentMine)
                 ? ReadInt(currentMine, "mine_level")
                 : null;
+            var currentMineKind = currentMine.ValueKind == JsonValueKind.Object
+                ? ReadString(currentMine, "mine_kind")
+                : string.Empty;
             var mandatoryRetreatReason = hasResources ? MandatoryRetreatReason(resources, objective, currentDepth) : string.Empty;
             if (!string.IsNullOrEmpty(mandatoryRetreatReason))
             {
@@ -292,7 +295,7 @@ namespace StardewAI.Core.Execution
                 }
             }
 
-            var shaftPlan = SelectShaft(tiles, search, grid, resources, hasResources, objective.MinimumReserveHealth);
+            var shaftPlan = SelectShaft(tiles, search, grid, resources, hasResources, objective.MinimumReserveHealth, currentMineKind);
             if (shaftPlan is not null)
             {
                 return shaftPlan;
@@ -337,7 +340,15 @@ namespace StardewAI.Core.Execution
                 return combatPlan;
             }
 
-            var unsafeShaft = SelectShaft(tiles, search, grid, resources, hasResources, minimumReserveHealth: 0, requireReserve: false);
+            var unsafeShaft = SelectShaft(
+                tiles,
+                search,
+                grid,
+                resources,
+                hasResources,
+                minimumReserveHealth: 0,
+                currentMineKind: currentMineKind,
+                requireReserve: false);
             if (unsafeShaft is not null && hasResources)
             {
                 var requiredHealth = (unsafeShaft.ExpectedHealthCost ?? 0) + Math.Max(1, objective.MinimumReserveHealth);
@@ -365,9 +376,12 @@ namespace StardewAI.Core.Execution
             JsonElement resources,
             bool hasResources,
             int minimumReserveHealth,
+            string currentMineKind,
             bool requireReserve = true)
         {
-            if (!tiles.TryGetProperty("shafts", out var shafts) || shafts.ValueKind != JsonValueKind.Array)
+            if (!string.Equals(currentMineKind, "skull_cavern", StringComparison.Ordinal) ||
+                !tiles.TryGetProperty("shafts", out var shafts) ||
+                shafts.ValueKind != JsonValueKind.Array)
             {
                 return null;
             }

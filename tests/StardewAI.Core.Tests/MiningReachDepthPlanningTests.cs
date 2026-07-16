@@ -384,6 +384,46 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void SkullCavernShaftSmokeKeepsMineFamiliesSeparateAndRecordsTraining()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "scripts",
+            "Invoke-RuntimeSkullCavernShaftSmoke.ps1"));
+
+        Assert.Contains("debug.setup_skull_cavern_shaft", source, StringComparison.Ordinal);
+        Assert.Contains("target_location_family=skull_cavern", source, StringComparison.Ordinal);
+        Assert.Contains("mine_area -eq 121", source, StringComparison.Ordinal);
+        Assert.Contains("mine_kind -eq \"skull_cavern\"", source, StringComparison.Ordinal);
+        Assert.Contains("executor.descend_shaft", source, StringComparison.Ordinal);
+        Assert.Contains("shaft_native_dialogue_handled", source, StringComparison.Ordinal);
+        Assert.Contains("live-training-feature-rows.jsonl", source, StringComparison.Ordinal);
+        Assert.Contains("-WindowStyle Hidden", source, StringComparison.Ordinal);
+        Assert.Contains("SDL_AUDIODRIVER", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("target_location_family=ordinary_mines", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("VolcanoDungeon", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MiningAdapterPublishesShaftsOnlyForLoadedSkullCavern()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "MiningReadAdapter.cs"));
+        var start = source.IndexOf("private static object[] ShaftTiles", StringComparison.Ordinal);
+        var end = source.IndexOf("public static int ShaftFallLevels", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var shaftSource = source[start..end];
+
+        Assert.Contains("mine.getMineArea() != MineShaft.desertArea", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("mine.mineLevel <= MineShaft.bottomOfMineLevel", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("TileIndex == 174", shaftSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ElevatorStartUsesDeepestMineLevelInsteadOfTargetProgress()
     {
         Assert.Equal(5, MiningReachDepthCandidateBuilder.ElevatorStartFor(1, 40, "ordinary_mines", 5));

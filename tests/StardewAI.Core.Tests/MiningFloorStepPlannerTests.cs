@@ -27,7 +27,8 @@ public sealed class MiningFloorStepPlannerTests
     {
         var plan = Plan(
             ladders: "[{\"tile_x\":5,\"tile_y\":2}]",
-            shafts: "[{\"tile_x\":4,\"tile_y\":2,\"expected_level_delta\":7,\"expected_mine_level_after\":128,\"expected_health_cost\":21,\"expected_health_after\":79}]");
+            shafts: "[{\"tile_x\":4,\"tile_y\":2,\"expected_level_delta\":7,\"expected_mine_level_after\":128,\"expected_health_cost\":21,\"expected_health_after\":79}]",
+            mineKind: "skull_cavern");
 
         Assert.Equal(MiningFloorStepKinds.DescendShaft, plan.StepKind);
         Assert.Equal("executor.descend_shaft", MiningFloorStepCompiler.ExecutionOptionId(plan));
@@ -38,6 +39,18 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Equal("shaft_health_reserve_verified", plan.SafetyWindowStatus);
         Assert.Contains(MiningFloorStepCompiler.BuildExecutionParameters(plan), parameter =>
             parameter.Name == "expected_mine_level_delta" && parameter.Value == "7");
+    }
+
+    [Fact]
+    public void OrdinaryMineRejectsMalformedShaftCandidateAndUsesLadder()
+    {
+        var plan = Plan(
+            ladders: "[{\"tile_x\":5,\"tile_y\":2}]",
+            shafts: "[{\"tile_x\":4,\"tile_y\":2,\"expected_level_delta\":7,\"expected_mine_level_after\":47,\"expected_health_cost\":21,\"expected_health_after\":79}]",
+            mineKind: "ordinary_mines");
+
+        Assert.Equal(MiningFloorStepKinds.DescendLadder, plan.StepKind);
+        Assert.Equal("reachable_ladder_available", plan.Reason);
     }
 
     [Fact]
@@ -1242,6 +1255,10 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("answerDialogueAction(\"Shaft_Jump\"", shaftSource, StringComparison.Ordinal);
         Assert.Contains("afterMine.mineLevel == active.ExpectedMineLevelAfter", shaftSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.health != active.ExpectedHealthAfter", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("mine.getMineArea() != MineShaft.desertArea", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("mine.mineLevel <= MineShaft.bottomOfMineLevel", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiLeftButtonOverride(pressed: true", shaftSource, StringComparison.Ordinal);
+        Assert.Contains("native_fall_dialogue_advanced_by_input", shaftSource, StringComparison.Ordinal);
         Assert.DoesNotContain("enterMineShaft(", shaftSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.enterMine(", shaftSource, StringComparison.Ordinal);
         Assert.DoesNotMatch(@"\.mineLevel\s*=(?!=)", shaftSource);
@@ -1274,6 +1291,7 @@ public sealed class MiningFloorStepPlannerTests
         bool mustKillAll = false,
         string[]? rows = null,
         string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"food_slots\":[]}",
+        string mineKind = "ordinary_mines",
         MiningFloorObjective? objective = null)
     {
         rows ??= new[] { "111111", "100001", "100001", "100001", "111111" };
@@ -1283,6 +1301,7 @@ public sealed class MiningFloorStepPlannerTests
         var json = """
         {
           "mining": {
+            "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "monsters": {"status":"available","value":MONSTERS},
@@ -1300,6 +1319,8 @@ public sealed class MiningFloorStepPlannerTests
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal)
+            .Replace("MINE_LEVEL", mineKind == "skull_cavern" ? "121" : "40", StringComparison.Ordinal)
+            .Replace("MINE_KIND", mineKind, StringComparison.Ordinal)
             .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json), objective ?? new MiningFloorObjective());
     }

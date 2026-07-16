@@ -3,10 +3,11 @@
 ## Status
 
 - Offline and runtime validation updated on 2026-07-16.
-- Full solution: PASS Core 914/914 and Backend 49/49.
+- Full solution: PASS Core 917/917 and Backend 49/49.
 - Hidden/silent isolated E: runtime smoke PASS at level 99: 118 objects, 79 breakable stones, 17 containers, 7 monsters, 50x50 collision rows, and five snapshots at 127-164 ms / 232,759 bytes.
 - Hidden/silent isolated E: native one-stone smoke PASS: target `(4,6)`, health sequence `8,4,0`, two native GoldPickaxe swings, object removed, 46 ticks, and a snapshot at 155 ms / 248,761 bytes.
 - Hidden/silent isolated E: rolling reach-depth PASS: levels 96/97/98 visited, two stone steps, two ladder descents, terminal exit, five fresh changed after-states, and five training rows.
+- Hidden/silent isolated E: Skull Cavern shaft PASS: area 121, level 130 to 134, deterministic delta 4, health 140 to 128, native prompt and post-fall dialogue handled, fresh changed after-state, and one training row.
 
 ## Commands Run
 
@@ -15,7 +16,8 @@
 - `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1 -MineLevel 99 -SampleCount 5 -MinimumBreakableStoneCount 1`
 - `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1 -MineLevel 99 -SampleCount 2 -MinimumBreakableStoneCount 1 -MineOneStone`
 - `scripts\Invoke-RuntimeMiningReachDepthLoop.ps1 -StartMineLevel 96 -TargetMineLevel 98`
+- `scripts\Invoke-RuntimeSkullCavernShaftSmoke.ps1`
 
 ## Runtime
 
-- Read-side validation, one native stone lifecycle, and the ordinary-mine rolling reach-depth loop are complete. Skull Cavern shaft behavior, arbitrary-depth duration calibration, and broader combat/loot combinations remain pending.
+- Read-side validation, one native stone lifecycle, the ordinary-mine rolling reach-depth loop, and one native Skull Cavern shaft lifecycle are complete. Arbitrary-depth duration calibration and broader combat/loot combinations remain pending. Volcano Dungeon is a separate planner/executor boundary and is not treated as a MineShaft variant.

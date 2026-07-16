@@ -5,7 +5,7 @@ Current-status correction: combat, natural pickup, food recovery, ladder/shaft d
 ## Risk Level
 
 - Read-side risk is low after isolated E: validation of compact collision and non-empty object/monster rows.
-- Historical foundation status: one-stone native execution was the only implemented action. Current main includes combat, descent, and retreat, and ordinary multi-floor integration is verified. The remaining high-risk boundaries are arbitrary-depth duration calibration, Skull Cavern shafts, and broader combat/loot combinations.
+- Historical foundation status: one-stone native execution was the only implemented action. Current main includes combat, descent, and retreat; ordinary multi-floor integration and one Skull Cavern shaft lifecycle are verified. The remaining high-risk boundaries are arbitrary-depth duration calibration and broader combat/loot combinations.
 
 ## Residual Risks
 
@@ -19,5 +19,6 @@ Current-status correction: combat, natural pickup, food recovery, ladder/shaft d
 
 - Candidate generation fails closed when any required mining group or nested required fact is missing, stale, errored, or unavailable.
 - Known impossible target depths and family mismatches are rejected before runtime.
+- Shaft transparency, planning, and execution require Skull Cavern `mine_kind`, area `121`, and level `>120`; ordinary mines ignore malformed shaft rows, quarry mine remains sentinel `77377`, and `VolcanoDungeon` is excluded from the MineShaft chain.
 - The compiler emits only a snapshot-bounded internal primitive and never guesses arbitrary-depth full-objective duration. Day planning fails closed until a duration model is calibrated from broader runtime samples.
 - Focused mining tests, E: read/action smokes, and the ordinary 96-to-98 rolling loop pass. Internal executor primitives remain compiler-owned and cannot be selected by the small model.

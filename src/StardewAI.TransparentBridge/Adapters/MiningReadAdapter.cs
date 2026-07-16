@@ -1158,7 +1158,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
 
     private static object[] ShaftTiles(xTile.Layers.Layer? layer, MineShaft mine, Farmer player)
     {
-        if (layer is null)
+        if (layer is null || mine.getMineArea() != MineShaft.desertArea || mine.mineLevel <= MineShaft.bottomOfMineLevel)
         {
             return Array.Empty<object>();
         }

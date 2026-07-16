@@ -413,6 +413,12 @@ public sealed class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_skull_cavern_shaft")
+            {
+                StartSetupSkullCavernShaft(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_breakable_container")
             {
                 pending.Completion.SetResult(ExecuteSetupBreakableContainer(pending.Request));
@@ -6692,6 +6698,11 @@ public sealed class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_requires_loaded_mineshaft"));
             return;
         }
+        if (mine.getMineArea() != MineShaft.desertArea || mine.mineLevel <= MineShaft.bottomOfMineLevel)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_requires_skull_cavern"));
+            return;
+        }
         if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "descend_shaft", requested, DescendShaftObservedEffect(), "descend_shaft_tool_or_menu_conflict"));
@@ -6760,12 +6771,51 @@ public sealed class ModEntry : Mod
         {
             if (Game1.currentLocation is MineShaft afterMine && afterMine.mineLevel == active.ExpectedMineLevelAfter)
             {
+                ReleaseSmapiLeftButtonOverride();
                 if (Game1.player.health != active.ExpectedHealthAfter)
                 {
                     CompleteDescendShaftBlocked(active, "descend_shaft_health_after_mismatch");
                     return;
                 }
                 CompleteDescendShaft(active, afterMine);
+                return;
+            }
+
+            if (Game1.activeClickableMenu is DialogueBox fallDialogue)
+            {
+                if (fallDialogue.isQuestion || (fallDialogue.responses?.Length ?? 0) > 0)
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_unexpected_question_after_jump");
+                    return;
+                }
+                if (active.FallDialoguePressAttempts >= 8)
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_fall_dialogue_press_budget_exhausted");
+                    return;
+                }
+
+                active.FallDialogueSeen = true;
+                if (active.FallDialogueButtonHeld)
+                {
+                    if (!TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
+                    {
+                        CompleteDescendShaftBlocked(active, "descend_shaft_fall_dialogue_" + releaseReason);
+                        return;
+                    }
+                    active.FallDialogueButtonHeld = false;
+                    active.FallDialoguePressAttempts++;
+                    return;
+                }
+                if (fallDialogue.transitioning || fallDialogue.safetyTimer > 0)
+                {
+                    return;
+                }
+                if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+                {
+                    CompleteDescendShaftBlocked(active, "descend_shaft_fall_dialogue_" + pressReason);
+                    return;
+                }
+                active.FallDialogueButtonHeld = true;
             }
             return;
         }
@@ -6901,6 +6951,7 @@ public sealed class ModEntry : Mod
 
     private void CompleteDescendShaft(ActiveDescendShaft active, MineShaft afterMine)
     {
+        ReleaseSmapiLeftButtonOverride();
         StopAllMovement();
         activeDescendShaft = null;
         var request = active.Pending.Request;
@@ -6919,7 +6970,14 @@ public sealed class ModEntry : Mod
             TrainingImpactScope = "executor_calibration",
             PrimitiveKind = "descend_shaft",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "bfs_reached_live_shaft", "native_shaft_prompt_observed", "native_shaft_jump_answer_handled", "exact_previewed_floor_and_health_observed" },
+            PrimitiveVerificationReasons = new[]
+            {
+                "bfs_reached_live_shaft",
+                "native_shaft_prompt_observed",
+                "native_shaft_jump_answer_handled",
+                active.FallDialogueSeen ? "native_fall_dialogue_advanced_by_input" : "native_fall_dialogue_not_observed",
+                "exact_previewed_floor_and_health_observed"
+            },
             RequestedEffect = active.RequestedEffect,
             ObservedEffect = DescendShaftObservedEffect(),
             ShaftMineLevelBefore = active.MineLevelBefore,
@@ -6938,6 +6996,7 @@ public sealed class ModEntry : Mod
 
     private void CompleteDescendShaftBlocked(ActiveDescendShaft active, string reason)
     {
+        ReleaseSmapiLeftButtonOverride();
         StopAllMovement();
         activeDescendShaft = null;
         var result = BlockedWithPrimitive(active.Pending.Request, "descend_shaft", active.RequestedEffect, DescendShaftObservedEffect(), reason);
@@ -9127,7 +9186,50 @@ public sealed class ModEntry : Mod
         var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
             ? EnsureMiningCalibrationLoadout()
             : MiningCalibrationLoadoutFacts.Disabled;
-        activeMineSetup = new ActiveMineSetup(pending, request.MineLevel.Value, beforeLocation, calibrationLoadout);
+        activeMineSetup = new ActiveMineSetup(
+            pending,
+            request.MineLevel.Value,
+            "ordinary_mines",
+            beforeLocation,
+            calibrationLoadout,
+            createForcedShaft: false);
+        Game1.enterMine(request.MineLevel.Value);
+    }
+
+    private void StartSetupSkullCavernShaft(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        if (!request.MineLevel.HasValue ||
+            request.MineLevel.Value <= MineShaft.bottomOfMineLevel ||
+            request.MineLevel.Value == MineShaft.quarryMineShaft)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "debug_setup_skull_cavern_shaft",
+                "current_location.mine_kind=skull_cavern;native_shaft_tile=174",
+                "mine_level=" + request.MineLevel,
+                "skull_cavern_fixture_level_out_of_range"));
+            return;
+        }
+
+        var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
+            ? EnsureMiningCalibrationLoadout()
+            : MiningCalibrationLoadoutFacts.Disabled;
+        activeMineSetup = new ActiveMineSetup(
+            pending,
+            request.MineLevel.Value,
+            "skull_cavern",
+            beforeLocation,
+            calibrationLoadout,
+            createForcedShaft: true);
         Game1.enterMine(request.MineLevel.Value);
     }
 
@@ -9337,7 +9439,34 @@ public sealed class ModEntry : Mod
         var active = activeMineSetup;
         active.ElapsedTicks++;
         var mine = Game1.currentLocation as MineShaft;
-        var verified = mine is not null && mine.mineLevel == active.MineLevel && mine.map is not null;
+        var loaded = mine is not null &&
+            mine.mineLevel == active.MineLevel &&
+            mine.map is not null &&
+            string.Equals(RuntimeMineKind(mine), active.ExpectedMineKind, StringComparison.Ordinal);
+        if (loaded && active.CreateForcedShaft && !active.ShaftCreationIssued)
+        {
+            var target = FindSkullCavernShaftFixtureTile(mine!);
+            if (!target.HasValue)
+            {
+                active.FailureReason = "skull_cavern_fixture_no_reachable_shaft_tile";
+                CompleteMineSetup(active, mine, verified: false);
+                return;
+            }
+
+            foreach (var monster in mine!.characters.OfType<Monster>().ToArray())
+            {
+                mine.characters.Remove(monster);
+            }
+            ClearMiningFixtureArea(mine, Game1.player.TilePoint, radius: 4);
+            mine.createLadderDown(target.Value.X, target.Value.Y, forceShaft: true);
+            active.ShaftTile = target;
+            active.ShaftCreationIssued = true;
+        }
+
+        var shaftVerified = !active.CreateForcedShaft ||
+            active.ShaftTile.HasValue &&
+            mine?.getTileIndexAt(active.ShaftTile.Value.X, active.ShaftTile.Value.Y, "Buildings", "mine") == 174;
+        var verified = loaded && shaftVerified;
         if (verified || active.ElapsedTicks >= active.MaxTicks)
         {
             CompleteMineSetup(active, mine, verified);
@@ -9360,36 +9489,82 @@ public sealed class ModEntry : Mod
             FeedbackAvailable = true,
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "debug_setup_mining_floor",
+            PrimitiveKind = active.CreateForcedShaft ? "debug_setup_skull_cavern_shaft" : "debug_setup_mining_floor",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
                 ? new[]
                 {
                     "native_enter_mine_completed",
                     "mine_level_verified",
+                    "mine_kind_verified:" + active.ExpectedMineKind,
                     "loaded_mine_map_present",
+                    active.CreateForcedShaft ? "native_forced_skull_cavern_shaft_created" : "shaft_fixture_not_requested",
                     active.CalibrationLoadout.Enabled ? "runtime_data_calibration_loadout_installed" : "calibration_loadout_disabled"
                 }
-                : new[] { "mining_fixture_state_mismatch" },
-            RequestedEffect = "current_location.mine_level=" + active.MineLevel,
+                : new[] { string.IsNullOrWhiteSpace(active.FailureReason) ? "mining_fixture_state_mismatch" : active.FailureReason },
+            RequestedEffect = "current_location.mine_level=" + active.MineLevel +
+                ";mine_kind=" + active.ExpectedMineKind +
+                ";forced_native_shaft=" + active.CreateForcedShaft.ToString().ToLowerInvariant(),
             ObservedEffect = "location=" + afterLocation +
                 ";mine_level=" + (mine?.mineLevel.ToString() ?? "unavailable") +
+                ";mine_kind=" + (mine is null ? "unavailable" : RuntimeMineKind(mine)) +
                 ";loaded_map=" + (mine?.map is not null) +
+                ";shaft_tile=" + (active.ShaftTile.HasValue ? active.ShaftTile.Value.X + "," + active.ShaftTile.Value.Y : "none") +
+                ";shaft_tile_index=" + (active.ShaftTile.HasValue && mine is not null ? mine.getTileIndexAt(active.ShaftTile.Value.X, active.ShaftTile.Value.Y, "Buildings", "mine") : -1) +
                 ";calibration_loadout=" + active.CalibrationLoadout.Enabled.ToString().ToLowerInvariant() +
                 ";weapon=" + active.CalibrationLoadout.WeaponQualifiedItemId +
                 ";weapon_max_damage=" + active.CalibrationLoadout.WeaponMaxDamage +
                 ";food=" + active.CalibrationLoadout.FoodQualifiedItemId +
                 ";food_health_recovery=" + active.CalibrationLoadout.FoodHealthRecovery +
                 ";food_stack=" + active.CalibrationLoadout.FoodStack,
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "mining_fixture_state_mismatch" },
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[] { string.IsNullOrWhiteSpace(active.FailureReason) ? "mining_fixture_state_mismatch" : active.FailureReason },
             ChangedFacts = verified
                 ? new[]
                 {
                     new SimulatedFactChange { Path = "player.location_id", Before = active.BeforeLocation, After = afterLocation },
-                    new SimulatedFactChange { Path = "current_location.mine_level", Before = string.Empty, After = mine!.mineLevel.ToString() }
+                    new SimulatedFactChange { Path = "current_location.mine_level", Before = string.Empty, After = mine!.mineLevel.ToString() },
+                    new SimulatedFactChange { Path = "current_location.mine_kind", Before = string.Empty, After = active.ExpectedMineKind }
                 }
                 : Array.Empty<SimulatedFactChange>()
         });
+    }
+
+    private static Point? FindSkullCavernShaftFixtureTile(MineShaft mine)
+    {
+        if (mine.map?.Layers.FirstOrDefault() is not { } layer)
+        {
+            return null;
+        }
+
+        var start = Game1.player.TilePoint;
+        return Enumerable.Range(0, layer.LayerWidth)
+            .SelectMany(x => Enumerable.Range(0, layer.LayerHeight).Select(y => new Point(x, y)))
+            .Where(tile => tile != start)
+            .Where(tile => ManhattanDistance(start, tile) >= 2)
+            .Where(tile => mine.getTileIndexAt(tile.X, tile.Y, "Buildings", "mine") < 0)
+            .Where(tile => mine.isTileClearForMineObjects(new Vector2(tile.X, tile.Y)))
+            .Where(tile => BuildCompilerAdjacentPath(mine, tile, null, 64, out _) is not null)
+            .OrderBy(tile => ManhattanDistance(start, tile))
+            .ThenBy(tile => tile.Y)
+            .ThenBy(tile => tile.X)
+            .Cast<Point?>()
+            .FirstOrDefault();
+    }
+
+    private static string RuntimeMineKind(MineShaft mine)
+    {
+        var area = mine.getMineArea();
+        if (area == MineShaft.quarryMineShaft || mine.mineLevel == MineShaft.quarryMineShaft)
+        {
+            return "quarry_mine";
+        }
+        if (area == MineShaft.desertArea && mine.mineLevel > MineShaft.bottomOfMineLevel)
+        {
+            return "skull_cavern";
+        }
+        return "ordinary_mines";
     }
 
     private static void ClearMiningFixtureArea(MineShaft mine, Point center, int radius)
@@ -13052,6 +13227,7 @@ public sealed class ModEntry : Mod
             request.OptionId != "debug.setup_fish_pond" &&
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
+            request.OptionId != "debug.setup_skull_cavern_shaft" &&
             request.OptionId != "debug.setup_breakable_container" &&
             request.OptionId != "debug.setup_mining_combat_fixture" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
@@ -13793,6 +13969,9 @@ public sealed class ModEntry : Mod
         public Vector2 LastPosition { get; set; }
         public bool PromptOpened { get; set; }
         public bool DialogueConfirmed { get; set; }
+        public bool FallDialogueSeen { get; set; }
+        public bool FallDialogueButtonHeld { get; set; }
+        public int FallDialoguePressAttempts { get; set; }
     }
 
     private sealed class ActiveExitMine
@@ -13873,18 +14052,31 @@ public sealed class ModEntry : Mod
 
     private sealed class ActiveMineSetup
     {
-        public ActiveMineSetup(PendingExecution pending, int mineLevel, string beforeLocation, MiningCalibrationLoadoutFacts calibrationLoadout)
+        public ActiveMineSetup(
+            PendingExecution pending,
+            int mineLevel,
+            string expectedMineKind,
+            string beforeLocation,
+            MiningCalibrationLoadoutFacts calibrationLoadout,
+            bool createForcedShaft)
         {
             Pending = pending;
             MineLevel = mineLevel;
+            ExpectedMineKind = expectedMineKind;
             BeforeLocation = beforeLocation;
             CalibrationLoadout = calibrationLoadout;
+            CreateForcedShaft = createForcedShaft;
         }
 
         public PendingExecution Pending { get; }
         public int MineLevel { get; }
+        public string ExpectedMineKind { get; }
         public string BeforeLocation { get; }
         public MiningCalibrationLoadoutFacts CalibrationLoadout { get; }
+        public bool CreateForcedShaft { get; }
+        public bool ShaftCreationIssued { get; set; }
+        public Point? ShaftTile { get; set; }
+        public string FailureReason { get; set; } = string.Empty;
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; } = 600;
