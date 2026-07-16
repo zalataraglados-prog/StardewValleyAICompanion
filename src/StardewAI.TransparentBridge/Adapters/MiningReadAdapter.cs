@@ -204,6 +204,7 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 melee_damage_semantics = ReadMeleeDamageSemantics(monster, Game1.player),
                 melee_attack_projections = ReadMeleeAttackProjections(monster, Game1.player),
                 slingshot_attack_projections = ReadSlingshotAttackProjections(monster, Game1.player),
+                bomb_damage_semantics = ReadBombDamageSemantics(monster),
                 is_hard_mode_monster = monster.isHardModeMonster.Value,
                 movement_speed = monster.Speed,
                 tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
@@ -410,6 +411,74 @@ public sealed class MiningReadAdapter : ReadAdapterBase
                 : null)
             .Where(projection => projection is not null)
             .ToArray()!;
+    }
+
+    private static object ReadBombDamageSemantics(Monster monster)
+    {
+        var vanillaType = monster.GetType().Assembly == typeof(Monster).Assembly;
+        var currentHitCanDamage = !monster.IsInvisible && !monster.isInvincible();
+        var canDefeatFromCurrentState = vanillaType;
+        var specialEffect = "normal_bomb_damage";
+        switch (monster)
+        {
+            case Spiker:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "permanent_immunity";
+                break;
+            case Bat bat when bat.Age == 789:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "permanent_current_variant_immunity";
+                break;
+            case Bug bug when bug.isArmoredBug.Value:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "armored_bug_explicit_bomb_immunity";
+                break;
+            case Mummy mummy when mummy.reviveTimer.Value > 0:
+                currentHitCanDamage = true;
+                canDefeatFromCurrentState = true;
+                specialEffect = "bomb_finalizes_reviving_mummy";
+                break;
+            case Mummy:
+                canDefeatFromCurrentState = false;
+                specialEffect = "standing_mummy_must_be_knocked_down_then_bombed";
+                break;
+            case RockCrab crab when !crab.isStickBug.Value && !crab.shellGone.Value:
+                specialEffect = "bomb_removes_shell_before_normal_damage";
+                break;
+            case RockCrab crab when crab.isStickBug.Value && !crab.shellGone.Value:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "stick_bug_shell_not_removed_by_bomb";
+                break;
+            case Grub grub when grub.pupating.Value:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "temporary_immunity_while_pupating";
+                break;
+            case LavaLurk lurk when lurk.currentState.Value == LavaLurk.State.Submerged:
+                currentHitCanDamage = false;
+                canDefeatFromCurrentState = false;
+                specialEffect = "temporary_immunity_while_submerged";
+                break;
+        }
+        if (!vanillaType)
+        {
+            currentHitCanDamage = false;
+            canDefeatFromCurrentState = false;
+            specialEffect = "unknown_custom_monster_takeDamage_semantics";
+        }
+        canDefeatFromCurrentState &= currentHitCanDamage;
+        return new
+        {
+            current_hit_can_damage = currentHitCanDamage,
+            can_defeat_from_current_state = canDefeatFromCurrentState,
+            special_effect = specialEffect,
+            monster_damage_formula = "uniform_radius_times_6_through_radius_times_8_then_receiver_takeDamage",
+            source = "GameLocation.explode/damageMonster; vanilla runtime-type takeDamage overrides"
+        };
     }
 
     private static object ReadSlingshotAttackProjection(Monster monster, Farmer player, Slingshot slingshot, int slotIndex)

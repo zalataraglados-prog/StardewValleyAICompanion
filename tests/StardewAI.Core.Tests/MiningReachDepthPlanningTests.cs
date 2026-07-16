@@ -267,6 +267,9 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("BuildSlingshotDamageDistribution", source, StringComparison.Ordinal);
         Assert.Contains("full_charge_ms = 300", source, StringComparison.Ordinal);
         Assert.Contains("bomb_slots = player.Items.Select", source, StringComparison.Ordinal);
+        Assert.Contains("bomb_damage_semantics = ReadBombDamageSemantics", source, StringComparison.Ordinal);
+        Assert.Contains("standing_mummy_must_be_knocked_down_then_bombed", source, StringComparison.Ordinal);
+        Assert.Contains("armored_bug_explicit_bomb_immunity", source, StringComparison.Ordinal);
         Assert.Contains("fuse_ms = 2400", source, StringComparison.Ordinal);
         Assert.Contains("object_destruction_shape = \"exact_getCircleOutlineGrid_fill\"", source, StringComparison.Ordinal);
         Assert.Contains("exact_decompiled_discrete_distribution", source, StringComparison.Ordinal);
