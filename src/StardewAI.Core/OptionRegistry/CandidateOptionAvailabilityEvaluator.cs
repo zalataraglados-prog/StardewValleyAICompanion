@@ -455,7 +455,7 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    sleepImmediatelyBlocks.Add("recovery_cross_map_home_route_unverified");
+                    sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, RecoveryRouteProbeCandidate()));
                 }
 
                 candidates.Add(new EventCandidate
@@ -470,8 +470,8 @@ namespace StardewAI.Core.OptionRegistry
                         ? bedStandTile is null
                             ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
                             : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
-                        : "route_to_home=" + homeLocation + ";sleep_not_executed",
-                    EstimatedTicks = currentLocationIsHome ? 240 : 900,
+                        : "rolling_horizon_route_to_home=" + homeLocation + ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
+                    EstimatedTicks = currentLocationIsHome ? 240 : 0,
                     BlockReasons = sleepImmediatelyBlocks.Distinct(StringComparer.Ordinal).ToArray()
                 });
                 return candidates.ToArray();
@@ -526,7 +526,7 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    returnHomeBlocks.Add("recovery_cross_map_home_route_unverified");
+                    returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, RecoveryRouteProbeCandidate()));
                 }
 
                 candidates.Add(new EventCandidate
@@ -541,8 +541,8 @@ namespace StardewAI.Core.OptionRegistry
                         ? bedStandTile is null
                             ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
                             : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
-                        : "route_to_home=" + homeLocation + ";sleep_not_executed",
-                    EstimatedTicks = currentLocationIsHome ? 240 : 900,
+                        : "rolling_horizon_route_to_home=" + homeLocation + ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
+                    EstimatedTicks = currentLocationIsHome ? 240 : 0,
                     BlockReasons = returnHomeBlocks.Distinct(StringComparer.Ordinal).ToArray()
                 });
                 candidates.Add(new EventCandidate
@@ -570,6 +570,15 @@ namespace StardewAI.Core.OptionRegistry
                 BlockReasons = ActiveMenuOpenForCandidate(snapshot) ? new[] { "intervening_menu_must_be_cleared_first" } : Array.Empty<string>()
             });
             return candidates.ToArray();
+        }
+
+        private static OptionAvailabilityCandidate RecoveryRouteProbeCandidate()
+        {
+            return new OptionAvailabilityCandidate
+            {
+                OptionId = "recovery.stabilize_day",
+                Parameters = new[] { Parameter("compiler_context.recovery_route_probe", "true") }
+            };
         }
 
         private EventCandidate[] InteractEndpointCandidates(SnapshotEnvelope snapshot)

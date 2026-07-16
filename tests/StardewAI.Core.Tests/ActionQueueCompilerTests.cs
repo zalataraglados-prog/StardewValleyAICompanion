@@ -1532,7 +1532,7 @@ public sealed class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileRecoveryLateNightBlocksWhenSleepTargetIsUnavailable()
+    public void CompileRecoveryLateNightBlocksWhenOutsideAndRouteGraphIsUnavailable()
     {
         var snapshot = Snapshot("""
         {
@@ -1563,7 +1563,53 @@ public sealed class ActionQueueCompilerTests
         var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "recovery.stabilize_day"), snapshot);
 
         Assert.Equal("blocked", queue.Status);
-        Assert.Contains("sleep_target_unavailable", queue.Items[0].BlockingReasons);
+        Assert.Contains("recovery_route_graph_unavailable", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileRecoveryLateNightEmitsOneTransparentConnectorThenReplans()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":2300,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Town","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":42,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":23,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"Town","current_location_is_home":false,"bed_tile_x":43,"bed_tile_y":23,"bed_tile_has_bed":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Town","width":70,"height":46,"notable_tiles":[{"tile_x":43,"tile_y":23,"collision_blocked":false}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Town","connectors":[{"kind":"warp","tile_x":43,"tile_y":23,"target_location":"Farm","target_x":10,"target_y":11,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Town","action_gates":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"Town","from_x":43,"from_y":23,"target_location":"Farm","target_x":10,"target_y":11,"resolved":true},
+              {"kind":"building_door","from_location":"Farm","from_x":64,"from_y":14,"target_location":"FarmHouse","target_x":3,"target_y":9,"resolved":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "recovery.stabilize_day"), snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Farm");
+        var step = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("traverse_connector", step.StepType);
+        Assert.Contains("rolling_horizon_replan=true", step.ExpectedEffect);
     }
 
     [Fact]

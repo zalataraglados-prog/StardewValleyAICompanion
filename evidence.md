@@ -46,5 +46,6 @@
 ## Recovery High-Level Chain
 
 - Safe menu close, bounded refresh, already-home late-night sleep, and already-home post-2400 sleep now compile to existing atomic executors.
-- Outside-home recovery retains `recovery_cross_map_home_route_unverified`; no arbitrary route or teleport was enabled.
+- Outside-home recovery now compiles one transparently confirmed route connector at a time toward `home_location_id`, then requires a fresh snapshot before the next connector. The compiler rejects missing graph edges, unmatched current connectors, closed/unresolved gates, and unreachable current-map segments.
+- Connector traversal no longer contains the old direct `Game1.currentLocation` / `player.Position` transition path. Standard and touch warps are entered through movement; action warps, locked doors, and building doors use the native `checkAction` lifecycle. Runtime verification is intentionally pending because this implementation slice was requested without game testing.
 - `current_location.home_context.sleep_executor_enabled=true` now matches the runtime-verified terminal sleep macro, while standalone prompt confirmation remains disabled.

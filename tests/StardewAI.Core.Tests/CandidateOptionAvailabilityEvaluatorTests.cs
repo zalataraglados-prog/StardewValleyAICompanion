@@ -1592,7 +1592,7 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
 
         Assert.Equal(3, option.EventCandidates.Length);
         Assert.Contains(option.EventCandidates, candidate => candidate.Kind == "recovery_close_menu" && candidate.BlockReasons.Contains("close_menu_type_unknown"));
-        Assert.Contains(option.EventCandidates, candidate => candidate.Kind == "recovery_return_home" && candidate.BlockReasons.Contains("recovery_cross_map_home_route_unverified"));
+        Assert.Contains(option.EventCandidates, candidate => candidate.Kind == "recovery_return_home" && candidate.BlockReasons.Contains("recovery_route_graph_unavailable"));
         Assert.Contains(option.EventCandidates, candidate => candidate.Kind == "recovery_sleep_before_collapse" && candidate.BlockReasons.Contains("recovery_terminal_sleep_already_covered_by_return_home"));
     }
 
@@ -1704,7 +1704,7 @@ public sealed class CandidateOptionAvailabilityEvaluatorTests
         var candidate = Assert.Single(option.EventCandidates);
         Assert.Equal("recovery:sleep_immediately", candidate.CandidateId);
         Assert.False(candidate.Available);
-        Assert.Contains("recovery_cross_map_home_route_unverified", candidate.BlockReasons);
+        Assert.Contains("recovery_route_graph_unavailable", candidate.BlockReasons);
     }
 
     [Fact]

@@ -152,9 +152,14 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "time.time", "player.energy", "menus.active_menu", "menus.sleep_prompt_context", "player.location_id", "player.tile_x", "player.tile_y" },
-                new[] { "urgent risks inspected", "safe stopping plan produced" },
-                new[] { "block_state_hash_mismatch", "block_mutation_in_observer_or_planner_mode" }));
+                new[]
+                {
+                    "time.time", "player.energy", "menus.active_menu", "menus.sleep_prompt_context",
+                    "player.location_id", "player.tile_x", "player.tile_y", "current_location.home_context",
+                    "locations.collision_grid", "locations.route_action_branch_coverage"
+                },
+                new[] { "urgent risks inspected", "one transparent rolling-horizon route or terminal sleep step produced" },
+                new[] { "block_state_hash_mismatch", "block_unverified_home_route", "block_mutation_in_observer_or_planner_mode" }));
 
             Register(Option("executor.move_to_tile", "movement", "Move to tile safely",
                 OptionBehaviorCategories.Mechanical,

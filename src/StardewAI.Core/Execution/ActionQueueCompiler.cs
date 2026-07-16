@@ -768,6 +768,11 @@ namespace StardewAI.Core.Execution
                 return BuildVolcanoReachCalderaParameters(action, snapshot);
             }
 
+            if (action.OptionId == "recovery.stabilize_day")
+            {
+                return BuildRecoveryParameters(action, snapshot);
+            }
+
             if (action.OptionId == "executor.buy_shop_item")
             {
                 return BuildBuyShopItemParameters(action, snapshot);
@@ -909,7 +914,7 @@ namespace StardewAI.Core.Execution
             {
                 Parameter("compiler_context.route_graph_source", "locations.route_graph"),
                 Parameter("compiler_context.current_map_collision_source", "locations.collision_grid"),
-                Parameter("compiler_context.route_executor_enabled", "false")
+                Parameter("compiler_context.route_executor_enabled", "true")
             };
 
             var targetLocation = ReadParameter(action, "target_location");
@@ -964,6 +969,55 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
             parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
             parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.resource_clumps,mining.monsters,mining.monster_drop_catalogs,mining.floor_objectives,mining.player_resources"));
+            return parameters.ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildRecoveryParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            var time = ReadStateFieldInt(snapshot, "time", "time");
+            if (time < 2200)
+            {
+                parameters.Add(Parameter("execution_option_id", "executor.wait_ticks"));
+                parameters.Add(Parameter("wait_ticks", "30"));
+                parameters.Add(Parameter("recovery_step_kind", "refresh_plan_after_stabilization"));
+                return parameters.ToArray();
+            }
+
+            if (SleepTarget(snapshot) is not null)
+            {
+                parameters.Add(Parameter("execution_option_id", "executor.sleep"));
+                parameters.Add(Parameter("recovery_step_kind", "terminal_sleep"));
+                return parameters.ToArray();
+            }
+
+            var routePlan = BuildRecoveryRoutePlan(snapshot);
+            if (routePlan.Step is null)
+            {
+                parameters.Add(Parameter("recovery_step_kind", "blocked"));
+                parameters.AddRange(routePlan.BlockReasons.Select(reason => Parameter("recovery_block_reason", reason)));
+                return parameters.ToArray();
+            }
+
+            var step = routePlan.Step;
+            parameters.Add(Parameter("execution_option_id", "executor.traverse_connector"));
+            parameters.Add(Parameter("recovery_step_kind", "rolling_route_home_connector"));
+            parameters.Add(Parameter("target_tile_x", step.Edge.FromX!.Value.ToString()));
+            parameters.Add(Parameter("target_tile_y", step.Edge.FromY!.Value.ToString()));
+            parameters.Add(Parameter("connector_kind", step.Edge.Kind));
+            parameters.Add(Parameter("expected_target_location", step.Edge.TargetLocation));
+            parameters.Add(Parameter("max_movement_tiles", Math.Max(1, step.PathTiles + 1).ToString()));
+            parameters.Add(Parameter("estimated_minutes", Math.Max(1, (step.EstimatedTicks + 59) / 60).ToString()));
+            parameters.Add(Parameter("compiler_context.route_graph_source", "locations.route_graph"));
+            parameters.Add(Parameter("compiler_context.route_connector_source", "locations.route_connectors"));
+            parameters.Add(Parameter("compiler_context.route_gate_source", "locations.route_gate_context"));
+            parameters.Add(Parameter("compiler_context.remaining_connector_count", step.RemainingConnectorCount.ToString()));
+            if (step.Edge.TargetX.HasValue && step.Edge.TargetY.HasValue)
+            {
+                parameters.Add(Parameter("expected_arrival_tile_x", step.Edge.TargetX.Value.ToString()));
+                parameters.Add(Parameter("expected_arrival_tile_y", step.Edge.TargetY.Value.ToString()));
+            }
+
             return parameters.ToArray();
         }
 
@@ -1108,7 +1162,7 @@ namespace StardewAI.Core.Execution
 
             if (SleepTarget(snapshot) is null)
             {
-                reasons.Add("sleep_target_unavailable");
+                reasons.AddRange(BuildRecoveryRoutePlan(snapshot).BlockReasons);
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -3239,18 +3293,24 @@ namespace StardewAI.Core.Execution
 
         private sealed class RouteGraphEdge
         {
-            public RouteGraphEdge(string fromLocation, string targetLocation, int? fromX, int? fromY)
+            public RouteGraphEdge(string kind, string fromLocation, string targetLocation, int? fromX, int? fromY, int? targetX, int? targetY)
             {
+                Kind = kind;
                 FromLocation = fromLocation;
                 TargetLocation = targetLocation;
                 FromX = fromX;
                 FromY = fromY;
+                TargetX = targetX;
+                TargetY = targetY;
             }
 
+            public string Kind { get; }
             public string FromLocation { get; }
             public string TargetLocation { get; }
             public int? FromX { get; }
             public int? FromY { get; }
+            public int? TargetX { get; }
+            public int? TargetY { get; }
         }
 
         private sealed class SleepStandTile
@@ -3276,14 +3336,299 @@ namespace StardewAI.Core.Execution
             public int EstimatedTicks { get; set; }
         }
 
+        private sealed class RecoveryRouteStep
+        {
+            public RouteGraphEdge Edge { get; set; } = null!;
+            public int PathTiles { get; set; }
+            public int EstimatedTicks { get; set; }
+            public int RemainingConnectorCount { get; set; }
+        }
+
+        private sealed class RecoveryRoutePlanResult
+        {
+            public RecoveryRouteStep? Step { get; set; }
+            public string[] BlockReasons { get; set; } = Array.Empty<string>();
+        }
+
+        private static RecoveryRoutePlanResult BuildRecoveryRoutePlan(SnapshotEnvelope snapshot)
+        {
+            var homeContext = ReadStateFieldValue(snapshot, "current_location", "home_context");
+            if (!homeContext.HasValue || homeContext.Value.ValueKind != JsonValueKind.Object)
+            {
+                return BlockedRecoveryRoute("recovery_home_context_unavailable");
+            }
+
+            var homeLocation = ReadString(homeContext.Value, "home_location_id");
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            if (!ReadBool(homeContext.Value, "home_available") ||
+                string.IsNullOrWhiteSpace(homeLocation) ||
+                string.IsNullOrWhiteSpace(currentLocation))
+            {
+                return BlockedRecoveryRoute("recovery_home_route_target_unavailable");
+            }
+
+            if (ReadBool(homeContext.Value, "current_location_is_home") ||
+                string.Equals(currentLocation, homeLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                return BlockedRecoveryRoute("sleep_target_unavailable");
+            }
+
+            var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
+            if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
+            {
+                return BlockedRecoveryRoute("recovery_route_graph_unavailable");
+            }
+
+            var graphEdges = ReadResolvedRouteGraphEdges(graph.Value)
+                .Where(edge => IsRecoveryConnectorKind(edge.Kind))
+                .ToArray();
+            var outgoing = graphEdges
+                .Where(edge =>
+                    string.Equals(edge.FromLocation, currentLocation, StringComparison.OrdinalIgnoreCase) &&
+                    edge.FromX.HasValue &&
+                    edge.FromY.HasValue)
+                .ToArray();
+            if (outgoing.Length == 0)
+            {
+                return BlockedRecoveryRoute("recovery_route_graph_no_executable_outgoing_connector");
+            }
+
+            var candidates = new List<RecoveryRouteStep>();
+            var observedBlocks = new List<string>();
+            foreach (var edge in outgoing)
+            {
+                var remainingPath = string.Equals(edge.TargetLocation, homeLocation, StringComparison.OrdinalIgnoreCase)
+                    ? Array.Empty<RouteGraphEdge>()
+                    : FindResolvedRouteGraphPath(graphEdges, edge.TargetLocation, homeLocation);
+                if (!string.Equals(edge.TargetLocation, homeLocation, StringComparison.OrdinalIgnoreCase) && remainingPath.Length == 0)
+                {
+                    observedBlocks.Add("recovery_route_graph_no_path_home");
+                    continue;
+                }
+
+                var connector = FindMatchingCurrentRouteConnector(snapshot, edge);
+                if (!connector.HasValue)
+                {
+                    observedBlocks.Add("recovery_current_connector_not_transparently_confirmed");
+                    continue;
+                }
+
+                var gateBlock = RecoveryConnectorGateBlock(snapshot, edge);
+                if (!string.IsNullOrWhiteSpace(gateBlock))
+                {
+                    observedBlocks.Add(gateBlock);
+                    continue;
+                }
+
+                var pathTiles = RecoveryConnectorPathTiles(snapshot, edge, connector.Value);
+                if (!pathTiles.HasValue)
+                {
+                    observedBlocks.Add("recovery_current_connector_start_segment_unreachable");
+                    continue;
+                }
+
+                candidates.Add(new RecoveryRouteStep
+                {
+                    Edge = edge,
+                    PathTiles = pathTiles.Value,
+                    EstimatedTicks = Math.Max(60, (pathTiles.Value + 1) * 60),
+                    RemainingConnectorCount = remainingPath.Length + 1
+                });
+            }
+
+            var selected = candidates
+                .OrderBy(candidate => candidate.RemainingConnectorCount)
+                .ThenBy(candidate => candidate.PathTiles)
+                .ThenBy(candidate => candidate.Edge.FromY)
+                .ThenBy(candidate => candidate.Edge.FromX)
+                .FirstOrDefault();
+            return selected is null
+                ? new RecoveryRoutePlanResult
+                {
+                    BlockReasons = observedBlocks
+                        .DefaultIfEmpty("recovery_route_home_step_unavailable")
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray()
+                }
+                : new RecoveryRoutePlanResult { Step = selected };
+        }
+
+        private static RecoveryRoutePlanResult BlockedRecoveryRoute(string reason)
+        {
+            return new RecoveryRoutePlanResult { BlockReasons = new[] { reason } };
+        }
+
+        private static bool IsRecoveryConnectorKind(string kind)
+        {
+            return kind is "warp" or "touch_action_warp" or "action_warp" or "locked_door_warp" or "building_door";
+        }
+
+        private static JsonElement? FindMatchingCurrentRouteConnector(SnapshotEnvelope snapshot, RouteGraphEdge edge)
+        {
+            var routeConnectors = ReadStateFieldValue(snapshot, "locations", "route_connectors");
+            if (!routeConnectors.HasValue ||
+                routeConnectors.Value.ValueKind != JsonValueKind.Object ||
+                !routeConnectors.Value.TryGetProperty("connectors", out var connectors) ||
+                connectors.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            foreach (var connector in connectors.EnumerateArray())
+            {
+                if (connector.ValueKind != JsonValueKind.Object ||
+                    ReadBool(connector, "resolved") != true ||
+                    !string.Equals(ReadString(connector, "kind"), edge.Kind, StringComparison.OrdinalIgnoreCase) ||
+                    ReadNullableInt(connector, "tile_x") != edge.FromX ||
+                    ReadNullableInt(connector, "tile_y") != edge.FromY ||
+                    !string.Equals(ReadString(connector, "target_location"), edge.TargetLocation, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var sourceProperty = ReadString(connector, "source_property");
+                if ((edge.Kind is "action_warp" or "locked_door_warp") &&
+                    !string.Equals(sourceProperty, "Buildings.Action", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (edge.Kind == "touch_action_warp" &&
+                    !string.Equals(sourceProperty, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var connectorTargetX = ReadNullableInt(connector, "target_x");
+                var connectorTargetY = ReadNullableInt(connector, "target_y");
+                if (edge.TargetX.HasValue && edge.TargetY.HasValue &&
+                    (connectorTargetX != edge.TargetX || connectorTargetY != edge.TargetY))
+                {
+                    continue;
+                }
+
+                return connector;
+            }
+
+            return null;
+        }
+
+        private static string? RecoveryConnectorGateBlock(SnapshotEnvelope snapshot, RouteGraphEdge edge)
+        {
+            if (edge.Kind is "warp" or "building_door")
+            {
+                return null;
+            }
+
+            var gateContext = ReadStateFieldValue(snapshot, "locations", "route_gate_context");
+            if (!gateContext.HasValue ||
+                gateContext.Value.ValueKind != JsonValueKind.Object ||
+                !gateContext.Value.TryGetProperty("action_gates", out var gates) ||
+                gates.ValueKind != JsonValueKind.Array)
+            {
+                return "recovery_current_connector_gate_context_unavailable";
+            }
+
+            foreach (var gate in gates.EnumerateArray())
+            {
+                if (gate.ValueKind != JsonValueKind.Object ||
+                    ReadNullableInt(gate, "tile_x") != edge.FromX ||
+                    ReadNullableInt(gate, "tile_y") != edge.FromY)
+                {
+                    continue;
+                }
+
+                if (!gate.TryGetProperty("allowed_now", out var allowed) ||
+                    allowed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                {
+                    return "recovery_current_connector_gate_unresolved";
+                }
+
+                return allowed.ValueKind == JsonValueKind.True
+                    ? null
+                    : "recovery_current_connector_gate_closed";
+            }
+
+            return "recovery_current_connector_gate_unresolved";
+        }
+
+        private static int? RecoveryConnectorPathTiles(SnapshotEnvelope snapshot, RouteGraphEdge edge, JsonElement connector)
+        {
+            var startX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
+            var startY = ReadStateFieldIntOptional(snapshot, "player", "tile_y");
+            var grid = ReadStateFieldValue(snapshot, "locations", "collision_grid");
+            if (!startX.HasValue || !startY.HasValue || !grid.HasValue || grid.Value.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var width = ReadInt(grid.Value, "width");
+            var height = ReadInt(grid.Value, "height");
+            if (width <= 0 || height <= 0 || !TileInBounds(startX.Value, startY.Value, width, height))
+            {
+                return null;
+            }
+
+            var blocked = ReadBlockedCollisionTiles(grid.Value);
+            var unsupported = ReadUnsupportedRouteActionTiles(snapshot);
+            var standTiles = new List<SleepStandTile>();
+            var standX = ReadNullableInt(connector, "stand_tile_x");
+            var standY = ReadNullableInt(connector, "stand_tile_y");
+            if (standX.HasValue && standY.HasValue)
+            {
+                standTiles.Add(new SleepStandTile(standX.Value, standY.Value));
+            }
+            else if (edge.FromX!.Value < 0)
+            {
+                standTiles.Add(new SleepStandTile(0, Math.Clamp(edge.FromY!.Value, 0, height - 1)));
+            }
+            else if (edge.FromX.Value >= width)
+            {
+                standTiles.Add(new SleepStandTile(width - 1, Math.Clamp(edge.FromY!.Value, 0, height - 1)));
+            }
+            else if (edge.FromY!.Value < 0)
+            {
+                standTiles.Add(new SleepStandTile(Math.Clamp(edge.FromX.Value, 0, width - 1), 0));
+            }
+            else if (edge.FromY.Value >= height)
+            {
+                standTiles.Add(new SleepStandTile(Math.Clamp(edge.FromX.Value, 0, width - 1), height - 1));
+            }
+            else
+            {
+                standTiles.AddRange(new[]
+                {
+                    new SleepStandTile(edge.FromX.Value + 1, edge.FromY.Value),
+                    new SleepStandTile(edge.FromX.Value - 1, edge.FromY.Value),
+                    new SleepStandTile(edge.FromX.Value, edge.FromY.Value + 1),
+                    new SleepStandTile(edge.FromX.Value, edge.FromY.Value - 1)
+                });
+            }
+
+            return standTiles
+                .Where(tile =>
+                    TileInBounds(tile.X, tile.Y, width, height) &&
+                    !blocked.Contains(TileKey(tile.X, tile.Y)) &&
+                    !unsupported.Contains(TileKey(tile.X, tile.Y)))
+                .Select(tile => ShortestPathLength(startX.Value, startY.Value, tile.X, tile.Y, width, height, blocked, unsupported))
+                .Where(length => length.HasValue)
+                .OrderBy(length => length)
+                .FirstOrDefault();
+        }
+
         private static RouteGraphEdge[] FindResolvedRouteGraphPath(JsonElement graph, string startLocation, string targetLocation)
+        {
+            return FindResolvedRouteGraphPath(ReadResolvedRouteGraphEdges(graph), startLocation, targetLocation);
+        }
+
+        private static RouteGraphEdge[] ReadResolvedRouteGraphEdges(JsonElement graph)
         {
             if (!graph.TryGetProperty("edges", out var edges) || edges.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<RouteGraphEdge>();
             }
 
-            var adjacency = new Dictionary<string, List<RouteGraphEdge>>(StringComparer.OrdinalIgnoreCase);
+            var resolvedEdges = new List<RouteGraphEdge>();
             foreach (var edge in edges.EnumerateArray())
             {
                 if (edge.ValueKind != JsonValueKind.Object ||
@@ -3293,6 +3638,7 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
 
+                var kind = ReadString(edge, "kind");
                 var from = ReadString(edge, "from_location");
                 var target = ReadString(edge, "target_location");
                 if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(target))
@@ -3300,13 +3646,31 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
 
-                if (!adjacency.TryGetValue(from, out var targets))
+                resolvedEdges.Add(new RouteGraphEdge(
+                    string.IsNullOrWhiteSpace(kind) ? "unknown" : kind,
+                    from,
+                    target,
+                    ReadNullableInt(edge, "from_x"),
+                    ReadNullableInt(edge, "from_y"),
+                    ReadNullableInt(edge, "target_x"),
+                    ReadNullableInt(edge, "target_y")));
+            }
+
+            return resolvedEdges.ToArray();
+        }
+
+        private static RouteGraphEdge[] FindResolvedRouteGraphPath(RouteGraphEdge[] edges, string startLocation, string targetLocation)
+        {
+            var adjacency = new Dictionary<string, List<RouteGraphEdge>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var edge in edges)
+            {
+                if (!adjacency.TryGetValue(edge.FromLocation, out var targets))
                 {
                     targets = new List<RouteGraphEdge>();
-                    adjacency[from] = targets;
+                    adjacency[edge.FromLocation] = targets;
                 }
 
-                targets.Add(new RouteGraphEdge(from, target, ReadNullableInt(edge, "from_x"), ReadNullableInt(edge, "from_y")));
+                targets.Add(edge);
             }
 
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { startLocation };
@@ -3423,6 +3787,47 @@ namespace StardewAI.Core.Execution
             }
 
             return false;
+        }
+
+        private static int? ShortestPathLength(int startX, int startY, int targetX, int targetY, int width, int height, HashSet<string> blockedTiles, HashSet<string> extraBlockedTiles)
+        {
+            var startKey = TileKey(startX, startY);
+            var targetKey = TileKey(targetX, targetY);
+            if (blockedTiles.Contains(startKey) || blockedTiles.Contains(targetKey) ||
+                extraBlockedTiles.Contains(startKey) || extraBlockedTiles.Contains(targetKey))
+            {
+                return null;
+            }
+
+            var visited = new HashSet<string>(StringComparer.Ordinal) { startKey };
+            var queue = new Queue<(int X, int Y, int Distance)>();
+            queue.Enqueue((startX, startY, 0));
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current.X == targetX && current.Y == targetY)
+                {
+                    return current.Distance;
+                }
+
+                foreach (var next in Neighbors(current.X, current.Y))
+                {
+                    if (!TileInBounds(next.X, next.Y, width, height))
+                    {
+                        continue;
+                    }
+
+                    var key = TileKey(next.X, next.Y);
+                    if (!visited.Add(key) || blockedTiles.Contains(key) || extraBlockedTiles.Contains(key))
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((next.X, next.Y, current.Distance + 1));
+                }
+            }
+
+            return null;
         }
 
         private static IEnumerable<(int X, int Y)> Neighbors(int x, int y)
@@ -4898,23 +5303,39 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<CompiledActionStep>();
             }
 
-            var steps = new List<CompiledActionStep>();
-
             var time = ReadStateFieldInt(snapshot, "time", "time");
-            if (time >= 2400)
+            if (time < 2200)
             {
-                steps.AddRange(CompileSleepSteps(snapshot));
-            }
-            else if (time >= 2200)
-            {
-                steps.AddRange(CompileSleepSteps(snapshot));
-            }
-            else
-            {
-                steps.Add(Step("refresh_plan_after_stabilization", "planner", "urgent_risks_rechecked", 0));
+                return new[] { Step("refresh_plan_after_stabilization", "planner", "urgent_risks_rechecked", 0) };
             }
 
-            return steps.ToArray();
+            var sleepSteps = CompileSleepSteps(snapshot);
+            if (sleepSteps.Length > 0)
+            {
+                return sleepSteps;
+            }
+
+            var routePlan = BuildRecoveryRoutePlan(snapshot);
+            if (routePlan.Step is null)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var edge = routePlan.Step.Edge;
+            var expected = "location=" + edge.TargetLocation + ";rolling_horizon_replan=true";
+            if (edge.TargetX.HasValue && edge.TargetY.HasValue)
+            {
+                expected += ";player.tile=" + edge.TargetX.Value + "," + edge.TargetY.Value;
+            }
+
+            return new[]
+            {
+                Step(
+                    "traverse_connector",
+                    edge.FromLocation + "(" + edge.FromX!.Value + "," + edge.FromY!.Value + ")",
+                    expected,
+                    routePlan.Step.EstimatedTicks)
+            };
         }
 
         private static bool IsMachineReady(JsonElement machine)

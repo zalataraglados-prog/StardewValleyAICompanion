@@ -759,6 +759,18 @@ public sealed class ModEntry : Mod
 
         var startTile = Game1.player.TilePoint;
         var requestedTargetTile = ResolveTargetTile(pending.Request, startTile);
+        var connectorTargetBlock = ValidateConnectorTarget(pending.Request, requestedTargetTile);
+        if (!string.IsNullOrWhiteSpace(connectorTargetBlock))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request,
+                primitiveKind,
+                ConnectorRequestedEffect(pending.Request),
+                ConnectorObservedEffect(),
+                connectorTargetBlock));
+            return;
+        }
+
         var targetTile = requestedTargetTile;
         Point? connectorActionTile = null;
         int? connectorExitDirection = null;
@@ -800,23 +812,23 @@ public sealed class ModEntry : Mod
             }
             else
             {
-            var standTile = FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
-            if (standTile is null)
-            {
-                pending.Completion.SetResult(BlockedWithPrimitive(
-                    pending.Request,
-                    primitiveKind,
-                    ConnectorRequestedEffect(pending.Request),
-                    ConnectorObservedEffect(),
-                    "connector_action_stand_tile_unavailable"));
-                return;
-            }
+                var standTile = FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+                if (standTile is null)
+                {
+                    pending.Completion.SetResult(BlockedWithPrimitive(
+                        pending.Request,
+                        primitiveKind,
+                        ConnectorRequestedEffect(pending.Request),
+                        ConnectorObservedEffect(),
+                        "connector_action_stand_tile_unavailable"));
+                    return;
+                }
 
-            targetTile = standTile.Value;
-        }
+                targetTile = standTile.Value;
+            }
         }
         else if (pending.Request.OptionId == "executor.traverse_connector" &&
-            string.Equals(pending.Request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase) &&
+            IsStepOntoConnectorKind(pending.Request.ConnectorKind) &&
             IsTileOnMap(Game1.currentLocation, requestedTargetTile))
         {
             connectorActionTile = requestedTargetTile;
@@ -847,7 +859,8 @@ public sealed class ModEntry : Mod
         {
             if (pending.Request.OptionId == "executor.traverse_connector")
             {
-                if (!IsActionConnectorKind(pending.Request.ConnectorKind))
+                if (!IsActionConnectorKind(pending.Request.ConnectorKind) &&
+                    !IsStepOntoConnectorKind(pending.Request.ConnectorKind))
                 {
                     pending.Completion.SetResult(BlockedWithPrimitive(
                         pending.Request,
@@ -883,76 +896,6 @@ public sealed class ModEntry : Mod
         Monitor.Log($"Started collision-checked tile move from {startTile.X},{startTile.Y} to {targetTile.X},{targetTile.Y} with {path.Count} path tile(s).", LogLevel.Info);
     }
 
-    private TrainingExecutionResult ExecuteDirectConnectorTraversal(TrainingExecutionRequest request, Point startTile, Point requestedTargetTile, Point? connectorActionTile)
-    {
-        var beforeLocation = Game1.currentLocation.NameOrUniqueName;
-        var beforeTile = Game1.player.TilePoint;
-        var expectedLocation = request.ExpectedTargetLocation;
-        var arrivalX = request.ExpectedArrivalTileX;
-        var arrivalY = request.ExpectedArrivalTileY;
-
-        if (!arrivalX.HasValue || !arrivalY.HasValue)
-        {
-            var actionTile = connectorActionTile ?? requestedTargetTile;
-            var rawAction = Game1.currentLocation.doesTileHaveProperty(actionTile.X, actionTile.Y, "Action", "Buildings");
-            if (!string.IsNullOrWhiteSpace(rawAction))
-            {
-                var parts = rawAction.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 4 && (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) || string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase)))
-                {
-                    arrivalX = ParseIntPart(parts, 1);
-                    arrivalY = ParseIntPart(parts, 2);
-                    expectedLocation = parts[3];
-                }
-            }
-        }
-
-        if (!arrivalX.HasValue || !arrivalY.HasValue)
-        {
-            var warp = Game1.currentLocation.warps.FirstOrDefault(candidate => candidate.X == requestedTargetTile.X && candidate.Y == requestedTargetTile.Y);
-            if (warp is not null)
-            {
-                arrivalX = warp.TargetX;
-                arrivalY = warp.TargetY;
-                expectedLocation = warp.TargetName;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(expectedLocation) || !arrivalX.HasValue || !arrivalY.HasValue)
-        {
-            return BlockedWithPrimitive(request, "traverse_connector", ConnectorRequestedEffect(request), ConnectorObservedEffect(), "connector_direct_target_unresolved");
-        }
-
-        DirectSetPlayerLocation(expectedLocation, arrivalX.Value, arrivalY.Value);
-        var afterLocation = Game1.currentLocation.NameOrUniqueName;
-        var afterTile = Game1.player.TilePoint;
-        var verified = string.Equals(afterLocation, request.ExpectedTargetLocation, StringComparison.OrdinalIgnoreCase);
-
-        return new TrainingExecutionResult
-        {
-            RunId = request.RunId,
-            QueueId = request.QueueId,
-            QueueItemId = request.QueueItemId,
-            BeforeStateHash = request.BeforeStateHash,
-            OptionId = request.OptionId,
-            Status = verified ? "applied" : "blocked",
-            FeedbackAvailable = true,
-            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
-            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "traverse_connector",
-            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
-            PrimitiveVerificationReasons = verified ? new[] { "connector_location_changed_as_expected", "collision_safe_path_validated_before_direct_runtime_transition" } : new[] { "connector_target_location_mismatch" },
-            RequestedEffect = ConnectorRequestedEffect(request),
-            ObservedEffect = ConnectorObservedEffect(),
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "connector_target_location_mismatch" },
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "player.location_id", Before = beforeLocation, After = afterLocation },
-                new SimulatedFactChange { Path = "player.tile", Before = beforeTile.X + "," + beforeTile.Y, After = afterTile.X + "," + afterTile.Y }
-            }
-        };
-    }
-
     private void TickTileMove(UpdateTickedEventArgs e)
     {
         if (activeTileMove is null)
@@ -986,16 +929,6 @@ public sealed class ModEntry : Mod
                 move.PathIndex = move.Path.Count;
                 move.StuckTicks = 0;
                 move.LastPosition = Game1.player.Position;
-                if (TryTriggerWarpConnector(move))
-                {
-                    if (!string.Equals(Game1.currentLocation.NameOrUniqueName, move.LocationId, StringComparison.Ordinal))
-                    {
-                        CompleteConnectorMoveAfterLocationChange(move);
-                    }
-
-                    return;
-                }
-
                 if (TryTriggerConnectorAction(move))
                 {
                     if (!string.Equals(Game1.currentLocation.NameOrUniqueName, move.LocationId, StringComparison.Ordinal))
@@ -1025,9 +958,8 @@ public sealed class ModEntry : Mod
                     return;
                 }
 
-                if (string.Equals(move.Pending.Request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase) &&
-                    move.ConnectorActionTile.HasValue &&
-                    !move.ConnectorActionAttempted)
+                if (IsStepOntoConnectorKind(move.Pending.Request.ConnectorKind) &&
+                    move.ConnectorActionTile.HasValue)
                 {
                     var beforeLocation = Game1.currentLocation.NameOrUniqueName;
                     var warpStepDirection = DirectionTo(Game1.player.TilePoint, move.ConnectorActionTile.Value);
@@ -1163,36 +1095,6 @@ public sealed class ModEntry : Mod
         }
     }
 
-    private bool TryTriggerWarpConnector(ActiveTileMove move)
-    {
-        if (!string.Equals(move.Pending.Request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase) || move.ConnectorExitDirection.HasValue)
-        {
-            return false;
-        }
-
-        if (move.ConnectorActionAttempted)
-        {
-            return false;
-        }
-
-        var warpTile = move.ConnectorActionTile ?? move.TargetTile;
-        var warp = Game1.currentLocation.warps.FirstOrDefault(candidate => candidate.X == warpTile.X && candidate.Y == warpTile.Y);
-        if (warp is null)
-        {
-            return false;
-        }
-
-        if (!string.Equals(warp.TargetName, move.Pending.Request.ExpectedTargetLocation, StringComparison.OrdinalIgnoreCase))
-        {
-            CompleteBlockedMove(move, "connector_warp_target_mismatch");
-            return true;
-        }
-
-        move.ConnectorActionAttempted = true;
-        DirectSetPlayerLocation(warp.TargetName, warp.TargetX, warp.TargetY);
-        return true;
-    }
-
     private bool TryTriggerConnectorAction(ActiveTileMove move)
     {
         if (move.ConnectorActionAttempted)
@@ -1211,74 +1113,53 @@ public sealed class ModEntry : Mod
 
         if (string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase))
         {
-            TriggerBuildingDoorConnector(move, actionTile);
-            return true;
+            if (!ValidateBuildingDoorConnector(move, actionTile))
+            {
+                return true;
+            }
         }
-
-        var rawAction = Game1.currentLocation.doesTileHaveProperty(actionTile.X, actionTile.Y, "Action", "Buildings");
-        if (string.IsNullOrWhiteSpace(rawAction))
+        else
         {
-            CompleteBlockedMove(move, "connector_action_property_missing");
-            return true;
+            var rawAction = Game1.currentLocation.doesTileHaveProperty(actionTile.X, actionTile.Y, "Action", "Buildings");
+            if (string.IsNullOrWhiteSpace(rawAction))
+            {
+                CompleteBlockedMove(move, "connector_action_property_missing");
+                return true;
+            }
+
+            var actionType = rawAction.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            if (!IsConnectorActionTypeWhitelisted(actionType))
+            {
+                CompleteBlockedMove(move, "connector_action_type_not_whitelisted");
+                return true;
+            }
+
+            if (string.Equals(kind, "locked_door_warp", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
+            {
+                CompleteBlockedMove(move, "connector_action_type_mismatch");
+                return true;
+            }
+
+            if (string.Equals(kind, "action_warp", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase))
+            {
+                CompleteBlockedMove(move, "connector_action_type_mismatch");
+                return true;
+            }
         }
 
-        var actionType = rawAction.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-        if (!IsConnectorActionTypeWhitelisted(actionType))
-        {
-            CompleteBlockedMove(move, "connector_action_type_not_whitelisted");
-            return true;
-        }
-
-        if (string.Equals(kind, "locked_door_warp", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
-        {
-            CompleteBlockedMove(move, "connector_action_type_mismatch");
-            return true;
-        }
-
-        if (string.Equals(kind, "action_warp", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase))
-        {
-            CompleteBlockedMove(move, "connector_action_type_mismatch");
-            return true;
-        }
-
-        var parts = rawAction.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
-        {
-            DirectSetPlayerLocation(parts[3], ParseIntPart(parts, 1) ?? Game1.player.TilePoint.X, ParseIntPart(parts, 2) ?? Game1.player.TilePoint.Y);
-            return true;
-        }
-
-        if (string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
-        {
-            DirectSetPlayerLocation(parts[3], ParseIntPart(parts, 1) ?? Game1.player.TilePoint.X, ParseIntPart(parts, 2) ?? Game1.player.TilePoint.Y);
-            return true;
-        }
-
-        var handled = Game1.currentLocation.performAction(rawAction, Game1.player, new TileLocation(actionTile.X, actionTile.Y));
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, actionTile));
+        var handled = Game1.currentLocation.checkAction(
+            new TileLocation(actionTile.X, actionTile.Y),
+            new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+            Game1.player);
         if (!handled)
         {
             CompleteBlockedMove(move, "connector_action_not_handled");
         }
 
         return true;
-    }
-
-    private static void DirectSetPlayerLocation(string targetLocationName, int targetX, int targetY)
-    {
-        var targetLocation = Game1.getLocationFromName(targetLocationName);
-        if (targetLocation is null)
-        {
-            return;
-        }
-
-        Game1.player.previousLocationName = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
-        Game1.currentLocation = targetLocation;
-        Game1.player.currentLocation = targetLocation;
-        Game1.player.Position = new Vector2(targetX * Game1.tileSize, targetY * Game1.tileSize);
-        Game1.player.Halt();
-        Game1.player.forceCanMove();
     }
 
     private static int? ParseIntPart(string[] parts, int index)
@@ -2276,13 +2157,87 @@ public sealed class ModEntry : Mod
             string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsStepOntoConnectorKind(string kind)
+    {
+        return string.Equals(kind, "warp", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(kind, "touch_action_warp", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsConnectorActionTypeWhitelisted(string actionType)
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void TriggerBuildingDoorConnector(ActiveTileMove move, Point actionTile)
+    private static string? ValidateConnectorTarget(TrainingExecutionRequest request, Point connectorTile)
+    {
+        if (!string.Equals(request.OptionId, "executor.traverse_connector", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (string.Equals(request.ConnectorKind, "building_door", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        string? targetLocation = null;
+        int? targetX = null;
+        int? targetY = null;
+        if (string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase))
+        {
+            var warp = Game1.currentLocation.warps.FirstOrDefault(candidate => candidate.X == connectorTile.X && candidate.Y == connectorTile.Y);
+            if (warp is null)
+            {
+                return "connector_warp_source_missing";
+            }
+
+            targetLocation = warp.TargetName;
+            targetX = warp.TargetX;
+            targetY = warp.TargetY;
+        }
+        else
+        {
+            var sourceProperty = string.Equals(request.ConnectorKind, "touch_action_warp", StringComparison.OrdinalIgnoreCase)
+                ? "TouchAction"
+                : "Action";
+            var layer = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal) ? "Back" : "Buildings";
+            var rawAction = Game1.currentLocation.doesTileHaveProperty(connectorTile.X, connectorTile.Y, sourceProperty, layer);
+            var parts = rawAction?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            if (parts.Length < 4)
+            {
+                return "connector_action_source_missing_or_unparseable";
+            }
+
+            var touchAction = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal);
+            var expectedBranch = string.Equals(request.ConnectorKind, "locked_door_warp", StringComparison.OrdinalIgnoreCase)
+                ? "LockedDoorWarp"
+                : "Warp";
+            if (!string.Equals(parts[0], expectedBranch, StringComparison.OrdinalIgnoreCase))
+            {
+                return "connector_action_type_mismatch";
+            }
+
+            targetLocation = touchAction ? parts[1] : parts[3];
+            targetX = ParseIntPart(parts, touchAction ? 2 : 1);
+            targetY = ParseIntPart(parts, touchAction ? 3 : 2);
+        }
+
+        if (!string.Equals(targetLocation, request.ExpectedTargetLocation, StringComparison.OrdinalIgnoreCase))
+        {
+            return "connector_source_target_location_mismatch";
+        }
+
+        if (request.ExpectedArrivalTileX.HasValue && request.ExpectedArrivalTileY.HasValue &&
+            (targetX != request.ExpectedArrivalTileX || targetY != request.ExpectedArrivalTileY))
+        {
+            return "connector_source_arrival_tile_mismatch";
+        }
+
+        return null;
+    }
+
+    private bool ValidateBuildingDoorConnector(ActiveTileMove move, Point actionTile)
     {
         var location = Game1.currentLocation;
         var building = location.buildings
@@ -2294,33 +2249,33 @@ public sealed class ModEntry : Mod
         if (building is null)
         {
             CompleteBlockedMove(move, "building_door_no_building_at_action_tile");
-            return;
+            return false;
         }
 
         if (building.daysOfConstructionLeft.Value > 0)
         {
             CompleteBlockedMove(move, "building_under_construction");
-            return;
+            return false;
         }
 
         var indoors = building.GetIndoors();
         if (indoors is null)
         {
             CompleteBlockedMove(move, "building_door_no_indoor_location");
-            return;
+            return false;
         }
 
         if (indoors.warps.Count == 0)
         {
             CompleteBlockedMove(move, "building_door_no_indoor_warps");
-            return;
+            return false;
         }
 
         var expectedLocation = move.Pending.Request.ExpectedTargetLocation;
         if (!string.Equals(indoors.NameOrUniqueName, expectedLocation, StringComparison.OrdinalIgnoreCase))
         {
             CompleteBlockedMove(move, "building_door_target_location_mismatch:expected=" + expectedLocation + ";actual=" + indoors.NameOrUniqueName);
-            return;
+            return false;
         }
 
         var playerTile = Game1.player.TilePoint;
@@ -2328,27 +2283,10 @@ public sealed class ModEntry : Mod
         if (Game1.player.TilePoint != expectedStandTile)
         {
             CompleteBlockedMove(move, "building_door_player_not_on_stand_tile:expected=" + expectedStandTile.X + "," + expectedStandTile.Y + ";actual=" + playerTile.X + "," + playerTile.Y);
-            return;
+            return false;
         }
 
-        Game1.player.faceDirection(0);
-
-        bool doActionResult;
-        try
-        {
-            doActionResult = building.doAction(new Vector2(actionTile.X, actionTile.Y), Game1.player);
-        }
-        catch (Exception ex)
-        {
-            CompleteBlockedMove(move, "building_door_doAction_exception:" + ex.GetType().Name);
-            return;
-        }
-
-        if (!doActionResult)
-        {
-            CompleteBlockedMove(move, "building_door_doAction_returned_false");
-            return;
-        }
+        return true;
     }
 
     private static Point? FindConnectorActionStandTile(GameLocation location, Point startTile, Point actionTile)

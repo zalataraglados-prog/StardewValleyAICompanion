@@ -553,24 +553,48 @@ public sealed class NativeShippingSourceGuardTests
     {
         var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
         Assert.Contains("building_door", source, StringComparison.Ordinal);
-        Assert.Contains("TriggerBuildingDoorConnector", source, StringComparison.Ordinal);
+        Assert.Contains("ValidateBuildingDoorConnector", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorBuildingDoorUsesNativeDoActionNotDirectWarp()
+    public void ShipExecutorBuildingDoorUsesNativeCheckActionNotDirectWarp()
     {
         var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
-        var doorSlice = Slice(source, "private void TriggerBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
-        Assert.Contains("building.doAction", doorSlice, StringComparison.Ordinal);
-        Assert.Contains(".humanDoor", doorSlice, StringComparison.Ordinal);
-        Assert.Contains("building.GetIndoors()", doorSlice, StringComparison.Ordinal);
-        Assert.DoesNotContain("building_door_no_location_change", doorSlice, StringComparison.Ordinal);
+        var doorSlice = Slice(source, "private bool TryTriggerConnectorAction", "private static int? ParseIntPart");
+        Assert.Contains("Game1.currentLocation.checkAction", doorSlice, StringComparison.Ordinal);
+        Assert.Contains("ValidateBuildingDoorConnector", doorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("building.doAction", doorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("performAction", doorSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("DirectSetPlayerLocation", doorSlice, StringComparison.Ordinal);
-        Assert.DoesNotContain("Game1.warpFarmer", doorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.currentLocation =", doorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.currentLocation =", doorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Position =", doorSlice, StringComparison.Ordinal);
 
-        var tickSlice = Slice(source, "private void TickTileMove", "private void TryTriggerWarpConnector");
+        var validationSlice = Slice(source, "private bool ValidateBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
+        Assert.Contains(".humanDoor", validationSlice, StringComparison.Ordinal);
+        Assert.Contains("building.GetIndoors()", validationSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("building.doAction", validationSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("DirectSetPlayerLocation", validationSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.warpFarmer", validationSlice, StringComparison.Ordinal);
+
+        var tickSlice = Slice(source, "private void TickTileMove", "private bool TryTriggerConnectorAction");
         Assert.Contains("CompleteConnectorMoveAfterLocationChange", tickSlice, StringComparison.Ordinal);
         Assert.Contains("AllowsLocationChange", tickSlice, StringComparison.Ordinal);
+        Assert.Contains("IsStepOntoConnectorKind", tickSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ConnectorTraversalHasNoDirectLocationMutationPath()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var connectorSlice = Slice(source, "private void StartTileMove", "private void StartSleep");
+        Assert.DoesNotContain("DirectSetPlayerLocation", connectorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("ExecuteDirectConnectorTraversal", connectorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.currentLocation =", connectorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.currentLocation =", connectorSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Position =", connectorSlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentLocation.checkAction", connectorSlice, StringComparison.Ordinal);
+        Assert.Contains("MovePlayerForTick", connectorSlice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -645,20 +669,24 @@ public sealed class NativeShippingSourceGuardTests
     public void BuildingDoorTriggerVerifiesExactStandTileBeforeAction()
     {
         var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
-        var triggerSlice = Slice(source, "private void TriggerBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
-        Assert.Contains("building_door_player_not_on_stand_tile", triggerSlice, StringComparison.Ordinal);
-        Assert.Contains("faceDirection(0)", triggerSlice, StringComparison.Ordinal);
-        Assert.Contains("actionTile.X, actionTile.Y + 1", triggerSlice, StringComparison.Ordinal);
+        var validationSlice = Slice(source, "private bool ValidateBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
+        Assert.Contains("building_door_player_not_on_stand_tile", validationSlice, StringComparison.Ordinal);
+        Assert.Contains("actionTile.X, actionTile.Y + 1", validationSlice, StringComparison.Ordinal);
+
+        var triggerSlice = Slice(source, "private bool TryTriggerConnectorAction", "private static int? ParseIntPart");
+        Assert.Contains("Game1.player.faceDirection(DirectionTo", triggerSlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentLocation.checkAction", triggerSlice, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildingDoorDoActionReturnValueChecked()
+    public void BuildingDoorCheckActionReturnValueChecked()
     {
         var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
-        var triggerSlice = Slice(source, "private void TriggerBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
-        Assert.Contains("building_door_doAction_returned_false", triggerSlice, StringComparison.Ordinal);
-        Assert.Contains("doActionResult = building.doAction", triggerSlice, StringComparison.Ordinal);
-        Assert.Contains("!doActionResult", triggerSlice, StringComparison.Ordinal);
+        var triggerSlice = Slice(source, "private bool TryTriggerConnectorAction", "private static int? ParseIntPart");
+        Assert.Contains("var handled = Game1.currentLocation.checkAction", triggerSlice, StringComparison.Ordinal);
+        Assert.Contains("connector_action_not_handled", triggerSlice, StringComparison.Ordinal);
+        Assert.Contains("!handled", triggerSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("building.doAction", triggerSlice, StringComparison.Ordinal);
     }
 
     [Fact]

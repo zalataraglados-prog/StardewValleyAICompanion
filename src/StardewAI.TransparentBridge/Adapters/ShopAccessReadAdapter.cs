@@ -188,7 +188,9 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
             resolved_edge_count = edges.Count(edge => ReadBoolProperty(edge, "resolved") == true),
             unresolved_edge_count = edges.Count(edge => ReadBoolProperty(edge, "resolved") != true),
             unsupported_action_branch_count = unsupportedActionBranches,
-            route_executor_enabled = false,
+            route_executor_enabled = true,
+            route_executor_scope = "resolved_warp_touch_action_warp_action_warp_locked_door_warp_building_door_only",
+            route_replan_policy = "fresh_snapshot_after_each_location_transition",
             graph_scope = "loaded_locations_only",
             edges = edges
                 .OrderBy(edge => ReadStringProperty(edge, "from_location"), StringComparer.Ordinal)
@@ -537,7 +539,8 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
             build_conditions_met = string.IsNullOrWhiteSpace(buildConditions) ? (bool?)null : GameStateQuery.CheckConditions(buildConditions, location),
             action_gate_count = actionGates.Length,
             action_gates = actionGates,
-            route_planner_enabled = false
+            route_planner_enabled = true,
+            route_planner_scope = "current_location_first_connector_with_fresh_snapshot_replan"
         };
     }
 
@@ -900,7 +903,8 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
             connector_count = connectors.Count,
             resolved_connector_count = connectors.Count(connector => ReadBoolProperty(connector, "resolved") == true),
             unresolved_connector_count = connectors.Count(connector => ReadBoolProperty(connector, "resolved") != true),
-            route_planner_enabled = false,
+            route_planner_enabled = true,
+            route_planner_scope = "resolved_supported_connectors_only",
             connectors = connectors
                 .OrderBy(connector => ReadStringProperty(connector, "kind"), StringComparer.Ordinal)
                 .ThenBy(connector => ReadIntProperty(connector, "tile_y") ?? 0)
@@ -911,64 +915,74 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
 
     private static object[] ReadActionConnectors(GameLocation location)
     {
-        var map = location.map;
-        if (map?.Layers is null || map.Layers.Count == 0)
-        {
-            return Array.Empty<object>();
-        }
-
-        var width = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerWidth);
-        var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
         var connectors = new List<object>();
-
-        for (var y = 0; y < height; y++)
+        foreach (var actionRow in ReadMapActions(location))
         {
-            for (var x = 0; x < width; x++)
+            var parts = actionRow.raw_action.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
             {
-                var action = location.doesTileHaveProperty(x, y, "Action", "Buildings");
-                if (string.IsNullOrWhiteSpace(action))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var parts = action.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 0)
+            if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
+            {
+                var touchAction = string.Equals(actionRow.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase);
+                var targetLocation = touchAction ? Part(parts, 1) : Part(parts, 3);
+                var targetX = touchAction ? ParseIntPart(parts, 2) : ParseIntPart(parts, 1);
+                var targetY = touchAction ? ParseIntPart(parts, 3) : ParseIntPart(parts, 2);
+                var resolved = !string.IsNullOrWhiteSpace(targetLocation) && targetX.HasValue && targetY.HasValue;
+                connectors.Add(new
                 {
-                    continue;
-                }
-
-                if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
+                    kind = touchAction ? "touch_action_warp" : "action_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = targetLocation,
+                    target_x = targetX,
+                    target_y = targetY,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved,
+                    unresolved_reason = resolved ? (string?)null : "warp_action_parse_failed"
+                });
+            }
+            else if (string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetLocation = Part(parts, 3);
+                var targetX = ParseIntPart(parts, 1);
+                var targetY = ParseIntPart(parts, 2);
+                var resolved = !string.IsNullOrWhiteSpace(targetLocation) && targetX.HasValue && targetY.HasValue;
+                connectors.Add(new
                 {
-                    connectors.Add(new
-                    {
-                        kind = "action_warp",
-                        tile_x = x,
-                        tile_y = y,
-                        target_location = Part(parts, 3),
-                        target_x = ParseIntPart(parts, 1),
-                        target_y = ParseIntPart(parts, 2),
-                        action,
-                        open = (bool?)null,
-                        resolved = true,
-                        unresolved_reason = (string?)null
-                    });
-                }
-                else if (IsShopEndpointAction(parts[0]))
+                    kind = "locked_door_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = targetLocation,
+                    target_x = targetX,
+                    target_y = targetY,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved,
+                    unresolved_reason = resolved ? (string?)null : "locked_door_warp_parse_failed"
+                });
+            }
+            else if (IsShopEndpointAction(parts[0]))
+            {
+                connectors.Add(new
                 {
-                    connectors.Add(new
-                    {
-                        kind = "shop_action",
-                        tile_x = x,
-                        tile_y = y,
-                        target_location = ResolveShopEndpointId(location, parts),
-                        target_x = (int?)null,
-                        target_y = (int?)null,
-                        action,
-                        open = (bool?)null,
-                        resolved = false,
-                        unresolved_reason = "shop_action_is_endpoint_not_location_transition"
-                    });
-                }
+                    kind = "shop_action",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = ResolveShopEndpointId(location, parts),
+                    target_x = (int?)null,
+                    target_y = (int?)null,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved = false,
+                    unresolved_reason = "shop_action_is_endpoint_not_location_transition"
+                });
             }
         }
 
