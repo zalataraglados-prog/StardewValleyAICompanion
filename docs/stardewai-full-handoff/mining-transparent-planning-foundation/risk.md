@@ -1,11 +1,11 @@
 # Risk
 
-Current-status correction: combat, natural pickup, food recovery, ladder/shaft descent, exit, and after-snapshot rolling compilation are implemented. The ordinary-mine 96-to-98 loop is runtime verified. The older blocked-executor statements below describe the foundation slice, not current main.
+Current-status correction: melee/slingshot/bomb combat, supported large resource-clump removal, natural pickup, food recovery, ladder/shaft descent, exit, and after-snapshot rolling compilation are implemented. The ordinary-mine 96-to-98 loop is runtime verified. Quarry Mine and Volcano Dungeon have separate high-level objectives and bounded static loops. The older blocked-executor statements below describe the foundation slice, not current main.
 
 ## Risk Level
 
 - Read-side risk is low after isolated E: validation of compact collision and non-empty object/monster rows.
-- Historical foundation status: one-stone native execution was the only implemented action. Current main includes combat, descent, and retreat; ordinary multi-floor integration and one Skull Cavern shaft lifecycle are verified. The remaining high-risk boundaries are arbitrary-depth duration calibration and broader combat/loot combinations.
+- Historical foundation status: one-stone native execution was the only implemented action. Current main includes advanced combat, resource-clump clearance, descent, and retreat; ordinary multi-floor integration and one Skull Cavern shaft lifecycle are verified. The remaining high-risk boundaries are arbitrary-depth duration calibration, first runtime evidence for the newer clump/advanced-weapon/Quarry/Volcano paths, and broader combat/loot combinations.
 
 ## Residual Risks
 
