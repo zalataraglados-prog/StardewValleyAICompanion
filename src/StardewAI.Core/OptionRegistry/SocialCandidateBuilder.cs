@@ -10,7 +10,7 @@ namespace StardewAI.Core.OptionRegistry
 {
     public static class SocialCandidateBuilder
     {
-        public static EventCandidate[] Build(SnapshotEnvelope snapshot, string optionId)
+        public static EventCandidate[] Build(SnapshotEnvelope snapshot, string optionId, int maxCandidates = 64)
         {
             if (optionId != "social.talk_npc" && optionId != "social.gift_npc")
             {
@@ -53,7 +53,7 @@ namespace StardewAI.Core.OptionRegistry
                 .ThenBy(candidate => candidate.TileY ?? 0)
                 .ThenBy(candidate => candidate.TileX ?? 0)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-                .Take(64)
+                .Take(Math.Max(1, maxCandidates))
                 .ToArray();
         }
 

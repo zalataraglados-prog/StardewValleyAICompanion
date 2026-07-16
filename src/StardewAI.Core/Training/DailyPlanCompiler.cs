@@ -1830,7 +1830,15 @@ namespace StardewAI.Core.Training
                 "expected_arrival_tile_y",
                 "max_movement_tiles",
                 "estimated_ticks",
-                "estimated_minutes"
+                "estimated_minutes",
+                "continuation.option_id",
+                "continuation.npc_name",
+                "continuation.target_location",
+                "continuation.slot_index",
+                "continuation.qualified_item_id",
+                "social_route.remaining_connector_count",
+                "social_route.position_source",
+                "social_route.future_schedule_projection"
             })
             {
                 var value = CandidateParameter(candidate, name);

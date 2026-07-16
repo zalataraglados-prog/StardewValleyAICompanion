@@ -7,6 +7,7 @@
 - Inventory item identity, slot, quality, stack, object shape, quest item, big craftable, furniture/wallpaper, protection, `not_giftable` base tag, special item flag, and `can_be_given_as_gift` are available from `PlayerReadAdapter`.
 - Current talk candidates require complete social legality, current loaded NPC facts, clear menu, current route window completion, and an adjacent non-collision stand tile.
 - Current gift candidates additionally require complete gift legality, vanilla limit exceptions, non-divorced relationship where a row exists, unprotected/non-quest/non-special item, no dumped/green-rain rejection, no special switch item or roommate-proposal tag, and complete deterministic taste/delta evidence.
+- A legal NPC on another loaded map can produce one rolling `route_connector_tile` social candidate. The route uses the NPC's current loaded `location_id`, prefers a resolved path whose first connector is currently executable, then minimizes connector count, and binds that first edge to the exact compiler-validated current connector. Talk/gift continuation identity is preserved, but the NPC and every legality input must be re-read after the transition.
 - Compiler preserves requested NPC/item and social evidence in `SocialPlanEnvelope`.
 - **Native `executor.social_interact` is implemented** — validates world/location/NPC identity/presence/tile/adjacency/action rectangle/menu/visibility/sleeping/CanSocialize/CanReceiveGifts/exact gift slot/item/stack and gift limits; only Stardrop Tea bypasses the daily limit, while spouse, birthday, or Stardrop Tea can bypass the weekly limit; calls `Game1.currentLocation.checkAction` as the only state-changing social call and records comprehensive typed before/after output.
 - All blocked social executor results record the precise runtime reason in `FailureCategory` and use `TrainingImpactScope=executor_calibration`, ensuring runtime failures do not affect strategy values.
@@ -18,13 +19,13 @@
 
 - `CanSocialize`, `CanReceiveGifts`, and gift taste are called only for vanilla runtime methods whose declaring type proves the non-overridden query path; modded/overridden rows are marked incomplete.
 - Blocked social rows remain visible in `social_candidates` with stable block reasons; ranking and compiler matching only use available rows.
-- Future schedule windows are not emitted because complete non-mutating precedence for green rain, island, festivals, marriage/divorce, rain, season/day/week, and special overrides is not implemented.
+- Future schedule windows are not emitted because complete non-mutating precedence for green rain, island, festivals, marriage/divorce, rain, season/day/week, and special overrides is not implemented. Cross-map routing uses only the currently loaded NPC instance and explicitly records `future_schedule_projection=not_used`.
 - Gift jealousy, dialogue branches, rejection text, event/menu side effects, and runtime item/friendship mutations are not claimed deterministic in this slice.
 - Unknown/modded NPCs and missing taste/schedule/route inputs fail closed with visible blocked-row diagnostics where enough identity exists to form a row.
 - Runtime social failures (NPC moved, tile mismatch, unexpected state) resolve as `blocked` with `executor_calibration` scope and never produce strategy-negative feedback.
 
 ## Pending
 
-- Isolated E: runtime integration: talk smoke test, ordinary gift smoke test including one-item-to-null, blocked/replan cases, output artifact audit, then duration calibration.
-- No live game was launched; validation is static-only for the executor code.
+- Isolated E: runtime integration for the new route chain: multi-map NPC pursuit, NPC movement between route steps, blocked/replan cases, then one-item-to-null gift and duration calibration.
+- No live game was launched for the cross-map route slice; validation is static Release build only.
 - Social executor duration remains planner-budget-assumed until runtime calibration.
