@@ -3860,6 +3860,9 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.descend_shaft" ||
                 optionId == "executor.exit_mine" ||
                 optionId == "executor.cool_volcano_lava" ||
+                optionId == "executor.break_volcano_stone" ||
+                optionId == "executor.break_volcano_container" ||
+                optionId == "executor.combat_volcano_monster" ||
                 optionId == "executor.select_safe_item_slot" ||
                 optionId == "executor.close_menu" ||
                 optionId == "executor.buy_shop_item" ||

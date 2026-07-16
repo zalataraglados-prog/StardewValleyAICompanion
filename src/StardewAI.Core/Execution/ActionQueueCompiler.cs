@@ -677,6 +677,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));
             blocking.AddRange(ValidateVolcanoReachCalderaPlan(action, snapshot));
             blocking.AddRange(ValidateCoolVolcanoLavaPlan(action, snapshot));
+            blocking.AddRange(ValidateVolcanoNativePrimitivePlan(action, snapshot));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
@@ -1671,6 +1672,114 @@ namespace StardewAI.Core.Execution
                      ReadInt(slot, "slot_index") == wateringCanSlot.Value && ReadBool(slot, "can_cool_lava_now"))))
             {
                 reasons.Add("volcano_cooling_watering_can_unavailable_or_empty");
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateVolcanoNativePrimitivePlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var isStone = action.OptionId == "executor.break_volcano_stone";
+            var isContainer = action.OptionId == "executor.break_volcano_container";
+            var isCombat = action.OptionId == "executor.combat_volcano_monster";
+            if (!isStone && !isContainer && !isCombat)
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var standX = ReadIntParameter(action, "stand_tile_x");
+            var standY = ReadIntParameter(action, "stand_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                reasons.Add("volcano_primitive_target_tile_required");
+            }
+            if (!standX.HasValue || !standY.HasValue)
+            {
+                reasons.Add("volcano_primitive_stand_tile_required");
+            }
+            else if (targetX.HasValue && targetY.HasValue &&
+                Math.Abs(targetX.Value - standX.Value) + Math.Abs(targetY.Value - standY.Value) != 1)
+            {
+                reasons.Add("volcano_primitive_stand_tile_not_adjacent");
+            }
+
+            var currentLevel = ReadStateFieldValue(snapshot, "volcano", "current_level");
+            if (!currentLevel.HasValue || currentLevel.Value.ValueKind != JsonValueKind.Object)
+            {
+                reasons.Add("volcano_current_level_unavailable");
+            }
+
+            var resources = ReadStateFieldValue(snapshot, "volcano", "player_resources");
+            if (isStone || isContainer)
+            {
+                var toolSlot = ReadIntParameter(action, "tool_slot_index");
+                if (!toolSlot.HasValue)
+                {
+                    reasons.Add("volcano_primitive_tool_slot_required");
+                }
+                else
+                {
+                    var slotsProperty = isStone ? "pickaxe_slots" : "heavy_hitter_slots";
+                    if (!resources.HasValue || resources.Value.ValueKind != JsonValueKind.Object ||
+                        !resources.Value.TryGetProperty(slotsProperty, out var slots) ||
+                        slots.ValueKind != JsonValueKind.Array ||
+                        !slots.EnumerateArray().Any(slot => ReadInt(slot, "slot_index") == toolSlot.Value))
+                    {
+                        reasons.Add(isStone ? "volcano_break_stone_pickaxe_unavailable" : "volcano_break_container_heavy_hitter_unavailable");
+                    }
+                }
+
+                var objects = ReadStateFieldValue(snapshot, "volcano", "objects");
+                if (targetX.HasValue && targetY.HasValue &&
+                    (!objects.HasValue || objects.Value.ValueKind != JsonValueKind.Array ||
+                     !objects.Value.EnumerateArray().Any(item =>
+                         ReadInt(item, "tile_x") == targetX.Value &&
+                         ReadInt(item, "tile_y") == targetY.Value &&
+                         ReadBool(item, isStone ? "is_breakable_stone" : "is_breakable_container") &&
+                         (string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")) ||
+                          string.Equals(ReadString(item, "qualified_item_id"), ReadParameter(action, "qualified_item_id"), StringComparison.Ordinal)))))
+                {
+                    reasons.Add(isStone ? "volcano_break_stone_target_not_live" : "volcano_break_container_target_not_live");
+                }
+            }
+
+            if (isCombat)
+            {
+                var runtimeIdentity = ReadParameter(action, "target_runtime_identity");
+                var runtimeType = ReadParameter(action, "target_runtime_type");
+                var targetName = ReadParameter(action, "target_name");
+                var weaponSlot = ReadIntParameter(action, "combat_weapon_slot_index");
+                if (string.IsNullOrWhiteSpace(runtimeIdentity) || string.IsNullOrWhiteSpace(runtimeType) || string.IsNullOrWhiteSpace(targetName))
+                {
+                    reasons.Add("volcano_combat_target_identity_required");
+                }
+                if (!weaponSlot.HasValue)
+                {
+                    reasons.Add("volcano_combat_weapon_slot_required");
+                }
+                else if (!resources.HasValue || resources.Value.ValueKind != JsonValueKind.Object ||
+                    !resources.Value.TryGetProperty("weapon_slots", out var weapons) ||
+                    weapons.ValueKind != JsonValueKind.Array ||
+                    !weapons.EnumerateArray().Any(slot =>
+                        ReadInt(slot, "slot_index") == weaponSlot.Value && !ReadBool(slot, "is_scythe")))
+                {
+                    reasons.Add("volcano_combat_melee_weapon_unavailable");
+                }
+
+                var monsters = ReadStateFieldValue(snapshot, "volcano", "monsters");
+                if (!string.IsNullOrWhiteSpace(runtimeIdentity) &&
+                    (!monsters.HasValue || monsters.Value.ValueKind != JsonValueKind.Array ||
+                     !monsters.Value.EnumerateArray().Any(monster =>
+                         string.Equals(ReadString(monster, "runtime_identity"), runtimeIdentity, StringComparison.Ordinal) &&
+                         string.Equals(ReadString(monster, "runtime_type"), runtimeType, StringComparison.Ordinal) &&
+                         string.Equals(ReadString(monster, "name"), targetName, StringComparison.Ordinal) &&
+                         ReadBool(monster, "melee_executor_supported"))))
+                {
+                    reasons.Add("volcano_combat_target_not_live_or_supported");
+                }
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -3765,6 +3874,13 @@ namespace StardewAI.Core.Execution
                 return CompileCoolVolcanoLavaStep(action);
             }
 
+            if (action.OptionId == "executor.break_volcano_stone" ||
+                action.OptionId == "executor.break_volcano_container" ||
+                action.OptionId == "executor.combat_volcano_monster")
+            {
+                return CompileVolcanoNativePrimitiveStep(action);
+            }
+
             if (action.OptionId == "executor.social_interact")
             {
                 return CompileSocialInteractStep(action);
@@ -3832,6 +3948,39 @@ namespace StardewAI.Core.Execution
                     "cool_volcano_lava",
                     "target(" + targetX.Value + "," + targetY.Value + "):watering_can_slot=" + wateringCanSlot.Value,
                     "volcano.tiles.cooled_lava_tiles contains target",
+                    Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
+            };
+        }
+
+        private static CompiledActionStep[] CompileVolcanoNativePrimitiveStep(SmallModelAction action)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var kind = action.OptionId switch
+            {
+                "executor.break_volcano_stone" => "break_volcano_stone",
+                "executor.break_volcano_container" => "break_volcano_container",
+                "executor.combat_volcano_monster" => "combat_volcano_monster",
+                _ => string.Empty
+            };
+            if (string.IsNullOrWhiteSpace(kind))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    kind,
+                    "target(" + targetX.Value + "," + targetY.Value + ")",
+                    action.OptionId == "executor.combat_volcano_monster"
+                        ? "volcano.monsters target absent_or_health_zero"
+                        : "volcano.objects target absent",
                     Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
             };
         }

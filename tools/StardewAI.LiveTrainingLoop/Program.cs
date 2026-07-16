@@ -571,6 +571,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var safeSlotIndex = ReadQueueParameterInt(item, "safe_slot_index");
     var restoreSlotIndex = ReadQueueParameterInt(item, "restore_slot_index");
     var wateringCanSlotIndex = ReadQueueParameterInt(item, "watering_can_slot_index");
+    var toolSlotIndex = ReadQueueParameterInt(item, "tool_slot_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
     var connectorKind = ReadQueueParameterString(item, "connector_kind");
@@ -674,6 +675,10 @@ static TrainingExecutionRequest BuildExecutionRequest(
     if (wateringCanSlotIndex.HasValue)
     {
         executionRequest.WateringCanSlotIndex = wateringCanSlotIndex.Value;
+    }
+    if (toolSlotIndex.HasValue)
+    {
+        executionRequest.ToolSlotIndex = toolSlotIndex.Value;
     }
     if (!string.IsNullOrWhiteSpace(interactionKind))
     {
@@ -916,19 +921,28 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
     var isMove = string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal) ||
         string.Equals(optionId, "debug.visible_walk", StringComparison.Ordinal);
     var isVolcanoCooling = string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal);
+    var isVolcanoObstacle = string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
+        string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal);
+    var isVolcanoCombat = string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal);
     var isPrimitive = isMove ||
         isVolcanoCooling ||
+        isVolcanoObstacle ||
+        isVolcanoCombat ||
         string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) ||
         string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal);
     var applied = string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal);
     var reward = isMove
         ? applied ? 0.05 : -0.05
         : isVolcanoCooling ? applied ? 0.10 : -0.10
+        : isVolcanoObstacle ? applied ? 0.08 : -0.08
+        : isVolcanoCombat ? applied ? 0.12 : -0.12
         : isPrimitive ? applied ? 0.02 : -0.02
         : Math.Round(watered * 0.10 - energyCost * 0.005, 4);
     var blocked = !string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal) &&
         !string.Equals(ReadString(execution, "status"), "no_op", StringComparison.Ordinal);
-    var requiredMinutes = isMove || isVolcanoCooling ? 1 : 30;
+    var requiredMinutes = isMove || isVolcanoCooling || isVolcanoObstacle
+        ? 1
+        : isVolcanoCombat ? 2 : 30;
     var primitiveVerificationStatus = ReadString(execution, "primitive_verification_status");
     var primitiveVerified = string.Equals(primitiveVerificationStatus, "verified", StringComparison.Ordinal);
     var failureCategory = ReadString(execution, "failure_category");
@@ -977,6 +991,7 @@ static TrainingDatasetAppendResult AppendRealExecutionRow(
                     Number("execution.water_after", ReadInt(execution, "water_after")),
                     Number("execution.estimated_ticks", ReadInt(execution, "estimated_ticks")),
                     Number("execution.actual_ticks", ReadInt(execution, "actual_ticks")),
+                    Number("execution.tool_use_count", ReadInt(execution, "tool_use_count")),
                     Number("combat.attack_count", ReadInt(execution, "combat_attack_count")),
                     Number("combat.hit_count", ReadInt(execution, "combat_hit_count")),
                     Number("combat.damage_taken", ReadInt(execution, "combat_damage_taken")),
@@ -1079,6 +1094,11 @@ static void WritePlanExecutionEpisode(
         ? applied ? 0.05 : -0.05
         : string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal)
             ? applied ? 0.10 : -0.10
+        : string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
+          string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal)
+            ? applied ? 0.08 : -0.08
+        : string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal)
+            ? applied ? 0.12 : -0.12
         : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)
             ? applied ? 0.02 : -0.02
         : 0;
@@ -1194,6 +1214,27 @@ static string[] RewardTerms(string optionId, bool isMove, bool applied, int wate
             : new[] { "real_volcano_lava_cooling_blocked" };
     }
 
+    if (string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal))
+    {
+        return applied
+            ? new[] { "real_volcano_stone_removed", "native_pickaxe_lifecycle" }
+            : new[] { "real_volcano_stone_removal_blocked" };
+    }
+
+    if (string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal))
+    {
+        return applied
+            ? new[] { "real_volcano_container_removed", "native_heavy_hitter_lifecycle" }
+            : new[] { "real_volcano_container_removal_blocked" };
+    }
+
+    if (string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal))
+    {
+        return applied
+            ? new[] { "real_volcano_monster_defeated", "native_melee_lifecycle" }
+            : new[] { "real_volcano_combat_blocked" };
+    }
+
     return watered > 0 ? new[] { "real_crop_watered", "real_energy_spent" } : Array.Empty<string>();
 }
 
@@ -1217,8 +1258,12 @@ static FeatureVector BuildStateFeatures(JsonObject snapshot)
             Number("volcano.coolable_uncooled_tile_count", CountNestedArray(snapshot, "volcano", "tiles", "coolable_uncooled_tiles")),
             Number("volcano.cooled_lava_tile_count", CountNestedArray(snapshot, "volcano", "tiles", "cooled_lava_tiles")),
             Number("volcano.gate_count", CountFieldArray(snapshot, "volcano", "gates")),
+            Number("volcano.object_count", CountFieldArray(snapshot, "volcano", "objects")),
             Number("volcano.monster_count", CountFieldArray(snapshot, "volcano", "monsters")),
             Number("volcano.watering_can_water_left", ReadFirstNestedArrayDouble(snapshot, "volcano", "player_resources", "watering_can_slots", "water_left")),
+            Number("volcano.pickaxe_slot_count", CountNestedArray(snapshot, "volcano", "player_resources", "pickaxe_slots")),
+            Number("volcano.weapon_slot_count", CountNestedArray(snapshot, "volcano", "player_resources", "weapon_slots")),
+            Number("volcano.heavy_hitter_slot_count", CountNestedArray(snapshot, "volcano", "player_resources", "heavy_hitter_slots")),
             Number("completeness.unavailable_count", ReadUnavailableCount(snapshot)),
             Number("completeness.required_readable_ratio", 1)
         },

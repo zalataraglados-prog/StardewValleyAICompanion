@@ -6,11 +6,15 @@ using StardewValley.Monsters;
 using StardewValley.Objects;
 using StardewValley.Tools;
 using StardewAI.Contracts.State;
+using System.Reflection;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed class VolcanoReadAdapter : ReadAdapterBase
 {
+    private static readonly FieldInfo? BreakableContainerHealthField = typeof(BreakableContainer)
+        .GetField("health", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+
     private string? cachedCollisionSignature;
     private object? cachedCollisionContext;
 
@@ -241,6 +245,9 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
                     is_breakable_container = obj is BreakableContainer,
                     is_chest = obj is Chest,
                     minutes_until_ready = obj.MinutesUntilReady,
+                    health_or_hits_remaining = obj.IsBreakableStone()
+                        ? obj.MinutesUntilReady
+                        : obj is BreakableContainer container ? ReadBreakableContainerHealth(container) : null,
                     can_be_grabbed = obj.CanBeGrabbed,
                     tool_requirement = obj.IsBreakableStone() ? "pickaxe" : obj is BreakableContainer ? "heavy_hitter" : "unknown_or_interact",
                     source = "VolcanoDungeon.objects and Object live fields"
@@ -257,6 +264,8 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
             .Select(monster =>
             {
                 var box = monster.GetBoundingBox();
+                var vanillaRuntimeType = monster.GetType().Assembly == typeof(Monster).Assembly;
+                var meleeSupported = vanillaRuntimeType && monster is not Spiker;
                 return new
                 {
                     runtime_identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"),
@@ -269,12 +278,18 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
                     bounding_box = new { x = box.X, y = box.Y, width = box.Width, height = box.Height },
                     health = monster.Health,
                     max_health = monster.MaxHealth,
+                    resilience = monster.resilience.Value,
+                    miss_chance = monster.missChance.Value,
                     damage_to_farmer = monster.DamageToFarmer,
                     is_glider = monster.isGlider.Value,
                     is_invisible = monster.IsInvisible,
                     is_invincible = monster.isInvincible(),
                     invincible_countdown_ms = monster.invincibleCountdown,
                     stun_time_ms = monster.stunTime.Value,
+                    melee_executor_supported = meleeSupported,
+                    melee_executor_block_reason = meleeSupported
+                        ? string.Empty
+                        : monster is Spiker ? "spiker_permanent_melee_immunity" : "custom_monster_melee_semantics_unverified",
                     tile_manhattan_distance_to_player = Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y),
                     future_ai_path_not_predicted = true,
                     source = "Monster live fields; future AI requires after-snapshot replanning"
@@ -340,7 +355,9 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
                 slot_index = index,
                 item_id = pickaxe.ItemId,
                 qualified_item_id = pickaxe.QualifiedItemId,
-                upgrade_level = pickaxe.UpgradeLevel
+                upgrade_level = pickaxe.UpgradeLevel,
+                additional_power = pickaxe.additionalPower.Value,
+                damage_per_hit = Math.Max(1, pickaxe.UpgradeLevel + 1)
             } : null).Where(slot => slot is not null).ToArray(),
             weapon_slots = player.Items.Select((item, index) => item is MeleeWeapon weapon ? new
             {
@@ -348,10 +365,27 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
                 item_id = weapon.ItemId,
                 qualified_item_id = weapon.QualifiedItemId,
                 minimum_damage = weapon.minDamage.Value,
-                maximum_damage = weapon.maxDamage.Value
+                maximum_damage = weapon.maxDamage.Value,
+                weapon_type = weapon.type.Value,
+                is_scythe = weapon.isScythe()
+            } : null).Where(slot => slot is not null).ToArray(),
+            heavy_hitter_slots = player.Items.Select((item, index) => item is Tool tool && tool.isHeavyHitter() ? new
+            {
+                slot_index = index,
+                item_id = tool.ItemId,
+                qualified_item_id = tool.QualifiedItemId,
+                runtime_type = tool.GetType().FullName,
+                upgrade_level = tool.UpgradeLevel,
+                container_damage_per_hit = tool is MeleeWeapon weapon && weapon.type.Value == 2 ? 2 : 1
             } : null).Where(slot => slot is not null).ToArray(),
             source = "Game1.player live resources and inventory"
         };
+    }
+
+    private static int? ReadBreakableContainerHealth(BreakableContainer container)
+    {
+        var netInt = BreakableContainerHealthField?.GetValue(container);
+        return netInt?.GetType().GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)?.GetValue(netInt) as int?;
     }
 
     private object CollisionContext(VolcanoDungeon volcano, xTile.Map? map)

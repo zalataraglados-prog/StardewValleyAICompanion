@@ -14,7 +14,8 @@ namespace StardewAI.Core.Execution
         public const string TraverseForwardConnector = "traverse_forward_connector";
         public const string CoolLavaTile = "cool_lava_tile";
         public const string CombatMonster = "combat_monster";
-        public const string BreakObstacle = "break_obstacle";
+        public const string BreakStone = "break_stone";
+        public const string BreakContainer = "break_container";
         public const string Blocked = "blocked";
     }
 
@@ -43,6 +44,8 @@ namespace StardewAI.Core.Execution
 
         public int EstimatedMovementTiles { get; set; }
 
+        public int EstimatedToolUses { get; set; }
+
         public string ExpectedTargetLocation { get; set; } = string.Empty;
 
         public int? ExpectedArrivalTileX { get; set; }
@@ -51,9 +54,15 @@ namespace StardewAI.Core.Execution
 
         public int? WateringCanSlotIndex { get; set; }
 
+        public int? ToolSlotIndex { get; set; }
+
+        public int? CombatWeaponSlotIndex { get; set; }
+
         public string TargetRuntimeIdentity { get; set; } = string.Empty;
 
         public string TargetRuntimeType { get; set; } = string.Empty;
+
+        public string TargetName { get; set; } = string.Empty;
 
         public string TargetQualifiedItemId { get; set; } = string.Empty;
 
@@ -100,10 +109,9 @@ namespace StardewAI.Core.Execution
             }
 
             var search = Search(grid, start);
-            var immediateThreat = SelectNearestMonster(monsters, search, start, maximumDistanceFromPlayer: 3);
+            var immediateThreat = SelectNearestMonster(monsters, resources, search, start, maximumDistanceFromPlayer: 3);
             if (immediateThreat is not null)
             {
-                immediateThreat.Reason = "volcano_combat_executor_not_implemented";
                 return immediateThreat;
             }
 
@@ -129,17 +137,15 @@ namespace StardewAI.Core.Execution
                 return lavaStep;
             }
 
-            var obstacleStep = SelectObstacle(objects, grid, search);
+            var obstacleStep = SelectObstacle(objects, resources, grid, search);
             if (obstacleStep is not null)
             {
-                obstacleStep.Reason = "volcano_obstacle_executor_not_implemented";
                 return obstacleStep;
             }
 
-            var remainingMonster = SelectNearestMonster(monsters, search, start, maximumDistanceFromPlayer: null);
+            var remainingMonster = SelectNearestMonster(monsters, resources, search, start, maximumDistanceFromPlayer: null);
             if (remainingMonster is not null)
             {
-                remainingMonster.Reason = "volcano_combat_executor_not_implemented";
                 return remainingMonster;
             }
 
@@ -303,7 +309,7 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static VolcanoFloorStepPlan? SelectObstacle(JsonElement objects, bool[][] grid, SearchResult search)
+        private static VolcanoFloorStepPlan? SelectObstacle(JsonElement objects, JsonElement resources, bool[][] grid, SearchResult search)
         {
             if (objects.ValueKind != JsonValueKind.Array)
             {
@@ -343,23 +349,43 @@ namespace StardewAI.Core.Execution
                 return null;
             }
 
+            var isStone = ReadBool(selected.Item, "is_breakable_stone");
+            var toolSlot = isStone
+                ? ReadBestSlot(resources, "pickaxe_slots", "damage_per_hit")
+                : ReadBestSlot(resources, "heavy_hitter_slots", "container_damage_per_hit");
+            var damagePerUse = toolSlot.HasValue
+                ? ReadSlotScore(
+                    resources,
+                    isStone ? "pickaxe_slots" : "heavy_hitter_slots",
+                    toolSlot.Value,
+                    isStone ? "damage_per_hit" : "container_damage_per_hit")
+                : 0;
+            var targetHealth = Math.Max(1, ReadInt(selected.Item, "health_or_hits_remaining"));
             return new VolcanoFloorStepPlan
             {
-                Status = "blocked",
-                StepKind = VolcanoFloorStepKinds.BreakObstacle,
+                Status = toolSlot.HasValue ? "ready" : "blocked",
+                StepKind = isStone ? VolcanoFloorStepKinds.BreakStone : VolcanoFloorStepKinds.BreakContainer,
+                Reason = toolSlot.HasValue
+                    ? isStone ? "reachable_native_pickaxe_target" : "reachable_native_heavy_hitter_target"
+                    : isStone ? "volcano_break_stone_pickaxe_unavailable" : "volcano_break_container_heavy_hitter_unavailable",
                 TargetTileX = ReadInt(selected.Item, "tile_x"),
                 TargetTileY = ReadInt(selected.Item, "tile_y"),
                 StandTileX = selected.StandX,
                 StandTileY = selected.StandY,
                 EstimatedMovementTiles = selected.Distance,
+                EstimatedToolUses = damagePerUse > 0
+                    ? (int)Math.Ceiling((double)targetHealth / damagePerUse)
+                    : 0,
                 TargetRuntimeType = ReadString(selected.Item, "runtime_type"),
                 TargetQualifiedItemId = ReadString(selected.Item, "qualified_item_id"),
+                ToolSlotIndex = toolSlot,
                 Path = selected.Path
             };
         }
 
         private static VolcanoFloorStepPlan? SelectNearestMonster(
             JsonElement monsters,
+            JsonElement resources,
             SearchResult search,
             (int X, int Y) start,
             int? maximumDistanceFromPlayer)
@@ -401,10 +427,15 @@ namespace StardewAI.Core.Execution
                 return null;
             }
 
+            var supported = ReadBool(selected.Monster, "melee_executor_supported");
+            var weaponSlot = ReadBestSlot(resources, "weapon_slots", "maximum_damage", rejectScythe: true);
             return new VolcanoFloorStepPlan
             {
-                Status = "blocked",
+                Status = supported && weaponSlot.HasValue ? "ready" : "blocked",
                 StepKind = VolcanoFloorStepKinds.CombatMonster,
+                Reason = !supported
+                    ? ReadString(selected.Monster, "melee_executor_block_reason")
+                    : weaponSlot.HasValue ? "reachable_native_melee_target" : "volcano_combat_melee_weapon_unavailable",
                 TargetTileX = ReadInt(selected.Monster, "tile_x"),
                 TargetTileY = ReadInt(selected.Monster, "tile_y"),
                 StandTileX = selected.StandX,
@@ -412,8 +443,37 @@ namespace StardewAI.Core.Execution
                 EstimatedMovementTiles = selected.Distance,
                 TargetRuntimeIdentity = ReadString(selected.Monster, "runtime_identity"),
                 TargetRuntimeType = ReadString(selected.Monster, "runtime_type"),
+                TargetName = ReadString(selected.Monster, "name"),
+                CombatWeaponSlotIndex = weaponSlot,
                 Path = selected.Path
             };
+        }
+
+        private static int? ReadBestSlot(JsonElement resources, string arrayProperty, string scoreProperty, bool rejectScythe = false)
+        {
+            if (!resources.TryGetProperty(arrayProperty, out var slots) || slots.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var selected = slots.EnumerateArray()
+                .Where(slot => !rejectScythe || !ReadBool(slot, "is_scythe"))
+                .OrderByDescending(slot => ReadInt(slot, scoreProperty))
+                .ThenBy(slot => ReadInt(slot, "slot_index"))
+                .FirstOrDefault();
+            return selected.ValueKind == JsonValueKind.Object ? ReadInt(selected, "slot_index") : null;
+        }
+
+        private static int ReadSlotScore(JsonElement resources, string arrayProperty, int slotIndex, string scoreProperty)
+        {
+            if (!resources.TryGetProperty(arrayProperty, out var slots) || slots.ValueKind != JsonValueKind.Array)
+            {
+                return 0;
+            }
+
+            var selected = slots.EnumerateArray()
+                .FirstOrDefault(slot => ReadInt(slot, "slot_index") == slotIndex);
+            return selected.ValueKind == JsonValueKind.Object ? ReadInt(selected, scoreProperty) : 0;
         }
 
         private static int? ReadWateringCanSlot(JsonElement resources)
@@ -582,6 +642,9 @@ namespace StardewAI.Core.Execution
                 VolcanoFloorStepKinds.PressDwarfSwitch => "executor.move_to_tile",
                 VolcanoFloorStepKinds.TraverseForwardConnector => "executor.traverse_connector",
                 VolcanoFloorStepKinds.CoolLavaTile => "executor.cool_volcano_lava",
+                VolcanoFloorStepKinds.BreakStone => "executor.break_volcano_stone",
+                VolcanoFloorStepKinds.BreakContainer => "executor.break_volcano_container",
+                VolcanoFloorStepKinds.CombatMonster => "executor.combat_volcano_monster",
                 _ => string.Empty
             };
         }
@@ -593,19 +656,24 @@ namespace StardewAI.Core.Execution
                 Parameter("execution_option_id", ExecutionOptionId(plan)),
                 Parameter("volcano_step_kind", plan.StepKind),
                 Parameter("volcano_step_reason", plan.Reason),
-                Parameter("estimated_movement_tiles", plan.EstimatedMovementTiles.ToString(CultureInfo.InvariantCulture))
+                Parameter("estimated_movement_tiles", plan.EstimatedMovementTiles.ToString(CultureInfo.InvariantCulture)),
+                Parameter("estimated_tool_uses", plan.EstimatedToolUses.ToString(CultureInfo.InvariantCulture))
             };
             Add(parameters, "target_tile_x", plan.TargetTileX);
             Add(parameters, "target_tile_y", plan.TargetTileY);
             Add(parameters, "stand_tile_x", plan.StandTileX);
             Add(parameters, "stand_tile_y", plan.StandTileY);
             Add(parameters, "max_movement_tiles", plan.EstimatedMovementTiles > 0 ? Math.Max(8, plan.EstimatedMovementTiles + 8) : (int?)null);
+            Add(parameters, "max_tool_swings", plan.EstimatedToolUses > 0 ? plan.EstimatedToolUses + 1 : (int?)null);
             Add(parameters, "expected_target_location", plan.ExpectedTargetLocation);
             Add(parameters, "expected_arrival_tile_x", plan.ExpectedArrivalTileX);
             Add(parameters, "expected_arrival_tile_y", plan.ExpectedArrivalTileY);
             Add(parameters, "watering_can_slot_index", plan.WateringCanSlotIndex);
+            Add(parameters, "tool_slot_index", plan.ToolSlotIndex);
+            Add(parameters, "combat_weapon_slot_index", plan.CombatWeaponSlotIndex);
             Add(parameters, "target_runtime_identity", plan.TargetRuntimeIdentity);
             Add(parameters, "target_runtime_type", plan.TargetRuntimeType);
+            Add(parameters, "target_name", plan.TargetName);
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
             if (plan.StepKind == VolcanoFloorStepKinds.PressDwarfSwitch)
             {

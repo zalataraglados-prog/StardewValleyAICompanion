@@ -45,6 +45,8 @@ public sealed class ModEntry : Mod
     private ActiveNativeFarmTool? activeNativeFarmTool;
     private ActiveMineStone? activeMineStone;
     private ActiveVolcanoCoolLava? activeVolcanoCoolLava;
+    private ActiveVolcanoObstacle? activeVolcanoObstacle;
+    private ActiveVolcanoCombat? activeVolcanoCombat;
     private ActiveBreakContainer? activeBreakContainer;
     private ActiveCombatMonster? activeCombatMonster;
     private ActiveShootMonster? activeShootMonster;
@@ -268,6 +270,8 @@ public sealed class ModEntry : Mod
         TickNativeFarmTool();
         TickMineStone();
         TickVolcanoCoolLava();
+        TickVolcanoObstacle();
+        TickVolcanoCombat();
         TickBreakContainer();
         TickCombatMonster();
         TickManualAutoCombat();
@@ -281,7 +285,7 @@ public sealed class ModEntry : Mod
         TickShipInventoryToBin();
         TickDialogueAdvance();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
         {
             return;
         }
@@ -328,6 +332,19 @@ public sealed class ModEntry : Mod
             if (pending.Request.OptionId == "executor.cool_volcano_lava")
             {
                 StartVolcanoCoolLava(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.break_volcano_stone" ||
+                pending.Request.OptionId == "executor.break_volcano_container")
+            {
+                StartVolcanoObstacle(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.combat_volcano_monster")
+            {
+                StartVolcanoCombat(pending);
                 return;
             }
 
@@ -6299,6 +6316,728 @@ public sealed class ModEntry : Mod
             ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y +
             ";target=" + target.X + "," + target.Y +
             ";cooled=" + cooled.ToString().ToLowerInvariant();
+    }
+
+    private void StartVolcanoObstacle(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        var isStone = request.OptionId == "executor.break_volcano_stone";
+        var primitiveKind = isStone ? "break_volcano_stone" : "break_volcano_container";
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            !request.StandTileX.HasValue || !request.StandTileY.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "volcano.objects[target].present=false", "target_or_stand=missing", "volcano_obstacle_target_and_stand_required"));
+            return;
+        }
+
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
+        var requested = "volcano.objects[" + target.X + "," + target.Y + "].present=false;native_tool=" + (isStone ? "Pickaxe" : "HeavyHitter");
+        if (Game1.currentLocation is not VolcanoDungeon volcano)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, requested, VolcanoObstacleObservedEffect(target, isStone), "volcano_obstacle_requires_loaded_volcano_dungeon"));
+            return;
+        }
+
+        var targetVector = target.ToVector2();
+        if (!volcano.objects.TryGetValue(targetVector, out var targetObject) ||
+            (isStone && !targetObject.IsBreakableStone()) ||
+            (!isStone && targetObject is not BreakableContainer) ||
+            (!string.IsNullOrWhiteSpace(request.QualifiedItemId) &&
+             !string.Equals(targetObject.QualifiedItemId, request.QualifiedItemId, StringComparison.Ordinal)))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, requested, VolcanoObstacleObservedEffect(target, isStone), "volcano_obstacle_target_not_live_or_type_drift"));
+            return;
+        }
+
+        if (!request.ToolSlotIndex.HasValue ||
+            request.ToolSlotIndex.Value < 0 ||
+            request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
+            Game1.player.Items[request.ToolSlotIndex.Value] is not Tool tool ||
+            (isStone && tool is not Pickaxe) ||
+            (!isStone && !tool.isHeavyHitter()))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, requested, VolcanoObstacleObservedEffect(target, isStone), "volcano_obstacle_tool_slot_invalid"));
+            return;
+        }
+
+        if (!AreAdjacent(stand, target) ||
+            !IsTileOnMap(volcano, stand) ||
+            !IsTileWalkable(volcano, stand) ||
+            IsTileOccupiedByCharacter(volcano, stand))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, requested, VolcanoObstacleObservedEffect(target, isStone), "volcano_obstacle_compiler_stand_tile_invalid"));
+            return;
+        }
+
+        var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var path = TryBuildTilePath(
+            volcano,
+            Game1.player.TilePoint,
+            stand,
+            maxMovementTiles,
+            out var pathReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, requested, VolcanoObstacleObservedEffect(target, isStone), "volcano_obstacle_path_unavailable:" + pathReason));
+            return;
+        }
+
+        var healthBefore = isStone
+            ? targetObject.MinutesUntilReady
+            : ReadBreakableContainerHealth((BreakableContainer)targetObject) ?? 3;
+        activeVolcanoObstacle = new ActiveVolcanoObstacle(
+            pending,
+            volcano,
+            target,
+            stand,
+            path,
+            targetObject,
+            tool,
+            request.ToolSlotIndex.Value,
+            Game1.player.CurrentToolIndex,
+            isStone,
+            healthBefore,
+            Game1.player.Stamina,
+            Math.Clamp(request.MaxCrops, 1, 64),
+            maxMovementTiles,
+            requested);
+    }
+
+    private void TickVolcanoObstacle()
+    {
+        if (activeVolcanoObstacle is null)
+        {
+            return;
+        }
+
+        var active = activeVolcanoObstacle;
+        try
+        {
+            TickVolcanoObstacleCore(active);
+        }
+        catch (Exception ex)
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickVolcanoObstacleCore(ActiveVolcanoObstacle active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady ||
+            Game1.currentLocation is not VolcanoDungeon volcano ||
+            !ReferenceEquals(volcano, active.Volcano))
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_location_changed_or_world_unavailable");
+            return;
+        }
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_timeout");
+            return;
+        }
+
+        var targetVector = active.Target.ToVector2();
+        if (!volcano.objects.TryGetValue(targetVector, out var current))
+        {
+            CompleteVolcanoObstacle(active);
+            return;
+        }
+        if (!ReferenceEquals(current, active.TargetObject) ||
+            (active.IsStone && !current.IsBreakableStone()) ||
+            (!active.IsStone && current is not BreakableContainer))
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_runtime_target_drift");
+            return;
+        }
+
+        if (!active.ActionHeld && ImmediateVolcanoThreat(volcano))
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_unsafe_monster_window");
+            return;
+        }
+
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            if (active.PathIndex >= active.Path.Count)
+            {
+                CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_path_exhausted_before_adjacent");
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                active.StuckTicks = 0;
+                return;
+            }
+            if (!IsTileWalkable(volcano, next) || IsTileOccupiedByCharacter(volcano, next))
+            {
+                CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_dynamic_path_blocked");
+                return;
+            }
+
+            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+            active.LastPosition = Game1.player.Position;
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (!movedSinceLastTick)
+            {
+                active.StuckTicks++;
+                if (active.StuckTicks > 45)
+                {
+                    CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_movement_stuck");
+                }
+            }
+            else
+            {
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.SwingCount >= active.MaxSwings)
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_swing_budget_exceeded");
+            return;
+        }
+        if (Game1.player.Stamina <= 0f)
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_energy_exhausted");
+            return;
+        }
+
+        if (active.IsStone)
+        {
+            if (!active.BeginIssued)
+            {
+                Game1.player.CurrentToolIndex = active.ToolSlotIndex;
+                Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+                Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize);
+                Game1.player.BeginUsingTool();
+                active.BeginIssued = true;
+                active.SwingCount++;
+                return;
+            }
+            if (!active.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
+            {
+                Game1.player.EndUsingTool();
+                active.ReleaseIssued = true;
+                return;
+            }
+            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
+            {
+                return;
+            }
+            RecordVolcanoObstacleSwing(active, current);
+            return;
+        }
+
+        if (active.ActionHeld)
+        {
+            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+            active.ActionHeld = false;
+            RecordVolcanoObstacleSwing(active, current);
+            return;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return;
+        }
+
+        Game1.player.CurrentToolIndex = active.ToolSlotIndex;
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+        Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        {
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_" + inputReason);
+            return;
+        }
+        active.ActionHeld = true;
+        active.SwingCount++;
+    }
+
+    private static void RecordVolcanoObstacleSwing(ActiveVolcanoObstacle active, StardewValley.Object current)
+    {
+        var health = active.IsStone
+            ? current.MinutesUntilReady
+            : current is BreakableContainer container ? ReadBreakableContainerHealth(container) ?? 0 : 0;
+        if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != health)
+        {
+            active.ObservedHealth.Add(health);
+        }
+        active.BeginIssued = false;
+        active.ReleaseIssued = false;
+    }
+
+    private void CompleteVolcanoObstacle(ActiveVolcanoObstacle active)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeVolcanoObstacle = null;
+        if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != 0)
+        {
+            active.ObservedHealth.Add(0);
+        }
+        var request = active.Pending.Request;
+        var primitiveKind = active.IsStone ? "break_volcano_stone" : "break_volcano_container";
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            EnergyBefore = active.StaminaBefore,
+            EnergyAfter = Game1.player.Stamina,
+            TargetLocation = active.Volcano.NameOrUniqueName,
+            TargetTileX = active.Target.X,
+            TargetTileY = active.Target.Y,
+            ToolQualifiedItemId = active.Tool.QualifiedItemId,
+            ToolUpgradeLevel = active.Tool.UpgradeLevel,
+            ToolUseCount = active.SwingCount,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = primitiveKind,
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = active.IsStone
+                ? new[] { "native_pickaxe_lifecycle_removed_volcano_stone", "native_swing_count=" + active.SwingCount }
+                : new[] { "native_heavy_hitter_input_removed_volcano_container", "released_contents_left_as_game_debris", "native_swing_count=" + active.SwingCount },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";health_sequence=" + string.Join(",", active.ObservedHealth) + ";native_swings=" + active.SwingCount,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "volcano.objects[" + active.Target.X + "," + active.Target.Y + "]", Before = active.TargetObject.QualifiedItemId + ":health=" + active.HealthBefore, After = "removed" },
+                new SimulatedFactChange { Path = "volcano.debris.count", Before = active.DebrisCountBefore.ToString(), After = active.Volcano.debris.Count.ToString() },
+                new SimulatedFactChange { Path = "player.energy", Before = active.StaminaBefore.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") }
+            }
+        });
+    }
+
+    private void CompleteVolcanoObstacleBlocked(ActiveVolcanoObstacle active, string reason)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+        RestoreSlot(active.RestoreSlotIndex);
+        activeVolcanoObstacle = null;
+        var primitiveKind = active.IsStone ? "break_volcano_stone" : "break_volcano_container";
+        var result = BlockedWithPrimitive(
+            active.Pending.Request,
+            primitiveKind,
+            active.RequestedEffect,
+            VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";native_swings=" + active.SwingCount,
+            reason);
+        result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
+        result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
+        result.ToolUseCount = active.SwingCount;
+        result.EnergyBefore = active.StaminaBefore;
+        result.EnergyAfter = Game1.player.Stamina;
+        result.ActualTicks = active.ElapsedTicks;
+        result.TrainingImpactScope = "executor_calibration";
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static string VolcanoObstacleObservedEffect(Point target, bool isStone)
+    {
+        var volcano = Game1.currentLocation as VolcanoDungeon;
+        var present = volcano?.objects.TryGetValue(target.ToVector2(), out var obj) == true &&
+            (isStone ? obj.IsBreakableStone() : obj is BreakableContainer);
+        return "location=" + (volcano?.NameOrUniqueName ?? "none") +
+            ";level=" + (volcano?.level.Value.ToString() ?? "none") +
+            ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y +
+            ";target=" + target.X + "," + target.Y +
+            ";target_present=" + present.ToString().ToLowerInvariant();
+    }
+
+    private void StartVolcanoCombat(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+
+        var requested = "volcano.monsters[target].present=false;native_input=melee";
+        if (string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
+            string.IsNullOrWhiteSpace(request.TargetRuntimeType) ||
+            string.IsNullOrWhiteSpace(request.TargetName))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_volcano_monster", requested, "target=missing_or_incomplete", "volcano_combat_target_identity_required"));
+            return;
+        }
+        if (Game1.currentLocation is not VolcanoDungeon volcano)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_volcano_monster", requested, "location=not_loaded_volcano", "volcano_combat_requires_loaded_volcano_dungeon"));
+            return;
+        }
+
+        var targets = volcano.characters.OfType<Monster>()
+            .Where(monster => monster.Health > 0)
+            .Where(monster => string.Equals(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(monster).ToString("X8"), request.TargetRuntimeIdentity, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.GetType().FullName, request.TargetRuntimeType, StringComparison.Ordinal))
+            .Where(monster => string.Equals(monster.Name, request.TargetName, StringComparison.Ordinal))
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_volcano_monster", requested, "matching_target_count=" + targets.Length, targets.Length == 0 ? "volcano_combat_target_not_found_or_moved" : "volcano_combat_target_ambiguous"));
+            return;
+        }
+
+        var target = targets[0];
+        if (target is Spiker || target.GetType().Assembly != typeof(Monster).Assembly)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_volcano_monster", requested, "target_type=" + target.GetType().FullName, "volcano_combat_target_melee_semantics_unsupported"));
+            return;
+        }
+        if (!request.CombatWeaponSlotIndex.HasValue ||
+            request.CombatWeaponSlotIndex.Value < 0 ||
+            request.CombatWeaponSlotIndex.Value >= Game1.player.Items.Count ||
+            Game1.player.Items[request.CombatWeaponSlotIndex.Value] is not MeleeWeapon weapon ||
+            weapon.isScythe())
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_volcano_monster", requested, "weapon=missing", "volcano_combat_melee_weapon_slot_invalid"));
+            return;
+        }
+
+        activeVolcanoCombat = new ActiveVolcanoCombat(
+            pending,
+            volcano,
+            target,
+            weapon,
+            request.CombatWeaponSlotIndex.Value,
+            Game1.player.CurrentToolIndex,
+            Math.Clamp(request.MaxAttacks, 1, 256),
+            Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
+            requested);
+    }
+
+    private void TickVolcanoCombat()
+    {
+        if (activeVolcanoCombat is null)
+        {
+            return;
+        }
+
+        var active = activeVolcanoCombat;
+        try
+        {
+            TickVolcanoCombatCore(active);
+        }
+        catch (Exception ex)
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickVolcanoCombatCore(ActiveVolcanoCombat active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady ||
+            Game1.currentLocation is not VolcanoDungeon volcano ||
+            !ReferenceEquals(volcano, active.Volcano))
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_location_changed_or_world_unavailable");
+            return;
+        }
+
+        RecordVolcanoCombatHealth(active);
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_timeout");
+            return;
+        }
+        if (Game1.player.health <= 0)
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_player_defeated");
+            return;
+        }
+
+        var targetPresent = volcano.characters.Contains(active.Target);
+        if (active.Target.Health <= 0 || !targetPresent)
+        {
+            if (active.Target.Health <= 0)
+            {
+                CompleteVolcanoCombat(active);
+            }
+            else
+            {
+                CompleteVolcanoCombatBlocked(active, "volcano_combat_target_disappeared_without_defeat");
+            }
+            return;
+        }
+
+        if (TrackVolcanoCombatProgress(active) > 600)
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_no_movement_or_damage_progress");
+            return;
+        }
+
+        var releasedAttackThisTick = false;
+        if (active.AttackButtonHeld)
+        {
+            if (!TryApplySmapiButtonOverride(SButton.C, pressed: false, out var releaseReason))
+            {
+                CompleteVolcanoCombatBlocked(active, releaseReason);
+                return;
+            }
+            active.AttackButtonHeld = false;
+            releasedAttackThisTick = true;
+        }
+
+        if (!IsMonsterWithinCombatReach(active.Target, active.Weapon))
+        {
+            var targetTile = active.Target.TilePoint;
+            if (active.PathIndex >= active.Path.Count || ManhattanDistance(active.PathTarget, targetTile) > 2)
+            {
+                var path = BuildAdjacentToolPath(
+                    volcano,
+                    targetTile,
+                    Math.Max(1, active.MaxMovementTiles - active.MovementTiles),
+                    out var pathReason,
+                    avoidSoftObstacles: true,
+                    allowRemovableObstacles: false);
+                if (path is null)
+                {
+                    active.PathFailures++;
+                    if (active.PathFailures > 120)
+                    {
+                        CompleteVolcanoCombatBlocked(active, "volcano_combat_dynamic_path_unavailable:" + pathReason);
+                    }
+                    return;
+                }
+                active.Path = path;
+                active.PathIndex = 0;
+                active.PathTarget = targetTile;
+                active.PathFailures = 0;
+            }
+
+            if (active.PathIndex >= active.Path.Count)
+            {
+                return;
+            }
+            var next = active.Path[active.PathIndex];
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+                return;
+            }
+            if (!IsTileWalkable(volcano, next) || IsTileOccupiedByCharacter(volcano, next))
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.PathFailures++;
+                return;
+            }
+
+            ObserveVolcanoCombatMovement(active);
+            if (active.MovementTiles > active.MaxMovementTiles)
+            {
+                CompleteVolcanoCombatBlocked(active, "volcano_combat_movement_budget_exceeded");
+                return;
+            }
+            StartMoving(DirectionTo(Game1.player.TilePoint, next));
+            MovePlayerForTick();
+            if (Game1.player.TilePoint == next)
+            {
+                active.PathIndex++;
+            }
+            if (active.StuckTicks > 45)
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.StuckTicks = 0;
+            }
+            return;
+        }
+
+        StopAllMovement();
+        if (active.Target.isInvincible() || Game1.player.UsingTool || releasedAttackThisTick ||
+            Game1.activeClickableMenu is not null || Game1.eventUp)
+        {
+            return;
+        }
+        if (active.AttackCount >= active.MaxAttacks)
+        {
+            CompleteVolcanoCombatBlocked(active, "volcano_combat_attack_budget_exceeded");
+            return;
+        }
+
+        var targetCenter = active.Target.GetBoundingBox().Center;
+        Game1.player.CurrentToolIndex = active.WeaponSlotIndex;
+        Game1.player.faceDirection(DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection));
+        Game1.player.lastClick = new Vector2(targetCenter.X, targetCenter.Y);
+        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        {
+            CompleteVolcanoCombatBlocked(active, inputReason);
+            return;
+        }
+        active.AttackButtonHeld = true;
+        active.AttackCount++;
+    }
+
+    private static int TrackVolcanoCombatProgress(ActiveVolcanoCombat active)
+    {
+        if (Vector2.DistanceSquared(active.LastProgressPosition, Game1.player.Position) >= 0.01f ||
+            active.Target.Health < active.LastProgressTargetHealth)
+        {
+            active.LastProgressPosition = Game1.player.Position;
+            active.LastProgressTargetHealth = active.Target.Health;
+            active.NoProgressTicks = 0;
+        }
+        else
+        {
+            active.NoProgressTicks++;
+        }
+        return active.NoProgressTicks;
+    }
+
+    private static void ObserveVolcanoCombatMovement(ActiveVolcanoCombat active)
+    {
+        var currentPosition = Game1.player.Position;
+        active.StuckTicks = Vector2.DistanceSquared(active.LastMovementPosition, currentPosition) < 0.01f
+            ? active.StuckTicks + 1
+            : 0;
+        var currentTile = Game1.player.TilePoint;
+        if (currentTile != active.LastMovementTile)
+        {
+            active.MovementTiles += ManhattanDistance(active.LastMovementTile, currentTile);
+        }
+        active.LastMovementPosition = currentPosition;
+        active.LastMovementTile = currentTile;
+    }
+
+    private static void RecordVolcanoCombatHealth(ActiveVolcanoCombat active)
+    {
+        if (active.TargetHealthSequence.Count == 0 || active.TargetHealthSequence[^1] != active.Target.Health)
+        {
+            if (active.TargetHealthSequence.Count > 0 && active.Target.Health < active.TargetHealthSequence[^1])
+            {
+                active.HitCount++;
+            }
+            active.TargetHealthSequence.Add(active.Target.Health);
+        }
+        if (active.PlayerHealthSequence.Count == 0 || active.PlayerHealthSequence[^1] != Game1.player.health)
+        {
+            active.PlayerHealthSequence.Add(Game1.player.health);
+        }
+    }
+
+    private void CompleteVolcanoCombat(ActiveVolcanoCombat active)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeVolcanoCombat = null;
+        RecordVolcanoCombatHealth(active);
+        var request = active.Pending.Request;
+        var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            TargetLocation = active.Volcano.NameOrUniqueName,
+            TargetTileX = request.TargetTileX,
+            TargetTileY = request.TargetTileY,
+            ToolQualifiedItemId = active.Weapon.QualifiedItemId,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "combat_volcano_monster",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = damageTaken == 0
+                ? new[] { "native_melee_defeated_volcano_target", "player_health_unchanged" }
+                : new[] { "native_melee_defeated_volcano_target", "player_damage_observed=" + damageTaken },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = VolcanoCombatObservedEffect(active),
+            CombatTargetRuntimeType = active.TargetRuntimeType,
+            CombatTargetRuntimeIdentity = active.TargetRuntimeIdentity,
+            CombatTargetName = active.TargetName,
+            CombatAttackCount = active.AttackCount,
+            CombatHitCount = active.HitCount,
+            CombatTargetHealthSequence = active.TargetHealthSequence.ToArray(),
+            CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray(),
+            CombatDamageTaken = damageTaken,
+            CombatTargetDefeated = true,
+            CombatMethod = "melee",
+            CombatTerminalState = "defeat",
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "volcano.monsters[" + active.TargetRuntimeIdentity + "].present", Before = "true", After = "false" },
+                new SimulatedFactChange { Path = "player.health", Before = active.PlayerHealthBefore.ToString(), After = Game1.player.health.ToString() }
+            }
+        });
+    }
+
+    private void CompleteVolcanoCombatBlocked(ActiveVolcanoCombat active, string reason)
+    {
+        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        StopAllMovement();
+        if (ReferenceEquals(Game1.player.CurrentTool, active.Weapon))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+        RestoreSlot(active.RestoreSlotIndex);
+        activeVolcanoCombat = null;
+        RecordVolcanoCombatHealth(active);
+        var result = BlockedWithPrimitive(active.Pending.Request, "combat_volcano_monster", active.RequestedEffect, VolcanoCombatObservedEffect(active), reason);
+        result.ToolQualifiedItemId = active.Weapon.QualifiedItemId;
+        result.ActualTicks = active.ElapsedTicks;
+        result.TrainingImpactScope = "executor_calibration";
+        result.CombatTargetRuntimeType = active.TargetRuntimeType;
+        result.CombatTargetRuntimeIdentity = active.TargetRuntimeIdentity;
+        result.CombatTargetName = active.TargetName;
+        result.CombatAttackCount = active.AttackCount;
+        result.CombatHitCount = active.HitCount;
+        result.CombatTargetHealthSequence = active.TargetHealthSequence.ToArray();
+        result.CombatPlayerHealthSequence = active.PlayerHealthSequence.ToArray();
+        result.CombatDamageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        result.CombatTargetDefeated = active.Target.Health <= 0;
+        result.CombatMethod = "melee";
+        result.CombatTerminalState = active.Target.Health <= 0 ? "defeat" : "blocked";
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static string VolcanoCombatObservedEffect(ActiveVolcanoCombat active)
+    {
+        return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
+            ";target_type=" + active.TargetRuntimeType +
+            ";target_name=" + active.TargetName +
+            ";target_health=" + active.Target.Health +
+            ";player_health=" + Game1.player.health +
+            ";attacks=" + active.AttackCount +
+            ";hits=" + active.HitCount;
     }
 
     private void StartBreakContainer(PendingExecution pending)
@@ -13596,6 +14335,9 @@ public sealed class ModEntry : Mod
             request.OptionId != "executor.clear_obstacle" &&
             request.OptionId != "executor.mine_stone" &&
             request.OptionId != "executor.cool_volcano_lava" &&
+            request.OptionId != "executor.break_volcano_stone" &&
+            request.OptionId != "executor.break_volcano_container" &&
+            request.OptionId != "executor.combat_volcano_monster" &&
             request.OptionId != "executor.break_container" &&
             request.OptionId != "executor.combat_monster" &&
             request.OptionId != "executor.shoot_monster" &&
@@ -13979,6 +14721,146 @@ public sealed class ModEntry : Mod
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
         public int CompletionWaitTicks { get; set; }
+    }
+
+    private sealed class ActiveVolcanoObstacle
+    {
+        public ActiveVolcanoObstacle(
+            PendingExecution pending,
+            VolcanoDungeon volcano,
+            Point target,
+            Point stand,
+            List<Point> path,
+            StardewValley.Object targetObject,
+            Tool tool,
+            int toolSlotIndex,
+            int restoreSlotIndex,
+            bool isStone,
+            int healthBefore,
+            double staminaBefore,
+            int maxSwings,
+            int maxMovementTiles,
+            string requestedEffect)
+        {
+            Pending = pending;
+            Volcano = volcano;
+            Target = target;
+            Stand = stand;
+            Path = path;
+            TargetObject = targetObject;
+            Tool = tool;
+            ToolSlotIndex = toolSlotIndex;
+            RestoreSlotIndex = restoreSlotIndex;
+            IsStone = isStone;
+            HealthBefore = healthBefore;
+            StaminaBefore = staminaBefore;
+            MaxSwings = maxSwings;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedEffect = requestedEffect;
+            DebrisCountBefore = volcano.debris.Count;
+            MaxTicks = Math.Max(360, maxMovementTiles * 90 + maxSwings * 240);
+            LastPosition = Game1.player.Position;
+            ObservedHealth.Add(healthBefore);
+        }
+
+        public PendingExecution Pending { get; }
+        public VolcanoDungeon Volcano { get; }
+        public Point Target { get; }
+        public Point Stand { get; }
+        public List<Point> Path { get; }
+        public StardewValley.Object TargetObject { get; }
+        public Tool Tool { get; }
+        public int ToolSlotIndex { get; }
+        public int RestoreSlotIndex { get; }
+        public bool IsStone { get; }
+        public int HealthBefore { get; }
+        public double StaminaBefore { get; }
+        public int MaxSwings { get; }
+        public int MaxMovementTiles { get; }
+        public int DebrisCountBefore { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public Vector2 LastPosition { get; set; }
+        public int SwingCount { get; set; }
+        public bool BeginIssued { get; set; }
+        public bool ReleaseIssued { get; set; }
+        public bool ActionHeld { get; set; }
+        public List<int> ObservedHealth { get; } = new();
+    }
+
+    private sealed class ActiveVolcanoCombat
+    {
+        public ActiveVolcanoCombat(
+            PendingExecution pending,
+            VolcanoDungeon volcano,
+            Monster target,
+            MeleeWeapon weapon,
+            int weaponSlotIndex,
+            int restoreSlotIndex,
+            int maxAttacks,
+            int maxMovementTiles,
+            string requestedEffect)
+        {
+            Pending = pending;
+            Volcano = volcano;
+            Target = target;
+            Weapon = weapon;
+            WeaponSlotIndex = weaponSlotIndex;
+            RestoreSlotIndex = restoreSlotIndex;
+            TargetRuntimeType = target.GetType().FullName ?? target.GetType().Name;
+            TargetRuntimeIdentity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target).ToString("X8");
+            TargetName = target.Name;
+            TargetHealthBefore = target.Health;
+            PlayerHealthBefore = Game1.player.health;
+            MaxAttacks = maxAttacks;
+            MaxMovementTiles = maxMovementTiles;
+            RequestedEffect = requestedEffect;
+            MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
+            LastProgressPosition = Game1.player.Position;
+            LastMovementPosition = Game1.player.Position;
+            LastMovementTile = Game1.player.TilePoint;
+            LastProgressTargetHealth = target.Health;
+            TargetHealthSequence.Add(target.Health);
+            PlayerHealthSequence.Add(Game1.player.health);
+        }
+
+        public PendingExecution Pending { get; }
+        public VolcanoDungeon Volcano { get; }
+        public Monster Target { get; }
+        public MeleeWeapon Weapon { get; }
+        public int WeaponSlotIndex { get; }
+        public int RestoreSlotIndex { get; }
+        public string TargetRuntimeType { get; }
+        public string TargetRuntimeIdentity { get; }
+        public string TargetName { get; }
+        public int TargetHealthBefore { get; }
+        public int PlayerHealthBefore { get; }
+        public int MaxAttacks { get; }
+        public int MaxMovementTiles { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+        public int MovementTiles { get; set; }
+        public List<Point> Path { get; set; } = new();
+        public int PathIndex { get; set; }
+        public Point PathTarget { get; set; } = new(-1, -1);
+        public int PathFailures { get; set; }
+        public int StuckTicks { get; set; }
+        public bool AttackButtonHeld { get; set; }
+        public int AttackCount { get; set; }
+        public int HitCount { get; set; }
+        public Vector2 LastProgressPosition { get; set; }
+        public Vector2 LastMovementPosition { get; set; }
+        public Point LastMovementTile { get; set; }
+        public int LastProgressTargetHealth { get; set; }
+        public int NoProgressTicks { get; set; }
+        public List<int> TargetHealthSequence { get; } = new();
+        public List<int> PlayerHealthSequence { get; } = new();
     }
 
     private sealed class ActiveBreakContainer

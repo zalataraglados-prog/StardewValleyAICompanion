@@ -119,6 +119,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("watering_can_slot_index")]
         public int? WateringCanSlotIndex { get; set; }
 
+        [JsonPropertyName("tool_slot_index")]
+        public int? ToolSlotIndex { get; set; }
+
         [JsonPropertyName("interaction_kind")]
         public string InteractionKind { get; set; } = string.Empty;
 
@@ -310,6 +313,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("tool_power")]
         public int? ToolPower { get; set; }
+
+        [JsonPropertyName("tool_use_count")]
+        public int? ToolUseCount { get; set; }
 
         [JsonPropertyName("water_before")]
         public int? WaterBefore { get; set; }

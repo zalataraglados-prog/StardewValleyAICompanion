@@ -308,6 +308,30 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches the verified adjacent stand tile", "native watering-can input adds the exact tile to cooledLavaTiles" },
                 new[] { "block_not_loaded_volcano", "block_level_five_cooling", "block_missing_watering_can_or_water", "block_direct_lava_mutation" }));
 
+            Register(Option("executor.break_volcano_stone", "volcano", "Break one transparent Volcano Dungeon stone",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "volcano.current_level", "volcano.tiles", "volcano.objects", "volcano.monsters", "volcano.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS reaches the verified adjacent stand tile", "native pickaxe lifecycle removes the exact stone" },
+                new[] { "block_not_loaded_volcano", "block_unknown_stone", "block_missing_pickaxe", "block_unsafe_tool_window", "block_direct_object_mutation" }));
+
+            Register(Option("executor.break_volcano_container", "volcano", "Break one transparent Volcano Dungeon container",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "volcano.current_level", "volcano.tiles", "volcano.objects", "volcano.monsters", "volcano.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS reaches the verified adjacent stand tile", "native heavy-hitter input removes the exact container", "released contents remain normal game debris" },
+                new[] { "block_not_loaded_volcano", "block_unknown_container", "block_missing_heavy_hitter", "block_unsafe_tool_window", "block_direct_object_mutation" }));
+
+            Register(Option("executor.combat_volcano_monster", "volcano", "Defeat one transparent Volcano Dungeon monster",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "volcano.current_level", "volcano.tiles", "volcano.monsters", "volcano.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "BFS pursuit reaches melee range", "native melee input defeats the exact runtime monster" },
+                new[] { "block_not_loaded_volcano", "block_unknown_runtime_identity", "block_missing_melee_weapon", "block_unverified_monster_semantics", "block_direct_monster_damage" }));
+
             Register(Option("executor.catch_fish", "fishing", "Execute one legal fishing attempt",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
