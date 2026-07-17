@@ -212,7 +212,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void LiveLoopMapsCompiledFishingParametersIntoRuntimeRequest()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var source = LiveTrainingLoopSources.All;
         Assert.Contains("ReadQueueParameterString(item, \"location_id\")", source);
         Assert.Contains("ReadQueueParameterInt(item, \"stand_tile_x\")", source);
         Assert.Contains("ReadQueueParameterInt(item, \"bobber_tile_x\")", source);
@@ -313,7 +313,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void LiveLoopReportsIncompleteWhenRequiredVerifiedActionsAreUnmet()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var source = LiveTrainingLoopSources.All;
         Assert.Contains("MaxAttempts", source);
         Assert.Contains("attemptsStarted++", source);
         Assert.Contains("verifiedActions >= options.RequiredVerifiedActions", source);

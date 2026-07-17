@@ -8,7 +8,7 @@ public sealed class SocialLocationMappingSourceGuardTests
     [Fact]
     public void BuildExecutionRequestCallsResolveLocationIdAndAssignsLocationId()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var source = LiveTrainingLoopSources.All;
 
         Assert.Contains("SocialLocationMapping.ResolveLocationId(item, optionId)", source);
         Assert.Contains("executionRequest.LocationId = socialTargetLocation", source);

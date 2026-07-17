@@ -321,11 +321,7 @@ public sealed class MiningReachDepthPlanningTests
     [Fact]
     public void LiveRuntimeUsesCompilerSelectedPrimitiveAndTypedCombatIdentity()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.LiveTrainingLoop",
-            "Program.cs"));
+        var source = LiveTrainingLoopSources.All;
 
         Assert.Contains("ReadQueueParameterString(item, \"execution_option_id\")", source, StringComparison.Ordinal);
         Assert.Contains("executionRequest.TargetRuntimeIdentity = targetRuntimeIdentity", source, StringComparison.Ordinal);
@@ -338,11 +334,7 @@ public sealed class MiningReachDepthPlanningTests
     [Fact]
     public void LiveRuntimeSupportsParameterizedHighLevelActions()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.LiveTrainingLoop",
-            "Program.cs"));
+        var source = LiveTrainingLoopSources.All;
 
         Assert.Contains("--use-parameterized-action", source, StringComparison.Ordinal);
         Assert.Contains("--action-option-id", source, StringComparison.Ordinal);

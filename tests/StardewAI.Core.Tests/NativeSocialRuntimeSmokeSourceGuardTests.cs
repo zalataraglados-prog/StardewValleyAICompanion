@@ -327,7 +327,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SocialContinuationDialogueRecoveryFlagReachesRuntimeSafetyGate()
     {
-        var loopSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var loopSource = LiveTrainingLoopSources.All;
         var runtimeSource = RuntimeHarnessSources.All;
 
         Assert.Contains("social_continuation_dialogue_recovery", loopSource, StringComparison.Ordinal);
@@ -524,7 +524,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void LiveTrainingLoopSavesRankingResponse()
     {
-        var loopSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var loopSource = LiveTrainingLoopSources.All;
 
         Assert.Contains("ranking-response-", loopSource, StringComparison.Ordinal);
         Assert.Contains("replan-ranking-response-", loopSource, StringComparison.Ordinal);
@@ -896,7 +896,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void LiveTrainingLoopRankingNonOverwrittenPaths()
     {
-        var loopSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var loopSource = LiveTrainingLoopSources.All;
 
         Assert.Contains("ranking-response-\" + iteration.ToString(\"D4\") + \".json\"", loopSource, StringComparison.Ordinal);
         Assert.Contains("replan-ranking-response-\" + iteration.ToString(\"D4\")", loopSource, StringComparison.Ordinal);
