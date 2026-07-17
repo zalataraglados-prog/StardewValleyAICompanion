@@ -1339,7 +1339,7 @@ public sealed class MiningFloorStepPlannerTests
     {
         var root = FindRepositoryRoot();
         var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
-        var planner = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Execution", "MiningFloorStepPlanner.cs"));
+        var planner = MiningFloorPlannerSources.All;
         var runtime = RuntimeHarnessSources.All;
 
         Assert.Contains("is_collectible_item_debris", bridge, StringComparison.Ordinal);
