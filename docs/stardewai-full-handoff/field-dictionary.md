@@ -165,6 +165,7 @@ Status values:
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
 |---|---|---|---|---|---|
+| `player.skills_detail` | Select the shortest exact route to Grandpa total-level thresholds without confusing buffs with permanent progress | `Farmer.Level`, `GetUnmodifiedSkillLevel`, `GetSkillLevel`, `experiencePoints`, `getBaseExperienceForLevel` | pending secondary comparison | covered_for_read / world_model_projected / needs_runtime_regen / candidate_binding_blocked | Contains all six vanilla rows, exact XP and next-level gaps. Luck is retained because it participates in `Farmer.Level`, but is marked unavailable for ordinary experience planning. `raise_skill_levels` remains blocked until action candidates expose exact decompile-backed XP outcomes. |
 | `player.money` | Buy/sell/value planning | `Game1.player.Money` | n/a | covered_for_gate | Required by buy supplies. |
 | `player.energy` | Work/time planning | `Game1.player.Stamina` | n/a | covered_for_gate | Required by movement/farm plans. |
 | `time.time` | Daily time budget and shop/route gates | `Game1.timeOfDay` | Time/shop pages pending | covered_for_gate | Required by economic/exploration/recovery. |

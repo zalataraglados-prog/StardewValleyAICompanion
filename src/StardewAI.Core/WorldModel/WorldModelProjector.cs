@@ -80,6 +80,7 @@ namespace StardewAI.Core.WorldModel
                         ["energy"] = "player.energy",
                         ["max_energy"] = "player.max_energy",
                         ["level"] = "player.level",
+                        ["skills_detail"] = "player.skills_detail",
                         ["has_skull_key"] = "player.has_skull_key",
                         ["has_rusty_key"] = "player.has_rusty_key",
                         ["married_or_roommate"] = "player.married_or_roommate",
