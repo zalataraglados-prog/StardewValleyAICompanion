@@ -1,5 +1,6 @@
 using StardewValley;
 using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -77,6 +78,65 @@ public sealed partial class FarmReadAdapter
             experience,
             "native_giant_crop_destroyed_by_player_axe");
     }
+
+    private static ResourceClumpClearanceProjection ReadFarmResourceClumpClearance(ResourceClump clump, Farmer player)
+    {
+        var (clearKind, minimumUpgrade) = clump.parentSheetIndex.Value switch
+        {
+            ResourceClump.stumpIndex => ("resource_stump", 1),
+            ResourceClump.hollowLogIndex => ("hollow_log", 2),
+            _ => (string.Empty, -1)
+        };
+        if (string.IsNullOrWhiteSpace(clearKind))
+        {
+            return ResourceClumpClearanceProjection.NotApplicable();
+        }
+        if (clump.GetType() != typeof(ResourceClump))
+        {
+            return ResourceClumpClearanceProjection.Blocked(clearKind, minimumUpgrade, "blocked_custom_resource_clump_runtime_type");
+        }
+
+        var selected = player.Items
+            .Select((item, index) => new { Tool = item as Axe, SlotIndex = index })
+            .Where(row => row.Tool is not null && row.Tool.UpgradeLevel >= minimumUpgrade)
+            .OrderByDescending(row => row.Tool!.UpgradeLevel)
+            .ThenBy(row => row.SlotIndex)
+            .FirstOrDefault();
+        if (selected is null)
+        {
+            return ResourceClumpClearanceProjection.Blocked(clearKind, minimumUpgrade, "blocked_required_axe_upgrade_missing");
+        }
+
+        var damage = Math.Max(1f, (selected.Tool!.UpgradeLevel + 1) * 0.75f);
+        var expectedHits = Math.Max(1, (int)Math.Ceiling(Math.Max(0f, clump.health.Value) / damage));
+        return new ResourceClumpClearanceProjection
+        {
+            ClearKind = clearKind,
+            MinimumToolUpgradeLevel = minimumUpgrade,
+            ToolSlotIndex = selected.SlotIndex,
+            ToolUpgradeLevel = selected.Tool.UpgradeLevel,
+            ExpectedToolHits = expectedHits,
+            Status = "ready"
+        };
+    }
+
+    private static HarvestExperienceProjection ReadFarmResourceClumpExperience(ResourceClump clump)
+    {
+        if (clump.parentSheetIndex.Value is not ResourceClump.stumpIndex and not ResourceClump.hollowLogIndex)
+        {
+            return HarvestExperienceProjection.NotApplicable();
+        }
+        if (clump.GetType() != typeof(ResourceClump))
+        {
+            return HarvestExperienceProjection.Unavailable("unavailable_custom_resource_clump_runtime_type");
+        }
+
+        return HarvestExperienceProjection.Exact(
+            "foraging",
+            Farmer.foragingSkill,
+            25,
+            "native_player_axe_destroys_resource_stump_or_hollow_log");
+    }
 }
 
 internal sealed class HarvestExperienceProjection
@@ -114,5 +174,35 @@ internal sealed class HarvestExperienceProjection
     public static HarvestExperienceProjection NotApplicable()
     {
         return new HarvestExperienceProjection { Status = "not_applicable" };
+    }
+}
+
+internal sealed class ResourceClumpClearanceProjection
+{
+    public string ClearKind { get; init; } = string.Empty;
+
+    public int? MinimumToolUpgradeLevel { get; init; }
+
+    public int? ToolSlotIndex { get; init; }
+
+    public int? ToolUpgradeLevel { get; init; }
+
+    public int? ExpectedToolHits { get; init; }
+
+    public string Status { get; init; } = string.Empty;
+
+    public static ResourceClumpClearanceProjection Blocked(string clearKind, int minimumUpgrade, string status)
+    {
+        return new ResourceClumpClearanceProjection
+        {
+            ClearKind = clearKind,
+            MinimumToolUpgradeLevel = minimumUpgrade,
+            Status = status
+        };
+    }
+
+    public static ResourceClumpClearanceProjection NotApplicable()
+    {
+        return new ResourceClumpClearanceProjection { Status = "not_applicable" };
     }
 }

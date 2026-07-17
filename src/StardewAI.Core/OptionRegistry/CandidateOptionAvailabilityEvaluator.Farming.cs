@@ -18,6 +18,7 @@ namespace StardewAI.Core.OptionRegistry
             return WateringCandidates(snapshot)
                 .Concat(HarvestCropCandidates(snapshot))
                 .Concat(HarvestGiantCropCandidates(snapshot))
+                .Concat(ClearFarmResourceClumpCandidates(snapshot))
                 .Concat(PickupDebrisCandidates(snapshot))
                 .Concat(PlantSeedCandidates(snapshot).Select(candidate => new EventCandidate
                 {
@@ -599,6 +600,141 @@ namespace StardewAI.Core.OptionRegistry
                     };
                 })
                 .ToArray();
+        }
+
+        private EventCandidate[] ClearFarmResourceClumpCandidates(SnapshotEnvelope snapshot)
+        {
+            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            if (!clumps.HasValue || clumps.Value.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
+            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            return clumps.Value.EnumerateArray()
+                .Where(clump => clump.ValueKind == JsonValueKind.Object &&
+                    ReadString(clump, "clear_kind") is "resource_stump" or "hollow_log")
+                .Select(clump =>
+                {
+                    var x = ReadInt(clump, "tile_x");
+                    var y = ReadInt(clump, "tile_y");
+                    var clearKind = ReadString(clump, "clear_kind");
+                    var status = ReadString(clump, "clear_obstacle_executor_status");
+                    var hits = Math.Max(1, ReadInt(clump, "expected_tool_hits_to_clear"));
+                    var width = Math.Max(1, ReadInt(clump, "width"));
+                    var height = Math.Max(1, ReadInt(clump, "height"));
+                    var standSelection = FindBestResourceClumpStandTile(snapshot, x, y, width, height);
+                    var standTile = standSelection?.Stand;
+                    var hitTile = standSelection?.Hit;
+                    var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
+                    {
+                        OptionId = "executor.break_farm_resource_clump",
+                        Parameters = new[]
+                        {
+                            Parameter("target_tile_x", (hitTile?.X ?? x).ToString()),
+                            Parameter("target_tile_y", (hitTile?.Y ?? y).ToString()),
+                            Parameter("stand_tile_x", (standTile?.X ?? x).ToString()),
+                            Parameter("stand_tile_y", (standTile?.Y ?? y).ToString()),
+                            Parameter("resource_clump_tile_x", x.ToString()),
+                            Parameter("resource_clump_tile_y", y.ToString()),
+                            Parameter("resource_clump_width", width.ToString()),
+                            Parameter("resource_clump_height", height.ToString()),
+                            Parameter("resource_clump_parent_sheet_index", ReadInt(clump, "parent_sheet_index").ToString()),
+                            Parameter("tool_slot_index", ReadInt(clump, "tool_slot_index").ToString()),
+                            Parameter("required_tool_kind", "axe"),
+                            Parameter("max_tool_swings", hits.ToString())
+                        }
+                    }).ToList();
+                    if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                    {
+                        blockReasons.Add(string.IsNullOrWhiteSpace(status) ? "resource_clump_clear_projection_unavailable" : status);
+                    }
+                    if (standTile is null)
+                    {
+                        blockReasons.Add("resource_clump_no_adjacent_route_stand_tile");
+                    }
+
+                    var distance = standTile is null
+                        ? 0
+                        : Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y);
+                    var effect = (standTile is not null ? "resource_clump_stand_tile=" + standTile.X + "," + standTile.Y + ";" : string.Empty) +
+                        (hitTile is not null ? "resource_clump_hit_tile=" + hitTile.X + "," + hitTile.Y + ";" : string.Empty) +
+                        "farm.resource_clumps[" + x + "," + y + "].present=false" +
+                        ";clear_kind=" + clearKind +
+                        ";resource_clump_tile=" + x + "," + y +
+                        ";resource_clump_width=" + width +
+                        ";resource_clump_height=" + height +
+                        ";resource_clump_parent_sheet_index=" + ReadInt(clump, "parent_sheet_index") +
+                        ";max_tool_swings=" + hits +
+                        ";max_movement_tiles=512" +
+                        ";tool_slot_index=" + ReadInt(clump, "tool_slot_index") +
+                        ";required_tool_kind=axe" +
+                        SkillExperienceEffect(clump);
+                    return new EventCandidate
+                    {
+                        CandidateId = "clear-resource-clump:Farm:" + x + "," + y + ":" + clearKind,
+                        Kind = "clear_farm_resource_clump",
+                        Available = blockReasons.Count == 0,
+                        LocationId = "Farm",
+                        TileX = x,
+                        TileY = y,
+                        ExpectedEffect = effect,
+                        EstimatedTicks = Math.Max(60, distance * 60 + hits * 60),
+                        EnergyCost = hits * 2,
+                        AvailabilityClass = "transparent_farm_resource_clump",
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                    };
+                })
+                .ToArray();
+        }
+
+        private static ResourceClumpStandSelection? FindBestResourceClumpStandTile(
+            SnapshotEnvelope snapshot,
+            int anchorX,
+            int anchorY,
+            int width,
+            int height)
+        {
+            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
+            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var candidates = new List<ResourceClumpStandSelection>();
+            for (var offsetX = 0; offsetX < width; offsetX++)
+            {
+                candidates.Add(new ResourceClumpStandSelection(
+                    new CandidateTile(anchorX + offsetX, anchorY - 1),
+                    new CandidateTile(anchorX + offsetX, anchorY)));
+                candidates.Add(new ResourceClumpStandSelection(
+                    new CandidateTile(anchorX + offsetX, anchorY + height),
+                    new CandidateTile(anchorX + offsetX, anchorY + height - 1)));
+            }
+            for (var offsetY = 0; offsetY < height; offsetY++)
+            {
+                candidates.Add(new ResourceClumpStandSelection(
+                    new CandidateTile(anchorX - 1, anchorY + offsetY),
+                    new CandidateTile(anchorX, anchorY + offsetY)));
+                candidates.Add(new ResourceClumpStandSelection(
+                    new CandidateTile(anchorX + width, anchorY + offsetY),
+                    new CandidateTile(anchorX + width - 1, anchorY + offsetY)));
+            }
+
+            return candidates
+                .Where(candidate => !CollisionGridBlocksTile(snapshot, candidate.Stand.X, candidate.Stand.Y))
+                .OrderBy(candidate => Math.Abs(playerX - candidate.Stand.X) + Math.Abs(playerY - candidate.Stand.Y))
+                .FirstOrDefault();
+        }
+
+        private sealed class ResourceClumpStandSelection
+        {
+            public ResourceClumpStandSelection(CandidateTile stand, CandidateTile hit)
+            {
+                Stand = stand;
+                Hit = hit;
+            }
+
+            public CandidateTile Stand { get; }
+
+            public CandidateTile Hit { get; }
         }
 
         private static EventCandidate[] PickupDebrisCandidates(SnapshotEnvelope snapshot)

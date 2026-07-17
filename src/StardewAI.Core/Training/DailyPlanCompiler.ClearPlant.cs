@@ -60,6 +60,50 @@ namespace StardewAI.Core.Training
             return steps;
         }
 
+        private static IEnumerable<SmallModelPlanStep> ClearFarmResourceClumpSteps(PolicyEventCandidatePrediction candidate)
+        {
+            var anchor = ParseCoordinate(candidate.ExpectedEffect, "resource_clump_tile=");
+            var hitTile = ParseCoordinate(candidate.ExpectedEffect, "resource_clump_hit_tile=");
+            var standTile = ParseCoordinate(candidate.ExpectedEffect, "resource_clump_stand_tile=");
+            if (!anchor.HasValue || !hitTile.HasValue || !standTile.HasValue)
+            {
+                return Array.Empty<SmallModelPlanStep>();
+            }
+
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("stand_tile_x", standTile.Value.X.ToString()),
+                Parameter("stand_tile_y", standTile.Value.Y.ToString()),
+                Parameter("resource_clump_tile_x", anchor.Value.X.ToString()),
+                Parameter("resource_clump_tile_y", anchor.Value.Y.ToString()),
+                Parameter("resource_clump_width", ParseValue(candidate.ExpectedEffect, "resource_clump_width=")),
+                Parameter("resource_clump_height", ParseValue(candidate.ExpectedEffect, "resource_clump_height=")),
+                Parameter("resource_clump_parent_sheet_index", ParseValue(candidate.ExpectedEffect, "resource_clump_parent_sheet_index=")),
+                Parameter("tool_slot_index", ParseValue(candidate.ExpectedEffect, "tool_slot_index=")),
+                Parameter("required_tool_kind", ParseValue(candidate.ExpectedEffect, "required_tool_kind=")),
+                Parameter("max_tool_swings", ParseValue(candidate.ExpectedEffect, "max_tool_swings=")),
+                Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles="))
+            };
+            AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "break_farm_resource_clump", 0),
+                    Kind = "break_farm_resource_clump",
+                    TargetLocation = "Farm",
+                    TargetTileX = hitTile.Value.X,
+                    TargetTileY = hitTile.Value.Y,
+                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "farm_resource_clump_identity_still_matches=true" },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[] { "native_cross_frame_tool_lifecycle", "transparent_perimeter_stand_tile", "no_direct_resource_clump_mutation" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = parameters.ToArray()
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> PlantSeedTileSteps(PolicyEventCandidatePrediction candidate)
         {
             if (!candidate.TileX.HasValue || !candidate.TileY.HasValue)

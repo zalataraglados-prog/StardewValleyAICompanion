@@ -77,9 +77,95 @@ namespace StardewAI.Core.Execution
                         reasons.Add("tree_clear_tool_swing_budget_insufficient");
                     }
                 }
+
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateFarmResourceClumpPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "executor.break_farm_resource_clump")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+            var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+            var width = ReadIntParameter(action, "resource_clump_width");
+            var height = ReadIntParameter(action, "resource_clump_height");
+            var parentSheetIndex = ReadIntParameter(action, "resource_clump_parent_sheet_index");
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var standX = ReadIntParameter(action, "stand_tile_x");
+            var standY = ReadIntParameter(action, "stand_tile_y");
+            var toolSlot = ReadIntParameter(action, "tool_slot_index");
+            var maximumHits = ReadIntParameter(action, "max_tool_swings");
+            if (!anchorX.HasValue || !anchorY.HasValue || !width.HasValue || !height.HasValue ||
+                !parentSheetIndex.HasValue || !targetX.HasValue || !targetY.HasValue ||
+                !standX.HasValue || !standY.HasValue || !toolSlot.HasValue || !maximumHits.HasValue)
+            {
+                reasons.Add("farm_resource_clump_typed_target_fields_required");
+                return reasons.ToArray();
+            }
+            if (ActionSeesActiveMenuOpen(action, snapshot))
+            {
+                reasons.Add("farm_resource_clump_menu_must_be_clear");
+            }
+            if (!string.Equals(ReadStateFieldString(snapshot, "player", "location_id"), "Farm", StringComparison.OrdinalIgnoreCase))
+            {
+                reasons.Add("farm_resource_clump_requires_loaded_farm");
+            }
+            if (!string.Equals(ReadParameter(action, "required_tool_kind"), "axe", StringComparison.Ordinal))
+            {
+                reasons.Add("farm_resource_clump_requires_axe");
+            }
+            if (width.Value < 1 || height.Value < 1 ||
+                !TileInsideRectangle(targetX.Value, targetY.Value, anchorX.Value, anchorY.Value, width.Value, height.Value) ||
+                TileInsideRectangle(standX.Value, standY.Value, anchorX.Value, anchorY.Value, width.Value, height.Value) ||
+                Math.Abs(standX.Value - targetX.Value) + Math.Abs(standY.Value - targetY.Value) != 1)
+            {
+                reasons.Add("farm_resource_clump_hit_or_stand_geometry_invalid");
+            }
+
+            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            var clump = clumps.HasValue && clumps.Value.ValueKind == JsonValueKind.Array
+                ? clumps.Value.EnumerateArray().FirstOrDefault(row =>
+                    ReadInt(row, "tile_x") == anchorX.Value &&
+                    ReadInt(row, "tile_y") == anchorY.Value &&
+                    ReadInt(row, "width") == width.Value &&
+                    ReadInt(row, "height") == height.Value &&
+                    ReadInt(row, "parent_sheet_index") == parentSheetIndex.Value)
+                : default;
+            if (clump.ValueKind != JsonValueKind.Object ||
+                ReadString(clump, "clear_kind") is not ("resource_stump" or "hollow_log"))
+            {
+                reasons.Add("farm_resource_clump_target_not_found_or_drifted");
+                return reasons.Distinct(StringComparer.Ordinal).ToArray();
+            }
+
+            var status = ReadString(clump, "clear_obstacle_executor_status");
+            if (!string.Equals(status, "ready", StringComparison.Ordinal))
+            {
+                reasons.Add(string.IsNullOrWhiteSpace(status) ? "farm_resource_clump_projection_unavailable" : status);
+            }
+            var expectedHits = NullableReadInt(clump, "expected_tool_hits_to_clear");
+            if (!expectedHits.HasValue || maximumHits.Value < expectedHits.Value)
+            {
+                reasons.Add("farm_resource_clump_tool_swing_budget_insufficient");
+            }
+            if (NullableReadInt(clump, "tool_slot_index") != toolSlot.Value)
+            {
+                reasons.Add("farm_resource_clump_tool_slot_drifted");
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool TileInsideRectangle(int x, int y, int anchorX, int anchorY, int width, int height)
+        {
+            return x >= anchorX && x < anchorX + width && y >= anchorY && y < anchorY + height;
         }
 
         private static string[] ValidateTillSoilPlan(SmallModelAction action, SnapshotEnvelope snapshot)

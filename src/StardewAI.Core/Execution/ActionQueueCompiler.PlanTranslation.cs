@@ -87,6 +87,7 @@ namespace StardewAI.Core.Execution
                 "choose_dialogue_response" => "executor.choose_dialogue_response",
                 "maintain_crops" => "farm.maintain_crops",
                 "clear_obstacle" => "executor.clear_obstacle",
+                "break_farm_resource_clump" => "executor.break_farm_resource_clump",
                 "till_soil" => "executor.till_soil",
                 "plant_seed" => "executor.plant_seed",
                 "harvest_crop" => "executor.harvest_crop",

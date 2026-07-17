@@ -400,6 +400,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.clear_obstacle" &&
             request.OptionId != "executor.mine_stone" &&
             request.OptionId != "executor.break_resource_clump" &&
+            request.OptionId != "executor.break_farm_resource_clump" &&
             request.OptionId != "executor.cool_volcano_lava" &&
             request.OptionId != "executor.break_volcano_stone" &&
             request.OptionId != "executor.break_volcano_container" &&

@@ -111,6 +111,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.close_menu" ||
                 optionId == "executor.buy_shop_item" ||
                 optionId == "executor.clear_obstacle" ||
+                optionId == "executor.break_farm_resource_clump" ||
                 optionId == "executor.till_soil" ||
                 optionId == "executor.plant_seed" ||
                 optionId == "executor.harvest_crop" ||

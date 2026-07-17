@@ -399,6 +399,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "removable obstacle cleared from target tile" },
                 new[] { "block_wrong_tool", "block_unremovable_obstacle", "block_menu_unsafe_tool_use" }));
 
+            Register(Option("executor.break_farm_resource_clump", "farm", "Remove one transparent farm stump or hollow log",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "farm.resource_clumps", "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact resource clump", "natural drops remain game debris" },
+                new[] { "block_unknown_clump", "block_missing_required_axe_upgrade", "block_unverified_perimeter", "block_menu_unsafe_tool_use", "block_direct_resource_clump_mutation" }));
+
             Register(Option("executor.plant_seed", "farm", "Plant one verified seed on one verified tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

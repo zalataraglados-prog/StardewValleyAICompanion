@@ -484,6 +484,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        var farmRequest = request.OptionId == "executor.break_farm_resource_clump";
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
             !request.ResourceClumpTileX.HasValue || !request.ResourceClumpTileY.HasValue ||
@@ -493,13 +494,32 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(
                 request,
                 "break_resource_clump",
-                "mining.resource_clumps[anchor].present=false",
+                (farmRequest ? "farm" : "mining") + ".resource_clumps[anchor].present=false",
                 "request=missing_typed_clump_fields",
                 "resource_clump_typed_target_fields_required"));
             return;
         }
 
-        if (Game1.currentLocation is not MineShaft mine)
+        GameLocation location;
+        if (farmRequest)
+        {
+            if (Game1.currentLocation is not Farm farm)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "break_resource_clump",
+                    "farm.resource_clumps[anchor].present=false",
+                    "location=not_loaded_farm",
+                    "farm_resource_clump_requires_loaded_farm"));
+                return;
+            }
+            location = farm;
+        }
+        else if (Game1.currentLocation is MineShaft mine)
+        {
+            location = mine;
+        }
+        else
         {
             pending.Completion.SetResult(BlockedWithPrimitive(
                 request,
@@ -513,29 +533,31 @@ public sealed partial class ModEntry : Mod
         var anchor = new Point(request.ResourceClumpTileX.Value, request.ResourceClumpTileY.Value);
         var hitTile = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
-        var clump = mine.resourceClumps.FirstOrDefault(candidate =>
+        var clump = location.resourceClumps.FirstOrDefault(candidate =>
             (int)candidate.Tile.X == anchor.X &&
             (int)candidate.Tile.Y == anchor.Y &&
             candidate.width.Value == request.ResourceClumpWidth.Value &&
             candidate.height.Value == request.ResourceClumpHeight.Value &&
             candidate.parentSheetIndex.Value == request.ResourceClumpParentSheetIndex.Value);
-        var requested = "mining.resource_clumps[" + anchor.X + "," + anchor.Y + "].present=false;native_tool=" + request.RequiredToolKind;
+        var factPathPrefix = farmRequest ? "farm.resource_clumps" : "mining.resource_clumps";
+        var requested = factPathPrefix + "[" + anchor.X + "," + anchor.Y + "].present=false;native_tool=" + request.RequiredToolKind;
         if (clump is null)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_target_not_found_or_drifted"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_target_not_found_or_drifted"));
             return;
         }
         if (!ResourceClumpContainsTile(clump, hitTile) ||
             !AreAdjacent(stand, hitTile) ||
             ResourceClumpContainsTile(clump, stand))
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_hit_or_stand_geometry_invalid"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_hit_or_stand_geometry_invalid"));
             return;
         }
         if (!TryResourceClumpRequirement(clump.parentSheetIndex.Value, out var requiredToolKind, out var minimumUpgradeLevel) ||
-            !string.Equals(requiredToolKind, request.RequiredToolKind, StringComparison.Ordinal))
+            !string.Equals(requiredToolKind, request.RequiredToolKind, StringComparison.Ordinal) ||
+            (farmRequest && clump.parentSheetIndex.Value is not ResourceClump.stumpIndex and not ResourceClump.hollowLogIndex))
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_type_unsupported_or_requirement_mismatch"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_type_unsupported_or_requirement_mismatch"));
             return;
         }
         if (request.ToolSlotIndex.Value < 0 ||
@@ -544,23 +566,23 @@ public sealed partial class ModEntry : Mod
             !ResourceClumpToolMatches(tool, requiredToolKind) ||
             tool.UpgradeLevel < minimumUpgradeLevel)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_required_tool_or_upgrade_unavailable"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_required_tool_or_upgrade_unavailable"));
             return;
         }
-        if (!IsTileOnMap(mine, stand) || !IsTileWalkable(mine, stand) || IsTileOccupiedByCharacter(mine, stand))
+        if (!IsTileOnMap(location, stand) || !IsTileWalkable(location, stand) || IsTileOccupiedByCharacter(location, stand))
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_compiler_stand_tile_invalid"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_compiler_stand_tile_invalid"));
             return;
         }
         if (Game1.player.Stamina <= 0f)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_energy_exhausted"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_energy_exhausted"));
             return;
         }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
         var path = TryBuildTilePath(
-            mine,
+            location,
             Game1.player.TilePoint,
             stand,
             maxMovementTiles,
@@ -569,13 +591,13 @@ public sealed partial class ModEntry : Mod
             allowRemovableObstacles: false);
         if (path is null)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(anchor), "resource_clump_path_unavailable:" + pathReason));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_path_unavailable:" + pathReason));
             return;
         }
 
         activeResourceClump = new ActiveResourceClump(
             pending,
-            mine,
+            location,
             clump,
             anchor,
             hitTile,
@@ -588,6 +610,8 @@ public sealed partial class ModEntry : Mod
             Math.Clamp(request.MaxCrops, 1, 64),
             maxMovementTiles,
             request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
+            factPathPrefix,
+            farmRequest,
             requested);
     }
 
@@ -612,7 +636,7 @@ public sealed partial class ModEntry : Mod
     private void TickResourceClumpCore(ActiveResourceClump active)
     {
         active.ElapsedTicks++;
-        if (!Context.IsWorldReady || Game1.currentLocation is not MineShaft mine || !ReferenceEquals(mine, active.Mine))
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
         {
             CompleteResourceClumpBlocked(active, "resource_clump_location_changed_or_world_unavailable");
             return;
@@ -638,7 +662,7 @@ public sealed partial class ModEntry : Mod
             }
         }
 
-        var targetPresent = mine.resourceClumps.Any(clump => ReferenceEquals(clump, active.Clump));
+        var targetPresent = active.Location.resourceClumps.Any(clump => ReferenceEquals(clump, active.Clump));
         if (!targetPresent)
         {
             if (active.BeginIssued)
@@ -658,7 +682,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (!active.BeginIssued && ImmediateMiningThreat(mine))
+        if (!active.BeginIssued && active.Location is MineShaft mine && ImmediateMiningThreat(mine))
         {
             StopAllMovement();
             active.CombatInterrupted = true;
@@ -682,7 +706,7 @@ public sealed partial class ModEntry : Mod
                 active.StuckTicks = 0;
                 return;
             }
-            if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
+            if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
             {
                 CompleteResourceClumpBlocked(active, "resource_clump_dynamic_path_blocked");
                 return;
@@ -759,6 +783,30 @@ public sealed partial class ModEntry : Mod
         RestoreSlot(active.RestoreSlotIndex);
         activeResourceClump = null;
         var request = active.Pending.Request;
+        var changedFacts = new List<SimulatedFactChange>
+        {
+            new SimulatedFactChange
+            {
+                Path = active.FactPathPrefix + "[" + active.Anchor.X + "," + active.Anchor.Y + "]",
+                Before = "parent_sheet_index=" + active.ParentSheetIndex + ":health=" + active.HealthBefore.ToString("0.###", CultureInfo.InvariantCulture),
+                After = "removed"
+            },
+            new SimulatedFactChange
+            {
+                Path = "player.energy",
+                Before = active.StaminaBefore.ToString("0.###", CultureInfo.InvariantCulture),
+                After = Game1.player.Stamina.ToString("0.###", CultureInfo.InvariantCulture)
+            }
+        };
+        if (active.TrackForagingExperience)
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.skills.foraging.experience",
+                Before = active.ForagingExperienceBefore.ToString(CultureInfo.InvariantCulture),
+                After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(CultureInfo.InvariantCulture)
+            });
+        }
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -770,7 +818,7 @@ public sealed partial class ModEntry : Mod
             FeedbackAvailable = true,
             EnergyBefore = active.StaminaBefore,
             EnergyAfter = Game1.player.Stamina,
-            TargetLocation = active.Mine.NameOrUniqueName,
+            TargetLocation = active.Location.NameOrUniqueName,
             TargetTileX = active.Anchor.X,
             TargetTileY = active.Anchor.Y,
             ToolQualifiedItemId = active.Tool.QualifiedItemId,
@@ -790,26 +838,12 @@ public sealed partial class ModEntry : Mod
                 "native_swing_count=" + active.SwingCount
             },
             RequestedEffect = active.RequestedEffect,
-            ObservedEffect = ResourceClumpObservedEffect(active.Anchor) +
+            ObservedEffect = ResourceClumpObservedEffect(active.Location, active.Anchor) +
                 ";parent_sheet_index=" + active.ParentSheetIndex +
                 ";size=" + active.Width + "x" + active.Height +
                 ";health_sequence=" + string.Join(",", active.ObservedHealth.Select(value => value.ToString("0.###", CultureInfo.InvariantCulture))) +
                 ";native_swings=" + active.SwingCount,
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange
-                {
-                    Path = "mining.resource_clumps[" + active.Anchor.X + "," + active.Anchor.Y + "]",
-                    Before = "parent_sheet_index=" + active.ParentSheetIndex + ":health=" + active.HealthBefore.ToString("0.###", CultureInfo.InvariantCulture),
-                    After = "removed"
-                },
-                new SimulatedFactChange
-                {
-                    Path = "player.energy",
-                    Before = active.StaminaBefore.ToString("0.###", CultureInfo.InvariantCulture),
-                    After = Game1.player.Stamina.ToString("0.###", CultureInfo.InvariantCulture)
-                }
-            }
+            ChangedFacts = changedFacts.ToArray()
         });
     }
 
@@ -826,7 +860,7 @@ public sealed partial class ModEntry : Mod
             active.Pending.Request,
             "break_resource_clump",
             active.RequestedEffect,
-            ResourceClumpObservedEffect(active.Anchor) + ";native_swings=" + active.SwingCount,
+            ResourceClumpObservedEffect(active.Location, active.Anchor) + ";native_swings=" + active.SwingCount,
             reason);
         result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
         result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
@@ -865,14 +899,13 @@ public sealed partial class ModEntry : Mod
             requiredToolKind == "pickaxe" && tool is Pickaxe;
     }
 
-    private static string ResourceClumpObservedEffect(Point anchor)
+    private static string ResourceClumpObservedEffect(GameLocation location, Point anchor)
     {
-        var mine = Game1.currentLocation as MineShaft;
-        var clump = mine?.resourceClumps.FirstOrDefault(candidate =>
+        var clump = location.resourceClumps.FirstOrDefault(candidate =>
             (int)candidate.Tile.X == anchor.X && (int)candidate.Tile.Y == anchor.Y);
         return clump is null
-            ? "location=" + (mine?.NameOrUniqueName ?? "none") + ";anchor=" + anchor.X + "," + anchor.Y + ";resource_clump=removed_or_missing"
-            : "location=" + mine!.NameOrUniqueName +
+            ? "location=" + location.NameOrUniqueName + ";anchor=" + anchor.X + "," + anchor.Y + ";resource_clump=removed_or_missing"
+            : "location=" + location.NameOrUniqueName +
                 ";anchor=" + anchor.X + "," + anchor.Y +
                 ";resource_clump=present" +
                 ";parent_sheet_index=" + clump.parentSheetIndex.Value +

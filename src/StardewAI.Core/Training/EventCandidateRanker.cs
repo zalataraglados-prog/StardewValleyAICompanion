@@ -86,7 +86,8 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.065;
                     }
-                    if (candidate.Kind == "clear_obstacle_tile")
+                    if (candidate.Kind == "clear_obstacle_tile" ||
+                        candidate.Kind == "clear_farm_resource_clump")
                     {
                         urgencySignal = 0.025;
                     }

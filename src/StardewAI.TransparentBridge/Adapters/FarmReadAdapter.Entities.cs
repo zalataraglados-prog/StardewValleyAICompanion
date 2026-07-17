@@ -68,7 +68,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return farm.resourceClumps
             .Select(clump =>
             {
-                var experience = ReadGiantCropExperience(clump, Game1.player);
+                var experience = clump is GiantCrop
+                    ? ReadGiantCropExperience(clump, Game1.player)
+                    : ReadFarmResourceClumpExperience(clump);
+                var clearance = ReadFarmResourceClumpClearance(clump, Game1.player);
                 return new
                 {
                     tile_x = (int)clump.Tile.X,
@@ -82,6 +85,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     giant_crop_id = clump is GiantCrop giant ? giant.Id : string.Empty,
                     required_tool = clump is GiantCrop ? "axe" : string.Empty,
                     executor_status = clump is GiantCrop ? "runtime_verified" : string.Empty,
+                    clear_kind = clearance.ClearKind,
+                    minimum_tool_upgrade_level = clearance.MinimumToolUpgradeLevel,
+                    tool_slot_index = clearance.ToolSlotIndex,
+                    tool_upgrade_level = clearance.ToolUpgradeLevel,
+                    expected_tool_hits_to_clear = clearance.ExpectedToolHits,
+                    clear_obstacle_executor_status = clearance.Status,
                     harvest_experience_skill_id = experience.SkillId,
                     harvest_experience_skill_index = experience.SkillIndex,
                     harvest_experience_on_success_min = experience.Minimum,

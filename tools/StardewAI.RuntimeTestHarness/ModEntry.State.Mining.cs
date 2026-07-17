@@ -92,7 +92,7 @@ public sealed partial class ModEntry : Mod
     {
         public ActiveResourceClump(
             PendingExecution pending,
-            MineShaft mine,
+            GameLocation location,
             ResourceClump clump,
             Point anchor,
             Point hitTile,
@@ -105,10 +105,12 @@ public sealed partial class ModEntry : Mod
             int maxSwings,
             int maxMovementTiles,
             int restoreSlotIndex,
+            string factPathPrefix,
+            bool trackForagingExperience,
             string requestedEffect)
         {
             Pending = pending;
-            Mine = mine;
+            Location = location;
             Clump = clump;
             Anchor = anchor;
             HitTile = hitTile;
@@ -124,8 +126,11 @@ public sealed partial class ModEntry : Mod
             MaxSwings = maxSwings;
             MaxMovementTiles = maxMovementTiles;
             RestoreSlotIndex = restoreSlotIndex;
+            FactPathPrefix = factPathPrefix;
+            TrackForagingExperience = trackForagingExperience;
             RequestedEffect = requestedEffect;
             StaminaBefore = Game1.player.Stamina;
+            ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
             MaxTicks = Math.Max(300, path.Count * 90 + maxSwings * 240);
             LastPosition = Game1.player.Position;
             LastObservedTile = Game1.player.TilePoint;
@@ -133,7 +138,7 @@ public sealed partial class ModEntry : Mod
         }
 
         public PendingExecution Pending { get; }
-        public MineShaft Mine { get; }
+        public GameLocation Location { get; }
         public ResourceClump Clump { get; }
         public Point Anchor { get; }
         public Point HitTile { get; }
@@ -149,8 +154,11 @@ public sealed partial class ModEntry : Mod
         public int MaxSwings { get; }
         public int MaxMovementTiles { get; }
         public int RestoreSlotIndex { get; }
+        public string FactPathPrefix { get; }
+        public bool TrackForagingExperience { get; }
         public string RequestedEffect { get; }
         public double StaminaBefore { get; }
+        public int ForagingExperienceBefore { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }
