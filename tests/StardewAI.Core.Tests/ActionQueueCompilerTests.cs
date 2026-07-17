@@ -2470,7 +2470,7 @@ public sealed class ActionQueueCompilerTests
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
 
         Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.target_location_segment_validation_status" && parameter.Value == "pending_per_location_collision_grid");
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.route_executor_enabled" && parameter.Value == "false");
+        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.route_executor_enabled" && parameter.Value == "true");
     }
 
     [Fact]

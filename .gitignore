@@ -5,6 +5,7 @@ obj/
 __pycache__/
 .pytest_cache/
 artifacts/
+TestResults/
 .worker-tasks/
 /test-results.txt
 *.user

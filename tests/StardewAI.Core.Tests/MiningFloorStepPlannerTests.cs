@@ -1370,6 +1370,7 @@ public sealed class MiningFloorStepPlannerTests
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
+            "resource_clumps": {"status":"available","value":[]},
             "monsters": {"status":"available","value":MONSTERS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED}},
             "player_resources": {"status":"available","value":RESOURCES}
@@ -1407,6 +1408,7 @@ public sealed class MiningFloorStepPlannerTests
           "mining": {
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":[],"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":8,"height":5,"blocked_rows":["11111111","10000001","10000001","10000001","11111111"]}}},
             "objects": {"status":"available","value":OBJECTS},
+            "resource_clumps": {"status":"available","value":[]},
             "monsters": {"status":"available","value":MONSTERS},
             "monster_drop_catalogs": {"status":"available","value":DROP_CATALOGS},
             "debris": {"status":"available","value":DEBRIS},
