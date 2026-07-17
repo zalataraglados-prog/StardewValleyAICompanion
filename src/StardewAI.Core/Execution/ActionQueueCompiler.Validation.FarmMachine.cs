@@ -118,7 +118,16 @@ namespace StardewAI.Core.Execution
                         !string.Equals(ReadString(targetObject, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
                         !string.Equals(ReadParameter(action, "clear_output_qualified_item_id"), ReadString(targetObject, "clear_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
                         ReadIntParameter(action, "clear_output_quantity_min") != NullableReadInt(targetObject, "clear_output_quantity_min") ||
-                        ReadIntParameter(action, "clear_output_quantity_max") != NullableReadInt(targetObject, "clear_output_quantity_max"))
+                        ReadIntParameter(action, "clear_output_quantity_max") != NullableReadInt(targetObject, "clear_output_quantity_max") ||
+                        !string.Equals(ReadParameter(action, "clear_bonus_output_qualified_item_id") ?? string.Empty, ReadString(targetObject, "clear_bonus_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
+                        ReadIntParameter(action, "clear_bonus_output_quantity_min") != NullableReadInt(targetObject, "clear_bonus_output_quantity_min") ||
+                        ReadIntParameter(action, "clear_bonus_output_quantity_max") != NullableReadInt(targetObject, "clear_bonus_output_quantity_max") ||
+                        ReadIntParameter(action, "artifact_spots_dug_before") != NullableReadInt(targetObject, "artifact_spots_dug_before") ||
+                        ReadIntParameter(action, "artifact_spots_dug_delta") != NullableReadInt(targetObject, "artifact_spots_dug_delta") ||
+                        ReadIntParameter(action, "artifact_spots_dug_expected_after") != NullableReadInt(targetObject, "artifact_spots_dug_expected_after") ||
+                        !string.Equals(ReadParameter(action, "clear_terrain_feature_expected_after") ?? string.Empty, ReadString(targetObject, "clear_terrain_feature_expected_after"), StringComparison.Ordinal) ||
+                        ReadIntParameter(action, "defense_book_mail_before") != NullableReadInt(targetObject, "defense_book_mail_before") ||
+                        ReadIntParameter(action, "defense_book_mail_expected_after") != NullableReadInt(targetObject, "defense_book_mail_expected_after"))
                     {
                         reasons.Add("object_clear_output_projection_drifted");
                     }

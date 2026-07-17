@@ -91,7 +91,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     private static object ReadObject(GameLocation location, Vector2 tile, StardewObject item, Farmer player)
     {
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
-        var clearance = ReadObjectClearance(item, player);
+        var clearance = ReadObjectClearance(location, tile, item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -134,7 +134,20 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             clear_output_projection_status = clearance.OutputStatus,
             clear_output_qualified_item_id = clearance.OutputQualifiedItemId,
             clear_output_quantity_min = clearance.OutputQuantity,
-            clear_output_quantity_max = clearance.OutputQuantity
+            clear_output_quantity_max = clearance.OutputQuantity,
+            clear_bonus_output_qualified_item_id = clearance.BonusOutputQualifiedItemId,
+            clear_bonus_output_quantity_min = clearance.BonusOutputQuantity,
+            clear_bonus_output_quantity_max = clearance.BonusOutputQuantity,
+            artifact_spots_dug_before = clearance.ArtifactSpotsDugBefore,
+            artifact_spots_dug_delta = clearance.ArtifactSpotsDugDelta,
+            artifact_spots_dug_expected_after = clearance.ArtifactSpotsDugExpectedAfter,
+            clear_terrain_feature_expected_after = clearance.TerrainFeatureExpectedAfter,
+            defense_book_mail_before = clearance.DefenseBookMailBefore.HasValue
+                ? clearance.DefenseBookMailBefore.Value ? 1 : 0
+                : (int?)null,
+            defense_book_mail_expected_after = clearance.DefenseBookMailExpectedAfter.HasValue
+                ? clearance.DefenseBookMailExpectedAfter.Value ? 1 : 0
+                : (int?)null
         };
     }
 

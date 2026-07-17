@@ -116,7 +116,16 @@ namespace StardewAI.Core.OptionRegistry
                     (ParameterName: "clear_output_projection_status", FieldName: "clear_output_projection_status"),
                     (ParameterName: "clear_output_qualified_item_id", FieldName: "clear_output_qualified_item_id"),
                     (ParameterName: "clear_output_quantity_min", FieldName: "clear_output_quantity_min"),
-                    (ParameterName: "clear_output_quantity_max", FieldName: "clear_output_quantity_max")
+                    (ParameterName: "clear_output_quantity_max", FieldName: "clear_output_quantity_max"),
+                    (ParameterName: "clear_bonus_output_qualified_item_id", FieldName: "clear_bonus_output_qualified_item_id"),
+                    (ParameterName: "clear_bonus_output_quantity_min", FieldName: "clear_bonus_output_quantity_min"),
+                    (ParameterName: "clear_bonus_output_quantity_max", FieldName: "clear_bonus_output_quantity_max"),
+                    (ParameterName: "artifact_spots_dug_before", FieldName: "artifact_spots_dug_before"),
+                    (ParameterName: "artifact_spots_dug_delta", FieldName: "artifact_spots_dug_delta"),
+                    (ParameterName: "artifact_spots_dug_expected_after", FieldName: "artifact_spots_dug_expected_after"),
+                    (ParameterName: "clear_terrain_feature_expected_after", FieldName: "clear_terrain_feature_expected_after"),
+                    (ParameterName: "defense_book_mail_before", FieldName: "defense_book_mail_before"),
+                    (ParameterName: "defense_book_mail_expected_after", FieldName: "defense_book_mail_expected_after")
                 })
                 {
                     if ((binding.ParameterName.StartsWith("skill_experience", StringComparison.Ordinal) && !hasSkillProjection) ||
@@ -241,12 +250,30 @@ namespace StardewAI.Core.OptionRegistry
             var outputQualifiedItemId = ReadString(source.Value, "clear_output_qualified_item_id");
             var outputMinimum = NullableReadInt(source.Value, "clear_output_quantity_min");
             var outputMaximum = NullableReadInt(source.Value, "clear_output_quantity_max");
+            var bonusOutputQualifiedItemId = ReadString(source.Value, "clear_bonus_output_qualified_item_id");
+            var bonusOutputMinimum = NullableReadInt(source.Value, "clear_bonus_output_quantity_min");
+            var bonusOutputMaximum = NullableReadInt(source.Value, "clear_bonus_output_quantity_max");
+            var artifactSpotsDugBefore = NullableReadInt(source.Value, "artifact_spots_dug_before");
+            var artifactSpotsDugDelta = NullableReadInt(source.Value, "artifact_spots_dug_delta");
+            var artifactSpotsDugExpectedAfter = NullableReadInt(source.Value, "artifact_spots_dug_expected_after");
+            var terrainFeatureExpectedAfter = ReadString(source.Value, "clear_terrain_feature_expected_after");
+            var defenseBookMailBefore = NullableReadInt(source.Value, "defense_book_mail_before");
+            var defenseBookMailExpectedAfter = NullableReadInt(source.Value, "defense_book_mail_expected_after");
             return (toolSlotIndex.HasValue ? ";tool_slot_index=" + toolSlotIndex.Value : string.Empty) +
                 (!string.IsNullOrWhiteSpace(requiredToolKind) ? ";required_tool_kind=" + requiredToolKind : string.Empty) +
                 (!string.IsNullOrWhiteSpace(outputStatus) ? ";clear_output_projection_status=" + outputStatus : string.Empty) +
                 (!string.IsNullOrWhiteSpace(outputQualifiedItemId) ? ";clear_output_qualified_item_id=" + outputQualifiedItemId : string.Empty) +
                 (outputMinimum.HasValue ? ";clear_output_quantity_min=" + outputMinimum.Value : string.Empty) +
-                (outputMaximum.HasValue ? ";clear_output_quantity_max=" + outputMaximum.Value : string.Empty);
+                (outputMaximum.HasValue ? ";clear_output_quantity_max=" + outputMaximum.Value : string.Empty) +
+                (!string.IsNullOrWhiteSpace(bonusOutputQualifiedItemId) ? ";clear_bonus_output_qualified_item_id=" + bonusOutputQualifiedItemId : string.Empty) +
+                (bonusOutputMinimum.HasValue ? ";clear_bonus_output_quantity_min=" + bonusOutputMinimum.Value : string.Empty) +
+                (bonusOutputMaximum.HasValue ? ";clear_bonus_output_quantity_max=" + bonusOutputMaximum.Value : string.Empty) +
+                (artifactSpotsDugBefore.HasValue ? ";artifact_spots_dug_before=" + artifactSpotsDugBefore.Value : string.Empty) +
+                (artifactSpotsDugDelta.HasValue ? ";artifact_spots_dug_delta=" + artifactSpotsDugDelta.Value : string.Empty) +
+                (artifactSpotsDugExpectedAfter.HasValue ? ";artifact_spots_dug_expected_after=" + artifactSpotsDugExpectedAfter.Value : string.Empty) +
+                (!string.IsNullOrWhiteSpace(terrainFeatureExpectedAfter) ? ";clear_terrain_feature_expected_after=" + terrainFeatureExpectedAfter : string.Empty) +
+                (defenseBookMailBefore.HasValue ? ";defense_book_mail_before=" + defenseBookMailBefore.Value : string.Empty) +
+                (defenseBookMailExpectedAfter.HasValue ? ";defense_book_mail_expected_after=" + defenseBookMailExpectedAfter.Value : string.Empty);
         }
 
         private static int ClearObstacleToolTicks(string clearKind, int maxToolSwings)

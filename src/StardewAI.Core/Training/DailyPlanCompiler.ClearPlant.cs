@@ -54,7 +54,16 @@ namespace StardewAI.Core.Training
                 "clear_output_projection_status",
                 "clear_output_qualified_item_id",
                 "clear_output_quantity_min",
-                "clear_output_quantity_max"
+                "clear_output_quantity_max",
+                "clear_bonus_output_qualified_item_id",
+                "clear_bonus_output_quantity_min",
+                "clear_bonus_output_quantity_max",
+                "artifact_spots_dug_before",
+                "artifact_spots_dug_delta",
+                "artifact_spots_dug_expected_after",
+                "clear_terrain_feature_expected_after",
+                "defense_book_mail_before",
+                "defense_book_mail_expected_after"
             })
             {
                 var value = ParseValue(candidate.ExpectedEffect, name + "=");
