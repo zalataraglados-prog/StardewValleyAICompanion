@@ -6,8 +6,7 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeShippingSourceGuardTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly string RuntimeHarnessSource = File.ReadAllText(
-        FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+    private static readonly string RuntimeHarnessSource = RuntimeHarnessSources.All;
     private static readonly string ShippingSmokeSource = File.ReadAllText(
         FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
 
@@ -75,7 +74,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorDoesNotCheckButtonPressedEarlyReturnAtTopOfApplyPhase()
     {
-        var applyPhaseSource = Slice(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"),
+        var applyPhaseSource = Slice(RuntimeHarnessSources.All,
             "private void ApplyShipPhaseInput", "private void CleanupAndBlock");
         var lines = applyPhaseSource.Split('\n');
         var firstSwitchCase = string.Join("\n", lines.Take(Math.Min(15, lines.Length)));

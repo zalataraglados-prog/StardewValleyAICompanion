@@ -1040,11 +1040,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeMineStoneUsesNativeToolLifecycleWithoutDirectToolFunction()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.RuntimeTestHarness",
-            "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartMineStone", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
         var mineStoneSource = source[start..end];
@@ -1076,11 +1072,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeMineStoneUsesCompilerStandTileAndReplansDynamicObstacles()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.RuntimeTestHarness",
-            "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartMineStone", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
         var mineStoneSource = source[start..end];
@@ -1100,11 +1092,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeMineTransitionsUseCompilerStandTilesWithoutImplicitClearance()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.RuntimeTestHarness",
-            "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         foreach (var method in new[] { "StartDescendLadder", "StartDescendShaft", "StartExitMine" })
         {
             var start = source.IndexOf("private void " + method, StringComparison.Ordinal);
@@ -1128,7 +1116,7 @@ public sealed class MiningFloorStepPlannerTests
     public void RuntimeMiningCalibrationLoadoutIsSandboxScopedAndRuntimeDataDriven()
     {
         var root = FindRepositoryRoot();
-        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var smoke = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
         var loop = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningReachDepthLoop.ps1"));
         var start = source.IndexOf("private static MiningCalibrationLoadoutFacts EnsureMiningCalibrationLoadout", StringComparison.Ordinal);
@@ -1149,7 +1137,7 @@ public sealed class MiningFloorStepPlannerTests
     public void RuntimeBreakContainerUsesNativeHeavyHitterInputAndVerifiesRemoval()
     {
         var root = FindRepositoryRoot();
-        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var driverSource = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "NativeHeavyHitterAction.cs"));
         var start = source.IndexOf("private void StartBreakContainer", StringComparison.Ordinal);
         var end = source.IndexOf("private static bool ImmediateMiningThreat", start, StringComparison.Ordinal);
@@ -1177,7 +1165,7 @@ public sealed class MiningFloorStepPlannerTests
     public void RuntimeCombatUsesFarmerInputAndPreservesTypedFeedback()
     {
         var root = FindRepositoryRoot();
-        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartCombatMonster", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1235,7 +1223,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeSlingshotAndBombUseNativeInputWithoutDirectDamageOrExplosionCalls()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var shootStart = source.IndexOf("private void StartShootMonster", StringComparison.Ordinal);
         var bombStart = source.IndexOf("private void StartPlaceBomb", shootStart, StringComparison.Ordinal);
         var meleeStart = source.IndexOf("private void StartCombatMonster", bombStart, StringComparison.Ordinal);
@@ -1306,7 +1294,7 @@ public sealed class MiningFloorStepPlannerTests
     public void RuntimeRecoveryUsesNativeEatLifecycleWithoutDirectHealthOrInventoryMutation()
     {
         var root = FindRepositoryRoot();
-        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartConsumeFood", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartCombatMonster", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1329,7 +1317,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimePickupWalksIntoNaturalCollectionAndCombatInterruptsWithoutDirectCollect()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartPickupDebris", StringComparison.Ordinal);
         var end = source.IndexOf("private static Debris? DebrisAt", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1352,7 +1340,7 @@ public sealed class MiningFloorStepPlannerTests
         var root = FindRepositoryRoot();
         var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
         var planner = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Execution", "MiningFloorStepPlanner.cs"));
-        var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var runtime = RuntimeHarnessSources.All;
 
         Assert.Contains("is_collectible_item_debris", bridge, StringComparison.Ordinal);
         Assert.Contains("non_item_visual_or_numeric_debris", bridge, StringComparison.Ordinal);
@@ -1388,7 +1376,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeLadderUsesBfsAndNativeCheckActionWithoutDirectMineTransition()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartDescendLadder", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1406,7 +1394,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeShaftUsesNativePromptAndVerifiesPreviewWithoutDirectTransition()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartDescendShaft", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1431,7 +1419,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeMineExitUsesNativePromptWithoutDirectWarp()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartExitMine", StringComparison.Ordinal);
         var end = source.IndexOf("private void StartConsumeFood", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1451,7 +1439,7 @@ public sealed class MiningFloorStepPlannerTests
     public void RuntimeSkullKeyClaimUsesNativeTwoStageChestActionWithoutDirectProgressMutation()
     {
         var root = FindRepositoryRoot();
-        var runtimeSource = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var runtimeSource = RuntimeHarnessSources.All;
         var start = runtimeSource.IndexOf("private void StartSkullKeyChestInteraction", StringComparison.Ordinal);
         var end = runtimeSource.IndexOf("private TrainingExecutionResult ExecuteInteract", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);

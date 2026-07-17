@@ -328,7 +328,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     public void SocialContinuationDialogueRecoveryFlagReachesRuntimeSafetyGate()
     {
         var loopSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
-        var runtimeSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var runtimeSource = RuntimeHarnessSources.All;
 
         Assert.Contains("social_continuation_dialogue_recovery", loopSource, StringComparison.Ordinal);
         Assert.Contains("executionRequest.SocialContinuationDialogueRecovery", loopSource, StringComparison.Ordinal);

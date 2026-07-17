@@ -1,0 +1,703 @@
+using HarmonyLib;
+using Microsoft.Xna.Framework;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Net;
+using System.Reflection;
+using System.Text.Json;
+using StardewAI.Contracts.Training;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.Buildings;
+using StardewValley.GameData.Crops;
+using StardewValley.Locations;
+using StardewValley.Menus;
+using StardewValley.Monsters;
+using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
+using XnaRectangle = Microsoft.Xna.Framework.Rectangle;
+using TileLocation = xTile.Dimensions.Location;
+using TileRectangle = xTile.Dimensions.Rectangle;
+
+namespace StardewAI.RuntimeTestHarness;
+
+public sealed partial class ModEntry : Mod
+{
+    private void StartPickupDebris(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", "location.debris[target].chunk_count_decreases_or_removed=true", "target_tile=missing", "target_tile_required"));
+            return;
+        }
+        if (activePickupDebris is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "executor=busy", "pickup_debris_executor_busy"));
+            return;
+        }
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "player=busy_or_menu_open", "pickup_debris_tool_or_menu_conflict"));
+            return;
+        }
+
+        var location = Game1.currentLocation;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var beforeObserved = DebrisObservedEffect(location, target, request.DebrisIndex);
+        if (string.IsNullOrWhiteSpace(request.QualifiedItemId))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));
+            return;
+        }
+        var debris = DebrisAt(location, target, request.DebrisIndex, request.QualifiedItemId);
+        var chunk = debris is null ? null : DebrisChunkAt(debris, target);
+        if (debris is null || chunk is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_target_not_found"));
+            return;
+        }
+
+        var itemId = DebrisQualifiedItemId(debris);
+        if (!string.Equals(itemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_mismatch"));
+            return;
+        }
+        if (!Game1.player.couldInventoryAcceptThisItem(debris.item ?? ItemRegistry.Create(itemId, 1, debris.itemQuality)))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_inventory_cannot_accept_item"));
+            return;
+        }
+        activePickupDebris = new ActivePickupDebris(
+            pending,
+            location,
+            debris,
+            chunk,
+            target,
+            itemId,
+            location.debris.Count,
+            debris.Chunks.Count,
+            CountInventoryItem(itemId),
+            InventoryStackSignature(),
+            DebrisRequestedEffect(request));
+    }
+
+    private void TickPickupDebris()
+    {
+        if (activePickupDebris is null)
+        {
+            return;
+        }
+
+        var active = activePickupDebris;
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_location_changed");
+            return;
+        }
+        if (active.ElapsedTicks - active.CombatInterruptedTicks > active.MaxTicks)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_natural_collection_timeout");
+            return;
+        }
+
+        var debrisStillPresent = active.Location.debris.Contains(active.Debris);
+        var chunkStillPresent = debrisStillPresent && active.Debris.Chunks.Contains(active.Chunk);
+        var itemCountAfter = CountInventoryItem(active.QualifiedItemId);
+        if ((!debrisStillPresent || !chunkStillPresent) && itemCountAfter > active.ItemCountBefore)
+        {
+            CompletePickupDebris(active, itemCountAfter);
+            return;
+        }
+
+        if (active.Location is MineShaft mine && ImmediateMiningThreat(mine))
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+        active.CombatInterrupted = false;
+
+        if (!chunkStillPresent)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_removed_without_inventory_gain");
+            return;
+        }
+        if (Game1.player.UsingTool || Game1.activeClickableMenu is not null || Game1.dialogueUp)
+        {
+            CompletePickupDebrisBlocked(active, "pickup_debris_tool_or_menu_conflict_during_move");
+            return;
+        }
+
+        var target = DebrisChunkTile(active.Chunk);
+        if (Game1.player.TilePoint == target)
+        {
+            StopAllMovement();
+            active.WaitAtTargetTicks++;
+            if (active.WaitAtTargetTicks > 120)
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.WaitAtTargetTicks = 0;
+            }
+            return;
+        }
+
+        if (active.PathIndex >= active.Path.Count || active.PathTarget != target)
+        {
+            var path = TryBuildTilePath(active.Location, Game1.player.TilePoint, target, 512, out var pathReason, avoidSoftObstacles: true);
+            if (path is null)
+            {
+                active.PathFailures++;
+                if (active.PathFailures > 90)
+                {
+                    CompletePickupDebrisBlocked(active, "pickup_debris_dynamic_path_unavailable:" + pathReason);
+                }
+                return;
+            }
+            active.Path = path;
+            active.PathIndex = 0;
+            active.PathTarget = target;
+            active.PathFailures = 0;
+        }
+
+        if (active.PathIndex >= active.Path.Count)
+        {
+            return;
+        }
+        var next = active.Path[active.PathIndex];
+        if (Game1.player.TilePoint == next)
+        {
+            active.PathIndex++;
+            return;
+        }
+        if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
+        {
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return;
+        }
+
+        var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
+        active.LastPosition = Game1.player.Position;
+        StartMoving(DirectionTo(Game1.player.TilePoint, next));
+        MovePlayerForTick();
+        if (Game1.player.TilePoint == next)
+        {
+            active.PathIndex++;
+        }
+        if (!movedSinceLastTick)
+        {
+            active.StuckTicks++;
+            if (active.StuckTicks > 45)
+            {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.StuckTicks = 0;
+            }
+        }
+        else
+        {
+            active.StuckTicks = 0;
+        }
+    }
+
+    private void CompletePickupDebris(ActivePickupDebris active, int itemCountAfter)
+    {
+        StopAllMovement();
+        activePickupDebris = null;
+        var request = active.Pending.Request;
+        var inventoryAfter = InventoryStackSignature();
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            ActualTicks = active.ElapsedTicks,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
+            PrimitiveKind = "pickup_debris",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[] { "bfs_reached_live_debris", "game_update_naturally_collected_chunk", "inventory_item_count_increased", "no_direct_debris_collect_call" },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = "debris_present=" + active.Location.debris.Contains(active.Debris).ToString().ToLowerInvariant() + ";item_count=" + itemCountAfter + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange { Path = "locations[" + active.LocationId + "].debris.count", Before = active.DebrisCountBefore.ToString(), After = active.Location.debris.Count.ToString() },
+                new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter },
+                new SimulatedFactChange { Path = "player.inventory.count[" + active.QualifiedItemId + "]", Before = active.ItemCountBefore.ToString(), After = itemCountAfter.ToString() }
+            }
+        });
+    }
+
+    private void CompletePickupDebrisBlocked(ActivePickupDebris active, string reason)
+    {
+        StopAllMovement();
+        activePickupDebris = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(
+            active.Pending.Request,
+            "pickup_debris",
+            active.RequestedEffect,
+            "debris_present=" + active.Location.debris.Contains(active.Debris).ToString().ToLowerInvariant() + ";item_count=" + CountInventoryItem(active.QualifiedItemId),
+            reason));
+    }
+
+    private static Point DebrisChunkTile(Chunk chunk)
+    {
+        return new Point(
+            (int)((chunk.position.X + 32f) / Game1.tileSize),
+            (int)((chunk.position.Y + 32f) / Game1.tileSize));
+    }
+
+    private static Debris? DebrisAt(GameLocation location, Point target, int? debrisIndex, string qualifiedItemId = "")
+    {
+        var indexes = Enumerable.Range(0, location.debris.Count);
+        if (debrisIndex.HasValue && debrisIndex.Value >= 0 && debrisIndex.Value < location.debris.Count)
+        {
+            indexes = new[] { debrisIndex.Value }
+                .Concat(indexes.Where(index => index != debrisIndex.Value));
+        }
+
+        foreach (var index in indexes)
+        {
+            var debris = location.debris[index];
+            if (DebrisChunkAt(debris, target) is not null &&
+                (string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                 string.Equals(DebrisQualifiedItemId(debris), qualifiedItemId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return debris;
+            }
+        }
+
+        return null;
+    }
+
+    private static string DebrisQualifiedItemId(Debris debris)
+    {
+        return debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value;
+    }
+
+    private static Chunk? DebrisChunkAt(Debris debris, Point target)
+    {
+        return debris.Chunks.FirstOrDefault(chunk =>
+            (int)((chunk.position.X + 32f) / Game1.tileSize) == target.X &&
+            (int)((chunk.position.Y + 32f) / Game1.tileSize) == target.Y);
+    }
+
+    private static string DebrisRequestedEffect(TrainingExecutionRequest request)
+    {
+        return "location.debris[" + (request.DebrisIndex.HasValue ? request.DebrisIndex.Value.ToString() : request.TargetTileX + "," + request.TargetTileY) + "].chunk_count_decreases_or_removed=true;player.inventory.updated;collection=native_proximity";
+    }
+
+    private static string DebrisObservedEffect(GameLocation location, Point target, int? debrisIndex)
+    {
+        var debris = DebrisAt(location, target, debrisIndex);
+        if (debris is null)
+        {
+            return "debris_present=false";
+        }
+
+        var index = location.debris.IndexOf(debris);
+        return "debris_present=true;debris_index=" + index + ";chunk_count=" + debris.Chunks.Count + ";qualified_item_id=" + (debris.item?.QualifiedItemId ?? debris.itemId.Value);
+    }
+
+    private static int CountInventoryItem(string qualifiedItemId)
+    {
+        if (string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return 0;
+        }
+
+        return Game1.player.Items
+            .Where(item => item is not null && string.Equals(item.QualifiedItemId, qualifiedItemId, StringComparison.OrdinalIgnoreCase))
+            .Sum(item => item!.Stack);
+    }
+
+    private TrainingExecutionResult ExecuteSetupMachineOutputTarget(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_machine_output_target", "farm.machines[target].ready_for_harvest=true", "target_tile=missing", "target_tile_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var farm = Game1.getFarm();
+        Game1.currentLocation = farm;
+        Game1.player.currentLocation = farm;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var tile = new Vector2(target.X, target.Y);
+        var outputItemId = string.IsNullOrWhiteSpace(request.QualifiedItemId)
+            ? QualifyObjectId(string.IsNullOrWhiteSpace(request.ShopItemId) ? "388" : request.ShopItemId)
+            : request.QualifiedItemId;
+        var beforeMachine = MachineObservedEffect(farm, target);
+        ClearReadyMachineOutputsForFixture(farm, tile);
+        farm.objects.Remove(tile);
+
+        var machine = new StardewValley.Object(tile, string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "12" : request.ExpectedShopId)
+        {
+            heldObject =
+            {
+                Value = ItemRegistry.Create<StardewValley.Object>(outputItemId, Math.Max(1, request.Quantity ?? 1))
+            },
+            readyForHarvest =
+            {
+                Value = true
+            }
+        };
+        machine.MinutesUntilReady = 0;
+        farm.objects[tile] = machine;
+        MoveFixtureFarmerToFarmAdjacent(target);
+
+        var verified = MachineAt(farm, target) is { readyForHarvest.Value: true, heldObject.Value: not null };
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_machine_output_target",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "isolated_runtime_fixture_machine_output_ready", "qualified_item_id=" + outputItemId }
+                : new[] { "fixture_machine_output_not_ready", "qualified_item_id=" + outputItemId },
+            RequestedEffect = "farm.machines[" + target.X + "," + target.Y + "].ready_for_harvest=true;held_item=" + outputItemId,
+            ObservedEffect = MachineObservedEffect(farm, target),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_output_not_ready" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.machines[" + target.X + "," + target.Y + "]",
+                        Before = beforeMachine,
+                        After = MachineObservedEffect(farm, target)
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private TrainingExecutionResult ExecuteCollectMachineOutput(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", "farm.machines[target].held_item=null;player.inventory.updated", "target_tile=missing", "target_tile_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var location = Game1.currentLocation;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var requested = MachineRequestedEffect(request);
+        var beforeObserved = MachineObservedEffect(location, target);
+        var machine = MachineAt(location, target);
+        if (machine is null)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_target_not_found");
+        }
+
+        if (!machine.readyForHarvest.Value || machine.heldObject.Value is null)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_not_ready");
+        }
+
+        var output = machine.heldObject.Value;
+        var outputId = output.QualifiedItemId;
+        if (!string.IsNullOrWhiteSpace(request.QualifiedItemId) &&
+            !string.Equals(outputId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_item_mismatch");
+        }
+
+        if (!Game1.player.couldInventoryAcceptThisItem(output))
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_inventory_cannot_accept_item");
+        }
+
+        var playerTile = Game1.player.TilePoint;
+        if (Math.Abs(playerTile.X - target.X) + Math.Abs(playerTile.Y - target.Y) != 1)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_player_not_adjacent");
+        }
+
+        var beforeInventory = InventoryStackSignature();
+        var beforeItemCount = CountInventoryItem(outputId);
+        var acted = machine.checkForAction(Game1.player);
+        var afterInventory = InventoryStackSignature();
+        var afterItemCount = CountInventoryItem(outputId);
+        var afterObserved = MachineObservedEffect(location, target);
+        var verified = acted &&
+            machine.heldObject.Value is null &&
+            !machine.readyForHarvest.Value &&
+            (!string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterItemCount > beforeItemCount);
+
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "collect_machine_output",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "machine_output_collected", "inventory_updated", "qualified_item_id=" + outputId }
+                : new[] { acted ? "checkForAction_returned_true" : "checkForAction_returned_false", machine.heldObject.Value is null ? "held_item_cleared" : "held_item_still_present" },
+            RequestedEffect = requested,
+            ObservedEffect = afterObserved,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { acted ? "collect_machine_output_post_state_mismatch" : "collect_machine_output_action_failed" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.machines[" + target.X + "," + target.Y + "].held_item",
+                        Before = beforeObserved,
+                        After = afterObserved
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "player.inventory.stack_signature",
+                        Before = beforeInventory,
+                        After = afterInventory
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private TrainingExecutionResult ExecuteSetupMachineInputTarget(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_machine_input_target", "farm.machines[target].loadable_inputs.length>0", "target_tile=missing", "target_tile_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var farm = Game1.getFarm();
+        Game1.currentLocation = farm;
+        Game1.player.currentLocation = farm;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var tile = new Vector2(target.X, target.Y);
+        var inputItemId = string.IsNullOrWhiteSpace(request.QualifiedItemId)
+            ? QualifyObjectId(string.IsNullOrWhiteSpace(request.ShopItemId) ? "262" : request.ShopItemId)
+            : request.QualifiedItemId;
+        var beforeMachine = MachineObservedEffect(farm, target);
+        farm.objects.Remove(tile);
+
+        var machine = new StardewValley.Object(tile, string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "12" : request.ExpectedShopId);
+        machine.MinutesUntilReady = -1;
+        machine.readyForHarvest.Value = false;
+        machine.heldObject.Value = null;
+        farm.objects[tile] = machine;
+        var inputSlot = EnsureInventoryItem(inputItemId, Math.Max(1, request.Quantity ?? 1));
+        MoveFixtureFarmerToFarmAdjacent(target);
+
+        var input = inputSlot >= 0 ? Game1.player.Items[inputSlot] : null;
+        var accepts = input is not null && machine.performObjectDropInAction(input, probe: true, Game1.player);
+        var verified = MachineAt(farm, target) is not null && inputSlot >= 0 && accepts;
+        RefreshTransparentMachineProbeCache();
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_machine_input_target",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot }
+                : new[] { "fixture_machine_input_probe_rejected", "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot },
+            RequestedEffect = "farm.machines[" + target.X + "," + target.Y + "].loadable_inputs.length>0;qualified_item_id=" + inputItemId,
+            ObservedEffect = MachineObservedEffect(farm, target) + ";input_slot_index=" + inputSlot + ";input_probe_accepts=" + accepts.ToString().ToLowerInvariant(),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_input_probe_rejected" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.machines[" + target.X + "," + target.Y + "]",
+                        Before = beforeMachine,
+                        After = MachineObservedEffect(farm, target)
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "player.inventory.input_slot_index",
+                        Before = "unknown",
+                        After = inputSlot.ToString()
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private TrainingExecutionResult ExecuteLoadMachineInput(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", "farm.machines[target].minutes_until_ready>0_or_ready=true;player.inventory.updated", "target_tile=missing", "target_tile_required");
+        }
+
+        if (!request.InputSlotIndex.HasValue)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", "farm.machines[target].minutes_until_ready>0_or_ready=true;player.inventory.updated", "input_slot=missing", "input_slot_index_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var location = Game1.currentLocation;
+        var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var requested = MachineInputRequestedEffect(request);
+        var beforeObserved = MachineObservedEffect(location, target);
+        var machine = MachineAt(location, target);
+        if (machine is null)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_target_not_found");
+        }
+
+        if (machine.MinutesUntilReady > 0 || machine.readyForHarvest.Value)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_target_busy");
+        }
+
+        var inputSlot = request.InputSlotIndex.Value;
+        if (inputSlot < 0 || inputSlot >= Game1.player.Items.Count)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_slot_out_of_range");
+        }
+
+        var input = Game1.player.Items[inputSlot];
+        if (input is null)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_slot_empty");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.QualifiedItemId) &&
+            !string.Equals(input.QualifiedItemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase))
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_item_mismatch");
+        }
+
+        if (!machine.performObjectDropInAction(input, probe: true, Game1.player))
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_probe_rejected");
+        }
+
+        var playerTile = Game1.player.TilePoint;
+        if (Math.Abs(playerTile.X - target.X) + Math.Abs(playerTile.Y - target.Y) != 1)
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_player_not_adjacent");
+        }
+
+        var beforeInventory = InventoryStackSignature();
+        var beforeStack = input.Stack;
+        var inputId = input.QualifiedItemId;
+        var acted = machine.performObjectDropInAction(input, probe: false, Game1.player);
+        var afterInventory = InventoryStackSignature();
+        var afterObserved = MachineObservedEffect(location, target);
+        var afterSlotItem = inputSlot < Game1.player.Items.Count ? Game1.player.Items[inputSlot] : null;
+        var afterStack = afterSlotItem?.Stack ?? 0;
+        var machineStarted = machine.MinutesUntilReady > 0 || machine.readyForHarvest.Value || machine.heldObject.Value is not null;
+        var inventoryChanged = !string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterStack < beforeStack;
+        var verified = acted && machineStarted && inventoryChanged;
+        RefreshTransparentMachineProbeCache();
+
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "load_machine_input",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "machine_input_loaded", "machine_processing_started_or_output_ready", "inventory_updated", "qualified_item_id=" + inputId }
+                : new[] { acted ? "performObjectDropInAction_returned_true" : "performObjectDropInAction_returned_false", machineStarted ? "machine_started" : "machine_not_started", inventoryChanged ? "inventory_changed" : "inventory_not_changed" },
+            RequestedEffect = requested,
+            ObservedEffect = afterObserved + ";input_slot_index=" + inputSlot + ";input_stack_before=" + beforeStack + ";input_stack_after=" + afterStack,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { acted ? "load_machine_input_post_state_mismatch" : "load_machine_input_action_failed" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.machines[" + target.X + "," + target.Y + "]",
+                        Before = beforeObserved,
+                        After = afterObserved
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "player.inventory.stack_signature",
+                        Before = beforeInventory,
+                        After = afterInventory
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private static StardewValley.Object? MachineAt(GameLocation location, Point target)
+    {
+        return location.objects.TryGetValue(new Vector2(target.X, target.Y), out var obj) &&
+            obj.bigCraftable.Value
+            ? obj
+            : null;
+    }
+}

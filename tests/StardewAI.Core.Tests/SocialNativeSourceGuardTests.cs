@@ -8,7 +8,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorSourceContainsOnlyCheckActionEntryPoint()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
 
         Assert.Contains("executor.social_interact", source, StringComparison.Ordinal);
 
@@ -43,7 +43,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorRecordsTimestampsAndGameTicks()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("startTicks = Game1.ticks", socialSource, StringComparison.Ordinal);
@@ -56,7 +56,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorRecordsFacingAfterCheckAction()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("afterFacing = Game1.player.FacingDirection", socialSource, StringComparison.Ordinal);
@@ -65,7 +65,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorRecordsNpcAndPlayerLocationBeforeAndAfter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("beforeNpcLocation", socialSource, StringComparison.Ordinal);
@@ -80,7 +80,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorRecordsDialogueCountAndTranslationKey()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("beforeDialogueCount = beforeCurrentDialogue?.Count ?? 0", socialSource, StringComparison.Ordinal);
@@ -95,7 +95,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorValidatesLocationIdAndNpcCoordinates()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("request.LocationId", socialSource, StringComparison.Ordinal);
@@ -110,7 +110,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorUsesDecompiledBackedNpcValidation()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("npc.IsVillager", socialSource, StringComparison.Ordinal);
@@ -123,7 +123,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorUsesBoundingRectangleIntersection()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("actionTargetRectangle", socialSource, StringComparison.Ordinal);
@@ -135,7 +135,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorHandlesStardropTeaExceptions()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("(O)StardropTea", socialSource, StringComparison.Ordinal);
@@ -149,7 +149,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorValidatesActiveObjectBeforeCheckAction()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("player.ActiveObject is null ||", socialSource, StringComparison.Ordinal);
@@ -161,7 +161,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorExactOneItemConsumption()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("afterGiftStack.Value == beforeGiftStack.Value - 1", socialSource, StringComparison.Ordinal);
@@ -170,7 +170,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorGiftRequiresSocialEffect()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("hasDialogueChange || hasFriendshipChange || hasGiftCounterChange", socialSource, StringComparison.Ordinal);
@@ -179,7 +179,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorTalkRequiresSocialTransition()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("hasTalkChange || hasDialogueChange || hasFriendshipChange", socialSource, StringComparison.Ordinal);
@@ -188,7 +188,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialBlockedResultContainsTrainingImpactScope()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var blockedSource = Slice(source, "private static TrainingExecutionResult BuildSocialBlockedResult", "private static TrainingExecutionResult BuildSocialInteractResult");
 
         Assert.Contains("TrainingImpactScope = \"executor_calibration\"", blockedSource, StringComparison.Ordinal);
@@ -383,7 +383,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorStackOneToNullVerification()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("afterGiftStack = afterItem?.Stack;", socialSource, StringComparison.Ordinal);
@@ -395,7 +395,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorPreservesNpcOnTileMismatch()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("BuildSocialBlockedResult(request, true, npc, \"social_interact\", \"social_npc_moved_from_observed_tile\")", socialSource, StringComparison.Ordinal);
@@ -404,7 +404,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialBlockedResultPopulatesFriendshipAndGiftFields()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var blockedSource = Slice(source, "private static TrainingExecutionResult BuildSocialBlockedResult", "private static TrainingExecutionResult BuildSocialInteractResult");
 
         Assert.Contains("friendshipData.TryGetValue(npcName, out var beforeFriendshipEntry", blockedSource, StringComparison.Ordinal);
@@ -425,7 +425,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialExecutorDispatcher()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
 
         Assert.Contains("executor.social_interact", source, StringComparison.Ordinal);
         Assert.Contains("ExecuteSocialInteract(pending.Request)", source, StringComparison.Ordinal);
@@ -441,7 +441,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialBlockedResultWorldNotReadySourceIsSafe()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var blockedSource = Slice(source, "private static TrainingExecutionResult BuildSocialBlockedResult", "private static TrainingExecutionResult BuildSocialInteractResult");
 
         Assert.Contains("Context.IsWorldReady", blockedSource, StringComparison.Ordinal);
@@ -460,7 +460,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialInteractResultAfterNpcPresentIsBooleanNotTernary()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var resultSource = Slice(source, "private static TrainingExecutionResult BuildSocialInteractResult", "private static string SocialInteractRequestedEffect");
 
         Assert.Contains("SocialNpcPresentAfter = afterNpcPresent", resultSource, StringComparison.Ordinal);
@@ -470,7 +470,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialObservedEffectWorldNotReadyIsSafe()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var effectSource = Slice(source, "private static string SocialInteractObservedEffect()", "private TrainingExecutionResult ExecuteChooseDialogueResponse");
 
         Assert.Contains("Context.IsWorldReady", effectSource, StringComparison.Ordinal);
@@ -482,7 +482,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void SocialRectangleReasonIsRenamed()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var socialSource = Slice(source, "private TrainingExecutionResult ExecuteSocialInteract", "private static TrainingExecutionResult BuildSocialBlockedResult");
 
         Assert.Contains("social_npc_not_intersecting_action_target_rectangle", socialSource, StringComparison.Ordinal);
@@ -651,7 +651,7 @@ public sealed class SocialNativeSourceGuardTests
     [Fact]
     public void DialogueSpeakerComparisonUsesStringEqualsNotReferenceEquals()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         var dialogueAdvanceSource = Slice(source, "private void TickDialogueAdvanceCore", "private static TrainingExecutionResult DialogueAdvanceResult");
 
         Assert.DoesNotContain("ReferenceEquals(currentBox.characterDialogue?.speaker?.Name", dialogueAdvanceSource, StringComparison.Ordinal);

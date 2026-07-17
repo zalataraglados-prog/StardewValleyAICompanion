@@ -5,7 +5,7 @@ public sealed class NativeToolSourceGuardTests
     [Fact]
     public void RuntimeFarmToolExecutorsUseNativeToolFunctions()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
 
         Assert.DoesNotContain("HoeDirt.watered", source, StringComparison.Ordinal);
         Assert.DoesNotContain("DoFunction(farm", source, StringComparison.Ordinal);

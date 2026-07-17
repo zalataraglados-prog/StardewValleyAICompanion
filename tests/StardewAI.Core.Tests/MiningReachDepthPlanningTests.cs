@@ -312,11 +312,7 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("Assert-MiningSnapshot", source, StringComparison.Ordinal);
         Assert.Contains("maximum_snapshot_latency_ms", source, StringComparison.Ordinal);
 
-        var harnessSource = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "tools",
-            "StardewAI.RuntimeTestHarness",
-            "ModEntry.cs"));
+        var harnessSource = RuntimeHarnessSources.All;
         Assert.Contains("StartSetupMiningFloor", harnessSource, StringComparison.Ordinal);
         Assert.Contains("native_enter_mine_completed", harnessSource, StringComparison.Ordinal);
         Assert.Contains("loaded_mine_map_present", harnessSource, StringComparison.Ordinal);

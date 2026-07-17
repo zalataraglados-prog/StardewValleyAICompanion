@@ -66,7 +66,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void RuntimeCatchFishBranchIsFailClosedAndDoesNotUseForbiddenCatchMutation()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         Assert.Contains("request.OptionId != \"executor.catch_fish\"", source);
         Assert.Contains("StartCatchFish(pending);", source);
         Assert.Contains("ValidateCatchFishStart", source);
@@ -254,7 +254,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void RuntimeCatchFishUsesSmapiOverrideWithoutReplacingGlobalOrOsInput()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         Assert.Contains("inputType.GetMethod(", source);
         Assert.Contains("\"OverrideButton\"", source);
         Assert.Contains("types: new[] { typeof(SButton), typeof(bool) }", source);
@@ -287,7 +287,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void RuntimeCatchFishHooksEachNibbleOnlyOnceAndRejectsJunkBobberBarMix()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         Assert.Contains("if (!active.HookIssuedForNibble)", source);
         Assert.Contains("active.HookIssuedForNibble = true;", source);
         Assert.Contains("active.HookAttemptCount++;", source);
@@ -302,7 +302,7 @@ public sealed class RuntimeCatchFishExecutorTests
     [Fact]
     public void RuntimeCatchFishRecordsActualReleasePowerOnlyAtCastTransition()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSources.All;
         Assert.Contains("active.WasTimingCastLastTick && !active.Rod.isTimingCast && active.Rod.isCasting", source);
         Assert.Contains("active.ObservedReleaseCastingPower = active.Rod.castingPower;", source);
         Assert.Contains("active.WasTimingCastLastTick = active.Rod.isTimingCast;", source);
