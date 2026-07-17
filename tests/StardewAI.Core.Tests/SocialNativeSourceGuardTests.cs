@@ -434,7 +434,7 @@ public sealed class SocialNativeSourceGuardTests
         Assert.DoesNotContain("social_native_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
         Assert.DoesNotContain("social_runtime_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
 
-        var evaluatorSource = File.ReadAllText(FindRepositoryFile("src", "StardewAI.Core", "OptionRegistry", "CandidateOptionAvailabilityEvaluator.cs"));
+        var evaluatorSource = CandidateOptionAvailabilityEvaluatorSources.All;
         Assert.Contains("executor.social_interact", evaluatorSource, StringComparison.Ordinal);
     }
 
