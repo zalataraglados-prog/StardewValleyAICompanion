@@ -1,8 +1,8 @@
 # evidence.md - Grandpa Direction Daily Candidate Binding (Final)
 
-## Static Implementation Only
+## Verification Status
 
-All evidence comes from static code review within the sandbox project snapshot. No tests or build were executed per task constraints.
+This handoff was superseded by a tested controller revision on 2026-07-17. Focused Core tests passed 103/103, full Core tests passed 946/946, Backend tests passed 49/49, and an E-drive isolated native shipping smoke passed its immediate postcondition.
 
 ## Catalog Completeness
 
@@ -32,9 +32,9 @@ Covered by unrun test definitions: `BindBlocksCompleteCommunityCenterWithUnresol
 
 ## No Speculative Field/Capability Checks
 
-`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Nine non-direct directions are unconditionally blocked as planned contract gaps. Covered by an unrun test definition: `BindNineNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Eight non-direct directions are unconditionally blocked as planned contract gaps. Covered by `BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
 
-Nine non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
+Eight non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
 
 ## Candidate Identity Preserved
 
@@ -61,6 +61,12 @@ Candidates with non-empty `BlockReasons` are rejected even when `TimelineStatus`
 - Does NOT promise specific catch or achievement
 - Covered by unrun test definitions: `BindCompleteMasterAnglerBindsCatchFishCandidatesWithProvenance` and `BindCompleteMasterAnglerDoesNotPromiseSpecificCatchOrAchievement`
 
+### complete_full_shipment
+- Permitted: `ship_inventory_item_to_bin` kind, `economy.ship_items` option
+- Requires exact typed evidence that the item is eligible, has never been shipped, contributes to completion, and can currently be shipped
+- Unknown or contradictory evidence fails closed with `candidate_direction_evidence_rejected`
+- Covered by `FullShipmentDirectionBindsOnlyExactContributingCandidate`, `FullShipmentDirectionRejectsAlreadyShippedCandidateEvenWhenContributionFlagConflicts`, and `BindFullShipmentRejectsCandidateWithoutExactContributionEvidence`
+
 ## Corrected Readiness and Provenance
 
 ### Readiness
@@ -76,7 +82,7 @@ Covered by unrun test definitions: `BindDoesNotIncludeDuplicateGrandpaProvenance
 Covered by an unrun test definition: `BindClonesCandidateArraysToPreventAliasing`.
 
 ### Missing Fields Populated
-Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. Verified for all nine non-direct rows by `BindNineNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. Verified for all eight non-direct rows by `BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
 
 ### Metadata Sourced from Adapter
 Domain, label, feedback_key, related_factor_ids, potential_points, priority_score, known, blocked are all from the adapter's `CandidateDirection`, not the catalog.
@@ -92,4 +98,7 @@ Covered by an unrun test definition: `BindDirectionMetadataIsSourcedFromAdapterN
 
 ## Build/Tests
 
-- Not run for this revision. Static implementation only.
+- Focused Core: 103/103 passed.
+- Full Core: 946/946 passed.
+- Backend: 49/49 passed.
+- E-drive isolated native shipping immediate postcondition: passed.

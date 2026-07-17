@@ -4,6 +4,10 @@
 
 Revised the grandpa direction daily candidate binding system per controller audit. This is a typed direction-to-daily-candidate binding system that decomposes validated `strategy.grandpa_progress` directions into concrete candidates passable to `DailyPlanCompiler`.
 
+## 2026-07-17 Controller Superseding Update
+
+`complete_full_shipment` is now the fourth direct direction. It binds only `economy.ship_items` / `ship_inventory_item_to_bin` candidates carrying exact typed full-shipment contribution evidence. The native compiler, executor, immediate receipt, and delayed `basicShipped` settlement recorder are implemented. The remaining blocked count is eight. Focused Core 103/103, full Core 946/946, Backend 49/49, and E-drive isolated native shipping immediate smoke all passed.
+
 ## Controller Audit Corrections Applied
 
 ### 1. Contracts Contain DTOs Only
@@ -16,8 +20,8 @@ Revised the grandpa direction daily candidate binding system per controller audi
 - Candidates are rejected when `BlockReasons` is non-empty, even if `TimelineStatus` is not `blocked`.
 
 ### 3. Planned Gaps Honest and Exposed
-- **Before**: Three direct rows listed speculative `required_transparent_fields`; nine blocked rows had no output when blocked.
-- **After**: Direct rows have empty `RequiredTransparentFields` and `RequiredCapabilities` (candidate availability is the authority). Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry for all nine unsupported rows (including CC/Joja).
+- **Historical baseline**: Three direct rows listed speculative `required_transparent_fields`; nine blocked rows had no output when blocked.
+- **After**: Direct rows have empty `RequiredTransparentFields` and `RequiredCapabilities`; full shipment additionally reports its covered transparent fields. Blocked results populate `MissingTransparentFields` and `MissingCapabilities` for all eight unsupported rows.
 
 ### 4. Nullable Intent Accurate
 - **Before**: `Bind(GrandpaDirectionBindingRequest request, SnapshotEnvelope snapshot)` -- non-nullable parameter.
@@ -38,8 +42,8 @@ Revised the grandpa direction daily candidate binding system per controller audi
 
 ### 8. Speculative Field/Capability Checks Removed
 - **Before**: `FieldReadableInSnapshot()` and `CapabilityAvailable()` inspected snapshot paths for non-direct-binding directions.
-- **After**: These methods are removed entirely. The nine non-direct rows are unconditionally blocked as planned contract gaps. Their `required_transparent_fields` and `required_capabilities` in the catalog represent planned gaps, not runtime checks.
-- Three direct rows bind only already-current, available, timeline-legal candidates using exact permitted option/kind checks. Missing permitted candidate produces `no_current_permitted_candidate` with precise rejection detail.
+- **After**: These methods are removed entirely. The eight non-direct rows are unconditionally blocked as planned contract gaps. Their `required_transparent_fields` and `required_capabilities` in the catalog represent planned gaps, not runtime checks.
+- Four direct rows bind only already-current, available, timeline-legal candidates using exact permitted option/kind checks. Full shipment also requires exact contribution evidence. Missing permitted candidate produces `no_current_permitted_candidate` with precise rejection detail.
 
 ### 9. Readiness Semantics and Provenance Corrected
 - **Before**: `BindingCoverageStatus` used `full` (2+ candidates) / `partial` (1) / `none` semantics.
@@ -49,12 +53,12 @@ Revised the grandpa direction daily candidate binding system per controller audi
 - Provenance parameters added once; existing provenance names on source candidates are preserved and not duplicated. Duplicate provenance names (second occurrence of the same name, even with matching values) reject with `candidate_provenance_duplicate`.
 - Does not convert long-horizon required minutes into daily `EstimatedTicks`. Does not claim factor completion or predict deltas.
 
-### 10. Tests Updated (Definitions Only, NOT RUN)
-- 64 test methods covering:
-  - Catalog: 12 entries, non-overlapping, policy-only (no score metadata), 3 direct-binding
+### 10. Tests Updated And Run
+- Focused binding/contribution suite passed 103/103; full Core passed 946/946; Backend passed 49/49. Coverage includes:
+  - Catalog: 12 entries, non-overlapping, policy-only (no score metadata), 4 direct-binding
   - State hash: empty reject, null snapshot reject, mismatch reject, exact match
   - Rejection: empty direction_id, unknown direction_id, target-complete, direction-absent
-  - Blocking: all 9 non-direct directions unconditionally blocked as planned contract gaps
+  - Blocking: all 8 non-direct directions unconditionally blocked as planned contract gaps
   - CC/Joja: both rows unconditionally blocked with `cc_joja_route_commitment_unavailable`
   - Direct binding: earn_money, raise_friendships, complete_master_angler with provenance
   - Availability gates: `AllowedNow == false`, `AllowedToday != true`, unavailable, blocked timeline, block_reasons non-empty rejected
@@ -64,7 +68,7 @@ Revised the grandpa direction daily candidate binding system per controller audi
   - Arrays cloned: `Parameters`, `GateReasons`, `BlockReasons`, `TimelineReasons` independently allocated
   - Provenance: existing names preserved; new ones added exactly once; duplicate provenance names rejected
   - Metadata sourced from adapter output, not catalog
-  - `MissingTransparentFields` and `MissingCapabilities` non-empty for all 9 blocked rows
+  - `MissingTransparentFields` and `MissingCapabilities` non-empty for all 8 blocked rows
 
 ### 11. Backend Endpoint Cleaned
 - `POST /api/v1/planner/grandpa-direction-binding/bind`
@@ -83,7 +87,7 @@ Revised the grandpa direction daily candidate binding system per controller audi
 
 ### Core Catalog (`GrandpaDirectionCatalog.cs`)
 - **`GrandpaDirectionCatalogEntry`**: policy-only binding metadata
-- **`GrandpaDirectionCatalog`**: 12-entry static catalog with 3 direct (empty required fields/capabilities) and 9 blocked (populated planned gaps)
+- **`GrandpaDirectionCatalog`**: 12-entry static catalog with 4 direct and 8 blocked planned gaps
 
 ### Core Binder (`GrandpaDirectionDailyCandidateBinding.cs`)
 - Accepts `(request, snapshot?)` -- nullable for fail-closed test
@@ -114,7 +118,7 @@ Revised the grandpa direction daily candidate binding system per controller audi
 | earn_money | Yes | sell_or_ship_inventory_item | Active |
 | raise_friendships | Yes | social_talk_current, social_gift_current | Active |
 | complete_master_angler | Yes | catch_fish | Active |
-| complete_full_shipment | No | - | Blocked (planned contract gap) |
+| complete_full_shipment | Yes | ship_inventory_item_to_bin | Active with exact contribution evidence |
 | raise_skill_levels | No | - | Blocked (planned contract gap) |
 | obtain_skull_key | No | - | Blocked (planned contract gap) |
 | complete_museum_collection | No | - | Blocked (planned contract gap) |
@@ -128,5 +132,5 @@ Revised the grandpa direction daily candidate binding system per controller audi
 
 1. **State hash binding**: Backend must have the snapshot pre-ingested for the exact state_hash. Late ingest ordering is a possible production concern.
 2. **CC/Joja route commitment**: Remains unresolved because transparent state does not prove which route the player committed to. Both rows stay blocked until new transparent evidence is exported.
-3. **Planned contract gaps**: 9 of 12 directions permanently blocked until transparent fields/capabilities are exported.
-4. **No runtime verification**: Static-only; tests were added but NOT RUN. Build NOT RUN.
+3. **Planned contract gaps**: 8 of 12 directions remain blocked until their transparent candidate/compiler/executor chains are complete.
+4. **Runtime boundary**: Full shipment has native immediate runtime proof and prior delayed settlement proof; the other direct directions retain their own dedicated runtime evidence.

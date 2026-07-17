@@ -64,17 +64,18 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void OnlyThreeDirectionsHaveDirectBindingEnabled()
+    public void FourDirectionsHaveDirectBindingEnabled()
     {
         var directDirections = GrandpaDirectionCatalog.Entries
             .Where(e => e.DirectBindingEnabled)
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(3, directDirections.Length);
+        Assert.Equal(4, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
+        Assert.Contains("complete_full_shipment", directDirections);
     }
 
     [Fact]
@@ -187,22 +188,36 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksUnsupportedDirectionAsPlannedContractGap()
+    public void BindFullShipmentRejectsCandidateWithoutExactContributionEvidence()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "complete_full_shipment"
+            DirectionId = "complete_full_shipment",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "ship:unknown",
+                    OptionId = "economy.ship_items",
+                    Kind = "ship_inventory_item_to_bin",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    CanShip = true
+                }
+            }
         }, snapshot);
 
         Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("direct binding is disabled"));
+        Assert.Contains(result.BlockReasons, r => r.Contains("full_shipment_evidence_unknown"));
         Assert.Equal("blocked", result.BindingCoverageStatus);
         Assert.Empty(result.MissingTransparentFields);
         Assert.NotEmpty(result.CoveredTransparentFields);
-        Assert.NotEmpty(result.MissingCapabilities);
+        Assert.Empty(result.MissingCapabilities);
     }
 
     [Fact]
@@ -1547,11 +1562,10 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindNineNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
+    public void BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
     {
         var blockedDirections = new[]
         {
-            "complete_full_shipment",
             "raise_skill_levels",
             "obtain_skull_key",
             "complete_museum_collection",
@@ -1589,14 +1603,7 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
             Assert.Equal("blocked", result.BindingStatus);
             Assert.Equal("blocked", result.BindingCoverageStatus);
             Assert.NotEmpty(result.BlockReasons);
-            if (directionId == "complete_full_shipment")
-            {
-                Assert.NotEmpty(result.CoveredTransparentFields);
-            }
-            else
-            {
-                Assert.NotEmpty(result.MissingTransparentFields);
-            }
+            Assert.NotEmpty(result.MissingTransparentFields);
             Assert.NotEmpty(result.MissingCapabilities);
         }
     }

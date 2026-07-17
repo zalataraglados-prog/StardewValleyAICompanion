@@ -1,114 +1,22 @@
-# test-results.txt - Grandpa Direction Daily Candidate Binding (Final)
+Grandpa direction daily candidate binding verification
+Date: 2026-07-17
 
-## Status: TESTS NOT RUN, BUILD NOT RUN
+Focused command:
+dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBindingTests|FullyQualifiedName~FullShipmentContributionTests" --no-restore
+Result: PASS, 103/103
 
-No test or build was authorized for this revision. Static text edits only.
+Full Core command:
+dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --no-restore
+Result: PASS, 946/946
 
-## Test Inventory
+Backend command:
+dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --no-restore
+Result: PASS, 49/49
 
-### Catalog Tests
-- [ ] CatalogHas12NonOverlappingEntries
-- [ ] CatalogEntriesArePlanPolicyOnlyNoScoreMetadata
-- [ ] OnlyThreeDirectionsHaveDirectBindingEnabled
+Runtime command:
+scripts/Invoke-RuntimeShipInventorySmoke.ps1 -SkipOvernight
+Result: PASS, immediate native shipping postcondition and pending receipt.
+Artifact: artifacts/runtime-ship-inventory-smoke/runtime-ship-inventory-smoke-20260717-171146/summary.json
 
-### State-Hash Fail-Closed Tests
-- [ ] BindRejectsEmptyStateHash
-- [ ] BindRejectsNullSnapshotWithKnownStateHash
-- [ ] BindRejectsStateHashMismatch
-
-### Rejection/Absence Tests
-- [ ] BindRejectsEmptyDirectionId
-- [ ] BindRejectsUnknownDirectionId
-- [ ] BindRejectsStaleDirectionWhenTargetAlreadyComplete
-- [ ] BindRejectsDirectionAbsentFromCandidateSetWhenTargetComplete
-
-### Blocked Direction Tests (9 non-direct-binding directions)
-- [ ] BindBlocksUnsupportedDirectionAsPlannedContractGap
-- [ ] BindBlocksRaiseSkillLevelsAsPlannedContractGap
-- [ ] BindBlocksObtainSkullKeyAsPlannedContractGap
-- [ ] BindBlocksCompleteMuseumCollectionAsPlannedContractGap
-- [ ] BindBlocksObtainRustyKeyAsPlannedContractGap
-- [ ] BindBlocksCompleteCommunityCenterWithUnresolvedRouteCommitment
-- [ ] BindBlocksCompleteJojaDevelopmentWithUnresolvedRouteCommitment
-- [ ] BindBlocksMarriageAndHouseUpgradeAsPlannedContractGap
-- [ ] BindBlocksEarnPetLoveAsPlannedContractGap
-- [ ] BindNineNonDirectDirectionsAllReturnBlockedWithPlannedRequirements
-
-### CC/Joja Unresolved Tests
-- [ ] BindCcJojaRowsAlwaysReportUnresolvedRouteCommitment
-
-### Direct Binding Tests (earn_money)
-- [ ] BindEarnMoneyNeedsSellOrShipCandidates
-- [ ] BindEarnMoneyBindsSellShipCandidatesWithProvenance
-- [ ] BindEarnMoneyDoesNotClaimGrandpaThresholdReached
-- [ ] BindEarnMoneyRejectsNonSellKinds
-- [ ] BindBlocksNonSellKindsForEarnMoney
-
-### Direct Binding Tests (raise_friendships)
-- [ ] BindRaiseFriendshipsBindsSocialCandidatesWithProvenance
-- [ ] BindRaiseFriendshipsDoesNotPromiseFriendshipPoints
-- [ ] BindHandlesGiftCandidateForRaiseFriendships
-
-### Direct Binding Tests (complete_master_angler)
-- [ ] BindCompleteMasterAnglerBindsCatchFishCandidatesWithProvenance
-- [ ] BindCompleteMasterAnglerDoesNotPromiseSpecificCatchOrAchievement
-
-### Availability Gate Tests
-- [ ] BindSkipsCandidatesWhereAllowedNowIsFalse
-- [ ] BindSkipsCandidatesWhereAllowedTodayIsNotTrue
-- [ ] BindSkipsUnavailableCandidates
-- [ ] BindSkipsBlockedCandidates
-- [ ] BindProvidesRejectionDetailForBlockedCandidate
-
-### BlockReasons Rejection Test
-- [ ] BindRejectsCandidateWithBlockReasonsEvenWhenTimelineNotBlocked
-
-### Candidate Preservation Test
-- [ ] BindPreservesCandidateIdScoreRankExpectedRewardAndActions
-
-### Readiness Tests
-- [ ] BindSingleCandidateIsReadyNotFull
-- [ ] BindHandlesMultipleCandidatesForSameDirection
-
-### Safety Tests
-- [ ] BindPreservesAllSourceCandidateFields
-- [ ] BindDoesNotOverwriteSourceParametersWithProvenance
-- [ ] BindDoesNotFabricateTileItemShopTimeEnergyQuantity
-- [ ] BindEarnMoneyCandidateBindsSourceFieldsWithoutOverwriting
-- [ ] BindClonesCandidateArraysToPreventAliasing
-
-### Provenance Tests
-- [ ] BindDoesNotIncludeDuplicateGrandpaProvenanceParams
-- [ ] BindDoesNotAddProvenanceIfAlreadyPresentOnSourceCandidate
-- [ ] BindPreservesMatchingExistingProvenance
-- [ ] BindRejectsCandidateWithConflictingProvenance
-- [ ] BindRejectsCandidateWithConflictingDirectionIdProvenance
-- [ ] BindRejectsDuplicateMatchingProvenance
-- [ ] BindRejectsDuplicateConflictingProvenance
-- [ ] BindReturnsProvenanceFieldsInResult
-- [ ] BindAuditHasProvenance
-- [ ] BindDirectionMetadataIsSourcedFromAdapterNotCatalog
-
-### Filtering Tests
-- [ ] BindBlocksCandidateWhenOptionIdNotPermitted
-- [ ] BindFarmingCandidateDoesNotMatchAnyDirectBinding
-- [ ] BindMiningCandidateDoesNotMatchEarnMoney
-- [ ] BindQuestCandidateDoesNotMatchEarnMoneyOrRaiseFriendships
-- [ ] BindPurchaseCandidateDoesNotMatchEarnMoney
-- [ ] BindCatchFishCandidateMatchesMasterAnglerButNotEarnMoney
-
-### Handoff Tests
-- [ ] BindBoundCandidateHandoffToDailyPlanCompilerDoesNotFail
-- [ ] BindRejectsStaleStateHashInSourceStateHashPreservation
-- [ ] All12DirectionsExistInCatalogAndCorrespondToAdapter
-
-## Recommended Test Commands
-
-```powershell
-dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBindingTests"
-dotnet test StardewValleyAICompanion.sln --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBinding"
-```
-
-## Build Status
-
-- NOT RUN per task constraints.
+Known build warning:
+MiningMonsterDropResolver.cs uses player.houseUpgradeLevel NetInt directly. This pre-existing SMAPI AvoidNetField warning is unrelated to the binding change.

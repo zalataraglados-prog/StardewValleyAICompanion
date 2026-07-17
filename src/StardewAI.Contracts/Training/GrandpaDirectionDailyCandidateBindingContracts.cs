@@ -94,10 +94,10 @@ namespace StardewAI.Contracts.Training
         public string Binder { get; set; } = "StardewAI.Core.Training.GrandpaDirectionDailyCandidateBinding";
 
         [JsonPropertyName("policy")]
-        public string Policy { get; set; } = "Conservative direct binding only for earn_money, raise_friendships, complete_master_angler. Other directions unconditionally blocked as planned contract gaps. No speculative field/capability checks.";
+        public string Policy { get; set; } = "Conservative direct binding for earn_money, raise_friendships, complete_master_angler, and complete_full_shipment. Full-shipment binding requires exact typed contribution evidence. Remaining directions are blocked as planned contract gaps.";
 
         [JsonPropertyName("catalog_version")]
-        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v1";
+        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v2";
 
         [JsonPropertyName("state_hash_verified")]
         public bool StateHashVerified { get; set; }

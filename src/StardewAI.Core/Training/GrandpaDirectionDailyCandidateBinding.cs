@@ -314,6 +314,12 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
+                if (!HasDirectionSpecificEvidence(request.DirectionId, candidate, out var evidenceReason))
+                {
+                    rejectionDetails.Add("candidate_direction_evidence_rejected:" + candidate.CandidateId + ":" + evidenceReason);
+                    continue;
+                }
+
                 var bound = CloneCandidate(candidate);
 
                 var expectedProvenance = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -421,6 +427,56 @@ namespace StardewAI.Core.Training
                     CcJojaRouteCommitmentResolved = false
                 }
             };
+        }
+
+        private static bool HasDirectionSpecificEvidence(
+            string directionId,
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (candidate.FullShipmentKnown != true)
+            {
+                rejectionReason = "full_shipment_evidence_unknown";
+                return false;
+            }
+
+            if (candidate.FullShipmentEligible != true)
+            {
+                rejectionReason = "full_shipment_item_ineligible";
+                return false;
+            }
+
+            if (candidate.FullShipmentCurrentShippedCount != 0)
+            {
+                rejectionReason = "full_shipment_current_shipped_count_not_zero";
+                return false;
+            }
+
+            if (candidate.FullShipmentAlreadyShipped != false)
+            {
+                rejectionReason = "full_shipment_item_already_shipped_or_unknown";
+                return false;
+            }
+
+            if (candidate.FullShipmentContributes != true)
+            {
+                rejectionReason = "full_shipment_candidate_does_not_contribute";
+                return false;
+            }
+
+            if (!candidate.CanShip)
+            {
+                rejectionReason = "full_shipment_candidate_cannot_ship";
+                return false;
+            }
+
+            return true;
         }
 
         private static DirectionMetadata SourceMetadata(CandidateDirection direction)

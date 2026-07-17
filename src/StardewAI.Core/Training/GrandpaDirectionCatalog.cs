@@ -44,12 +44,11 @@ namespace StardewAI.Core.Training
                 new[] { "fishing.catch_fish" },
                 new[] { "catch_fish" },
                 "Cannot bind catch_fish candidates because required transparent fishing fields are unavailable."),
-            CreateBlocked("complete_full_shipment",
-                "grandpa.blocked.complete_full_shipment",
-                Array.Empty<string>(),
-                new[] { "NativeShippingCompilerCapability", "NativeInputShippingExecutorCapability", "EndOfDayBasicShippedPostconditionRecorderCapability" },
-                "complete_full_shipment blocked: transparent full_shipment_progress is readable as static typed input; direct binding is disabled until native-input shipping compiler, executor, and end-of-day basicShipped update postcondition recorder exist.",
-                false,
+            CreateDirect("complete_full_shipment",
+                "grandpa.direct.complete_full_shipment",
+                new[] { "economy.ship_items" },
+                new[] { "ship_inventory_item_to_bin" },
+                "Cannot bind full-shipment candidates because exact transparent contribution evidence is unavailable.",
                 new[] { "world_progress.shipping_collection", "world_progress.full_shipment_progress" }),
             CreateBlocked("raise_skill_levels",
                 "grandpa.blocked.raise_skill_levels",
@@ -106,7 +105,8 @@ namespace StardewAI.Core.Training
             string bindingRuleId,
             string[] permittedOptionIds,
             string[] permittedCandidateKinds,
-            string blockReasonTemplate)
+            string blockReasonTemplate,
+            string[]? coveredTransparentFields = null)
         {
             return new GrandpaDirectionCatalogEntry
             {
@@ -116,6 +116,7 @@ namespace StardewAI.Core.Training
                 PermittedOptionIds = permittedOptionIds,
                 PermittedCandidateKinds = permittedCandidateKinds,
                 RequiredTransparentFields = Array.Empty<string>(),
+                CoveredTransparentFields = coveredTransparentFields ?? Array.Empty<string>(),
                 RequiredCapabilities = Array.Empty<string>(),
                 BlockReasonTemplate = blockReasonTemplate,
                 CcJojaSensitive = false

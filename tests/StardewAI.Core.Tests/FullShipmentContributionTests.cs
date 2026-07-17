@@ -803,65 +803,111 @@ public sealed class FullShipmentContributionTests
     // === Catalog and binding tests ===
 
     [Fact]
-    public void FullShipmentDirectionBlockedHasEmptyMissingTransparentFieldsAndCoveredFieldsCatalogued()
+    public void FullShipmentDirectionBindsOnlyExactContributingCandidate()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "complete_full_shipment"
+            DirectionId = "complete_full_shipment",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "ship:parsnip:0",
+                    OptionId = "economy.ship_items",
+                    Kind = "ship_inventory_item_to_bin",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    CanShip = true,
+                    FullShipmentKnown = true,
+                    FullShipmentEligible = true,
+                    FullShipmentCurrentShippedCount = 0,
+                    FullShipmentAlreadyShipped = false,
+                    FullShipmentContributes = true
+                }
+            }
         }, snapshot);
 
-        Assert.Equal("blocked", result.BindingStatus);
-        Assert.Equal("blocked", result.BindingCoverageStatus);
-
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("ready", result.BindingCoverageStatus);
+        var bound = Assert.Single(result.BoundCandidates);
+        Assert.Equal("ship:parsnip:0", bound.CandidateId);
+        Assert.Contains(bound.Parameters,
+            p => p.Name == "grandpa_direction_id" && p.Value == "complete_full_shipment");
         Assert.Empty(result.MissingTransparentFields);
-
+        Assert.Empty(result.MissingCapabilities);
         Assert.Contains("world_progress.shipping_collection", result.CoveredTransparentFields);
         Assert.Contains("world_progress.full_shipment_progress", result.CoveredTransparentFields);
-
-        Assert.Contains("NativeShippingCompilerCapability", result.MissingCapabilities);
-        Assert.Contains("NativeInputShippingExecutorCapability", result.MissingCapabilities);
-        Assert.Contains("EndOfDayBasicShippedPostconditionRecorderCapability", result.MissingCapabilities);
-
-        Assert.DoesNotContain(result.BlockReasons, r => r.Contains("shipping_collection is missing"));
     }
 
     [Fact]
-    public void CatalogCompleteFullShipmentEntryHasCoveredTransparentFieldsAndHonestBlocker()
+    public void FullShipmentDirectionRejectsAlreadyShippedCandidateEvenWhenContributionFlagConflicts()
+    {
+        var snapshot = GrandpaSnapshot();
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_full_shipment",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "ship:parsnip:already-shipped",
+                    OptionId = "economy.ship_items",
+                    Kind = "ship_inventory_item_to_bin",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    CanShip = true,
+                    FullShipmentKnown = true,
+                    FullShipmentEligible = true,
+                    FullShipmentCurrentShippedCount = 1,
+                    FullShipmentAlreadyShipped = true,
+                    FullShipmentContributes = true
+                }
+            }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Empty(result.BoundCandidates);
+        Assert.Contains(result.BlockReasons,
+            reason => reason.Contains("full_shipment_current_shipped_count_not_zero", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CatalogCompleteFullShipmentEntryIsDirectAndKeepsTransparentCoverage()
     {
         var entry = GrandpaDirectionCatalog.Entries
             .First(e => e.DirectionId == "complete_full_shipment");
 
-        Assert.False(entry.DirectBindingEnabled);
-        Assert.Equal("grandpa.blocked.complete_full_shipment", entry.BindingRuleId);
-
+        Assert.True(entry.DirectBindingEnabled);
+        Assert.Equal("grandpa.direct.complete_full_shipment", entry.BindingRuleId);
+        Assert.Equal(new[] { "economy.ship_items" }, entry.PermittedOptionIds);
+        Assert.Equal(new[] { "ship_inventory_item_to_bin" }, entry.PermittedCandidateKinds);
         Assert.Empty(entry.RequiredTransparentFields);
-
         Assert.Contains("world_progress.shipping_collection", entry.CoveredTransparentFields);
         Assert.Contains("world_progress.full_shipment_progress", entry.CoveredTransparentFields);
         Assert.Equal(2, entry.CoveredTransparentFields.Length);
-
-        Assert.Contains("NativeShippingCompilerCapability", entry.RequiredCapabilities);
-        Assert.Contains("NativeInputShippingExecutorCapability", entry.RequiredCapabilities);
-        Assert.Contains("EndOfDayBasicShippedPostconditionRecorderCapability", entry.RequiredCapabilities);
-
-        Assert.Contains("static typed input", entry.BlockReasonTemplate);
-        Assert.DoesNotContain(entry.BlockReasonTemplate, "shipped-items-tracking data");
+        Assert.Empty(entry.RequiredCapabilities);
+        Assert.Contains("exact transparent contribution evidence", entry.BlockReasonTemplate);
     }
 
     [Fact]
-    public void CatalogHas12EntriesAndFullShipmentIsBlocked()
+    public void CatalogHas12EntriesAndFullShipmentIsDirect()
     {
         var entries = GrandpaDirectionCatalog.Entries;
         Assert.Equal(12, entries.Length);
 
         var fullShipment = entries.Single(e => e.DirectionId == "complete_full_shipment");
-        Assert.False(fullShipment.DirectBindingEnabled);
+        Assert.True(fullShipment.DirectBindingEnabled);
         Assert.Empty(fullShipment.RequiredTransparentFields);
         Assert.NotEmpty(fullShipment.CoveredTransparentFields);
-        Assert.NotEmpty(fullShipment.RequiredCapabilities);
+        Assert.Empty(fullShipment.RequiredCapabilities);
     }
 
     [Fact]
