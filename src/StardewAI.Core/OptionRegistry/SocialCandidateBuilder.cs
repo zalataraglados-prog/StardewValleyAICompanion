@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
 {
@@ -746,43 +747,6 @@ namespace StardewAI.Core.OptionRegistry
             return candidate.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))?.Value ?? string.Empty;
         }
 
-        private static string? ReadParameter(SmallModelAction action, string name)
-        {
-            return action.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))?.Value;
-        }
-
-        private static JsonElement? ReadStateFieldValue(SnapshotEnvelope snapshot, string section, string property)
-        {
-            return snapshot.State.TryGetValue(section, out var sectionValue) &&
-                sectionValue.ValueKind == JsonValueKind.Object &&
-                sectionValue.TryGetProperty(property, out var field) &&
-                field.TryGetProperty("value", out var value)
-                ? value
-                : null;
-        }
-
-        private static string ReadStateFieldString(SnapshotEnvelope snapshot, string section, string property)
-        {
-            var value = ReadStateFieldValue(snapshot, section, property);
-            return value.HasValue && value.Value.ValueKind == JsonValueKind.String ? value.Value.GetString() ?? string.Empty : string.Empty;
-        }
-
-        private static int ReadStateFieldInt(SnapshotEnvelope snapshot, string section, string property)
-        {
-            var value = ReadStateFieldValue(snapshot, section, property);
-            return value.HasValue && value.Value.TryGetInt32(out var result) ? result : 0;
-        }
-
-        private static int ReadInt(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.TryGetInt32(out var result) ? result : 0;
-        }
-
-        private static string ReadString(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
-        }
-
         private static bool TryReadBool(JsonElement item, string property, out bool result)
         {
             if (item.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False)
@@ -794,25 +758,9 @@ namespace StardewAI.Core.OptionRegistry
             return false;
         }
 
-        private static bool ReadBool(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True;
-        }
-
         private static bool ReadBool(JsonElement? item, string property)
         {
-            return item.HasValue && ReadBool(item.Value, property);
-        }
-
-        private static bool ReadStateFieldBool(SnapshotEnvelope snapshot, string section, string property)
-        {
-            var value = ReadStateFieldValue(snapshot, section, property);
-            return value.HasValue && value.Value.ValueKind == JsonValueKind.True;
-        }
-
-        private static SmallModelActionParameter Parameter(string name, string value)
-        {
-            return new SmallModelActionParameter { Name = name, Value = value ?? string.Empty };
+            return item.HasValue && Infrastructure.SnapshotValueReader.ReadBool(item.Value, property);
         }
 
         private sealed class CandidateTile

@@ -33,8 +33,8 @@ This means a plan can be `feasible` while execution remains disabled.
 Python backend status:
 
 ```text
-backend/ is deprecated.
-src/StardewAI.Backend is the active transport layer.
+The retired Python `backend/` prototype has been removed from the working tree and remains available through Git history.
+`src/StardewAI.Backend` is the only active transport layer.
 ```
 
 Target projects:

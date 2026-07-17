@@ -6,11 +6,15 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeShippingSourceGuardTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string RuntimeHarnessSource = File.ReadAllText(
+        FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+    private static readonly string ShippingSmokeSource = File.ReadAllText(
+        FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
 
     [Fact]
     public void ShipExecutorSourceHasDayStartedSubscription()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("DayStarted += OnDayStartedForShippingReceipts", source, StringComparison.Ordinal);
         Assert.Contains("private void OnDayStartedForShippingReceipts", source, StringComparison.Ordinal);
         Assert.Contains("ReconcileShippingReceipts", source, StringComparison.Ordinal);
@@ -19,7 +23,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSourceHasReceiptLifecycleMethods()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("basicShipped_incremented_by_expected_quantity", source, StringComparison.Ordinal);
         Assert.Contains("basicShipped_did_not_increment", source, StringComparison.Ordinal);
         Assert.Contains("\"pending\"", source, StringComparison.Ordinal);
@@ -33,7 +37,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasNoSetCursorPositionReflection()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.DoesNotContain("SetCursorPosition", source, StringComparison.Ordinal);
         Assert.Contains("Game1.setMousePosition", source, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseX(", source, StringComparison.Ordinal);
@@ -43,7 +47,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasCursorPositionVerification()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("cursor_position_mismatch", source, StringComparison.Ordinal);
         Assert.Contains("active.PositionTarget.X", source, StringComparison.Ordinal);
         Assert.Contains("active.PositionTarget.Y", source, StringComparison.Ordinal);
@@ -54,7 +58,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasExplicitPerClickPhases()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("ShipPhase.BinPosition", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinPositionVerify", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinPress", source, StringComparison.Ordinal);
@@ -81,7 +85,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasReleaseRetryAndFailureCheck()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("ReleaseRetries", source, StringComparison.Ordinal);
         Assert.Contains("ReleaseShipRightButton", source, StringComparison.Ordinal);
         Assert.Contains("_failed_after_retries", source, StringComparison.Ordinal);
@@ -91,7 +95,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorRequiresStandTileBothFieldsAndExactEquality()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
         Assert.Contains("stand_tile_required", startSlice, StringComparison.Ordinal);
         Assert.Contains("player_not_on_exact_stand_tile", startSlice, StringComparison.Ordinal);
@@ -102,7 +106,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHandlesNullSlotWhenStackWasOne()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var slotPhaseSlice = Slice(source, "private void TickShipSlotClickPhase", "private void TickShipVerifyAndClose");
         Assert.Contains("BeforeSlotStack > 1", slotPhaseSlice, StringComparison.Ordinal);
         Assert.Contains("slotItem is null", slotPhaseSlice, StringComparison.Ordinal);
@@ -112,7 +116,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasAtomicReceiptWrite()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var receiptSlice = Slice(source, "private string WriteShipPendingReceipt", "private static string SanitizeFileName");
         Assert.Contains(".tmp", receiptSlice, StringComparison.Ordinal);
         Assert.Contains("File.Move", receiptSlice, StringComparison.Ordinal);
@@ -122,7 +126,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorFailClosedOnEmptyReceiptPath()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var verifySlice = Slice(source, "private void TickShipVerifyAndClose", "private void ApplyShipPhaseInput");
         Assert.Contains("receipt_write_failed", verifySlice, StringComparison.Ordinal);
         Assert.Contains("string.IsNullOrWhiteSpace(receiptPath)", verifySlice, StringComparison.Ordinal);
@@ -144,7 +148,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptPollsExactReceiptByPathAndVerifiesRunId()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("-LiteralPath $receiptPath -PathType Leaf", script, StringComparison.Ordinal);
         Assert.Contains("receipt.run_id -ne $RunId", script, StringComparison.Ordinal);
         Assert.Contains("receipt.queue_id", script, StringComparison.Ordinal);
@@ -156,7 +160,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorProductionRegionHasNoProhibitedMutationCalls()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var shipSlice = Slice(source, "private void StartShipInventoryItemToBin", "private static string ShipRequestedEffect");
         Assert.DoesNotContain("Farm.shipItem", shipSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("shipItem(", shipSlice, StringComparison.Ordinal);
@@ -176,7 +180,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSourceContainsShippingBinDoActionPath()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("Game1.setMousePosition", source, StringComparison.Ordinal);
         Assert.Contains("OverrideButton", source, StringComparison.Ordinal);
         Assert.Contains("SButton.MouseRight", source, StringComparison.Ordinal);
@@ -185,7 +189,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorUsesUnqualifiedItemIdForBasicShipped()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
         Assert.Contains("slotItem.ItemId", startSlice, StringComparison.Ordinal);
         Assert.Contains("GetBasicShippedCount(Game1.player, unqualifiedItemId)", startSlice, StringComparison.Ordinal);
@@ -194,7 +198,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasExactTargetTileResolution()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
         Assert.Contains("no_completed_bin_at_target_tile", startSlice, StringComparison.Ordinal);
         Assert.Contains("target_tile_required", startSlice, StringComparison.Ordinal);
@@ -206,7 +210,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipReceiptContainsAllRequiredFields()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var receiptSlice = Slice(source, "private sealed class ShippingReceipt", "internal static class SavesFolderPatch");
         Assert.Contains("ReceiptId", receiptSlice, StringComparison.Ordinal);
         Assert.Contains("RunId", receiptSlice, StringComparison.Ordinal);
@@ -224,7 +228,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipReceiptIdConstructionIncludesRequestNonce()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var receiptSlice = Slice(source, "private string WriteShipPendingReceipt", "private static string SanitizeFileName");
         Assert.Contains("safeNonce", receiptSlice, StringComparison.Ordinal);
         Assert.Contains("receiptFileName", receiptSlice, StringComparison.Ordinal);
@@ -236,7 +240,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasRequestNonceValidation()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
         Assert.Contains("request_nonce_required", startSlice, StringComparison.Ordinal);
         Assert.Contains("string.IsNullOrWhiteSpace(pending.Request.RequestNonce)", startSlice, StringComparison.Ordinal);
@@ -245,7 +249,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorReconciliationHandlesTerminalUnappendedReceipts()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var reconcileSlice = Slice(source, "private void ReconcileShippingReceipts", "private static void AtomicWriteReceipt");
         Assert.Contains("isTerminal", reconcileSlice, StringComparison.Ordinal);
         Assert.Contains("!receipt.FeedbackAppended", reconcileSlice, StringComparison.Ordinal);
@@ -255,7 +259,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorAppendDelayedFeedbackIsIdempotentByReceiptId()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var feedbackSlice = Slice(source, "private bool AppendDelayedFeedback", "private void StartShipInventoryItemToBin");
         Assert.Contains("File.ReadAllLines", feedbackSlice, StringComparison.Ordinal);
         Assert.Contains("receipt_id", feedbackSlice, StringComparison.Ordinal);
@@ -268,7 +272,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasRequestNonceInReceiptCreation()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var receiptSlice = Slice(source, "private string WriteShipPendingReceipt", "private static string SanitizeFileName");
         Assert.Contains("RequestNonce", receiptSlice, StringComparison.Ordinal);
         Assert.Contains("active.Pending.Request.RequestNonce", receiptSlice, StringComparison.Ordinal);
@@ -277,7 +281,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasSameDateGuardInSettlementHelper()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var helperSlice = Slice(source, "private void TrySettleActiveRunPendingShippingReceipts", "private void StartShipInventoryItemToBin");
         Assert.Contains("SourceDate", helperSlice, StringComparison.Ordinal);
         Assert.Contains("currentGameDate", helperSlice, StringComparison.Ordinal);
@@ -287,7 +291,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSettlementHelperAccumulatesPerReceiptErrors()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var helperSlice = Slice(source, "private void TrySettleActiveRunPendingShippingReceipts", "private void StartShipInventoryItemToBin");
         Assert.Contains("new List<Exception>()", helperSlice, StringComparison.Ordinal);
         Assert.Contains("errors.Add(ex)", helperSlice, StringComparison.Ordinal);
@@ -297,7 +301,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasAtomicReceiptWriteMethod()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("private static void AtomicWriteReceipt", source, StringComparison.Ordinal);
         Assert.Contains("File.Move(tempPath, receiptPath", source, StringComparison.Ordinal);
     }
@@ -305,7 +309,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasFeedbackAppendedGuard()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var feedbackSlice = Slice(source, "private bool AppendDelayedFeedback", "private void StartShipInventoryItemToBin");
         Assert.Contains("FeedbackAppended", feedbackSlice, StringComparison.Ordinal);
         Assert.Contains("if (receipt.FeedbackAppended) return true;", feedbackSlice, StringComparison.Ordinal);
@@ -314,7 +318,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorReconciliationOnlySetsFeedbackAppendedOnAppendSuccess()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var reconcileSlice = Slice(source, "private void ReconcileShippingReceipts", "private static void AtomicWriteReceipt");
         Assert.Contains("if (AppendDelayedFeedback(receipt))", reconcileSlice, StringComparison.Ordinal);
         var appendCalls = CountOccurrences(reconcileSlice, "if (AppendDelayedFeedback(receipt))");
@@ -324,14 +328,14 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorAppendDelayedFeedbackReturnsBool()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("private bool AppendDelayedFeedback", source, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ShipExecutorResolveReceiptDirectoryFailClosedInTrainingMode()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var resolveSlice = Slice(source, "private static string ResolveReceiptDirectory", "private void AppendDelayedFeedback");
         Assert.Contains("STARDEWAI_TRAINING_MODE", resolveSlice, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_TRAINING_OUTPUT_DIR is required", resolveSlice, StringComparison.Ordinal);
@@ -344,7 +348,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptHasPreLaunchCollisionGuard()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("Get-NetTCPConnection", script, StringComparison.Ordinal);
         Assert.Contains("Port $port is already listening", script, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name", script, StringComparison.Ordinal);
@@ -354,7 +358,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptPassesOnlyOnCompletedStatus()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("-ne \"completed\"", script, StringComparison.Ordinal);
         Assert.Contains("non-completed status", script, StringComparison.Ordinal);
         Assert.Contains("\"failed\"", script, StringComparison.Ordinal);
@@ -363,7 +367,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptHasFullReceiptCorrelation()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("receipt.request_nonce -ne", script, StringComparison.Ordinal);
         Assert.Contains("receipt.queue_item_id -ne", script, StringComparison.Ordinal);
         Assert.Contains("receipt.quantity -ne", script, StringComparison.Ordinal);
@@ -376,7 +380,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptChecksNonceInReceiptFilename()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("Split-Path -Leaf", script, StringComparison.Ordinal);
         Assert.Contains("receiptFileName", script, StringComparison.Ordinal);
         Assert.Contains("shipRequest.request_nonce", script, StringComparison.Ordinal);
@@ -386,7 +390,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorReconciliationWritesWithAtomicMethod()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var reconcileSlice = Slice(source, "private void ReconcileShippingReceipts", "private static void AtomicWriteReceipt");
         Assert.Contains("AtomicWriteReceipt", reconcileSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("File.WriteAllText", reconcileSlice, StringComparison.Ordinal);
@@ -406,7 +410,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptSelectsFarmWarpFromTransparentWarps()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("target_name -eq \"Farm\"", script, StringComparison.Ordinal);
         Assert.Contains("current_location.identity", script, StringComparison.Ordinal);
         Assert.Contains("current_location.warps", script, StringComparison.Ordinal);
@@ -418,7 +422,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptUsesProductionTraverseConnectorForPreflight()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("executor.traverse_connector", script, StringComparison.Ordinal);
         Assert.Contains("connector_kind = \"warp\"", script, StringComparison.Ordinal);
         Assert.Contains("expected_target_location = \"Farm\"", script, StringComparison.Ordinal);
@@ -431,7 +435,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesPostRouteFarmLocation()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("post-warp location is not Farm", script, StringComparison.Ordinal);
         Assert.Contains("expected Farm after warp", script, StringComparison.Ordinal);
         Assert.Contains("$afterLocationName -ne \"Farm\"", script, StringComparison.Ordinal);
@@ -440,7 +444,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptUsesPostRouteStateHashForFixture()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("$connectorSnapshot.state_hash", script, StringComparison.Ordinal);
         Assert.Contains("$connectorSnapshot = $initialSnapshot", script, StringComparison.Ordinal);
     }
@@ -448,8 +452,8 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void RuntimeHarnessHasNoDirectMovementCompatibilitySwitch()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var script = ShippingSmokeSource;
+        var source = RuntimeHarnessSource;
         var config = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "HarnessConfig.cs"));
 
         Assert.DoesNotContain("STARDEWAI_USE_DIRECT_VALIDATED_MOVEMENT", script, StringComparison.Ordinal);
@@ -462,7 +466,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasDeferredCursorVerificationPhases()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("BinPositionVerify", source, StringComparison.Ordinal);
         Assert.Contains("SlotPositionVerify", source, StringComparison.Ordinal);
         Assert.Contains("PositionVerified", source, StringComparison.Ordinal);
@@ -471,7 +475,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSeparatesCursorDispatchFromVerification()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("Game1.setMousePosition(pos.X, pos.Y, ui_scale: false)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseX(ui_scale: false)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseY(ui_scale: false)", source, StringComparison.Ordinal);
@@ -481,7 +485,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorUsesUiScaleForSlotCursorPosition()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("Game1.setMousePosition(slotPos.Value.X, slotPos.Value.Y, ui_scale: true)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseX(ui_scale: true)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseY(ui_scale: true)", source, StringComparison.Ordinal);
@@ -490,7 +494,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorBinPhaseAdvancementRequiresPositionVerified()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var binOpenSlice = Slice(source, "private void TickShipBinOpenPhase", "private void TickShipSlotClickPhase");
         Assert.Contains("active.PositionSet && !active.PositionVerified", binOpenSlice, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinPositionVerify", binOpenSlice, StringComparison.Ordinal);
@@ -501,7 +505,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSlotPhaseAdvancementRequiresPositionVerified()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var slotClickSlice = Slice(source, "private void TickShipSlotClickPhase", "private void TickShipVerifyAndClose");
         Assert.Contains("active.PositionSet && !active.PositionVerified", slotClickSlice, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.SlotPositionVerify", slotClickSlice, StringComparison.Ordinal);
@@ -512,7 +516,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorResetsPositionVerifiedOnBinToSlotTransition()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var binOpenSlice = Slice(source, "private void TickShipBinOpenPhase", "private void TickShipSlotClickPhase");
         Assert.Contains("active.PositionVerified = false", binOpenSlice, StringComparison.Ordinal);
     }
@@ -551,7 +555,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorHasBuildingDoorInActionConnectorKinds()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("building_door", source, StringComparison.Ordinal);
         Assert.Contains("ValidateBuildingDoorConnector", source, StringComparison.Ordinal);
     }
@@ -559,7 +563,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorBuildingDoorUsesNativeCheckActionNotDirectWarp()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var doorSlice = Slice(source, "private bool TryTriggerConnectorAction", "private static int? ParseIntPart");
         Assert.Contains("Game1.currentLocation.checkAction", doorSlice, StringComparison.Ordinal);
         Assert.Contains("ValidateBuildingDoorConnector", doorSlice, StringComparison.Ordinal);
@@ -586,7 +590,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ConnectorTraversalHasNoDirectLocationMutationPath()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var connectorSlice = Slice(source, "private void StartTileMove", "private void StartSleep");
         Assert.DoesNotContain("DirectSetPlayerLocation", connectorSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("ExecuteDirectConnectorTraversal", connectorSlice, StringComparison.Ordinal);
@@ -600,7 +604,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptResolvesFarmhouseBuildingDoorConnector()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("has_door_access_resolved", script, StringComparison.Ordinal);
         Assert.Contains("human_door_absolute_tile_x", script, StringComparison.Ordinal);
         Assert.Contains("indoor_location_id", script, StringComparison.Ordinal);
@@ -612,7 +616,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesHomeLocationAfterConnector()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("post-connector location is not Farmhouse interior", script, StringComparison.Ordinal);
         Assert.Contains("expected $homeIndoorId", script, StringComparison.Ordinal);
         Assert.Contains("$homeLocationName -ne $homeIndoorId", script, StringComparison.Ordinal);
@@ -621,7 +625,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptSleepUsesPostHomeConnectorStateHash()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("$homeConnectorSnapshot.state_hash", script, StringComparison.Ordinal);
         Assert.Contains("runtime-ship-inventory-smoke.sleep", script, StringComparison.Ordinal);
     }
@@ -629,7 +633,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSettlementHelperScopedToActiveRunId()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var helperSlice = Slice(source, "private void TrySettleActiveRunPendingShippingReceipts", "private void StartShipInventoryItemToBin");
         Assert.Contains("STARDEWAI_TRAINING_RUN_ID", helperSlice, StringComparison.Ordinal);
         Assert.Contains("activeRunId", helperSlice, StringComparison.Ordinal);
@@ -644,7 +648,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorReconciliationScopesTimeoutToActiveRunId()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var reconcileSlice = Slice(source, "private void ReconcileShippingReceipts", "private static void AtomicWriteReceipt");
         Assert.Contains("STARDEWAI_TRAINING_RUN_ID", reconcileSlice, StringComparison.Ordinal);
         Assert.Contains("activeRunId", reconcileSlice, StringComparison.Ordinal);
@@ -658,7 +662,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void BuildingDoorStandTileEnforcesExactDecompileBackedTile()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var startSlice = Slice(source, "private void StartTileMove", "private void TickTileMove");
         Assert.Contains("connector_building_door_building_not_found", startSlice, StringComparison.Ordinal);
         Assert.Contains("connector_building_door_stand_tile_blocked", startSlice, StringComparison.Ordinal);
@@ -668,7 +672,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void BuildingDoorTriggerVerifiesExactStandTileBeforeAction()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var validationSlice = Slice(source, "private bool ValidateBuildingDoorConnector", "private static Point? FindConnectorActionStandTile");
         Assert.Contains("building_door_player_not_on_stand_tile", validationSlice, StringComparison.Ordinal);
         Assert.Contains("actionTile.X, actionTile.Y + 1", validationSlice, StringComparison.Ordinal);
@@ -681,7 +685,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void BuildingDoorCheckActionReturnValueChecked()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var triggerSlice = Slice(source, "private bool TryTriggerConnectorAction", "private static int? ParseIntPart");
         Assert.Contains("var handled = Game1.currentLocation.checkAction", triggerSlice, StringComparison.Ordinal);
         Assert.Contains("connector_action_not_handled", triggerSlice, StringComparison.Ordinal);
@@ -717,7 +721,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptUsesRouteGraphForFarmhouseEdge()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("locations.route_graph", script, StringComparison.Ordinal);
         Assert.Contains("route_graph Farmhouse edge disagrees", script, StringComparison.Ordinal);
         Assert.Contains("no resolved Farmhouse building_door edge in route_graph", script, StringComparison.Ordinal);
@@ -727,7 +731,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptCrossChecksRouteGraphAgainstFarmBuildings()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("route_graph Farmhouse edge disagrees with farm.buildings transparent row", script, StringComparison.Ordinal);
         Assert.Contains("graph_door", script, StringComparison.Ordinal);
         Assert.Contains("building_door", script, StringComparison.Ordinal);
@@ -738,7 +742,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptUsesExactLocationEqualityOnly()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.DoesNotContain("StartsWith", script, StringComparison.Ordinal);
         Assert.Contains("$homeLocationName -ne $homeIndoorId", script, StringComparison.Ordinal);
     }
@@ -746,7 +750,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptCrossCheckFailsClosedWhenFarmBuildingsAbsent()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("farm.buildings data unavailable", script, StringComparison.Ordinal);
         Assert.Contains("cannot cross-check route_graph Farmhouse edge", script, StringComparison.Ordinal);
     }
@@ -754,7 +758,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptCrossCheckFailsClosedOnNonSingleFarmhouseCount()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("expected exactly one resolved Farmhouse row", script, StringComparison.Ordinal);
         Assert.Contains("resolved_farmhouse_count", script, StringComparison.Ordinal);
     }
@@ -762,7 +766,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesPlayerTileEqualsHomeArrivalTileAfterConnector()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.Contains("post-connector player tile does not match expected arrival tile", script, StringComparison.Ordinal);
         Assert.Contains("$homeConnectorSnapshot.state.player.tile_x.value", script, StringComparison.Ordinal);
         Assert.Contains("$homeConnectorSnapshot.state.player.tile_y.value", script, StringComparison.Ordinal);
@@ -781,7 +785,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorHasShipSummaryClosePhaseEnum()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("ShipSummaryClosePhase", source, StringComparison.Ordinal);
         Assert.Contains("WaitReady", source, StringComparison.Ordinal);
         Assert.Contains("PositionVerify", source, StringComparison.Ordinal);
@@ -791,7 +795,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuUsesTickStateMachine()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void ApplyShipSummaryInput");
         Assert.Contains("case ShipSummaryClosePhase.WaitReady", summarySlice, StringComparison.Ordinal);
         Assert.Contains("case ShipSummaryClosePhase.Position", summarySlice, StringComparison.Ordinal);
@@ -804,7 +808,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuChecksCanReceiveInputAndCurrentPage()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void ApplyShipSummaryInput");
         Assert.Contains("CanReceiveInput", summarySlice, StringComparison.Ordinal);
         Assert.Contains("currentPage", summarySlice, StringComparison.Ordinal);
@@ -818,7 +822,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuUsesUiScaleCursorPosition()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
         Assert.Contains("Game1.setMousePosition(target.X, target.Y, ui_scale: true)", inputSlice, StringComparison.Ordinal);
         Assert.Contains("Game1.getMouseX(ui_scale: true)", inputSlice, StringComparison.Ordinal);
@@ -836,7 +840,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuHasDeferredCursorVerification()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void ApplyShipSummaryInput");
         Assert.Contains("!sleep.SummaryPositionVerified", summarySlice, StringComparison.Ordinal);
         Assert.Contains("ShipSummaryClosePhase.PositionVerify", summarySlice, StringComparison.Ordinal);
@@ -846,7 +850,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuHasCursorMismatchCheck()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
         Assert.Contains("shipping_summary_cursor_position_mismatch", inputSlice, StringComparison.Ordinal);
         Assert.Contains("Math.Abs(ax - sleep.SummaryPositionTarget.X)", inputSlice, StringComparison.Ordinal);
@@ -856,7 +860,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuHasPressReleasePhases()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
         Assert.Contains("ShipSummaryClosePhase.Press", inputSlice, StringComparison.Ordinal);
         Assert.Contains("ShipSummaryClosePhase.Release", inputSlice, StringComparison.Ordinal);
@@ -868,7 +872,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuUsesMouseLeftNotRight()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var inputSlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
         Assert.Contains("TryApplySmapiLeftButtonOverride", inputSlice, StringComparison.Ordinal);
         Assert.DoesNotContain("SButton.MouseRight", inputSlice, StringComparison.Ordinal);
@@ -877,7 +881,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuHasNoProhibitedClosureCalls()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void CompleteSleep");
         Assert.DoesNotContain("receiveLeftClick", summarySlice, StringComparison.Ordinal);
         Assert.DoesNotContain("okClicked", summarySlice, StringComparison.Ordinal);
@@ -893,7 +897,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuUsesDirectTypedAccessNotReflection()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void TickShipSummaryClosePhase", "private void CompleteSleep");
         Assert.Contains("ShippingMenu shippingMenu", summarySlice, StringComparison.Ordinal);
         Assert.Contains("shippingMenu.okButton", summarySlice, StringComparison.Ordinal);
@@ -905,7 +909,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuCompletionOnlyAfterMenuNull()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("menu is null", source, StringComparison.Ordinal);
         Assert.Contains("\"post_sleep_menu_closed\"", source, StringComparison.Ordinal);
     }
@@ -913,7 +917,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorShippingMenuReleasesLeftButtonOnAllPaths()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var summarySlice = Slice(source, "private void ApplyShipSummaryInput", "private void CompleteSleep");
         Assert.Contains("ReleaseSmapiLeftButtonOverride()", summarySlice, StringComparison.Ordinal);
     }
@@ -921,7 +925,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorOnUpdateTickingHasShipSummaryInputDispatch()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var tickingSlice = Slice(source, "private void OnExecutorUpdateTicking", "private void StartTileMove");
         Assert.Contains("ApplyShipSummaryInput", tickingSlice, StringComparison.Ordinal);
         Assert.Contains("WaitForPostSleepStable", tickingSlice, StringComparison.Ordinal);
@@ -933,7 +937,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorNonShippingMenuPostSleepFailsClosed()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("post_sleep_menu_not_closed", source, StringComparison.Ordinal);
         Assert.Contains("PostSleepWaitTicks", source, StringComparison.Ordinal);
         Assert.Contains("PostSleepWaitTicks > 600", source, StringComparison.Ordinal);
@@ -942,7 +946,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SleepExecutorCompleteSleepAndBlockedSleepReleaseLeftButton()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("private void CompleteSleep(ActiveSleep sleep", source, StringComparison.Ordinal);
         Assert.Contains("private void CompleteBlockedSleep(ActiveSleep sleep", source, StringComparison.Ordinal);
         var completeSlice = Slice(source, "private void CompleteSleep(ActiveSleep sleep", "private void CompleteBlockedSleep(ActiveSleep sleep");
@@ -954,7 +958,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SettlementHelperIsCalledFromBothDayStartedAndPostSleep()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var dayStartedSlice = Slice(source, "private void OnDayStartedForShippingReceipts", "private void ReconcileShippingReceipts");
         Assert.Contains("TrySettleActiveRunPendingShippingReceipts()", dayStartedSlice, StringComparison.Ordinal);
 
@@ -968,7 +972,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void PostSleepSettlementOccursAfterMenuNullAndBeforeCompleteSleep()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var tickSleepSlice = Slice(source, "private void TickSleep", "private bool TickSleepMoveToStand");
 
         var menuNullIdx = tickSleepSlice.IndexOf("menu is null", StringComparison.Ordinal);
@@ -991,7 +995,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void SmokeScriptNeverWritesReceiptStatusMutation()
     {
-        var script = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+        var script = ShippingSmokeSource;
         Assert.DoesNotContain("AtomicWriteReceipt", script, StringComparison.Ordinal);
         Assert.DoesNotContain("WriteAllText", script, StringComparison.Ordinal);
         Assert.DoesNotContain("Out-File", script, StringComparison.Ordinal);
@@ -1004,14 +1008,14 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ShipExecutorSettlementHelperExistsWithExactName()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         Assert.Contains("private void TrySettleActiveRunPendingShippingReceipts", source, StringComparison.Ordinal);
     }
 
     [Fact]
     public void SleepExecutorActiveSleepHasSummaryPhaseFields()
     {
-        var source = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var source = RuntimeHarnessSource;
         var sleepClassSlice = Slice(source, "private sealed class ActiveSleep", "private enum ShipSummaryClosePhase");
         Assert.Contains("SummaryPhase", sleepClassSlice, StringComparison.Ordinal);
         Assert.Contains("SummaryPositionSet", sleepClassSlice, StringComparison.Ordinal);

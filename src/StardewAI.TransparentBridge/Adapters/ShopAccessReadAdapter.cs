@@ -1405,30 +1405,10 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
         var rawShopId = Part(parts, 1);
         if (string.Equals(parts[0], "Buy", StringComparison.OrdinalIgnoreCase))
         {
-            return ResolveLegacyBuyShopId(location, rawShopId);
+            return ShopIdResolver.ResolveLegacyBuy(location, rawShopId);
         }
 
         return rawShopId;
-    }
-
-    private static string? ResolveLegacyBuyShopId(GameLocation location, string? legacyShopId)
-    {
-        if (string.Equals(legacyShopId, "Fish", StringComparison.OrdinalIgnoreCase))
-        {
-            return "FishShop";
-        }
-
-        if (location is SeedShop && string.Equals(legacyShopId, "General", StringComparison.OrdinalIgnoreCase))
-        {
-            return "SeedShop";
-        }
-
-        if (string.Equals(location.NameOrUniqueName, "SandyHouse", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Sandy";
-        }
-
-        return legacyShopId;
     }
 
     private static string? Part(string[] parts, int index)

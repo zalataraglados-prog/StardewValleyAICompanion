@@ -41,7 +41,7 @@ dotnet build
 dotnet test
 ```
 
-`backend/` 下的 Python FastAPI 原型已经退役，仅作为迁移参考，不再新增功能。
+早期 Python FastAPI 原型已经从工作树移除；迁移参考保留在 Git 历史中。当前后端与动作编译链仅以 C# 项目为准。
 
 SMAPI 运行后，Bridge 默认监听：
 

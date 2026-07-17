@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\StardewAI.Contracts\StardewAI.Contracts.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.Core\StardewAI.Core.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
+    <ProjectReference Include="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
     <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
   </ItemGroup>
 

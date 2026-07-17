@@ -1,0 +1,78 @@
+StardewAI repository cleanup review manifest
+Generated: 2026-07-17 Asia/Shanghai
+
+STATUS
+Preview only. No path in this manifest has been deleted, recycled, pruned, or unregistered.
+Every physical target below exists, is not a reparse point, and is a strict descendant of its approved parent root.
+
+APPROVED PARENT ROOT A
+I:\StardewAI-workers
+
+PHYSICAL WORKTREE TARGETS (send to Windows Recycle Bin only after post-manifest approval)
+I:\StardewAI-workers\backend-sync                  65,710 bytes
+I:\StardewAI-workers\bridge-readers                65,712 bytes
+I:\StardewAI-workers\math-local-artifact          112,800 bytes
+I:\StardewAI-workers\math-model-theory            112,798 bytes
+I:\StardewAI-workers\math-preference              112,796 bytes
+I:\StardewAI-workers\math-reward-safety           112,799 bytes
+I:\StardewAI-workers\schema-contract               65,713 bytes
+
+WORKTREE VERIFICATION
+All seven worktrees are clean.
+All seven worker branches have zero commits not already contained in main.
+No unmerged worker result will be lost by recycling these directories.
+
+APPROVED PARENT ROOT B
+I:\StardewValleyAICompanion
+
+RETIRED PYTHON/CACHE TARGETS (send to Windows Recycle Bin only after post-manifest approval)
+I:\StardewValleyAICompanion\.venv                 38,522,054 bytes
+I:\StardewValleyAICompanion\.pytest_cache             1,083 bytes
+I:\StardewValleyAICompanion\backend\__pycache__      26,411 bytes
+I:\StardewValleyAICompanion\.worker-tasks             2,140 bytes
+
+The .worker-tasks directory contains only these two ignored, completed delegation request files:
+I:\StardewValleyAICompanion\.worker-tasks\deepseek-read-flash-20260713-141426.task.md
+I:\StardewValleyAICompanion\.worker-tasks\deepseek-read-flash-20260715-132125.task.md
+
+GIT-MANAGED STALE METADATA (run git worktree prune only after physical targets are recycled)
+I:\StardewValleyAICompanion\.git\worktrees\backend-sync
+I:\StardewValleyAICompanion\.git\worktrees\bridge-readers
+I:\StardewValleyAICompanion\.git\worktrees\math-local-artifact
+I:\StardewValleyAICompanion\.git\worktrees\math-model-theory
+I:\StardewValleyAICompanion\.git\worktrees\math-preference
+I:\StardewValleyAICompanion\.git\worktrees\math-reward-safety
+I:\StardewValleyAICompanion\.git\worktrees\schema-contract
+I:\StardewValleyAICompanion\.git\worktrees\work
+I:\StardewValleyAICompanion\.git\worktrees\work1
+I:\StardewValleyAICompanion\.git\worktrees\work2
+I:\StardewValleyAICompanion\.git\worktrees\work3
+I:\StardewValleyAICompanion\.git\worktrees\work4
+I:\StardewValleyAICompanion\.git\worktrees\work5
+
+The work/work1/work2/work3/work4/work5 entries already point to nonexistent C:\Users\18236\deepseek-worker sandbox paths and are reported prunable by git.
+
+MERGED BRANCHES (delete with git branch -d only after worktree pruning)
+worker/backend-sync
+worker/bridge-readers
+worker/math-local-artifact
+worker/math-model-theory
+worker/math-preference
+worker/math-reward-safety
+worker/schema-contract
+
+EXPLICITLY EXCLUDED
+I:\StardewValleyAICompanion\artifacts
+I:\StardewValleyAICompanion\logs
+I:\StardewValleyAICompanion\full-core-test.log
+I:\StardewValleyAICompanion\test-results.txt
+
+These may contain current training, runtime, or regression evidence and are not approved cleanup targets.
+
+SAFE EXECUTION RULES
+1. Re-resolve each physical target and parent immediately before action.
+2. Reject missing paths, drive roots, wildcards, reparse points, or targets outside the approved parent.
+3. Preview each target with C:\Users\18236\safe-cleanup\Send-ReviewedPathToRecycleBin.ps1.
+4. After explicit approval of this exact manifest, send physical targets to the Windows Recycle Bin.
+5. Never empty the Recycle Bin.
+6. Run git worktree prune, verify main, then delete only the seven fully merged branches with git branch -d.

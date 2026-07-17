@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
 {
@@ -568,32 +569,6 @@ namespace StardewAI.Core.Execution
                 envelope.TryGetProperty("status", out var status) &&
                 string.Equals(status.GetString(), "available", StringComparison.OrdinalIgnoreCase) &&
                 envelope.TryGetProperty("value", out value);
-        }
-
-        private static int ReadInt(JsonElement element, string property)
-        {
-            return element.ValueKind == JsonValueKind.Object &&
-                element.TryGetProperty(property, out var value) &&
-                value.TryGetInt32(out var parsed)
-                    ? parsed
-                    : 0;
-        }
-
-        private static bool ReadBool(JsonElement element, string property)
-        {
-            return element.ValueKind == JsonValueKind.Object &&
-                element.TryGetProperty(property, out var value) &&
-                value.ValueKind is JsonValueKind.True or JsonValueKind.False &&
-                value.GetBoolean();
-        }
-
-        private static string ReadString(JsonElement element, string property)
-        {
-            return element.ValueKind == JsonValueKind.Object &&
-                element.TryGetProperty(property, out var value) &&
-                value.ValueKind == JsonValueKind.String
-                    ? value.GetString() ?? string.Empty
-                    : string.Empty;
         }
 
         private static VolcanoFloorStepPlan Blocked(string reason)

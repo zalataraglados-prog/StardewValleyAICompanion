@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\StardewAI.Contracts\StardewAI.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
   </ItemGroup>
 
   <ItemGroup>

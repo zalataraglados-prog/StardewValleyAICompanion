@@ -1148,7 +1148,9 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void RuntimeBreakContainerUsesNativeHeavyHitterInputAndVerifiesRemoval()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var driverSource = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "NativeHeavyHitterAction.cs"));
         var start = source.IndexOf("private void StartBreakContainer", StringComparison.Ordinal);
         var end = source.IndexOf("private static bool ImmediateMiningThreat", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1157,11 +1159,8 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("executor.break_container", source, StringComparison.Ordinal);
         Assert.Contains("obj is not BreakableContainer", containerSource, StringComparison.Ordinal);
         Assert.Contains("tool.isHeavyHitter()", containerSource, StringComparison.Ordinal);
-        Assert.Contains("HeavyHitterInputButton(active.Tool)", containerSource, StringComparison.Ordinal);
-        Assert.Contains("tool is MeleeWeapon ? SButton.MouseLeft : SButton.C", containerSource, StringComparison.Ordinal);
-        Assert.Contains("RecordBreakContainerCompletedSwing", containerSource, StringComparison.Ordinal);
-        Assert.Contains("active.ActionIssued = true", containerSource, StringComparison.Ordinal);
-        Assert.Contains("active.SwingCount++", containerSource, StringComparison.Ordinal);
+        Assert.Contains("TryTickNativeHeavyHitterAction", containerSource, StringComparison.Ordinal);
+        Assert.Contains("tool is MeleeWeapon ? SButton.MouseLeft : SButton.C", driverSource, StringComparison.Ordinal);
         Assert.Contains("native_heavy_hitter_input_removed_container", containerSource, StringComparison.Ordinal);
         Assert.Contains("released_contents_left_as_game_debris", containerSource, StringComparison.Ordinal);
         Assert.DoesNotContain("performToolAction(", containerSource, StringComparison.Ordinal);

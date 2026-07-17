@@ -7,14 +7,16 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
 {
-    public sealed class CandidateOptionAvailabilityEvaluator
+    public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         private readonly OptionRegistry optionRegistry;
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
+        private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
 
         public CandidateOptionAvailabilityEvaluator()
             : this(new OptionRegistry(), new Verifier.Verifier())
@@ -26,6 +28,7 @@ namespace StardewAI.Core.OptionRegistry
             this.optionRegistry = optionRegistry;
             this.verifier = verifier;
             compiler = new ActionQueueCompiler(optionRegistry, verifier);
+            eventCandidateProviders = CreateEventCandidateProviders();
         }
 
         public OptionAvailabilityEnvelope Evaluate(
@@ -336,77 +339,9 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<EventCandidate>();
             }
 
-            if (optionId == "farm.maintain_crops")
-            {
-                return FarmMaintenanceCandidates(snapshot);
-            }
-
-            if (optionId == "farm.process_machines")
-            {
-                return MachineProcessingCandidates(snapshot);
-            }
-
-            if (optionId == "executor.clear_obstacle")
-            {
-                return ClearObstacleCandidates(snapshot);
-            }
-
-            if (optionId == "executor.plant_seed")
-            {
-                return PlantSeedCandidates(snapshot);
-            }
-
-            if (optionId == "exploration.visit_location")
-            {
-                return RouteConnectorCandidates(snapshot);
-            }
-
-            if (optionId == "executor.interact")
-            {
-                return InteractEndpointCandidates(snapshot);
-            }
-
-            if (optionId == "recovery.stabilize_day")
-            {
-                return RecoveryCandidates(snapshot);
-            }
-
-            if (optionId == "fishing.catch_fish")
-            {
-                return FishingEventCandidateBuilder.Build(snapshot);
-            }
-
-            if (optionId == "mining.reach_depth")
-            {
-                return MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
-            }
-
-            if (optionId == "mining.acquire_golden_scythe")
-            {
-                return MiningGoldenScytheCandidateBuilder.Build(snapshot, parameters);
-            }
-
-            if (optionId == "mining.obtain_skull_key")
-            {
-                return MiningSkullKeyCandidateBuilder.Build(snapshot, parameters);
-            }
-
-            if (optionId == "volcano.reach_caldera")
-            {
-                return VolcanoReachCalderaCandidateBuilder.Build(snapshot, parameters);
-            }
-
-            if (optionId == "quest.advance")
-            {
-                return QuestCandidates(snapshot);
-            }
-
-            if (optionId == "economy.ship_items")
-            {
-                return ShipCandidates(snapshot);
-            }
-
-            return Array.Empty<EventCandidate>();
+            return eventCandidateProviders.TryGetValue(optionId, out var provider)
+                ? provider(snapshot, parameters)
+                : Array.Empty<EventCandidate>();
         }
 
         private EventCandidate[] SocialCandidates(
@@ -4260,36 +4195,6 @@ namespace StardewAI.Core.OptionRegistry
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 
-        private static JsonElement? ReadStateFieldValue(SnapshotEnvelope snapshot, string sectionName, string fieldName)
-        {
-            if (!snapshot.State.TryGetValue(sectionName, out var section) ||
-                section.ValueKind != JsonValueKind.Object ||
-                !section.TryGetProperty(fieldName, out var field) ||
-                field.ValueKind != JsonValueKind.Object ||
-                !field.TryGetProperty("value", out var value))
-            {
-                return null;
-            }
-
-            return value;
-        }
-
-        private static int ReadStateFieldInt(SnapshotEnvelope snapshot, string sectionName, string fieldName)
-        {
-            var value = ReadStateFieldValue(snapshot, sectionName, fieldName);
-            return value.HasValue && value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetInt32(out var result)
-                ? result
-                : 0;
-        }
-
-        private static string ReadStateFieldString(SnapshotEnvelope snapshot, string sectionName, string fieldName)
-        {
-            var value = ReadStateFieldValue(snapshot, sectionName, fieldName);
-            return value.HasValue && value.Value.ValueKind == JsonValueKind.String
-                ? value.Value.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
         private static bool HasUsableShippingBin(JsonElement? shippingBins)
         {
             if (!shippingBins.HasValue || shippingBins.Value.ValueKind != JsonValueKind.Array)
@@ -4425,51 +4330,6 @@ namespace StardewAI.Core.OptionRegistry
             return value.ValueKind == JsonValueKind.Object &&
                 value.TryGetProperty(propertyName, out var property) &&
                 property.ValueKind == JsonValueKind.Number;
-        }
-
-        private static int ReadInt(JsonElement value, string propertyName)
-        {
-            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(propertyName, out var property))
-            {
-                return 0;
-            }
-
-            return property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var result) ? result : 0;
-        }
-
-        private static int? NullableReadInt(JsonElement value, string propertyName)
-        {
-            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(propertyName, out var property))
-            {
-                return null;
-            }
-
-            return property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var result) ? result : null;
-        }
-
-        private static double? NullableReadDouble(JsonElement value, string propertyName)
-        {
-            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(propertyName, out var property))
-            {
-                return null;
-            }
-
-            return property.ValueKind == JsonValueKind.Number && property.TryGetDouble(out var result) ? result : null;
-        }
-
-        private static string ReadString(JsonElement value, string propertyName)
-        {
-            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(propertyName, out var property))
-            {
-                return string.Empty;
-            }
-
-            return property.ValueKind == JsonValueKind.String ? property.GetString() ?? string.Empty : string.Empty;
-        }
-
-        private static SmallModelActionParameter Parameter(string name, string value)
-        {
-            return new SmallModelActionParameter { Name = name, Value = value };
         }
 
         private string[] CompilerProbeBlockingReasons(SnapshotEnvelope snapshot, OptionAvailabilityCandidate candidate)

@@ -11,10 +11,15 @@ namespace StardewAI.Core.Tests;
 
 public sealed class NativeSocialRuntimeSmokeSourceGuardTests
 {
+    private static readonly string SocialSmokeSource = File.ReadAllText(
+        FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+    private static readonly string NpcAdapterSource = File.ReadAllText(
+        FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+
     [Fact]
     public void SmokeScriptUsesEOnlyRuntimePaths()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("E:\\StardewValleyAICompanion-runtime", source, StringComparison.Ordinal);
         Assert.Contains("$RuntimeRoot", source, StringComparison.Ordinal);
@@ -29,7 +34,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptLaunchesHiddenWithAudioNull()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("WindowStyle Hidden", source, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("SDL_AUDIODRIVER", source, StringComparison.Ordinal);
@@ -41,7 +46,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasPortConflictGuard()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Test-PortConflictGuard", source, StringComparison.Ordinal);
         Assert.Contains("Get-NetTCPConnection", source, StringComparison.Ordinal);
@@ -54,7 +59,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasExactProcessCleanup()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("KeepGameRunning", source, StringComparison.Ordinal);
         Assert.Contains("Stop-Process", source, StringComparison.Ordinal);
@@ -69,7 +74,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptPreservesEnvironmentVariables()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("previousEnv", source, StringComparison.Ordinal);
         Assert.Contains("$env:STARDEWAI_TEST_SAVES", source, StringComparison.Ordinal);
@@ -83,7 +88,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsFindLegalSocialTalkCandidate()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("Find-LegalSocialTalkCandidate", source, StringComparison.Ordinal);
         Assert.DoesNotContain("simple_non_villager_npc", source, StringComparison.Ordinal);
@@ -95,7 +100,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsFindLegalSocialGiftCandidate()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("Find-LegalSocialGiftCandidate", source, StringComparison.Ordinal);
         Assert.DoesNotContain("can_receive_gifts", source, StringComparison.Ordinal);
@@ -111,7 +116,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsManualSocialExecutionRequestBuilder()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("Build-SocialTalkExecutionRequest", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Build-SocialGiftExecutionRequest", source, StringComparison.Ordinal);
@@ -121,7 +126,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsDirectSocialTrainingExecute()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         var lines = source.Split('\n');
         foreach (var line in lines)
@@ -139,7 +144,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasNoDirectNpcOrFriendshipOrOutcomeMutation()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("changeFriendship", source, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("set_Friendship", source, StringComparison.OrdinalIgnoreCase);
@@ -155,7 +160,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasProductionChainArtifactsWithCorrectFieldPaths()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("ranking-response-0001.json", source, StringComparison.Ordinal);
         Assert.Contains("talk-ranking-response.json", source, StringComparison.Ordinal);
@@ -179,7 +184,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesCorrectPlanStepKindMapping()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("move_to_tile", source, StringComparison.Ordinal);
         Assert.Contains("move_to_social_stand", source, StringComparison.Ordinal);
@@ -193,7 +198,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesCorrectQueueOptionIdMapping()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("executor.move_to_tile", source, StringComparison.Ordinal);
         Assert.Contains("executor.social_interact", source, StringComparison.Ordinal);
@@ -204,7 +209,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDeploysModsBeforeLaunch()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Deploy-TransparentBridgeToRuntime.ps1", source, StringComparison.Ordinal);
         Assert.Contains("Deploy-RuntimeTestHarnessToRuntime.ps1", source, StringComparison.Ordinal);
@@ -213,7 +218,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptTalksBeforeGiftWithProductionRecoveryClose()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("social.talk_npc", source, StringComparison.Ordinal);
         Assert.Contains("social.gift_npc", source, StringComparison.Ordinal);
@@ -226,7 +231,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptFailClosedWhenGiftFails()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Gift LiveTrainingLoop returned exit code", source, StringComparison.Ordinal);
         Assert.Contains("gift-failed.json", source, StringComparison.Ordinal);
@@ -241,7 +246,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresEpisodeRankingAndFeatureRowArtifacts()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("plan-execution-episode-0001.json", source, StringComparison.Ordinal);
         Assert.Contains("ranking-response-0001.json", source, StringComparison.Ordinal);
@@ -252,7 +257,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresRankingProvenanceForCandidates()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("ranked_event_candidates", source, StringComparison.Ordinal);
         Assert.Contains("social_talk_current", source, StringComparison.Ordinal);
@@ -262,7 +267,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasRouteGraphBfsTraversal()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Invoke-RouteGraphBfsToNpc", source, StringComparison.Ordinal);
         Assert.Contains("route_graph", source, StringComparison.Ordinal);
@@ -277,7 +282,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptExecutesProductionSocialRouteCandidateBeforeLegacyTraversalFallback()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         var productionStage = source.IndexOf("Verify-ProductionSocialRouteStepArtifacts", StringComparison.Ordinal);
         var fallbackStage = source.IndexOf("Invoke-RouteGraphBfsToNpc", productionStage, StringComparison.Ordinal);
@@ -296,7 +301,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void ProductionSocialRouteSmokeRequiresCompiledAndVerifiedConnectorArtifacts()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("production-route-ranking-response.json", source, StringComparison.Ordinal);
         Assert.Contains("production-route-daily-plan-response.json", source, StringComparison.Ordinal);
@@ -311,7 +316,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void ProductionSocialRouteOnlyModeReportsItsBoundedRuntimeScope()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("[switch] $ProductionRouteOnly", source, StringComparison.Ordinal);
         Assert.Contains("one_production_social_route_connector_then_fresh_snapshot", source, StringComparison.Ordinal);
@@ -352,7 +357,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesSocialExecutionFieldsDirectly()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("social_native_handled", source, StringComparison.Ordinal);
         Assert.Contains("social_npc_name", source, StringComparison.Ordinal);
@@ -381,7 +386,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresGiftStackDecreaseByOne()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("gift_stack_before", source, StringComparison.Ordinal);
         Assert.Contains("gift_stack_after", source, StringComparison.Ordinal);
@@ -391,7 +396,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresFriendshipNonNullBeforeAfter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("friendship_before", source, StringComparison.Ordinal);
         Assert.Contains("social_friendship_points_before", source, StringComparison.Ordinal);
@@ -403,7 +408,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresGiftCounterIncrements()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Gifts today did not increment by 1", source, StringComparison.Ordinal);
         Assert.Contains("social_gifts_today_before", source, StringComparison.Ordinal);
@@ -413,7 +418,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptNeverReturnsPassedTalkOnlyOrSkipped()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("passed_talk_only", source, StringComparison.Ordinal);
         Assert.DoesNotContain("\"skipped\"", source, StringComparison.Ordinal);
@@ -425,7 +430,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesProductionRecoveryCloseNotHandWrittenRequest()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("recovery.stabilize_day", source, StringComparison.Ordinal);
         Assert.Contains("close-dialogue-loop", source, StringComparison.Ordinal);
@@ -445,7 +450,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptStartsAspNetCoreBackend()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("ASPNETCORE_URLS", source, StringComparison.Ordinal);
         Assert.Contains("BackendPort", source, StringComparison.Ordinal);
@@ -456,7 +461,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasBackendProcessCleanup()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("$backendProcess", source, StringComparison.Ordinal);
         Assert.Contains("Stop-Process -Id $backendProcess.Id", source, StringComparison.Ordinal);
@@ -466,7 +471,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesMoveBeforeSocialUsingActualFieldPaths()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("kind", source, StringComparison.Ordinal);
         Assert.Contains("step_id", source, StringComparison.Ordinal);
@@ -479,7 +484,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void ProductionCompileChainRequiresBackendAndLiveTrainingLoop()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("Build-SocialTalkExecutionRequest", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Build-SocialGiftExecutionRequest", source, StringComparison.Ordinal);
@@ -532,7 +537,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesAvailableCandidateSelectionNotRankDefault()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains(".available -eq", source, StringComparison.Ordinal);
         Assert.Contains("candidate_id", source, StringComparison.Ordinal);
@@ -547,7 +552,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptCrossChecksCandidateIdThroughPlanQueueExecution()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("planCandidateId", source, StringComparison.Ordinal);
         Assert.Contains("moveStepCandidateId", source, StringComparison.Ordinal);
@@ -559,7 +564,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptValidatesTalkManhattanAdjacencyAndFacing()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Manhattan-adjacent", source, StringComparison.Ordinal);
         Assert.Contains("player_facing_before", source, StringComparison.Ordinal);
@@ -576,7 +581,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptValidatesGiftStackNullOrDecrementAndWeekCounter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("item_stack_before", source, StringComparison.Ordinal);
         Assert.Contains("gift_updates_normal_limits", source, StringComparison.Ordinal);
@@ -589,7 +594,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDerivesSummaryFlagsFromEvidenceNotHardcoded()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("giftStackDecreased", source, StringComparison.Ordinal);
         Assert.Contains("talkArtifacts.HasRankedCandidate", source, StringComparison.Ordinal);
@@ -601,7 +606,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptIngestsSnapshotBeforePreTalkRankProbe()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("bridge-snapshot-ingested.json", source, StringComparison.Ordinal);
         Assert.Contains("/api/v1/snapshots", source, StringComparison.Ordinal);
@@ -611,7 +616,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDoesNotUseDirectCoordinateTeleportForMovement()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("teleport", source, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("setPosition", source, StringComparison.OrdinalIgnoreCase);
@@ -621,7 +626,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptGiftLegalityDelegatedToProductionSocialCandidateBuilder()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("is_divorced", source, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("social_gift_divorced", source, StringComparison.Ordinal);
@@ -632,7 +637,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptReliesOnProductionRouteGraph()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("directWarp", source, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("teleport", source, StringComparison.OrdinalIgnoreCase);
@@ -645,7 +650,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptBfsTraversalSavesAllEdgeRequestsAndResults()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("route-graph-bfs-edge", source, StringComparison.Ordinal);
         Assert.Contains("-request.json", source, StringComparison.Ordinal);
@@ -658,7 +663,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptBfsFailsClosedWhenNoRouteExists()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("No bounded transparent route", source, StringComparison.Ordinal);
         Assert.Contains("failed_closed", source, StringComparison.Ordinal);
@@ -667,7 +672,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRecordsLocationStateHashBeforeAfter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("before_location", source, StringComparison.Ordinal);
         Assert.Contains("after_talk_location", source, StringComparison.Ordinal);
@@ -680,7 +685,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesPowerShell51CompatibleSyntax()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("??", source, StringComparison.Ordinal);
     }
@@ -688,7 +693,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesCorrectRouteGraphEdgeFieldNames()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains(".resolved", source, StringComparison.Ordinal);
         Assert.Contains(".from_location", source, StringComparison.Ordinal);
@@ -704,7 +709,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresExactTraverseConnectorRequestFields()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("target_tile_x", source, StringComparison.Ordinal);
         Assert.Contains("target_tile_y", source, StringComparison.Ordinal);
@@ -719,7 +724,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDoesNotDefaultMissingKindToWarp()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("\"warp\"", source, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("edge.kind", source, StringComparison.Ordinal);
@@ -728,7 +733,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresAppliedAndVerifiedTraverseResult()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("result not applied/verified", source, StringComparison.Ordinal);
         Assert.Contains("primitive_verification_status", source, StringComparison.Ordinal);
@@ -739,7 +744,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresArrivalTileVerificationAfterTraverse()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("arrival tile mismatch", source, StringComparison.Ordinal);
         Assert.Contains("route-graph-bfs-bad-arrival-tile.json", source, StringComparison.Ordinal);
@@ -748,7 +753,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptFiltersRouteEdgesByResolvedContract()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains(".resolved -eq", source, StringComparison.Ordinal);
         Assert.Contains(".from_location", source, StringComparison.Ordinal);
@@ -760,7 +765,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsEdgeConnectorKindFieldAlias()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("edgeData.connector_kind", source, StringComparison.Ordinal);
         Assert.DoesNotContain("edge.connector_kind", source, StringComparison.Ordinal);
@@ -770,7 +775,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRejectsWrongTileCoordinateAliases()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("edgeData.target_tile_x", source, StringComparison.Ordinal);
         Assert.DoesNotContain("edgeData.target_tile_y", source, StringComparison.Ordinal);
@@ -781,7 +786,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptUsesEdgeFromCoordinatesForTargetTile()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("target_tile_x =", source, StringComparison.Ordinal);
         Assert.Contains("target_tile_y =", source, StringComparison.Ordinal);
@@ -795,7 +800,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresEdgeKindNotBeNullOrEmpty()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("missing or empty kind", source, StringComparison.Ordinal);
         Assert.Contains("has empty kind", source, StringComparison.Ordinal);
@@ -804,7 +809,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasGetParameterValueHelper()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("function Get-ParameterValue", source, StringComparison.Ordinal);
         Assert.Contains("Required parameter", source, StringComparison.Ordinal);
@@ -815,7 +820,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptHasGetCandidateIdFromPreconditionsHelper()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("function Get-CandidateIdFromPreconditions", source, StringComparison.Ordinal);
         Assert.Contains("candidate_id:*", source, StringComparison.Ordinal);
@@ -827,7 +832,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptReadsNpcNameSlotAndStackFromParameters()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Get-ParameterValue -Parameters $selectedCandidate.parameters -Name \"npc_name\"", source, StringComparison.Ordinal);
         Assert.Contains("Get-ParameterValue -Parameters $selectedCandidate.parameters -Name \"slot_index\"", source, StringComparison.Ordinal);
@@ -841,7 +846,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptAcceptsTileZero()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("-eq 0", source.Split(new[] { "throw" }, StringSplitOptions.None)
             .Where(s => s.Contains("tile")).DefaultIfEmpty(string.Empty).First(), StringComparison.Ordinal);
@@ -850,7 +855,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptAcceptsOneItemGiftNullAfter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("stack should be null when exactly one item consumed", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Gift execution missing gift_stack_after", source, StringComparison.Ordinal);
@@ -859,7 +864,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresMultiItemStackDecrement()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Gift stack after must be non-null when before=", source, StringComparison.Ordinal);
         Assert.Contains("stack did not decrease by exactly 1", source, StringComparison.Ordinal);
@@ -869,7 +874,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptValidatesExactFacingTowardNpc()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("does not point toward NPC", source, StringComparison.Ordinal);
         Assert.Contains("$expectedFacing = 0", source, StringComparison.Ordinal);
@@ -881,7 +886,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresExactlyOneSocialResult()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Expected exactly 1 verified applied social_interact result", source, StringComparison.Ordinal);
         Assert.Contains("Expected exactly 1 social_interact plan step", source, StringComparison.Ordinal);
@@ -902,7 +907,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresGiftSlotAndItemIdNonNull()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Gift execution missing gift_slot_before", source, StringComparison.Ordinal);
         Assert.Contains("Gift candidate missing qualified_item_id", source, StringComparison.Ordinal);
@@ -912,7 +917,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptPreservesGiftCountersWhenNotNormalLimits()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("gift_updates_normal_limits", source, StringComparison.Ordinal);
         Assert.Contains("candidateGiftUpdatesNormal", source, StringComparison.Ordinal);
@@ -921,7 +926,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresFullSnapshotProfile()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("?profile=full", source, StringComparison.Ordinal);
         Assert.DoesNotContain("\"/api/v1/snapshot\"", source, StringComparison.Ordinal);
@@ -948,7 +953,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void WaitWorldSnapshotRequiresFullDomainSet()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("requiredDomains", source, StringComparison.Ordinal);
         Assert.Contains("missingDomains", source, StringComparison.Ordinal);
@@ -969,7 +974,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void NpcReadAdapterEnumeratesAllLocationsWithForEachLocationIncludeInteriorsAndGenerated()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+        var source = NpcAdapterSource;
 
         Assert.Contains("Utility.ForEachLocation", source, StringComparison.Ordinal);
         Assert.Contains("includeInteriors: true", source, StringComparison.Ordinal);
@@ -982,7 +987,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void NpcReadAdapterProvenanceNamesForEachLocationAndConcreteSources()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+        var source = NpcAdapterSource;
 
         Assert.Contains("Utility.ForEachLocation(includeInteriors:true, includeGenerated:true)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.locations, instanced interiors, MineShaft.activeMines, VolcanoDungeon.activeLevels", source, StringComparison.Ordinal);
@@ -994,7 +999,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void NpcReadAdapterCurrentInstanceLoadedChecksActualCharacterCollection()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+        var source = NpcAdapterSource;
 
         Assert.Contains("npcCurrentLocation.characters.Any", source, StringComparison.Ordinal);
         Assert.Contains("instanceLoaded", source, StringComparison.Ordinal);
@@ -1004,7 +1009,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void NpcReadAdapterVisibleOnScreenFalseForNonCurrentLocation()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+        var source = NpcAdapterSource;
 
         Assert.Contains("isCurrentLocation", source, StringComparison.Ordinal);
         Assert.Contains("isCurrentLocation && Utility.isOnScreen", source, StringComparison.Ordinal);
@@ -1022,7 +1027,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void CollectAllLoadedNpcsUsesReferenceIdentityNotCompositeStringKey()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "NpcReadAdapter.cs"));
+        var source = NpcAdapterSource;
 
         Assert.Contains("Utility.ForEachLocation", source, StringComparison.Ordinal);
         Assert.Contains("ReferenceEqualityComparer.Instance", source, StringComparison.Ordinal);
@@ -1038,7 +1043,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDeterministicRouteReachableNpcFilter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("ordinaryNpcs", source, StringComparison.Ordinal);
         Assert.Contains("reachableLocations", source, StringComparison.Ordinal);
@@ -1053,7 +1058,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void RejectsSuffixedRunIdPatterns()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("$RunId.route-bfs", source, StringComparison.Ordinal);
         Assert.DoesNotContain("$RunId.talk", source, StringComparison.Ordinal);
@@ -1064,7 +1069,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void RequiresAllExecutionPhasesUseExactBaseRunId()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("run_id = \"$RunId\"", source, StringComparison.Ordinal);
 
@@ -1081,7 +1086,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void HasSeparatePhaseRootDirectories()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("$talkLoopRoot = Join-Path $runDirectory \"talk-loop\"", source, StringComparison.Ordinal);
         Assert.Contains("$giftLoopRoot = Join-Path $runDirectory \"gift-loop\"", source, StringComparison.Ordinal);
@@ -1120,7 +1125,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptDoesNotRequireSocialPlanOnSocialInteract()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.DoesNotContain("social_plan is null", source, StringComparison.Ordinal);
         Assert.DoesNotContain("social_plan.action_kind", source, StringComparison.Ordinal);
@@ -1132,7 +1137,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptStillRequiresNormalizedTalkParameters()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("npc_name", source, StringComparison.Ordinal);
         Assert.Contains("social_action_kind", source, StringComparison.Ordinal);
@@ -1146,7 +1151,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptStillRequiresNormalizedGiftParameters()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("slot_index", source, StringComparison.Ordinal);
         Assert.Contains("qualified_item_id", source, StringComparison.Ordinal);
@@ -1156,7 +1161,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesNormalizedParametersMatchCandidate()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Queue social item npc_name mismatch", source, StringComparison.Ordinal);
         Assert.Contains("Queue social item action_kind", source, StringComparison.Ordinal);
@@ -1167,7 +1172,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptVerifiesNormalizedParametersMatchCandidateGift()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Gift queue npc_name mismatch", source, StringComparison.Ordinal);
         Assert.Contains("Gift queue action_kind", source, StringComparison.Ordinal);
@@ -1179,7 +1184,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptReadsActiveMenuAsObjectNotScalarString()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Get-SnapshotObject", source, StringComparison.Ordinal);
 
@@ -1197,7 +1202,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptChecksActiveMenuIsOpenViaPropertyNotStringCompare()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("activeMenu.is_open", source, StringComparison.Ordinal);
         Assert.Contains("afterCloseActiveMenu.is_open", source, StringComparison.Ordinal);
@@ -1206,7 +1211,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptFailsClosedOnMissingActiveMenuAfterTalk()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("active_menu missing or null after talk", source, StringComparison.Ordinal);
         Assert.Contains("active_menu.is_open missing or null after talk", source, StringComparison.Ordinal);
@@ -1216,7 +1221,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptFailsClosedOnMissingActiveMenuAfterClose()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("active_menu missing or null after close", source, StringComparison.Ordinal);
         Assert.Contains("active_menu.is_open missing or null after close", source, StringComparison.Ordinal);
@@ -1226,7 +1231,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptGetSnapshotObjectHasNoDefaultParameter()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         var functionBody = ExtractFunctionBody(source, "Get-SnapshotObject");
         Assert.DoesNotContain("$Default", functionBody, StringComparison.Ordinal);
@@ -1236,7 +1241,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptActiveMenuIsOpenCheckedWithIsNotBoolGuard()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("is_open -isnot [bool]", source, StringComparison.Ordinal);
         Assert.Contains("-isnot [bool]", source, StringComparison.Ordinal);
@@ -1254,7 +1259,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void SmokeScriptRequiresReadableNonNullSpouseProof()
     {
-        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+        var source = SocialSmokeSource;
 
         Assert.Contains("Snapshot after wait does not have readable player.spouse", source, StringComparison.Ordinal);
         Assert.Contains("known no-spouse state as null instead of canonical empty string", source, StringComparison.Ordinal);

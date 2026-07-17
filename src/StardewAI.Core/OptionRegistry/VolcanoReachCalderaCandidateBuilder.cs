@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
 {
@@ -95,56 +96,5 @@ namespace StardewAI.Core.OptionRegistry
             return missing.Distinct(StringComparer.Ordinal).ToArray();
         }
 
-        private static string ReadStateFieldStatus(SnapshotEnvelope snapshot, string section, string field)
-        {
-            if (!snapshot.State.TryGetValue(section, out var sectionElement) ||
-                sectionElement.ValueKind != JsonValueKind.Object ||
-                !sectionElement.TryGetProperty(field, out var envelope) ||
-                envelope.ValueKind != JsonValueKind.Object ||
-                !envelope.TryGetProperty("status", out var status) ||
-                status.ValueKind != JsonValueKind.String)
-            {
-                return string.Empty;
-            }
-
-            return status.GetString() ?? string.Empty;
-        }
-
-        private static bool ReadableStatus(string status)
-        {
-            return string.Equals(status, "available", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(status, "derived", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static JsonElement? ReadStateFieldValue(SnapshotEnvelope snapshot, string section, string field)
-        {
-            if (!snapshot.State.TryGetValue(section, out var sectionElement) ||
-                sectionElement.ValueKind != JsonValueKind.Object ||
-                !sectionElement.TryGetProperty(field, out var envelope) ||
-                envelope.ValueKind != JsonValueKind.Object ||
-                !envelope.TryGetProperty("value", out var value))
-            {
-                return null;
-            }
-
-            return value;
-        }
-
-        private static int ReadInt(JsonElement element, string property)
-        {
-            return element.TryGetProperty(property, out var value) && value.TryGetInt32(out var parsed) ? parsed : 0;
-        }
-
-        private static string ReadString(JsonElement element, string property)
-        {
-            return element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
-        private static SmallModelActionParameter Parameter(string name, string value)
-        {
-            return new SmallModelActionParameter { Name = name, Value = value };
-        }
     }
 }

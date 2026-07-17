@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.LiveTrainingLoop"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.RuntimeTestHarness", "tools\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.csproj", "{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.RuntimePrimitives", "src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj", "{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{01483AE2-3B7C-4CE6-826E-C67198ECC138} = {C7D7B2C0-EF32-46FD-829F-09E9AEA95D0E}
@@ -83,5 +89,6 @@ Global
 		{D947DFB2-1ADF-47FD-8412-4C4BB0BC34C7} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
 		{1625D2AB-AC2A-4F61-8D87-EA1478BE0029} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
 		{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
+		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1} = {C7D7B2C0-EF32-46FD-829F-09E9AEA95D0E}
 	EndGlobalSection
 EndGlobal

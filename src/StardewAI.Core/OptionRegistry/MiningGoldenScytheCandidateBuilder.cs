@@ -5,6 +5,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
 {
@@ -82,45 +83,5 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static JsonElement? ReadStateFieldValue(SnapshotEnvelope snapshot, string section, string field)
-        {
-            if (!snapshot.State.TryGetValue(section, out var sectionElement) ||
-                sectionElement.ValueKind != JsonValueKind.Object ||
-                !sectionElement.TryGetProperty(field, out var envelope) ||
-                envelope.ValueKind != JsonValueKind.Object ||
-                !envelope.TryGetProperty("value", out var value))
-            {
-                return null;
-            }
-
-            return value;
-        }
-
-        private static string? ReadParameter(SmallModelActionParameter[] parameters, string name)
-        {
-            return parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.OrdinalIgnoreCase))?.Value;
-        }
-
-        private static int? ReadIntParameter(SmallModelActionParameter[] parameters, string name)
-        {
-            return int.TryParse(ReadParameter(parameters, name), out var value) ? value : null;
-        }
-
-        private static int ReadInt(JsonElement element, string property)
-        {
-            return element.TryGetProperty(property, out var value) && value.TryGetInt32(out var parsed) ? parsed : 0;
-        }
-
-        private static string ReadString(JsonElement element, string property)
-        {
-            return element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
-        private static SmallModelActionParameter Parameter(string name, string value)
-        {
-            return new SmallModelActionParameter { Name = name, Value = value };
-        }
     }
 }

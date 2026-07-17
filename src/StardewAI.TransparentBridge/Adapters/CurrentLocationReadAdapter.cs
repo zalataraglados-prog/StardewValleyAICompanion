@@ -799,7 +799,7 @@ public sealed class CurrentLocationReadAdapter : ReadAdapterBase
             {
                 kind = "legacy_buy",
                 legacy_shop_id = legacyShopId,
-                shop_id = ResolveLegacyBuyShopId(location, legacyShopId)
+                shop_id = ShopIdResolver.ResolveLegacyBuy(location, legacyShopId)
             };
         }
 
@@ -882,26 +882,6 @@ public sealed class CurrentLocationReadAdapter : ReadAdapterBase
             source = "derived_from_dialogue_shop_action_tile",
             rule = "owner must be within two tiles horizontally and not below the counter action tile"
         };
-    }
-
-    private static string? ResolveLegacyBuyShopId(GameLocation location, string? legacyShopId)
-    {
-        if (string.Equals(legacyShopId, "Fish", StringComparison.OrdinalIgnoreCase))
-        {
-            return "FishShop";
-        }
-
-        if (location is SeedShop && string.Equals(legacyShopId, "General", StringComparison.OrdinalIgnoreCase))
-        {
-            return "SeedShop";
-        }
-
-        if (string.Equals(location.NameOrUniqueName, "SandyHouse", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Sandy";
-        }
-
-        return legacyShopId;
     }
 
     private static object? ParseOwnerArea(string[] parts)

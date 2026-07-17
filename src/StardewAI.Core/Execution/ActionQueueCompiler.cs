@@ -13,10 +13,11 @@ using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
 using StardewAI.Core.WorldModel;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
 {
-    public sealed class ActionQueueCompiler
+    public sealed partial class ActionQueueCompiler
     {
         private const int DefaultMaxMoveRouteRepairClears = 2;
         private const int HardMaxMoveRouteRepairClears = 4;
@@ -739,66 +740,13 @@ namespace StardewAI.Core.Execution
 
         private static SmallModelActionParameter[] BuildNormalizedParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
-            if (action.OptionId == "exploration.visit_location")
-            {
-                return BuildRoutePreviewParameters(action, snapshot);
-            }
+            return ActionParameterCompilers.TryGetValue(action.OptionId, out var compiler)
+                ? compiler(action, snapshot)
+                : action.Parameters;
+        }
 
-            if (action.OptionId == "executor.traverse_connector")
-            {
-                return BuildTraverseConnectorParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.select_safe_item_slot")
-            {
-                return BuildSelectSafeItemSlotParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.close_menu")
-            {
-                return BuildCloseMenuParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "mining.reach_depth")
-            {
-                return BuildMiningReachDepthParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "mining.acquire_golden_scythe")
-            {
-                return BuildMiningGoldenScytheParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "mining.obtain_skull_key")
-            {
-                return BuildMiningSkullKeyParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "volcano.reach_caldera")
-            {
-                return BuildVolcanoReachCalderaParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "recovery.stabilize_day")
-            {
-                return BuildRecoveryParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.buy_shop_item")
-            {
-                return BuildBuyShopItemParameters(action, snapshot);
-            }
-
-            if (action.OptionId == "social.talk_npc" || action.OptionId == "social.gift_npc")
-            {
-                return BuildSocialParameters(action, snapshot);
-            }
-
-            if (action.OptionId != "farm.maintain_crops")
-            {
-                return action.Parameters;
-            }
-
+        private static SmallModelActionParameter[] BuildCropMaintenanceParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
             var parameters = new List<SmallModelActionParameter>(action.Parameters)
             {
                 Parameter("compiler_context.season", ReadStateFieldString(snapshot, "time", "season")),
@@ -4419,134 +4367,9 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<CompiledActionStep>();
             }
 
-            if (action.OptionId == "farm.maintain_crops")
-            {
-                return CompileCropMaintenanceSteps(action, snapshot);
-            }
-
-            if (action.OptionId == "farm.process_machines")
-            {
-                return CompileMachineProcessingSteps(snapshot);
-            }
-
-            if (action.OptionId == "recovery.stabilize_day")
-            {
-                return CompileRecoverySteps(snapshot);
-            }
-
-            if (action.OptionId == "executor.move_to_tile")
-            {
-                return CompileMoveToTileStep(action);
-            }
-
-            if (action.OptionId == "executor.traverse_connector")
-            {
-                return CompileTraverseConnectorStep(action);
-            }
-
-            if (action.OptionId == "executor.face_direction")
-            {
-                return CompileFaceDirectionStep(action);
-            }
-
-            if (action.OptionId == "executor.interact")
-            {
-                return CompileInteractStep(action);
-            }
-
-            if (action.OptionId == "executor.buy_shop_item")
-            {
-                return CompileBuyShopItemStep(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.choose_dialogue_response")
-            {
-                return CompileChooseDialogueResponseStep(action);
-            }
-
-            if (action.OptionId == "executor.sleep")
-            {
-                return CompileSleepSteps(snapshot, action);
-            }
-
-            if (action.OptionId == "executor.wait_ticks")
-            {
-                return CompileWaitTicksStep(action);
-            }
-
-            if (action.OptionId == "executor.clear_obstacle")
-            {
-                return CompileClearObstacleStep(action);
-            }
-
-            if (action.OptionId == "executor.till_soil")
-            {
-                return CompileTillSoilStep(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.plant_seed")
-            {
-                return CompilePlantSeedStep(action);
-            }
-
-            if (action.OptionId == "executor.harvest_crop")
-            {
-                return CompileHarvestCropStep(action);
-            }
-
-            if (action.OptionId == "executor.harvest_giant_crop")
-            {
-                return CompileHarvestGiantCropStep(action);
-            }
-
-            if (action.OptionId == "executor.pickup_debris")
-            {
-                return CompilePickupDebrisStep(action);
-            }
-
-            if (action.OptionId == "executor.collect_machine_output")
-            {
-                return CompileCollectMachineOutputStep(action);
-            }
-
-            if (action.OptionId == "executor.load_machine_input")
-            {
-                return CompileLoadMachineInputStep(action);
-            }
-
-            if (action.OptionId == "executor.catch_fish")
-            {
-                return CompileCatchFishStep(action);
-            }
-
-            if (action.OptionId == "executor.cool_volcano_lava")
-            {
-                return CompileCoolVolcanoLavaStep(action);
-            }
-
-            if (action.OptionId == "executor.break_volcano_stone" ||
-                action.OptionId == "executor.break_volcano_container" ||
-                action.OptionId == "executor.combat_volcano_monster")
-            {
-                return CompileVolcanoNativePrimitiveStep(action);
-            }
-
-            if (action.OptionId == "executor.social_interact")
-            {
-                return CompileSocialInteractStep(action);
-            }
-
-            if (action.OptionId == "executor.select_safe_item_slot")
-            {
-                return CompileSelectSafeItemSlotStep(action, snapshot);
-            }
-
-            if (action.OptionId == "executor.close_menu")
-            {
-                return CompileCloseMenuStep(snapshot);
-            }
-
-            return Array.Empty<CompiledActionStep>();
+            return ActionStepCompilers.TryGetValue(action.OptionId, out var compiler)
+                ? compiler(action, snapshot)
+                : Array.Empty<CompiledActionStep>();
         }
 
         private static CompiledActionStep[] CompileCloseMenuStep(SnapshotEnvelope snapshot)
@@ -5596,52 +5419,6 @@ namespace StardewAI.Core.Execution
             return false;
         }
 
-        private static int ReadStateFieldInt(SnapshotEnvelope snapshot, string section, string property)
-        {
-            return ReadStateFieldIntOptional(snapshot, section, property) ?? 0;
-        }
-
-        private static int? ReadStateFieldIntOptional(SnapshotEnvelope snapshot, string section, string property)
-        {
-            return snapshot.State.TryGetValue(section, out var sectionValue) &&
-                sectionValue.ValueKind == JsonValueKind.Object &&
-                sectionValue.TryGetProperty(property, out var field) &&
-                field.TryGetProperty("value", out var value) &&
-                value.TryGetInt32(out var result)
-                ? result
-                : null;
-        }
-
-        private static double? ReadStateFieldDoubleOptional(SnapshotEnvelope snapshot, string section, string property)
-        {
-            return snapshot.State.TryGetValue(section, out var sectionValue) &&
-                sectionValue.ValueKind == JsonValueKind.Object &&
-                sectionValue.TryGetProperty(property, out var field) &&
-                field.TryGetProperty("value", out var value) &&
-                value.TryGetDouble(out var result)
-                ? result
-                : null;
-        }
-
-        private static string ReadStateFieldString(SnapshotEnvelope snapshot, string section, string property)
-        {
-            var value = ReadStateFieldValue(snapshot, section, property);
-            return value.HasValue &&
-                value.Value.ValueKind == JsonValueKind.String
-                ? value.Value.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
-        private static JsonElement? ReadStateFieldValue(SnapshotEnvelope snapshot, string section, string property)
-        {
-            return snapshot.State.TryGetValue(section, out var sectionValue) &&
-                sectionValue.ValueKind == JsonValueKind.Object &&
-                sectionValue.TryGetProperty(property, out var field) &&
-                field.TryGetProperty("value", out var value)
-                ? value
-                : null;
-        }
-
         private static int? SafeSlotIndex(SnapshotEnvelope snapshot)
         {
             var context = ReadStateFieldValue(snapshot, "player", "safe_item_context");
@@ -5667,34 +5444,6 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static int? ReadIntParameter(SmallModelAction action, string name)
-        {
-            var value = ReadParameter(action, name);
-            return int.TryParse(value, out var result) ? result : null;
-        }
-
-        private static double? ReadDoubleParameter(SmallModelAction action, string name)
-        {
-            var value = ReadParameter(action, name);
-            return double.TryParse(value, out var result) ? result : null;
-        }
-
-        private static string? ReadParameter(SmallModelAction action, string name)
-        {
-            return action.Parameters
-                .FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
-                ?.Value;
-        }
-
-        private static SmallModelActionParameter Parameter(string name, string value)
-        {
-            return new SmallModelActionParameter
-            {
-                Name = name,
-                Value = value ?? string.Empty
-            };
-        }
-
         private static string[] SplitList(string? value)
         {
             return string.IsNullOrWhiteSpace(value)
@@ -5705,39 +5454,5 @@ namespace StardewAI.Core.Execution
                     .ToArray();
         }
 
-        private static int ReadInt(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.TryGetInt32(out var result)
-                ? result
-                : 0;
-        }
-
-        private static string ReadString(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
-        private static bool ReadBool(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True;
-        }
-
-        private static double ReadDouble(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) && value.TryGetDouble(out var result)
-                ? result
-                : 0d;
-        }
-
-        private static int? ReadNullableInt(JsonElement item, string property)
-        {
-            return item.TryGetProperty(property, out var value) &&
-                value.ValueKind == JsonValueKind.Number &&
-                value.TryGetInt32(out var result)
-                ? result
-                : null;
-        }
     }
 }

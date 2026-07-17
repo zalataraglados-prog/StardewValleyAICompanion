@@ -23,7 +23,7 @@ using TileRectangle = xTile.Dimensions.Rectangle;
 
 namespace StardewAI.RuntimeTestHarness;
 
-public sealed class ModEntry : Mod
+public sealed partial class ModEntry : Mod
 {
     private static readonly FieldInfo? BreakableContainerHealthField = typeof(BreakableContainer)
         .GetField("health", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
@@ -7109,14 +7109,9 @@ public sealed class ModEntry : Mod
         var targetVector = active.Target.ToVector2();
         if (!volcano.objects.TryGetValue(targetVector, out var current))
         {
-            if (!active.IsStone && active.ContainerActionIssued)
+            if (!active.IsStone)
             {
-                active.SwingCount++;
-                active.ContainerActionIssued = false;
-                if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != 0)
-                {
-                    active.ObservedHealth.Add(0);
-                }
+                active.HeavyHitterAction!.RecordRemoval();
             }
             CompleteVolcanoObstacle(active);
             return;
@@ -7129,7 +7124,7 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        if (!active.ActionHeld && ImmediateVolcanoThreat(volcano))
+        if ((active.IsStone || !active.HeavyHitterAction!.ButtonHeld) && ImmediateVolcanoThreat(volcano))
         {
             CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_unsafe_monster_window");
             return;
@@ -7179,7 +7174,7 @@ public sealed class ModEntry : Mod
         }
 
         StopAllMovement();
-        if (active.SwingCount >= active.MaxSwings)
+        if (active.IsStone && active.SwingCount >= active.MaxSwings)
         {
             CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_swing_budget_exceeded");
             return;
@@ -7216,46 +7211,19 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        if (active.ActionHeld)
+        if (!TryTickNativeHeavyHitterAction(
+                active.HeavyHitterAction!,
+                active.Target,
+                current is BreakableContainer container ? ReadBreakableContainerHealth(container) : null,
+                out var heavyHitterReason))
         {
-            TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
-            active.ActionHeld = false;
-            return;
+            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_" + heavyHitterReason);
         }
-        if (active.ContainerActionIssued)
-        {
-            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
-            {
-                return;
-            }
-
-            active.SwingCount++;
-            active.ContainerActionIssued = false;
-            RecordVolcanoObstacleSwing(active, current);
-            return;
-        }
-        if (Game1.player.UsingTool)
-        {
-            return;
-        }
-
-        Game1.player.CurrentToolIndex = active.ToolSlotIndex;
-        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-        Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
-        if (!TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: true, out var inputReason))
-        {
-            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_" + inputReason);
-            return;
-        }
-        active.ActionHeld = true;
-        active.ContainerActionIssued = true;
     }
 
     private static void RecordVolcanoObstacleSwing(ActiveVolcanoObstacle active, StardewValley.Object current)
     {
-        var health = active.IsStone
-            ? current.MinutesUntilReady
-            : current is BreakableContainer container ? ReadBreakableContainerHealth(container) ?? 0 : 0;
+        var health = current.MinutesUntilReady;
         if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != health)
         {
             active.ObservedHealth.Add(health);
@@ -7266,14 +7234,26 @@ public sealed class ModEntry : Mod
 
     private void CompleteVolcanoObstacle(ActiveVolcanoObstacle active)
     {
-        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
+        if (active.HeavyHitterAction is not null)
+        {
+            ReleaseNativeHeavyHitterAction(active.HeavyHitterAction);
+        }
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeVolcanoObstacle = null;
-        if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != 0)
+        var swingCount = active.EffectiveSwingCount;
+        if (active.EffectiveObservedHealth.Count == 0 || active.EffectiveObservedHealth[^1] != 0)
         {
-            active.ObservedHealth.Add(0);
+            if (active.HeavyHitterAction is not null)
+            {
+                active.HeavyHitterAction.RecordRemoval();
+            }
+            else
+            {
+                active.ObservedHealth.Add(0);
+            }
         }
+        var observedHealth = active.EffectiveObservedHealth;
         var request = active.Pending.Request;
         var primitiveKind = active.IsStone ? "break_volcano_stone" : "break_volcano_container";
         active.Pending.Completion.SetResult(new TrainingExecutionResult
@@ -7292,7 +7272,7 @@ public sealed class ModEntry : Mod
             TargetTileY = active.Target.Y,
             ToolQualifiedItemId = active.Tool.QualifiedItemId,
             ToolUpgradeLevel = active.Tool.UpgradeLevel,
-            ToolUseCount = active.SwingCount,
+            ToolUseCount = swingCount,
             ActualTicks = active.ElapsedTicks,
             TrainingImpactScope = "executor_calibration",
             StartedAt = active.StartedAt,
@@ -7300,10 +7280,10 @@ public sealed class ModEntry : Mod
             PrimitiveKind = primitiveKind,
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = active.IsStone
-                ? new[] { "native_pickaxe_lifecycle_removed_volcano_stone", "native_swing_count=" + active.SwingCount }
-                : new[] { "native_heavy_hitter_input_removed_volcano_container", "released_contents_left_as_game_debris", "native_swing_count=" + active.SwingCount },
+                ? new[] { "native_pickaxe_lifecycle_removed_volcano_stone", "native_swing_count=" + swingCount }
+                : new[] { "native_heavy_hitter_input_removed_volcano_container", "released_contents_left_as_game_debris", "native_swing_count=" + swingCount },
             RequestedEffect = active.RequestedEffect,
-            ObservedEffect = VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";health_sequence=" + string.Join(",", active.ObservedHealth) + ";native_swings=" + active.SwingCount,
+            ObservedEffect = VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";health_sequence=" + string.Join(",", observedHealth) + ";native_swings=" + swingCount,
             ChangedFacts = new[]
             {
                 new SimulatedFactChange { Path = "volcano.objects[" + active.Target.X + "," + active.Target.Y + "]", Before = active.TargetObject.QualifiedItemId + ":health=" + active.HealthBefore, After = "removed" },
@@ -7315,7 +7295,10 @@ public sealed class ModEntry : Mod
 
     private void CompleteVolcanoObstacleBlocked(ActiveVolcanoObstacle active, string reason)
     {
-        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
+        if (active.HeavyHitterAction is not null)
+        {
+            ReleaseNativeHeavyHitterAction(active.HeavyHitterAction);
+        }
         StopAllMovement();
         if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
         {
@@ -7324,15 +7307,16 @@ public sealed class ModEntry : Mod
         RestoreSlot(active.RestoreSlotIndex);
         activeVolcanoObstacle = null;
         var primitiveKind = active.IsStone ? "break_volcano_stone" : "break_volcano_container";
+        var swingCount = active.EffectiveSwingCount;
         var result = BlockedWithPrimitive(
             active.Pending.Request,
             primitiveKind,
             active.RequestedEffect,
-            VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";native_swings=" + active.SwingCount,
+            VolcanoObstacleObservedEffect(active.Target, active.IsStone) + ";health_sequence=" + string.Join(",", active.EffectiveObservedHealth) + ";native_swings=" + swingCount,
             reason);
         result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
         result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
-        result.ToolUseCount = active.SwingCount;
+        result.ToolUseCount = swingCount;
         result.EnergyBefore = active.StaminaBefore;
         result.EnergyAfter = Game1.player.Stamina;
         result.ActualTicks = active.ElapsedTicks;
@@ -8070,7 +8054,7 @@ public sealed class ModEntry : Mod
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (!active.Mine.objects.TryGetValue(targetVector, out var obj))
         {
-            RecordBreakContainerCompletedSwing(active, 0);
+            active.HeavyHitterAction.RecordRemoval();
             CompleteBreakContainer(active);
             return;
         }
@@ -8080,7 +8064,7 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        if (!active.ButtonHeld && ImmediateMiningThreat(active.Mine))
+        if (!active.HeavyHitterAction.ButtonHeld && ImmediateMiningThreat(active.Mine))
         {
             StopAllMovement();
             active.CombatInterrupted = true;
@@ -8130,62 +8114,19 @@ public sealed class ModEntry : Mod
         }
 
         StopAllMovement();
-        if (active.ButtonHeld)
+        if (!TryTickNativeHeavyHitterAction(
+                active.HeavyHitterAction,
+                active.Target,
+                ReadBreakableContainerHealth(container),
+                out var heavyHitterReason))
         {
-            TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
-            active.ButtonHeld = false;
-            return;
-        }
-        if (active.ActionIssued)
-        {
-            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
-            {
-                return;
-            }
-
-            RecordBreakContainerCompletedSwing(active, ReadBreakableContainerHealth(container));
-            return;
-        }
-        if (Game1.player.UsingTool)
-        {
-            return;
-        }
-        if (active.SwingCount >= active.MaxSwings)
-        {
-            CompleteBreakContainerBlocked(active, "break_container_swing_budget_exceeded");
-            return;
-        }
-
-        SelectTool(active.Tool);
-        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-        Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
-        if (!TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: true, out var inputReason))
-        {
-            CompleteBreakContainerBlocked(active, "break_container_" + inputReason);
-            return;
-        }
-        active.ButtonHeld = true;
-        active.ActionIssued = true;
-    }
-
-    private static void RecordBreakContainerCompletedSwing(ActiveBreakContainer active, int? remainingHealth)
-    {
-        if (!active.ActionIssued)
-        {
-            return;
-        }
-
-        active.SwingCount++;
-        active.ActionIssued = false;
-        if (remainingHealth.HasValue && (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != remainingHealth.Value))
-        {
-            active.ObservedHealth.Add(remainingHealth.Value);
+            CompleteBreakContainerBlocked(active, "break_container_" + heavyHitterReason);
         }
     }
 
     private void CompleteBreakContainer(ActiveBreakContainer active)
     {
-        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
+        ReleaseNativeHeavyHitterAction(active.HeavyHitterAction);
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeBreakContainer = null;
@@ -8224,7 +8165,7 @@ public sealed class ModEntry : Mod
 
     private void CompleteBreakContainerBlocked(ActiveBreakContainer active, string reason)
     {
-        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
+        ReleaseNativeHeavyHitterAction(active.HeavyHitterAction);
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeBreakContainer = null;
@@ -8240,11 +8181,6 @@ public sealed class ModEntry : Mod
         result.ActualTicks = active.ElapsedTicks;
         result.TrainingImpactScope = "executor_calibration";
         active.Pending.Completion.SetResult(result);
-    }
-
-    private static SButton HeavyHitterInputButton(Tool tool)
-    {
-        return tool is MeleeWeapon ? SButton.MouseLeft : SButton.C;
     }
 
     private static Tool? BestContainerTool()
@@ -15916,6 +15852,7 @@ public sealed class ModEntry : Mod
             Path = path;
             TargetObject = targetObject;
             Tool = tool;
+            HeavyHitterAction = isStone ? null : new NativeHeavyHitterActionState(tool, healthBefore, maxSwings);
             ToolSlotIndex = toolSlotIndex;
             RestoreSlotIndex = restoreSlotIndex;
             IsStone = isStone;
@@ -15927,7 +15864,10 @@ public sealed class ModEntry : Mod
             DebrisCountBefore = volcano.debris.Count;
             MaxTicks = Math.Max(360, maxMovementTiles * 90 + maxSwings * 240);
             LastPosition = Game1.player.Position;
-            ObservedHealth.Add(healthBefore);
+            if (isStone)
+            {
+                ObservedHealth.Add(healthBefore);
+            }
         }
 
         public PendingExecution Pending { get; }
@@ -15937,6 +15877,7 @@ public sealed class ModEntry : Mod
         public List<Point> Path { get; }
         public StardewValley.Object TargetObject { get; }
         public Tool Tool { get; }
+        public NativeHeavyHitterActionState? HeavyHitterAction { get; }
         public int ToolSlotIndex { get; }
         public int RestoreSlotIndex { get; }
         public bool IsStone { get; }
@@ -15953,11 +15894,11 @@ public sealed class ModEntry : Mod
         public int StuckTicks { get; set; }
         public Vector2 LastPosition { get; set; }
         public int SwingCount { get; set; }
+        public int EffectiveSwingCount => HeavyHitterAction?.SwingCount ?? SwingCount;
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
-        public bool ActionHeld { get; set; }
-        public bool ContainerActionIssued { get; set; }
         public List<int> ObservedHealth { get; } = new();
+        public IReadOnlyList<int> EffectiveObservedHealth => HeavyHitterAction?.ObservedHealth ?? ObservedHealth;
     }
 
     private sealed class ActiveVolcanoCombat
@@ -16040,15 +15981,13 @@ public sealed class ModEntry : Mod
             Target = target;
             Path = path;
             Container = container;
-            Tool = tool;
+            HeavyHitterAction = new NativeHeavyHitterActionState(tool, healthBefore, maxSwings);
             HealthBefore = healthBefore;
-            MaxSwings = maxSwings;
             RestoreSlotIndex = restoreSlotIndex;
             RequestedEffect = requestedEffect;
             DebrisCountBefore = mine.debris.Count;
             MaxTicks = Math.Max(300, path.Count * 90 + maxSwings * 180);
             LastPosition = Game1.player.Position;
-            ObservedHealth.Add(healthBefore);
         }
 
         public PendingExecution Pending { get; }
@@ -16056,9 +15995,10 @@ public sealed class ModEntry : Mod
         public Point Target { get; }
         public List<Point> Path { get; }
         public BreakableContainer Container { get; }
-        public Tool Tool { get; }
+        public NativeHeavyHitterActionState HeavyHitterAction { get; }
+        public Tool Tool => HeavyHitterAction.Tool;
         public int HealthBefore { get; }
-        public int MaxSwings { get; }
+        public int MaxSwings => HeavyHitterAction.MaxSwings;
         public int RestoreSlotIndex { get; }
         public string RequestedEffect { get; }
         public int DebrisCountBefore { get; }
@@ -16068,12 +16008,10 @@ public sealed class ModEntry : Mod
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
         public Vector2 LastPosition { get; set; }
-        public int SwingCount { get; set; }
-        public bool ButtonHeld { get; set; }
-        public bool ActionIssued { get; set; }
+        public int SwingCount => HeavyHitterAction.SwingCount;
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
-        public List<int> ObservedHealth { get; } = new();
+        public IReadOnlyList<int> ObservedHealth => HeavyHitterAction.ObservedHealth;
     }
 
     private sealed class ActiveShootMonster

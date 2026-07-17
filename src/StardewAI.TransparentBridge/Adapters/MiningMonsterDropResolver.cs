@@ -70,7 +70,7 @@ internal static class MiningMonsterDropResolver
 
         var pendantOverrideEligible = mine.mineLevel > 121 &&
             player.getFriendshipHeartLevelForNPC("Krobus") >= 10 &&
-            player.houseUpgradeLevel.Value >= 1 &&
+            player.HouseUpgradeLevel >= 1 &&
             !player.isMarriedOrRoommates() &&
             !player.isEngaged();
         var baseBranchChance = pendantOverrideEligible ? 0.999d : 1d;
