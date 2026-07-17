@@ -55,6 +55,8 @@ static partial class Program
             : string.Equals(optionId, "executor.break_resource_clump", StringComparison.Ordinal) ||
               string.Equals(optionId, "executor.break_farm_resource_clump", StringComparison.Ordinal)
                 ? applied ? 0.08 : -0.08
+            : string.Equals(optionId, "executor.collect_spawned_object", StringComparison.Ordinal)
+                ? applied ? 0.05 : -0.05
             : string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal)
                 ? applied ? 0.12 : -0.12
             : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)

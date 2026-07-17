@@ -57,6 +57,7 @@ public sealed partial class ModEntry : Mod
     private ActivePlaceBomb? activePlaceBomb;
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
+    private ActiveSpawnedObjectPickup? activeSpawnedObjectPickup;
     private ActiveDescendLadder? activeDescendLadder;
     private ActiveDescendShaft? activeDescendShaft;
     private ActiveExitMine? activeExitMine;
@@ -285,6 +286,7 @@ public sealed partial class ModEntry : Mod
         TickManualAutoCombat();
         TickConsumeFood();
         TickPickupDebris();
+        TickSpawnedObjectPickup();
         TickShootMonster();
         TickPlaceBomb();
         TickDescendLadder();
@@ -294,7 +296,7 @@ public sealed partial class ModEntry : Mod
         TickDialogueAdvance();
         TickSkullKeyChestInteraction();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null)
         {
             return;
         }
@@ -597,6 +599,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.pickup_debris")
             {
                 StartPickupDebris(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.collect_spawned_object")
+            {
+                StartSpawnedObjectPickup(pending);
                 return;
             }
 

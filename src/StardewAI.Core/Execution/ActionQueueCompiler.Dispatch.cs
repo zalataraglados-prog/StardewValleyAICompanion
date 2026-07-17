@@ -31,6 +31,7 @@ namespace StardewAI.Core.Execution
                 ["executor.harvest_crop"] = (action, _) => CompileHarvestCropStep(action),
                 ["executor.harvest_giant_crop"] = (action, _) => CompileHarvestGiantCropStep(action),
                 ["executor.pickup_debris"] = (action, _) => CompilePickupDebrisStep(action),
+                ["executor.collect_spawned_object"] = (action, _) => CompileCollectSpawnedObjectStep(action),
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),

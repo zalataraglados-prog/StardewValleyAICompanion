@@ -112,6 +112,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "legal cast candidate selected", "catch attempt handed to the fishing executor" },
                 new[] { "block_unresolved_fishing_context", "block_illegal_cast_geometry", "block_unobserved_catch_result" }));
 
+            Register(Option("foraging.collect_spawned_objects", "foraging", "Collect one transparent spawned object candidate",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one current spawned-object candidate selected", "native pickup handed to the mechanical executor" },
+                new[] { "block_unknown_spawned_object", "block_inventory_full", "block_unverified_route", "block_direct_object_mutation" }));
+
             Register(Option("mining.reach_depth", "mining", "Reach mine depth from transparent current mine state",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -446,6 +454,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.inventory", "player.inventory_capacity", "farm.debris", "menus.active_menu" },
                 new[] { "collectible debris removed and inventory updated" },
                 new[] { "block_unverified_debris", "block_inventory_full_or_unverified_item", "block_menu_unsafe_pickup" }));
+
+            Register(Option("executor.collect_spawned_object", "foraging", "Collect one verified spawned object through native checkAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one adjacent stand tile", "native checkAction collects the exact spawned object", "inventory and skill deltas are observed" },
+                new[] { "block_unknown_spawned_object", "block_inventory_full", "block_menu_unsafe_pickup", "block_direct_object_mutation" }));
 
             Register(Option("executor.collect_machine_output", "farm", "Collect one verified ready machine output",
                 OptionBehaviorCategories.Mechanical,

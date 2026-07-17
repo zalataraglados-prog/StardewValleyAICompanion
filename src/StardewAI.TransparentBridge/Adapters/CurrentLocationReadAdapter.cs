@@ -84,12 +84,13 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         return location.objects.Pairs
             .OrderBy(pair => pair.Key.X)
             .ThenBy(pair => pair.Key.Y)
-            .Select(pair => ReadObject(pair.Key, pair.Value))
+            .Select(pair => ReadObject(location, pair.Key, pair.Value, Game1.player))
             .ToArray();
     }
 
-    private static object ReadObject(Vector2 tile, StardewObject item)
+    private static object ReadObject(GameLocation location, Vector2 tile, StardewObject item, Farmer player)
     {
+        var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -100,7 +101,24 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             display_name = item.DisplayName,
             stack = item.Stack,
             quality = item.Quality,
-            type = item.GetType().FullName
+            type = item.GetType().FullName,
+            object_type = item.Type,
+            is_spawned_object = item.IsSpawnedObject,
+            is_forage = item.isForage(),
+            special_variable = item.SpecialVariable,
+            is_quest_item = item.questItem.Value,
+            quest_id = item.questId.Value ?? string.Empty,
+            spawned_object_pickup_status = harvest.Status,
+            projected_harvest_quality = harvest.Quality,
+            projected_primary_quantity = harvest.PrimaryQuantity,
+            projected_gatherer_duplicate = harvest.GathererDuplicate,
+            projected_total_quantity = harvest.TotalQuantity,
+            foraging_experience_on_success_min = harvest.ForagingExperience,
+            foraging_experience_on_success_max = harvest.ForagingExperience,
+            farming_experience_on_success_min = harvest.FarmingExperience,
+            farming_experience_on_success_max = harvest.FarmingExperience,
+            harvest_experience_status = harvest.ExperienceStatus,
+            harvest_experience_basis = harvest.ExperienceBasis
         };
     }
 

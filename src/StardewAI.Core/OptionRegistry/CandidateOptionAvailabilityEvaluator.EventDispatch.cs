@@ -20,6 +20,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["executor.interact"] = (snapshot, _) => InteractEndpointCandidates(snapshot),
                 ["recovery.stabilize_day"] = (snapshot, _) => RecoveryCandidates(snapshot),
                 ["fishing.catch_fish"] = (snapshot, _) => FishingEventCandidateBuilder.Build(snapshot),
+                ["foraging.collect_spawned_objects"] = (snapshot, _) => SpawnedObjectForagingCandidates(snapshot),
                 ["mining.reach_depth"] = MiningReachDepthCandidateBuilder.Build,
                 ["mining.acquire_golden_scythe"] = MiningGoldenScytheCandidateBuilder.Build,
                 ["mining.obtain_skull_key"] = MiningSkullKeyCandidateBuilder.Build,

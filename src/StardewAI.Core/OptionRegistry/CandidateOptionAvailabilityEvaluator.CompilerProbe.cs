@@ -84,6 +84,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.maintain_crops" ||
                 optionId == "farm.process_machines" ||
                 optionId == "fishing.catch_fish" ||
+                optionId == "foraging.collect_spawned_objects" ||
                 optionId == "mining.reach_depth" ||
                 optionId == "mining.obtain_skull_key" ||
                 optionId == "mining.acquire_golden_scythe" ||
@@ -120,6 +121,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.interact" ||
                 optionId == "executor.sleep" ||
                 optionId == "executor.pickup_debris" ||
+                optionId == "executor.collect_spawned_object" ||
                 optionId == "executor.collect_machine_output" ||
                 optionId == "executor.load_machine_input" ||
                 optionId == "executor.choose_dialogue_response" ||

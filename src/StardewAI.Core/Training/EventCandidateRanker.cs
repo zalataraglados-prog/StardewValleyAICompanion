@@ -103,6 +103,10 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.03;
                     }
+                    if (candidate.Kind == "collect_spawned_object")
+                    {
+                        urgencySignal = 0.035;
+                    }
                     if (candidate.Kind == "ship_inventory_item_to_bin")
                     {
                         urgencySignal = 0.025 + ShippingValueSignal(candidate);

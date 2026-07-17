@@ -86,6 +86,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_recovery_candidates");
             }
 
+            if (optionId == "foraging.collect_spawned_objects")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_spawned_object_candidates",
+                    "no_available_spawned_object_candidates");
+            }
+
             if (hasBoundParameters)
             {
                 return Array.Empty<string>();

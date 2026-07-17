@@ -190,6 +190,27 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileCollectSpawnedObjectStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(qualifiedItemId))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+            var estimatedTicks = Math.Max(1, ReadIntParameter(action, "estimated_minutes") ?? 2) * 60;
+
+            return new[]
+            {
+                Step(
+                    "collect_spawned_object",
+                    "current_location(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
+                    "current_location.objects[" + x.Value + "," + y.Value + "].present=false_or_blocked",
+                    estimatedTicks)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectMachineOutputStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");

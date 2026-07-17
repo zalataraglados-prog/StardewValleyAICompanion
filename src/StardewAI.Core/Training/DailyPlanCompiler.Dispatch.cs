@@ -67,6 +67,11 @@ namespace StardewAI.Core.Training
                 return PickupDebrisItemSteps(candidate);
             }
 
+            if (candidate.Kind == "collect_spawned_object")
+            {
+                return CollectSpawnedObjectSteps(candidate);
+            }
+
             if (candidate.Kind == "collect_machine_output_tile")
             {
                 return CollectMachineOutputSteps(candidate);
