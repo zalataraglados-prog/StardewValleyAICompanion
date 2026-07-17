@@ -92,6 +92,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     {
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
         var clearance = ReadObjectClearance(location, tile, item, player);
+        var crabPot = ReadCrabPotHarvest(tile, item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -149,7 +150,36 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 : (int?)null,
             defense_book_mail_expected_after = clearance.DefenseBookMailExpectedAfter.HasValue
                 ? clearance.DefenseBookMailExpectedAfter.Value ? 1 : 0
-                : (int?)null
+                : (int?)null,
+            crab_pot_collect_status = crabPot.Status,
+            crab_pot_tile_index = crabPot.TileIndex,
+            crab_pot_ready_for_harvest = crabPot.ReadyForHarvest,
+            crab_pot_owner_id = crabPot.OwnerId,
+            crab_pot_bait_qualified_item_id = crabPot.BaitQualifiedItemId,
+            crab_pot_bait_unit_state_sha256 = crabPot.BaitUnitStateSha256,
+            crab_pot_output_runtime_type = crabPot.OutputRuntimeType,
+            crab_pot_output_qualified_item_id = crabPot.OutputQualifiedItemId,
+            crab_pot_output_quality = crabPot.OutputQuality,
+            crab_pot_output_unit_state_sha256 = crabPot.OutputUnitStateSha256,
+            crab_pot_output_state_context = string.IsNullOrWhiteSpace(crabPot.OutputRuntimeType) ? "not_applicable" : "post_inventory_receive",
+            crab_pot_expected_output_items_json = crabPot.OutputItemsJson,
+            crab_pot_output_stack_before = crabPot.OutputStackBefore,
+            crab_pot_output_stack_on_collect = crabPot.OutputStackOnCollect,
+            crab_pot_book_double_roll_succeeded = crabPot.BookDoubleRollSucceeded,
+            crab_pot_book_crabbing_owned = crabPot.BookCrabbingOwned,
+            crab_pot_book_double_applied = crabPot.BookDoubleApplied,
+            crab_pot_inventory_accepts_base_stack = crabPot.InventoryAcceptsBaseStack,
+            crab_pot_inventory_accepts_collect_stack = crabPot.InventoryAcceptsCollectStack,
+            crab_pot_fishing_experience_on_success_min = crabPot.FishingExperience,
+            crab_pot_fishing_experience_on_success_max = crabPot.FishingExperience,
+            crab_pot_experience_projection_status = crabPot.ExperienceStatus,
+            crab_pot_fish_collection_eligible = crabPot.FishCollectionEligible,
+            crab_pot_fish_caught_count_before = crabPot.FishCaughtCountBefore,
+            crab_pot_fish_caught_count_after = crabPot.FishCaughtCountAfter,
+            crab_pot_fish_caught_max_size_before = crabPot.FishCaughtMaxSizeBefore,
+            crab_pot_catch_size_min = crabPot.CatchSizeMin,
+            crab_pot_catch_size_max = crabPot.CatchSizeMax,
+            crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus
         };
     }
 

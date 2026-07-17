@@ -238,6 +238,26 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileCollectCrabPotStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            var outputId = ReadParameter(action, "qualified_item_id");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(outputId))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "collect_crab_pot",
+                    "current_location(" + x.Value + "," + y.Value + "):" + outputId,
+                    "current_location.objects[" + x.Value + "," + y.Value + "].crab_pot_ready_for_harvest=false;player.inventory.updated;player.skills.fishing.experience_increases",
+                    Math.Max(30, (ReadIntParameter(action, "estimated_minutes") ?? 2) * 60))
+            };
+        }
+
         private static CompiledActionStep[] CompileLoadMachineInputStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");

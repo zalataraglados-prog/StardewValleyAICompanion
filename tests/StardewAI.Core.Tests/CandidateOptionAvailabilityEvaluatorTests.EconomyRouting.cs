@@ -297,7 +297,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.True(repair.Available);
         Assert.Equal("route_repair_clearable_obstacle", repair.AvailabilityClass);
         Assert.StartsWith("route-repair:route:Farm:12,10:warp:clear:Farm:12,10:grass", repair.CandidateId);
-        Assert.Equal("route_repair_for=route:Farm:12,10:warp;move_to_adjacent=11,10;current_location.obstacle[12,10]=clear;clear_kind=grass;source=Grass", repair.ExpectedEffect);
+        Assert.Equal("route_repair_for=route:Farm:12,10:warp;move_to_adjacent=11,10;current_location.obstacle[12,10]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
     }
 
     [Fact]
@@ -341,7 +341,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         var repair = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
         Assert.True(repair.Available);
         Assert.StartsWith("route-repair:route:Farm:3,0:warp:clear:Farm:1,0:grass", repair.CandidateId);
-        Assert.Equal("route_repair_for=route:Farm:3,0:warp;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass", repair.ExpectedEffect);
+        Assert.Equal("route_repair_for=route:Farm:3,0:warp;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.Constants;
 using StardewValley.Enchantments;
 using StardewValley.Extensions;
 using StardewValley.GameData.Locations;

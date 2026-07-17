@@ -801,7 +801,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(11, candidate.TileX);
         Assert.Equal(10, candidate.TileY);
-        Assert.Equal("move_to_adjacent=10,10;current_location.obstacle[11,10]=clear;clear_kind=grass;source=Grass", candidate.ExpectedEffect);
+        Assert.Equal("move_to_adjacent=10,10;current_location.obstacle[11,10]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", candidate.ExpectedEffect);
         Assert.Equal(60, candidate.EstimatedTicks);
         Assert.Equal(0, candidate.EnergyCost);
     }
@@ -838,7 +838,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
         Assert.Empty(candidate.BlockReasons);
-        Assert.Equal("move_to_adjacent=12,10;current_location.obstacle[13,10]=clear;clear_kind=grass;source=Grass", candidate.ExpectedEffect);
+        Assert.Equal("move_to_adjacent=12,10;current_location.obstacle[13,10]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", candidate.ExpectedEffect);
         Assert.Equal(180, candidate.EstimatedTicks);
     }
 

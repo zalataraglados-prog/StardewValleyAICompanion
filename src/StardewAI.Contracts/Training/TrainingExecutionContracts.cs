@@ -131,6 +131,39 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("clear_output_items_json")]
         public string ClearOutputItemsJson { get; set; } = string.Empty;
 
+        [JsonPropertyName("expected_output_items_json")]
+        public string ExpectedOutputItemsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_skill_id")]
+        public string ExpectedSkillId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_skill_experience_delta")]
+        public int? ExpectedSkillExperienceDelta { get; set; }
+
+        [JsonPropertyName("expected_container_bait_qualified_item_id")]
+        public string ExpectedContainerBaitQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_fish_collection_eligible")]
+        public int? ExpectedFishCollectionEligible { get; set; }
+
+        [JsonPropertyName("expected_fish_caught_count_before")]
+        public int? ExpectedFishCaughtCountBefore { get; set; }
+
+        [JsonPropertyName("expected_fish_caught_count_after")]
+        public int? ExpectedFishCaughtCountAfter { get; set; }
+
+        [JsonPropertyName("expected_fish_caught_max_size_before")]
+        public int? ExpectedFishCaughtMaxSizeBefore { get; set; }
+
+        [JsonPropertyName("expected_catch_size_min")]
+        public int? ExpectedCatchSizeMin { get; set; }
+
+        [JsonPropertyName("expected_catch_size_max")]
+        public int? ExpectedCatchSizeMax { get; set; }
+
+        [JsonPropertyName("catch_size_projection_status")]
+        public string CatchSizeProjectionStatus { get; set; } = string.Empty;
+
         [JsonPropertyName("artifact_spots_dug_before")]
         public int? ArtifactSpotsDugBefore { get; set; }
 

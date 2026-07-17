@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using System.Globalization;
 using StardewAI.Contracts.Training;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewObject = StardewValley.Object;

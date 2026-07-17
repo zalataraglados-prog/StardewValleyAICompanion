@@ -63,6 +63,7 @@ namespace StardewAI.Core.Training
                     "farm.maintain_crops",
                     "foraging.collect_spawned_objects",
                     "fishing.catch_fish",
+                    "fishing.collect_crab_pots",
                     "mining.reach_depth",
                     "executor.clear_obstacle",
                     "executor.break_farm_resource_clump"
@@ -73,6 +74,7 @@ namespace StardewAI.Core.Training
                     "harvest_giant_crop_tile",
                     "collect_spawned_object",
                     "catch_fish",
+                    "collect_crab_pot",
                     "mining_reach_depth_plan_envelope",
                     "clear_obstacle_tile",
                     "clear_farm_resource_clump"

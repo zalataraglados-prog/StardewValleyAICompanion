@@ -15,6 +15,7 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | ordinary stump and hollow-log `ResourceClump.performToolAction` | Foraging | exact farm resource-clump evidence |
 | spawned-object `GameLocation.checkAction` / `OnHarvestedForage` | Farming and/or Foraging | exact current pickup evidence |
 | twig and artifact/seed-spot `Object.performToolAction` | Foraging | exact current typed-clear evidence; eligible unseen-secret-note artifact outcomes remain fail-closed |
+| `CrabPot.checkForAction` | Fishing | exact ready output, deterministic `Book_Crabbing` doubling, inventory gate, `+5` XP, bait/reset state, and native interaction evidence; the ambient RNG catch-size argument is recorded at execution |
 
 ## Missing Mechanical Candidate Families
 
@@ -25,7 +26,6 @@ These are required before native skill-source enumeration can be called complete
 | `MilkPail.DoFunction`, `Shears.DoFunction`, and compatible `FarmAnimal` interaction | Farming | animal/tool eligibility, produce identity/quality, inventory gate, exact XP, native executor, observed deltas |
 | `Pan.DoFunction` | Mining and Foraging | live panning spot, pan state, complete reward/XP branch projection, native executor |
 | `FishPond.CheckForAction` harvest and pond quest completion | Fishing | pond state, output/quest requirements, XP formula inputs, native interaction executor |
-| `CrabPot.checkForAction` | Fishing | ready output, inventory, owner/profession state, exact `+5`, native interaction executor |
 | `HoeDirt.performToolAction` ginger branch | Foraging | hoe-harvest candidate distinct from ordinary player crop harvest |
 | `Bush.shake` berry harvest | Foraging | harvestable bush state, season/day/quantity, native interaction executor |
 | mine treasure `Chest` collection | Luck | exact eligible chest identity, current mine level, native chest lifecycle, output and XP verification |

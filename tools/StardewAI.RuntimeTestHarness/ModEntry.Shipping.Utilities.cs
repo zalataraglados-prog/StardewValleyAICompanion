@@ -432,6 +432,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_giant_crop_target" &&
             request.OptionId != "debug.setup_debris_target" &&
             request.OptionId != "debug.setup_machine_output_target" &&
+            request.OptionId != "debug.setup_crab_pot_target" &&
             request.OptionId != "debug.setup_machine_input_target" &&
             request.OptionId != "debug.setup_shipping_target" &&
             request.OptionId != "executor.select_safe_item_slot" &&
@@ -443,6 +444,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.harvest_giant_crop" &&
             request.OptionId != "executor.pickup_debris" &&
             request.OptionId != "executor.collect_spawned_object" &&
+            request.OptionId != "executor.collect_crab_pot" &&
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
             request.OptionId != "executor.catch_fish" &&

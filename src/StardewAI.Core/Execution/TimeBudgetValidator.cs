@@ -302,6 +302,11 @@ namespace StardewAI.Core.Execution
 
         private ExecutionAssumption? FindAssumption(ActionQueueItem item)
         {
+            if (item.OptionId is "fishing.collect_crab_pots" or "executor.collect_crab_pot")
+            {
+                return assumptionRegistry.GetRequired("crab_pot_collection");
+            }
+
             var activity = Parameter(item, "target_activity");
             if (activity == "mining")
             {

@@ -11,6 +11,7 @@ $ErrorActionPreference = "Stop"
 $sourceDir = Join-Path $ProjectRoot "tools\StardewAI.RuntimeTestHarness\bin\Debug\net6.0"
 $targetDir = Join-Path $RuntimeModsDir "StardewAI.RuntimeTestHarness"
 $contractSource = Join-Path $ProjectRoot "src\StardewAI.Contracts\bin\Debug\netstandard2.1\StardewAI.Contracts.dll"
+$runtimePrimitivesSource = Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives\bin\Debug\netstandard2.1\StardewAI.RuntimePrimitives.dll"
 $requiredFiles = @(
     "manifest.json",
     "StardewAI.RuntimeTestHarness.dll",
@@ -38,13 +39,16 @@ foreach ($file in $requiredFiles) {
 if (-not (Test-Path -LiteralPath $contractSource)) {
     throw "Required contract output missing: $contractSource"
 }
+if (-not (Test-Path -LiteralPath $runtimePrimitivesSource)) {
+    throw "Required runtime primitives output missing: $runtimePrimitivesSource"
+}
 
 if ($DryRun) {
     [pscustomobject]@{
         status = "dry_run"
         source_dir = $sourceDir
         target_dir = $targetDir
-        files = $requiredFiles + @("StardewAI.Contracts.dll")
+        files = $requiredFiles + @("StardewAI.Contracts.dll", "StardewAI.RuntimePrimitives.dll")
         preserves = "config.json"
     } | ConvertTo-Json -Depth 4
     exit 0
@@ -55,11 +59,12 @@ foreach ($file in $requiredFiles) {
     Copy-Item -LiteralPath (Join-Path $sourceDir $file) -Destination (Join-Path $targetDir $file) -Force
 }
 Copy-Item -LiteralPath $contractSource -Destination (Join-Path $targetDir "StardewAI.Contracts.dll") -Force
+Copy-Item -LiteralPath $runtimePrimitivesSource -Destination (Join-Path $targetDir "StardewAI.RuntimePrimitives.dll") -Force
 
 [pscustomobject]@{
     status = "deployed"
     source_dir = $sourceDir
     target_dir = $targetDir
-    files = $requiredFiles + @("StardewAI.Contracts.dll")
+    files = $requiredFiles + @("StardewAI.Contracts.dll", "StardewAI.RuntimePrimitives.dll")
     preserves = "config.json"
 } | ConvertTo-Json -Depth 4

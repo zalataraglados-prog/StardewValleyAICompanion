@@ -58,6 +58,7 @@ public sealed partial class ModEntry : Mod
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
     private ActiveSpawnedObjectPickup? activeSpawnedObjectPickup;
+    private ActiveCrabPotCollect? activeCrabPotCollect;
     private ActiveDescendLadder? activeDescendLadder;
     private ActiveDescendShaft? activeDescendShaft;
     private ActiveExitMine? activeExitMine;
@@ -101,6 +102,9 @@ public sealed partial class ModEntry : Mod
         harmony.Patch(
             original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), Type.EmptyTypes),
             prefix: new HarmonyMethod(typeof(BombPlacementCursorPatch), nameof(BombPlacementCursorPatch.GetOldMouseYPrefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
+            prefix: new HarmonyMethod(typeof(CrabPotCaughtFishPatch), nameof(CrabPotCaughtFishPatch.Prefix)));
 
         Monitor.Log($"Redirected Stardew save folder to {config.SavesPath}", LogLevel.Info);
 
@@ -287,6 +291,7 @@ public sealed partial class ModEntry : Mod
         TickConsumeFood();
         TickPickupDebris();
         TickSpawnedObjectPickup();
+        TickCrabPotCollect();
         TickShootMonster();
         TickPlaceBomb();
         TickDescendLadder();
@@ -296,7 +301,7 @@ public sealed partial class ModEntry : Mod
         TickDialogueAdvance();
         TickSkullKeyChestInteraction();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeCrabPotCollect is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null)
         {
             return;
         }
@@ -608,6 +613,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.collect_crab_pot")
+            {
+                StartCrabPotCollect(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_crab_pot_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupCrabPotTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.collect_machine_output")
             {
                 pending.Completion.SetResult(ExecuteCollectMachineOutput(pending.Request));
@@ -656,6 +673,8 @@ public sealed partial class ModEntry : Mod
         {
             StopAllMovement();
             activeCatchFish = null;
+            activeCrabPotCollect = null;
+            CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
             if (activeDialogue is not null)

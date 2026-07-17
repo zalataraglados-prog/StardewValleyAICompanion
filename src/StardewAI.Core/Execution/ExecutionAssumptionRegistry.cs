@@ -47,6 +47,13 @@ namespace StardewAI.Core.Execution
                 new[] { "missed_bite", "bad_bobber_control", "failed_perfect_catch_due_to_inputs" },
                 new[] { "FishingRod.minFishingBiteTime", "FishingRod.maxFishingBiteTime", "FishingRod.baseChanceForTreasure", "FishingGame" }),
             Assumption(
+                "crab_pot_collection",
+                new[] { "fishing.collect_crab_pots", "executor.collect_crab_pot" },
+                new[] { "ready_output", "inventory_capacity", "adjacent_reachable_tile", "menu_clear" },
+                new[] { "route_length", "book_double_roll", "caught_fish_size" },
+                Array.Empty<string>(),
+                new[] { "CrabPot.checkForAction", "Farmer.caughtFish", "Farmer.gainExperience" }),
+            Assumption(
                 "navigation",
                 new[] { "exploration.visit_location", "social.gift_npc", "economy.buy_supplies", "quest.advance" },
                 new[] { "passability_verified", "warp_verified", "destination_available", "time_budget" },

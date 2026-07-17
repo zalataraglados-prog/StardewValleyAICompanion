@@ -94,6 +94,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_spawned_object_candidates");
             }
 
+            if (optionId == "fishing.collect_crab_pots")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_crab_pot_candidates",
+                    "no_available_crab_pot_candidates");
+            }
+
             if (hasBoundParameters)
             {
                 return Array.Empty<string>();
