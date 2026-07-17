@@ -7109,6 +7109,15 @@ public sealed class ModEntry : Mod
         var targetVector = active.Target.ToVector2();
         if (!volcano.objects.TryGetValue(targetVector, out var current))
         {
+            if (!active.IsStone && active.ContainerActionIssued)
+            {
+                active.SwingCount++;
+                active.ContainerActionIssued = false;
+                if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != 0)
+                {
+                    active.ObservedHealth.Add(0);
+                }
+            }
             CompleteVolcanoObstacle(active);
             return;
         }
@@ -7209,8 +7218,19 @@ public sealed class ModEntry : Mod
 
         if (active.ActionHeld)
         {
-            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+            TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
             active.ActionHeld = false;
+            return;
+        }
+        if (active.ContainerActionIssued)
+        {
+            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
+            {
+                return;
+            }
+
+            active.SwingCount++;
+            active.ContainerActionIssued = false;
             RecordVolcanoObstacleSwing(active, current);
             return;
         }
@@ -7222,13 +7242,13 @@ public sealed class ModEntry : Mod
         Game1.player.CurrentToolIndex = active.ToolSlotIndex;
         Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
         Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
-        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        if (!TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: true, out var inputReason))
         {
             CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_" + inputReason);
             return;
         }
         active.ActionHeld = true;
-        active.SwingCount++;
+        active.ContainerActionIssued = true;
     }
 
     private static void RecordVolcanoObstacleSwing(ActiveVolcanoObstacle active, StardewValley.Object current)
@@ -7246,7 +7266,7 @@ public sealed class ModEntry : Mod
 
     private void CompleteVolcanoObstacle(ActiveVolcanoObstacle active)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeVolcanoObstacle = null;
@@ -7295,7 +7315,7 @@ public sealed class ModEntry : Mod
 
     private void CompleteVolcanoObstacleBlocked(ActiveVolcanoObstacle active, string reason)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
         StopAllMovement();
         if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
         {
@@ -8050,6 +8070,7 @@ public sealed class ModEntry : Mod
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (!active.Mine.objects.TryGetValue(targetVector, out var obj))
         {
+            RecordBreakContainerCompletedSwing(active, 0);
             CompleteBreakContainer(active);
             return;
         }
@@ -8111,13 +8132,18 @@ public sealed class ModEntry : Mod
         StopAllMovement();
         if (active.ButtonHeld)
         {
-            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+            TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
             active.ButtonHeld = false;
-            var health = ReadBreakableContainerHealth(container);
-            if (health.HasValue && (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != health.Value))
+            return;
+        }
+        if (active.ActionIssued)
+        {
+            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
             {
-                active.ObservedHealth.Add(health.Value);
+                return;
             }
+
+            RecordBreakContainerCompletedSwing(active, ReadBreakableContainerHealth(container));
             return;
         }
         if (Game1.player.UsingTool)
@@ -8133,18 +8159,33 @@ public sealed class ModEntry : Mod
         SelectTool(active.Tool);
         Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
         Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize + Game1.tileSize / 2, active.Target.Y * Game1.tileSize + Game1.tileSize / 2);
-        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        if (!TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: true, out var inputReason))
         {
             CompleteBreakContainerBlocked(active, "break_container_" + inputReason);
             return;
         }
         active.ButtonHeld = true;
+        active.ActionIssued = true;
+    }
+
+    private static void RecordBreakContainerCompletedSwing(ActiveBreakContainer active, int? remainingHealth)
+    {
+        if (!active.ActionIssued)
+        {
+            return;
+        }
+
         active.SwingCount++;
+        active.ActionIssued = false;
+        if (remainingHealth.HasValue && (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != remainingHealth.Value))
+        {
+            active.ObservedHealth.Add(remainingHealth.Value);
+        }
     }
 
     private void CompleteBreakContainer(ActiveBreakContainer active)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeBreakContainer = null;
@@ -8163,6 +8204,7 @@ public sealed class ModEntry : Mod
             TargetTileY = active.Target.Y,
             ToolQualifiedItemId = active.Tool.QualifiedItemId,
             ToolUpgradeLevel = active.Tool.UpgradeLevel,
+            ToolUseCount = active.SwingCount,
             ActualTicks = active.ElapsedTicks,
             TrainingImpactScope = "executor_calibration",
             StartedAt = active.StartedAt,
@@ -8182,11 +8224,27 @@ public sealed class ModEntry : Mod
 
     private void CompleteBreakContainerBlocked(ActiveBreakContainer active, string reason)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(HeavyHitterInputButton(active.Tool), pressed: false, out _);
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeBreakContainer = null;
-        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "break_container", active.RequestedEffect, BreakContainerObservedEffect(active.Target) + ";native_swings=" + active.SwingCount, reason));
+        var result = BlockedWithPrimitive(
+            active.Pending.Request,
+            "break_container",
+            active.RequestedEffect,
+            BreakContainerObservedEffect(active.Target) + ";health_sequence=" + string.Join(",", active.ObservedHealth) + ";native_swings=" + active.SwingCount,
+            reason);
+        result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
+        result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
+        result.ToolUseCount = active.SwingCount;
+        result.ActualTicks = active.ElapsedTicks;
+        result.TrainingImpactScope = "executor_calibration";
+        active.Pending.Completion.SetResult(result);
+    }
+
+    private static SButton HeavyHitterInputButton(Tool tool)
+    {
+        return tool is MeleeWeapon ? SButton.MouseLeft : SButton.C;
     }
 
     private static Tool? BestContainerTool()
@@ -15898,6 +15956,7 @@ public sealed class ModEntry : Mod
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
         public bool ActionHeld { get; set; }
+        public bool ContainerActionIssued { get; set; }
         public List<int> ObservedHealth { get; } = new();
     }
 
@@ -16011,6 +16070,7 @@ public sealed class ModEntry : Mod
         public Vector2 LastPosition { get; set; }
         public int SwingCount { get; set; }
         public bool ButtonHeld { get; set; }
+        public bool ActionIssued { get; set; }
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();

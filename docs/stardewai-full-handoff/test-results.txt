@@ -3023,3 +3023,17 @@ Result: PASS; native movement and pickaxe input removed a health-4 stone in one 
 Movement regression contract:
 - No `Game1.player.MovePosition`, direct `Game1.player.Position +=`, or same-frame `beforePosition` progress checks remain in RuntimeTestHarness.
 - Stuck detection and combat movement budgets consume cross-tick observed position/tile changes, so normal walking animation and game collision remain authoritative.
+
+2026-07-17 break-container calibration and Skull Key 119-to-120 closure
+
+Runtime: `artifacts\runtime-mining-snapshot-smoke\runtime-container-lifecycle-20260717102239\summary.json`
+Result: PASS; deterministic health-3 barrel used native `(W)63` melee input, completed one attack animation, observed health `3,0`, and disappeared from the refreshed transparent snapshot.
+
+Runtime: `artifacts\runtime-mining-reach-depth\runtime-skull-key-20260717102345\summary.json`
+Result: PASS; seven of seven actions verified from depth 119 through 120, including a naturally selected container, ladder descent, `has_skull_key false -> true`, and native exit. All seven after snapshots were fresh and all state hashes changed.
+
+Command: `dotnet test StardewValleyAICompanion.sln --no-restore --verbosity minimal`
+Result: PASS; StardewAI.Core.Tests 957, StardewAI.Backend.Tests 49.
+
+Command: PowerShell parser over `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1`
+Result: PASS.

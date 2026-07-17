@@ -13,14 +13,18 @@ Accepted on 2026-07-17.
 
 ## Runtime Proof
 
-Artifact: `artifacts/runtime-mining-reach-depth/runtime-skull-key-20260717-180537/summary.json`.
+Primary artifact: `artifacts/runtime-mining-reach-depth/runtime-skull-key-20260717102345/summary.json`.
 
-1. `executor.move_to_tile`: approached the transparent reward chest.
-2. `executor.interact`: native open/claim sequence; observed `has_skull_key false -> true`.
-3. `executor.exit_mine`: used the floor-120 two-tile exit stand and native ExitMine dialogue.
+1. Floor 119: two `executor.mine_stone` steps and one `executor.break_container` step opened the live route.
+2. `executor.descend_ladder`: changed the transparent depth from 119 to 120.
+3. `executor.move_to_tile`: approached the transparent reward chest.
+4. `executor.interact`: native open/claim sequence; observed `has_skull_key false -> true`.
+5. `executor.exit_mine`: used the floor-120 two-tile exit stand and native ExitMine dialogue.
 
-All three primitives were applied and verified. Every after snapshot was fresh, every state hash changed, and three executor-calibration rows were written. The isolated fixture reset is debug-only; the production executor never writes `hasSkullKey` directly.
+All seven primitives were applied and verified. Every after snapshot was fresh, every state hash changed, and seven executor-calibration rows were written. The isolated fixture reset is debug-only; the production executor never writes `hasSkullKey` directly.
 
-## Remaining Independent Issue
+The narrower floor-120 proof remains at `artifacts/runtime-mining-reach-depth/runtime-skull-key-20260717-180537/summary.json`.
 
-A 119-to-120 attempt first selected a random breakable container and hit `break_container_swing_budget_exceeded`. This is tracked as RISK-009. It does not invalidate the dedicated floor-120 key chain, but the longer 119-to-120 regression should be rerun after container budget calibration.
+## Container Calibration Closure
+
+The original 119-to-120 failure is closed as RISK-009. `artifacts/runtime-mining-snapshot-smoke/runtime-container-lifecycle-20260717102239/summary.json` deterministically placed a live health-3 barrel, selected the native club `(W)63`, observed `3 -> 0` over one completed attack animation, and confirmed removal in the refreshed transparent snapshot. The primary 119-to-120 artifact then exercised a naturally selected container in the complete objective chain.

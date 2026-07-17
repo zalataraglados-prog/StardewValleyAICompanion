@@ -1157,7 +1157,11 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("executor.break_container", source, StringComparison.Ordinal);
         Assert.Contains("obj is not BreakableContainer", containerSource, StringComparison.Ordinal);
         Assert.Contains("tool.isHeavyHitter()", containerSource, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: true", containerSource, StringComparison.Ordinal);
+        Assert.Contains("HeavyHitterInputButton(active.Tool)", containerSource, StringComparison.Ordinal);
+        Assert.Contains("tool is MeleeWeapon ? SButton.MouseLeft : SButton.C", containerSource, StringComparison.Ordinal);
+        Assert.Contains("RecordBreakContainerCompletedSwing", containerSource, StringComparison.Ordinal);
+        Assert.Contains("active.ActionIssued = true", containerSource, StringComparison.Ordinal);
+        Assert.Contains("active.SwingCount++", containerSource, StringComparison.Ordinal);
         Assert.Contains("native_heavy_hitter_input_removed_container", containerSource, StringComparison.Ordinal);
         Assert.Contains("released_contents_left_as_game_debris", containerSource, StringComparison.Ordinal);
         Assert.DoesNotContain("performToolAction(", containerSource, StringComparison.Ordinal);
@@ -1165,6 +1169,7 @@ public sealed class MiningFloorStepPlannerTests
 
         var smoke = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeMiningSnapshotSmoke.ps1"));
         Assert.Contains("[switch] $BreakOneContainer", smoke, StringComparison.Ordinal);
+        Assert.Contains("[switch] $ForceBreakableContainerFixture", smoke, StringComparison.Ordinal);
         Assert.Contains("option_id = \"executor.break_container\"", smoke, StringComparison.Ordinal);
         Assert.Contains("break_container_removed", smoke, StringComparison.Ordinal);
     }

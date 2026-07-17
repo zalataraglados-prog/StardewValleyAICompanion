@@ -11,6 +11,7 @@ param(
     [string] $OutputDirectory = "artifacts\runtime-mining-snapshot-smoke",
     [switch] $MineOneStone,
     [switch] $BreakOneContainer,
+    [switch] $ForceBreakableContainerFixture,
     [switch] $CombatOneMonster,
     [switch] $ManualCombatMovement,
     [switch] $MiningCalibrationLoadout,
@@ -313,7 +314,7 @@ try {
     $containerTarget = $null
     $containerRemoved = $null
     if ($BreakOneContainer) {
-        for ($clearanceAttempt = 0; $clearanceAttempt -lt 4 -and $null -eq $containerTarget; $clearanceAttempt++) {
+        for ($clearanceAttempt = 0; -not $ForceBreakableContainerFixture -and $clearanceAttempt -lt 4 -and $null -eq $containerTarget; $clearanceAttempt++) {
             $playerX = [int]$snapshot.state.mining.tiles.value.player_tile.tile_x
             $playerY = [int]$snapshot.state.mining.tiles.value.player_tile.tile_y
             $collision = $snapshot.state.mining.tiles.value.collision_context
@@ -537,6 +538,7 @@ try {
         mine_stone_health_sequence = $healthSequence
         mine_stone_removed = $stoneRemoved
         break_one_container_requested = [bool]$BreakOneContainer
+        forced_breakable_container_fixture = [bool]$ForceBreakableContainerFixture
         break_container_target = if ($null -ne $containerTarget) { "$($containerTarget.tile_x),$($containerTarget.tile_y)" } else { "" }
         break_container_health_before = if ($null -ne $containerTarget) { [int]$containerTarget.health_or_hits_remaining } else { $null }
         break_container_status = if ($null -ne $containerResult) { [string]$containerResult.status } else { "not_requested" }
