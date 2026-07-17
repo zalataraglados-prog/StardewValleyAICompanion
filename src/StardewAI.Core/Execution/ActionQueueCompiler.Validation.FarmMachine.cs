@@ -78,6 +78,52 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
+                var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
+                var targetObject = objects.HasValue && objects.Value.ValueKind == JsonValueKind.Array
+                    ? objects.Value.EnumerateArray().FirstOrDefault(item =>
+                        ReadInt(item, "tile_x") == targetX.Value &&
+                        ReadInt(item, "tile_y") == targetY.Value &&
+                        ReadString(item, "clear_kind") is "twig" or "artifact_spot")
+                    : default;
+                if (targetObject.ValueKind == JsonValueKind.Object)
+                {
+                    var status = ReadString(targetObject, "clear_obstacle_executor_status");
+                    if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                    {
+                        reasons.Add(string.IsNullOrWhiteSpace(status) ? "object_clear_projection_unavailable" : status);
+                    }
+                    var expectedHits = NullableReadInt(targetObject, "expected_tool_hits_to_clear");
+                    var maximumHits = ReadIntParameter(action, "max_tool_swings");
+                    if (!expectedHits.HasValue || !maximumHits.HasValue || maximumHits.Value < expectedHits.Value)
+                    {
+                        reasons.Add("object_clear_tool_swing_budget_insufficient");
+                    }
+                    if (ReadIntParameter(action, "tool_slot_index") != NullableReadInt(targetObject, "tool_slot_index"))
+                    {
+                        reasons.Add("object_clear_tool_slot_drifted");
+                    }
+                    if (!string.Equals(ReadParameter(action, "required_tool_kind"), ReadString(targetObject, "required_tool_kind"), StringComparison.Ordinal))
+                    {
+                        reasons.Add("object_clear_required_tool_kind_drifted");
+                    }
+                    if (!string.Equals(ReadParameter(action, "skill_experience_projection_status"), "exact", StringComparison.Ordinal) ||
+                        !string.Equals(ReadString(targetObject, "harvest_experience_projection_status"), "exact", StringComparison.Ordinal) ||
+                        !string.Equals(ReadParameter(action, "skill_experience_skill_id"), ReadString(targetObject, "harvest_experience_skill_id"), StringComparison.Ordinal) ||
+                        ReadIntParameter(action, "skill_experience_on_success_min") != NullableReadInt(targetObject, "harvest_experience_on_success_min") ||
+                        ReadIntParameter(action, "skill_experience_on_success_max") != NullableReadInt(targetObject, "harvest_experience_on_success_max"))
+                    {
+                        reasons.Add("object_clear_experience_projection_drifted");
+                    }
+                    if (!string.Equals(ReadParameter(action, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
+                        !string.Equals(ReadString(targetObject, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
+                        !string.Equals(ReadParameter(action, "clear_output_qualified_item_id"), ReadString(targetObject, "clear_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
+                        ReadIntParameter(action, "clear_output_quantity_min") != NullableReadInt(targetObject, "clear_output_quantity_min") ||
+                        ReadIntParameter(action, "clear_output_quantity_max") != NullableReadInt(targetObject, "clear_output_quantity_max"))
+                    {
+                        reasons.Add("object_clear_output_projection_drifted");
+                    }
+                }
+
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

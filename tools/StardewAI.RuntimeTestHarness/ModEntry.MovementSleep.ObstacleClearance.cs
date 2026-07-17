@@ -107,7 +107,7 @@ public sealed partial class ModEntry : Mod
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var requested = "current_location.obstacle[" + target.X + "," + target.Y + "]=clear";
-        if (!CanClearRouteObstacles(location))
+        if (!CanClearRouteObstacles(location) && !IsExplicitPortableSkillClearanceObject(location, target))
         {
             return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_location_not_whitelisted");
         }
@@ -117,16 +117,38 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_target_not_adjacent");
         }
 
-        var tool = SelectClearanceTool(location, target);
+        var projectedTool = SelectClearanceTool(location, target);
+        var tool = projectedTool;
+        if (request.ToolSlotIndex.HasValue)
+        {
+            if (request.ToolSlotIndex.Value < 0 ||
+                request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
+                Game1.player.Items[request.ToolSlotIndex.Value] is not Tool requestedTool ||
+                !ReferenceEquals(requestedTool, projectedTool))
+            {
+                return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_tool_slot_drifted");
+            }
+            tool = requestedTool;
+        }
         if (tool is null)
         {
             return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_no_matching_tool_or_obstacle");
+        }
+        if (!string.IsNullOrWhiteSpace(request.RequiredToolKind) &&
+            !string.Equals(request.RequiredToolKind, ClearanceToolKind(tool), StringComparison.Ordinal))
+        {
+            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_required_tool_kind_drifted");
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
         var before = ObstacleLabel(location, target);
         var staminaBefore = Game1.player.Stamina;
         var beforeForagingExperience = Game1.player.experiencePoints[Farmer.foragingSkill];
+        var expectedForagingExperience = ProjectedClearanceForagingExperience(location, target);
+        var expectedOutputQualifiedItemId = ProjectedClearanceOutputQualifiedItemId(location, target);
+        var outputCountBefore = expectedOutputQualifiedItemId is null
+            ? 0
+            : CountLocationDebrisItem(location, expectedOutputQualifiedItemId);
         var swings = Math.Clamp(request.MaxCrops, 1, 64);
         var observedLabels = new List<string> { before };
         for (var swing = 0; swing < swings; swing++)
@@ -148,7 +170,50 @@ public sealed partial class ModEntry : Mod
         }
 
         var after = ObstacleLabel(location, target);
-        var verified = after == "clear";
+        var foragingExperienceAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
+        var foragingExperienceDelta = foragingExperienceAfter - beforeForagingExperience;
+        var outputCountAfter = expectedOutputQualifiedItemId is null
+            ? 0
+            : CountLocationDebrisItem(location, expectedOutputQualifiedItemId);
+        var outputQuantityDelta = outputCountAfter - outputCountBefore;
+        var verified = after == "clear" &&
+            (!expectedForagingExperience.HasValue || foragingExperienceDelta == expectedForagingExperience.Value) &&
+            (expectedOutputQualifiedItemId is null || outputQuantityDelta == 1);
+        var verificationFailureReason = after != "clear"
+            ? "target_obstacle_still_present"
+            : expectedForagingExperience.HasValue && foragingExperienceDelta != expectedForagingExperience.Value
+                ? "projected_foraging_experience_mismatch"
+                : "projected_clear_output_mismatch";
+        var changedFacts = new List<SimulatedFactChange>
+        {
+            new SimulatedFactChange
+            {
+                Path = "current_location.obstacle[" + target.X + "," + target.Y + "]",
+                Before = before,
+                After = after
+            },
+            new SimulatedFactChange
+            {
+                Path = "player.energy",
+                Before = staminaBefore.ToString("0.###"),
+                After = Game1.player.Stamina.ToString("0.###")
+            },
+            new SimulatedFactChange
+            {
+                Path = "player.skills.foraging.experience",
+                Before = beforeForagingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                After = foragingExperienceAfter.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            }
+        };
+        if (expectedOutputQualifiedItemId is not null)
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "current_location.debris.count[" + expectedOutputQualifiedItemId + "]",
+                Before = outputCountBefore.ToString(CultureInfo.InvariantCulture),
+                After = outputCountAfter.ToString(CultureInfo.InvariantCulture)
+            });
+        }
         return new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -165,32 +230,16 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "clear_obstacle",
             PrimitiveVerificationStatus = verified ? "verified" : "blocked",
             PrimitiveVerificationReasons = verified
-                ? new[] { "target_obstacle_cleared", "tool=" + tool.GetType().Name }
-                : new[] { "target_obstacle_still_present", "tool=" + tool.GetType().Name },
+                ? new[] { "target_obstacle_cleared", "tool=" + tool.GetType().Name, "projected_foraging_experience_matched=" + (expectedForagingExperience.HasValue ? "true" : "not_projected"), "projected_output_matched=" + (expectedOutputQualifiedItemId is null ? "not_projected" : "true") }
+                : new[] { verificationFailureReason, "tool=" + tool.GetType().Name },
             RequestedEffect = requested,
-            ObservedEffect = "before=" + before + ";after=" + after + ";labels=" + string.Join(">", observedLabels),
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "target_obstacle_still_present" },
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange
-                {
-                    Path = "current_location.obstacle[" + target.X + "," + target.Y + "]",
-                    Before = before,
-                    After = after
-                },
-                new SimulatedFactChange
-                {
-                    Path = "player.energy",
-                    Before = staminaBefore.ToString("0.###"),
-                    After = Game1.player.Stamina.ToString("0.###")
-                },
-                new SimulatedFactChange
-                {
-                    Path = "player.skills.foraging.experience",
-                    Before = beforeForagingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
-                }
-            }
+            ObservedEffect = "before=" + before + ";after=" + after + ";labels=" + string.Join(">", observedLabels) +
+                ";foraging_experience_delta=" + foragingExperienceDelta +
+                ";expected_foraging_experience=" + (expectedForagingExperience?.ToString(CultureInfo.InvariantCulture) ?? "not_projected") +
+                ";output_qualified_item_id=" + (expectedOutputQualifiedItemId ?? "not_projected") +
+                ";output_quantity_delta=" + outputQuantityDelta,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { verificationFailureReason },
+            ChangedFacts = changedFacts.ToArray()
         };
     }
 
@@ -242,6 +291,11 @@ public sealed partial class ModEntry : Mod
                 return FindTool<Axe>();
             }
 
+            if (obj.QualifiedItemId is "(O)590" or "(O)SeedSpot")
+            {
+                return FindTool<Hoe>();
+            }
+
             return null;
         }
 
@@ -266,6 +320,52 @@ public sealed partial class ModEntry : Mod
         }
 
         return null;
+    }
+
+    private static bool IsExplicitPortableSkillClearanceObject(GameLocation location, Point tile)
+    {
+        return location.objects.TryGetValue(tile.ToVector2(), out var item) &&
+            item.GetType() == typeof(StardewValley.Object) &&
+            (item.IsTwig() || item.QualifiedItemId is "(O)590" or "(O)SeedSpot");
+    }
+
+    private static int? ProjectedClearanceForagingExperience(GameLocation location, Point tile)
+    {
+        if (!location.objects.TryGetValue(tile.ToVector2(), out var item) || item.GetType() != typeof(StardewValley.Object))
+        {
+            return null;
+        }
+        if (item.IsTwig())
+        {
+            return 1;
+        }
+        return item.QualifiedItemId is "(O)590" or "(O)SeedSpot" ? 15 : null;
+    }
+
+    private static string? ProjectedClearanceOutputQualifiedItemId(GameLocation location, Point tile)
+    {
+        return location.objects.TryGetValue(tile.ToVector2(), out var item) &&
+            item.GetType() == typeof(StardewValley.Object) && item.IsTwig()
+                ? "(O)388"
+                : null;
+    }
+
+    private static int CountLocationDebrisItem(GameLocation location, string qualifiedItemId)
+    {
+        return location.debris.Count(debris =>
+            string.Equals(DebrisQualifiedItemId(debris), qualifiedItemId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string ClearanceToolKind(Tool tool)
+    {
+        return tool switch
+        {
+            Axe => "axe",
+            Hoe => "hoe",
+            Pickaxe => "pickaxe",
+            MeleeWeapon => "melee_weapon",
+            _ => tool.GetType().Name.ToLowerInvariant()
+        };
     }
 
     private static TTool? FindTool<TTool>() where TTool : Tool

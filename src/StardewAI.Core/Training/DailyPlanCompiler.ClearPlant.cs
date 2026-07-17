@@ -39,6 +39,30 @@ namespace StardewAI.Core.Training
             {
                 Parameter("max_tool_swings", string.IsNullOrWhiteSpace(maxToolSwings) ? "8" : maxToolSwings)
             };
+            var toolSlotIndex = ParseValue(candidate.ExpectedEffect, "tool_slot_index=");
+            var requiredToolKind = ParseValue(candidate.ExpectedEffect, "required_tool_kind=");
+            if (!string.IsNullOrWhiteSpace(toolSlotIndex))
+            {
+                parameters.Add(Parameter("tool_slot_index", toolSlotIndex));
+            }
+            if (!string.IsNullOrWhiteSpace(requiredToolKind))
+            {
+                parameters.Add(Parameter("required_tool_kind", requiredToolKind));
+            }
+            foreach (var name in new[]
+            {
+                "clear_output_projection_status",
+                "clear_output_qualified_item_id",
+                "clear_output_quantity_min",
+                "clear_output_quantity_max"
+            })
+            {
+                var value = ParseValue(candidate.ExpectedEffect, name + "=");
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    parameters.Add(Parameter(name, value));
+                }
+            }
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
 
             steps.Add(

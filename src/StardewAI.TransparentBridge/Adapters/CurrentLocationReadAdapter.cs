@@ -91,6 +91,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     private static object ReadObject(GameLocation location, Vector2 tile, StardewObject item, Farmer player)
     {
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
+        var clearance = ReadObjectClearance(item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -118,7 +119,22 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             farming_experience_on_success_min = harvest.FarmingExperience,
             farming_experience_on_success_max = harvest.FarmingExperience,
             harvest_experience_status = harvest.ExperienceStatus,
-            harvest_experience_basis = harvest.ExperienceBasis
+            harvest_experience_basis = harvest.ExperienceBasis,
+            clear_kind = clearance.ClearKind,
+            clear_obstacle_executor_status = clearance.Status,
+            required_tool_kind = clearance.RequiredToolKind,
+            tool_slot_index = clearance.ToolSlotIndex,
+            expected_tool_hits_to_clear = clearance.ExpectedToolHits,
+            harvest_experience_skill_id = clearance.SkillId,
+            harvest_experience_skill_index = clearance.SkillIndex,
+            harvest_experience_on_success_min = clearance.Experience,
+            harvest_experience_on_success_max = clearance.Experience,
+            harvest_experience_condition = clearance.ExperienceCondition,
+            harvest_experience_projection_status = clearance.ExperienceStatus,
+            clear_output_projection_status = clearance.OutputStatus,
+            clear_output_qualified_item_id = clearance.OutputQualifiedItemId,
+            clear_output_quantity_min = clearance.OutputQuantity,
+            clear_output_quantity_max = clearance.OutputQuantity
         };
     }
 
