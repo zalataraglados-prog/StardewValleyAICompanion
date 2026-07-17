@@ -343,7 +343,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void CollisionGridTreatsLockedFriendshipTouchDoorsAsDynamicObstacles()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+        var source = ShopAccessReadAdapterSources.All;
 
         Assert.Contains("ReadFriendshipDoorGate(location, touchAction)", source, StringComparison.Ordinal);
         Assert.Contains("friendshipDoor is { AllowedNow: false }", source, StringComparison.Ordinal);

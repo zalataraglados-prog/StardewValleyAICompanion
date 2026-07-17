@@ -153,7 +153,7 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.DoesNotContain("baitBonus = mineArea switch", bridgeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("baitName.Contains(\"Lava Eel\"", bridgeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("tryToCreateUnseenSecretNote", bridgeSource, StringComparison.Ordinal);
-        var routeSource = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+        var routeSource = ShopAccessReadAdapterSources.All;
         Assert.Contains("pathfinding: true", routeSource);
         var smokeSource = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
         Assert.Contains("profile=fishing", smokeSource);

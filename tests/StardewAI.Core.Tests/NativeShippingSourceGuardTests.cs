@@ -542,7 +542,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void RouteConnectorsAndWallGraphHaveBuildingDoorEdges()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+        var source = ShopAccessReadAdapterSources.All;
         Assert.Contains("ReadBuildingDoorConnectors", source, StringComparison.Ordinal);
         Assert.Contains("ReadBuildingDoorGraphEdge", source, StringComparison.Ordinal);
         Assert.Contains("\"building_door\"", source, StringComparison.Ordinal);
@@ -695,7 +695,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ReadBuildingDoorGraphEdgeEmitsUnresolvedRows()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+        var source = ShopAccessReadAdapterSources.All;
         var doorSlice = Slice(source, "private static object ReadBuildingDoorGraphEdge", "private static string ClassifyRouteActionBranch");
         Assert.Contains("human_door_unavailable", doorSlice, StringComparison.Ordinal);
         Assert.Contains("indoor_location_unavailable", doorSlice, StringComparison.Ordinal);
@@ -708,7 +708,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void ReadSingleBuildingDoorConnectorEmitsUnresolvedRows()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+        var source = ShopAccessReadAdapterSources.All;
         var connSlice = Slice(source, "private static object ReadSingleBuildingDoorConnector", "private static object ReadCollisionGrid");
         Assert.Contains("human_door_unavailable", connSlice, StringComparison.Ordinal);
         Assert.Contains("indoor_location_unavailable", connSlice, StringComparison.Ordinal);
