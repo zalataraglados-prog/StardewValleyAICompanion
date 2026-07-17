@@ -522,9 +522,19 @@ namespace StardewAI.Core.OptionRegistry
                     var y = ReadInt(crop, "tile_y");
                     var harvestItemId = ReadString(crop, "harvest_item_id");
                     var harvestMethod = ReadString(crop, "harvest_method");
+                    var skillId = ReadString(crop, "harvest_experience_skill_id");
+                    var skillMinimum = NullableReadInt(crop, "harvest_experience_on_success_min");
+                    var skillMaximum = NullableReadInt(crop, "harvest_experience_on_success_max");
+                    var skillCondition = ReadString(crop, "harvest_experience_condition");
+                    var skillStatus = ReadString(crop, "harvest_experience_projection_status");
                     var effect = "farm.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestMethod) ? ";harvest_method=" + harvestMethod : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
+                        (skillMinimum.HasValue ? ";skill_experience_on_success_min=" + skillMinimum.Value : string.Empty) +
+                        (skillMaximum.HasValue ? ";skill_experience_on_success_max=" + skillMaximum.Value : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(skillCondition) ? ";skill_experience_condition=" + skillCondition : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(skillStatus) ? ";skill_experience_projection_status=" + skillStatus : string.Empty) +
                         ";harvest_executor_status=runtime_verified";
                     return new EventCandidate
                     {
@@ -559,10 +569,20 @@ namespace StardewAI.Core.OptionRegistry
                     var y = ReadInt(clump, "tile_y");
                     var id = ReadString(clump, "giant_crop_id");
                     var health = ReadInt(clump, "health");
+                    var skillId = ReadString(clump, "harvest_experience_skill_id");
+                    var skillMinimum = NullableReadInt(clump, "harvest_experience_on_success_min");
+                    var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
+                    var skillCondition = ReadString(clump, "harvest_experience_condition");
+                    var skillStatus = ReadString(clump, "harvest_experience_projection_status");
                     var effect = "farm.resource_clumps[" + x + "," + y + "].is_giant_crop=false" +
                         (!string.IsNullOrWhiteSpace(id) ? ";giant_crop_id=" + id : string.Empty) +
                         ";required_tool=axe" +
                         ";resource_clump_health=" + health +
+                        (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
+                        (skillMinimum.HasValue ? ";skill_experience_on_success_min=" + skillMinimum.Value : string.Empty) +
+                        (skillMaximum.HasValue ? ";skill_experience_on_success_max=" + skillMaximum.Value : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(skillCondition) ? ";skill_experience_condition=" + skillCondition : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(skillStatus) ? ";skill_experience_projection_status=" + skillStatus : string.Empty) +
                         ";harvest_giant_crop_executor_status=runtime_verified";
                     return new EventCandidate
                     {

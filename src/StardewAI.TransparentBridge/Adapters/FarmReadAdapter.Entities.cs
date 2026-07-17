@@ -66,19 +66,29 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
     private static object[] ReadResourceClumps(Farm farm)
     {
         return farm.resourceClumps
-            .Select(clump => new
+            .Select(clump =>
             {
-                tile_x = (int)clump.Tile.X,
-                tile_y = (int)clump.Tile.Y,
-                runtime_type = clump.GetType().FullName,
-                parent_sheet_index = clump.parentSheetIndex.Value,
-                width = clump.width.Value,
-                height = clump.height.Value,
-                health = clump.health.Value,
-                is_giant_crop = clump is GiantCrop,
-                giant_crop_id = clump is GiantCrop giant ? giant.Id : string.Empty,
-                required_tool = clump is GiantCrop ? "axe" : string.Empty,
-                executor_status = clump is GiantCrop ? "blocked_requires_giant_crop_executor" : string.Empty
+                var experience = ReadGiantCropExperience(clump, Game1.player);
+                return new
+                {
+                    tile_x = (int)clump.Tile.X,
+                    tile_y = (int)clump.Tile.Y,
+                    runtime_type = clump.GetType().FullName,
+                    parent_sheet_index = clump.parentSheetIndex.Value,
+                    width = clump.width.Value,
+                    height = clump.height.Value,
+                    health = clump.health.Value,
+                    is_giant_crop = clump is GiantCrop,
+                    giant_crop_id = clump is GiantCrop giant ? giant.Id : string.Empty,
+                    required_tool = clump is GiantCrop ? "axe" : string.Empty,
+                    executor_status = clump is GiantCrop ? "runtime_verified" : string.Empty,
+                    harvest_experience_skill_id = experience.SkillId,
+                    harvest_experience_skill_index = experience.SkillIndex,
+                    harvest_experience_on_success_min = experience.Minimum,
+                    harvest_experience_on_success_max = experience.Maximum,
+                    harvest_experience_condition = experience.Condition,
+                    harvest_experience_projection_status = experience.Status
+                };
             })
             .OrderBy(clump => clump.tile_y)
             .ThenBy(clump => clump.tile_x)

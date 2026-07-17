@@ -82,6 +82,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             {
                 var dirt = (HoeDirt)pair.Value;
                 var crop = dirt.crop;
+                var experience = ReadCropHarvestExperience(crop);
                 return new
                 {
                     tile_x = (int)pair.Key.X,
@@ -96,7 +97,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     fully_grown = crop.fullyGrown.Value,
                     ready_for_harvest = dirt.readyForHarvest(),
                     watered = dirt.isWatered(),
-                    needs_watering = dirt.needsWatering()
+                    needs_watering = dirt.needsWatering(),
+                    harvest_experience_skill_id = experience.SkillId,
+                    harvest_experience_skill_index = experience.SkillIndex,
+                    harvest_experience_on_success_min = experience.Minimum,
+                    harvest_experience_on_success_max = experience.Maximum,
+                    harvest_experience_condition = experience.Condition,
+                    harvest_experience_projection_status = experience.Status
                 };
             })
             .OrderBy(crop => crop.tile_y)

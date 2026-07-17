@@ -55,6 +55,7 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("harvest_method", harvestMethod));
             }
+            AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
 
             return new[]
             {
@@ -89,6 +90,7 @@ namespace StardewAI.Core.Training
                 parameters.Add(Parameter("giant_crop_id", giantCropId));
             }
             parameters.Add(Parameter("required_tool", "axe"));
+            AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
 
             return new[]
             {
@@ -107,6 +109,26 @@ namespace StardewAI.Core.Training
                     Parameters = parameters.ToArray()
                 }
             };
+        }
+
+        private static void AddSkillExperienceParameters(List<SmallModelActionParameter> parameters, string expectedEffect)
+        {
+            var names = new[]
+            {
+                "skill_experience_skill_id",
+                "skill_experience_on_success_min",
+                "skill_experience_on_success_max",
+                "skill_experience_condition",
+                "skill_experience_projection_status"
+            };
+            foreach (var name in names)
+            {
+                var value = ParseValue(expectedEffect, name + "=");
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    parameters.Add(Parameter(name, value));
+                }
+            }
         }
 
         private static IEnumerable<SmallModelPlanStep> PickupDebrisItemSteps(PolicyEventCandidatePrediction candidate)
