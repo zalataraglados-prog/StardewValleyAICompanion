@@ -172,7 +172,7 @@ public sealed partial class CurrentLocationReadAdapter
             return new ObjectClearanceProjection
             {
                 ClearKind = "artifact_spot",
-                Status = "blocked_artifact_spot_runtime_multiset_verifier_pending",
+                Status = "ready",
                 RequiredToolKind = requiredToolKind,
                 ToolSlotIndex = toolSlotIndex,
                 ExpectedToolHits = 1,

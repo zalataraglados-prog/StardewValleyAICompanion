@@ -125,6 +125,30 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_tool_kind")]
         public string RequiredToolKind { get; set; } = string.Empty;
 
+        [JsonPropertyName("clear_output_projection_status")]
+        public string ClearOutputProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("clear_output_items_json")]
+        public string ClearOutputItemsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("artifact_spots_dug_before")]
+        public int? ArtifactSpotsDugBefore { get; set; }
+
+        [JsonPropertyName("artifact_spots_dug_delta")]
+        public int? ArtifactSpotsDugDelta { get; set; }
+
+        [JsonPropertyName("artifact_spots_dug_expected_after")]
+        public int? ArtifactSpotsDugExpectedAfter { get; set; }
+
+        [JsonPropertyName("clear_terrain_feature_expected_after")]
+        public string ClearTerrainFeatureExpectedAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("defense_book_mail_before")]
+        public int? DefenseBookMailBefore { get; set; }
+
+        [JsonPropertyName("defense_book_mail_expected_after")]
+        public int? DefenseBookMailExpectedAfter { get; set; }
+
         [JsonPropertyName("resource_clump_tile_x")]
         public int? ResourceClumpTileX { get; set; }
 

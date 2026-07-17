@@ -262,6 +262,14 @@ static partial class Program
         var wateringCanSlotIndex = ReadQueueParameterInt(item, "watering_can_slot_index");
         var toolSlotIndex = ReadQueueParameterInt(item, "tool_slot_index");
         var requiredToolKind = ReadQueueParameterString(item, "required_tool_kind");
+        var clearOutputProjectionStatus = ReadQueueParameterString(item, "clear_output_projection_status");
+        var clearOutputItemsJson = ReadQueueParameterString(item, "clear_output_items_json");
+        var artifactSpotsDugBefore = ReadQueueParameterInt(item, "artifact_spots_dug_before");
+        var artifactSpotsDugDelta = ReadQueueParameterInt(item, "artifact_spots_dug_delta");
+        var artifactSpotsDugExpectedAfter = ReadQueueParameterInt(item, "artifact_spots_dug_expected_after");
+        var clearTerrainFeatureExpectedAfter = ReadQueueParameterString(item, "clear_terrain_feature_expected_after");
+        var defenseBookMailBefore = ReadQueueParameterInt(item, "defense_book_mail_before");
+        var defenseBookMailExpectedAfter = ReadQueueParameterInt(item, "defense_book_mail_expected_after");
         var resourceClumpTileX = ReadQueueParameterInt(item, "resource_clump_tile_x");
         var resourceClumpTileY = ReadQueueParameterInt(item, "resource_clump_tile_y");
         var resourceClumpWidth = ReadQueueParameterInt(item, "resource_clump_width");
@@ -379,6 +387,14 @@ static partial class Program
             executionRequest.ToolSlotIndex = toolSlotIndex.Value;
         }
         executionRequest.RequiredToolKind = requiredToolKind;
+        executionRequest.ClearOutputProjectionStatus = clearOutputProjectionStatus;
+        executionRequest.ClearOutputItemsJson = clearOutputItemsJson;
+        executionRequest.ArtifactSpotsDugBefore = artifactSpotsDugBefore;
+        executionRequest.ArtifactSpotsDugDelta = artifactSpotsDugDelta;
+        executionRequest.ArtifactSpotsDugExpectedAfter = artifactSpotsDugExpectedAfter;
+        executionRequest.ClearTerrainFeatureExpectedAfter = clearTerrainFeatureExpectedAfter;
+        executionRequest.DefenseBookMailBefore = defenseBookMailBefore;
+        executionRequest.DefenseBookMailExpectedAfter = defenseBookMailExpectedAfter;
         executionRequest.ResourceClumpTileX = resourceClumpTileX;
         executionRequest.ResourceClumpTileY = resourceClumpTileY;
         executionRequest.ResourceClumpWidth = resourceClumpWidth;
