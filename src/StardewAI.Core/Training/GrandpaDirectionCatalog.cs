@@ -56,13 +56,29 @@ namespace StardewAI.Core.Training
                 new[] { "mining_obtain_skull_key_plan_envelope" },
                 "Cannot bind Skull Key candidates because the ordinary-mine floor-120 reward contract is incomplete.",
                 new[] { "player.has_skull_key", "mining.current_mine", "mining.floor_objectives" }),
-            CreateBlocked("raise_skill_levels",
-                "grandpa.blocked.raise_skill_levels",
-                new[] { "player.level", "player.skills_detail" },
-                new[] { "SkillExperienceCandidateCapability" },
-                "raise_skill_levels blocked: transparent skill levels and experience are covered, but exact per-action experience candidates are not yet bound.",
-                false,
-                new[] { "player.level", "player.skills_detail" }),
+            CreateDirect("raise_skill_levels",
+                "grandpa.direct.raise_skill_levels",
+                new[]
+                {
+                    "farm.maintain_crops",
+                    "foraging.collect_spawned_objects",
+                    "fishing.catch_fish",
+                    "mining.reach_depth",
+                    "executor.clear_obstacle",
+                    "executor.break_farm_resource_clump"
+                },
+                new[]
+                {
+                    "harvest_crop_tile",
+                    "harvest_giant_crop_tile",
+                    "collect_spawned_object",
+                    "catch_fish",
+                    "mining_reach_depth_plan_envelope",
+                    "clear_obstacle_tile",
+                    "clear_farm_resource_clump"
+                },
+                "Cannot bind skill-growth candidates because no current candidate has complete positive skill-experience evidence.",
+                new[] { "player.level", "player.skills_detail", "event_candidates.skill_experience" }),
             CreateBlocked("complete_museum_collection",
                 "grandpa.blocked.complete_museum_collection",
                 new[] { "world_progress.achievements.[5]", "world_progress.museum_items" },

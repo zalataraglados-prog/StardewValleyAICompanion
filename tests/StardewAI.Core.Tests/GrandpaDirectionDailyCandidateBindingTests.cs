@@ -64,19 +64,20 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void FourDirectionsHaveDirectBindingEnabled()
+    public void SixDirectionsHaveDirectBindingEnabled()
     {
         var directDirections = GrandpaDirectionCatalog.Entries
             .Where(e => e.DirectBindingEnabled)
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(5, directDirections.Length);
+        Assert.Equal(6, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
         Assert.Contains("complete_full_shipment", directDirections);
         Assert.Contains("obtain_skull_key", directDirections);
+        Assert.Contains("raise_skill_levels", directDirections);
     }
 
     [Fact]
@@ -222,18 +223,77 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksRaiseSkillLevelsAsPlannedContractGap()
+    public void BindAllowsRaiseSkillLevelsOnlyWithCompletePositiveExperienceEvidence()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "raise_skill_levels"
+            DirectionId = "raise_skill_levels",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "harvest:Farm:10,10",
+                    OptionId = "farm.maintain_crops",
+                    Kind = "harvest_crop_tile",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    Parameters = new[]
+                    {
+                        Parameter("skill_experience_skill_id", "farming"),
+                        Parameter("skill_experience_on_success_min", "8"),
+                        Parameter("skill_experience_on_success_max", "8"),
+                        Parameter("skill_experience_condition", "native_player_crop_harvest"),
+                        Parameter("skill_experience_projection_status", "exact")
+                    }
+                }
+            }
+        }, snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        var candidate = Assert.Single(result.BoundCandidates);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "grandpa_direction_id" && parameter.Value == "raise_skill_levels");
+    }
+
+    [Fact]
+    public void BindRejectsRaiseSkillLevelsWithoutPositiveCompleteExperienceEvidence()
+    {
+        var snapshot = GrandpaSnapshot();
+        var binding = new GrandpaDirectionDailyCandidateBinding();
+        var result = binding.Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "raise_skill_levels",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "clear:Farm:10,10:grass",
+                    OptionId = "executor.clear_obstacle",
+                    Kind = "clear_obstacle_tile",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    Parameters = new[]
+                    {
+                        Parameter("skill_experience_skill_id", "foraging"),
+                        Parameter("skill_experience_on_success_min", "0"),
+                        Parameter("skill_experience_on_success_max", "0"),
+                        Parameter("skill_experience_condition", "native_grass_cut"),
+                        Parameter("skill_experience_projection_status", "exact")
+                    }
+                }
+            }
         }, snapshot);
 
         Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Contains(result.BlockReasons, reason => reason.Contains("skill_experience_not_positive"));
     }
 
     [Fact]

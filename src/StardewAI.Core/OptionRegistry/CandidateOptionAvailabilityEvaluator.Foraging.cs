@@ -96,7 +96,16 @@ namespace StardewAI.Core.OptionRegistry
                         EstimatedTicks = Math.Max(30, distance * 60 + 30),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_spawned_object_native_pickup",
-                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = new[]
+                        {
+                            Parameter("foraging_experience_on_success_min", ReadInt(item, "foraging_experience_on_success_min").ToString()),
+                            Parameter("foraging_experience_on_success_max", ReadInt(item, "foraging_experience_on_success_max").ToString()),
+                            Parameter("farming_experience_on_success_min", ReadInt(item, "farming_experience_on_success_min").ToString()),
+                            Parameter("farming_experience_on_success_max", ReadInt(item, "farming_experience_on_success_max").ToString()),
+                            Parameter("skill_experience_projection_status", ReadString(item, "harvest_experience_status")),
+                            Parameter("skill_experience_condition", ReadString(item, "harvest_experience_basis"))
+                        }
                     };
                 })
                 .ToArray();

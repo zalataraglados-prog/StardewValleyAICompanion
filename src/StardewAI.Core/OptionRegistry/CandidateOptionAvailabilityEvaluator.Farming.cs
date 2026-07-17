@@ -548,7 +548,15 @@ namespace StardewAI.Core.OptionRegistry
                         ExpectedEffect = effect,
                         EstimatedTicks = 60,
                         EnergyCost = 0,
-                        AvailabilityClass = "transparent_ready_for_harvest_runtime_verified"
+                        AvailabilityClass = "transparent_ready_for_harvest_runtime_verified",
+                        Parameters = new[]
+                        {
+                            Parameter("skill_experience_skill_id", skillId),
+                            Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_condition", skillCondition),
+                            Parameter("skill_experience_projection_status", skillStatus)
+                        }
                     };
                 })
                 .ToArray();
@@ -596,7 +604,15 @@ namespace StardewAI.Core.OptionRegistry
                         ExpectedEffect = effect,
                         EstimatedTicks = Math.Max(3, health) * 60,
                         EnergyCost = Math.Max(1, health),
-                        AvailabilityClass = "transparent_giant_crop_resource_clump_runtime_verified"
+                        AvailabilityClass = "transparent_giant_crop_resource_clump_runtime_verified",
+                        Parameters = new[]
+                        {
+                            Parameter("skill_experience_skill_id", skillId),
+                            Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_condition", skillCondition),
+                            Parameter("skill_experience_projection_status", skillStatus)
+                        }
                     };
                 })
                 .ToArray();
@@ -627,6 +643,11 @@ namespace StardewAI.Core.OptionRegistry
                     var standSelection = FindBestResourceClumpStandTile(snapshot, x, y, width, height);
                     var standTile = standSelection?.Stand;
                     var hitTile = standSelection?.Hit;
+                    var skillId = ReadString(clump, "harvest_experience_skill_id");
+                    var skillMinimum = NullableReadInt(clump, "harvest_experience_on_success_min");
+                    var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
+                    var skillCondition = ReadString(clump, "harvest_experience_condition");
+                    var skillStatus = ReadString(clump, "harvest_experience_projection_status");
                     var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
                     {
                         OptionId = "executor.break_farm_resource_clump",
@@ -683,7 +704,15 @@ namespace StardewAI.Core.OptionRegistry
                         EstimatedTicks = Math.Max(60, distance * 60 + hits * 60),
                         EnergyCost = hits * 2,
                         AvailabilityClass = "transparent_farm_resource_clump",
-                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = new[]
+                        {
+                            Parameter("skill_experience_skill_id", skillId),
+                            Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
+                            Parameter("skill_experience_condition", skillCondition),
+                            Parameter("skill_experience_projection_status", skillStatus)
+                        }
                     };
                 })
                 .ToArray();

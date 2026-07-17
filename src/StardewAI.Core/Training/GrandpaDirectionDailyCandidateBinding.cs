@@ -439,6 +439,10 @@ namespace StardewAI.Core.Training
             {
                 return HasSkullKeyAcquisitionEvidence(candidate, out rejectionReason);
             }
+            if (string.Equals(directionId, "raise_skill_levels", StringComparison.Ordinal))
+            {
+                return HasSkillExperienceEvidence(candidate, out rejectionReason);
+            }
             if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
             {
                 return true;
@@ -481,6 +485,132 @@ namespace StardewAI.Core.Training
             }
 
             return true;
+        }
+
+        private static bool HasSkillExperienceEvidence(
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!TryReadUniqueParameter(candidate, "skill_experience_projection_status", out var status) ||
+                !IsCompleteSkillExperienceStatus(status))
+            {
+                rejectionReason = "skill_experience_projection_not_complete";
+                return false;
+            }
+            if (!TryReadUniqueParameter(candidate, "skill_experience_condition", out _))
+            {
+                rejectionReason = "skill_experience_condition_missing_or_ambiguous";
+                return false;
+            }
+
+            if (TryReadUniqueParameter(candidate, "skill_experience_skill_id", out var skillId))
+            {
+                if (!IsVanillaSkillId(skillId))
+                {
+                    rejectionReason = "skill_experience_skill_id_invalid";
+                    return false;
+                }
+                if (!TryReadPositiveExperienceBounds(
+                    candidate,
+                    "skill_experience_on_success_min",
+                    "skill_experience_on_success_max",
+                    out rejectionReason))
+                {
+                    return false;
+                }
+                return true;
+            }
+
+            var foragingValid = TryReadExperienceBounds(
+                candidate,
+                "foraging_experience_on_success_min",
+                "foraging_experience_on_success_max",
+                out var foragingMinimum,
+                out var foragingMaximum);
+            var farmingValid = TryReadExperienceBounds(
+                candidate,
+                "farming_experience_on_success_min",
+                "farming_experience_on_success_max",
+                out var farmingMinimum,
+                out var farmingMaximum);
+            if (!foragingValid || !farmingValid)
+            {
+                rejectionReason = "multi_skill_experience_bounds_missing_or_invalid";
+                return false;
+            }
+            if (Math.Max(foragingMaximum, farmingMaximum) <= 0)
+            {
+                rejectionReason = "multi_skill_experience_not_positive";
+                return false;
+            }
+            if (foragingMinimum < 0 || farmingMinimum < 0)
+            {
+                rejectionReason = "multi_skill_experience_minimum_negative";
+                return false;
+            }
+            return true;
+        }
+
+        private static bool TryReadPositiveExperienceBounds(
+            PolicyEventCandidatePrediction candidate,
+            string minimumName,
+            string maximumName,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!TryReadExperienceBounds(candidate, minimumName, maximumName, out _, out var maximum))
+            {
+                rejectionReason = "skill_experience_bounds_missing_or_invalid";
+                return false;
+            }
+            if (maximum <= 0)
+            {
+                rejectionReason = "skill_experience_not_positive";
+                return false;
+            }
+            return true;
+        }
+
+        private static bool TryReadExperienceBounds(
+            PolicyEventCandidatePrediction candidate,
+            string minimumName,
+            string maximumName,
+            out int minimum,
+            out int maximum)
+        {
+            minimum = 0;
+            maximum = 0;
+            return TryReadUniqueParameter(candidate, minimumName, out var minimumText) &&
+                TryReadUniqueParameter(candidate, maximumName, out var maximumText) &&
+                int.TryParse(minimumText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out minimum) &&
+                int.TryParse(maximumText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out maximum) &&
+                minimum >= 0 &&
+                maximum >= minimum;
+        }
+
+        private static bool TryReadUniqueParameter(
+            PolicyEventCandidatePrediction candidate,
+            string name,
+            out string value)
+        {
+            var values = (candidate.Parameters ?? Array.Empty<SmallModelActionParameter>())
+                .Where(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
+                .Select(parameter => parameter.Value)
+                .ToArray();
+            value = values.Length == 1 ? values[0] : string.Empty;
+            return values.Length == 1 && !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static bool IsCompleteSkillExperienceStatus(string status)
+        {
+            return string.Equals(status, "exact", StringComparison.Ordinal) ||
+                status.StartsWith("exact_", StringComparison.Ordinal);
+        }
+
+        private static bool IsVanillaSkillId(string skillId)
+        {
+            return skillId is "farming" or "mining" or "foraging" or "fishing" or "combat" or "luck";
         }
 
         private static bool HasSkullKeyAcquisitionEvidence(

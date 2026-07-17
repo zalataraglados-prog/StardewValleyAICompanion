@@ -129,11 +129,10 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindSevenNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
+    public void BindSixNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
     {
         var blockedDirections = new[]
         {
-            "raise_skill_levels",
             "complete_museum_collection",
             "obtain_rusty_key",
             "complete_community_center",

@@ -207,7 +207,8 @@ namespace StardewAI.Core.OptionRegistry
                 EstimatedTicks = estimatedTicks,
                 EnergyCost = energyCost,
                 AvailabilityClass = "always_available",
-                BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                Parameters = probeParameters.ToArray()
             };
         }
 
