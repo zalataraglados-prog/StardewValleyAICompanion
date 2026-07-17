@@ -1,0 +1,36 @@
+StardewAI cleanup review addendum
+Generated: 2026-07-17 Asia/Shanghai
+
+STATUS
+Preview only. These paths were discovered after the approved cleanup manifest was executed.
+They have not been recycled because they were not included in the approved manifest.
+
+TARGET 1
+Exact path: I:\StardewValleyAICompanion\backend
+Approved parent root: I:\StardewValleyAICompanion
+Expected leaf name: backend
+Files: 2
+Total bytes: 320
+Reparse point: false
+Contents: uvicorn.err.log and uvicorn.out.log, both from the retired Python backend.
+
+TARGET 2
+Exact path: I:\StardewValleyAICompanion\tests\__pycache__
+Approved parent root: I:\StardewValleyAICompanion\tests
+Expected leaf name: __pycache__
+Files: 2
+Total bytes: 34,427
+Reparse point: false
+Contents: compiled Python cache files for the removed test_backend_sync.py test.
+
+SAFE EXECUTION
+After explicit approval of this addendum, preview each exact directory with:
+C:\Users\18236\safe-cleanup\Send-ReviewedPathToRecycleBin.ps1
+
+Use the exact confirmation code from preview mode for commit mode. Never empty the Recycle Bin.
+
+EXCLUDED
+I:\StardewValleyAICompanion\artifacts
+I:\StardewValleyAICompanion\logs
+I:\StardewValleyAICompanion\full-core-test.log
+I:\StardewValleyAICompanion\test-results.txt
