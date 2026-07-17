@@ -380,6 +380,8 @@ public sealed partial class ModEntry : Mod
         var beforeReady = dirt.readyForHarvest();
         var beforeHadCrop = dirt.crop is not null;
         var beforeInventory = InventoryStackSignature();
+        var beforeFarmingExperience = Game1.player.experiencePoints[Farmer.farmingSkill];
+        var beforeForagingExperience = Game1.player.experiencePoints[Farmer.foragingSkill];
         var harvestItemId = crop.indexOfHarvest.Value;
         var beforeHarvestDebrisCount = CountDebrisForItem(location, harvestItemId);
         var expectedRegrow = crop.RegrowsAfterHarvest();
@@ -437,6 +439,18 @@ public sealed partial class ModEntry : Mod
                 After = afterHarvestDebrisCount.ToString()
             });
         }
+        changed.Add(new SimulatedFactChange
+        {
+            Path = "player.skills.farming.experience",
+            Before = beforeFarmingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            After = Game1.player.experiencePoints[Farmer.farmingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
+        });
+        changed.Add(new SimulatedFactChange
+        {
+            Path = "player.skills.foraging.experience",
+            Before = beforeForagingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
+        });
 
         return new TrainingExecutionResult
         {
@@ -643,6 +657,7 @@ public sealed partial class ModEntry : Mod
 
         var beforeDebrisCount = location.debris.Count;
         var beforeHealth = clump.health.Value;
+        var beforeLuckExperience = Game1.player.experiencePoints[Farmer.luckSkill];
         var swings = 0;
         const int maxSwings = 64;
         axe.lastUser = Game1.player;
@@ -700,6 +715,12 @@ public sealed partial class ModEntry : Mod
                         Path = "farm.debris.count",
                         Before = beforeDebrisCount.ToString(),
                         After = afterDebrisCount.ToString()
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "player.skills.luck.experience",
+                        Before = beforeLuckExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        After = Game1.player.experiencePoints[Farmer.luckSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
                     }
                 }
                 : Array.Empty<SimulatedFactChange>()
