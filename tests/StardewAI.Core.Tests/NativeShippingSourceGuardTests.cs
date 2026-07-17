@@ -398,7 +398,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void DailyPlanCompilerShipStepsHaveStandTileParameters()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.Core", "Training", "DailyPlanCompiler.cs"));
+        var source = DailyPlanCompilerSources.All;
         var shipSlice = Slice(source, "private static IEnumerable<SmallModelPlanStep> ShipInventoryItemToBinSteps", "private static IEnumerable<SmallModelPlanStep> SocialInteractionSteps");
         Assert.Contains("route_stand_tile_x", shipSlice, StringComparison.Ordinal);
         Assert.Contains("route_stand_tile_y", shipSlice, StringComparison.Ordinal);

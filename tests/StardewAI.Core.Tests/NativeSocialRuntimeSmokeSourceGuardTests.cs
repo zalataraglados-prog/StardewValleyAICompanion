@@ -500,7 +500,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void DailyPlanCompilerMapsSocialTalkToSocialInteractPlanStep()
     {
-        var compilerSource = File.ReadAllText(FindRepositoryFile("src", "StardewAI.Core", "Training", "DailyPlanCompiler.cs"));
+        var compilerSource = DailyPlanCompilerSources.All;
 
         Assert.Contains("social_talk_current", compilerSource, StringComparison.Ordinal);
         Assert.Contains("social_gift_current", compilerSource, StringComparison.Ordinal);
