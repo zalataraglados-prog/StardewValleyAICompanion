@@ -2,6 +2,21 @@
 
 Date: 2026-07-17
 
+## Implementation Status
+
+The file-level cleanup described below was completed on 2026-07-17 without behavior changes:
+
+- RuntimeTestHarness is split into domain partials and then refined into movement, obstacle clearance, pathing, shipping receipt/execution, volcano action, and domain-state files. Its largest file is now below 1,000 lines.
+- `ActionQueueCompiler` is split into dispatch, plan translation, normalization, routing, validation, strategy/social, and step-building files. Its largest file is below 900 lines.
+- `CandidateOptionAvailabilityEvaluator` and `DailyPlanCompiler` are split by candidate/action domain. Their largest files are below 750 lines.
+- Mining floor contracts, planning domains, and execution-parameter compilation are separate files. The largest mining planner file is below 450 lines.
+- LiveTrainingLoop keeps startup/reporting in `Program.cs`; queue construction, runtime execution, queue inspection, dataset persistence, JSON/HTTP helpers, options, and report DTOs are separate files.
+- Mining, shop/route, farm, fishing, and monster-drop bridge projections are split by transparent data group.
+- All Core test files that exceeded 1,000 lines are split by behavior surface and share helpers through partial test classes. The largest Core test file is below 1,000 lines.
+- Source-guard tests now aggregate the relevant partial source sets from repository paths. No test depends on a generated absolute temp file.
+
+The remaining approximately 1,000-line production files, such as `FishingEventCandidateBuilder`, are cohesive single-domain algorithms rather than mixed orchestration files. They should be split only when a real provider or rule-family boundary is extracted, not by arbitrary line count.
+
 ## Verdict
 
 The solution-level decomposition is sound and the dependency graph is acyclic. The file-level decomposition is not yet sound: three orchestration files remain large enough to hide duplicate behavior and make handoffs risky.
