@@ -23,6 +23,8 @@ namespace StardewAI.Core.Execution
         public const string ConsumeFood = "consume_food";
         public const string MoveToGoldenScytheAltar = "move_to_golden_scythe_altar";
         public const string ClaimGoldenScythe = "claim_golden_scythe";
+        public const string MoveToSkullKeyChest = "move_to_skull_key_chest";
+        public const string ClaimSkullKey = "claim_skull_key";
         public const string Blocked = "blocked";
     }
 
@@ -32,6 +34,7 @@ namespace StardewAI.Core.Execution
         public const string CollectResourceOrArtifact = "collect_resource_or_artifact";
         public const string CollectMonsterDrop = "collect_monster_drop";
         public const string AcquireGoldenScythe = "acquire_golden_scythe";
+        public const string AcquireSkullKey = "acquire_skull_key";
     }
 
     public sealed class MiningFloorObjective
@@ -227,6 +230,39 @@ namespace StardewAI.Core.Execution
             var currentMineKind = currentMine.ValueKind == JsonValueKind.Object
                 ? ReadString(currentMine, "mine_kind")
                 : string.Empty;
+
+            if (objective.Kind == MiningObjectiveKinds.AcquireSkullKey)
+            {
+                if (!string.Equals(currentMineKind, "ordinary_mines", StringComparison.Ordinal) ||
+                    !currentDepth.HasValue || currentDepth.Value < 1 || currentDepth.Value > 120)
+                {
+                    return Blocked("skull_key_requires_ordinary_mines_1_120");
+                }
+
+                if (SnapshotBool(snapshot, "player", "has_skull_key") == true)
+                {
+                    return SelectMineExit(tiles, search, grid, "skull_key_acquired_exit_ordinary_mines") ??
+                        Blocked("skull_key_acquired_but_native_exit_unreachable");
+                }
+
+                if (currentDepth.Value == 120)
+                {
+                    if (!ReadBool(objectives, "skull_key_applicable"))
+                    {
+                        return Blocked("skull_key_floor_120_reward_not_applicable");
+                    }
+                    if (!objectives.TryGetProperty("skull_key_reward_chests", out var rewardChests) ||
+                        rewardChests.ValueKind != JsonValueKind.Array ||
+                        rewardChests.GetArrayLength() == 0)
+                    {
+                        return Blocked("skull_key_reward_chest_unavailable");
+                    }
+
+                    var rewardStep = SelectSkullKeyChestStep(rewardChests, search, grid);
+                    return rewardStep ?? Blocked("skull_key_reward_chest_unreachable");
+                }
+            }
+
             var mandatoryRetreatReason = hasResources ? MandatoryRetreatReason(resources, objective, currentDepth) : string.Empty;
             if (!string.IsNullOrEmpty(mandatoryRetreatReason))
             {
@@ -493,6 +529,49 @@ namespace StardewAI.Core.Execution
             return step;
         }
 
+        private static MiningFloorStepPlan? SelectSkullKeyChestStep(
+            JsonElement rewardChests,
+            SearchResult search,
+            bool[,] grid)
+        {
+            var candidate = rewardChests.EnumerateArray()
+                .Where(chest => ReadBool(chest, "contains_skull_key"))
+                .Select(chest => TargetCandidate(chest, search, grid, estimatedSwings: 0, deterministicLadder: false))
+                .Where(row => row is not null)
+                .OrderBy(row => row!.Distance)
+                .ThenBy(row => row!.TargetY)
+                .ThenBy(row => row!.TargetX)
+                .FirstOrDefault();
+            if (candidate is null)
+            {
+                return null;
+            }
+
+            if (candidate.Distance > 0)
+            {
+                return new MiningFloorStepPlan
+                {
+                    Status = "ready",
+                    StepKind = MiningFloorStepKinds.MoveToSkullKeyChest,
+                    Reason = "approach_skull_key_reward_chest",
+                    TargetTileX = candidate.StandX,
+                    TargetTileY = candidate.StandY,
+                    StandTileX = candidate.StandX,
+                    StandTileY = candidate.StandY,
+                    EstimatedMovementTiles = candidate.Distance,
+                    EstimatedToolSwings = 0,
+                    TargetName = "SkullKeyChest",
+                    SafetyWindowStatus = "skull_key_reward_route_clear",
+                    Path = candidate.Path
+                };
+            }
+
+            var step = Build(MiningFloorStepKinds.ClaimSkullKey, "skull_key_reward_chest_adjacent", candidate);
+            step.TargetName = "SkullKeyChest";
+            step.SafetyWindowStatus = "skull_key_reward_interaction_window_clear";
+            return step;
+        }
+
         private static int ReadInventoryEmptySlots(JsonElement resources)
         {
             if (!resources.TryGetProperty("inventory_capacity", out var capacity) ||
@@ -549,7 +628,7 @@ namespace StardewAI.Core.Execution
             }
 
             return exits.EnumerateArray()
-                .Select(exit => new { Exit = exit, Candidate = TargetCandidate(exit, search, grid, estimatedSwings: 0, deterministicLadder: false) })
+                .Select(exit => new { Exit = exit, Candidate = MineExitCandidate(exit, search, grid) })
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => row.Candidate!.Distance)
                 .ThenBy(row => row.Candidate!.TargetY)
@@ -567,6 +646,49 @@ namespace StardewAI.Core.Execution
                     return plan;
                 })
                 .FirstOrDefault();
+        }
+
+        private static Candidate? MineExitCandidate(JsonElement element, SearchResult search, bool[,] grid)
+        {
+            var targetX = ReadInt(element, "tile_x");
+            var targetY = ReadInt(element, "tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                return null;
+            }
+
+            var adjacent = TargetCandidate(targetX.Value, targetY.Value, search, grid, estimatedSwings: 0, deterministicLadder: false);
+            if (adjacent is not null)
+            {
+                return adjacent;
+            }
+
+            Candidate? best = null;
+            for (var offsetX = -2; offsetX <= 2; offsetX++)
+            {
+                for (var offsetY = -2; offsetY <= 2; offsetY++)
+                {
+                    if (Math.Abs(offsetX) + Math.Abs(offsetY) != 2)
+                    {
+                        continue;
+                    }
+                    var standX = targetX.Value + offsetX;
+                    var standY = targetY.Value + offsetY;
+                    if (!InBounds(grid, standX, standY) || grid[standX, standY] ||
+                        !search.Distance.TryGetValue(Key(standX, standY), out var distance))
+                    {
+                        continue;
+                    }
+
+                    var candidate = new Candidate(targetX.Value, targetY.Value, standX, standY, distance, 0, false, search.PathTo(standX, standY));
+                    if (best is null || candidate.Distance < best.Distance ||
+                        candidate.Distance == best.Distance && (candidate.StandY < best.StandY || candidate.StandY == best.StandY && candidate.StandX < best.StandX))
+                    {
+                        best = candidate;
+                    }
+                }
+            }
+            return best;
         }
 
         private static string MandatoryRetreatReason(JsonElement resources, MiningFloorObjective objective, int? currentDepth)
@@ -1883,6 +2005,20 @@ namespace StardewAI.Core.Execution
                 envelope.TryGetProperty("value", out value);
         }
 
+        private static bool? SnapshotBool(SnapshotEnvelope snapshot, string sectionName, string fieldName)
+        {
+            if (!snapshot.State.TryGetValue(sectionName, out var section) ||
+                section.ValueKind != JsonValueKind.Object ||
+                !TryFieldValue(section, fieldName, out var value))
+            {
+                return null;
+            }
+
+            return value.ValueKind == JsonValueKind.True
+                ? true
+                : value.ValueKind == JsonValueKind.False ? false : null;
+        }
+
         private static bool InBounds(bool[,] grid, int x, int y)
         {
             return x >= 0 && y >= 0 && x < grid.GetLength(0) && y < grid.GetLength(1);
@@ -2220,6 +2356,8 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.ExitMine => "executor.exit_mine",
                 MiningFloorStepKinds.MoveToGoldenScytheAltar => "executor.move_to_tile",
                 MiningFloorStepKinds.ClaimGoldenScythe => "executor.interact",
+                MiningFloorStepKinds.MoveToSkullKeyChest => "executor.move_to_tile",
+                MiningFloorStepKinds.ClaimSkullKey => "executor.interact",
                 _ => string.Empty
             };
         }
@@ -2289,6 +2427,12 @@ namespace StardewAI.Core.Execution
             {
                 parameters.Add(Parameter("interaction_kind", "map_action"));
                 parameters.Add(Parameter("expected_action_type", "GoldenScythe"));
+            }
+            else if (plan.StepKind == MiningFloorStepKinds.ClaimSkullKey)
+            {
+                parameters.Add(Parameter("interaction_kind", "overlay_object"));
+                parameters.Add(Parameter("expected_action_type", "SkullKeyChest"));
+                parameters.Add(Parameter("required_postcondition", "player.has_skull_key=true"));
             }
             return parameters.ToArray();
         }

@@ -435,6 +435,10 @@ namespace StardewAI.Core.Training
             out string rejectionReason)
         {
             rejectionReason = string.Empty;
+            if (string.Equals(directionId, "obtain_skull_key", StringComparison.Ordinal))
+            {
+                return HasSkullKeyAcquisitionEvidence(candidate, out rejectionReason);
+            }
             if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
             {
                 return true;
@@ -474,6 +478,41 @@ namespace StardewAI.Core.Training
             {
                 rejectionReason = "full_shipment_candidate_cannot_ship";
                 return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasSkullKeyAcquisitionEvidence(
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            var required = new[]
+            {
+                (Name: "target_location_family", Value: "ordinary_mines"),
+                (Name: "target_depth", Value: "120"),
+                (Name: "required_terminal_interaction", Value: "skull_key_reward_chest"),
+                (Name: "required_postcondition", Value: "player.has_skull_key=true"),
+                (Name: "required_executor_profile", Value: "mining_perfect_executor"),
+                (Name: "runtime_boundary", Value: "current_floor_step_executable")
+            };
+            foreach (var contract in required)
+            {
+                var values = candidate.Parameters
+                    .Where(parameter => string.Equals(parameter.Name, contract.Name, StringComparison.OrdinalIgnoreCase))
+                    .Select(parameter => parameter.Value)
+                    .ToArray();
+                if (values.Length != 1)
+                {
+                    rejectionReason = "skull_key_contract_parameter_count_invalid:" + contract.Name;
+                    return false;
+                }
+                if (!string.Equals(values[0], contract.Value, StringComparison.Ordinal))
+                {
+                    rejectionReason = "skull_key_contract_parameter_mismatch:" + contract.Name;
+                    return false;
+                }
             }
 
             return true;

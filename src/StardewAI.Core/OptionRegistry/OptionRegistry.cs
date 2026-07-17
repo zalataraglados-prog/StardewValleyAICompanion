@@ -124,6 +124,18 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "rolling-horizon current-floor action compiled", "after-state replanning continues until target depth" },
                 new[] { "block_unavailable_required_state", "block_impossible_target_depth", "block_unsupported_current_floor_step" }));
 
+            Register(Option("mining.obtain_skull_key", "mining", "Reach ordinary mine floor 120 and claim the native Skull Key reward chest",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[]
+                {
+                    "player.has_skull_key", "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
+                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
+                },
+                new[] { "ordinary mine floor 120 reached", "native reward chest claimed", "player.has_skull_key observed true" },
+                new[] { "block_wrong_mine_family", "block_missing_skull_key_chest", "block_unverified_skull_key_postcondition" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

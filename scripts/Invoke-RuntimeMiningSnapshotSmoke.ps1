@@ -14,6 +14,7 @@ param(
     [switch] $CombatOneMonster,
     [switch] $ManualCombatMovement,
     [switch] $MiningCalibrationLoadout,
+    [switch] $ResetSkullKeyFixture,
     [switch] $VisibleGame,
     [switch] $KeepGameRunning
 )
@@ -206,6 +207,7 @@ $previousEnv = @{
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     STARDEWAI_COMBAT_MANUAL_MOVEMENT = $env:STARDEWAI_COMBAT_MANUAL_MOVEMENT
     STARDEWAI_MINING_CALIBRATION_LOADOUT = $env:STARDEWAI_MINING_CALIBRATION_LOADOUT
+    STARDEWAI_RESET_SKULL_KEY_FIXTURE = $env:STARDEWAI_RESET_SKULL_KEY_FIXTURE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
 }
@@ -219,6 +221,7 @@ try {
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_COMBAT_MANUAL_MOVEMENT = if ($ManualCombatMovement) { "1" } else { "0" }
     $env:STARDEWAI_MINING_CALIBRATION_LOADOUT = if ($MiningCalibrationLoadout) { "1" } else { "0" }
+    $env:STARDEWAI_RESET_SKULL_KEY_FIXTURE = if ($ResetSkullKeyFixture) { "1" } else { "0" }
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
 

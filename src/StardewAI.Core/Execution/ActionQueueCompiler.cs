@@ -674,6 +674,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateWaitTicksPlan(action));
             blocking.AddRange(ValidateCatchFishPlan(action, snapshot));
             blocking.AddRange(ValidateMiningReachDepthPlan(action, snapshot));
+            blocking.AddRange(ValidateMiningSkullKeyPlan(action, snapshot));
             blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));
             blocking.AddRange(ValidateVolcanoReachCalderaPlan(action, snapshot));
             blocking.AddRange(ValidateCoolVolcanoLavaPlan(action, snapshot));
@@ -766,6 +767,11 @@ namespace StardewAI.Core.Execution
             if (action.OptionId == "mining.acquire_golden_scythe")
             {
                 return BuildMiningGoldenScytheParameters(action, snapshot);
+            }
+
+            if (action.OptionId == "mining.obtain_skull_key")
+            {
+                return BuildMiningSkullKeyParameters(action, snapshot);
             }
 
             if (action.OptionId == "volcano.reach_caldera")
@@ -1082,6 +1088,24 @@ namespace StardewAI.Core.Execution
             parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
             parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
             parameters.Add(Parameter("compiler_context.transparent_groups", "mining.current_mine,mining.tiles,mining.objects,mining.resource_clumps,mining.monsters,mining.floor_objectives,mining.player_resources"));
+            return parameters.ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildMiningSkullKeyParameters(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var parameters = new List<SmallModelActionParameter>(action.Parameters)
+            {
+                Parameter("target_location_family", "ordinary_mines"),
+                Parameter("target_depth", "120"),
+                Parameter("required_terminal_interaction", "skull_key_reward_chest"),
+                Parameter("required_postcondition", "player.has_skull_key=true")
+            };
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, MiningSkullKeyCandidateBuilder.Objective(action.Parameters));
+            parameters.AddRange(MiningFloorStepCompiler.BuildExecutionParameters(floorStep));
+            parameters.Add(Parameter("estimate_status", "rolling_horizon_current_floor_step"));
+            parameters.Add(Parameter("required_executor_profile", "mining_perfect_executor"));
+            parameters.Add(Parameter("runtime_boundary", string.IsNullOrWhiteSpace(MiningFloorStepCompiler.ExecutionOptionId(floorStep)) ? floorStep.Reason : "current_floor_step_executable"));
+            parameters.Add(Parameter("compiler_context.transparent_groups", "player.has_skull_key,mining.current_mine,mining.tiles,mining.objects,mining.resource_clumps,mining.monsters,mining.floor_objectives,mining.player_resources"));
             return parameters.ToArray();
         }
 
@@ -1693,6 +1717,34 @@ namespace StardewAI.Core.Execution
             else if (string.IsNullOrWhiteSpace(executionOptionId))
             {
                 reasons.Add("golden_scythe_floor_step_executor_not_implemented:" + floorStep.StepKind);
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateMiningSkullKeyPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "mining.obtain_skull_key")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>(MiningReachDepthCandidateBuilder.MissingMiningGroups(snapshot));
+            var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
+            if (currentMine.HasValue)
+            {
+                reasons.AddRange(MiningSkullKeyCandidateBuilder.ValidateCurrentMine(currentMine.Value));
+            }
+
+            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, MiningSkullKeyCandidateBuilder.Objective(action.Parameters));
+            var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
+            if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
+            {
+                reasons.Add(floorStep.Reason);
+            }
+            else if (string.IsNullOrWhiteSpace(executionOptionId))
+            {
+                reasons.Add("skull_key_floor_step_executor_not_implemented:" + floorStep.StepKind);
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -2340,11 +2392,6 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_kind_required" };
             }
 
-            if (!string.Equals(interactionKind, "map_action", StringComparison.Ordinal))
-            {
-                return new[] { "interact_kind_unsupported" };
-            }
-
             if (!InteractTargetWithinOneTile(snapshot, targetX.Value, targetY.Value))
             {
                 return new[] { "interact_target_not_adjacent" };
@@ -2355,15 +2402,31 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_menu_must_be_clear" };
             }
 
-            if (RouteActionBranchBlockedAtTile(snapshot, targetX.Value, targetY.Value))
-            {
-                return new[] { "interact_unsupported_action_branch_at_target" };
-            }
-
             var expectedActionType = ReadParameter(action, "expected_action_type");
             if (string.IsNullOrWhiteSpace(expectedActionType))
             {
                 return new[] { "interact_expected_action_type_required" };
+            }
+
+            if (string.Equals(interactionKind, "overlay_object", StringComparison.Ordinal))
+            {
+                if (!string.Equals(expectedActionType, "SkullKeyChest", StringComparison.Ordinal))
+                {
+                    return new[] { "interact_overlay_object_type_unsupported" };
+                }
+                return SkullKeyRewardChestMatches(snapshot, targetX.Value, targetY.Value)
+                    ? Array.Empty<string>()
+                    : new[] { "skull_key_reward_chest_not_observed_at_target" };
+            }
+
+            if (!string.Equals(interactionKind, "map_action", StringComparison.Ordinal))
+            {
+                return new[] { "interact_kind_unsupported" };
+            }
+
+            if (RouteActionBranchBlockedAtTile(snapshot, targetX.Value, targetY.Value))
+            {
+                return new[] { "interact_unsupported_action_branch_at_target" };
             }
 
             if (!TargetActionBranchMatches(snapshot, targetX.Value, targetY.Value, expectedActionType))
@@ -2372,6 +2435,25 @@ namespace StardewAI.Core.Execution
             }
 
             return Array.Empty<string>();
+        }
+
+        private static bool SkullKeyRewardChestMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
+        {
+            var chests = ReadStateFieldValue(snapshot, "mining", "floor_objectives");
+            if (!chests.HasValue || chests.Value.ValueKind != JsonValueKind.Object ||
+                !chests.Value.TryGetProperty("skull_key_reward_chests", out var rewardChests) ||
+                rewardChests.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            return rewardChests.EnumerateArray().Any(chest =>
+                ReadInt(chest, "tile_x") == targetX &&
+                ReadInt(chest, "tile_y") == targetY &&
+                ReadBool(chest, "contains_skull_key") == true &&
+                ReadInt(chest, "special_item_which") == 4 &&
+                string.Equals(ReadString(chest, "interaction_kind"), "overlay_object", StringComparison.Ordinal) &&
+                string.Equals(ReadString(chest, "expected_action_type"), "SkullKeyChest", StringComparison.Ordinal));
         }
 
         private static bool InteractTargetWithinOneTile(SnapshotEnvelope snapshot, int targetX, int targetY)

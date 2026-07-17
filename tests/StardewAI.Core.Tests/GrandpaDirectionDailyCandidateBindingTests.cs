@@ -71,11 +71,12 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(4, directDirections.Length);
+        Assert.Equal(5, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
         Assert.Contains("complete_full_shipment", directDirections);
+        Assert.Contains("obtain_skull_key", directDirections);
     }
 
     [Fact]
@@ -236,18 +237,43 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksObtainSkullKeyAsPlannedContractGap()
+    public void BindObtainSkullKeyRequiresAndPreservesExactAcquisitionContract()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "obtain_skull_key"
+            DirectionId = "obtain_skull_key",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "mining:obtain_skull_key",
+                    OptionId = "mining.obtain_skull_key",
+                    Kind = "mining_obtain_skull_key_plan_envelope",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now",
+                    Parameters = new[]
+                    {
+                        Parameter("target_location_family", "ordinary_mines"),
+                        Parameter("target_depth", "120"),
+                        Parameter("required_terminal_interaction", "skull_key_reward_chest"),
+                        Parameter("required_postcondition", "player.has_skull_key=true"),
+                        Parameter("required_executor_profile", "mining_perfect_executor"),
+                        Parameter("runtime_boundary", "current_floor_step_executable")
+                    }
+                }
+            }
         }, snapshot);
 
-        Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("grandpa.direct.obtain_skull_key", result.BindingRuleId);
+        Assert.Single(result.BoundCandidates);
+        Assert.Contains(result.BoundCandidates[0].Parameters, parameter =>
+            parameter.Name == "required_postcondition" && parameter.Value == "player.has_skull_key=true");
     }
 
     [Fact]
@@ -1562,12 +1588,11 @@ public sealed class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
+    public void BindSevenNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
     {
         var blockedDirections = new[]
         {
             "raise_skill_levels",
-            "obtain_skull_key",
             "complete_museum_collection",
             "obtain_rusty_key",
             "complete_community_center",

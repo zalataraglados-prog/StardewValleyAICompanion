@@ -9,6 +9,7 @@ param(
     [int] $MinimumReserveEnergy = 0,
     [string] $RunId = ("runtime-mining-reach-depth-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-mining-reach-depth",
+    [switch] $AcquireSkullKey,
     [switch] $VisibleGame,
     [switch] $KeepProcessesRunning
 )
@@ -70,6 +71,11 @@ function Read-MineLevel {
     return [int]$Snapshot.state.mining.current_mine.value.mine_level
 }
 
+function Read-HasSkullKey {
+    param($Snapshot)
+    return [bool]$Snapshot.state.player.has_skull_key.value
+}
+
 function Read-ExecutionPrimitive {
     param($Execution)
     $steps = @($Execution.step_results)
@@ -79,11 +85,20 @@ function Read-ExecutionPrimitive {
     return $Execution
 }
 
-if ($StartMineLevel -lt 1 -or $StartMineLevel -gt 119) {
-    throw "StartMineLevel must be between 1 and 119."
-}
-if ($TargetMineLevel -le $StartMineLevel -or $TargetMineLevel -gt 120) {
-    throw "TargetMineLevel must be greater than StartMineLevel and at most 120."
+if ($AcquireSkullKey) {
+    if ($StartMineLevel -lt 1 -or $StartMineLevel -gt 120) {
+        throw "AcquireSkullKey StartMineLevel must be between 1 and 120."
+    }
+    if ($TargetMineLevel -ne 120) {
+        throw "AcquireSkullKey requires TargetMineLevel 120."
+    }
+} else {
+    if ($StartMineLevel -lt 1 -or $StartMineLevel -gt 119) {
+        throw "StartMineLevel must be between 1 and 119."
+    }
+    if ($TargetMineLevel -le $StartMineLevel -or $TargetMineLevel -gt 120) {
+        throw "TargetMineLevel must be greater than StartMineLevel and at most 120."
+    }
 }
 if ($MaximumFloorSteps -lt 2) {
     throw "MaximumFloorSteps must be at least 2."
@@ -104,6 +119,7 @@ $stepSummaries = New-Object System.Collections.Generic.List[object]
 $visitedDepths = New-Object System.Collections.Generic.List[int]
 $objectiveReached = $false
 $terminalExitVerified = $false
+$skullKeyTransitionObserved = $false
 
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
@@ -133,6 +149,7 @@ try {
         -RunId $bootstrapRunId `
         -OutputDirectory $bootstrapOutputDirectory `
         -MiningCalibrationLoadout `
+        -ResetSkullKeyFixture:$AcquireSkullKey `
         -VisibleGame:$VisibleGame `
         -KeepGameRunning | Out-Null
 
@@ -156,6 +173,7 @@ try {
     for ($step = 1; $step -le $MaximumFloorSteps; $step++) {
         $before = Wait-MiningSnapshot
         $beforeLevel = Read-MineLevel $before
+        $beforeHasSkullKey = Read-HasSkullKey $before
         if ($null -eq $beforeLevel) {
             throw "Current mine level was unavailable before step $step."
         }
@@ -179,9 +197,22 @@ try {
             "--train-every", "1",
             "--sleep-ms", "0",
             "--max-crops", "64",
-            "--use-parameterized-action",
-            "--action-option-id", "mining.reach_depth",
-            "--action-parameter", "target_depth=$TargetMineLevel",
+            "--use-parameterized-action"
+        )
+        if ($AcquireSkullKey) {
+            $arguments += @(
+                "--action-option-id", "mining.obtain_skull_key",
+                "--action-parameter", "target_depth=120",
+                "--action-parameter", "required_terminal_interaction=skull_key_reward_chest",
+                "--action-parameter", "required_postcondition=player.has_skull_key=true"
+            )
+        } else {
+            $arguments += @(
+                "--action-option-id", "mining.reach_depth",
+                "--action-parameter", "target_depth=$TargetMineLevel"
+            )
+        }
+        $arguments += @(
             "--action-parameter", "target_location_family=ordinary_mines",
             "--action-parameter", "latest_exit_time=$LatestExitTime",
             "--action-parameter", "minimum_reserve_health=$MinimumReserveHealth",
@@ -205,6 +236,10 @@ try {
         }
         $after = Get-Content -LiteralPath $afterPath -Raw | ConvertFrom-Json
         $afterLevel = Read-MineLevel $after
+        $afterHasSkullKey = Read-HasSkullKey $after
+        if (-not $beforeHasSkullKey -and $afterHasSkullKey) {
+            $skullKeyTransitionObserved = $true
+        }
         $primitiveStatus = [string]$primitive.status
         $verification = [string]$primitive.primitive_verification_status
         $optionId = [string]$primitive.option_id
@@ -212,6 +247,8 @@ try {
             step = $step
             before_depth = $beforeLevel
             after_depth = $afterLevel
+            has_skull_key_before = $beforeHasSkullKey
+            has_skull_key_after = $afterHasSkullKey
             state_hash_before = [string]$before.state_hash
             state_hash_after = [string]$after.state_hash
             state_hash_changed = [bool]$execution.state_hash_changed
@@ -235,13 +272,29 @@ try {
             throw "Step $step produced a stale after snapshot."
         }
 
-        if ($beforeLevel -ge $TargetMineLevel) {
+        if ($AcquireSkullKey -and $beforeHasSkullKey) {
+            if ($optionId -ne "executor.exit_mine") {
+                throw "Skull Key was acquired but compiler selected '$optionId' instead of executor.exit_mine."
+            }
+            if (-not $skullKeyTransitionObserved) {
+                throw "Skull Key exit was selected without observing the false-to-true postcondition transition."
+            }
+            $objectiveReached = $true
+            $terminalExitVerified = $true
+            break
+        }
+
+        if (-not $AcquireSkullKey -and $beforeLevel -ge $TargetMineLevel) {
             if ($optionId -ne "executor.exit_mine") {
                 throw "Target depth was reached but compiler selected '$optionId' instead of executor.exit_mine."
             }
             $objectiveReached = $true
             $terminalExitVerified = $true
             break
+        }
+
+        if ($AcquireSkullKey -and $beforeLevel -ge 120 -and $optionId -eq "executor.exit_mine") {
+            throw "Compiler attempted to exit floor 120 before player.has_skull_key became true."
         }
 
         if ($null -ne $afterLevel -and $afterLevel -gt $TargetMineLevel) {
@@ -268,6 +321,8 @@ try {
         target_depth = $TargetMineLevel
         objective_reached = $objectiveReached
         terminal_exit_verified = $terminalExitVerified
+        acquire_skull_key_mode = [bool]$AcquireSkullKey
+        skull_key_transition_observed = $skullKeyTransitionObserved
         visited_depths = @($visitedDepthArray)
         distinct_depth_count = @($visitedDepthArray | Sort-Object -Unique).Count
         executed_step_count = $stepSummaryArray.Count

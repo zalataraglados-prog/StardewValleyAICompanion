@@ -134,6 +134,102 @@ public sealed class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void SkullKeyObjectiveContinuesDownOrdinaryMineBeforeFloor120()
+    {
+        var plan = Plan(
+            ladders: "[{\"tile_x\":4,\"tile_y\":2}]",
+            mineLevel: 119,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.DescendLadder, plan.StepKind);
+        Assert.Equal("executor.descend_ladder", MiningFloorStepCompiler.ExecutionOptionId(plan));
+    }
+
+    [Fact]
+    public void SkullKeyObjectiveMovesToFloor120RewardChest()
+    {
+        var plan = Plan(
+            skullKeyRewardChests: "[{\"tile_x\":4,\"tile_y\":2,\"contains_skull_key\":true,\"special_item_which\":4,\"interaction_kind\":\"overlay_object\",\"expected_action_type\":\"SkullKeyChest\"}]",
+            skullKeyApplicable: true,
+            mineLevel: 120,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.MoveToSkullKeyChest, plan.StepKind);
+        Assert.Equal("executor.move_to_tile", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        Assert.Equal(3, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+    }
+
+    [Fact]
+    public void SkullKeyObjectiveClaimsAdjacentFloor120RewardChest()
+    {
+        var plan = Plan(
+            skullKeyRewardChests: "[{\"tile_x\":2,\"tile_y\":2,\"contains_skull_key\":true,\"special_item_which\":4,\"interaction_kind\":\"overlay_object\",\"expected_action_type\":\"SkullKeyChest\"}]",
+            skullKeyApplicable: true,
+            mineLevel: 120,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.ClaimSkullKey, plan.StepKind);
+        Assert.Equal("executor.interact", MiningFloorStepCompiler.ExecutionOptionId(plan));
+        var parameters = MiningFloorStepCompiler.BuildExecutionParameters(plan);
+        Assert.Contains(parameters, parameter => parameter.Name == "interaction_kind" && parameter.Value == "overlay_object");
+        Assert.Contains(parameters, parameter => parameter.Name == "required_postcondition" && parameter.Value == "player.has_skull_key=true");
+    }
+
+    [Fact]
+    public void SkullKeyObjectiveDoesNotTreatFloor120WithoutRewardEvidenceAsComplete()
+    {
+        var plan = Plan(
+            skullKeyApplicable: true,
+            mineLevel: 120,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("skull_key_reward_chest_unavailable", plan.Reason);
+    }
+
+    [Fact]
+    public void SkullKeyObjectiveExitsOnlyAfterTransparentPostcondition()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":4,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":23,\"tile_y\":8}}]",
+            hasSkullKey: true,
+            mineLevel: 120,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.ExitMine, plan.StepKind);
+        Assert.Equal("skull_key_acquired_exit_ordinary_mines", plan.Reason);
+    }
+
+    [Fact]
+    public void SkullKeyObjectiveSupportsFloor120TwoTileExitInteractionStand()
+    {
+        var plan = Plan(
+            rows: new[] { "1111111", "1111111", "1001111", "1000111", "1111111" },
+            exits: "[{\"tile_x\":3,\"tile_y\":1,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":23,\"tile_y\":8}}]",
+            hasSkullKey: true,
+            mineLevel: 120,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.ExitMine, plan.StepKind);
+        Assert.Equal(2, Math.Abs(plan.StandTileX!.Value - plan.TargetTileX!.Value) + Math.Abs(plan.StandTileY!.Value - plan.TargetTileY!.Value));
+    }
+
+    [Theory]
+    [InlineData("skull_cavern", 121)]
+    [InlineData("quarry_mine", 77377)]
+    public void SkullKeyObjectiveRejectsOtherMineFamilies(string mineKind, int mineLevel)
+    {
+        var plan = Plan(
+            mineKind: mineKind,
+            mineLevel: mineLevel,
+            objective: new MiningFloorObjective { Kind = MiningObjectiveKinds.AcquireSkullKey });
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("skull_key_requires_ordinary_mines_1_120", plan.Reason);
+    }
+
+    [Fact]
     public void KillAllFloorSelectsReachableMonsterBeforeStone()
     {
         var plan = Plan(
@@ -1015,7 +1111,7 @@ public sealed class MiningFloorStepPlannerTests
             var end = source.IndexOf("\n    private ", start + 1, StringComparison.Ordinal);
             var methodSource = source[start..end];
             Assert.Contains("request.StandTileX", methodSource, StringComparison.Ordinal);
-            Assert.Contains("BuildCompilerAdjacentPath", methodSource, StringComparison.Ordinal);
+            Assert.Contains(method == "StartExitMine" ? "BuildCompilerMineExitPath" : "BuildCompilerAdjacentPath", methodSource, StringComparison.Ordinal);
         }
 
         var helperStart = source.IndexOf("private static List<Point>? BuildCompilerAdjacentPath", StringComparison.Ordinal);
@@ -1341,8 +1437,37 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("active.MineBefore.checkAction", exitSource, StringComparison.Ordinal);
         Assert.Contains("answerDialogueAction(\"ExitMine_Leave\"", exitSource, StringComparison.Ordinal);
         Assert.Contains("ExpectedMineExitDestination", exitSource, StringComparison.Ordinal);
+        Assert.Contains("BuildCompilerMineExitPath", exitSource, StringComparison.Ordinal);
+        Assert.Contains("is < 1 or > 2", exitSource, StringComparison.Ordinal);
         Assert.DoesNotContain("warpFarmer(", exitSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.enterMine(", exitSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeSkullKeyClaimUsesNativeTwoStageChestActionWithoutDirectProgressMutation()
+    {
+        var root = FindRepositoryRoot();
+        var runtimeSource = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = runtimeSource.IndexOf("private void StartSkullKeyChestInteraction", StringComparison.Ordinal);
+        var end = runtimeSource.IndexOf("private TrainingExecutionResult ExecuteInteract", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var claimSource = runtimeSource[start..end];
+
+        Assert.Contains("SkullKeyChestStage.OpenChest", claimSource, StringComparison.Ordinal);
+        Assert.Contains("SkullKeyChestStage.ClaimItem", claimSource, StringComparison.Ordinal);
+        Assert.True(claimSource.Split("mine.checkAction(", StringSplitOptions.None).Length >= 3);
+        Assert.Contains("Game1.player.hasSkullKey", claimSource, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"Game1\.player\.hasSkullKey\s*=", claimSource);
+
+        var adapterSource = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        Assert.Contains("mine.overlayObjects", adapterSource, StringComparison.Ordinal);
+        Assert.Contains("item.which.Value == 4", adapterSource, StringComparison.Ordinal);
+
+        var loopSource = File.ReadAllText(Path.Combine(root, "scripts", "Invoke-RuntimeMiningReachDepthLoop.ps1"));
+        Assert.Contains("[switch] $AcquireSkullKey", loopSource, StringComparison.Ordinal);
+        Assert.Contains("mining.obtain_skull_key", loopSource, StringComparison.Ordinal);
+        Assert.Contains("$skullKeyTransitionObserved", loopSource, StringComparison.Ordinal);
+        Assert.Contains("before player.has_skull_key became true", loopSource, StringComparison.Ordinal);
     }
 
     private static MiningFloorStepPlan Plan(
@@ -1355,6 +1480,10 @@ public sealed class MiningFloorStepPlannerTests
         bool mustKillAll = false,
         bool goldenScytheApplicable = false,
         bool goldenScytheClaimed = false,
+        string skullKeyRewardChests = "[]",
+        bool skullKeyApplicable = false,
+        bool hasSkullKey = false,
+        int? mineLevel = null,
         string[]? rows = null,
         string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"inventory_capacity\":{\"empty_slots\":12},\"food_slots\":[]}",
         string mineKind = "ordinary_mines",
@@ -1366,13 +1495,16 @@ public sealed class MiningFloorStepPlannerTests
         var height = rows.Length;
         var json = """
         {
+          "player": {
+            "has_skull_key": {"status":"available","value":HAS_SKULL_KEY}
+          },
           "mining": {
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "resource_clumps": {"status":"available","value":[]},
             "monsters": {"status":"available","value":MONSTERS},
-            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED}},
+            "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED,"skull_key_applicable":SKULL_KEY_APPLICABLE,"skull_key_acquired":HAS_SKULL_KEY,"skull_key_reward_chests":SKULL_KEY_REWARD_CHESTS}},
             "player_resources": {"status":"available","value":RESOURCES}
           }
         }
@@ -1381,17 +1513,20 @@ public sealed class MiningFloorStepPlannerTests
             .Replace("SHAFTS", shafts, StringComparison.Ordinal)
             .Replace("EXITS", exits, StringComparison.Ordinal)
             .Replace("GOLDEN_SCYTHE_ALTARS", goldenScytheAltars, StringComparison.Ordinal)
+            .Replace("SKULL_KEY_REWARD_CHESTS", skullKeyRewardChests, StringComparison.Ordinal)
             .Replace("WIDTH", width.ToString(), StringComparison.Ordinal)
             .Replace("HEIGHT", height.ToString(), StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal)
-            .Replace("MINE_LEVEL", mineKind == "skull_cavern" ? "121" : mineKind == "quarry_mine" ? "77377" : "40", StringComparison.Ordinal)
+            .Replace("MINE_LEVEL", (mineLevel ?? (mineKind == "skull_cavern" ? 121 : mineKind == "quarry_mine" ? 77377 : 40)).ToString(), StringComparison.Ordinal)
             .Replace("MINE_KIND", mineKind, StringComparison.Ordinal)
             .Replace("MUST_KILL_ALL", mustKillAll.ToString().ToLowerInvariant(), StringComparison.Ordinal)
             .Replace("GOLDEN_SCYTHE_APPLICABLE", goldenScytheApplicable.ToString().ToLowerInvariant(), StringComparison.Ordinal)
-            .Replace("GOLDEN_SCYTHE_CLAIMED", goldenScytheClaimed.ToString().ToLowerInvariant(), StringComparison.Ordinal);
+            .Replace("GOLDEN_SCYTHE_CLAIMED", goldenScytheClaimed.ToString().ToLowerInvariant(), StringComparison.Ordinal)
+            .Replace("SKULL_KEY_APPLICABLE", skullKeyApplicable.ToString().ToLowerInvariant(), StringComparison.Ordinal)
+            .Replace("HAS_SKULL_KEY", hasSkullKey.ToString().ToLowerInvariant(), StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json), objective ?? new MiningFloorObjective());
     }
 

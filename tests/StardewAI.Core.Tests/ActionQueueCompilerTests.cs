@@ -2188,6 +2188,87 @@ public sealed class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileAllowsObservedAdjacentSkullKeyRewardChestInteraction()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"UndergroundMine120","status":"available"},
+            "tile_x": {"value":10,"status":"available"},
+            "tile_y": {"value":10,"status":"available"},
+            "facing_direction": {"value":1,"status":"available"}
+          },
+          "current_location": {
+            "route_context": {"value":{"probes":[]},"status":"available"}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available"}
+          },
+          "mining": {
+            "floor_objectives": {"value":{"skull_key_reward_chests":[{"tile_x":11,"tile_y":10,"contains_skull_key":true,"special_item_which":4,"interaction_kind":"overlay_object","expected_action_type":"SkullKeyChest"}]},"status":"available"}
+          },
+          "locations": {
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available"}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "executor.interact");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "11" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "10" },
+            new SmallModelActionParameter { Name = "interaction_kind", Value = "overlay_object" },
+            new SmallModelActionParameter { Name = "expected_action_type", Value = "SkullKeyChest" },
+            new SmallModelActionParameter { Name = "required_postcondition", Value = "player.has_skull_key=true" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileBlocksSkullKeyChestInteractionWithoutExactTransparentRewardEvidence()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"UndergroundMine120","status":"available"},
+            "tile_x": {"value":10,"status":"available"},
+            "tile_y": {"value":10,"status":"available"},
+            "facing_direction": {"value":1,"status":"available"}
+          },
+          "current_location": {
+            "route_context": {"value":{"probes":[]},"status":"available"}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available"}
+          },
+          "mining": {
+            "floor_objectives": {"value":{"skull_key_reward_chests":[]},"status":"available"}
+          },
+          "locations": {
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available"}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "executor.interact");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "11" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "10" },
+            new SmallModelActionParameter { Name = "interaction_kind", Value = "overlay_object" },
+            new SmallModelActionParameter { Name = "expected_action_type", Value = "SkullKeyChest" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("skull_key_reward_chest_not_observed_at_target", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void CompileBlocksVisitLocationWhenTargetTileHasUnsupportedRouteActionBranch()
     {
         var snapshot = Snapshot("""

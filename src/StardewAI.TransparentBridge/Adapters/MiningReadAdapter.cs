@@ -969,6 +969,9 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             golden_scythe_claimed = Game1.player.mailReceived.Contains("gotGoldenScythe"),
             golden_scythe_reward_qualified_item_id = "(W)53",
             golden_scythe_action_token = "GoldenScythe",
+            skull_key_applicable = mine.getMineArea() != MineShaft.desertArea && mine.mineLevel == MineShaft.bottomOfMineLevel,
+            skull_key_acquired = Game1.player.hasSkullKey,
+            skull_key_reward_chests = ReadSkullKeyRewardChests(mine),
             ladder_creation_rule = new
             {
                 should_create_ladder_on_level = mine.shouldCreateLadderOnThisLevel(),
@@ -995,6 +998,32 @@ public sealed class MiningReadAdapter : ReadAdapterBase
             },
             source = "MineShaft flags and simple methods only"
         };
+    }
+
+    private static object[] ReadSkullKeyRewardChests(MineShaft mine)
+    {
+        return mine.overlayObjects
+            .Where(pair => pair.Value is Chest chest &&
+                chest.Items.OfType<SpecialItem>().Any(item => item.which.Value == 4))
+            .OrderBy(pair => pair.Key.Y)
+            .ThenBy(pair => pair.Key.X)
+            .Select(pair =>
+            {
+                var chest = (Chest)pair.Value;
+                return (object)new
+                {
+                    tile_x = (int)pair.Key.X,
+                    tile_y = (int)pair.Key.Y,
+                    runtime_type = chest.GetType().FullName,
+                    item_count = chest.Items.Count,
+                    contains_skull_key = true,
+                    skull_key_special_item_which = 4,
+                    interaction_kind = "overlay_object",
+                    expected_action_type = "SkullKeyChest",
+                    source = "MineShaft.overlayObjects Chest.Items SpecialItem.which"
+                };
+            })
+            .ToArray();
     }
 
     private static object ReadPlayerResources(Farmer player)

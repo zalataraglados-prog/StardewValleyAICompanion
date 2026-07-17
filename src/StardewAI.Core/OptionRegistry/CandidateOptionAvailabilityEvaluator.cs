@@ -99,6 +99,7 @@ namespace StardewAI.Core.OptionRegistry
                 ? ValueGateBlockingReasons(snapshot, option.OptionId, economicCandidates)
                 : Array.Empty<string>();
             var eventCandidateReasons = option.OptionId == "mining.reach_depth" ||
+                option.OptionId == "mining.obtain_skull_key" ||
                 option.OptionId == "mining.acquire_golden_scythe" ||
                 option.OptionId == "volcano.reach_caldera" ||
                 safety.MissingStateFactors.Length == 0
@@ -212,6 +213,14 @@ namespace StardewAI.Core.OptionRegistry
                     eventCandidates,
                     "no_mining_acquire_golden_scythe_candidates",
                     "no_available_mining_acquire_golden_scythe_candidates");
+            }
+
+            if (optionId == "mining.obtain_skull_key")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mining_obtain_skull_key_candidates",
+                    "no_available_mining_obtain_skull_key_candidates");
             }
 
             if (optionId == "volcano.reach_caldera")
@@ -375,6 +384,11 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "mining.acquire_golden_scythe")
             {
                 return MiningGoldenScytheCandidateBuilder.Build(snapshot, parameters);
+            }
+
+            if (optionId == "mining.obtain_skull_key")
+            {
+                return MiningSkullKeyCandidateBuilder.Build(snapshot, parameters);
             }
 
             if (optionId == "volcano.reach_caldera")
@@ -4530,6 +4544,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.process_machines" ||
                 optionId == "fishing.catch_fish" ||
                 optionId == "mining.reach_depth" ||
+                optionId == "mining.obtain_skull_key" ||
                 optionId == "mining.acquire_golden_scythe" ||
                 optionId == "volcano.reach_caldera" ||
                 optionId == "economy.buy_supplies" ||

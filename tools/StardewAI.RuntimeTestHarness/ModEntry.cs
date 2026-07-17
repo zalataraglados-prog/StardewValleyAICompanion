@@ -69,6 +69,7 @@ public sealed class ModEntry : Mod
     private int? manualAutoCombatRestoreSlotIndex;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveDialogueAdvance? activeDialogueAdvance;
+    private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
 
     public override void Entry(IModHelper helper)
     {
@@ -291,8 +292,9 @@ public sealed class ModEntry : Mod
         TickExitMine();
         TickShipInventoryToBin();
         TickDialogueAdvance();
+        TickSkullKeyChestInteraction();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeFarmTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null)
         {
             return;
         }
@@ -543,7 +545,15 @@ public sealed class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.interact")
             {
-                pending.Completion.SetResult(ExecuteInteract(pending.Request));
+                if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
+                {
+                    StartSkullKeyChestInteraction(pending);
+                }
+                else
+                {
+                    pending.Completion.SetResult(ExecuteInteract(pending.Request));
+                }
                 return;
             }
 
@@ -662,7 +672,6 @@ public sealed class ModEntry : Mod
                 executorMovementDirection = null;
                 Monitor.Log($"Movement input dispatch failed: {movementInputReason}.", LogLevel.Error);
             }
-
             if (activeCatchFish is not null && !ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason))
             {
                 CompleteBlockedCatchFish(activeCatchFish, castInputReason);
@@ -3648,6 +3657,234 @@ public sealed class ModEntry : Mod
         return "menus.active_menu.is_open=" + (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() + ";menus.active_menu.type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
     }
 
+    private void StartSkullKeyChestInteraction(PendingExecution pending)
+    {
+        var request = pending.Request;
+        var target = request.TargetTileX.HasValue && request.TargetTileY.HasValue
+            ? new Point(request.TargetTileX.Value, request.TargetTileY.Value)
+            : Point.Zero;
+        var reasons = ValidateExecutionRequest(request);
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            reasons.Add("interact_target_tile_required");
+        }
+        if (!string.Equals(request.InteractionKind, "overlay_object", StringComparison.Ordinal) ||
+            !string.Equals(request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
+        {
+            reasons.Add("skull_key_chest_contract_mismatch");
+        }
+        if (Game1.currentLocation is not MineShaft mine ||
+            !string.Equals(RuntimeMineKind(mine), "ordinary_mines", StringComparison.Ordinal) ||
+            mine.mineLevel != MineShaft.bottomOfMineLevel)
+        {
+            reasons.Add("skull_key_chest_requires_ordinary_mine_floor_120");
+        }
+        else if (!TryGetSkullKeyRewardChest(mine, target, out _))
+        {
+            reasons.Add("skull_key_reward_chest_not_observed_at_target");
+        }
+        if (!AreAdjacent(Game1.player.TilePoint, target))
+        {
+            reasons.Add("interact_target_not_adjacent");
+        }
+        if (Game1.activeClickableMenu is not null)
+        {
+            reasons.Add("interact_menu_must_be_clear");
+        }
+        if (Game1.player.hasSkullKey)
+        {
+            reasons.Add("skull_key_already_acquired");
+        }
+        if (reasons.Count > 0)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "claim_skull_key",
+                InteractRequestedEffect(request) + ";required_postcondition=player.has_skull_key=true",
+                InteractObservedEffect() + ";player.has_skull_key=" + Game1.player.hasSkullKey.ToString().ToLowerInvariant(),
+                reasons.Distinct(StringComparer.Ordinal).ToArray()));
+            return;
+        }
+
+        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, target));
+        activeSkullKeyChestInteraction = new ActiveSkullKeyChestInteraction(pending, (MineShaft)Game1.currentLocation, target);
+    }
+
+    private void TickSkullKeyChestInteraction()
+    {
+        var active = activeSkullKeyChestInteraction;
+        if (active is null)
+        {
+            return;
+        }
+
+        active.ElapsedTicks++;
+        if (Game1.player.hasSkullKey)
+        {
+            if (active.KeyObservedAtTick == 0)
+            {
+                active.KeyObservedAtTick = active.ElapsedTicks;
+            }
+            if (Game1.player.CanMove && !Game1.player.UsingTool && Game1.activeClickableMenu is null && !Game1.dialogueUp)
+            {
+                TryApplySmapiRightButtonOverride(pressed: false, out _);
+                activeSkullKeyChestInteraction = null;
+                active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: true));
+                return;
+            }
+            if (active.DismissActionHeld)
+            {
+                if (!TryApplySmapiRightButtonOverride(pressed: false, out var releaseReason))
+                {
+                    activeSkullKeyChestInteraction = null;
+                    active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_hold_up_" + releaseReason));
+                    return;
+                }
+                active.DismissActionHeld = false;
+                active.DismissAttempts++;
+                active.LastDismissAttemptTick = active.ElapsedTicks;
+                return;
+            }
+            if (active.ElapsedTicks - active.KeyObservedAtTick >= 15 &&
+                active.ElapsedTicks - active.LastDismissAttemptTick >= 20)
+            {
+                if (!TryApplySmapiRightButtonOverride(pressed: true, out var pressReason))
+                {
+                    activeSkullKeyChestInteraction = null;
+                    active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_hold_up_" + pressReason));
+                    return;
+                }
+                active.DismissActionHeld = true;
+            }
+            return;
+        }
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            TryApplySmapiRightButtonOverride(pressed: false, out _);
+            activeSkullKeyChestInteraction = null;
+            active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_postcondition_timeout"));
+            return;
+        }
+        if (Game1.currentLocation is not MineShaft mine || !ReferenceEquals(mine, active.Mine) || mine.mineLevel != MineShaft.bottomOfMineLevel)
+        {
+            activeSkullKeyChestInteraction = null;
+            active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_chest_location_changed"));
+            return;
+        }
+        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            activeSkullKeyChestInteraction = null;
+            active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_chest_adjacency_lost"));
+            return;
+        }
+
+        switch (active.Stage)
+        {
+            case SkullKeyChestStage.OpenChest:
+                active.OpenHandled = mine.checkAction(
+                    new TileLocation(active.Target.X, active.Target.Y),
+                    new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+                    Game1.player);
+                if (!active.OpenHandled)
+                {
+                    activeSkullKeyChestInteraction = null;
+                    active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_chest_open_not_handled"));
+                    return;
+                }
+                active.Stage = SkullKeyChestStage.WaitForOpenAnimation;
+                active.StageStartedAtTick = active.ElapsedTicks;
+                return;
+
+            case SkullKeyChestStage.WaitForOpenAnimation:
+                if (active.ElapsedTicks - active.StageStartedAtTick < 60)
+                {
+                    return;
+                }
+                active.Stage = SkullKeyChestStage.ClaimItem;
+                return;
+
+            case SkullKeyChestStage.ClaimItem:
+                active.ClaimHandled = mine.checkAction(
+                    new TileLocation(active.Target.X, active.Target.Y),
+                    new TileRectangle(Game1.viewport.X, Game1.viewport.Y, Game1.viewport.Width, Game1.viewport.Height),
+                    Game1.player);
+                active.ClaimAttempts++;
+                active.Stage = SkullKeyChestStage.WaitForPostcondition;
+                active.StageStartedAtTick = active.ElapsedTicks;
+                return;
+
+            case SkullKeyChestStage.WaitForPostcondition:
+                if (Game1.player.hasSkullKey)
+                {
+                    return;
+                }
+                if (active.ElapsedTicks - active.StageStartedAtTick >= 45 && active.ClaimAttempts < 3)
+                {
+                    active.Stage = SkullKeyChestStage.ClaimItem;
+                    return;
+                }
+                if (active.ElapsedTicks - active.StageStartedAtTick >= 90)
+                {
+                    activeSkullKeyChestInteraction = null;
+                    active.Pending.Completion.SetResult(BuildSkullKeyChestResult(active, verified: false, "skull_key_native_claim_not_observed"));
+                }
+                return;
+        }
+    }
+
+    private static bool TryGetSkullKeyRewardChest(MineShaft mine, Point target, out Chest? chest)
+    {
+        chest = null;
+        if (!mine.overlayObjects.TryGetValue(new Vector2(target.X, target.Y), out var overlay) || overlay is not Chest candidate)
+        {
+            return false;
+        }
+
+        chest = candidate;
+        return candidate.Items.OfType<SpecialItem>().Any(item => item.which.Value == 4);
+    }
+
+    private static TrainingExecutionResult BuildSkullKeyChestResult(ActiveSkullKeyChestInteraction active, bool verified, params string[] reasons)
+    {
+        var request = active.Pending.Request;
+        var verificationReasons = verified
+            ? new[] { "native_reward_chest_open_handled", "native_reward_item_claimed", "player_has_skull_key_transition_observed" }
+            : reasons.Length > 0 ? reasons : new[] { "skull_key_native_claim_not_observed" };
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            ActualTicks = active.ElapsedTicks,
+            PrimitiveKind = "claim_skull_key",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verificationReasons,
+            RequestedEffect = InteractRequestedEffect(request) + ";required_postcondition=player.has_skull_key=true",
+            ObservedEffect = InteractObservedEffect() +
+                ";open_handled=" + active.OpenHandled.ToString().ToLowerInvariant() +
+                ";claim_handled=" + active.ClaimHandled.ToString().ToLowerInvariant() +
+                ";claim_attempts=" + active.ClaimAttempts +
+                ";dismiss_attempts=" + active.DismissAttempts +
+                ";player.has_skull_key=" + Game1.player.hasSkullKey.ToString().ToLowerInvariant(),
+            BlockReasons = verified ? Array.Empty<string>() : verificationReasons,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "player.has_skull_key",
+                    Before = active.HasSkullKeyBefore.ToString().ToLowerInvariant(),
+                    After = Game1.player.hasSkullKey.ToString().ToLowerInvariant()
+                }
+            }
+        };
+    }
+
     private TrainingExecutionResult ExecuteInteract(TrainingExecutionRequest request)
     {
         var reasons = ValidateExecutionRequest(request);
@@ -5680,6 +5917,55 @@ public sealed class ModEntry : Mod
             out blockReason,
             avoidSoftObstacles: true,
             allowRemovableObstacles: false);
+    }
+
+    private static List<Point>? BuildCompilerMineExitPath(
+        MineShaft mine,
+        Point target,
+        Point? requestedStand,
+        int maxMovementTiles,
+        out string blockReason)
+    {
+        blockReason = string.Empty;
+        var stands = new List<Point>();
+        if (requestedStand.HasValue && ManhattanDistance(requestedStand.Value, target) is >= 1 and <= 2)
+        {
+            stands.Add(requestedStand.Value);
+        }
+        for (var offsetX = -2; offsetX <= 2; offsetX++)
+        {
+            for (var offsetY = -2; offsetY <= 2; offsetY++)
+            {
+                var distance = Math.Abs(offsetX) + Math.Abs(offsetY);
+                if (distance is >= 1 and <= 2)
+                {
+                    stands.Add(new Point(target.X + offsetX, target.Y + offsetY));
+                }
+            }
+        }
+
+        foreach (var stand in stands.Distinct().OrderBy(point => ManhattanDistance(Game1.player.TilePoint, point)))
+        {
+            if (!IsTileOnMap(mine, stand) || !IsTileWalkable(mine, stand) || IsTileOccupiedByCharacter(mine, stand))
+            {
+                continue;
+            }
+            var path = TryBuildTilePath(
+                mine,
+                Game1.player.TilePoint,
+                stand,
+                maxMovementTiles,
+                out blockReason,
+                avoidSoftObstacles: true,
+                allowRemovableObstacles: false);
+            if (path is not null)
+            {
+                return path;
+            }
+        }
+
+        blockReason = string.IsNullOrWhiteSpace(blockReason) ? "mine_exit_interaction_stand_unreachable" : blockReason;
+        return null;
     }
 
     private void TickMineStone()
@@ -8560,7 +8846,7 @@ public sealed class ModEntry : Mod
         var requestedStand = request.StandTileX.HasValue && request.StandTileY.HasValue
             ? new Point(request.StandTileX.Value, request.StandTileY.Value)
             : (Point?)null;
-        var path = BuildCompilerAdjacentPath(mine, target, requestedStand, maxMovementTiles, out var pathReason);
+        var path = BuildCompilerMineExitPath(mine, target, requestedStand, maxMovementTiles, out var pathReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_path_unavailable:" + pathReason));
@@ -8646,7 +8932,7 @@ public sealed class ModEntry : Mod
         }
         active.CombatInterrupted = false;
 
-        if (!AreAdjacent(Game1.player.TilePoint, active.Target))
+        if (ManhattanDistance(Game1.player.TilePoint, active.Target) is < 1 or > 2)
         {
             if (active.PathIndex >= active.Path.Count)
             {
@@ -8664,7 +8950,7 @@ public sealed class ModEntry : Mod
             }
             if (!IsTileWalkable(active.MineBefore, next) || IsTileOccupiedByCharacter(active.MineBefore, next))
             {
-                var repaired = BuildCompilerAdjacentPath(
+                var repaired = BuildCompilerMineExitPath(
                     active.MineBefore,
                     active.Target,
                     active.RequestedStand,
@@ -8728,7 +9014,7 @@ public sealed class ModEntry : Mod
 
     private static bool TryReplanExitMine(ActiveExitMine active, out string blockReason)
     {
-        var repaired = BuildCompilerAdjacentPath(
+        var repaired = BuildCompilerMineExitPath(
             active.MineBefore,
             active.Target,
             active.RequestedStand,
@@ -10680,6 +10966,10 @@ public sealed class ModEntry : Mod
         }
 
         var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        if (Environment.GetEnvironmentVariable("STARDEWAI_RESET_SKULL_KEY_FIXTURE") == "1")
+        {
+            Game1.player.hasSkullKey = false;
+        }
         var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
             ? EnsureMiningCalibrationLoadout()
             : MiningCalibrationLoadoutFacts.Disabled;
@@ -16476,6 +16766,42 @@ public sealed class ModEntry : Mod
         ReleaseAfterAdvance,
         WaitAdvanceEffect,
         CheckClose
+    }
+
+    private enum SkullKeyChestStage
+    {
+        OpenChest,
+        WaitForOpenAnimation,
+        ClaimItem,
+        WaitForPostcondition
+    }
+
+    private sealed class ActiveSkullKeyChestInteraction
+    {
+        public ActiveSkullKeyChestInteraction(PendingExecution pending, MineShaft mine, Point target)
+        {
+            Pending = pending;
+            Mine = mine;
+            Target = target;
+            HasSkullKeyBefore = Game1.player.hasSkullKey;
+        }
+
+        public PendingExecution Pending { get; }
+        public MineShaft Mine { get; }
+        public Point Target { get; }
+        public bool HasSkullKeyBefore { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 360;
+        public int ElapsedTicks { get; set; }
+        public int StageStartedAtTick { get; set; }
+        public int ClaimAttempts { get; set; }
+        public bool OpenHandled { get; set; }
+        public bool ClaimHandled { get; set; }
+        public int KeyObservedAtTick { get; set; }
+        public int LastDismissAttemptTick { get; set; }
+        public int DismissAttempts { get; set; }
+        public bool DismissActionHeld { get; set; }
+        public SkullKeyChestStage Stage { get; set; }
     }
 
     private sealed class ActiveDialogueAdvance
