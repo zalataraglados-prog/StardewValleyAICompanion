@@ -1,0 +1,433 @@
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
+using StardewValley;
+using StardewValley.Buildings;
+using StardewValley.GameData.Machines;
+using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
+using StardewAI.TransparentBridge.State;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace StardewAI.TransparentBridge.Adapters;
+
+public sealed partial class FarmReadAdapter : ReadAdapterBase
+{
+    private static object[] ReadCachedMachineProbeRowsOrFallback(Farm farm)
+    {
+        var currentTick = unchecked((long)Game1.ticks);
+        lock (MachineProbeCacheLock)
+        {
+            if (cachedMachineProbeRows.Length > 0 &&
+                cachedMachineProbeTick >= 0 &&
+                currentTick - cachedMachineProbeTick <= MachineProbeCacheMaxAgeTicks &&
+                CachedMachineProbeRowsHaveLoadableInput())
+            {
+                return cachedMachineProbeRows;
+            }
+        }
+
+        return ReadMachines(farm, includeLoadableInputs: false, minimalMachineProfile: true, machineProbeCacheTick: -1);
+    }
+
+    private static void SetMachineProbeCache(object[] rows, long tick)
+    {
+        lock (MachineProbeCacheLock)
+        {
+            cachedMachineProbeRows = rows;
+            cachedMachineProbeTick = tick;
+        }
+    }
+
+    private static bool CachedMachineProbeRowsHaveLoadableInput()
+    {
+        foreach (var row in cachedMachineProbeRows)
+        {
+            var loadableInputs = row.GetType().GetProperty("loadable_inputs")?.GetValue(row) as Array;
+            if (loadableInputs is { Length: > 0 })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static object[] ReadMachines(Farm farm)
+    {
+        var minimalMachineProfile = string.Equals(SnapshotProfileContext.Current, "machine", StringComparison.OrdinalIgnoreCase);
+        return ReadMachines(farm, includeLoadableInputs: false, minimalMachineProfile, machineProbeCacheTick: -1);
+    }
+
+    private static object[] ReadMachines(Farm farm, bool includeLoadableInputs, bool minimalMachineProfile, long machineProbeCacheTick)
+    {
+        return farm.objects.Pairs
+            .Where(pair => pair.Value.bigCraftable.Value && pair.Value.GetMachineData() is not null)
+            .OrderBy(pair => pair.Key.Y)
+            .ThenBy(pair => pair.Key.X)
+            .Take(MaxMachineRowsPerSnapshot)
+            .Select(pair =>
+            {
+                object machineData = minimalMachineProfile
+                    ? new
+                    {
+                        status = "blocked",
+                        reason = "machine_profile_minimal_skips_machine_data"
+                    }
+                    : ReadMachineDataSummary(pair.Value.GetMachineData());
+                var loadableInputs = includeLoadableInputs
+                    ? ReadMachineLoadableInputs(pair.Value)
+                    : Array.Empty<object>();
+                return new
+                {
+                    tile_x = (int)pair.Key.X,
+                    tile_y = (int)pair.Key.Y,
+                    qualified_item_id = pair.Value.QualifiedItemId,
+                    display_name = pair.Value.DisplayName,
+                    ready_for_harvest = pair.Value.readyForHarvest.Value,
+                    minutes_until_ready = pair.Value.MinutesUntilReady,
+                    machine_row_snapshot_limit = MaxMachineRowsPerSnapshot,
+                    loadable_input_probe_slot_limit = MaxMachineInputProbeSlotsPerMachine,
+                    loadable_input_probe_status = includeLoadableInputs ? "available_main_thread_cache" : "blocked_requires_main_thread_cache",
+                    machine_probe_cache_tick = machineProbeCacheTick,
+                    machine_data = machineData,
+                    held_item = SummarizeItem(pair.Value.heldObject.Value),
+                    loadable_inputs = loadableInputs
+                };
+            })
+            .Where(machine => minimalMachineProfile ||
+                machine.minutes_until_ready > 0 ||
+                machine.ready_for_harvest ||
+                machine.held_item is not null ||
+                machine.loadable_inputs.Length > 0)
+            .ToArray();
+    }
+
+    private static object ReadMachineDataSummary(object? machineData)
+    {
+        if (machineData is null)
+        {
+            return new
+            {
+                source = "Object.GetMachineData()",
+                status = "unavailable"
+            };
+        }
+
+        return new
+        {
+            source = "Object.GetMachineData()",
+            status = "available",
+            has_input = ReadBoolNullable(machineData, "HasInput"),
+            has_output = ReadBoolNullable(machineData, "HasOutput"),
+            use_first_valid_output = ReadBoolNullable(machineData, "UseFirstValidOutput"),
+            output_rule_count = ReadCount(machineData, "OutputRules"),
+            output_rules = ReadMachineOutputRules(machineData)
+        };
+    }
+
+    private static object[] ReadMachineOutputRules(object machineData)
+    {
+        var outputRules = ReadMemberValue(machineData, "OutputRules");
+        if (outputRules is not System.Collections.IEnumerable enumerable)
+        {
+            return Array.Empty<object>();
+        }
+
+        return enumerable
+            .Cast<object?>()
+            .Where(rule => rule is not null)
+            .Take(12)
+            .Select(rule => new
+            {
+                id = ReadString(rule!, "Id") ?? string.Empty,
+                required_item_id = ReadString(rule!, "RequiredItemId") ?? string.Empty,
+                condition = ReadString(rule!, "Condition") ?? string.Empty,
+                per_item_condition = ReadString(rule!, "PerItemCondition") ?? string.Empty,
+                output_method = ReadString(rule!, "OutputMethod") ?? string.Empty,
+                trigger_count = ReadCount(rule!, "Triggers"),
+                required_item_count = ReadCount(rule!, "RequiredItems"),
+                max_items = ReadIntNullable(rule!, "MaxItems"),
+                minutes_until_ready = ReadIntNullable(rule!, "MinutesUntilReady"),
+                output_item = ReadMachineOutputItem(ReadMemberValue(rule!, "OutputItem")),
+                output_items = ReadMachineOutputItemList(ReadMemberValue(rule!, "OutputItems")),
+                additional_consumed_item_count = ReadCount(rule!, "AdditionalConsumedItems"),
+                additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(rule!, "AdditionalConsumedItems"))
+            })
+            .ToArray();
+    }
+
+    private static object[] ReadMachineAdditionalConsumedItems(object? items)
+    {
+        if (items is not System.Collections.IEnumerable enumerable)
+        {
+            return Array.Empty<object>();
+        }
+
+        return enumerable
+            .Cast<object?>()
+            .Where(item => item is not null)
+            .Take(8)
+            .Select(item =>
+            {
+                var itemId = ReadString(item!, "ItemId") ?? string.Empty;
+                var amount = ReadIntNullable(item!, "Amount") ?? 1;
+                var salePrice = ReadItemSalePrice(itemId);
+                return new
+                {
+                    item_id = itemId,
+                    qualified_item_id = NormalizeObjectQualifiedId(itemId),
+                    amount,
+                    sale_price = salePrice,
+                    total_value = salePrice.HasValue ? salePrice.Value * Math.Max(1, amount) : (int?)null
+                };
+            })
+            .ToArray();
+    }
+
+    private static object? ReadMachineOutputItem(object? output)
+    {
+        if (output is null)
+        {
+            return null;
+        }
+
+        var itemId = ReadString(output, "ItemId") ?? ReadString(output, "Item") ?? string.Empty;
+        return new
+        {
+            item_id = itemId,
+            qualified_item_id = NormalizeObjectQualifiedId(itemId),
+            stack = ReadIntNullable(output, "Stack"),
+            min_stack = ReadIntNullable(output, "MinStack"),
+            max_stack = ReadIntNullable(output, "MaxStack"),
+            quality = ReadIntNullable(output, "Quality"),
+            price = ReadIntNullable(output, "Price"),
+            sale_price = ReadItemSalePrice(itemId),
+            copy_price = ReadBoolNullable(output, "CopyPrice"),
+            copy_quality = ReadBoolNullable(output, "CopyQuality"),
+            copy_color = ReadBoolNullable(output, "CopyColor"),
+            preserve_type = ReadString(output, "PreserveType") ?? string.Empty,
+            preserve_id = ReadString(output, "PreserveId") ?? string.Empty
+        };
+    }
+
+    private static object[] ReadMachineOutputItemList(object? outputs)
+    {
+        if (outputs is not System.Collections.IEnumerable enumerable)
+        {
+            return Array.Empty<object>();
+        }
+
+        return enumerable
+            .Cast<object?>()
+            .Where(output => output is not null)
+            .Take(8)
+            .Select(ReadMachineOutputItem)
+            .Where(output => output is not null)
+            .Cast<object>()
+            .ToArray();
+    }
+
+    private static object[] ReadMachineLoadableInputs(StardewValley.Object machine)
+    {
+        if (Game1.player is null ||
+            machine.GetMachineData() is null ||
+            machine.readyForHarvest.Value ||
+            machine.MinutesUntilReady > 0)
+        {
+            return Array.Empty<object>();
+        }
+
+        var predictedOutputCache = new Dictionary<string, object>();
+        var inputs = new List<object>();
+        for (var index = 0; index < Game1.player.Items.Count && index < MaxMachineInputProbeSlotsPerMachine; index++)
+        {
+            var item = Game1.player.Items[index];
+            if (item is null || item is not StardewValley.Object)
+            {
+                continue;
+            }
+
+            bool accepts;
+            try
+            {
+                accepts = machine.performObjectDropInAction(item, probe: true, Game1.player);
+            }
+            catch (Exception ex)
+            {
+                inputs.Add(new
+                {
+                    slot_index = index,
+                    item_id = item.ItemId,
+                    qualified_item_id = item.QualifiedItemId,
+                    display_name = item.DisplayName,
+                    stack = item.Stack,
+                    quality = item.Quality,
+                    sale_price = item.salePrice(),
+                    predicted_output = new
+                    {
+                        status = "blocked",
+                        reason = "machine_input_probe_exception",
+                        exception_type = ex.GetType().Name
+                    },
+                    probe_source = "Object.performObjectDropInAction(probe:true)",
+                    load_executor_status = "blocked_probe_exception"
+                });
+                continue;
+            }
+
+            if (!accepts)
+            {
+                continue;
+            }
+
+            inputs.Add(new
+            {
+                slot_index = index,
+                item_id = item.ItemId,
+                qualified_item_id = item.QualifiedItemId,
+                display_name = item.DisplayName,
+                stack = item.Stack,
+                quality = item.Quality,
+                sale_price = item.salePrice(),
+                predicted_output = ReadPredictedMachineOutputCached(machine, item, predictedOutputCache),
+                probe_source = "Object.performObjectDropInAction(probe:true)",
+                load_executor_status = "covered_for_runtime_load"
+            });
+        }
+
+        return inputs.ToArray();
+    }
+
+    private static object ReadPredictedMachineOutputCached(StardewValley.Object machine, Item inputItem, IDictionary<string, object> cache)
+    {
+        var key = inputItem.QualifiedItemId + "|" + inputItem.ItemId + "|" + inputItem.Quality + "|" + inputItem.Stack + "|" + inputItem.salePrice();
+        if (cache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        object predicted;
+        try
+        {
+            predicted = ReadPredictedMachineOutput(machine, inputItem);
+        }
+        catch (Exception ex)
+        {
+            predicted = new
+            {
+                status = "blocked",
+                reason = "machine_native_output_probe_exception",
+                exception_type = ex.GetType().Name
+            };
+        }
+        cache[key] = predicted;
+        return predicted;
+    }
+
+    private static object ReadPredictedMachineOutput(StardewValley.Object machine, Item inputItem)
+    {
+        var machineData = machine.GetMachineData();
+        if (machineData is null || Game1.player is null || machine.Location is null)
+        {
+            return new
+            {
+                status = "unavailable",
+                reason = "machine_context_unavailable"
+            };
+        }
+
+        if (!MachineDataUtility.TryGetMachineOutputRule(
+            machine,
+            machineData,
+            MachineOutputTrigger.ItemPlacedInMachine,
+            inputItem,
+            Game1.player,
+            machine.Location,
+            out var outputRule,
+            out _,
+            out _,
+            out _))
+        {
+            return new
+            {
+                status = "unavailable",
+                reason = "machine_output_rule_unavailable"
+            };
+        }
+
+        var outputEntries = outputRule.OutputItem;
+        if (outputEntries is null || outputEntries.Count == 0)
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_output_item_unavailable"
+            };
+        }
+
+        if (!outputRule.UseFirstValidOutput && outputEntries.Count > 1)
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_output_random_choice_not_probed"
+            };
+        }
+
+        var outputData = MachineDataUtility.GetOutputData(machine, machineData, outputRule, inputItem, Game1.player, machine.Location);
+        if (outputData is null)
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_output_data_unavailable"
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(outputData.OutputMethod))
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_output_custom_method_not_probed"
+            };
+        }
+
+        var outputItem = MachineDataUtility.GetOutputItem(machine, outputData, inputItem, Game1.player, probe: true, out var overrideMinutesUntilReady);
+        if (outputItem is null)
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_output_probe_returned_null"
+            };
+        }
+
+        var ruleMinutesUntilReady = ReadIntNullable(outputRule, "MinutesUntilReady");
+        var effectiveMinutesUntilReady = overrideMinutesUntilReady ?? ruleMinutesUntilReady;
+        return new
+        {
+            status = "available",
+            source = "MachineDataUtility.GetOutputItem(probe:true)",
+            matched_rule_id = outputRule.Id ?? string.Empty,
+            required_item_id = ReadString(outputRule, "RequiredItemId") ?? string.Empty,
+            use_first_valid_output = outputRule.UseFirstValidOutput,
+            rule_minutes_until_ready = ruleMinutesUntilReady,
+            effective_minutes_until_ready = effectiveMinutesUntilReady,
+            item = SummarizeItem(outputItem),
+            sale_price = outputItem.salePrice(),
+            stack = outputItem.Stack,
+            quality = outputItem.Quality,
+            preserve_type = outputItem is StardewValley.Object outputObject && outputObject.preserve.Value.HasValue
+                ? outputObject.preserve.Value.Value.ToString()
+                : string.Empty,
+            preserved_item_id = outputItem is StardewValley.Object preservedObject
+                ? preservedObject.GetPreservedItemId() ?? string.Empty
+                : string.Empty,
+            override_minutes_until_ready = overrideMinutesUntilReady
+        };
+    }
+
+}

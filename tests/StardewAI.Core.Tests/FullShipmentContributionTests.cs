@@ -770,11 +770,7 @@ public sealed class FullShipmentContributionTests
     [Fact]
     public void AdapterScopeUsesUseSeparateWalletsNotReferenceEquals()
     {
-        var adapterPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
-            "src", "StardewAI.TransparentBridge", "Adapters", "FarmReadAdapter.cs"));
-        var source = File.ReadAllText(adapterPath);
+        var source = FarmReadAdapterSources.All;
 
         Assert.Contains("useSeparateWallets", source);
         Assert.DoesNotContain("ReferenceEquals", source);
@@ -785,11 +781,7 @@ public sealed class FullShipmentContributionTests
     [Fact]
     public void AdapterEmitsStandTilesArrayAndContentsWithSignature()
     {
-        var adapterPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
-            "src", "StardewAI.TransparentBridge", "Adapters", "FarmReadAdapter.cs"));
-        var source = File.ReadAllText(adapterPath);
+        var source = FarmReadAdapterSources.All;
 
         Assert.Contains("stand_tiles", source);
         Assert.Contains("contents_signature", source);

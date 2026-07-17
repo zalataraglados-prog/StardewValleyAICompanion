@@ -142,7 +142,7 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.DoesNotContain("pullFishFromWater(", source, StringComparison.Ordinal);
         Assert.DoesNotContain("whichFish =", source, StringComparison.Ordinal);
         Assert.DoesNotContain("addItemToInventoryBool(ItemRegistry.Create", source, StringComparison.Ordinal);
-        var bridgeSource = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "FishingReadAdapter.cs"));
+        var bridgeSource = FishingReadAdapterSources.All;
         Assert.Contains("vanilla_secret_note_or_item", bridgeSource);
         Assert.Contains("Utility.GetUnseenSecretNotes", bridgeSource);
         Assert.Contains("internal_name = item.Name", bridgeSource);

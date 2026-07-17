@@ -523,7 +523,7 @@ public sealed class NativeShippingSourceGuardTests
     [Fact]
     public void FarmBuildingsTransparentRowHasDoorTraversalData()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "FarmReadAdapter.cs"));
+        var source = FarmReadAdapterSources.All;
         var buildingSlice = Slice(source, "private static object ReadBuildingRow(Building building)", "private static object[] ReadShippingBins");
         Assert.Contains("human_door_relative_x", buildingSlice, StringComparison.Ordinal);
         Assert.Contains("human_door_absolute_tile_x", buildingSlice, StringComparison.Ordinal);
