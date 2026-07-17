@@ -1,0 +1,139 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.Json;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
+using StardewAI.Contracts.Plans;
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Goals;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
+using StardewAI.Core.Verifier;
+using StardewAI.Core.WorldModel;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
+
+namespace StardewAI.Core.Execution
+{
+    public sealed partial class ActionQueueCompiler
+    {
+        private static SmallModelAction PlanStepToAction(
+            SmallModelPlanStep step,
+            int stepIndex,
+            int stepCount,
+            bool activeMenuOpenBeforeStep,
+            string activeMenuTypeBeforeStep)
+        {
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("plan_step_kind", step.Kind),
+                Parameter("target_location", step.TargetLocation),
+                Parameter("compiler_context.plan_step_index", stepIndex.ToString()),
+                Parameter("compiler_context.plan_step_count", stepCount.ToString()),
+                Parameter("compiler_context.is_terminal_step", (stepIndex == stepCount - 1).ToString().ToLowerInvariant()),
+                Parameter("compiler_context.active_menu_open_before_step", activeMenuOpenBeforeStep.ToString().ToLowerInvariant()),
+                Parameter("compiler_context.active_menu_type_before_step", activeMenuTypeBeforeStep)
+            };
+
+            if (step.TargetTileX.HasValue)
+            {
+                parameters.Add(Parameter("target_tile_x", step.TargetTileX.Value.ToString()));
+            }
+            if (step.TargetTileY.HasValue)
+            {
+                parameters.Add(Parameter("target_tile_y", step.TargetTileY.Value.ToString()));
+            }
+            if (step.Direction.HasValue)
+            {
+                parameters.Add(Parameter("direction", step.Direction.Value.ToString()));
+            }
+            if (step.WaitTicks.HasValue)
+            {
+                parameters.Add(Parameter("wait_ticks", step.WaitTicks.Value.ToString()));
+            }
+            if (step.EstimatedMinutes.HasValue)
+            {
+                parameters.Add(Parameter("estimated_minutes", step.EstimatedMinutes.Value.ToString()));
+            }
+            parameters.AddRange(step.Preconditions.Select(value => Parameter("precondition", value)));
+            parameters.AddRange(step.ExpectedEffects.Select(value => Parameter("expected_effect", value)));
+            parameters.AddRange(step.SafetyConstraints.Select(value => Parameter("safety_constraint", value)));
+            parameters.AddRange(step.FailurePolicy.Select(value => Parameter("failure_policy", value)));
+            parameters.AddRange(step.Parameters);
+
+            return new SmallModelAction
+            {
+                ActionId = string.IsNullOrWhiteSpace(step.StepId) ? "plan_step." + Guid.NewGuid().ToString("N") : step.StepId,
+                OptionId = PlanStepOptionId(step.Kind),
+                Rationale = "compiled from small_model_plan step",
+                Parameters = parameters.ToArray()
+            };
+        }
+
+        private static string PlanStepOptionId(string kind)
+        {
+            return kind switch
+            {
+                "move_to_tile" => "executor.move_to_tile",
+                "traverse_connector" => "executor.traverse_connector",
+                "face_direction" => "executor.face_direction",
+                "interact" => "executor.interact",
+                "sleep" => "executor.sleep",
+                "wait_ticks" => "executor.wait_ticks",
+                "close_menu" => "executor.close_menu",
+                "buy_shop_item" => "executor.buy_shop_item",
+                "choose_dialogue_response" => "executor.choose_dialogue_response",
+                "maintain_crops" => "farm.maintain_crops",
+                "clear_obstacle" => "executor.clear_obstacle",
+                "till_soil" => "executor.till_soil",
+                "plant_seed" => "executor.plant_seed",
+                "harvest_crop" => "executor.harvest_crop",
+                "harvest_giant_crop" => "executor.harvest_giant_crop",
+                "pickup_debris" => "executor.pickup_debris",
+                "collect_machine_output" => "executor.collect_machine_output",
+                "load_machine_input" => "executor.load_machine_input",
+                "catch_fish" => "executor.catch_fish",
+                "social_interact" => "executor.social_interact",
+                "ship_inventory_item_to_bin" => "executor.ship_inventory_item_to_bin",
+                _ => "unknown.plan_step"
+            };
+        }
+
+        private static bool StepOpensMenu(SmallModelPlanStep step)
+        {
+            return step.ExpectedEffects.Any(effect =>
+                effect.Contains("menus.active_menu.is_open=true", StringComparison.OrdinalIgnoreCase) ||
+                effect.Contains("menus.sleep_prompt_context.prompt_open=true", StringComparison.OrdinalIgnoreCase) ||
+                effect.Contains("menu_open", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string InferredOpenedMenuType(SmallModelPlanStep step)
+        {
+            if (step.ExpectedEffects.Any(effect =>
+                    effect.Contains("DialogueBox", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("dialogue", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_Blacksmith", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_Carpenter", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_Marnie", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_AdventureGuild", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_adventureGuild", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "DialogueBox";
+            }
+
+            if (step.ExpectedEffects.Any(effect =>
+                    effect.Contains("ShopMenu", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_OpenShop", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_Buy", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("interact_map_action_JojaShop", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "ShopMenu";
+            }
+
+            return string.Empty;
+        }
+
+    }
+}

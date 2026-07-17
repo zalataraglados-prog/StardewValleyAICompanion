@@ -512,7 +512,7 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     [Fact]
     public void ActionQueueCompilerValidatesSocialInteractWithStandTileAdjacency()
     {
-        var compilerSource = File.ReadAllText(FindRepositoryFile("src", "StardewAI.Core", "Execution", "ActionQueueCompiler.cs"));
+        var compilerSource = ActionQueueCompilerSources.All;
 
         Assert.Contains("ValidateSocialInteractPlan", compilerSource, StringComparison.Ordinal);
         Assert.Contains("social_stand_not_adjacent_to_npc", compilerSource, StringComparison.Ordinal);
