@@ -12,6 +12,9 @@ internal static class RuntimeHarnessSources
         {
             ["ModEntry.cs"] = 0,
             ["ModEntry.MovementSleep.cs"] = 10,
+            ["ModEntry.MovementSleep.ObstacleClearance.cs"] = 11,
+            ["ModEntry.MovementSleep.ResultsConnector.cs"] = 12,
+            ["ModEntry.MovementSleep.PathingInput.cs"] = 13,
             ["ModEntry.Sleep.cs"] = 20,
             ["ModEntry.Farming.cs"] = 30,
             ["ModEntry.Dialogue.cs"] = 40,
@@ -23,6 +26,8 @@ internal static class RuntimeHarnessSources
             ["ModEntry.ExecutionCommon.cs"] = 100,
             ["ModEntry.MiningResources.cs"] = 110,
             ["ModEntry.Volcano.cs"] = 120,
+            ["ModEntry.Volcano.Obstacle.cs"] = 121,
+            ["ModEntry.Volcano.Combat.cs"] = 122,
             ["ModEntry.Mining.Container.cs"] = 130,
             ["ModEntry.Mining.Traversal.cs"] = 140,
             ["ModEntry.Mining.Consumable.cs"] = 150,
@@ -35,7 +40,14 @@ internal static class RuntimeHarnessSources
             ["ModEntry.Fishing.cs"] = 220,
             ["ModEntry.FixtureInventory.cs"] = 230,
             ["ModEntry.Shipping.cs"] = 240,
-            ["ModEntry.State.cs"] = 250
+            ["ModEntry.Shipping.Execution.cs"] = 241,
+            ["ModEntry.Shipping.Utilities.cs"] = 242,
+            ["ModEntry.State.cs"] = 250,
+            ["ModEntry.State.Mining.cs"] = 251,
+            ["ModEntry.State.Volcano.cs"] = 252,
+            ["ModEntry.State.Combat.cs"] = 253,
+            ["ModEntry.State.Setup.cs"] = 254,
+            ["ModEntry.State.RecoveryShipping.cs"] = 255
         };
 
         return string.Join(
