@@ -99,6 +99,12 @@ namespace StardewAI.Core.Execution
 
         public string CombatTerminalState { get; set; } = string.Empty;
 
+        public string SkillExperienceSkillId { get; set; } = string.Empty;
+
+        public int? ExpectedSkillExperience { get; set; }
+
+        public string SkillExperienceCondition { get; set; } = string.Empty;
+
         public int? SlingshotSlotIndex { get; set; }
 
         public string SlingshotAmmoQualifiedItemId { get; set; } = string.Empty;

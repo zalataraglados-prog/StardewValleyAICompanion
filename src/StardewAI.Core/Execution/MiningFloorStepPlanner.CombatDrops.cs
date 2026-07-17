@@ -60,6 +60,12 @@ namespace StardewAI.Core.Execution
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.CombatMethod = row.Combat?.Method ?? "melee";
                     plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
+                    if (string.Equals(plan.CombatTerminalState, "defeat", StringComparison.Ordinal))
+                    {
+                        plan.SkillExperienceSkillId = "combat";
+                        plan.ExpectedSkillExperience = ReadInt(row.Monster, "combat_experience_on_defeat");
+                        plan.SkillExperienceCondition = ReadString(row.Monster, "combat_experience_condition");
+                    }
                     plan.RequiredWeaponEnchantmentRuntimeType = plan.CombatMethod == "melee" ? ReadRequiredWeaponEnchantment(row.Monster) : string.Empty;
                     plan.CombatWeaponSlotIndex = plan.CombatMethod == "melee" ? row.Combat?.SlotIndex : null;
                     plan.SlingshotSlotIndex = plan.CombatMethod == "slingshot" ? row.Combat?.SlotIndex : null;

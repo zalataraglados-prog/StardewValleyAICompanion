@@ -4,7 +4,7 @@ using StardewValley.Locations;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
-public sealed class PlayerReadAdapter : ReadAdapterBase
+public sealed partial class PlayerReadAdapter : ReadAdapterBase
 {
     public override string Domain => "player";
     public override int Priority => 20;
@@ -63,6 +63,7 @@ public sealed class PlayerReadAdapter : ReadAdapterBase
             ["max_energy"] = Field(player?.MaxStamina, "Game1.player.MaxStamina", tick),
             ["level"] = Field(Context.IsWorldReady ? (int?)player?.Level : null, "Game1.player.Level", tick),
             ["skills_detail"] = Field(ReadSkillsDetail(player), "Game1.player.GetUnmodifiedSkillLevel/GetSkillLevel/experiencePoints and Farmer.getBaseExperienceForLevel", tick),
+            ["luck_context"] = Field(ReadLuckContext(player), "Game1.player.team.sharedDailyLuck, Farmer.DailyLuck/LuckLevel, Farmer.hasSpecialCharm, BuffManager.AppliedBuffs", tick),
             ["has_skull_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasSkullKey : null, "Game1.player.hasSkullKey", tick),
             ["has_rusty_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasRustyKey : null, "Game1.player.hasRustyKey", tick),
             ["married_or_roommate"] = Field(Context.IsWorldReady ? (bool?)player?.isMarriedOrRoommates() : null, "Game1.player.isMarriedOrRoommates()", tick),
@@ -170,60 +171,6 @@ public sealed class PlayerReadAdapter : ReadAdapterBase
             occupied_item_stacks = occupied,
             empty_slots = empty,
             has_empty_slot = empty > 0
-        };
-    }
-
-    private static object? ReadSkillsDetail(Farmer? player)
-    {
-        if (player is null)
-        {
-            return null;
-        }
-
-        var skills = new[]
-        {
-            ReadSkill(player, 0, "farming", supportsExperiencePlanning: true),
-            ReadSkill(player, 1, "fishing", supportsExperiencePlanning: true),
-            ReadSkill(player, 2, "foraging", supportsExperiencePlanning: true),
-            ReadSkill(player, 3, "mining", supportsExperiencePlanning: true),
-            ReadSkill(player, 4, "combat", supportsExperiencePlanning: true),
-            ReadSkill(player, 5, "luck", supportsExperiencePlanning: false)
-        };
-
-        return new
-        {
-            scoring_level = player.Level,
-            scoring_formula = "floor((farming+fishing+foraging+combat+mining+luck)/2)",
-            vanilla_level_cap = 10,
-            skills
-        };
-    }
-
-    private static object ReadSkill(Farmer player, int index, string skillId, bool supportsExperiencePlanning)
-    {
-        var unmodifiedLevel = player.GetUnmodifiedSkillLevel(index);
-        var effectiveLevel = player.GetSkillLevel(index);
-        var experience = player.experiencePoints[index];
-        var nextLevel = unmodifiedLevel < 10 ? unmodifiedLevel + 1 : (int?)null;
-        var nextLevelExperience = nextLevel.HasValue
-            ? Farmer.getBaseExperienceForLevel(nextLevel.Value)
-            : (int?)null;
-
-        return new
-        {
-            skill_id = skillId,
-            skill_index = index,
-            unmodified_level = unmodifiedLevel,
-            effective_level = effectiveLevel,
-            temporary_buff_delta = effectiveLevel - unmodifiedLevel,
-            experience,
-            next_level = nextLevel,
-            next_level_experience = nextLevelExperience,
-            experience_to_next_level = nextLevelExperience.HasValue
-                ? Math.Max(0, nextLevelExperience.Value - experience)
-                : (int?)null,
-            at_vanilla_level_cap = unmodifiedLevel >= 10,
-            supports_experience_planning = supportsExperiencePlanning
         };
     }
 

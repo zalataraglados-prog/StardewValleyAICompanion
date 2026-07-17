@@ -92,6 +92,11 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 health = monster.Health,
                 max_health = monster.MaxHealth,
                 damage_to_farmer = monster.DamageToFarmer,
+                combat_experience_on_defeat = mine.isFarm.Value
+                    ? Math.Max(1, monster.ExperienceGained / 3)
+                    : monster.ExperienceGained,
+                combat_experience_skill_index = Farmer.combatSkill,
+                combat_experience_condition = "native_monster_death_attributed_to_player",
                 resilience = monster.resilience.Value,
                 miss_chance = monster.missChance.Value,
                 is_monster = monster.IsMonster,
@@ -134,7 +139,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     dynamic_replan_required = true,
                     future_ai_path_not_predicted = true
                 },
-                source = "Monster live fields; " + drops.Source + "; future AI is handled by after-snapshot replanning, not guessed"
+                source = "Monster live fields including GameLocation.monsterDrop combat XP semantics; " + drops.Source + "; future AI is handled by after-snapshot replanning, not guessed"
             };
         }).ToArray();
     }

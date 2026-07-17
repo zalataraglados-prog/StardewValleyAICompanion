@@ -81,6 +81,9 @@ namespace StardewAI.Core.Execution
             Add(parameters, "combat_weapon_slot_index", plan.CombatWeaponSlotIndex);
             Add(parameters, "combat_method", plan.CombatMethod);
             Add(parameters, "combat_terminal_state", plan.CombatTerminalState);
+            Add(parameters, "skill_experience_skill_id", plan.SkillExperienceSkillId);
+            Add(parameters, "expected_skill_experience", plan.ExpectedSkillExperience);
+            Add(parameters, "skill_experience_condition", plan.SkillExperienceCondition);
             Add(parameters, "slingshot_slot_index", plan.SlingshotSlotIndex);
             Add(parameters, "slingshot_ammo_qualified_item_id", plan.SlingshotAmmoQualifiedItemId);
             Add(parameters, "bomb_slot_index", plan.BombSlotIndex);
