@@ -1177,7 +1177,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("MovementTraversalCost(location, next)", source, StringComparison.Ordinal);
         Assert.Contains("pickaxe.UpgradeLevel + 1", source, StringComparison.Ordinal);
 
-        var bridgeSource = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var bridgeSource = MiningReadAdapterSources.All;
         Assert.Contains("[\"resource_clumps\"]", bridgeSource, StringComparison.Ordinal);
         Assert.Contains("ResourceClumpRequirement", bridgeSource, StringComparison.Ordinal);
         Assert.Contains("minimum_upgrade_level", bridgeSource, StringComparison.Ordinal);
@@ -1273,7 +1273,7 @@ public sealed class MiningFloorStepPlannerTests
     [Fact]
     public void TransparentSlingshotProjectionPublishesExplosiveAreaSafetyAndUtility()
     {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var source = MiningReadAdapterSources.All;
         var start = source.IndexOf("private static object ReadSlingshotAttackProjection", StringComparison.Ordinal);
         var end = source.IndexOf("private static MeleeDamageDistribution BuildSlingshotDamageDistribution", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
@@ -1338,7 +1338,7 @@ public sealed class MiningFloorStepPlannerTests
     public void OpportunisticDebrisSkipsNonItemVisualsAndRuntimeRebindsStableIdentity()
     {
         var root = FindRepositoryRoot();
-        var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var bridge = MiningReadAdapterSources.All;
         var planner = MiningFloorPlannerSources.All;
         var runtime = RuntimeHarnessSources.All;
 
@@ -1451,7 +1451,7 @@ public sealed class MiningFloorStepPlannerTests
         Assert.Contains("Game1.player.hasSkullKey", claimSource, StringComparison.Ordinal);
         Assert.DoesNotMatch(@"Game1\.player\.hasSkullKey\s*=", claimSource);
 
-        var adapterSource = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "MiningReadAdapter.cs"));
+        var adapterSource = MiningReadAdapterSources.All;
         Assert.Contains("mine.overlayObjects", adapterSource, StringComparison.Ordinal);
         Assert.Contains("item.which.Value == 4", adapterSource, StringComparison.Ordinal);
 

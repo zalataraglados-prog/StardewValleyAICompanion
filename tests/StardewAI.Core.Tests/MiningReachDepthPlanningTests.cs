@@ -231,12 +231,7 @@ public sealed class MiningReachDepthPlanningTests
     [Fact]
     public void MiningAdapterNoLongerPublishesKnownRequiredFactsAsUnavailable()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "src",
-            "StardewAI.TransparentBridge",
-            "Adapters",
-            "MiningReadAdapter.cs"));
+        var source = MiningReadAdapterSources.All;
 
         Assert.DoesNotContain("map_collision_passability_unavailable", source, StringComparison.Ordinal);
         Assert.DoesNotContain("object_classification_incomplete", source, StringComparison.Ordinal);
@@ -395,12 +390,7 @@ public sealed class MiningReachDepthPlanningTests
     [Fact]
     public void MiningAdapterPublishesShaftsOnlyForLoadedSkullCavern()
     {
-        var source = File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "src",
-            "StardewAI.TransparentBridge",
-            "Adapters",
-            "MiningReadAdapter.cs"));
+        var source = MiningReadAdapterSources.All;
         var start = source.IndexOf("private static object[] ShaftTiles", StringComparison.Ordinal);
         var end = source.IndexOf("public static int ShaftFallLevels", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
