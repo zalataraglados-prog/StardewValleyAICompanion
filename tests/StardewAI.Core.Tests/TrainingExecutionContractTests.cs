@@ -248,6 +248,26 @@ public sealed class TrainingExecutionContractTests
     }
 
     [Fact]
+    public void TrainingExecutionRequestSerializesSocialContinuationDialogueRecovery()
+    {
+        var request = new TrainingExecutionRequest
+        {
+            RunId = "run.social.recovery",
+            QueueId = "queue.social.recovery",
+            QueueItemId = "item.social.recovery",
+            BeforeStateHash = "hash.before",
+            OptionId = "executor.close_menu",
+            SocialContinuationDialogueRecovery = true
+        };
+
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(json, JsonOptions)!;
+
+        Assert.Contains("\"social_continuation_dialogue_recovery\":true", json);
+        Assert.True(roundTrip.SocialContinuationDialogueRecovery);
+    }
+
+    [Fact]
     public void TrainingExecutionRequestDeserializesOldJsonWithInteractDefaults()
     {
         var request = JsonSerializer.Deserialize<TrainingExecutionRequest>("""

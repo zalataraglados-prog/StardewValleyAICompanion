@@ -60,6 +60,53 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.DoesNotContain(filtered, item => item["queue_item_id"]!.GetValue<string>() == "queue_item.regenerated.completed");
     }
 
+    [Fact]
+    public void ContinuationFilterKeepsSameNpcAndRejectsObjectiveSwitch()
+    {
+        var continuation = new JsonObject
+        {
+            ["option_id"] = "social.talk_npc",
+            ["npc_name"] = "Abigail",
+            ["target_location"] = "SeedShop",
+            ["slot_index"] = string.Empty,
+            ["qualified_item_id"] = string.Empty
+        };
+        var candidates = new JsonArray
+        {
+            SocialCandidate("social.talk_npc", "Leah", false),
+            SocialCandidate("social.talk_npc", "Abigail", true),
+            SocialCandidate("social.gift_npc", "Abigail", false)
+        };
+
+        var filtered = QueueReplanFilter.FilterRankedCandidates(candidates, continuation);
+
+        var selectedNode = Assert.Single(filtered);
+        Assert.NotNull(selectedNode);
+        var selected = selectedNode!.AsObject();
+        var parameters = Assert.IsType<JsonArray>(selected["parameters"]);
+        var parameter = Assert.IsType<JsonObject>(Assert.Single(parameters));
+        Assert.Equal("Abigail", parameter["value"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void AppliedWaitCarriesContinuationAndAppliedMatchingInteractionCompletesIt()
+    {
+        var wait = QueueItem("queue.wait", "executor.wait_ticks", "0", "0", string.Empty);
+        wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.option_id", "social.talk_npc"));
+        wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.npc_name", "Abigail"));
+        wait["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.target_location", "SeedShop"));
+        var continuation = QueueReplanFilter.ReadSocialContinuation(wait);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("Abigail", continuation!["npc_name"]!.GetValue<string>());
+
+        var interact = QueueItem("queue.social", "executor.social_interact", "10", "10", string.Empty);
+        interact["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("npc_name", "Abigail"));
+        interact["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("social_action_kind", "talk"));
+        Assert.True(QueueReplanFilter.CompletesSocialContinuation(interact, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesSocialContinuation(interact, continuation, "blocked"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -86,6 +133,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                         ["target"] = "Farm(" + targetX + "," + targetY + ")"
                     }
                 }
+            }
+        };
+    }
+
+    private static JsonObject SocialCandidate(string optionId, string npcName, bool continuationParameters)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "social:" + optionId + ":" + npcName,
+            ["option_id"] = optionId,
+            ["parameters"] = new JsonArray
+            {
+                Parameter(continuationParameters ? "continuation.npc_name" : "npc_name", npcName)
             }
         };
     }

@@ -89,12 +89,12 @@ namespace StardewAI.Core.OptionRegistry
             var safety = verifier.Verify(snapshot, option);
             var reasons = new List<string>(safety.BlockingReasons);
             var notes = new List<string>();
-            var compilerReasons = IsUnboundSocialCandidate(candidate)
+            var compilerReasons = IsUnboundSocialCandidate(candidate) || IsSocialContinuationCandidate(candidate)
                 ? Array.Empty<string>()
                 : CompilerProbeBlockingReasons(snapshot, candidate);
             var economicCandidates = EconomicCandidates(snapshot, option.OptionId);
             var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
-            var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors);
+            var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(snapshot, option.OptionId, economicCandidates)
                 : Array.Empty<string>();
@@ -187,6 +187,13 @@ namespace StardewAI.Core.OptionRegistry
         {
             return candidate.Parameters.Length == 0 &&
                 (candidate.OptionId == "social.talk_npc" || candidate.OptionId == "social.gift_npc");
+        }
+
+        private static bool IsSocialContinuationCandidate(OptionAvailabilityCandidate candidate)
+        {
+            return (candidate.OptionId == "social.talk_npc" || candidate.OptionId == "social.gift_npc") &&
+                !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.npc_name")) &&
+                !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.target_location"));
         }
 
         private static string[] EventCandidateGateBlockingReasons(string optionId, EventCandidate[] eventCandidates, bool hasBoundParameters)
@@ -388,21 +395,34 @@ namespace StardewAI.Core.OptionRegistry
             return Array.Empty<EventCandidate>();
         }
 
-        private EventCandidate[] SocialCandidates(SnapshotEnvelope snapshot, string optionId, string[] missingStateFactors)
+        private EventCandidate[] SocialCandidates(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            string[] missingStateFactors,
+            SmallModelActionParameter[] boundParameters)
         {
             var candidates = missingStateFactors.Any(factor => factor != "npcs.schedules")
                 ? Array.Empty<EventCandidate>()
                 : SocialCandidateBuilder.Build(snapshot, optionId, int.MaxValue);
-            if (candidates.Length == 0)
+            var continuationNpc = ReadParameter(boundParameters, "continuation.npc_name");
+            var continuationTarget = ReadParameter(boundParameters, "continuation.target_location");
+            var hasCurrentContinuationNpc = candidates.Any(candidate =>
+                string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(continuationNpc) &&
+                !string.IsNullOrWhiteSpace(continuationTarget) &&
+                !hasCurrentContinuationNpc)
             {
-                return candidates;
+                candidates = candidates
+                    .Concat(new[] { LastObservedSocialContinuationCandidate(optionId, continuationNpc, continuationTarget, boundParameters) })
+                    .ToArray();
             }
+            if (candidates.Length == 0) return candidates;
 
             var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
             var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray();
-            return candidates
+            var routed = candidates
                 .Select(candidate =>
                     string.IsNullOrWhiteSpace(candidate.LocationId) ||
                     string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
@@ -413,6 +433,128 @@ namespace StardewAI.Core.OptionRegistry
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .Take(64)
                 .ToArray();
+            if (!string.IsNullOrWhiteSpace(continuationNpc))
+            {
+                routed = routed
+                    .Select(candidate => string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                        !candidate.Available &&
+                        candidate.BlockReasons.Length > 0 &&
+                        candidate.BlockReasons.All(reason => reason == "social_menu_must_be_clear")
+                            ? SocialContinuationCloseMenu(optionId, candidate)
+                            : string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                        !candidate.Available &&
+                        string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase) &&
+                        candidate.BlockReasons.Length > 0 &&
+                        candidate.BlockReasons.All(IsRetryableSocialContinuationBlock)
+                            ? SocialContinuationRetryWait(optionId, candidate)
+                            : candidate)
+                    .ToArray();
+            }
+            return routed;
+        }
+
+        private static EventCandidate SocialContinuationCloseMenu(string optionId, EventCandidate candidate)
+        {
+            var npcName = ReadParameter(candidate.Parameters, "npc_name");
+            return new EventCandidate
+            {
+                CandidateId = candidate.CandidateId + ":continuation-close-menu",
+                Kind = "recovery_close_menu",
+                Available = true,
+                LocationId = candidate.LocationId,
+                ExpectedEffect = "menu_not_blocking_same_social_objective;fresh_snapshot_replan_required=true",
+                EstimatedTicks = 10,
+                EnergyCost = 0,
+                AvailabilityClass = "social_continuation_menu_recovery",
+                GateReasons = candidate.BlockReasons,
+                BlockReasons = Array.Empty<string>(),
+                Parameters = new[]
+                {
+                    Parameter("execution_option_id", "executor.close_menu"),
+                    Parameter("continuation.option_id", optionId),
+                    Parameter("continuation.npc_name", npcName),
+                    Parameter("continuation.target_location", candidate.LocationId),
+                    Parameter("social_route.position_source", "npcs.social_interaction.current_loaded_instance"),
+                    Parameter("social_route.future_schedule_projection", "not_used"),
+                    Parameter("social_continuation_dialogue_recovery", "true")
+                }
+            };
+        }
+
+        private static bool IsRetryableSocialContinuationBlock(string reason)
+        {
+            return reason is "social_no_reachable_adjacent_stand_tile" or
+                "social_npc_not_in_player_location" or
+                "social_npc_not_in_player_location_stand_skipped" or
+                "social_npc_busy" or
+                "social_npc_has_controller" or
+                "social_npc_sleeping";
+        }
+
+        private static EventCandidate SocialContinuationRetryWait(string optionId, EventCandidate candidate)
+        {
+            var npcName = ReadParameter(candidate.Parameters, "npc_name");
+            var parameters = new List<SmallModelActionParameter>(candidate.Parameters)
+            {
+                Parameter("continuation.option_id", optionId),
+                Parameter("continuation.npc_name", npcName),
+                Parameter("continuation.target_location", candidate.LocationId),
+                Parameter("social_route.position_source", "npcs.social_interaction.current_loaded_instance"),
+                Parameter("social_route.future_schedule_projection", "not_used"),
+                Parameter("retry_wait_ticks", "600")
+            };
+            return new EventCandidate
+            {
+                CandidateId = candidate.CandidateId + ":continuation-retry-wait",
+                Kind = "social_continuation_retry_wait",
+                Available = true,
+                LocationId = candidate.LocationId,
+                TileX = candidate.TileX,
+                TileY = candidate.TileY,
+                ExpectedEffect = "same_social_objective_retained=true;fresh_snapshot_replan_required=true;future_schedule_projection_not_used=true",
+                EstimatedTicks = 600,
+                EnergyCost = 0,
+                AvailabilityClass = "current_loaded_social_target_temporarily_unreachable_retry",
+                GateReasons = candidate.BlockReasons,
+                BlockReasons = Array.Empty<string>(),
+                Parameters = parameters.ToArray()
+            };
+        }
+
+        private static EventCandidate LastObservedSocialContinuationCandidate(
+            string optionId,
+            string npcName,
+            string targetLocation,
+            SmallModelActionParameter[] boundParameters)
+        {
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("npc_name", npcName),
+                Parameter("social_route.position_source", "continuation.last_observed_current_loaded_instance")
+            };
+            foreach (var name in new[]
+            {
+                "continuation.slot_index",
+                "continuation.qualified_item_id",
+                "continuation.observed_state_hash",
+                "continuation.observed_game_time"
+            })
+            {
+                var value = ReadParameter(boundParameters, name);
+                if (!string.IsNullOrWhiteSpace(value)) parameters.Add(Parameter(name, value));
+            }
+
+            return new EventCandidate
+            {
+                CandidateId = "social:continuation:" + optionId + ":" + npcName,
+                Kind = optionId == "social.gift_npc" ? "social_gift_current" : "social_talk_current",
+                Available = false,
+                LocationId = targetLocation,
+                ExpectedEffect = "social_target_from_last_observed_loaded_instance=true;fresh_snapshot_required_after_each_connector=true",
+                AvailabilityClass = "last_observed_social_target_route_only",
+                BlockReasons = new[] { "social_npc_not_in_player_location" },
+                Parameters = parameters.ToArray()
+            };
         }
 
         private EventCandidate SocialRouteCandidate(
@@ -482,7 +624,9 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("continuation.npc_name", npcName),
                 Parameter("continuation.target_location", socialCandidate.LocationId),
                 Parameter("social_route.remaining_connector_count", remainingConnectorCount.ToString()),
-                Parameter("social_route.position_source", "npcs.social_interaction.current_loaded_instance"),
+                Parameter("social_route.position_source", string.IsNullOrWhiteSpace(ReadParameter(socialCandidate.Parameters, "social_route.position_source"))
+                    ? "npcs.social_interaction.current_loaded_instance"
+                    : ReadParameter(socialCandidate.Parameters, "social_route.position_source")),
                 Parameter("social_route.future_schedule_projection", "not_used")
             };
             var slotIndex = ReadParameter(socialCandidate.Parameters, "slot_index");
@@ -520,7 +664,16 @@ namespace StardewAI.Core.OptionRegistry
                 EnergyCost = 0,
                 AvailabilityClass = routeCandidate is not null && reasons.Length == 0
                     ? "current_loaded_npc_cross_map_route_step"
-                    : "current_loaded_npc_cross_map_route_blocked",
+                    : routeCandidate?.AllowedToday == true
+                        ? "current_loaded_npc_cross_map_route_deferred"
+                        : "current_loaded_npc_cross_map_route_blocked",
+                AllowedNow = routeCandidate?.AllowedNow,
+                AllowedToday = routeCandidate?.AllowedToday,
+                NextOpenTime = routeCandidate?.NextOpenTime,
+                EffectiveOpenTime = routeCandidate?.EffectiveOpenTime,
+                ClosesAt = routeCandidate?.ClosesAt,
+                WaitCost = routeCandidate?.WaitCost,
+                GateReasons = routeCandidate?.GateReasons ?? Array.Empty<string>(),
                 BlockReasons = reasons,
                 Parameters = routeParameters
                     .Concat(continuationParameters)
@@ -611,9 +764,11 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return plans
-                .OrderByDescending(plan => plan.FirstConnectorCandidate?.Available == true)
+                .OrderByDescending(plan => plan.FirstConnectorCandidate is not null &&
+                    (plan.FirstConnectorCandidate.Available || plan.FirstConnectorCandidate.AllowedToday == true))
                 .ThenByDescending(plan => plan.FirstConnectorCandidate is not null)
                 .ThenBy(plan => plan.Path.Length)
+                .ThenByDescending(plan => plan.FirstConnectorCandidate?.Available == true)
                 .ThenBy(plan => plan.Path[0].TargetLocation, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(plan => plan.Path[0].Kind, StringComparer.Ordinal)
                 .ThenBy(plan => plan.Path[0].FromY)
@@ -1688,11 +1843,13 @@ namespace StardewAI.Core.OptionRegistry
                 routePreviewParameters.Add(Parameter("target_location", targetLocation));
             }
 
-            var routePreviewBlocks = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
-            {
-                OptionId = "exploration.visit_location",
-                Parameters = routePreviewParameters.ToArray()
-            });
+            var routePreviewBlocks = kind is "action_warp" or "locked_door_warp" or "building_door"
+                ? Array.Empty<string>()
+                : CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
+                {
+                    OptionId = "exploration.visit_location",
+                    Parameters = routePreviewParameters.ToArray()
+                });
             var executionProbe = CompilerProbeItem(snapshot, new OptionAvailabilityCandidate
             {
                 OptionId = "executor.traverse_connector",
@@ -1710,6 +1867,7 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(normalizedParameters)
                 .ToArray();
             var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
+            var gateTimeline = ReadRouteGateTimeline(snapshot, x, y);
             var expectedEffect = "player.tile=" + x + "," + y +
                 ";route_connector=" + kind +
                 ";expected_target_location=" + targetLocation +
@@ -1730,9 +1888,118 @@ namespace StardewAI.Core.OptionRegistry
                 ExpectedEffect = expectedEffect,
                 EstimatedTicks = estimatedTicks,
                 EnergyCost = 0,
+                AvailabilityClass = gateTimeline.HasValue ? "windowed_route_connector" : "state_gated_route_connector",
+                AllowedNow = gateTimeline?.AllowedNow,
+                AllowedToday = gateTimeline?.AllowedToday,
+                NextOpenTime = gateTimeline?.NextOpenTime,
+                EffectiveOpenTime = gateTimeline?.EffectiveOpenTime,
+                ClosesAt = gateTimeline?.ClosesAt,
+                WaitCost = gateTimeline?.WaitCost,
+                GateReasons = gateTimeline?.GateReasons ?? Array.Empty<string>(),
                 BlockReasons = blockReasons,
                 Parameters = candidateParameters
             };
+        }
+
+        private static RouteGateTimeline? ReadRouteGateTimeline(SnapshotEnvelope snapshot, int tileX, int tileY)
+        {
+            var gateContext = ReadStateFieldValue(snapshot, "locations", "route_gate_context");
+            if (!gateContext.HasValue ||
+                gateContext.Value.ValueKind != JsonValueKind.Object ||
+                !gateContext.Value.TryGetProperty("action_gates", out var gates) ||
+                gates.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var gate = gates.EnumerateArray().FirstOrDefault(candidate =>
+                candidate.ValueKind == JsonValueKind.Object &&
+                ReadNullableInt(candidate, "tile_x") == tileX &&
+                ReadNullableInt(candidate, "tile_y") == tileY);
+            if (gate.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(gate, "kind"), "locked_door_warp", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var allowedNow = ReadBool(gate, "allowed_now");
+            var effectiveOpenTime = ReadNullableInt(gate, "effective_open_time") ?? ReadNullableInt(gate, "open_time");
+            var closeTime = ReadNullableInt(gate, "close_time");
+            var currentTime = ReadStateFieldInt(snapshot, "time", "time");
+            var greenRainOverride = ReadBool(gate, "green_rain_override") == true;
+            var hardGateOpen = ReadBool(gate, "festival_closed") != true &&
+                ReadBool(gate, "seed_shop_wednesday_closed") != true &&
+                (ReadBool(gate, "friendship_allowed") != false || greenRainOverride) &&
+                string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason"));
+            var canOpenLaterToday = allowedNow == false &&
+                hardGateOpen &&
+                effectiveOpenTime.HasValue &&
+                closeTime.HasValue &&
+                currentTime < effectiveOpenTime.Value &&
+                currentTime < closeTime.Value;
+            var allowedToday = allowedNow == true || canOpenLaterToday;
+            var reasons = new List<string>();
+            if (allowedNow == false)
+            {
+                if (ReadBool(gate, "festival_closed") == true)
+                {
+                    reasons.Add("route_gate_festival_closed");
+                }
+                if (ReadBool(gate, "seed_shop_wednesday_closed") == true)
+                {
+                    reasons.Add("route_gate_seed_shop_wednesday_closed");
+                }
+                if (ReadBool(gate, "friendship_allowed") == false && !greenRainOverride)
+                {
+                    reasons.Add("route_gate_friendship_blocked");
+                }
+                if (effectiveOpenTime.HasValue && currentTime < effectiveOpenTime.Value && hardGateOpen)
+                {
+                    reasons.Add("route_gate_not_open_yet");
+                }
+                else if (closeTime.HasValue && currentTime >= closeTime.Value)
+                {
+                    reasons.Add("route_gate_closed_for_day");
+                }
+            }
+
+            return new RouteGateTimeline(
+                allowedNow,
+                allowedToday,
+                canOpenLaterToday ? effectiveOpenTime : null,
+                effectiveOpenTime,
+                closeTime,
+                WaitCostTicks(currentTime, effectiveOpenTime, allowedNow, allowedToday),
+                reasons.ToArray());
+        }
+
+        private readonly struct RouteGateTimeline
+        {
+            public RouteGateTimeline(
+                bool? allowedNow,
+                bool? allowedToday,
+                int? nextOpenTime,
+                int? effectiveOpenTime,
+                int? closesAt,
+                int? waitCost,
+                string[] gateReasons)
+            {
+                AllowedNow = allowedNow;
+                AllowedToday = allowedToday;
+                NextOpenTime = nextOpenTime;
+                EffectiveOpenTime = effectiveOpenTime;
+                ClosesAt = closesAt;
+                WaitCost = waitCost;
+                GateReasons = gateReasons;
+            }
+
+            public bool? AllowedNow { get; }
+            public bool? AllowedToday { get; }
+            public int? NextOpenTime { get; }
+            public int? EffectiveOpenTime { get; }
+            public int? ClosesAt { get; }
+            public int? WaitCost { get; }
+            public string[] GateReasons { get; }
         }
 
         private EventCandidate[] RouteRepairClearObstacleCandidates(SnapshotEnvelope snapshot, IEnumerable<EventCandidate> routeCandidates)

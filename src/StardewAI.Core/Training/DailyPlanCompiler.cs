@@ -60,12 +60,18 @@ namespace StardewAI.Core.Training
             var reservedInventorySlotQuantities = new Dictionary<int, int>();
             foreach (var candidate in OrderedCandidates(candidates))
             {
-                var waitSteps = WaitSteps(candidate).ToArray();
-                var candidateSteps = CandidateSteps(candidate).ToArray();
+                var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) &&
+                    (candidate.ScheduledWaitCost ?? 0) > 0;
+                var waitSteps = rollingDeferred
+                    ? WaitSteps(candidate).Take(1).ToArray()
+                    : WaitSteps(candidate).ToArray();
+                var candidateSteps = rollingDeferred
+                    ? Array.Empty<SmallModelPlanStep>()
+                    : CandidateSteps(candidate).ToArray();
                 var candidateMinutes = waitSteps
                     .Concat(candidateSteps)
                     .Sum(step => step.EstimatedMinutes ?? TicksToMinutes(step.WaitTicks ?? candidate.EstimatedTicks));
-                if (candidateSteps.Length == 0)
+                if (candidateSteps.Length == 0 && waitSteps.Length == 0)
                 {
                     audit.Add(CandidateAudit(
                         candidate,
@@ -161,7 +167,9 @@ namespace StardewAI.Core.Training
                 audit.Add(CandidateAudit(
                     candidate,
                     "accepted",
-                    new[] { "fits_aggregate_budget" },
+                    rollingDeferred
+                        ? new[] { "fits_aggregate_budget", "rolling_horizon_wait_then_refresh_snapshot" }
+                        : new[] { "fits_aggregate_budget" },
                     candidateMinutes,
                     remainingMinutes,
                     nextRemainingMinutes,
@@ -177,7 +185,10 @@ namespace StardewAI.Core.Training
                     remainingEnergy = nextRemainingEnergy;
                 }
 
-                ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities);
+                if (!rollingDeferred)
+                {
+                    ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities);
+                }
                 selected++;
             }
 
@@ -602,12 +613,31 @@ namespace StardewAI.Core.Training
                     WaitTicks = ticks,
                     EstimatedMinutes = Math.Max(1, ticks / 60),
                     Preconditions = new[] { "timeline_status:" + candidate.TimelineStatus },
-                    ExpectedEffects = new[] { "time_advances_without_state_mutation" },
+                    ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = ContinuationParameters(candidate)
                 };
                 remaining -= ticks;
             }
+        }
+
+        private static SmallModelActionParameter[] ContinuationParameters(PolicyEventCandidatePrediction candidate)
+        {
+            var names = new HashSet<string>(new[]
+            {
+                "continuation.option_id",
+                "continuation.npc_name",
+                "continuation.target_location",
+                "continuation.slot_index",
+                "continuation.qualified_item_id",
+                "social_route.position_source",
+                "social_route.future_schedule_projection",
+                "social_continuation_dialogue_recovery"
+            }, StringComparer.Ordinal);
+            return candidate.Parameters
+                .Where(parameter => names.Contains(parameter.Name))
+                .ToArray();
         }
 
         private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate)
@@ -694,12 +724,37 @@ namespace StardewAI.Core.Training
                 return SocialInteractionSteps(candidate);
             }
 
+            if (candidate.Kind == "social_continuation_retry_wait")
+            {
+                return SocialContinuationRetryWaitSteps(candidate);
+            }
+
             if (candidate.Kind == "ship_inventory_item_to_bin")
             {
                 return ShipInventoryItemToBinSteps(candidate);
             }
 
             return Array.Empty<SmallModelPlanStep>();
+        }
+
+        private static IEnumerable<SmallModelPlanStep> SocialContinuationRetryWaitSteps(PolicyEventCandidatePrediction candidate)
+        {
+            var waitTicks = CandidateInt(candidate, "retry_wait_ticks") ?? 600;
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "social_continuation_retry_wait", 0),
+                    Kind = "wait_ticks",
+                    WaitTicks = Math.Clamp(waitTicks, 1, MaxWaitTicksPerStep),
+                    EstimatedMinutes = Math.Max(1, waitTicks / 60),
+                    Preconditions = new[] { "same_social_objective_active=true", "current_social_interaction_not_executable=true" },
+                    ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
+                    SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu", "do_not_compile_social_interaction_until_reachable" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = ContinuationParameters(candidate)
+                }
+            };
         }
 
         private static IEnumerable<SmallModelPlanStep> CatchFishSteps(PolicyEventCandidatePrediction candidate)
@@ -961,7 +1016,8 @@ namespace StardewAI.Core.Training
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "menus.active_menu.is_open=true" },
                     ExpectedEffects = new[] { "menus.active_menu.is_open=false" },
                     SafetyConstraints = new[] { "close_only_safe_whitelisted_menu", "recovery_menu_close" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = ContinuationParameters(candidate)
                 }
             };
         }

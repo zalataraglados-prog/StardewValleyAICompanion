@@ -7,7 +7,7 @@ namespace StardewAI.Core.Tests;
 public sealed class DailyPlanCompilerTests
 {
     [Fact]
-    public void CompileTurnsDeferredShopEndpointIntoWaitMoveAndInteractPlan()
+    public void CompileTurnsDeferredShopEndpointIntoOneRollingWaitThenReplan()
     {
         var candidate = new PolicyEventCandidatePrediction
         {
@@ -28,20 +28,11 @@ public sealed class DailyPlanCompilerTests
         Assert.Equal("small_model_plan.v1", plan.SchemaVersion);
         Assert.Equal("daily_candidate_plan", plan.PlanType);
         Assert.Equal("training_farmer", plan.Actor.ActorType);
-        Assert.Equal(4, plan.Steps.Length);
-        Assert.All(plan.Steps.Take(2), step => Assert.Equal("wait_ticks", step.Kind));
-        Assert.All(plan.Steps.Take(2), step => Assert.Equal(600, step.WaitTicks));
-        Assert.Equal("move_to_tile", plan.Steps[2].Kind);
-        Assert.Equal("Town", plan.Steps[2].TargetLocation);
-        Assert.Equal(10, plan.Steps[2].TargetTileX);
-        Assert.Equal(10, plan.Steps[2].TargetTileY);
-        Assert.Equal("interact", plan.Steps[3].Kind);
-        Assert.Equal(11, plan.Steps[3].TargetTileX);
-        Assert.Equal(10, plan.Steps[3].TargetTileY);
-        Assert.Contains(plan.Steps[3].Parameters, parameter =>
-            parameter.Name == "interaction_kind" && parameter.Value == "map_action");
-        Assert.Contains(plan.Steps[3].Parameters, parameter =>
-            parameter.Name == "expected_action_type" && parameter.Value == "OpenShop");
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains("fresh_snapshot_replan_required=true", wait.ExpectedEffects);
+        Assert.Contains(plan.CandidateAudit[0].Reasons, reason => reason == "rolling_horizon_wait_then_refresh_snapshot");
     }
 
     [Fact]

@@ -1119,6 +1119,8 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
             for (var x = 0; x < width; x++)
             {
                 var action = location.doesTileHaveProperty(x, y, "Action", "Buildings");
+                var touchAction = location.doesTileHaveProperty(x, y, "TouchAction", "Back");
+                var friendshipDoor = ReadFriendshipDoorGate(location, touchAction);
                 var warp = location.warps.FirstOrDefault(candidate => candidate.X == x && candidate.Y == y);
                 var point = new Point(x, y);
                 var hasDoor = location.doors.ContainsKey(point);
@@ -1132,7 +1134,8 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
                     Game1.player,
                     pathfinding: true);
 
-                if (!collision && string.IsNullOrWhiteSpace(action) && warp is null && !hasDoor && !hasInteriorDoor)
+                var collisionBlocked = collision || friendshipDoor is { AllowedNow: false };
+                if (!collisionBlocked && string.IsNullOrWhiteSpace(action) && string.IsNullOrWhiteSpace(touchAction) && warp is null && !hasDoor && !hasInteriorDoor)
                 {
                     continue;
                 }
@@ -1141,11 +1144,19 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
                 {
                     tile_x = x,
                     tile_y = y,
-                    collision_blocked = collision,
+                    collision_blocked = collisionBlocked,
+                    native_collision_blocked = collision,
                     action,
+                    touch_action = touchAction,
                     warp_target = warp?.TargetName,
                     door = hasDoor,
-                    interior_door = hasInteriorDoor
+                    interior_door = hasInteriorDoor,
+                    friendship_door = friendshipDoor is not null,
+                    friendship_door_allowed_now = friendshipDoor?.AllowedNow,
+                    friendship_door_required_hearts = friendshipDoor?.RequiredHearts,
+                    friendship_door_npc_names = friendshipDoor?.NpcNames,
+                    friendship_door_green_rain_override = friendshipDoor?.GreenRainOverride,
+                    friendship_door_gate_source = friendshipDoor?.Source
                 });
             }
         }
@@ -1165,6 +1176,30 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
         };
     }
 
+    private static FriendshipDoorGate? ReadFriendshipDoorGate(GameLocation location, string? touchAction)
+    {
+        var parts = (touchAction ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0 || !string.Equals(parts[0], "Door", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var npcNames = parts.Skip(1).ToArray();
+        var greenRainOverride = Game1.year == 1 &&
+            location.IsGreenRainingHere() &&
+            npcNames.Any(name => string.Equals(name, "Sebastian", StringComparison.Ordinal));
+        var friendshipAllowed = npcNames.Length == 0 ||
+            npcNames.Any(name => Game1.player.getFriendshipHeartLevelForNPC(name) >= 2);
+
+        return new FriendshipDoorGate(
+            AllowedNow: friendshipAllowed || greenRainOverride,
+            RequiredHearts: 2,
+            NpcNames: npcNames,
+            GreenRainOverride: greenRainOverride,
+            Source: "GameLocation.performTouchAction Door branch; Farmer.getFriendshipHeartLevelForNPC; year-one Green Rain Sebastian override");
+    }
+
     private sealed record ShopAccessSummary(
         string shop_id,
         int owner_rule_count,
@@ -1175,6 +1210,13 @@ public sealed class ShopAccessReadAdapter : ReadAdapterBase
         bool condition_present,
         string? currency,
         object stock_preview);
+
+    private sealed record FriendshipDoorGate(
+        bool AllowedNow,
+        int RequiredHearts,
+        string[] NpcNames,
+        bool GreenRainOverride,
+        string Source);
 
     private static ShopAccessSummary ReadShopSummary(string shopId, ShopData shopData)
     {

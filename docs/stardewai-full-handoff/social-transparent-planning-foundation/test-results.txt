@@ -27,5 +27,15 @@ Remaining runtime tests (isolated E: runtime environment):
   `artifacts/runtime-native-social-smoke/runtime-native-social-smoke-20260717-145440/summary.json`.
 - Verified chain: ranked `social.talk_npc` remote candidate -> one `traverse_connector` plan step -> one `executor.traverse_connector` queue item -> native `FarmHouse -> Farm` -> changed state hash -> fresh after snapshot -> episode and one executor-calibration row.
 - Continuation evidence: NPC `Abigail`, current loaded target `SeedShop`, remaining connector count `4`, `future_schedule_projection=not_used`.
-- Scope is intentionally bounded: `full_multi_connector_pursuit_verified=false`.
+- Historical scope for run `20260717-145440` was intentionally bounded: `full_multi_connector_pursuit_verified=false`; the later full-pursuit result below supersedes that limitation.
 - Diagnostic default-smoke run `runtime-native-social-smoke-20260717-145048` proved the production first step, then exposed the legacy BFS helper bypassing the closed `Town -> SeedShop` gate at 6:20 and timing out. Do not solve this by extending the timeout; the remaining chain must defer time-gated connectors upstream and preserve the same social continuation across replans.
+
+2026-07-17 full pursuit closure:
+
+- Full solution tests: Core 945/945, Backend 49/49.
+- Isolated E: production same-objective pursuit PASS:
+  `artifacts/runtime-native-social-smoke/runtime-native-social-smoke-20260717-164525/summary.json`.
+- Exact objective stayed `social.talk_npc` / `Abigail` across 26 fresh-snapshot iterations.
+- Applied and verified 6 native connector steps, 19 bounded wait steps, and exactly 1 native social interaction; the loop stopped on objective completion before the 32-attempt bound.
+- Current-state pursuit entered SeedShop only after its live gate opened. A locked `TouchAction=Door Pierre Caroline` friendship door was emitted as a dynamic collision obstacle, so the planner waited until Abigail's current loaded position became reachable instead of repeatedly colliding with the door.
+- `social_route.future_schedule_projection=not_used`; no future NPC schedule was emitted or consumed.

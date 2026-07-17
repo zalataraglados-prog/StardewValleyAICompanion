@@ -19,6 +19,68 @@ public static class QueueReplanFilter
             .ToArray();
     }
 
+    public static JsonObject? ReadSocialContinuation(JsonObject? queueItem)
+    {
+        var optionId = ReadParameter(queueItem, "continuation.option_id");
+        var npcName = ReadParameter(queueItem, "continuation.npc_name");
+        if (string.IsNullOrWhiteSpace(optionId) || string.IsNullOrWhiteSpace(npcName))
+        {
+            return null;
+        }
+
+        return new JsonObject
+        {
+            ["option_id"] = optionId,
+            ["npc_name"] = npcName,
+            ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
+            ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
+            ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+        };
+    }
+
+    public static JsonArray FilterRankedCandidates(JsonArray rankedCandidates, JsonObject? continuation)
+    {
+        if (continuation is null)
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate => candidate is not null && MatchesContinuation(candidate, continuation))
+            .Select(candidate => JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
+    public static bool CompletesSocialContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
+    {
+        if (!string.Equals(executionStatus, "applied", StringComparison.Ordinal) || queueItem is null)
+        {
+            return false;
+        }
+
+        var optionId = ReadString(queueItem, "option_id");
+        if (!string.Equals(optionId, "executor.social_interact", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (continuation is null)
+        {
+            return true;
+        }
+
+        var npcName = ReadParameter(queueItem, "npc_name");
+        var actionKind = ReadParameter(queueItem, "social_action_kind");
+        var continuationOption = ReadString(continuation, "option_id");
+        var expectedActionKind = string.Equals(continuationOption, "social.gift_npc", StringComparison.Ordinal)
+            ? "gift"
+            : "talk";
+        return string.Equals(npcName, ReadString(continuation, "npc_name"), StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(actionKind, expectedActionKind, StringComparison.Ordinal);
+    }
+
     public static QueueReplanDecision DecideAfterExecution(
         string executionStatus,
         bool continueAfterBlocked,
@@ -94,6 +156,76 @@ public static class QueueReplanFilter
         return obj is not null && obj.TryGetPropertyValue(propertyName, out var value) && value is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var result)
             ? result
             : string.Empty;
+    }
+
+    private static bool MatchesContinuation(JsonObject candidate, JsonObject continuation)
+    {
+        var optionId = ReadString(candidate, "option_id");
+        if (!string.Equals(optionId, ReadString(continuation, "option_id"), StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var npcName = ReadCandidateParameter(candidate, "continuation.npc_name");
+        if (string.IsNullOrWhiteSpace(npcName))
+        {
+            npcName = ReadCandidateParameter(candidate, "npc_name");
+        }
+        if (!string.Equals(npcName, ReadString(continuation, "npc_name"), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return OptionalIdentityMatches(candidate, continuation, "slot_index", "continuation.slot_index") &&
+            OptionalIdentityMatches(candidate, continuation, "qualified_item_id", "continuation.qualified_item_id");
+    }
+
+    private static bool OptionalIdentityMatches(JsonObject candidate, JsonObject continuation, string directName, string continuationName)
+    {
+        var expected = ReadString(continuation, directName);
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return true;
+        }
+
+        var actual = ReadCandidateParameter(candidate, continuationName);
+        if (string.IsNullOrWhiteSpace(actual))
+        {
+            actual = ReadCandidateParameter(candidate, directName);
+        }
+        if (string.IsNullOrWhiteSpace(actual) && candidate.TryGetPropertyValue(directName, out var directValue))
+        {
+            actual = directValue?.ToString() ?? string.Empty;
+        }
+        return string.Equals(actual, expected, StringComparison.Ordinal);
+    }
+
+    private static string ReadCandidateParameter(JsonObject candidate, string name)
+    {
+        var parameters = candidate["parameters"]?.AsArray();
+        if (parameters is null)
+        {
+            return string.Empty;
+        }
+
+        var parameter = parameters
+            .Select(node => node?.AsObject())
+            .FirstOrDefault(value => value is not null && string.Equals(ReadString(value, "name"), name, StringComparison.Ordinal));
+        return ReadString(parameter, "value");
+    }
+
+    private static string ReadParameter(JsonObject? queueItem, string name)
+    {
+        var parameters = queueItem?["normalized_command"]?["parameters"]?.AsArray();
+        if (parameters is null)
+        {
+            return string.Empty;
+        }
+
+        var parameter = parameters
+            .Select(node => node?.AsObject())
+            .FirstOrDefault(value => value is not null && string.Equals(ReadString(value, "name"), name, StringComparison.Ordinal));
+        return ReadString(parameter, "value");
     }
 
     private static bool IsContinuableExecutionStatus(string status)

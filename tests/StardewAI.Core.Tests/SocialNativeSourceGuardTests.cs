@@ -655,7 +655,7 @@ public sealed class SocialNativeSourceGuardTests
         var dialogueAdvanceSource = Slice(source, "private void TickDialogueAdvanceCore", "private static TrainingExecutionResult DialogueAdvanceResult");
 
         Assert.DoesNotContain("ReferenceEquals(currentBox.characterDialogue?.speaker?.Name", dialogueAdvanceSource, StringComparison.Ordinal);
-        Assert.Contains("string.Equals(currentBox.characterDialogue?.speaker?.Name", dialogueAdvanceSource, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(currentSpeakerName, advance.InitialSpeakerName, StringComparison.Ordinal)", dialogueAdvanceSource, StringComparison.Ordinal);
         Assert.Contains("StringComparison.Ordinal", dialogueAdvanceSource, StringComparison.Ordinal);
     }
 

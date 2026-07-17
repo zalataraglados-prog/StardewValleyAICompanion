@@ -228,11 +228,10 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("small_model_plan.v1", plan.GetProperty("schema_version").GetString());
             Assert.Equal("daily_candidate_plan", plan.GetProperty("plan_type").GetString());
             var steps = plan.GetProperty("steps").EnumerateArray().ToArray();
-            Assert.Equal(4, steps.Length);
-            Assert.Equal("wait_ticks", steps[0].GetProperty("kind").GetString());
-            Assert.Equal(600, steps[0].GetProperty("wait_ticks").GetInt32());
-            Assert.Equal("move_to_tile", steps[2].GetProperty("kind").GetString());
-            Assert.Equal("interact", steps[3].GetProperty("kind").GetString());
+            var wait = Assert.Single(steps);
+            Assert.Equal("wait_ticks", wait.GetProperty("kind").GetString());
+            Assert.Equal(600, wait.GetProperty("wait_ticks").GetInt32());
+            Assert.Contains("fresh_snapshot_replan_required=true", wait.GetProperty("expected_effects").EnumerateArray().Select(value => value.GetString()));
         }
 
         [Fact]

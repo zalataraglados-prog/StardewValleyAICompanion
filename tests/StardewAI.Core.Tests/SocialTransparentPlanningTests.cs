@@ -872,7 +872,15 @@ public sealed class SocialTransparentPlanningTests
             ExpectedEffect = candidate.ExpectedEffect,
             EstimatedTicks = candidate.EstimatedTicks,
             EnergyCost = candidate.EnergyCost,
-            TimelineStatus = candidate.Available ? "ready_now" : "blocked",
+            AllowedNow = candidate.AllowedNow,
+            AllowedToday = candidate.AllowedToday,
+            NextOpenTime = candidate.NextOpenTime,
+            EffectiveOpenTime = candidate.EffectiveOpenTime,
+            ClosesAt = candidate.ClosesAt,
+            WaitCost = candidate.WaitCost,
+            GateReasons = candidate.GateReasons,
+            TimelineStatus = candidate.Available ? "ready_now" : candidate.AllowedToday == true ? "deferred" : "blocked",
+            ScheduledWaitCost = candidate.AllowedToday == true ? candidate.WaitCost : null,
             Parameters = candidate.Parameters,
             BlockReasons = candidate.BlockReasons
         };
@@ -952,6 +960,148 @@ public sealed class SocialTransparentPlanningTests
         Assert.Equal("executor.traverse_connector", item.OptionId);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "continuation.target_location" && parameter.Value == "SeedShop");
+    }
+
+    [Fact]
+    public void RemoteTalkAtClosedDoorDefersSameNpcWithOneRollingWait()
+    {
+        var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var snapshot = CompleteSocialSnapshot(
+            socialInteractionValue: remoteSocial,
+            routeConnectorsValue: "{\"location_id\":\"Town\",\"connectors\":[{\"kind\":\"locked_door_warp\",\"tile_x\":11,\"tile_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true},{\"kind\":\"warp\",\"tile_x\":19,\"tile_y\":10,\"target_location\":\"Beach\",\"target_x\":1,\"target_y\":1,\"resolved\":true}]}",
+            routeGraphValue: "{\"edges\":[{\"kind\":\"locked_door_warp\",\"from_location\":\"Town\",\"from_x\":11,\"from_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true},{\"kind\":\"warp\",\"from_location\":\"Town\",\"from_x\":19,\"from_y\":10,\"target_location\":\"Beach\",\"target_x\":1,\"target_y\":1,\"resolved\":true},{\"kind\":\"warp\",\"from_location\":\"Beach\",\"from_x\":2,\"from_y\":2,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true}]}",
+            routeGateContextValue: "{\"location_id\":\"Town\",\"action_gates\":[{\"kind\":\"locked_door_warp\",\"tile_x\":11,\"tile_y\":10,\"target_location\":\"SeedShop\",\"open_time\":900,\"effective_open_time\":900,\"close_time\":1700,\"festival_closed\":false,\"seed_shop_wednesday_closed\":false,\"friendship_allowed\":true,\"green_rain_override\":false,\"allowed_now\":false,\"unresolved_reason\":null}]}",
+            currentTime: 620);
+
+        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "social.talk_npc" })
+            .Options).SocialCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.False(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(900, candidate.NextOpenTime);
+        Assert.Equal(11, candidate.TileX);
+        Assert.Equal(9600, candidate.WaitCost);
+        Assert.Contains("route_gate_not_open_yet", candidate.GateReasons);
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+
+        var plan = new StardewAI.Core.Training.DailyPlanCompiler().Compile(
+            new[] { ToPrediction(candidate, "social.talk_npc") },
+            snapshot.StateHash);
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(wait.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+    }
+
+    [Fact]
+    public void BoundTalkContinuationRoutesToLastObservedLocationWhenNpcInstanceUnloads()
+    {
+        var snapshot = CompleteSocialSnapshot(
+            socialInteractionValue: "[]",
+            routeConnectorsValue: "{\"location_id\":\"Town\",\"connectors\":[{\"kind\":\"door\",\"tile_x\":null,\"tile_y\":null,\"target_location\":\"Unknown\",\"resolved\":false},{\"kind\":\"warp\",\"tile_x\":20,\"tile_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true}]}",
+            routeGraphValue: "{\"edges\":[{\"kind\":\"warp\",\"from_location\":\"Town\",\"from_x\":20,\"from_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true}]}" );
+        var binding = new OptionAvailabilityCandidate
+        {
+            OptionId = "social.talk_npc",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "social.talk_npc" },
+                new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "SeedShop" }
+            }
+        };
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { binding })
+            .Options);
+        var candidate = Assert.Single(option.SocialCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Equal(20, candidate.TileX);
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "social_route.position_source" && parameter.Value == "continuation.last_observed_current_loaded_instance");
+        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "social_route.future_schedule_projection" && parameter.Value == "not_used");
+    }
+
+    [Fact]
+    public void BoundTalkContinuationWaitsWhenCurrentNpcIsTemporarilyUnreachable()
+    {
+        var collision = "{\"width\":20,\"height\":20,\"notable_tiles\":[{\"tile_x\":9,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":11,\"tile_y\":10,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":9,\"collision_blocked\":true},{\"tile_x\":10,\"tile_y\":11,\"collision_blocked\":true}]}";
+        var snapshot = CompleteSocialSnapshot(collisionValue: collision);
+        var binding = new OptionAvailabilityCandidate
+        {
+            OptionId = "social.talk_npc",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "social.talk_npc" },
+                new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "Town" }
+            }
+        };
+
+        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { binding })
+            .Options).SocialCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Equal("social_continuation_retry_wait", candidate.Kind);
+        Assert.Equal("current_loaded_social_target_temporarily_unreachable_retry", candidate.AvailabilityClass);
+        Assert.Contains("social_no_reachable_adjacent_stand_tile", candidate.GateReasons);
+        Assert.Empty(candidate.BlockReasons);
+
+        var plan = new StardewAI.Core.Training.DailyPlanCompiler().Compile(
+            new[] { ToPrediction(candidate, "social.talk_npc") },
+            snapshot.StateHash);
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(wait.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+    }
+
+    [Fact]
+    public void BoundTalkContinuationClosesDialogueMenuBeforeRetryingNpc()
+    {
+        var snapshot = CompleteSocialSnapshot(
+            activeMenuValue: "{\"is_open\":true,\"type\":\"DialogueBox\",\"last_question_key\":null,\"is_sleep_prompt\":false,\"event_up\":false,\"dialogue_is_question\":false,\"dialogue_response_count\":0,\"dialogue_transitioning\":false,\"dialogue_character_present\":false,\"dialogue_speaker_name\":null}");
+        var binding = new OptionAvailabilityCandidate
+        {
+            OptionId = "social.talk_npc",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "social.talk_npc" },
+                new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "Town" }
+            }
+        };
+
+        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { binding })
+            .Options).SocialCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Equal("recovery_close_menu", candidate.Kind);
+        Assert.Equal("social_continuation_menu_recovery", candidate.AvailabilityClass);
+        Assert.Contains("social_menu_must_be_clear", candidate.GateReasons);
+
+        var plan = new StardewAI.Core.Training.DailyPlanCompiler().Compile(
+            new[] { ToPrediction(candidate, "social.talk_npc") },
+            snapshot.StateHash);
+        var close = Assert.Single(plan.Steps);
+        Assert.Equal("close_menu", close.Kind);
+        Assert.Contains(close.Parameters, parameter => parameter.Name == "continuation.npc_name" && parameter.Value == "Abigail");
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.True(queue.Status == "pending", string.Join(",", queue.CompilerDiagnostics.Concat(queue.Items.SelectMany(item => item.BlockingReasons))));
+        Assert.Equal("executor.close_menu", Assert.Single(queue.Items).OptionId);
     }
 
     [Fact]
@@ -1071,6 +1221,9 @@ public sealed class SocialTransparentPlanningTests
         string? routeActionCoverageValue = null,
         string? routeConnectorsValue = null,
         string? routeGraphValue = null,
+        string? routeGateContextValue = null,
+        string? activeMenuValue = null,
+        int currentTime = 900,
         int playerTileX = 8,
         int playerTileY = 10)
     {
@@ -1083,6 +1236,8 @@ public sealed class SocialTransparentPlanningTests
         routeActionCoverageValue ??= "{\"rows\":[]}";
         routeConnectorsValue ??= "{\"location_id\":\"Town\",\"connectors\":[]}";
         routeGraphValue ??= "{\"edges\":[]}";
+        routeGateContextValue ??= "{\"location_id\":\"Town\",\"action_gates\":[]}";
+        activeMenuValue ??= "{\"is_open\":false,\"type\":\"none\"}";
 
         return Snapshot("""
         {
@@ -1096,7 +1251,7 @@ public sealed class SocialTransparentPlanningTests
             ,"active_dialogue_events": {"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "time": {
-            "time": {"value":900,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "time": {"value":CURRENT_TIME,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "year": {"value":2,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "is_green_rain": {"value":false,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -1107,12 +1262,14 @@ public sealed class SocialTransparentPlanningTests
             "gift_tastes": GIFT_TASTE_FIELD
           },
           "menus": {
-            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "active_menu": {"value":ACTIVE_MENU_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "collision_grid": {"value":COLLISION_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":ROUTE_ACTION_COVERAGE_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_connectors": {"value":ROUTE_CONNECTORS_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":ROUTE_GATE_CONTEXT_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_graph": {"value":ROUTE_GRAPH_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
@@ -1125,7 +1282,10 @@ public sealed class SocialTransparentPlanningTests
         .Replace("COLLISION_VALUE", collisionValue)
         .Replace("ROUTE_ACTION_COVERAGE_VALUE", routeActionCoverageValue)
         .Replace("ROUTE_CONNECTORS_VALUE", routeConnectorsValue)
+        .Replace("ROUTE_GATE_CONTEXT_VALUE", routeGateContextValue)
+        .Replace("ACTIVE_MENU_VALUE", activeMenuValue)
         .Replace("ROUTE_GRAPH_VALUE", routeGraphValue)
+        .Replace("CURRENT_TIME", currentTime.ToString())
         .Replace("PLAYER_TILE_X", playerTileX.ToString())
         .Replace("PLAYER_TILE_Y", playerTileY.ToString()));
     }

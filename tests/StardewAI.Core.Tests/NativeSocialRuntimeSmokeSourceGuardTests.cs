@@ -320,6 +320,36 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     }
 
     [Fact]
+    public void SocialContinuationDialogueRecoveryFlagReachesRuntimeSafetyGate()
+    {
+        var loopSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var runtimeSource = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+
+        Assert.Contains("social_continuation_dialogue_recovery", loopSource, StringComparison.Ordinal);
+        Assert.Contains("executionRequest.SocialContinuationDialogueRecovery", loopSource, StringComparison.Ordinal);
+        Assert.Contains("request.SocialContinuationDialogueRecovery", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("allowSpeakerlessSocialContinuation", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("currentBox.characterDialogue?.speaker?.Name ?? string.Empty", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(currentSpeakerName, advance.InitialSpeakerName", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("dialogueBox.responses", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.eventUp", runtimeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CollisionGridTreatsLockedFriendshipTouchDoorsAsDynamicObstacles()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ShopAccessReadAdapter.cs"));
+
+        Assert.Contains("ReadFriendshipDoorGate(location, touchAction)", source, StringComparison.Ordinal);
+        Assert.Contains("friendshipDoor is { AllowedNow: false }", source, StringComparison.Ordinal);
+        Assert.Contains("friendship_door_allowed_now", source, StringComparison.Ordinal);
+        Assert.Contains("getFriendshipHeartLevelForNPC(name) >= 2", source, StringComparison.Ordinal);
+        Assert.Contains("location.IsGreenRainingHere()", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.year == 1", source, StringComparison.Ordinal);
+        Assert.Contains("Sebastian", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SmokeScriptVerifiesSocialExecutionFieldsDirectly()
     {
         var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));

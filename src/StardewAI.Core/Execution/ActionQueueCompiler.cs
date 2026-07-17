@@ -1275,7 +1275,15 @@ namespace StardewAI.Core.Execution
 
             if (type == "DialogueBox")
             {
-                return SafeOrdinaryDialogueBlockReasons(snapshot);
+                var dialogueReasons = SafeOrdinaryDialogueBlockReasons(snapshot);
+                if (string.Equals(ReadParameter(action, "social_continuation_dialogue_recovery"), "true", StringComparison.OrdinalIgnoreCase))
+                {
+                    dialogueReasons = dialogueReasons
+                        .Where(reason => reason != "dialogue_close_character_present_false" &&
+                            reason != "dialogue_close_speaker_name_empty")
+                        .ToArray();
+                }
+                return dialogueReasons;
             }
 
             return new[] { "close_menu_type_not_whitelisted" };
@@ -3276,22 +3284,23 @@ namespace StardewAI.Core.Execution
             var blockedTiles = ReadBlockedCollisionTiles(grid.Value);
             var unsupportedTiles = ReadUnsupportedRouteActionTiles(snapshot);
 
-            if (!TileInBounds(startX.Value, startY.Value, width, height) || !TileInBounds(targetX.Value, targetY.Value, width, height))
+            var pathTarget = ResolveBoundaryWarpStandTile(snapshot, targetX.Value, targetY.Value, width, height);
+            if (!TileInBounds(startX.Value, startY.Value, width, height) || pathTarget is null)
             {
                 return new[] { "route_path_target_out_of_collision_grid" };
             }
 
-            if (blockedTiles.Contains(TileKey(targetX.Value, targetY.Value)))
+            if (blockedTiles.Contains(TileKey(pathTarget.X, pathTarget.Y)))
             {
                 return new[] { "route_path_target_blocked_by_collision_grid" };
             }
 
-            if (PathExists(startX.Value, startY.Value, targetX.Value, targetY.Value, width, height, blockedTiles, unsupportedTiles))
+            if (PathExists(startX.Value, startY.Value, pathTarget.X, pathTarget.Y, width, height, blockedTiles, unsupportedTiles))
             {
                 return Array.Empty<string>();
             }
 
-            if (PathExists(startX.Value, startY.Value, targetX.Value, targetY.Value, width, height, blockedTiles, new HashSet<string>(StringComparer.Ordinal)))
+            if (PathExists(startX.Value, startY.Value, pathTarget.X, pathTarget.Y, width, height, blockedTiles, new HashSet<string>(StringComparer.Ordinal)))
             {
                 return new[] { "unsupported_route_action_branch_on_path" };
             }
@@ -3350,29 +3359,92 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<string>();
             }
 
-            if (!TileInBounds(firstEdge.FromX.Value, firstEdge.FromY.Value, width, height))
+            var startConnectorTile = ResolveBoundaryWarpStandTile(
+                snapshot,
+                firstEdge.FromX.Value,
+                firstEdge.FromY.Value,
+                width,
+                height,
+                firstEdge.Kind);
+            if (startConnectorTile is null)
             {
                 return new[] { "route_graph_start_connector_out_of_collision_grid" };
             }
 
             var blockedTiles = ReadBlockedCollisionTiles(grid.Value);
-            if (blockedTiles.Contains(TileKey(firstEdge.FromX.Value, firstEdge.FromY.Value)))
+            if (blockedTiles.Contains(TileKey(startConnectorTile.X, startConnectorTile.Y)))
             {
                 return new[] { "route_graph_start_connector_blocked_by_collision_grid" };
             }
 
             var unsupportedTiles = ReadUnsupportedRouteActionTiles(snapshot);
-            if (PathExists(startX.Value, startY.Value, firstEdge.FromX.Value, firstEdge.FromY.Value, width, height, blockedTiles, unsupportedTiles))
+            if (PathExists(startX.Value, startY.Value, startConnectorTile.X, startConnectorTile.Y, width, height, blockedTiles, unsupportedTiles))
             {
                 return Array.Empty<string>();
             }
 
-            if (PathExists(startX.Value, startY.Value, firstEdge.FromX.Value, firstEdge.FromY.Value, width, height, blockedTiles, new HashSet<string>(StringComparer.Ordinal)))
+            if (PathExists(startX.Value, startY.Value, startConnectorTile.X, startConnectorTile.Y, width, height, blockedTiles, new HashSet<string>(StringComparer.Ordinal)))
             {
                 return new[] { "unsupported_route_action_branch_on_start_segment" };
             }
 
             return new[] { "route_graph_start_segment_blocked_by_collision_grid" };
+        }
+
+        private static SleepStandTile? ResolveBoundaryWarpStandTile(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            int width,
+            int height,
+            string? knownKind = null)
+        {
+            if (TileInBounds(targetX, targetY, width, height))
+            {
+                return new SleepStandTile(targetX, targetY);
+            }
+
+            var kind = knownKind;
+            if (string.IsNullOrWhiteSpace(kind))
+            {
+                var connectors = ReadStateFieldValue(snapshot, "locations", "route_connectors");
+                if (connectors.HasValue &&
+                    connectors.Value.ValueKind == JsonValueKind.Object &&
+                    connectors.Value.TryGetProperty("connectors", out var rows) &&
+                    rows.ValueKind == JsonValueKind.Array)
+                {
+                    kind = rows.EnumerateArray()
+                        .Where(row => row.ValueKind == JsonValueKind.Object &&
+                            ReadNullableInt(row, "tile_x") == targetX &&
+                            ReadNullableInt(row, "tile_y") == targetY)
+                        .Select(row => ReadString(row, "kind"))
+                        .FirstOrDefault();
+                }
+            }
+
+            if (!string.Equals(kind, "warp", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            if (targetX < 0 && targetY >= 0 && targetY < height)
+            {
+                return new SleepStandTile(0, targetY);
+            }
+            if (targetX >= width && targetY >= 0 && targetY < height)
+            {
+                return new SleepStandTile(width - 1, targetY);
+            }
+            if (targetY < 0 && targetX >= 0 && targetX < width)
+            {
+                return new SleepStandTile(targetX, 0);
+            }
+            if (targetY >= height && targetX >= 0 && targetX < width)
+            {
+                return new SleepStandTile(targetX, height - 1);
+            }
+
+            return null;
         }
 
         private sealed class RouteGraphEdge
@@ -5579,7 +5651,9 @@ namespace StardewAI.Core.Execution
 
         private static int? ReadNullableInt(JsonElement item, string property)
         {
-            return item.TryGetProperty(property, out var value) && value.TryGetInt32(out var result)
+            return item.TryGetProperty(property, out var value) &&
+                value.ValueKind == JsonValueKind.Number &&
+                value.TryGetInt32(out var result)
                 ? result
                 : null;
         }

@@ -33,8 +33,14 @@ var lastQueueId = string.Empty;
 var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
+JsonObject? activeSocialContinuation = null;
+var socialObjectiveCompleted = false;
 
-for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVerifiedActions <= 0 || verifiedActions < options.RequiredVerifiedActions); iteration++)
+for (var iteration = 1;
+    iteration <= options.MaxAttempts &&
+    (options.RequiredVerifiedActions <= 0 || verifiedActions < options.RequiredVerifiedActions) &&
+    (!options.StopAfterSocialObjectiveComplete || !socialObjectiveCompleted);
+    iteration++)
 {
     attemptsStarted++;
     var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
@@ -59,7 +65,7 @@ for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVer
     JsonObject queue;
     if (options.UseDailyPlan)
     {
-        var dailyPlan = await BuildQueueFromDailyPlanAsync(http, options, lastStateHash);
+        var dailyPlan = await BuildQueueFromDailyPlanAsync(http, options, lastStateHash, activeSocialContinuation);
         modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
         var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
@@ -99,7 +105,7 @@ for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVer
         }
 
         var execution = options.UseRealRuntimeExecutor
-            ? await ExecuteRealRuntimeAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId)
+            ? await ExecuteRealRuntimeAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeSocialContinuation)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRealRuntimeExecutor)
@@ -119,6 +125,10 @@ for (var iteration = 1; iteration <= options.MaxAttempts && (options.RequiredVer
             }
 
             var realAppend = AppendRealExecutionRow(options, beforeSnapshot, queue, execution, lastStateHash, lastQueueId);
+            activeSocialContinuation = execution["social_objective_continuation"] is JsonObject continuation
+                ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
+                : null;
+            socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             rowsAppended = realAppend.RowCount;
             verifiedActions++;
@@ -208,17 +218,44 @@ static string BuildParameterizedActionRequest(LiveTrainingOptions options, strin
 static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildQueueFromDailyPlanAsync(
     HttpClient http,
     LiveTrainingOptions options,
-    string stateHash)
+    string stateHash,
+    JsonObject? socialContinuation)
 {
     var rankRequest = JsonSerializer.Serialize(new
     {
         dataset_path = Path.GetFullPath(options.DatasetPath),
         state_hash = stateHash,
-        candidate_option_ids = options.DailyPlanCandidateOptionIds,
+        candidate_option_ids = socialContinuation is null ? options.DailyPlanCandidateOptionIds : Array.Empty<string>(),
+        candidates = socialContinuation is null
+            ? Array.Empty<object>()
+            : new object[]
+            {
+                new
+                {
+                    option_id = ReadString(socialContinuation, "option_id"),
+                    parameters = new[]
+                    {
+                        new { name = "continuation.option_id", value = ReadString(socialContinuation, "option_id") },
+                        new { name = "continuation.npc_name", value = ReadString(socialContinuation, "npc_name") },
+                        new { name = "continuation.target_location", value = ReadString(socialContinuation, "target_location") },
+                        new { name = "continuation.slot_index", value = ReadString(socialContinuation, "slot_index") },
+                        new { name = "continuation.qualified_item_id", value = ReadString(socialContinuation, "qualified_item_id") }
+                    }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
+                }
+            },
         include_blocked_options = false
     }, JsonOptions);
     var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
     var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
+    var selectedCandidates = QueueReplanFilter.FilterRankedCandidates(rankedCandidates, socialContinuation);
+    ranking["social_continuation_filter"] = new JsonObject
+    {
+        ["active"] = socialContinuation is not null,
+        ["objective"] = socialContinuation is null ? null : JsonNode.Parse(socialContinuation.ToJsonString(JsonOptions)),
+        ["input_candidate_count"] = rankedCandidates.Count,
+        ["selected_candidate_count"] = selectedCandidates.Count,
+        ["policy"] = "same_option_and_npc_with_optional_gift_identity;fail_closed_no_objective_switch"
+    };
     var compileRequest = JsonSerializer.Serialize(new
     {
         state_hash = stateHash,
@@ -226,7 +263,7 @@ static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonO
         execution_mode = "training_singleplayer",
         max_candidates = options.DailyPlanMaxCandidates,
         compile_action_queue = true,
-        ranked_event_candidates = JsonNode.Parse(rankedCandidates.ToJsonString(JsonOptions))
+        ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
     }, JsonOptions);
     var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile", compileRequest);
     var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
@@ -285,7 +322,8 @@ static string BuildMovePlanRequest(LiveTrainingOptions options, string stateHash
     }, JsonOptions);
 }
 
-var verifiedTargetMet = options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions;
+var verifiedTargetMet = (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
+    (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
 {
@@ -308,6 +346,8 @@ var report = new LiveTrainingLoopReport
     RowsAppended = rowsAppended,
     VerifiedActions = verifiedActions,
     RequiredVerifiedActions = options.RequiredVerifiedActions,
+    SocialObjectiveCompleted = socialObjectiveCompleted,
+    ActiveSocialContinuation = activeSocialContinuation,
     LastStateHash = lastStateHash,
     LastQueueId = lastQueueId,
     Concurrency = 1,
@@ -336,7 +376,8 @@ Console.WriteLine(JsonSerializer.Serialize(new
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.ExecutionMode,
-    executor_feedback_required = options.RequireExecutorFeedback
+    executor_feedback_required = options.RequireExecutorFeedback,
+    social_objective_completed = socialObjectiveCompleted
 }, JsonOptions));
 
 static async Task<JsonObject> ExecuteRealRuntimeAsync(
@@ -348,7 +389,8 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
     JsonObject beforeSnapshot,
     JsonObject queue,
     string stateHash,
-    string queueId)
+    string queueId,
+    JsonObject? socialContinuation)
 {
     var queueItems = ExecutableQueueItems(queue);
     if (!string.IsNullOrWhiteSpace(options.ExecutorOptionId))
@@ -372,6 +414,10 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
     JsonObject finalAfterSnapshot = beforeSnapshot;
     var attemptedCount = 0;
     var attemptedSemanticKeys = new HashSet<string>(StringComparer.Ordinal);
+    var activeSocialContinuation = socialContinuation is null
+        ? null
+        : JsonNode.Parse(socialContinuation.ToJsonString(JsonOptions))?.AsObject();
+    var socialObjectiveCompleted = false;
 
     for (var itemIndex = 0; itemIndex < queueItems.Length && attemptedCount < options.MaxQueueItemAttempts; itemIndex++)
     {
@@ -424,6 +470,15 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
         attemptedSemanticKeys.Add(itemSemanticKey);
 
         var executionStatus = ReadString(execution, "status");
+        if (QueueReplanFilter.CompletesSocialContinuation(item, activeSocialContinuation, executionStatus))
+        {
+            socialObjectiveCompleted = true;
+            activeSocialContinuation = null;
+        }
+        else if (string.Equals(executionStatus, "applied", StringComparison.Ordinal))
+        {
+            activeSocialContinuation = QueueReplanFilter.ReadSocialContinuation(item) ?? activeSocialContinuation;
+        }
 
         var replanDecision = QueueReplanFilter.DecideAfterExecution(
             executionStatus,
@@ -445,7 +500,7 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
 
         if (replanDecision.ShouldReplan)
         {
-            var replan = await BuildQueueFromDailyPlanAsync(http, options, currentStateHash);
+            var replan = await BuildQueueFromDailyPlanAsync(http, options, currentStateHash, activeSocialContinuation);
             var replanSuffix = "-item-" + (attemptedCount + 1).ToString("D4");
             var replanPlanPath = Path.Combine(options.SnapshotDir, "replan-model-plan-" + iteration.ToString("D4") + replanSuffix + ".json");
             var replanDailyPlanPath = Path.Combine(options.SnapshotDir, "replan-daily-plan-response-" + iteration.ToString("D4") + replanSuffix + ".json");
@@ -505,6 +560,10 @@ static async Task<JsonObject> ExecuteRealRuntimeAsync(
     aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
     aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
     aggregate["source"] = "real_runtime_executor";
+    aggregate["social_objective_completed"] = socialObjectiveCompleted;
+    aggregate["social_objective_continuation"] = activeSocialContinuation is null
+        ? null
+        : JsonNode.Parse(activeSocialContinuation.ToJsonString(JsonOptions));
     await File.WriteAllTextAsync(aggregateExecutionPath, aggregate.ToJsonString(JsonOptions), Encoding.UTF8);
     return aggregate;
 }
@@ -580,6 +639,9 @@ static TrainingExecutionRequest BuildExecutionRequest(
     var resourceClumpParentSheetIndex = ReadQueueParameterInt(item, "resource_clump_parent_sheet_index");
     var interactionKind = ReadQueueParameterString(item, "interaction_kind");
     var expectedActionType = ReadQueueParameterString(item, "expected_action_type");
+    var socialContinuationDialogueRecovery = bool.TryParse(
+        ReadQueueParameterString(item, "social_continuation_dialogue_recovery"),
+        out var parsedSocialContinuationDialogueRecovery) && parsedSocialContinuationDialogueRecovery;
     var connectorKind = ReadQueueParameterString(item, "connector_kind");
     var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
     var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -700,6 +762,7 @@ static TrainingExecutionRequest BuildExecutionRequest(
     {
         executionRequest.ExpectedActionType = expectedActionType;
     }
+    executionRequest.SocialContinuationDialogueRecovery = socialContinuationDialogueRecovery;
     if (!string.IsNullOrWhiteSpace(connectorKind))
     {
         executionRequest.ConnectorKind = connectorKind;
@@ -1617,6 +1680,7 @@ public sealed class LiveTrainingOptions
     public int MaxQueueItemAttempts { get; set; } = 24;
     public int DailyPlanMaxCandidates { get; set; } = 4;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
+    public bool StopAfterSocialObjectiveComplete { get; set; }
     public string ExecutionMode => RequireExecutorFeedback
         ? UseRealRuntimeExecutor ? "real_runtime_executor" : "training_sandbox_feedback_gate"
         : "disabled";
@@ -1803,6 +1867,10 @@ public sealed class LiveTrainingOptions
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .ToArray();
             }
+            else if (current == "--stop-after-social-objective-complete")
+            {
+                options.StopAfterSocialObjectiveComplete = true;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(options.RunId))
@@ -1865,6 +1933,12 @@ public sealed class LiveTrainingLoopReport
 
     [JsonPropertyName("required_verified_actions")]
     public int RequiredVerifiedActions { get; set; }
+
+    [JsonPropertyName("social_objective_completed")]
+    public bool SocialObjectiveCompleted { get; set; }
+
+    [JsonPropertyName("active_social_continuation")]
+    public JsonObject? ActiveSocialContinuation { get; set; }
 
     [JsonPropertyName("last_state_hash")]
     public string LastStateHash { get; set; } = string.Empty;

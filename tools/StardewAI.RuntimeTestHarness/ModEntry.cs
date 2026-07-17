@@ -3287,7 +3287,8 @@ public sealed class ModEntry : Mod
             return CompletedCloseMenu(request, beforeOpen, beforeType, "no_op", "verified_no_active_menu", new[] { "active_menu_already_closed" });
         }
 
-        if (beforeType == "DialogueBox" && menu is DialogueBox unsafeBox && !CanAdvanceOrdinaryDialogue(unsafeBox))
+        if (beforeType == "DialogueBox" && menu is DialogueBox unsafeBox &&
+            !CanAdvanceOrdinaryDialogue(unsafeBox, request.SocialContinuationDialogueRecovery))
         {
             var unsafeReasons = new List<string>();
             if (unsafeBox.isQuestion) unsafeReasons.Add("dialogue_is_question_true");
@@ -3357,15 +3358,16 @@ public sealed class ModEntry : Mod
             verified ? new[] { "active_menu_closed" } : new[] { "active_menu_still_open" });
     }
 
-    private static bool CanAdvanceOrdinaryDialogue(DialogueBox dialogueBox)
+    private static bool CanAdvanceOrdinaryDialogue(DialogueBox dialogueBox, bool allowSpeakerlessSocialContinuation = false)
     {
         return !dialogueBox.isQuestion &&
             (dialogueBox.responses is null || dialogueBox.responses.Length == 0) &&
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
             string.IsNullOrWhiteSpace(Game1.currentLocation?.lastQuestionKey) &&
             !Game1.eventUp &&
-            dialogueBox.characterDialogue is not null &&
-            !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name);
+            ((dialogueBox.characterDialogue is not null &&
+                !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name)) ||
+                allowSpeakerlessSocialContinuation);
     }
 
     private void StartDialogueAdvance(PendingExecution pending)
@@ -3378,7 +3380,8 @@ public sealed class ModEntry : Mod
         }
 
         var menu = Game1.activeClickableMenu;
-        if (menu is not DialogueBox dialogueBox || !CanAdvanceOrdinaryDialogue(dialogueBox))
+        if (menu is not DialogueBox dialogueBox ||
+            !CanAdvanceOrdinaryDialogue(dialogueBox, pending.Request.SocialContinuationDialogueRecovery))
         {
             pending.Completion.SetResult(ExecuteCloseMenu(pending.Request));
             return;
@@ -3452,17 +3455,18 @@ public sealed class ModEntry : Mod
             return;
         }
 
-        if (!string.Equals(currentBox.characterDialogue?.speaker?.Name, advance.InitialSpeakerName, StringComparison.Ordinal))
+        var currentSpeakerName = currentBox.characterDialogue?.speaker?.Name ?? string.Empty;
+        if (!string.Equals(currentSpeakerName, advance.InitialSpeakerName, StringComparison.Ordinal))
         {
             ReleaseSmapiLeftButtonOverride();
             activeDialogueAdvance = null;
             advance.Pending.Completion.SetResult(DialogueAdvanceResult(
                 advance, "blocked", "blocked", "dialogue_speaker_changed_during_advance",
-                new[] { "dialogue_speaker_changed_during_advance:expected=" + advance.InitialSpeakerName + ";actual=" + (currentBox.characterDialogue?.speaker?.Name ?? "null") }));
+                new[] { "dialogue_speaker_changed_during_advance:expected=" + advance.InitialSpeakerName + ";actual=" + currentSpeakerName }));
             return;
         }
 
-        if (!CanAdvanceOrdinaryDialogue(currentBox))
+        if (!CanAdvanceOrdinaryDialogue(currentBox, advance.Pending.Request.SocialContinuationDialogueRecovery))
         {
             ReleaseSmapiLeftButtonOverride();
             activeDialogueAdvance = null;

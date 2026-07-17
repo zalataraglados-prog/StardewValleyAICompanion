@@ -146,6 +146,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_action_type")]
         public string ExpectedActionType { get; set; } = string.Empty;
 
+        [JsonPropertyName("social_continuation_dialogue_recovery")]
+        public bool SocialContinuationDialogueRecovery { get; set; }
+
         [JsonPropertyName("connector_kind")]
         public string ConnectorKind { get; set; } = string.Empty;
 

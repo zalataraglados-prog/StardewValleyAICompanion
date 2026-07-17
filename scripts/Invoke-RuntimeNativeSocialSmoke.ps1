@@ -7,6 +7,7 @@ param(
     [int] $BackendPort = 5158,
     [int] $StartupTimeoutSeconds = 120,
     [switch] $ProductionRouteOnly,
+    [switch] $ProductionPursuitOnly,
     [switch] $KeepGameRunning
 )
 
@@ -996,6 +997,79 @@ function Verify-ProductionSocialRouteStepArtifacts {
     }
 }
 
+function Verify-ProductionSocialPursuitArtifacts {
+    param(
+        [Parameter(Mandatory = $true)] [string] $LoopRoot,
+        [Parameter(Mandatory = $true)] [string] $RunId,
+        [Parameter(Mandatory = $true)] [string] $RunDirectory
+    )
+
+    $runRoot = Join-Path $LoopRoot (Join-Path "runs" $RunId)
+    $snapshotDir = Join-Path $runRoot "live-snapshots"
+    $reportPath = Join-Path $runRoot "live-training-loop-report.json"
+    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+        throw "Production social pursuit report missing: $reportPath"
+    }
+
+    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    if ($report.social_objective_completed -ne $true) {
+        throw "Production social pursuit did not complete the locked social objective"
+    }
+    if ($null -ne $report.active_social_continuation) {
+        throw "Production social pursuit completed with a stale continuation"
+    }
+
+    $rankingFiles = @(Get-ChildItem -LiteralPath $snapshotDir -Filter "ranking-response-*.json" -File | Where-Object { $_.BaseName -match '^ranking-response-[0-9]{4}$' } | Sort-Object Name)
+    $executionFiles = @(Get-ChildItem -LiteralPath $snapshotDir -Filter "execution-*.json" -File | Where-Object { $_.BaseName -match '^execution-[0-9]{4}$' } | Sort-Object Name)
+    $afterFiles = @(Get-ChildItem -LiteralPath $snapshotDir -Filter "after-snapshot-*.json" -File | Where-Object { $_.BaseName -match '^after-snapshot-[0-9]{4}$' } | Sort-Object Name)
+    if ($rankingFiles.Count -lt 1 -or $executionFiles.Count -lt 1 -or $afterFiles.Count -lt 1) {
+        throw "Production social pursuit artifacts are incomplete"
+    }
+
+    $lockedNpc = $null
+    $routeApplied = 0
+    $waitApplied = 0
+    $socialApplied = 0
+    foreach ($rankingFile in $rankingFiles) {
+        $ranking = Get-Content -LiteralPath $rankingFile.FullName -Raw | ConvertFrom-Json
+        if ($ranking.social_continuation_filter.active -eq $true) {
+            $objectiveNpc = [string]$ranking.social_continuation_filter.objective.npc_name
+            if ([string]::IsNullOrWhiteSpace($lockedNpc)) { $lockedNpc = $objectiveNpc }
+            if ($objectiveNpc -ne $lockedNpc) { throw "Social pursuit switched NPC from '$lockedNpc' to '$objectiveNpc'" }
+            if ([int]$ranking.social_continuation_filter.selected_candidate_count -ne 1) {
+                throw "Social continuation filter did not select exactly one candidate in $($rankingFile.Name)"
+            }
+        }
+    }
+
+    foreach ($executionFile in $executionFiles) {
+        $execution = Get-Content -LiteralPath $executionFile.FullName -Raw | ConvertFrom-Json
+        foreach ($step in @($execution.step_results)) {
+            if ($step.status -ne "applied" -or $step.primitive_verification_status -ne "verified") { continue }
+            $optionId = [string]$step.option_id
+            if ($optionId -eq "executor.traverse_connector") { $routeApplied++ }
+            elseif ($optionId -eq "executor.wait_ticks") { $waitApplied++ }
+            elseif ($optionId -eq "executor.social_interact") { $socialApplied++ }
+        }
+    }
+    if ($routeApplied -lt 1) { throw "Production social pursuit did not verify any connector traversal" }
+    if ($socialApplied -ne 1) { throw "Production social pursuit expected one verified social interaction, found $socialApplied" }
+
+    $finalSnapshot = Get-Content -LiteralPath $afterFiles[-1].FullName -Raw | ConvertFrom-Json
+    Copy-Item -LiteralPath $reportPath -Destination (Join-Path $RunDirectory "production-pursuit-report.json") -Force
+    Copy-Item -LiteralPath $afterFiles[-1].FullName -Destination (Join-Path $RunDirectory "production-pursuit-final-snapshot.json") -Force
+    return [PSCustomObject]@{
+        Verified = $true
+        NpcName = $lockedNpc
+        RouteStepsApplied = $routeApplied
+        WaitStepsApplied = $waitApplied
+        SocialInteractionsApplied = $socialApplied
+        Iterations = [int]$report.attempts_started
+        FinalLocation = Get-SnapshotString $finalSnapshot "player" "location_id"
+        FinalSnapshot = $finalSnapshot
+    }
+}
+
 function Build-RouteEdgeTraverseRequest {
     param(
         [Parameter(Mandatory = $true)] $EdgeData,
@@ -1387,6 +1461,51 @@ try {
     }
     if ($ProductionRouteOnly -and $hasSameLocationCandidate) {
         throw "ProductionRouteOnly requires a remote social route candidate, but a same-location talk candidate is already available"
+    }
+
+    if ($ProductionPursuitOnly) {
+        dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
+            --root $routeCandidateLoopRoot `
+            --backend-url $backendUrl `
+            --bridge-snapshot-url $snapshotUrl `
+            --executor-url $executorUrl `
+            --no-manifest `
+            --run-id $RunId `
+            --save-isolation-path $savesPath `
+            --max-attempts 32 `
+            --sleep-ms 0 `
+            --skip-training `
+            --use-daily-plan `
+            --daily-plan-max-candidates 1 `
+            --daily-plan-candidate-options "social.talk_npc" `
+            --after-snapshot-wait-ms 1000 `
+            --continue-after-blocked-queue-items `
+            --stop-after-social-objective-complete
+        if ($LASTEXITCODE -ne 0) { throw "Production social pursuit LiveTrainingLoop returned exit code $LASTEXITCODE" }
+
+        $pursuitEvidence = Verify-ProductionSocialPursuitArtifacts `
+            -LoopRoot $routeCandidateLoopRoot `
+            -RunId $RunId `
+            -RunDirectory $runDirectory
+        Write-JsonFile (Join-Path $runDirectory "production-pursuit-verification.json") $pursuitEvidence
+        $pursuitSummary = [ordered]@{
+            status = "passed"
+            run_id = $RunId
+            save_slot = $SaveSlot
+            production_social_pursuit_verified = $pursuitEvidence.Verified
+            npc_name = $pursuitEvidence.NpcName
+            connector_steps_applied = $pursuitEvidence.RouteStepsApplied
+            wait_steps_applied = $pursuitEvidence.WaitStepsApplied
+            social_interactions_applied = $pursuitEvidence.SocialInteractionsApplied
+            iterations = $pursuitEvidence.Iterations
+            final_location = $pursuitEvidence.FinalLocation
+            future_schedule_projection = "not_used"
+            scope = "same_objective_multi_connector_social_pursuit_with_live_gate_deferral"
+            artifacts_dir = $runDirectory
+        }
+        Write-JsonFile (Join-Path $runDirectory "summary.json") $pursuitSummary
+        $pursuitSummary | ConvertTo-Json -Depth 32
+        return
     }
 
     if (-not $hasSameLocationCandidate) {
