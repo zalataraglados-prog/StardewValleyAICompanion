@@ -51,7 +51,7 @@ namespace StardewAI.Core.OptionRegistry
 
                     var x = ReadInt(feature, "tile_x");
                     var y = ReadInt(feature, "tile_y");
-                    candidates.Add(ClearObstacleCandidate(snapshot, locationId, playerX, playerY, x, y, clearKind, type));
+                    candidates.Add(ClearObstacleCandidate(snapshot, locationId, playerX, playerY, x, y, clearKind, type, feature));
                 }
             }
 
@@ -63,9 +63,21 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate ClearObstacleCandidate(SnapshotEnvelope snapshot, string locationId, int playerX, int playerY, int x, int y, string clearKind, string sourceId)
+        private EventCandidate ClearObstacleCandidate(
+            SnapshotEnvelope snapshot,
+            string locationId,
+            int playerX,
+            int playerY,
+            int x,
+            int y,
+            string clearKind,
+            string sourceId,
+            JsonElement? source = null)
         {
             var energyCost = ClearObstacleEnergyCost(clearKind);
+            var maxToolSwings = clearKind == "tree" && source.HasValue
+                ? Math.Max(1, ReadInt(source.Value, "expected_axe_hits_to_clear"))
+                : 8;
             var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
             {
                 OptionId = "executor.clear_obstacle",
@@ -73,9 +85,17 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     Parameter("target_tile_x", x.ToString()),
                     Parameter("target_tile_y", y.ToString()),
-                    Parameter("max_tool_swings", "8")
+                    Parameter("max_tool_swings", maxToolSwings.ToString())
                 }
             }).ToList();
+            if (clearKind == "tree" && source.HasValue)
+            {
+                var status = ReadString(source.Value, "tree_clear_executor_status");
+                if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                {
+                    blockReasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_clear_projection_unavailable" : status);
+                }
+            }
             var standTile = FindBestStandTile(snapshot, x, y);
             if (standTile is null)
             {
@@ -84,7 +104,7 @@ namespace StardewAI.Core.OptionRegistry
             var distance = standTile is not null
                 ? Math.Abs(playerX - standTile.X) + Math.Abs(playerY - standTile.Y)
                 : 0;
-            var estimatedTicks = Math.Max(60, distance * 60 + ClearObstacleToolTicks(clearKind));
+            var estimatedTicks = Math.Max(60, distance * 60 + ClearObstacleToolTicks(clearKind, maxToolSwings));
             var playerEnergy = ReadStateFieldValue(snapshot, "player", "energy");
             if (playerEnergy.HasValue &&
                 playerEnergy.Value.ValueKind == JsonValueKind.Number &&
@@ -109,7 +129,8 @@ namespace StardewAI.Core.OptionRegistry
                 TileX = x,
                 TileY = y,
                 ExpectedEffect = (standTile is not null ? "move_to_adjacent=" + standTile.X + "," + standTile.Y + ";" : string.Empty) +
-                    "current_location.obstacle[" + x + "," + y + "]=clear;clear_kind=" + clearKind + ";source=" + sourceId,
+                    "current_location.obstacle[" + x + "," + y + "]=clear;clear_kind=" + clearKind + ";source=" + sourceId +
+                    ";max_tool_swings=" + maxToolSwings + SkillExperienceEffect(source),
                 EstimatedTicks = estimatedTicks,
                 EnergyCost = energyCost,
                 AvailabilityClass = "always_available",
@@ -117,7 +138,26 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static int ClearObstacleToolTicks(string clearKind)
+        private static string SkillExperienceEffect(JsonElement? source)
+        {
+            if (!source.HasValue)
+            {
+                return string.Empty;
+            }
+
+            var skillId = ReadString(source.Value, "harvest_experience_skill_id");
+            var minimum = NullableReadInt(source.Value, "harvest_experience_on_success_min");
+            var maximum = NullableReadInt(source.Value, "harvest_experience_on_success_max");
+            var condition = ReadString(source.Value, "harvest_experience_condition");
+            var status = ReadString(source.Value, "harvest_experience_projection_status");
+            return (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
+                (minimum.HasValue ? ";skill_experience_on_success_min=" + minimum.Value : string.Empty) +
+                (maximum.HasValue ? ";skill_experience_on_success_max=" + maximum.Value : string.Empty) +
+                (!string.IsNullOrWhiteSpace(condition) ? ";skill_experience_condition=" + condition : string.Empty) +
+                (!string.IsNullOrWhiteSpace(status) ? ";skill_experience_projection_status=" + status : string.Empty);
+        }
+
+        private static int ClearObstacleToolTicks(string clearKind, int maxToolSwings)
         {
             return clearKind switch
             {
@@ -125,8 +165,8 @@ namespace StardewAI.Core.OptionRegistry
                 "weeds" => 60,
                 "stone" => 240,
                 "twig" => 240,
-                "tree" => 600,
-                "fruit_tree" => 600,
+                "tree" => Math.Max(1, maxToolSwings) * 60,
+                "fruit_tree" => Math.Max(1, maxToolSwings) * 60,
                 _ => 240
             };
         }

@@ -126,6 +126,7 @@ public sealed partial class ModEntry : Mod
         var started = DateTimeOffset.UtcNow.ToString("O");
         var before = ObstacleLabel(location, target);
         var staminaBefore = Game1.player.Stamina;
+        var beforeForagingExperience = Game1.player.experiencePoints[Farmer.foragingSkill];
         var swings = Math.Clamp(request.MaxCrops, 1, 64);
         var observedLabels = new List<string> { before };
         for (var swing = 0; swing < swings; swing++)
@@ -182,6 +183,12 @@ public sealed partial class ModEntry : Mod
                     Path = "player.energy",
                     Before = staminaBefore.ToString("0.###"),
                     After = Game1.player.Stamina.ToString("0.###")
+                },
+                new SimulatedFactChange
+                {
+                    Path = "player.skills.foraging.experience",
+                    Before = beforeForagingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
                 }
             }
         };

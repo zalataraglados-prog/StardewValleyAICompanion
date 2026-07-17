@@ -31,16 +31,55 @@ namespace StardewAI.Core.Execution
                 : new[] { "movement_target_tile_required" };
         }
 
-        private static string[] ValidateClearObstaclePlan(SmallModelAction action)
+        private static string[] ValidateClearObstaclePlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "executor.clear_obstacle")
             {
                 return Array.Empty<string>();
             }
 
-            return ReadIntParameter(action, "target_tile_x").HasValue && ReadIntParameter(action, "target_tile_y").HasValue
-                ? Array.Empty<string>()
-                : new[] { "clear_obstacle_target_tile_required" };
+            var reasons = new List<string>();
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                reasons.Add("clear_obstacle_target_tile_required");
+            }
+            if (ActionSeesActiveMenuOpen(action, snapshot))
+            {
+                reasons.Add("clear_obstacle_menu_must_be_clear");
+            }
+
+            if (targetX.HasValue && targetY.HasValue)
+            {
+                var terrainFeatures = ReadStateFieldValue(snapshot, "current_location", "terrain_features");
+                var target = terrainFeatures.HasValue && terrainFeatures.Value.ValueKind == JsonValueKind.Array
+                    ? terrainFeatures.Value.EnumerateArray().FirstOrDefault(feature =>
+                        ReadInt(feature, "tile_x") == targetX.Value &&
+                        ReadInt(feature, "tile_y") == targetY.Value)
+                    : default;
+                if (target.ValueKind == JsonValueKind.Object &&
+                    ReadString(target, "type").EndsWith(".Tree", StringComparison.Ordinal))
+                {
+                    var status = ReadString(target, "tree_clear_executor_status");
+                    if (!string.Equals(status, "ready", StringComparison.Ordinal))
+                    {
+                        reasons.Add(string.IsNullOrWhiteSpace(status) ? "tree_clear_projection_unavailable" : status);
+                    }
+                    var expectedHits = NullableReadInt(target, "expected_axe_hits_to_clear");
+                    var maximumHits = ReadIntParameter(action, "max_tool_swings");
+                    if (!expectedHits.HasValue)
+                    {
+                        reasons.Add("tree_clear_expected_hits_unavailable");
+                    }
+                    else if (!maximumHits.HasValue || maximumHits.Value < expectedHits.Value)
+                    {
+                        reasons.Add("tree_clear_tool_swing_budget_insufficient");
+                    }
+                }
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 
         private static string[] ValidateTillSoilPlan(SmallModelAction action, SnapshotEnvelope snapshot)

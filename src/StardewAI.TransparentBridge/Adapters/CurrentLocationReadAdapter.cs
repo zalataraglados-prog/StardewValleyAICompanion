@@ -8,7 +8,7 @@ using StardewObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
-public sealed class CurrentLocationReadAdapter : ReadAdapterBase
+public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
 {
     public override string Domain => "current_location";
     public override int Priority => 30;
@@ -158,12 +158,7 @@ public sealed class CurrentLocationReadAdapter : ReadAdapterBase
 
     private static object ReadTerrainFeature(Vector2 tile, TerrainFeature feature)
     {
-        return new
-        {
-            tile_x = (int)tile.X,
-            tile_y = (int)tile.Y,
-            type = feature.GetType().FullName
-        };
+        return ReadTerrainFeatureDetails(tile, feature);
     }
 
     private static object ReadPlantingContext(GameLocation location)

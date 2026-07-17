@@ -34,6 +34,13 @@ namespace StardewAI.Core.Training
                 });
             }
 
+            var maxToolSwings = ParseValue(candidate.ExpectedEffect, "max_tool_swings=");
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("max_tool_swings", string.IsNullOrWhiteSpace(maxToolSwings) ? "8" : maxToolSwings)
+            };
+            AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
+
             steps.Add(
                 new SmallModelPlanStep
                 {
@@ -47,10 +54,7 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[] { "target_obstacle_from_transparent_location_state", "executor_requires_adjacent_target" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
-                    Parameters = new[]
-                    {
-                        Parameter("max_tool_swings", "8")
-                    }
+                    Parameters = parameters.ToArray()
                 });
 
             return steps;
