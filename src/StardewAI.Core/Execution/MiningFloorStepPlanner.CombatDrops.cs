@@ -64,7 +64,10 @@ namespace StardewAI.Core.Execution
                     {
                         plan.SkillExperienceSkillId = "combat";
                         plan.ExpectedSkillExperience = ReadInt(row.Monster, "combat_experience_on_defeat");
+                        plan.SkillExperienceMinimum = plan.ExpectedSkillExperience;
+                        plan.SkillExperienceMaximum = plan.ExpectedSkillExperience;
                         plan.SkillExperienceCondition = ReadString(row.Monster, "combat_experience_condition");
+                        plan.SkillExperienceProjectionStatus = "exact_for_native_monster_defeat";
                     }
                     plan.RequiredWeaponEnchantmentRuntimeType = plan.CombatMethod == "melee" ? ReadRequiredWeaponEnchantment(row.Monster) : string.Empty;
                     plan.CombatWeaponSlotIndex = plan.CombatMethod == "melee" ? row.Combat?.SlotIndex : null;

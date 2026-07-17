@@ -66,6 +66,16 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 drop_item_identity_completeness = dropProjection?.ItemIdentityCompleteness ?? "not_applicable",
                 drop_probability_status = dropProjection?.ProbabilityStatus ?? "not_applicable",
                 drop_rule_conditions = dropProjection?.AppliedRuleConditions ?? Array.Empty<string>(),
+                mining_experience_skill_index = breakableStone ? Farmer.miningSkill : (int?)null,
+                mining_experience_on_break_min = dropProjection?.MiningExperienceMinimum,
+                mining_experience_on_break_max = dropProjection?.MiningExperienceMaximum,
+                mining_experience_condition = dropProjection?.MiningExperienceCondition ?? "not_applicable",
+                mining_experience_projection_status = dropProjection?.MiningExperienceProjectionStatus ?? "not_applicable",
+                luck_experience_skill_index = breakableStone ? Farmer.luckSkill : (int?)null,
+                luck_experience_on_break_min = dropProjection?.LuckExperienceMinimum,
+                luck_experience_on_break_max = dropProjection?.LuckExperienceMaximum,
+                luck_experience_condition = dropProjection?.LuckExperienceCondition ?? "not_applicable",
+                luck_experience_projection_status = dropProjection?.LuckExperienceProjectionStatus ?? "not_applicable",
                 ladder_preview = breakableStone ? ReadLadderPreview(mine, pair.Key, player) : null,
                 source = "Object.IsBreakableStone/MinutesUntilReady; Pickaxe.DoFunction; BreakableContainer.health read-only reflection; " +
                     (dropProjection?.Source ?? "no_stone_drop_projection")

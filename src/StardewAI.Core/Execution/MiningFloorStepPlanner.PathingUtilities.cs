@@ -71,19 +71,29 @@ namespace StardewAI.Core.Execution
                     var deterministic = obj.TryGetProperty("ladder_preview", out var preview) &&
                         preview.ValueKind == JsonValueKind.Object &&
                         ReadBool(preview, "creates_ladder");
-                    return TargetCandidate(obj, search, grid, swings, deterministic);
+                    return new
+                    {
+                        Object = obj,
+                        Candidate = TargetCandidate(obj, search, grid, swings, deterministic)
+                    };
                 })
-                .Where(candidate => candidate is not null)
-                .OrderBy(candidate => candidate!.DeterministicLadder ? 0 : 1)
-                .ThenBy(candidate => candidate!.Distance + candidate.Swings)
-                .ThenBy(candidate => candidate!.Swings)
-                .ThenBy(candidate => candidate!.Distance)
-                .ThenBy(candidate => candidate!.TargetY)
-                .ThenBy(candidate => candidate!.TargetX)
-                .Select(candidate => Build(
-                    MiningFloorStepKinds.MineStone,
-                    candidate!.DeterministicLadder ? "deterministic_ladder_stone_reachable" : "lowest_reachable_movement_and_swing_cost",
-                    candidate))
+                .Where(row => row.Candidate is not null)
+                .OrderBy(row => row.Candidate!.DeterministicLadder ? 0 : 1)
+                .ThenBy(row => row.Candidate!.Distance + row.Candidate.Swings)
+                .ThenBy(row => row.Candidate!.Swings)
+                .ThenBy(row => row.Candidate!.Distance)
+                .ThenBy(row => row.Candidate!.TargetY)
+                .ThenBy(row => row.Candidate!.TargetX)
+                .Select(row =>
+                {
+                    var plan = Build(
+                        MiningFloorStepKinds.MineStone,
+                        row.Candidate!.DeterministicLadder ? "deterministic_ladder_stone_reachable" : "lowest_reachable_movement_and_swing_cost",
+                        row.Candidate);
+                    plan.TargetQualifiedItemId = ReadString(row.Object, "qualified_item_id");
+                    ApplyStoneExperienceProjection(plan, row.Object);
+                    return plan;
+                })
                 .FirstOrDefault();
         }
 

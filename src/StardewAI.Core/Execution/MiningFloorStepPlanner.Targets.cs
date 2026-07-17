@@ -39,6 +39,10 @@ namespace StardewAI.Core.Execution
                     plan.SourceMatchStatus = row.MatchStatus;
                     plan.RestoreSlotIndex = restoreSlot;
                     plan.SafetyWindowStatus = "clear_at_snapshot";
+                    if (stepKind == MiningFloorStepKinds.MineStone)
+                    {
+                        ApplyStoneExperienceProjection(plan, row.Object);
+                    }
                     return plan;
                 })
                 .FirstOrDefault();

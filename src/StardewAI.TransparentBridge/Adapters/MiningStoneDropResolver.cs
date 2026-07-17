@@ -15,6 +15,7 @@ internal static class MiningStoneDropResolver
         var rules = new List<string>();
         var itemId = stone.ItemId;
         var directNode = AddDirectNodeDrops(itemId, guaranteed, conditional, guaranteedOneOf, rules);
+        var experience = ResolveExperience(mine, itemId, player, directNode);
 
         if (!directNode)
         {
@@ -44,9 +45,104 @@ internal static class MiningStoneDropResolver
             PossibleDropQualifiedItemIds = possible,
             ItemIdentityCompleteness = "complete_for_current_vanilla_mineshaft_stone",
             ProbabilityStatus = "not_computed_rng_outcomes_enumerated",
+            MiningExperienceMinimum = experience.MiningMinimum,
+            MiningExperienceMaximum = experience.MiningMaximum,
+            MiningExperienceCondition = experience.MiningCondition,
+            MiningExperienceProjectionStatus = experience.MiningStatus,
+            LuckExperienceMinimum = experience.LuckMinimum,
+            LuckExperienceMaximum = experience.LuckMaximum,
+            LuckExperienceCondition = experience.LuckCondition,
+            LuckExperienceProjectionStatus = experience.LuckStatus,
             AppliedRuleConditions = rules.Distinct(StringComparer.Ordinal).OrderBy(rule => rule, StringComparer.Ordinal).ToArray(),
-            Source = "GameLocation.OnStoneDestroyed/breakStone; MineShaft.checkStoneForItems/getOreIdForLevel; Debris.InitializeResource"
+            Source = "GameLocation.OnStoneDestroyed/breakStone; MineShaft.checkStoneForItems/getOreIdForLevel; Debris.InitializeResource; Farmer.gainExperience"
         };
+    }
+
+    private static StoneExperienceProjection ResolveExperience(MineShaft mine, string itemId, Farmer player, bool directNode)
+    {
+        if (!directNode)
+        {
+            var area = mine.getMineArea();
+            var luckMaximum = mine.mineLevel > 20 ? 60 * area : 20 * area;
+            return new StoneExperienceProjection
+            {
+                MiningMinimum = 0,
+                MiningMaximum = 5,
+                MiningCondition = "generic_stone_native_ore_roll",
+                MiningStatus = "exact_bounded_from_decompiled_rng_branches",
+                LuckMinimum = 0,
+                LuckMaximum = Math.Max(0, luckMaximum),
+                LuckCondition = mine.mineLevel > 20
+                    ? "generic_stone_native_area_geode_and_omni_geode_rolls"
+                    : "generic_stone_native_area_geode_roll",
+                LuckStatus = luckMaximum == 0
+                    ? "exact_zero_for_current_mine_area"
+                    : "exact_bounded_from_decompiled_rng_branches"
+            };
+        }
+
+        var (minimum, maximum) = DirectNodeMiningExperience(itemId, player.professions.Contains(19));
+        return new StoneExperienceProjection
+        {
+            MiningMinimum = minimum,
+            MiningMaximum = maximum,
+            MiningCondition = "native_game_location_break_stone_success",
+            MiningStatus = minimum == maximum
+                ? "exact_for_current_direct_node"
+                : "exact_bounded_from_decompiled_rng_branches",
+            LuckMinimum = 0,
+            LuckMaximum = 0,
+            LuckCondition = "no_native_luck_experience_branch_for_direct_node",
+            LuckStatus = "exact_zero_for_current_direct_node"
+        };
+    }
+
+    private static (int Minimum, int Maximum) DirectNodeMiningExperience(string itemId, bool hasGeologist)
+    {
+        var baseExperience = itemId switch
+        {
+            "95" => 18,
+            "843" or "844" => 12,
+            "25" => 5,
+            "75" => 8,
+            "76" => 16,
+            "77" => 32,
+            "816" or "817" or "818" => 6,
+            "819" => 64,
+            "8" or "10" => 16,
+            "12" or "4" => 80,
+            "14" or "6" => 40,
+            "2" or "46" => 150,
+            "849" or "751" => 5,
+            "850" or "290" => 12,
+            "BasicCoalNode0" or "BasicCoalNode1" or "VolcanoCoalNode0" or "VolcanoCoalNode1" => 10,
+            "764" or "VolcanoGoldNode" => 18,
+            "765" or "CalicoEggStone_0" or "CalicoEggStone_1" or "CalicoEggStone_2" => 50,
+            _ => 0
+        };
+
+        if (itemId is "846" or "847" or "668" or "845" or "670")
+        {
+            return (3, 4);
+        }
+        if (itemId == "44")
+        {
+            return hasGeologist ? (8, 150) : (16, 150);
+        }
+        if (!hasGeologist)
+        {
+            return (baseExperience, baseExperience);
+        }
+
+        var geologistExperience = itemId switch
+        {
+            "8" or "10" => 8,
+            "12" or "4" => 50,
+            "14" or "6" => 20,
+            "2" => 100,
+            _ => baseExperience
+        };
+        return (Math.Min(baseExperience, geologistExperience), Math.Max(baseExperience, geologistExperience));
     }
 
     private static bool AddDirectNodeDrops(
@@ -297,7 +393,42 @@ internal sealed class MiningStoneDropProjection
 
     public string ProbabilityStatus { get; set; } = string.Empty;
 
+    public int MiningExperienceMinimum { get; set; }
+
+    public int MiningExperienceMaximum { get; set; }
+
+    public string MiningExperienceCondition { get; set; } = string.Empty;
+
+    public string MiningExperienceProjectionStatus { get; set; } = string.Empty;
+
+    public int LuckExperienceMinimum { get; set; }
+
+    public int LuckExperienceMaximum { get; set; }
+
+    public string LuckExperienceCondition { get; set; } = string.Empty;
+
+    public string LuckExperienceProjectionStatus { get; set; } = string.Empty;
+
     public string[] AppliedRuleConditions { get; set; } = Array.Empty<string>();
 
     public string Source { get; set; } = string.Empty;
+}
+
+internal sealed class StoneExperienceProjection
+{
+    public int MiningMinimum { get; set; }
+
+    public int MiningMaximum { get; set; }
+
+    public string MiningCondition { get; set; } = string.Empty;
+
+    public string MiningStatus { get; set; } = string.Empty;
+
+    public int LuckMinimum { get; set; }
+
+    public int LuckMaximum { get; set; }
+
+    public string LuckCondition { get; set; } = string.Empty;
+
+    public string LuckStatus { get; set; } = string.Empty;
 }

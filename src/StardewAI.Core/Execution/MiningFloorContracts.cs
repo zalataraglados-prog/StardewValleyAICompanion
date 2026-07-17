@@ -103,7 +103,23 @@ namespace StardewAI.Core.Execution
 
         public int? ExpectedSkillExperience { get; set; }
 
+        public int? SkillExperienceMinimum { get; set; }
+
+        public int? SkillExperienceMaximum { get; set; }
+
         public string SkillExperienceCondition { get; set; } = string.Empty;
+
+        public string SkillExperienceProjectionStatus { get; set; } = string.Empty;
+
+        public string SecondarySkillExperienceSkillId { get; set; } = string.Empty;
+
+        public int? SecondarySkillExperienceMinimum { get; set; }
+
+        public int? SecondarySkillExperienceMaximum { get; set; }
+
+        public string SecondarySkillExperienceCondition { get; set; } = string.Empty;
+
+        public string SecondarySkillExperienceProjectionStatus { get; set; } = string.Empty;
 
         public int? SlingshotSlotIndex { get; set; }
 

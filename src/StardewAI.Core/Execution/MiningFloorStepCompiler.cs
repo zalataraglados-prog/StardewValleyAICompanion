@@ -83,7 +83,15 @@ namespace StardewAI.Core.Execution
             Add(parameters, "combat_terminal_state", plan.CombatTerminalState);
             Add(parameters, "skill_experience_skill_id", plan.SkillExperienceSkillId);
             Add(parameters, "expected_skill_experience", plan.ExpectedSkillExperience);
+            Add(parameters, "skill_experience_on_success_min", plan.SkillExperienceMinimum);
+            Add(parameters, "skill_experience_on_success_max", plan.SkillExperienceMaximum);
             Add(parameters, "skill_experience_condition", plan.SkillExperienceCondition);
+            Add(parameters, "skill_experience_projection_status", plan.SkillExperienceProjectionStatus);
+            Add(parameters, "secondary_skill_experience_skill_id", plan.SecondarySkillExperienceSkillId);
+            Add(parameters, "secondary_skill_experience_on_success_min", plan.SecondarySkillExperienceMinimum);
+            Add(parameters, "secondary_skill_experience_on_success_max", plan.SecondarySkillExperienceMaximum);
+            Add(parameters, "secondary_skill_experience_condition", plan.SecondarySkillExperienceCondition);
+            Add(parameters, "secondary_skill_experience_projection_status", plan.SecondarySkillExperienceProjectionStatus);
             Add(parameters, "slingshot_slot_index", plan.SlingshotSlotIndex);
             Add(parameters, "slingshot_ammo_qualified_item_id", plan.SlingshotAmmoQualifiedItemId);
             Add(parameters, "bomb_slot_index", plan.BombSlotIndex);
