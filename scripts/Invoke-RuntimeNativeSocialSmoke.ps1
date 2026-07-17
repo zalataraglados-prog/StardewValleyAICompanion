@@ -6,6 +6,7 @@ param(
     [string] $OutputDirectory = "artifacts\runtime-native-social-smoke",
     [int] $BackendPort = 5158,
     [int] $StartupTimeoutSeconds = 120,
+    [switch] $ProductionRouteOnly,
     [switch] $KeepGameRunning
 )
 
@@ -873,6 +874,128 @@ function Test-PortConflictGuard {
     return $conflicts
 }
 
+function Verify-ProductionSocialRouteStepArtifacts {
+    param(
+        [Parameter(Mandatory = $true)] [string] $LoopRoot,
+        [Parameter(Mandatory = $true)] [string] $RunId,
+        [Parameter(Mandatory = $true)] [string] $RunDirectory,
+        [Parameter(Mandatory = $true)] $BeforeSnapshot
+    )
+
+    $snapshotDir = Join-Path $LoopRoot (Join-Path "runs" (Join-Path $RunId "live-snapshots"))
+    $rankingPath = Join-Path $snapshotDir "ranking-response-0001.json"
+    $dailyPlanPath = Join-Path $snapshotDir "daily-plan-response-0001.json"
+    $queuePath = Join-Path $snapshotDir "compiled-queue-0001.json"
+    $executionPath = Join-Path $snapshotDir "execution-0001.json"
+    $episodePath = Join-Path $snapshotDir "plan-execution-episode-0001.json"
+    $afterSnapshotPath = Join-Path $snapshotDir "after-snapshot-0001.json"
+    foreach ($path in @($rankingPath, $dailyPlanPath, $queuePath, $executionPath, $episodePath, $afterSnapshotPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Production social route step missing artifact: $path"
+        }
+    }
+
+    $ranking = Get-Content -LiteralPath $rankingPath -Raw | ConvertFrom-Json
+    $dailyPlan = Get-Content -LiteralPath $dailyPlanPath -Raw | ConvertFrom-Json
+    $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
+    $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
+    $afterSnapshot = Get-Content -LiteralPath $afterSnapshotPath -Raw | ConvertFrom-Json
+
+    $routeCandidates = @($ranking.ranked_event_candidates | Where-Object {
+        $_.option_id -eq "social.talk_npc" -and
+        $_.kind -eq "route_connector_tile" -and
+        $_.available -eq $true -and
+        $_.timeline_status -ne "blocked"
+    })
+    if ($routeCandidates.Count -lt 1) {
+        throw "Production social route step ranking has no available route_connector_tile candidate"
+    }
+
+    $planSteps = @($dailyPlan.plan.steps)
+    if ($planSteps.Count -ne 1 -or $planSteps[0].kind -ne "traverse_connector") {
+        throw "Production social route step must compile exactly one traverse_connector plan step"
+    }
+    $planStep = $planSteps[0]
+    $candidateId = Get-CandidateIdFromPreconditions -Preconditions $planStep.preconditions
+    $selected = @($routeCandidates | Where-Object { [string]$_.candidate_id -eq $candidateId })
+    if ($selected.Count -ne 1) {
+        throw "Production social route plan candidate_id '$candidateId' does not bind exactly one ranked route candidate"
+    }
+    $candidate = $selected[0]
+
+    $npcName = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "continuation.npc_name")
+    $continuationOption = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "continuation.option_id")
+    $finalTargetLocation = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "continuation.target_location")
+    $nextLocation = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "expected_target_location")
+    $positionSource = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "social_route.position_source")
+    $futureProjection = [string](Get-ParameterValue -Parameters $candidate.parameters -Name "social_route.future_schedule_projection")
+    $remainingConnectorCount = Get-ParameterInt -Parameters $candidate.parameters -Name "social_route.remaining_connector_count"
+    if ($continuationOption -ne "social.talk_npc") { throw "Production social route continuation option mismatch: $continuationOption" }
+    if ([string]::IsNullOrWhiteSpace($npcName)) { throw "Production social route continuation NPC is empty" }
+    if ([string]::IsNullOrWhiteSpace($finalTargetLocation)) { throw "Production social route final target location is empty" }
+    if ([string]::IsNullOrWhiteSpace($nextLocation)) { throw "Production social route next location is empty" }
+    if ($positionSource -ne "npcs.social_interaction.current_loaded_instance") { throw "Production social route position source mismatch: $positionSource" }
+    if ($futureProjection -ne "not_used") { throw "Production social route unexpectedly used future schedule projection: $futureProjection" }
+    if ($remainingConnectorCount -lt 1) { throw "Production social route remaining connector count must be positive" }
+
+    $planParams = @($planStep.parameters)
+    if ((Get-ParameterValue -Parameters $planParams -Name "continuation.npc_name") -ne $npcName) { throw "Plan lost social continuation NPC" }
+    if ((Get-ParameterValue -Parameters $planParams -Name "continuation.target_location") -ne $finalTargetLocation) { throw "Plan lost social continuation target" }
+    if ((Get-ParameterValue -Parameters $planParams -Name "expected_target_location") -ne $nextLocation) { throw "Plan connector target mismatch" }
+    if (-not (@($planStep.expected_effects) -contains "fresh_snapshot_replan_required=true")) { throw "Plan does not require fresh snapshot replan" }
+
+    $queueItems = @($queue.items)
+    if ($queueItems.Count -ne 1 -or $queueItems[0].option_id -ne "executor.traverse_connector") {
+        throw "Production social route plan must compile exactly one executor.traverse_connector queue item"
+    }
+    $queueItem = $queueItems[0]
+    $queueParams = @($queueItem.normalized_command.parameters)
+    if ((Get-ParameterValue -Parameters $queueParams -Name "continuation.npc_name") -ne $npcName) { throw "Queue lost social continuation NPC" }
+    if ((Get-ParameterValue -Parameters $queueParams -Name "continuation.target_location") -ne $finalTargetLocation) { throw "Queue lost social continuation target" }
+    if ((Get-ParameterValue -Parameters $queueParams -Name "expected_target_location") -ne $nextLocation) { throw "Queue connector target mismatch" }
+
+    $executionResults = if ($execution.PSObject.Properties.Name -contains "steps") {
+        @($execution.steps)
+    }
+    else {
+        @($execution)
+    }
+    $verified = @($executionResults | Where-Object {
+        $_.option_id -eq "executor.traverse_connector" -and
+        $_.status -eq "applied" -and
+        $_.primitive_verification_status -eq "verified"
+    })
+    if ($verified.Count -ne 1) {
+        throw "Production social route execution must contain one applied/verified traverse_connector result"
+    }
+
+    $beforeLocation = Get-SnapshotString $BeforeSnapshot "player" "location_id"
+    $afterLocation = Get-SnapshotString $afterSnapshot "player" "location_id"
+    if ($afterLocation -ne $nextLocation) {
+        throw "Production social route arrival mismatch: expected '$nextLocation', got '$afterLocation'"
+    }
+    if ($afterSnapshot.state_hash -eq $BeforeSnapshot.state_hash) {
+        throw "Production social route after snapshot did not change state hash"
+    }
+
+    Copy-Item -LiteralPath $rankingPath -Destination (Join-Path $RunDirectory "production-route-ranking-response.json") -Force
+    Copy-Item -LiteralPath $dailyPlanPath -Destination (Join-Path $RunDirectory "production-route-daily-plan-response.json") -Force
+    Copy-Item -LiteralPath $queuePath -Destination (Join-Path $RunDirectory "production-route-compiled-queue.json") -Force
+    Copy-Item -LiteralPath $executionPath -Destination (Join-Path $RunDirectory "production-route-execution.json") -Force
+    Copy-Item -LiteralPath $episodePath -Destination (Join-Path $RunDirectory "production-route-episode.json") -Force
+    Copy-Item -LiteralPath $afterSnapshotPath -Destination (Join-Path $RunDirectory "production-route-after-snapshot.json") -Force
+
+    return [PSCustomObject]@{
+        Verified = $true
+        NpcName = $npcName
+        BeforeLocation = $beforeLocation
+        NextLocation = $nextLocation
+        FinalTargetLocation = $finalTargetLocation
+        RemainingConnectorCount = $remainingConnectorCount
+        AfterSnapshot = $afterSnapshot
+    }
+}
+
 function Build-RouteEdgeTraverseRequest {
     param(
         [Parameter(Mandatory = $true)] $EdgeData,
@@ -1148,6 +1271,7 @@ if (-not (Test-Path -LiteralPath $slotPath -PathType Container)) {
 }
 
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
+$routeCandidateLoopRoot = Join-Path $runDirectory "production-route-loop"
 $talkLoopRoot = Join-Path $runDirectory "talk-loop"
 $giftLoopRoot = Join-Path $runDirectory "gift-loop"
 $backendStdout = Join-Path $runDirectory "backend.stdout.log"
@@ -1227,6 +1351,8 @@ try {
     }
     if (-not $locationReadable) { throw "Snapshot after wait does not have readable location_id" }
     $location = Get-SnapshotString $before "player" "location_id"
+    $initialLocation = $location
+    $productionRouteEvidence = $null
 
     $spouseField = $before.state.player.spouse
     if ($null -eq $spouseField -or $spouseField.status -notin @("available", "derived")) {
@@ -1259,8 +1385,59 @@ try {
             }
         }
     }
+    if ($ProductionRouteOnly -and $hasSameLocationCandidate) {
+        throw "ProductionRouteOnly requires a remote social route candidate, but a same-location talk candidate is already available"
+    }
 
     if (-not $hasSameLocationCandidate) {
+        dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
+            --root $routeCandidateLoopRoot `
+            --backend-url $backendUrl `
+            --bridge-snapshot-url $snapshotUrl `
+            --executor-url $executorUrl `
+            --no-manifest `
+            --run-id $RunId `
+            --save-isolation-path $savesPath `
+            --iterations 1 `
+            --train-every 1 `
+            --sleep-ms 0 `
+            --use-daily-plan `
+            --daily-plan-max-candidates 1 `
+            --daily-plan-candidate-options "social.talk_npc" `
+            --after-snapshot-wait-ms 1000 `
+            --continue-after-blocked-queue-items
+        if ($LASTEXITCODE -ne 0) { throw "Production social route LiveTrainingLoop returned exit code $LASTEXITCODE" }
+
+        $productionRouteEvidence = Verify-ProductionSocialRouteStepArtifacts `
+            -LoopRoot $routeCandidateLoopRoot `
+            -RunId $RunId `
+            -RunDirectory $runDirectory `
+            -BeforeSnapshot $before
+        Write-JsonFile (Join-Path $runDirectory "production-route-verification.json") $productionRouteEvidence
+        $before = $productionRouteEvidence.AfterSnapshot
+        $location = Get-SnapshotString $before "player" "location_id"
+
+        if ($ProductionRouteOnly) {
+            $routeOnlySummary = [ordered]@{
+                status = "passed"
+                run_id = $RunId
+                save_slot = $SaveSlot
+                production_route_candidate_verified = $productionRouteEvidence.Verified
+                npc_name = $productionRouteEvidence.NpcName
+                before_location = $productionRouteEvidence.BeforeLocation
+                after_location = $productionRouteEvidence.NextLocation
+                final_target_location = $productionRouteEvidence.FinalTargetLocation
+                remaining_connector_count = $productionRouteEvidence.RemainingConnectorCount
+                future_schedule_projection = "not_used"
+                scope = "one_production_social_route_connector_then_fresh_snapshot"
+                full_multi_connector_pursuit_verified = $false
+                artifacts_dir = $runDirectory
+            }
+            Write-JsonFile (Join-Path $runDirectory "summary.json") $routeOnlySummary
+            $routeOnlySummary | ConvertTo-Json -Depth 32
+            return
+        }
+
         $socialInteractionField = Read-FieldValue $before "npcs" "social_interaction"
         $targetNpc = $null
         $consideredNpcs = @()
@@ -1591,7 +1768,13 @@ try {
         gift_has_verified_execution = $giftVerification.HasVerifiedExecution
         gift_evidence = $giftVerification.GiftEvidence
         gift_stack_decreased_by_one = $giftStackDecreased
-        before_location = $location
+        production_route_candidate_verified = ($null -ne $productionRouteEvidence -and $productionRouteEvidence.Verified -eq $true)
+        production_route_npc_name = if ($null -eq $productionRouteEvidence) { "" } else { $productionRouteEvidence.NpcName }
+        production_route_before_location = if ($null -eq $productionRouteEvidence) { "" } else { $productionRouteEvidence.BeforeLocation }
+        production_route_after_location = if ($null -eq $productionRouteEvidence) { "" } else { $productionRouteEvidence.NextLocation }
+        production_route_final_target_location = if ($null -eq $productionRouteEvidence) { "" } else { $productionRouteEvidence.FinalTargetLocation }
+        production_route_remaining_connector_count = if ($null -eq $productionRouteEvidence) { 0 } else { $productionRouteEvidence.RemainingConnectorCount }
+        before_location = $initialLocation
         after_talk_location = Get-SnapshotString $afterTalk "player" "location_id"
         after_gift_location = Get-SnapshotString $afterGift "player" "location_id"
         before_state_hash = $before.state_hash

@@ -27,7 +27,7 @@ Intentional blockers:
 - Direct high-level `social.talk_npc`/`social.gift_npc` remain gated through daily-plan compilation; only `executor.social_interact` is runtime enabled.
 - Future schedule projection is still not emitted. Cross-map pursuit is now available only for an NPC's current loaded location: one exact connector is compiled, then a fresh snapshot must re-evaluate the NPC and all social/gift legality before another route or interaction step.
 - Modded/overridden NPC social methods fail closed unless their query purity is proven.
-- No live game was launched and no test suite was executed; validation is static source review plus Release build, with test sources compiled as part of the solution.
+- Cross-map runtime scope is bounded: one production candidate-to-native-connector step is verified; complete multi-map pursuit is not yet claimed.
 
 Validation:
 
@@ -38,5 +38,5 @@ Validation:
 
 Remaining work:
 
-- Isolated E: runtime integration: talk smoke, ordinary gift smoke including one-item-to-null, blocked/replan cases, output artifact audit, then duration calibration.
+- Full continuation-aware multi-map pursuit with upstream time-gate deferral; NPC movement between route steps; one-item-to-null gift; blocked/replan cases; then duration calibration.
 - Runtime failures remain executor calibration and never strategy-negative.

@@ -275,6 +275,51 @@ public sealed class NativeSocialRuntimeSmokeSourceGuardTests
     }
 
     [Fact]
+    public void SmokeScriptExecutesProductionSocialRouteCandidateBeforeLegacyTraversalFallback()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+
+        var productionStage = source.IndexOf("Verify-ProductionSocialRouteStepArtifacts", StringComparison.Ordinal);
+        var fallbackStage = source.IndexOf("Invoke-RouteGraphBfsToNpc", productionStage, StringComparison.Ordinal);
+        Assert.True(productionStage >= 0);
+        Assert.True(fallbackStage > productionStage);
+        Assert.Contains("production-route-loop", source, StringComparison.Ordinal);
+        Assert.Contains("kind -eq \"route_connector_tile\"", source, StringComparison.Ordinal);
+        Assert.Contains("continuation.option_id", source, StringComparison.Ordinal);
+        Assert.Contains("continuation.npc_name", source, StringComparison.Ordinal);
+        Assert.Contains("continuation.target_location", source, StringComparison.Ordinal);
+        Assert.Contains("social_route.position_source", source, StringComparison.Ordinal);
+        Assert.Contains("social_route.future_schedule_projection", source, StringComparison.Ordinal);
+        Assert.Contains("fresh_snapshot_replan_required=true", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProductionSocialRouteSmokeRequiresCompiledAndVerifiedConnectorArtifacts()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+
+        Assert.Contains("production-route-ranking-response.json", source, StringComparison.Ordinal);
+        Assert.Contains("production-route-daily-plan-response.json", source, StringComparison.Ordinal);
+        Assert.Contains("production-route-compiled-queue.json", source, StringComparison.Ordinal);
+        Assert.Contains("production-route-execution.json", source, StringComparison.Ordinal);
+        Assert.Contains("production-route-episode.json", source, StringComparison.Ordinal);
+        Assert.Contains("Production social route plan must compile exactly one executor.traverse_connector queue item", source, StringComparison.Ordinal);
+        Assert.Contains("Production social route execution must contain one applied/verified traverse_connector result", source, StringComparison.Ordinal);
+        Assert.Contains("Production social route arrival mismatch", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProductionSocialRouteOnlyModeReportsItsBoundedRuntimeScope()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));
+
+        Assert.Contains("[switch] $ProductionRouteOnly", source, StringComparison.Ordinal);
+        Assert.Contains("one_production_social_route_connector_then_fresh_snapshot", source, StringComparison.Ordinal);
+        Assert.Contains("full_multi_connector_pursuit_verified = $false", source, StringComparison.Ordinal);
+        Assert.Contains("future_schedule_projection = \"not_used\"", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SmokeScriptVerifiesSocialExecutionFieldsDirectly()
     {
         var source = File.ReadAllText(FindRepositoryFile("scripts", "Invoke-RuntimeNativeSocialSmoke.ps1"));

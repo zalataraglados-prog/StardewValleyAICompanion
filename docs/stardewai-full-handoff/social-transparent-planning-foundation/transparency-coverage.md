@@ -26,6 +26,6 @@
 
 ## Pending
 
-- Isolated E: runtime integration for the new route chain: multi-map NPC pursuit, NPC movement between route steps, blocked/replan cases, then one-item-to-null gift and duration calibration.
-- No live game was launched for the cross-map route slice; validation is static Release build only.
+- Isolated E: one production route connector is runtime verified (`FarmHouse -> Farm` toward Abigail/SeedShop) with ranked candidate, daily plan, compiled queue, applied/verified execution, fresh after snapshot, episode, and feature row.
+- Pending route integration: preserve the same continuation objective across every fresh snapshot, defer a closed destination connector upstream until its time gate allows entry, complete a multi-map NPC pursuit, and exercise NPC movement between route steps.
 - Social executor duration remains planner-budget-assumed until runtime calibration.

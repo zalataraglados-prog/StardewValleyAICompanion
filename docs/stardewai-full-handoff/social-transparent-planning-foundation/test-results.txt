@@ -18,3 +18,14 @@ Remaining runtime tests (isolated E: runtime environment):
   - blocked/replan cases
   - output artifact audit
   - duration calibration
+
+2026-07-17 controller validation:
+
+- Full solution tests: Core 936/936, Backend 49/49.
+- Focused social/route source tests passed before full regression.
+- Hidden/silent E: production social route first connector PASS:
+  `artifacts/runtime-native-social-smoke/runtime-native-social-smoke-20260717-145440/summary.json`.
+- Verified chain: ranked `social.talk_npc` remote candidate -> one `traverse_connector` plan step -> one `executor.traverse_connector` queue item -> native `FarmHouse -> Farm` -> changed state hash -> fresh after snapshot -> episode and one executor-calibration row.
+- Continuation evidence: NPC `Abigail`, current loaded target `SeedShop`, remaining connector count `4`, `future_schedule_projection=not_used`.
+- Scope is intentionally bounded: `full_multi_connector_pursuit_verified=false`.
+- Diagnostic default-smoke run `runtime-native-social-smoke-20260717-145048` proved the production first step, then exposed the legacy BFS helper bypassing the closed `Town -> SeedShop` gate at 6:20 and timing out. Do not solve this by extending the timeout; the remaining chain must defer time-gated connectors upstream and preserve the same social continuation across replans.
