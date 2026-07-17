@@ -1,6 +1,9 @@
 using Microsoft.Xna.Framework;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.SaveSerialization;
 using StardewValley.Tools;
 using StardewObject = StardewValley.Object;
 
@@ -27,6 +30,7 @@ public sealed partial class CurrentLocationReadAdapter
         var requiredToolKind = clearKind == "twig" ? "axe" : "hoe";
         var selected = player.Items
             .Select((candidate, index) => new { Tool = candidate as Tool, SlotIndex = index })
+            .OrderByDescending(row => row.SlotIndex == player.CurrentToolIndex)
             .FirstOrDefault(row =>
                 (requiredToolKind == "axe" && row.Tool is Axe) ||
                 (requiredToolKind == "hoe" && row.Tool is Hoe));
@@ -38,6 +42,10 @@ public sealed partial class CurrentLocationReadAdapter
         if (clearKind == "artifact_spot" && item.QualifiedItemId == "(O)SeedSpot")
         {
             return ProjectSeedSpotClearance(location, tile, player, selected.SlotIndex, requiredToolKind);
+        }
+        if (clearKind == "artifact_spot")
+        {
+            return ProjectArtifactSpotClearance(location, tile, player, (Hoe)selected.Tool, selected.SlotIndex, requiredToolKind);
         }
 
         var outputComplete = clearKind == "twig";
@@ -57,7 +65,10 @@ public sealed partial class CurrentLocationReadAdapter
             ExperienceStatus = "exact",
             OutputStatus = outputComplete ? "exact" : "incomplete",
             OutputQualifiedItemId = outputComplete ? "(O)388" : string.Empty,
-            OutputQuantity = outputComplete ? 1 : null
+            OutputQuantity = outputComplete ? 1 : null,
+            OutputItems = outputComplete
+                ? new[] { ClearanceOutputItemProjection.FromStandard("(O)388") }
+                : Array.Empty<ClearanceOutputItemProjection>()
         };
     }
 
@@ -110,7 +121,15 @@ public sealed partial class CurrentLocationReadAdapter
             ArtifactSpotsDugExpectedAfter = (int)artifactSpotsDugAfter,
             TerrainFeatureExpectedAfter = terrainFeatureExpectedAfter,
             DefenseBookMailBefore = defenseBookMailBefore,
-            DefenseBookMailExpectedAfter = defenseBookMailBefore || defenseBookDropped
+            DefenseBookMailExpectedAfter = defenseBookMailBefore || defenseBookDropped,
+            OutputItems = new[] { ClearanceOutputItemProjection.FromStandard(seed.QualifiedItemId, seed.Stack) }
+                .Concat(defenseBookDropped
+                    ? new[] { ClearanceOutputItemProjection.FromStandard("(O)Book_Defense") }
+                    : Array.Empty<ClearanceOutputItemProjection>())
+                .OrderBy(output => output.QualifiedItemId, StringComparer.Ordinal)
+                .ThenBy(output => output.RuntimeType, StringComparer.Ordinal)
+                .ThenBy(output => output.Quality)
+                .ToArray()
         };
     }
 }
@@ -138,6 +157,7 @@ internal sealed class ObjectClearanceProjection
     public string TerrainFeatureExpectedAfter { get; init; } = string.Empty;
     public bool? DefenseBookMailBefore { get; init; }
     public bool? DefenseBookMailExpectedAfter { get; init; }
+    public ClearanceOutputItemProjection[] OutputItems { get; init; } = Array.Empty<ClearanceOutputItemProjection>();
 
     public static ObjectClearanceProjection Blocked(string clearKind, string status, string requiredToolKind = "")
     {
@@ -159,5 +179,38 @@ internal sealed class ObjectClearanceProjection
             ExperienceStatus = "not_applicable",
             OutputStatus = "not_applicable"
         };
+    }
+}
+
+internal sealed record ClearanceOutputItemProjection(
+    string RuntimeType,
+    string QualifiedItemId,
+    int Quality,
+    string UnitStateSha256,
+    int Quantity)
+{
+    private static readonly ConcurrentDictionary<string, ClearanceOutputItemProjection> StandardUnitCache = new(StringComparer.Ordinal);
+
+    public static ClearanceOutputItemProjection FromStandard(string qualifiedItemId, int quantity = 1)
+    {
+        var unit = StandardUnitCache.GetOrAdd(
+            qualifiedItemId,
+            static id => From(ItemRegistry.Create(id)) with { Quantity = 1 });
+        return unit with { Quantity = quantity };
+    }
+
+    public static ClearanceOutputItemProjection From(Item item)
+    {
+        var unit = item.getOne();
+        unit.Stack = 1;
+        using var stream = new MemoryStream();
+        SaveSerializer.GetSerializer(unit.GetType()).Serialize(stream, unit);
+        var stateHash = Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();
+        return new ClearanceOutputItemProjection(
+            unit.GetType().FullName ?? unit.GetType().Name,
+            unit.QualifiedItemId,
+            unit.Quality,
+            stateHash,
+            item.Stack);
     }
 }

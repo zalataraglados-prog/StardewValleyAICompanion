@@ -52,6 +52,7 @@ namespace StardewAI.Core.Training
             foreach (var name in new[]
             {
                 "clear_output_projection_status",
+                "clear_output_items_json",
                 "clear_output_qualified_item_id",
                 "clear_output_quantity_min",
                 "clear_output_quantity_max",

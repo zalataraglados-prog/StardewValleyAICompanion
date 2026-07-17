@@ -119,7 +119,7 @@ public sealed partial class ModEntry : Mod
         if (location.objects.TryGetValue(target.ToVector2(), out var unsupportedObject) &&
             unsupportedObject.QualifiedItemId == "(O)590")
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "blocked_artifact_spot_output_projection_incomplete");
+            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "blocked_artifact_spot_runtime_multiset_verifier_pending");
         }
         if (location.objects.TryGetValue(target.ToVector2(), out var seedSpot) &&
             seedSpot.QualifiedItemId == "(O)SeedSpot" &&

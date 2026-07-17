@@ -116,7 +116,8 @@ namespace StardewAI.Core.Execution
                     }
                     if (!string.Equals(ReadParameter(action, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
                         !string.Equals(ReadString(targetObject, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
-                        !string.Equals(ReadParameter(action, "clear_output_qualified_item_id"), ReadString(targetObject, "clear_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(ReadParameter(action, "clear_output_items_json"), ReadString(targetObject, "clear_output_items_json"), StringComparison.Ordinal) ||
+                        !string.Equals(ReadParameter(action, "clear_output_qualified_item_id") ?? string.Empty, ReadString(targetObject, "clear_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
                         ReadIntParameter(action, "clear_output_quantity_min") != NullableReadInt(targetObject, "clear_output_quantity_min") ||
                         ReadIntParameter(action, "clear_output_quantity_max") != NullableReadInt(targetObject, "clear_output_quantity_max") ||
                         !string.Equals(ReadParameter(action, "clear_bonus_output_qualified_item_id") ?? string.Empty, ReadString(targetObject, "clear_bonus_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||

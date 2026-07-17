@@ -114,6 +114,7 @@ namespace StardewAI.Core.OptionRegistry
                     (ParameterName: "skill_experience_on_success_max", FieldName: "harvest_experience_on_success_max"),
                     (ParameterName: "skill_experience_projection_status", FieldName: "harvest_experience_projection_status"),
                     (ParameterName: "clear_output_projection_status", FieldName: "clear_output_projection_status"),
+                    (ParameterName: "clear_output_items_json", FieldName: "clear_output_items_json"),
                     (ParameterName: "clear_output_qualified_item_id", FieldName: "clear_output_qualified_item_id"),
                     (ParameterName: "clear_output_quantity_min", FieldName: "clear_output_quantity_min"),
                     (ParameterName: "clear_output_quantity_max", FieldName: "clear_output_quantity_max"),
@@ -248,6 +249,7 @@ namespace StardewAI.Core.OptionRegistry
                 return string.Empty;
             }
             var outputQualifiedItemId = ReadString(source.Value, "clear_output_qualified_item_id");
+            var outputItemsJson = ReadString(source.Value, "clear_output_items_json");
             var outputMinimum = NullableReadInt(source.Value, "clear_output_quantity_min");
             var outputMaximum = NullableReadInt(source.Value, "clear_output_quantity_max");
             var bonusOutputQualifiedItemId = ReadString(source.Value, "clear_bonus_output_qualified_item_id");
@@ -262,6 +264,7 @@ namespace StardewAI.Core.OptionRegistry
             return (toolSlotIndex.HasValue ? ";tool_slot_index=" + toolSlotIndex.Value : string.Empty) +
                 (!string.IsNullOrWhiteSpace(requiredToolKind) ? ";required_tool_kind=" + requiredToolKind : string.Empty) +
                 (!string.IsNullOrWhiteSpace(outputStatus) ? ";clear_output_projection_status=" + outputStatus : string.Empty) +
+                (!string.IsNullOrWhiteSpace(outputItemsJson) ? ";clear_output_items_json=" + outputItemsJson : string.Empty) +
                 (!string.IsNullOrWhiteSpace(outputQualifiedItemId) ? ";clear_output_qualified_item_id=" + outputQualifiedItemId : string.Empty) +
                 (outputMinimum.HasValue ? ";clear_output_quantity_min=" + outputMinimum.Value : string.Empty) +
                 (outputMaximum.HasValue ? ";clear_output_quantity_max=" + outputMaximum.Value : string.Empty) +
