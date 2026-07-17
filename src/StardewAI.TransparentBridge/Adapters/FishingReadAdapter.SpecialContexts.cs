@@ -141,6 +141,12 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 rod_slot_index = entry.slotIndex,
                 rod_qualified_item_id = rod.QualifiedItemId,
                 rod_upgrade_level = rod.UpgradeLevel,
+                uses_training_rod = rod.QualifiedItemId == "(T)TrainingRod",
+                quality_bobber_count = rod.GetTackle().Count(item => item?.QualifiedItemId == "(O)877"),
+                tackle_qualified_item_ids = rod.GetTackle()
+                    .Where(item => item is not null)
+                    .Select(item => item!.QualifiedItemId)
+                    .ToArray(),
                 selected = ReferenceEquals(rod, currentRod),
                 complete = contextComplete,
                 failure,

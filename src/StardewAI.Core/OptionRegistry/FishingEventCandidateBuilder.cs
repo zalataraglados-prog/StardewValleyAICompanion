@@ -9,7 +9,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.OptionRegistry
 {
-    internal static class FishingEventCandidateBuilder
+    internal static partial class FishingEventCandidateBuilder
     {
         private const int EstimatedCatchTicks = 1800;
 
@@ -168,7 +168,10 @@ namespace StardewAI.Core.OptionRegistry
                                 qualifiedItemId,
                                 normalCast,
                                 expectedChance,
-                                expectedChance.HasValue ? "rule_local_preview" : "unresolved_rule_local_probability"));
+                                expectedChance.HasValue ? "rule_local_preview" : "unresolved_rule_local_probability",
+                                IntNullable(output, "effective_fish_difficulty"),
+                                Bool(rule, "is_boss_fish") == true,
+                                MaximumRawFishQuality(rodContext)));
                         }
                     }
 
@@ -543,7 +546,10 @@ namespace StardewAI.Core.OptionRegistry
             string qualifiedItemId,
             CastSelection cast,
             double? chance,
-            string probabilityStatus)
+            string probabilityStatus,
+            int? effectiveFishDifficulty = null,
+            bool isBossFish = false,
+            int? maximumRawFishQuality = null)
         {
             return new EventCandidate
             {
@@ -585,7 +591,11 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("water_depth", cast.Bobber.WaterDepth),
                     Parameter("rule_local_catch_chance_preview", chance),
                     Parameter("rule_local_probability_status", probabilityStatus)
-                }
+                }.Concat(FishingOutcomeExperienceParameters(
+                    effectiveFishDifficulty,
+                    isBossFish,
+                    maximumRawFishQuality,
+                    cast.Bobber.WaterDepth)).ToArray()
             };
         }
 
@@ -615,7 +625,10 @@ namespace StardewAI.Core.OptionRegistry
                             item_id = candidate.ItemId,
                             qualified_item_id = candidate.QualifiedItemId,
                             chance_preview = ParameterDouble(candidate, "rule_local_catch_chance_preview"),
-                            probability_status = CandidateParameter(candidate, "rule_local_probability_status")
+                            probability_status = CandidateParameter(candidate, "rule_local_probability_status"),
+                            effective_fish_difficulty = CandidateInt(candidate, "effective_fish_difficulty"),
+                            is_boss_fish = CandidateBool(candidate, "is_boss_fish"),
+                            maximum_raw_fish_quality = CandidateInt(candidate, "maximum_raw_fish_quality")
                         })
                         .GroupBy(outcome => string.Join("|", outcome.source_kind, outcome.source_key, outcome.outcome_index, outcome.qualified_item_id), StringComparer.Ordinal)
                         .Select(outcomeGroup => outcomeGroup.First())
@@ -675,7 +688,7 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("possible_qualified_item_ids_json", possibleIdsJson),
                             Parameter("outcome_local_chance_preview_sum", knownMass),
                             Parameter("outcome_probability_status", allProbabilitiesKnown ? "all_local_previews_known" : "partial_unknown_fallthrough")
-                        }
+                        }.Concat(AggregatedFishingExperienceParameters(outcomes, first)).ToArray()
                     };
                 });
         }
@@ -692,6 +705,28 @@ namespace StardewAI.Core.OptionRegistry
                 : null;
         }
 
+        private static bool CandidateBool(EventCandidate candidate, string name)
+        {
+            return bool.TryParse(CandidateParameter(candidate, name), out var value) && value;
+        }
+
+        private static int? IntNullable(JsonElement element, string property)
+        {
+            return element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed)
+                ? parsed
+                : null;
+        }
+
+        private static int MaximumRawFishQuality(JsonElement rodContext)
+        {
+            if (Bool(rodContext, "uses_training_rod") == true)
+            {
+                return 0;
+            }
+
+            return Int(rodContext, "quality_bobber_count") > 0 ? 4 : 2;
+        }
+
         private sealed class FishingOutcomeProjection
         {
             public string source_kind { get; set; } = string.Empty;
@@ -701,6 +736,9 @@ namespace StardewAI.Core.OptionRegistry
             public string qualified_item_id { get; set; } = string.Empty;
             public double? chance_preview { get; set; }
             public string probability_status { get; set; } = string.Empty;
+            public int? effective_fish_difficulty { get; set; }
+            public bool is_boss_fish { get; set; }
+            public int? maximum_raw_fish_quality { get; set; }
         }
 
         private static CastSelection? FindBestCast(

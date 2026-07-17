@@ -131,7 +131,18 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActiveCatchFish
     {
-        public ActiveCatchFish(PendingExecution pending, Point standTile, Point bobberTile, FishingRod rod, float desiredCastingPower, bool maxCastRequested, string beforeInventory, float beforeStamina, int beforeExpectedCaughtCount)
+        public ActiveCatchFish(
+            PendingExecution pending,
+            Point standTile,
+            Point bobberTile,
+            FishingRod rod,
+            float desiredCastingPower,
+            bool maxCastRequested,
+            string beforeInventory,
+            float beforeStamina,
+            int beforeExpectedCaughtCount,
+            int beforeFishingExperience,
+            int beforeLuckExperience)
         {
             Pending = pending;
             StandTile = standTile;
@@ -142,6 +153,8 @@ public sealed partial class ModEntry : Mod
             BeforeInventory = beforeInventory;
             BeforeStamina = beforeStamina;
             BeforeExpectedCaughtCount = beforeExpectedCaughtCount;
+            BeforeFishingExperience = beforeFishingExperience;
+            BeforeLuckExperience = beforeLuckExperience;
         }
 
         public PendingExecution Pending { get; }
@@ -153,6 +166,8 @@ public sealed partial class ModEntry : Mod
         public string BeforeInventory { get; }
         public float BeforeStamina { get; }
         public int BeforeExpectedCaughtCount { get; }
+        public int BeforeFishingExperience { get; }
+        public int BeforeLuckExperience { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; } = 9000;

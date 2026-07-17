@@ -54,6 +54,8 @@ public sealed partial class ModEntry : Mod
         var beforeInventory = InventoryStackSignature();
         var beforeStamina = Game1.player.Stamina;
         var beforeCaughtCount = ExpectedFishCaughtCount(request.ExpectedQualifiedItemId);
+        var beforeFishingExperience = Game1.player.experiencePoints[Farmer.fishingSkill];
+        var beforeLuckExperience = Game1.player.experiencePoints[Farmer.luckSkill];
         Game1.player.CurrentToolIndex = request.RodSlotIndex.Value;
         Game1.player.faceDirection(direction);
         catchFishUseToolHeld = true;
@@ -71,7 +73,18 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        activeCatchFish = new ActiveCatchFish(pending, stand, bobber, rod, castingPower, maxCastRequested, beforeInventory, beforeStamina, beforeCaughtCount);
+        activeCatchFish = new ActiveCatchFish(
+            pending,
+            stand,
+            bobber,
+            rod,
+            castingPower,
+            maxCastRequested,
+            beforeInventory,
+            beforeStamina,
+            beforeCaughtCount,
+            beforeFishingExperience,
+            beforeLuckExperience);
     }
 
     private bool ApplyCatchFishUseToolInput(ActiveCatchFish active, out string reason)
@@ -668,6 +681,8 @@ public sealed partial class ModEntry : Mod
             {
                 new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.BeforeInventory, After = afterInventory },
                 new SimulatedFactChange { Path = "player.stamina", Before = active.BeforeStamina.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") },
+                new SimulatedFactChange { Path = "player.skills.fishing.experience", Before = active.BeforeFishingExperience.ToString(System.Globalization.CultureInfo.InvariantCulture), After = Game1.player.experiencePoints[Farmer.fishingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture) },
+                new SimulatedFactChange { Path = "player.skills.luck.experience", Before = active.BeforeLuckExperience.ToString(System.Globalization.CultureInfo.InvariantCulture), After = Game1.player.experiencePoints[Farmer.luckSkill].ToString(System.Globalization.CultureInfo.InvariantCulture) },
                 new SimulatedFactChange { Path = "fishing.rule_key", Before = request.RuleKey, After = request.RuleKey },
                 new SimulatedFactChange { Path = "fishing.planned_outcome_distribution_json", Before = request.OutcomeDistributionJson, After = request.OutcomeDistributionJson },
                 new SimulatedFactChange { Path = "fishing.outcome_probability_status", Before = request.OutcomeProbabilityStatus, After = request.OutcomeProbabilityStatus },

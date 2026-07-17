@@ -145,6 +145,7 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                 : 0;
         var catchLimitReached = spawn.CatchLimit > -1 && catchCount >= spawn.CatchLimit;
         var targetedByBait = spawn.ItemId == targetedFishId;
+        var effectiveFishDifficulty = EffectiveNextCatchDifficulty(requirements?.Difficulty, spawn.IsBossFish, player);
         var genericChanceByTile = requirements is not null
             && requirements.ParseStatus == "parsed"
             && !spawn.IgnoreFishDataRequirements
@@ -180,6 +181,9 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             display_name = parsedItem.DisplayName,
             category = parsedItem.Category,
             object_type = parsedItem.ObjectType,
+            base_fish_difficulty = requirements?.Difficulty,
+            effective_fish_difficulty = effectiveFishDifficulty,
+            fishing_experience_inputs_complete = hasFishData && requirements?.ParseStatus == "parsed" && effectiveFishDifficulty.HasValue,
             catch_count = catchCount,
             catch_limit_reached = catchLimitReached,
             output_eligible_before_random_rolls = genericEligibility.EligibleBeforeRandomRoll && !catchLimitReached,
@@ -190,6 +194,27 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             data_fish_chance_roll_pending = requirements is not null && !spawn.IgnoreFishDataRequirements,
             data_fish_chance_by_water_depth = genericChanceByTile
         }, true);
+    }
+
+    private static int? EffectiveNextCatchDifficulty(int? baseDifficulty, bool isBossFish, Farmer player)
+    {
+        if (!baseDifficulty.HasValue)
+        {
+            return null;
+        }
+
+        var difficulty = (float)baseDifficulty.Value;
+        if (player.stats.Get("blessingOfWaters") != 0 && difficulty > 20f)
+        {
+            difficulty = isBossFish ? difficulty * 0.75f : difficulty / 2f;
+        }
+
+        if (player.fishCaught.Length == 0 && difficulty < 50f)
+        {
+            difficulty = 50f;
+        }
+
+        return (int)difficulty;
     }
 
     private static float? CalculateDataFishChance(
