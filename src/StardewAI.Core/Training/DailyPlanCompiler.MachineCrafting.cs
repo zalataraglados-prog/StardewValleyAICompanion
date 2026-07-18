@@ -17,7 +17,17 @@ namespace StardewAI.Core.Training
                 "output_count",
                 "times_crafted_before",
                 "ingredient_rows_json",
-                "crafting_source"
+                "crafting_source",
+                "machine_demand_class",
+                "machine_demand_priority",
+                "priority_task_required",
+                "priority_task_sources_json",
+                "production_capacity_required",
+                "potential_input_count",
+                "placed_same_machine_count",
+                "idle_same_machine_count",
+                "collection_path_required",
+                "collection_path_source"
             })
             {
                 parameters.Add(Parameter(name, CandidateParameter(candidate, name)));

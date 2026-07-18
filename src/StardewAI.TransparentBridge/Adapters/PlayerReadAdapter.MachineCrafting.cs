@@ -23,21 +23,6 @@ public sealed partial class PlayerReadAdapter
             };
         }
 
-        var profile = SnapshotProfileContext.Current;
-        var houseLevel = ReadFarmhouseUpgradeLevel(player) ?? 0;
-        if (houseLevel < 2 && profile is not ("machine" or "training_machine" or "full"))
-        {
-            return new
-            {
-                projection_status = "blocked_profile_and_house_level_not_relevant",
-                machine_recipe_count = 0,
-                unclassified_known_recipe_count = 0,
-                unclassified_known_recipe_names = Array.Empty<string>(),
-                unclassified_known_recipes = Array.Empty<object>(),
-                rows = Array.Empty<object>()
-            };
-        }
-
         var rows = new List<object>();
         var unclassified = new List<UnclassifiedRecipe>();
         foreach (var recipeName in player.craftingRecipes.Keys.OrderBy(name => name, StringComparer.Ordinal))
@@ -81,6 +66,12 @@ public sealed partial class PlayerReadAdapter
             var output = outputs[0];
             var acceptsOutputAfterConsumption = craftable.Count > 0 &&
                 InventoryAcceptsAfterConsumption(player.Items, remaining, output.Item);
+            var potentialInputs = ReadPotentialMachineInputs(output, player);
+            var ownedOutputSlots = player.Items
+                .Select((item, index) => new { item, index })
+                .Where(entry => entry.item is not null && string.Equals(entry.item.QualifiedItemId, output.QualifiedItemId, StringComparison.Ordinal))
+                .Select(entry => new { slot_index = entry.index, stack = entry.item!.Stack })
+                .ToArray();
             rows.Add(new
             {
                 recipe_name = recipe.name,
@@ -93,6 +84,7 @@ public sealed partial class PlayerReadAdapter
                 output_qualified_item_id = output.QualifiedItemId,
                 output_display_name = output.DisplayName,
                 output_runtime_type = output.RuntimeType,
+                output_context_tags = output.Item.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
                 output_big_craftable = output.BigCraftable,
                 output_machine_data_status = output.MachineDataStatus,
                 output_count_per_craft = recipe.numberProducedPerCraft,
@@ -101,6 +93,13 @@ public sealed partial class PlayerReadAdapter
                     ? "Cellar_or_location_map_property_CanCaskHere"
                     : "Object.canBePlacedHere_and_GameLocation.CanItemBePlacedHere",
                 known_recipe = true,
+                owned_output_inventory_slots = ownedOutputSlots,
+                owned_output_inventory_count = ownedOutputSlots.Sum(entry => entry.stack),
+                potential_input_probe_status = potentialInputs.Status,
+                potential_loadable_inputs = potentialInputs.Rows,
+                potential_loadable_input_count = potentialInputs.Rows.Length,
+                potential_input_probe_failures = potentialInputs.Failures,
+                potential_input_probe_failure_count = potentialInputs.Failures.Length,
                 ingredients_player_inventory_only = true,
                 ingredient_rows = firstPlan,
                 has_ingredients_for_one = craftable.Count > 0,
@@ -136,6 +135,7 @@ public sealed partial class PlayerReadAdapter
             unclassified_known_recipe_names = unclassified.Select(row => row.RecipeName).ToArray(),
             unclassified_known_recipes = unclassified.Select(row => new { recipe_name = row.RecipeName, reason = row.Reason }).ToArray(),
             max_projected_craft_count = MaxProjectedMachineCraftCount,
+            scan_scope = "all_learned_recipes_from_game_start_independent_of_house_level",
             rows = rows.ToArray()
         };
     }
@@ -277,6 +277,89 @@ public sealed partial class PlayerReadAdapter
         return false;
     }
 
+    private static PotentialMachineInputProjection ReadPotentialMachineInputs(MachineRecipeOutput output, Farmer player)
+    {
+        if (SnapshotProfileContext.Current is not ("machine" or "training_machine" or "full"))
+        {
+            return new PotentialMachineInputProjection(
+                "blocked_requires_machine_training_machine_or_full_profile",
+                Array.Empty<object>(),
+                Array.Empty<object>());
+        }
+        if (Game1.getFarm() is not { } farm)
+        {
+            return new PotentialMachineInputProjection("unavailable_farm_topology", Array.Empty<object>(), Array.Empty<object>());
+        }
+
+        var contexts = MachineLocationTopology.ReadPersistentLocations(farm, player)
+            .Where(location => location.IsPlayerControlled && !Utility.isPlacementForbiddenHere(location.Location))
+            .ToArray();
+        if (contexts.Length == 0)
+        {
+            return new PotentialMachineInputProjection("unavailable_player_controlled_machine_context", Array.Empty<object>(), Array.Empty<object>());
+        }
+        var rows = new List<object>();
+        var failures = new List<object>();
+        for (var slot = 0; slot < player.Items.Count; slot++)
+        {
+            var input = player.Items[slot];
+            if (input is not StardewValley.Object)
+            {
+                continue;
+            }
+
+            var acceptingLocations = new List<string>();
+            foreach (var context in contexts)
+            {
+                try
+                {
+                    var probe = ItemRegistry.Create<StardewValley.Object>(output.QualifiedItemId);
+                    probe.Location = context.Location;
+                    probe.TileLocation = Microsoft.Xna.Framework.Vector2.Zero;
+                    if (probe is Cask cask && !cask.IsValidCaskLocation())
+                    {
+                        continue;
+                    }
+                    if (probe.performObjectDropInAction(input, probe: true, player))
+                    {
+                        acceptingLocations.Add(context.Location.NameOrUniqueName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failures.Add(new
+                    {
+                        slot_index = slot,
+                        qualified_item_id = input.QualifiedItemId,
+                        location_id = context.Location.NameOrUniqueName,
+                        exception_type = ex.GetType().Name,
+                        reason = "detached_machine_native_input_probe_exception"
+                    });
+                }
+            }
+            if (acceptingLocations.Count > 0)
+            {
+                rows.Add(new
+                {
+                    slot_index = slot,
+                    item_id = input.ItemId,
+                    qualified_item_id = input.QualifiedItemId,
+                    stack = input.Stack,
+                    quality = input.Quality,
+                    accepting_location_ids = acceptingLocations.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                    accepting_location_count = acceptingLocations.Count,
+                    probe_source = "detached_machine.performObjectDropInAction(probe:true)_across_native_player_controlled_location_topology"
+                });
+            }
+        }
+        return new PotentialMachineInputProjection(
+            failures.Count == 0
+                ? "complete_native_probe_across_player_controlled_persistent_location_topology"
+                : "partial_native_probe_exceptions_fail_closed",
+            rows.ToArray(),
+            failures.ToArray());
+    }
+
     private sealed record MachineRecipeOutput(
         Item Item,
         string ItemId,
@@ -288,6 +371,8 @@ public sealed partial class PlayerReadAdapter
         bool IsCask);
 
     private sealed record CraftCountProjection(int Count, bool Capped);
+
+    private sealed record PotentialMachineInputProjection(string Status, object[] Rows, object[] Failures);
 
     private sealed record UnclassifiedRecipe(string RecipeName, string Reason);
 }

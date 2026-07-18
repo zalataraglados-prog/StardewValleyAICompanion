@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
@@ -53,6 +54,7 @@ namespace StardewAI.Core.Execution
             var expectedIngredientRows = row.Value.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
+            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row.Value);
             if (!string.Equals(ReadString(row.Value, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal) ||
                 ReadBool(row.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
@@ -66,6 +68,20 @@ namespace StardewAI.Core.Execution
                 !string.Equals(ReadParameter(action, "crafting_source"), "native_personal_crafting_menu", StringComparison.Ordinal))
             {
                 reasons.Add("craft_machine_item_projection_drifted");
+            }
+            if (!demand.HasDemand ||
+                !string.Equals(ReadParameter(action, "machine_demand_class"), demand.DemandClass, StringComparison.Ordinal) ||
+                ReadIntParameter(action, "machine_demand_priority") != demand.Priority ||
+                !string.Equals(ReadParameter(action, "priority_task_required"), Lower(demand.PriorityTaskRequired), StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "priority_task_sources_json"), JsonSerializer.Serialize(demand.PriorityTaskSources), StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "production_capacity_required"), Lower(demand.ProductionCapacityRequired), StringComparison.Ordinal) ||
+                ReadIntParameter(action, "potential_input_count") != demand.PotentialInputCount ||
+                ReadIntParameter(action, "placed_same_machine_count") != demand.PlacedSameMachineCount ||
+                ReadIntParameter(action, "idle_same_machine_count") != demand.IdleSameMachineCount ||
+                !string.Equals(ReadParameter(action, "collection_path_required"), Lower(demand.CollectionPathRequired), StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "collection_path_source"), demand.CollectionPathSource, StringComparison.Ordinal))
+            {
+                reasons.Add("craft_machine_item_demand_projection_drifted");
             }
 
             return reasons.ToArray();

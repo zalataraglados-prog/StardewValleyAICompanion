@@ -100,6 +100,10 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.035 + MachineInputOpportunityCostSignal(candidate.ExpectedEffect);
                     }
+                    if (candidate.Kind == "craft_machine_item")
+                    {
+                        urgencySignal = MachineInfrastructureDemandSignal(candidate.ExpectedEffect);
+                    }
                     if (candidate.Kind == "catch_fish")
                     {
                         urgencySignal = 0.03;
@@ -310,6 +314,17 @@ namespace StardewAI.Core.Training
             return opportunityCost.HasValue
                 ? Math.Round(Math.Clamp(opportunityCost.Value * -0.0002, -0.04, 0), 4)
                 : 0;
+        }
+
+        private static double MachineInfrastructureDemandSignal(string expectedEffect)
+        {
+            return ParseInt(expectedEffect, "machine_demand_priority=") switch
+            {
+                300 => 0.18,
+                200 => 0.10,
+                100 => 0.05,
+                _ => -0.20
+            };
         }
 
         private static double ShippingValueSignal(EventCandidate candidate)

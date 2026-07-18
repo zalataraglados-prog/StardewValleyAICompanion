@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -37,6 +38,7 @@ namespace StardewAI.Core.OptionRegistry
             var ingredientRowsJson = row.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
+            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row);
             var blockReasons = new List<string>();
             if (!string.Equals(ReadString(row, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal))
             {
@@ -54,6 +56,10 @@ namespace StardewAI.Core.OptionRegistry
             {
                 blockReasons.Add("machine_recipe_identity_unavailable");
             }
+            if (!demand.HasDemand)
+            {
+                blockReasons.Add("machine_recipe_has_no_proven_task_production_or_collection_requirement");
+            }
 
             return new EventCandidate
             {
@@ -68,6 +74,11 @@ namespace StardewAI.Core.OptionRegistry
                     ";output_count=" + outputCount +
                     ";times_crafted_before=" + timesCrafted +
                     ";times_crafted_after=" + (timesCrafted + outputCount) +
+                    ";machine_demand_class=" + demand.DemandClass +
+                    ";machine_demand_priority=" + demand.Priority +
+                    ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
+                    ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
+                    ";collection_path_required=" + demand.CollectionPathRequired.ToString().ToLowerInvariant() +
                     ";native_contract=CraftingPage.receiveLeftClick",
                 ItemId = outputItemId,
                 QualifiedItemId = outputQualifiedId,
@@ -84,7 +95,17 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("output_count", outputCount.ToString()),
                     Parameter("times_crafted_before", timesCrafted.ToString()),
                     Parameter("ingredient_rows_json", ingredientRowsJson),
-                    Parameter("crafting_source", "native_personal_crafting_menu")
+                    Parameter("crafting_source", "native_personal_crafting_menu"),
+                    Parameter("machine_demand_class", demand.DemandClass),
+                    Parameter("machine_demand_priority", demand.Priority.ToString()),
+                    Parameter("priority_task_required", demand.PriorityTaskRequired.ToString().ToLowerInvariant()),
+                    Parameter("priority_task_sources_json", JsonSerializer.Serialize(demand.PriorityTaskSources)),
+                    Parameter("production_capacity_required", demand.ProductionCapacityRequired.ToString().ToLowerInvariant()),
+                    Parameter("potential_input_count", demand.PotentialInputCount.ToString()),
+                    Parameter("placed_same_machine_count", demand.PlacedSameMachineCount.ToString()),
+                    Parameter("idle_same_machine_count", demand.IdleSameMachineCount.ToString()),
+                    Parameter("collection_path_required", demand.CollectionPathRequired.ToString().ToLowerInvariant()),
+                    Parameter("collection_path_source", demand.CollectionPathSource)
                 }
             };
         }

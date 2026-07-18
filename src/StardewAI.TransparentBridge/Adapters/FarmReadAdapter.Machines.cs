@@ -49,14 +49,25 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private static object[] ReadMachines(Farm farm, bool includeLoadableInputs, bool minimalMachineProfile, long machineProbeCacheTick)
     {
+        var player = Game1.player;
+        if (player is null)
+        {
+            return Array.Empty<object>();
+        }
         var currentLocationId = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
-        var machineRows = ReadPlayerMachineLocations(farm)
+        var playerId = player.UniqueMultiplayerID;
+        var machineRows = MachineLocationTopology.ReadPersistentLocations(farm, player)
             .SelectMany(location => location.Location.objects.Pairs
-                .Where(pair => pair.Value.bigCraftable.Value && pair.Value.GetMachineData() is not null)
+                .Where(pair => pair.Value.bigCraftable.Value &&
+                    pair.Value.GetMachineData() is not null &&
+                    (location.IsPlayerControlled || pair.Value.owner.Value == playerId))
                 .Select(pair => new
                 {
                     location.Location,
                     location.Kind,
+                    location.IsPlayerControlled,
+                    location.RootLocationId,
+                    location.ParentBuildingRuntimeType,
                     Pair = pair
                 }))
             .OrderBy(row => row.Location.NameOrUniqueName, StringComparer.Ordinal)
@@ -87,7 +98,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var liveMachineData = row.Pair.Value.GetMachineData();
                 var machineHasInput = ReadBoolNullable(liveMachineData!, "HasInput");
                 var machineIsIdle = row.Pair.Value.MinutesUntilReady <= 0 && !row.Pair.Value.readyForHarvest.Value;
-                var harvestExperience = ReadMachineHarvestExperience(liveMachineData, Game1.player);
+                var harvestExperience = ReadMachineHarvestExperience(liveMachineData, player);
                 object machineData = minimalMachineProfile
                     ? new
                     {
@@ -102,11 +113,15 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 {
                     location_id = locationId,
                     location_kind = row.Kind,
+                    location_is_player_controlled = row.IsPlayerControlled,
+                    root_location_id = row.RootLocationId,
+                    parent_building_runtime_type = row.ParentBuildingRuntimeType,
                     location_is_current = probeLocationIsCurrent,
                     tile_x = (int)row.Pair.Key.X,
                     tile_y = (int)row.Pair.Key.Y,
                     qualified_item_id = row.Pair.Value.QualifiedItemId,
                     display_name = row.Pair.Value.DisplayName,
+                    owner_player_id = row.Pair.Value.owner.Value,
                     ready_for_harvest = row.Pair.Value.readyForHarvest.Value,
                     minutes_until_ready = row.Pair.Value.MinutesUntilReady,
                     machine_has_input = machineHasInput,
@@ -148,38 +163,6 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
     {
         return locationId + ":" + (int)tile.X + "," + (int)tile.Y;
     }
-
-    private static MachineLocationRef[] ReadPlayerMachineLocations(Farm farm)
-    {
-        var result = new List<MachineLocationRef>
-        {
-            new(farm, "farm_outdoor")
-        };
-        var home = Game1.player is null ? null : Utility.getHomeOfFarmer(Game1.player);
-        AddMachineLocation(result, home, "farmhouse");
-        var cellarName = home?.GetCellarName();
-        if (!string.IsNullOrWhiteSpace(cellarName))
-        {
-            AddMachineLocation(result, Game1.getLocationFromName(cellarName), "cellar");
-        }
-
-        return result.ToArray();
-    }
-
-    private static void AddMachineLocation(ICollection<MachineLocationRef> result, GameLocation? location, string kind)
-    {
-        if (location is null || result.Any(row => string.Equals(
-            row.Location.NameOrUniqueName,
-            location.NameOrUniqueName,
-            StringComparison.OrdinalIgnoreCase)))
-        {
-            return;
-        }
-
-        result.Add(new MachineLocationRef(location, kind));
-    }
-
-    private sealed record MachineLocationRef(GameLocation Location, string Kind);
 
     private static object ReadMachineDataSummary(object? machineData)
     {

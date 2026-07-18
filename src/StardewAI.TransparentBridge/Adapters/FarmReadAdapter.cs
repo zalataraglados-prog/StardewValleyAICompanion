@@ -64,7 +64,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         {
             return Section("farm", new Dictionary<string, object>
             {
-                ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; player Farm/FarmHouse/Cellar GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache")
+                ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false) plus native farm/home ownership topology; GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache")
             });
         }
 
@@ -85,7 +85,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["crops"] = Field(ReadCrops(farm), "Game1.getFarm().terrainFeatures[*] as HoeDirt.crop", tick, "vanilla_1_6_farm"),
             ["terrain_features"] = Field(ReadTerrainFeatures(farm), "Game1.getFarm().terrainFeatures", tick, "vanilla_1_6_farm"),
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),
-            ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; player Farm/FarmHouse/Cellar GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
+            ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false) plus native farm/home ownership topology; GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
             ["chests"] = Field(ReadChests(farm), "Game1.getFarm().objects[*] as Chest", tick, "vanilla_1_6_farm"),
             ["animals"] = Field(ReadAnimals(farm), "Game1.locations[*].animals plus Game1.getFarm().buildings[*].GetIndoors().animals", tick, "vanilla_1_6_farm_and_animal_houses"),
             ["pets"] = Field(ReadPets(), "Utility.getAllPets(); Pet fields; Data/Pets; Pet.checkAction and Pet.dayUpdate projections", tick, "vanilla_1_6_pet"),
