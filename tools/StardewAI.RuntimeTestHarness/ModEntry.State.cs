@@ -74,9 +74,9 @@ public sealed partial class ModEntry : Mod
         public string StartedAt { get; }
     }
 
-    private sealed class ActiveNativeFarmTool
+    private sealed class ActiveNativeTool
     {
-        private ActiveNativeFarmTool(PendingExecution pending, string primitiveKind, string locationId, Point target, List<Point> path, Tool tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool? beforeWatered, bool? beforeHadHoeDirt)
+        private ActiveNativeTool(PendingExecution pending, string primitiveKind, string locationId, Point target, List<Point> path, Tool tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool? beforeWatered, bool? beforeHadHoeDirt, bool beforeGinger = false, int beforeGingerDebrisCount = 0, int beforeGingerInventoryCount = 0, int beforeForagingExperience = 0, int? beforeHoeDirtState = null, double expectedEnergyCost = 0d)
         {
             Pending = pending;
             PrimitiveKind = primitiveKind;
@@ -91,19 +91,30 @@ public sealed partial class ModEntry : Mod
             RequestedEffect = requestedEffect;
             BeforeWatered = beforeWatered;
             BeforeHadHoeDirt = beforeHadHoeDirt;
+            BeforeGinger = beforeGinger;
+            BeforeGingerDebrisCount = beforeGingerDebrisCount;
+            BeforeGingerInventoryCount = beforeGingerInventoryCount;
+            BeforeForagingExperience = beforeForagingExperience;
+            BeforeHoeDirtState = beforeHoeDirtState;
+            ExpectedEnergyCost = expectedEnergyCost;
             LastPosition = Game1.player.Position;
             MaxMovementTicks = Math.Max(120, path.Count * 90);
             MaxTicks = MaxMovementTicks + 240;
         }
 
-        public static ActiveNativeFarmTool Water(PendingExecution pending, string locationId, Point target, List<Point> path, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered)
+        public static ActiveNativeTool Water(PendingExecution pending, string locationId, Point target, List<Point> path, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered)
         {
-            return new ActiveNativeFarmTool(pending, "water_crop", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null);
+            return new ActiveNativeTool(pending, "water_crop", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null);
         }
 
-        public static ActiveNativeFarmTool Till(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeHadHoeDirt)
+        public static ActiveNativeTool Till(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeHadHoeDirt)
         {
-            return new ActiveNativeFarmTool(pending, "till_soil", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, beforeHadHoeDirt);
+            return new ActiveNativeTool(pending, "till_soil", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, beforeHadHoeDirt);
+        }
+
+        public static ActiveNativeTool Ginger(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, int beforeGingerDebrisCount, int beforeGingerInventoryCount, int beforeForagingExperience, int beforeHoeDirtState, double expectedEnergyCost)
+        {
+            return new ActiveNativeTool(pending, "harvest_ginger", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, true, true, beforeGingerDebrisCount, beforeGingerInventoryCount, beforeForagingExperience, beforeHoeDirtState, expectedEnergyCost);
         }
 
         public PendingExecution Pending { get; }
@@ -119,6 +130,12 @@ public sealed partial class ModEntry : Mod
         public string RequestedEffect { get; }
         public bool? BeforeWatered { get; }
         public bool? BeforeHadHoeDirt { get; }
+        public bool BeforeGinger { get; }
+        public int BeforeGingerDebrisCount { get; }
+        public int BeforeGingerInventoryCount { get; }
+        public int BeforeForagingExperience { get; }
+        public int? BeforeHoeDirtState { get; }
+        public double ExpectedEnergyCost { get; }
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }

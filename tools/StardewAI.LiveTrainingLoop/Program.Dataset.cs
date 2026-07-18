@@ -57,6 +57,8 @@ static partial class Program
                 ? applied ? 0.08 : -0.08
             : string.Equals(optionId, "executor.collect_spawned_object", StringComparison.Ordinal)
                 ? applied ? 0.05 : -0.05
+            : string.Equals(optionId, "executor.harvest_ginger", StringComparison.Ordinal)
+                ? applied ? 0.06 : -0.06
             : string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal)
                 ? applied ? 0.12 : -0.12
             : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)

@@ -9,7 +9,8 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | `FishingRod.pullFishFromWater` and fishing treasure completion | Fishing, conditional Luck | transparent bounded candidate evidence and observed runtime deltas |
 | `GameLocation.breakStone` and `MineShaft.checkStoneForItems` | Mining, conditional Luck | transparent current-stone bounds in rolling mining candidates |
 | `GameLocation.monsterDrop` | Combat | exact current native-monster candidate evidence |
-| `Crop.harvest` | Farming or Foraging | exact current crop candidate evidence; unsupported hoe-harvest ginger remains excluded |
+| `Crop.harvest` | Farming or Foraging | exact current ordinary crop candidate evidence; hoe-harvest ginger stays outside this executor |
+| `Crop.hitWithHoe` / `HoeDirt.performToolAction` ginger branch | Foraging | exact current ginger identity, Hoe slot, energy, `(O)829 x1` debris, soil after-state, and `+7` XP flow through a dedicated candidate/compiler/native-tool chain; runtime validation pending |
 | `GiantCrop.performToolAction` | Luck | exact current complete-giant-crop evidence |
 | `Tree.performToolAction` / `performTreeFall` | Foraging | exact current tree/moss evidence |
 | ordinary stump and hollow-log `ResourceClump.performToolAction` | Foraging | exact farm resource-clump evidence |
@@ -26,7 +27,6 @@ These are required before native skill-source enumeration can be called complete
 
 | native source | skills | required slice |
 |---|---|---|
-| `HoeDirt.performToolAction` ginger branch | Foraging | hoe-harvest candidate distinct from ordinary player crop harvest |
 | `Bush.shake` berry harvest | Foraging | harvestable bush state, season/day/quantity, native interaction executor |
 | mine treasure `Chest` collection | Luck | exact eligible chest identity, current mine level, native chest lifecycle, output and XP verification |
 | Green Rain bush-like `ResourceClump` destruction | Foraging | runtime type/state, deterministic drops, tool budget, dedicated clearance contract |

@@ -68,6 +68,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "Pan.beginUsing", "Pan.getPanItems", "Pan.DoFunction", "GameLocation.performOrePanTenMinuteUpdate" }),
             Assumption(
+                "ginger_harvest",
+                new[] { "foraging.harvest_ginger", "executor.harvest_ginger" },
+                new[] { "exact_ginger_crop", "hoe_available", "energy_floor", "adjacent_reachable_tile", "menu_clear" },
+                new[] { "route_length", "native_tool_animation_ticks" },
+                Array.Empty<string>(),
+                new[] { "Crop.hitWithHoe", "HoeDirt.performToolAction", "Hoe.DoFunction", "Farmer.gainExperience" }),
+            Assumption(
                 "navigation",
                 new[] { "exploration.visit_location", "social.gift_npc", "economy.buy_supplies", "quest.advance" },
                 new[] { "passability_verified", "warp_verified", "destination_available", "time_budget" },

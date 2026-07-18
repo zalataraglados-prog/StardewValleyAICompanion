@@ -211,6 +211,26 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileHarvestGingerStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            if (!x.HasValue || !y.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var estimatedTicks = Math.Max(1, ReadIntParameter(action, "estimated_minutes") ?? 2) * 60;
+            return new[]
+            {
+                Step(
+                    "harvest_ginger",
+                    "current_location(" + x.Value + "," + y.Value + "):native_hoe",
+                    "current_location.terrain_features[" + x.Value + "," + y.Value + "].crop=none;current_location.debris[(O)829].count_increases=1;player.skills.foraging.experience_delta=7",
+                    estimatedTicks)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectAnimalProductStep(SmallModelAction action)
         {
             var animalId = ReadParameter(action, "target_runtime_identity");

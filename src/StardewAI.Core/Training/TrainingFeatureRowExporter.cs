@@ -221,6 +221,7 @@ namespace StardewAI.Core.Training
                 case "executor.complete_fish_pond_request":
                 case "executor.collect_animal_product":
                 case "executor.pan_ore_spot":
+                case "executor.harvest_ginger":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":
                 case "fishing.catch_fish":
@@ -228,6 +229,7 @@ namespace StardewAI.Core.Training
                 case "fishing.service_fish_ponds":
                 case "farm.collect_animal_products":
                 case "foraging.pan_ore_spot":
+                case "foraging.harvest_ginger":
                     return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":
                 case "economy.sell_items":

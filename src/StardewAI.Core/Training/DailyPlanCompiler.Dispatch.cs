@@ -72,6 +72,11 @@ namespace StardewAI.Core.Training
                 return CollectSpawnedObjectSteps(candidate);
             }
 
+            if (candidate.Kind == "harvest_ginger")
+            {
+                return HarvestGingerSteps(candidate);
+            }
+
             if (candidate.Kind == "collect_crab_pot")
             {
                 return CollectCrabPotSteps(candidate);

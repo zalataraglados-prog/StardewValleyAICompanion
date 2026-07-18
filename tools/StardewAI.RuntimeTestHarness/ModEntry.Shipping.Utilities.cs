@@ -448,6 +448,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.harvest_giant_crop" &&
             request.OptionId != "executor.pickup_debris" &&
             request.OptionId != "executor.collect_spawned_object" &&
+            request.OptionId != "executor.harvest_ginger" &&
             request.OptionId != "executor.collect_crab_pot" &&
             request.OptionId != "executor.collect_animal_product" &&
             request.OptionId != "executor.pan_ore_spot" &&

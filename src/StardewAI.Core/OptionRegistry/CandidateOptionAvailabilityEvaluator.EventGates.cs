@@ -94,6 +94,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_spawned_object_candidates");
             }
 
+            if (optionId == "foraging.harvest_ginger")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_ginger_harvest_candidates",
+                    "no_available_ginger_harvest_candidates");
+            }
+
             if (optionId == "foraging.pan_ore_spot")
             {
                 return EventCandidateAvailabilityReasons(

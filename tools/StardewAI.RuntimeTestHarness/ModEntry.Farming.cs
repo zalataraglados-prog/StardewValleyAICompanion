@@ -130,7 +130,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        activeNativeFarmTool = ActiveNativeFarmTool.Water(pending, farm.NameOrUniqueName, target, path, can!, staminaBefore, waterBefore, started, estimatedTicks, requested, IsCropWatered(farm, target));
+        activeNativeTool = ActiveNativeTool.Water(pending, farm.NameOrUniqueName, target, path, can!, staminaBefore, waterBefore, started, estimatedTicks, requested, IsCropWatered(farm, target));
     }
 
     private void StartTillSoil(PendingExecution pending)
@@ -179,7 +179,7 @@ public sealed partial class ModEntry : Mod
 
         var tile = new Vector2(target.X, target.Y);
         var hadHoeDirt = farm.terrainFeatures.TryGetValue(tile, out var beforeFeature) && beforeFeature is HoeDirt;
-        activeNativeFarmTool = ActiveNativeFarmTool.Till(pending, farm.NameOrUniqueName, target, path, hoe!, staminaBefore, started, estimatedTicks, requested, hadHoeDirt);
+        activeNativeTool = ActiveNativeTool.Till(pending, farm.NameOrUniqueName, target, path, hoe!, staminaBefore, started, estimatedTicks, requested, hadHoeDirt);
     }
 
     private static string[] ValidateWaterCropTarget(Farm farm, Point target, WateringCan? can)
@@ -271,28 +271,28 @@ public sealed partial class ModEntry : Mod
         return null;
     }
 
-    private void TickNativeFarmTool()
+    private void TickNativeTool()
     {
-        if (activeNativeFarmTool is null)
+        if (activeNativeTool is null)
         {
             return;
         }
 
-        var tool = activeNativeFarmTool;
+        var tool = activeNativeTool;
         try
         {
-            TickNativeFarmToolCore(tool);
+            TickNativeToolCore(tool);
         }
         catch (Exception ex)
         {
             CleanupBlockedNativeToolLifecycle(tool);
-            activeNativeFarmTool = null;
-            Monitor.Log($"Native farm tool execution failed: {ex}", LogLevel.Error);
+            activeNativeTool = null;
+            Monitor.Log($"Native tool execution failed: {ex}", LogLevel.Error);
             tool.Pending.Completion.SetResult(NativeToolBlocked(tool.Pending.Request, tool.PrimitiveKind, tool.Target, tool.Tool, tool.WaterBefore, tool.StaminaBefore, tool.StartedAt, tool.EstimatedTicks, "execution_exception:" + ex.GetType().Name, tool.RequestedEffect, NativeToolObservedEffect(tool), actualTicks: tool.ElapsedTicks));
         }
     }
 
-    private void TickNativeFarmToolCore(ActiveNativeFarmTool tool)
+    private void TickNativeToolCore(ActiveNativeTool tool)
     {
         tool.ElapsedTicks++;
         if (!Context.IsWorldReady || Game1.currentLocation is null)
@@ -366,10 +366,12 @@ public sealed partial class ModEntry : Mod
         StopAllMovement();
         if (!tool.BeginIssued)
         {
-            var farm = Game1.getFarm();
-            var recheck = tool.PrimitiveKind == "water_crop"
-                ? ValidateWaterCropTarget(farm, tool.Target, tool.Tool as WateringCan)
-                : ValidateTillSoilTarget(farm, tool.Target, tool.Tool as Hoe);
+            var recheck = tool.PrimitiveKind switch
+            {
+                "water_crop" => ValidateWaterCropTarget(Game1.getFarm(), tool.Target, tool.Tool as WateringCan),
+                "harvest_ginger" => ValidateGingerHarvestTarget(Game1.currentLocation, tool.Target, tool.Tool as Hoe, tool.Pending.Request),
+                _ => ValidateTillSoilTarget(Game1.getFarm(), tool.Target, tool.Tool as Hoe)
+            };
             if (recheck.Length > 0)
             {
                 CompleteNativeToolBlocked(tool, recheck[0], recheck);
@@ -399,14 +401,14 @@ public sealed partial class ModEntry : Mod
         CompleteNativeTool(tool);
     }
 
-    private void CompleteNativeToolBlocked(ActiveNativeFarmTool tool, string reason, string[]? reasons = null)
+    private void CompleteNativeToolBlocked(ActiveNativeTool tool, string reason, string[]? reasons = null)
     {
         CleanupBlockedNativeToolLifecycle(tool);
-        activeNativeFarmTool = null;
+        activeNativeTool = null;
         tool.Pending.Completion.SetResult(NativeToolBlocked(tool.Pending.Request, tool.PrimitiveKind, tool.Target, tool.Tool, tool.WaterBefore, tool.StaminaBefore, tool.StartedAt, tool.EstimatedTicks, reason, tool.RequestedEffect, NativeToolObservedEffect(tool), reasons, tool.ElapsedTicks));
     }
 
-    private void CleanupBlockedNativeToolLifecycle(ActiveNativeFarmTool tool)
+    private void CleanupBlockedNativeToolLifecycle(ActiveNativeTool tool)
     {
         StopAllMovement();
         if (!tool.BeginIssued || !ReferenceEquals(Game1.player.CurrentTool, tool.Tool))
@@ -417,10 +419,16 @@ public sealed partial class ModEntry : Mod
         Game1.player.completelyStopAnimatingOrDoingAction();
     }
 
-    private void CompleteNativeTool(ActiveNativeFarmTool tool)
+    private void CompleteNativeTool(ActiveNativeTool tool)
     {
         StopAllMovement();
-        activeNativeFarmTool = null;
+        activeNativeTool = null;
+
+        if (tool.PrimitiveKind == "harvest_ginger")
+        {
+            CompleteHarvestGingerNativeTool(tool);
+            return;
+        }
 
         var farm = Game1.getFarm();
         var verified = tool.PrimitiveKind == "water_crop"
@@ -504,29 +512,40 @@ public sealed partial class ModEntry : Mod
         };
     }
 
-    private static string NativeToolObservedEffect(ActiveNativeFarmTool tool)
+    private static string NativeToolObservedEffect(ActiveNativeTool tool)
     {
+        if (tool.PrimitiveKind == "harvest_ginger")
+        {
+            return GingerHarvestObservedEffect(Game1.currentLocation, tool.Target);
+        }
+
         var farm = Game1.getFarm();
         return tool.PrimitiveKind == "water_crop"
             ? WaterCropObservedEffect(farm, tool.Target)
             : TillSoilObservedEffect(farm, tool.Target);
     }
 
-    private static string[] NativeToolVerifiedReasons(ActiveNativeFarmTool tool)
+    private static string[] NativeToolVerifiedReasons(ActiveNativeTool tool)
     {
-        return tool.PrimitiveKind == "water_crop"
-            ? new[] { "native_watering_can_lifecycle_watered_target_crop" }
-            : new[] { "native_hoe_lifecycle_created_hoe_dirt" };
+        return tool.PrimitiveKind switch
+        {
+            "water_crop" => new[] { "native_watering_can_lifecycle_watered_target_crop" },
+            "harvest_ginger" => new[] { "native_hoe_lifecycle_removed_ginger_crop", "native_ginger_debris_created", "native_foraging_experience_delta_seven" },
+            _ => new[] { "native_hoe_lifecycle_created_hoe_dirt" }
+        };
     }
 
-    private static string[] NativeToolMismatchReasons(ActiveNativeFarmTool tool)
+    private static string[] NativeToolMismatchReasons(ActiveNativeTool tool)
     {
-        return tool.PrimitiveKind == "water_crop"
-            ? new[] { "target_crop_water_state_unchanged_after_native_tool_lifecycle" }
-            : new[] { "target_tile_unchanged_after_native_hoe_lifecycle" };
+        return tool.PrimitiveKind switch
+        {
+            "water_crop" => new[] { "target_crop_water_state_unchanged_after_native_tool_lifecycle" },
+            "harvest_ginger" => new[] { "ginger_native_postcondition_mismatch" },
+            _ => new[] { "target_tile_unchanged_after_native_hoe_lifecycle" }
+        };
     }
 
-    private static SimulatedFactChange[] NativeToolChangedFacts(ActiveNativeFarmTool tool, bool? afterWatered, bool? afterHoeDirt, int? waterAfter)
+    private static SimulatedFactChange[] NativeToolChangedFacts(ActiveNativeTool tool, bool? afterWatered, bool? afterHoeDirt, int? waterAfter)
     {
         var changes = new List<SimulatedFactChange>
         {

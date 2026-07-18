@@ -107,6 +107,10 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.035;
                     }
+                    if (candidate.Kind == "harvest_ginger")
+                    {
+                        urgencySignal = 0.04;
+                    }
                     if (candidate.Kind == "collect_crab_pot")
                     {
                         urgencySignal = 0.04;

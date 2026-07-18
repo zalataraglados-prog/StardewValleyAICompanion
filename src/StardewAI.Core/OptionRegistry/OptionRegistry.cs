@@ -144,6 +144,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one current spawned-object candidate selected", "native pickup handed to the mechanical executor" },
                 new[] { "block_unknown_spawned_object", "block_inventory_full", "block_unverified_route", "block_direct_object_mutation" }));
 
+            Register(Option("foraging.harvest_ginger", "foraging", "Hoe one transparent ginger forage crop",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact ginger crop selected", "native Hoe lifecycle handed to the mechanical executor" },
+                new[] { "block_no_ginger_crop", "block_missing_hoe", "block_insufficient_energy", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("foraging.pan_ore_spot", "foraging", "Pan one transparent active ore spot",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -494,6 +502,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native checkAction collects the exact spawned object", "inventory and skill deltas are observed" },
                 new[] { "block_unknown_spawned_object", "block_inventory_full", "block_menu_unsafe_pickup", "block_direct_object_mutation" }));
+
+            Register(Option("executor.harvest_ginger", "foraging", "Harvest one verified ginger crop with the native Hoe lifecycle",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "current_location.terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one adjacent stand tile", "native Hoe hit removes only the ginger crop", "ginger debris, energy, and Foraging XP deltas are verified" },
+                new[] { "block_target_not_exact_ginger", "block_missing_hoe", "block_insufficient_energy", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_crop_or_debris_mutation" }));
 
             Register(Option("executor.collect_crab_pot", "fishing", "Collect one verified ready crab pot through native checkAction",
                 OptionBehaviorCategories.Mechanical,

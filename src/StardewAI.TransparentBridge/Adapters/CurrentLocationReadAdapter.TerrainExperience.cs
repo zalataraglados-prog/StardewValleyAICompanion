@@ -9,6 +9,11 @@ public sealed partial class CurrentLocationReadAdapter
 {
     private static object ReadTerrainFeatureDetails(Vector2 tile, TerrainFeature feature)
     {
+        if (feature is HoeDirt dirt)
+        {
+            return ReadHoeDirtDetails(tile, dirt);
+        }
+
         if (feature is not Tree tree)
         {
             return new
@@ -64,6 +69,68 @@ public sealed partial class CurrentLocationReadAdapter
                 ? "exact_from_decompiled_native_tree_branches"
                 : "unavailable_custom_tree_runtime_type",
             source = "Tree live net fields; Tree.performToolAction/performTreeFall/CreateMossItem"
+        };
+    }
+
+    private static object ReadHoeDirtDetails(Vector2 tile, HoeDirt dirt)
+    {
+        var crop = dirt.crop;
+        var isGinger = crop is not null &&
+            crop.forageCrop.Value &&
+            string.Equals(crop.whichForageCrop.Value, Crop.forageCrop_gingerID, StringComparison.Ordinal);
+        var hoeEntry = Game1.player.Items
+            .Select((item, index) => new { Item = item, Index = index })
+            .FirstOrDefault(entry => entry.Item is Hoe);
+        var hoe = hoeEntry?.Item as Hoe;
+        var exactVanillaRuntimeTypes = dirt.GetType() == typeof(HoeDirt) &&
+            crop?.GetType() == typeof(Crop) &&
+            hoe?.GetType() == typeof(Hoe);
+        var energyCost = hoe?.isEfficient.Value == true
+            ? 0f
+            : Math.Max(0f, 2f - Game1.player.FarmingLevel * 0.1f);
+        var harvestStatus = !isGinger
+            ? "not_ginger"
+            : hoe is null
+                ? "blocked_hoe_missing"
+                : !exactVanillaRuntimeTypes
+                    ? "blocked_custom_ginger_runtime_type"
+                    : Game1.player.Stamina < energyCost
+                        ? "blocked_insufficient_energy"
+                        : "ready";
+
+        return new
+        {
+            tile_x = (int)tile.X,
+            tile_y = (int)tile.Y,
+            type = dirt.GetType().FullName,
+            hoe_dirt_state = dirt.state.Value,
+            has_crop = crop is not null,
+            crop_runtime_type = crop?.GetType().FullName,
+            crop_is_forage = crop?.forageCrop.Value ?? false,
+            forage_crop_id = crop?.whichForageCrop.Value ?? string.Empty,
+            is_ginger = isGinger,
+            ginger_harvest_status = harvestStatus,
+            ginger_required_tool_kind = "Hoe",
+            ginger_tool_slot_index = hoeEntry?.Index,
+            ginger_tool_qualified_item_id = hoe?.QualifiedItemId,
+            ginger_tool_upgrade_level = hoe?.UpgradeLevel,
+            ginger_tool_is_efficient = hoe?.isEfficient.Value,
+            ginger_exact_vanilla_runtime_types = exactVanillaRuntimeTypes,
+            ginger_energy_cost = energyCost,
+            ginger_output_qualified_item_id = isGinger ? "(O)829" : string.Empty,
+            ginger_output_quality = isGinger ? 0 : (int?)null,
+            ginger_output_quantity_min = isGinger ? 1 : 0,
+            ginger_output_quantity_max = isGinger ? 1 : 0,
+            ginger_output_delivery = isGinger ? "native_world_debris_then_automatic_pickup_possible" : "not_applicable",
+            ginger_foraging_experience_on_success_min = isGinger ? 7 : 0,
+            ginger_foraging_experience_on_success_max = isGinger ? 7 : 0,
+            ginger_crop_expected_after = isGinger ? "none" : "unchanged",
+            ginger_hoe_dirt_expected_after = isGinger ? "present" : "unchanged",
+            ginger_hoe_dirt_state_expected_after = isGinger ? (Game1.currentLocation.IsRainingHere() ? 1 : 0) : dirt.state.Value,
+            ginger_projection_status = isGinger
+                ? exactVanillaRuntimeTypes ? "exact_from_native_crop_hit_with_hoe" : "unavailable_custom_runtime_type"
+                : "not_applicable",
+            source = "HoeDirt live net fields; Crop.hitWithHoe; HoeDirt.performToolAction; Hoe.DoFunction"
         };
     }
 
