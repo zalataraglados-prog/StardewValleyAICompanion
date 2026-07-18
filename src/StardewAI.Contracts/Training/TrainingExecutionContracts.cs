@@ -125,6 +125,48 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("required_tool_kind")]
         public string RequiredToolKind { get; set; } = string.Empty;
 
+        [JsonPropertyName("pan_upgrade_level")]
+        public int? PanUpgradeLevel { get; set; }
+
+        [JsonPropertyName("pan_enchantments_json")]
+        public string PanEnchantmentsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("click_pixel_x")]
+        public int? ClickPixelX { get; set; }
+
+        [JsonPropertyName("click_pixel_y")]
+        public int? ClickPixelY { get; set; }
+
+        [JsonPropertyName("expected_times_panned_before")]
+        public int? ExpectedTimesPannedBefore { get; set; }
+
+        [JsonPropertyName("expected_times_panned_after")]
+        public int? ExpectedTimesPannedAfter { get; set; }
+
+        [JsonPropertyName("expected_mining_experience_before")]
+        public int? ExpectedMiningExperienceBefore { get; set; }
+
+        [JsonPropertyName("expected_mining_experience_delta")]
+        public int? ExpectedMiningExperienceDelta { get; set; }
+
+        [JsonPropertyName("expected_mining_experience_after")]
+        public int? ExpectedMiningExperienceAfter { get; set; }
+
+        [JsonPropertyName("expected_foraging_experience_before")]
+        public int? ExpectedForagingExperienceBefore { get; set; }
+
+        [JsonPropertyName("expected_foraging_experience_delta")]
+        public int? ExpectedForagingExperienceDelta { get; set; }
+
+        [JsonPropertyName("expected_foraging_experience_after")]
+        public int? ExpectedForagingExperienceAfter { get; set; }
+
+        [JsonPropertyName("post_use_ore_pan_point_status")]
+        public string PostUseOrePanPointStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("post_use_respawn_attempts")]
+        public int? PostUseRespawnAttempts { get; set; }
+
         [JsonPropertyName("clear_output_projection_status")]
         public string ClearOutputProjectionStatus { get; set; } = string.Empty;
 

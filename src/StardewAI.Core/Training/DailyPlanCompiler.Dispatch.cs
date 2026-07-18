@@ -81,6 +81,10 @@ namespace StardewAI.Core.Training
             {
                 return CollectAnimalProductSteps(candidate);
             }
+            if (candidate.Kind == "pan_ore_spot")
+            {
+                return PanOreSpotSteps(candidate);
+            }
 
             if (candidate.Kind == "collect_machine_output_tile")
             {

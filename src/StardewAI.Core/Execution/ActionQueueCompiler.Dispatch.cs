@@ -34,6 +34,7 @@ namespace StardewAI.Core.Execution
                 ["executor.collect_spawned_object"] = (action, _) => CompileCollectSpawnedObjectStep(action),
                 ["executor.collect_crab_pot"] = (action, _) => CompileCollectCrabPotStep(action),
                 ["executor.collect_animal_product"] = (action, _) => CompileCollectAnimalProductStep(action),
+                ["executor.pan_ore_spot"] = (action, _) => CompilePanOreSpotStep(action),
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),

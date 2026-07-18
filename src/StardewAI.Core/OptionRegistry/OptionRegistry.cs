@@ -136,6 +136,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one current spawned-object candidate selected", "native pickup handed to the mechanical executor" },
                 new[] { "block_unknown_spawned_object", "block_inventory_full", "block_unverified_route", "block_direct_object_mutation" }));
 
+            Register(Option("foraging.pan_ore_spot", "foraging", "Pan one transparent active ore spot",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.panning", "locations.collision_grid", "menus.active_menu" },
+                new[] { "active ore-pan point and exact native reward multiset selected", "native Pan lifecycle handed to the mechanical executor" },
+                new[] { "block_inactive_ore_pan_point", "block_missing_pan", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("mining.reach_depth", "mining", "Reach mine depth from transparent current mine state",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -494,6 +502,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "farm.animals", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native Milk Pail or Shears lifecycle targets the exact animal", "produce, inventory, energy, friendship, and Farming XP deltas are verified" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_animal_or_inventory_mutation" }));
+
+            Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.panning", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one legal shore stand tile", "native Pan lifecycle consumes the active point", "exact output multiset, TimesPanned, Mining XP, Foraging XP, and post-use point state are verified" },
+                new[] { "block_inactive_ore_pan_point", "block_missing_pan", "block_inventory_full", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_inventory_or_skill_mutation" }));
 
             Register(Option("executor.collect_machine_output", "farm", "Collect one verified ready machine output",
                 OptionBehaviorCategories.Mechanical,

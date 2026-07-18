@@ -111,6 +111,10 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.04;
                     }
+                    if (candidate.Kind == "pan_ore_spot")
+                    {
+                        urgencySignal = 0.04;
+                    }
                     if (candidate.Kind == "ship_inventory_item_to_bin")
                     {
                         urgencySignal = 0.025 + ShippingValueSignal(candidate);

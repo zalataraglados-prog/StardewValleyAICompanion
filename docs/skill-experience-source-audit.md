@@ -17,6 +17,7 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | twig and artifact/seed-spot `Object.performToolAction` | Foraging | exact current typed-clear evidence; eligible unseen-secret-note artifact outcomes remain fail-closed |
 | `CrabPot.checkForAction` | Fishing | exact ready output, deterministic `Book_Crabbing` doubling, inventory gate, `+5` XP, bait/reset state, and native interaction evidence; the ambient RNG catch-size argument is recorded at execution |
 | `MilkPail.DoFunction`, `Shears.DoFunction`, and compatible `FarmAnimal` interaction | Farming | all outdoor and animal-house animals expose live eligibility, output quality/unit state, Animal Cracker quantity, tool slot, inventory gate, stats, `-4` energy, `+5` friendship, and `+5` Farming XP; candidate, compiler rebind, moving-target native executor, and both isolated tool smokes are verified |
+| `Pan.DoFunction` / `Pan.getPanItems` | Mining and Foraging | active ore point, exact Pan upgrade/enchantments, luck/DaysPlayed/TimesPanned inputs, native deterministic reward multiset, aggregate inventory acceptance, direct ore/diamond receipt stats, Mining XP, Foraging XP, and post-use point status are projected; generic `Farmer.OnItemReceived` quest/special-order/collection callbacks and upgraded-Pan respawn use explicit runtime-observed status; compiler rebind and native copper/steel smokes are verified |
 
 ## Missing Mechanical Candidate Families
 
@@ -24,7 +25,6 @@ These are required before native skill-source enumeration can be called complete
 
 | native source | skills | required slice |
 |---|---|---|
-| `Pan.DoFunction` | Mining and Foraging | live panning spot, pan state, complete reward/XP branch projection, native executor |
 | `FishPond.CheckForAction` harvest and pond quest completion | Fishing | pond state, output/quest requirements, XP formula inputs, native interaction executor |
 | `HoeDirt.performToolAction` ginger branch | Foraging | hoe-harvest candidate distinct from ordinary player crop harvest |
 | `Bush.shake` berry harvest | Foraging | harvestable bush state, season/day/quantity, native interaction executor |

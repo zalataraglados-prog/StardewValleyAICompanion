@@ -54,6 +54,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "CrabPot.checkForAction", "Farmer.caughtFish", "Farmer.gainExperience" }),
             Assumption(
+                "panning",
+                new[] { "foraging.pan_ore_spot", "executor.pan_ore_spot" },
+                new[] { "active_ore_pan_point", "exact_pan_tool", "inventory_capacity", "reachable_shore_tile", "menu_clear" },
+                new[] { "reward_multiset", "mining_experience", "foraging_experience", "post_use_ore_point_respawn" },
+                Array.Empty<string>(),
+                new[] { "Pan.beginUsing", "Pan.getPanItems", "Pan.DoFunction", "GameLocation.performOrePanTenMinuteUpdate" }),
+            Assumption(
                 "navigation",
                 new[] { "exploration.visit_location", "social.gift_npc", "economy.buy_supplies", "quest.advance" },
                 new[] { "passability_verified", "warp_verified", "destination_available", "time_budget" },

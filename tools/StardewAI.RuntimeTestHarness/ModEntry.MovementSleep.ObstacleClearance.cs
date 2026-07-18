@@ -783,6 +783,10 @@ public sealed partial class ModEntry : Mod
         {
             var unit = item.getOne();
             unit.Stack = 1;
+            if (unit is StardewValley.Object objectUnit)
+            {
+                objectUnit.Flipped = false;
+            }
             using var stream = new MemoryStream();
             SaveSerializer.GetSerializer(unit.GetType()).Serialize(stream, unit);
             var stateHash = Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();

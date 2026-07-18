@@ -32,6 +32,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.doors",
                 "current_location.interior_doors",
                 "current_location.warps",
+                "current_location.panning",
                 "current_location.map"
             }
             : Array.Empty<string>();
@@ -51,6 +52,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["doors"] = Field(location is null ? null : ReadDoors(location), "Game1.currentLocation.doors", tick),
             ["interior_doors"] = Field(location is null ? null : ReadInteriorDoors(location), "Game1.currentLocation.interiorDoors", tick),
             ["warps"] = Field(location is null ? null : ReadWarps(location), "Game1.currentLocation.warps", tick),
+            ["panning"] = Field(location is null ? null : ReadPanning(location, Game1.player), "GameLocation.orePanPoint; Pan.beginUsing/getPanItems on a detached NetFarmerRoot clone", tick),
             ["map"] = Field(location is null ? null : ReadMap(location), "Game1.currentLocation.map.Layers", tick)
         }, unavailable, location is null ? "unavailable" : "partial");
     }

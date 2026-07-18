@@ -231,6 +231,24 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompilePanOreSpotStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(ReadParameter(action, "expected_output_items_json")))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+            return new[]
+            {
+                Step(
+                    "pan_ore_spot",
+                    "current_location(" + x.Value + "," + y.Value + "):Pan",
+                    "current_location.panning.ore_pan_point_consumed=true;player.inventory.updated;player.stats.TimesPanned.increases;player.skills.mining.experience.increases;player.skills.foraging.experience.increases",
+                    180)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectMachineOutputStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");

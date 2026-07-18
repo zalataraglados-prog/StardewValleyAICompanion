@@ -94,6 +94,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_spawned_object_candidates");
             }
 
+            if (optionId == "foraging.pan_ore_spot")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_active_ore_pan_candidate",
+                    "no_available_ore_pan_candidate");
+            }
+
             if (optionId == "fishing.collect_crab_pots")
             {
                 return EventCandidateAvailabilityReasons(

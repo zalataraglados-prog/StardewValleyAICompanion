@@ -166,6 +166,9 @@ namespace StardewAI.Core.Execution
                 case "farm.collect_animal_products":
                 case "executor.collect_animal_product":
                     return EstimateCompiledSteps(item, "native_animal_tool_steps.v1");
+                case "foraging.pan_ore_spot":
+                case "executor.pan_ore_spot":
+                    return EstimateCompiledSteps(item, "native_pan_steps.v1");
                 case "economy.buy_supplies":
                     return Fixed(90, "shop_menu_rule.v1");
                 case "economy.sell_items":
@@ -313,6 +316,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "farm.collect_animal_products" or "executor.collect_animal_product")
             {
                 return assumptionRegistry.GetRequired("animals");
+            }
+
+            if (item.OptionId is "foraging.pan_ore_spot" or "executor.pan_ore_spot")
+            {
+                return assumptionRegistry.GetRequired("panning");
             }
 
             var activity = Parameter(item, "target_activity");
