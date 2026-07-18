@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Training;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Characters;

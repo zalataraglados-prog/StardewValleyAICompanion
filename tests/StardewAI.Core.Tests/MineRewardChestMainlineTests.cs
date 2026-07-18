@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -81,7 +82,7 @@ public sealed class MineRewardChestMainlineTests
 
     private static string StateJson(string status, bool skullKey)
     {
-        return $$"""
+        return $$$"""
         {
           "player": {
             "location_id":{"value":"UndergroundMine20","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -99,7 +100,7 @@ public sealed class MineRewardChestMainlineTests
             "monsters":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "floor_objectives":{"value":{"must_kill_all_monsters_to_advance":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "player_resources":{"value":{"health":100,"max_health":100,"energy":200,"max_energy":270,"current_time":1000,"selected_slot_index":0,"inventory_capacity":{"empty_slots":1}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "reward_chests":{"value":[{"tile_x":3,"tile_y":2,"runtime_type":"StardewValley.Objects.Chest","mine_level":20,"mine_kind":"ordinary_mines","reward_branch":"ordinary_fixed_reward","status":"{{status}}","contains_skull_key":{{skullKey.ToString().ToLowerInvariant()}},"is_stardrop":false,
+            "reward_chests":{"value":[{"tile_x":3,"tile_y":2,"runtime_type":"StardewValley.Objects.Chest","mine_level":20,"mine_kind":"ordinary_mines","reward_branch":"ordinary_fixed_reward","status":"{{{status}}}","contains_skull_key":{{{skullKey.ToString().ToLowerInvariant()}}},"is_stardrop":false,
               "item":{"runtime_type":"StardewValley.Tools.MeleeWeapon","item_id":"11","qualified_item_id":"(W)11","quantity":1,"quality":0,"inventory_accepts":true},
               "expected_output_items_json":"[{\"runtimeType\":\"StardewValley.Tools.MeleeWeapon\",\"qualifiedItemId\":\"(W)11\",\"quality\":0,\"unitStateSha256\":\"test\",\"quantity\":1}]",
               "native_gain_experience_call_amount":45,"expected_luck_experience_delta":0,"expected_stardrop_max_stamina_delta":0,"native_contract":"one_reward_open_then_wait_dumpContents_then_empty_chest_cleanup_checkAction"}],

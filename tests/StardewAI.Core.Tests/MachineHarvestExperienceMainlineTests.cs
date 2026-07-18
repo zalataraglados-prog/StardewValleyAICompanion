@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -60,7 +61,7 @@ public sealed class MachineHarvestExperienceMainlineTests
             new { SkillId = "luck", SkillIndex = 5, Delta = 0 }
         });
         var escapedDeltas = JsonSerializer.Serialize(deltas);
-        return $$"""
+        return $$$"""
         {
           "player": {
             "location_id":{"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -71,8 +72,8 @@ public sealed class MachineHarvestExperienceMainlineTests
           },
           "farm":{"machines":{"value":[{
             "tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,
-            "harvest_experience_raw":"{{raw}}","harvest_experience_entries":[],
-            "harvest_experience_deltas":{{deltas}},"harvest_experience_deltas_json":{{escapedDeltas}},
+            "harvest_experience_raw":"{{{raw}}}","harvest_experience_entries":[],
+            "harvest_experience_deltas":{{{deltas}}},"harvest_experience_deltas_json":{{{escapedDeltas}}},
             "harvest_mastery_experience_delta":3,"harvest_experience_projection_status":"exact_native_pair_parser_and_gain_sink",
             "held_item":{"item_id":"388","qualified_item_id":"(O)388","stack":1,"quality":0,"sale_price":20,"maximum_stack_size":999}
           }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Text.Json;
 using System.Globalization;
 using StardewAI.Contracts.Options;

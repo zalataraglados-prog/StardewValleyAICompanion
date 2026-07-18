@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -75,7 +76,7 @@ public sealed class BookReadingMainlineTests
         var escapedTags = JsonSerializer.Serialize(tags);
         var recipes = JsonSerializer.Serialize(Array.Empty<string>());
         var escapedRecipes = JsonSerializer.Serialize(recipes);
-        return $$"""
+        return $$$"""
         {
           "player": {
             "location_id":{"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -84,13 +85,13 @@ public sealed class BookReadingMainlineTests
             "book_candidates":{"value":[{
               "slot_index":0,"item_id":"SkillBook_3","qualified_item_id":"(O)SkillBook_3","display_name":"Mining Monthly","runtime_type":"StardewValley.Object","category":-103,
               "stack_before":1,"stack_after":0,"temporarily_invisible":false,
-              "context_tags_native_order":{{tags}},"context_tags_native_order_json":{{escapedTags}},"matched_book_experience_tag":"",
+              "context_tags_native_order":{{{tags}}},"context_tags_native_order_json":{{{escapedTags}}},"matched_book_experience_tag":"",
               "already_read_stat_key":"SkillBook_3","already_read_stat_before":0,
               "native_branch":"skill_book","native_branch_status":"exact","experience_calls":[{"SkillId":"mining","SkillIndex":3,"Amount":250}],
-              "experience_deltas":{{deltas}},"experience_deltas_json":{{escapedDeltas}},"mastery_experience_delta":0,"experience_projection_status":"exact_native_gain_experience_order",
-              "skill_level_deltas":{{levelDeltas}},"skill_level_deltas_json":{{escapedLevelDeltas}},
-              "new_levels_before":{{newLevelsBefore}},"new_levels_before_json":{{escapedNewLevelsBefore}},
-              "new_levels_after":{{newLevelsAfter}},"new_levels_after_json":{{escapedNewLevelsAfter}},
+              "experience_deltas":{{{deltas}}},"experience_deltas_json":{{{escapedDeltas}}},"mastery_experience_delta":0,"experience_projection_status":"exact_native_gain_experience_order",
+              "skill_level_deltas":{{{levelDeltas}}},"skill_level_deltas_json":{{{escapedLevelDeltas}}},
+              "new_levels_before":{{{newLevelsBefore}}},"new_levels_before_json":{{{escapedNewLevelsBefore}}},
+              "new_levels_after":{{{newLevelsAfter}}},"new_levels_after_json":{{{escapedNewLevelsAfter}}},
               "native_feedback_callbacks":"native_book_animation_1000ms;music_duck_4000ms;book_read_sound;skill_book_message_suppressed_for_new_level_menu",
               "book_stat_key":"","book_stat_before":null,"book_stat_after":null,
               "read_a_book_mail_before":false,"read_a_book_mail_after":false,
@@ -98,12 +99,13 @@ public sealed class BookReadingMainlineTests
               "well_read_achievement_definition_loaded":true,"well_read_achievement_game_mode_allows_unlock":true,
               "well_read_hatter_mail_before":false,"well_read_hatter_mail_after":false,
               "well_read_dialogue_event_seen_before":false,"well_read_dialogue_event_seen_after":false,"well_read_ui_sound_platform_callbacks":"not_triggered",
-              "cooking_recipes_added":{{recipes}},"cooking_recipes_added_json":{{escapedRecipes}},"cooking_recipes_added_count":0,
+              "cooking_recipes_added":{{{recipes}}},"cooking_recipes_added_json":{{{escapedRecipes}}},"cooking_recipes_added_count":0,
               "player_can_move":true,"event_up":false,"festival_active":false,"fade_to_black":false,"swimming":false,"bathing_clothes":false,"on_bridge":false,"active_menu_clear":true,
               "available":true,"block_reasons":[]
             }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}}
+          "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+          "time":{"time":{"value":600,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}}
         }
         """;
     }

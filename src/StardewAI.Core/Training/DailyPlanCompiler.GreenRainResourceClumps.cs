@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 

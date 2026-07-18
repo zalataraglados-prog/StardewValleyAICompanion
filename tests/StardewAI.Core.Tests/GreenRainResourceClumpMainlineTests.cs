@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -57,7 +58,7 @@ public sealed class GreenRainResourceClumpMainlineTests
 
     private static string StateJson(double combinedProbability)
     {
-        return $$"""
+        return $$$"""
         {
           "player": {
             "location_id":{"value":"Forest","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -78,7 +79,7 @@ public sealed class GreenRainResourceClumpMainlineTests
               "expected_core_output_items_json":"[{\"runtimeType\":\"StardewValley.Object\",\"qualifiedItemId\":\"(O)Moss\",\"quality\":0,\"unitStateSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"quantity\":2},{\"runtimeType\":\"StardewValley.Object\",\"qualifiedItemId\":\"(O)771\",\"quality\":0,\"unitStateSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"quantity\":3}]",
               "possible_secret_note_qualified_item_id":"(O)79","unseen_secret_note_count":4,"total_secret_note_count":25,
               "secret_note_outer_roll_probability":0.05,"secret_note_inner_roll_probability":0.32,
-              "secret_note_combined_probability":{{combinedProbability.ToString(System.Globalization.CultureInfo.InvariantCulture)}},
+              "secret_note_combined_probability":{{{combinedProbability.ToString(System.Globalization.CultureInfo.InvariantCulture)}}},
               "secret_note_projection_status":"bounded_probability_global_rng_not_consumed",
               "output_distribution_status":"exact_seeded_core_plus_bounded_secret_note_probability",
               "native_contract":"axe_DoFunction_to_GameLocation.performToolAction_then_ResourceClump.destroy"

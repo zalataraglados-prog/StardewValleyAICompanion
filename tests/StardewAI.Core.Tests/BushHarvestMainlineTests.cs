@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -50,7 +51,7 @@ public sealed class BushHarvestMainlineTests
 
     private static string StateJson(string status, string branch, string outputId, int quantity, int quality, int xp)
     {
-        return $$"""
+        return $$$"""
         {
           "player": {
             "location_id":{"value":"Forest","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -62,10 +63,10 @@ public sealed class BushHarvestMainlineTests
           "current_location":{
             "debris":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "large_terrain_features":{"value":[{"tile_x":12,"tile_y":10,"runtime_type":"StardewValley.TerrainFeatures.Bush","bounding_tile_width":2,"bounding_tile_height":1,
-              "is_bush":true,"bush_size":1,"bush_kind":"{{branch}}","ready_for_harvest":true,"in_bloom":true,"tile_sheet_offset_before":1,"tile_sheet_offset_expected_after":0,
-              "bush_harvest_status":"{{status}}","bush_projection_status":"exact_from_native_bush_shake","bush_output_qualified_item_id":"{{outputId}}",
-              "bush_output_quantity_min":{{quantity}},"bush_output_quantity_max":{{quantity}},"bush_output_quality":{{quality}},
-              "bush_foraging_experience_on_success_min":{{xp}},"bush_foraging_experience_on_success_max":{{xp}},
+              "is_bush":true,"bush_size":1,"bush_kind":"{{{branch}}}","ready_for_harvest":true,"in_bloom":true,"tile_sheet_offset_before":1,"tile_sheet_offset_expected_after":0,
+              "bush_harvest_status":"{{{status}}}","bush_projection_status":"exact_from_native_bush_shake","bush_output_qualified_item_id":"{{{outputId}}}",
+              "bush_output_quantity_min":{{{quantity}}},"bush_output_quantity_max":{{{quantity}}},"bush_output_quality":{{{quality}}},
+              "bush_foraging_experience_on_success_min":{{{xp}}},"bush_foraging_experience_on_success_max":{{{xp}}},
               "bush_nut_key":"","bush_nut_collected_before":false,"bush_nut_collected_expected_after":false}],
               "status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },

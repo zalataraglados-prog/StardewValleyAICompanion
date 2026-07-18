@@ -24,8 +24,8 @@ public sealed class NativeToolSourceGuardTests
         Assert.DoesNotContain("currentLocation = farm", executionSource, StringComparison.Ordinal);
         Assert.Contains("if (Game1.currentLocation != farm)", executionSource, StringComparison.Ordinal);
         Assert.Contains("BuildAdjacentToolPath(farm, target", executionSource, StringComparison.Ordinal);
-        Assert.Contains("ValidateWaterCropTarget(farm, tool.Target", executionSource, StringComparison.Ordinal);
-        Assert.Contains("ValidateTillSoilTarget(farm, tool.Target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("ValidateWaterCropTarget(Game1.getFarm(), tool.Target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("ValidateTillSoilTarget(Game1.getFarm(), tool.Target", executionSource, StringComparison.Ordinal);
         Assert.Contains("CompleteNativeTool(tool);", executionSource, StringComparison.Ordinal);
         Assert.Contains("? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(farm, tool.Target)", executionSource, StringComparison.Ordinal);
         Assert.Contains(": !tool.BeforeHadHoeDirt.GetValueOrDefault() && farm.terrainFeatures.TryGetValue", executionSource, StringComparison.Ordinal);

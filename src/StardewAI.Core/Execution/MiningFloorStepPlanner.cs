@@ -86,14 +86,14 @@ namespace StardewAI.Core.Execution
                     {
                         return Blocked("skull_key_floor_120_reward_not_applicable");
                     }
-                    if (!objectives.TryGetProperty("skull_key_reward_chests", out var rewardChests) ||
-                        rewardChests.ValueKind != JsonValueKind.Array ||
-                        rewardChests.GetArrayLength() == 0)
+                    if (!objectives.TryGetProperty("skull_key_reward_chests", out var skullKeyRewardChests) ||
+                        skullKeyRewardChests.ValueKind != JsonValueKind.Array ||
+                        skullKeyRewardChests.GetArrayLength() == 0)
                     {
                         return Blocked("skull_key_reward_chest_unavailable");
                     }
 
-                    var rewardStep = SelectSkullKeyChestStep(rewardChests, search, grid);
+                    var rewardStep = SelectSkullKeyChestStep(skullKeyRewardChests, search, grid);
                     return rewardStep ?? Blocked("skull_key_reward_chest_unreachable");
                 }
             }

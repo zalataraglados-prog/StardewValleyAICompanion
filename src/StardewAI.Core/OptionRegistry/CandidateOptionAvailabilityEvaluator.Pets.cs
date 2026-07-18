@@ -146,7 +146,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     TileY = y,
                     ExpectedEffect = PetBowlExpectedEffect(bowl),
                     EstimatedTicks = Math.Max(120, distance * 60 + 120),
-                    EnergyCost = ReadDouble(bowl, "watering_energy_cost"),
+                    EnergyCost = (int)Math.Ceiling(ReadDouble(bowl, "watering_energy_cost")),
                     AvailabilityClass = "transparent_native_pet_bowl_watering",
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
                     Parameters = parameters

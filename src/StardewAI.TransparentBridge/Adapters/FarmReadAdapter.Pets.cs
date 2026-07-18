@@ -171,7 +171,8 @@ public sealed partial class FarmReadAdapter
             .Select(entry =>
             {
                 var actionTile = FindPetBowlActionTile(entry.Bowl);
-                var hasAssignedPet = entry.Bowl.HasPet() && petById.TryGetValue(entry.Bowl.petId.Value, out var pet);
+                Pet? pet = null;
+                var hasAssignedPet = entry.Bowl.HasPet() && petById.TryGetValue(entry.Bowl.petId.Value, out pet);
                 var friendshipBefore = hasAssignedPet ? pet!.friendshipTowardFarmer.Value : (int?)null;
                 var projectedAfterFillAndDayUpdate = friendshipBefore.HasValue
                     ? Math.Min(Pet.maxFriendship, friendshipBefore.Value + 6)
@@ -236,7 +237,7 @@ public sealed partial class FarmReadAdapter
                     expected_watering_can_water_after = expectedWaterAfter,
                     energy_before = player.Stamina,
                     watering_energy_cost = wateringEnergyCost,
-                    expected_energy_after = wateringEnergyCost.HasValue ? player.Stamina - wateringEnergyCost.Value : null,
+                    expected_energy_after = wateringEnergyCost.HasValue ? (double?)(player.Stamina - wateringEnergyCost.Value) : null,
                     energy_delta_projection_status = wateringEnergyCost.HasValue ? "exact_vanilla_power_zero" : "watering_can_unavailable",
                     action_status = status
                 };
