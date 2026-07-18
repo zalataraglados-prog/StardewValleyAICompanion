@@ -107,6 +107,33 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.CompletesSocialContinuation(interact, continuation, "blocked"));
     }
 
+    [Fact]
+    public void MachineContinuationKeepsSameExecutorLocationAndTileUntilApplied()
+    {
+        var route = QueueItem("queue.machine.route", "executor.traverse_connector", "4", "8", string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.option_id", "executor.collect_machine_output"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.machine_location_id", "Cellar"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.machine_tile_x", "5"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.machine_tile_y", "6"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("machine", continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            MachineCandidate("collect_machine_output_tile", "Cellar", 5, 7),
+            MachineCandidate("collect_machine_output_tile", "Cellar", 5, 6),
+            MachineCandidate("load_machine_input_tile", "Cellar", 5, 6)
+        };
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(candidates, continuation));
+        Assert.Equal(6, selected!["tile_y"]!.GetValue<int>());
+
+        var collect = QueueItem("queue.machine.collect", "executor.collect_machine_output", "5", "6", string.Empty);
+        collect["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("machine_location_id", "Cellar"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(collect, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(collect, continuation, "blocked"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -134,6 +161,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                     }
                 }
             }
+        };
+    }
+
+    private static JsonObject MachineCandidate(string kind, string locationId, int tileX, int tileY)
+    {
+        return new JsonObject
+        {
+            ["option_id"] = "farm.process_machines",
+            ["kind"] = kind,
+            ["location_id"] = locationId,
+            ["tile_x"] = tileX,
+            ["tile_y"] = tileY,
+            ["parameters"] = new JsonArray()
         };
     }
 

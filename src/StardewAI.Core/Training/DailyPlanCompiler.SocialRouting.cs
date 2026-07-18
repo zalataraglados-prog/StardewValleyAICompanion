@@ -113,9 +113,14 @@ namespace StardewAI.Core.Training
                 "continuation.target_location",
                 "continuation.slot_index",
                 "continuation.qualified_item_id",
+                "continuation.machine_location_id",
+                "continuation.machine_tile_x",
+                "continuation.machine_tile_y",
                 "social_route.remaining_connector_count",
                 "social_route.position_source",
-                "social_route.future_schedule_projection"
+                "social_route.future_schedule_projection",
+                "machine_route.remaining_connector_count",
+                "machine_route.snapshot_policy"
             })
             {
                 var value = CandidateParameter(candidate, name);

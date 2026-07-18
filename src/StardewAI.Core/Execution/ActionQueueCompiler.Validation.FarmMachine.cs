@@ -552,17 +552,22 @@ namespace StardewAI.Core.Execution
             }
 
             var targetLocation = ReadParameter(action, "target_location");
-            if (!string.IsNullOrWhiteSpace(targetLocation) &&
-                !string.Equals(targetLocation, "Farm", StringComparison.OrdinalIgnoreCase) &&
+            var machineLocation = ReadParameter(action, "machine_location_id");
+            if (string.IsNullOrWhiteSpace(targetLocation) ||
                 !string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase))
             {
                 reasons.Add("collect_machine_output_target_location_mismatch");
+            }
+            if (string.IsNullOrWhiteSpace(machineLocation) ||
+                !string.Equals(machineLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                reasons.Add("collect_machine_output_machine_location_mismatch");
             }
 
             JsonElement? machine = null;
             if (targetX.HasValue && targetY.HasValue)
             {
-                machine = MachineAt(snapshot, targetX.Value, targetY.Value);
+                machine = MachineAt(snapshot, targetLocation, targetX.Value, targetY.Value);
                 if (!machine.HasValue)
                 {
                     reasons.Add("collect_machine_output_not_verified_by_transparent_farm_state");
@@ -613,7 +618,7 @@ namespace StardewAI.Core.Execution
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 
-        private static JsonElement? MachineAt(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private static JsonElement? MachineAt(SnapshotEnvelope snapshot, string? locationId, int targetX, int targetY)
         {
             var machines = ReadStateFieldValue(snapshot, "farm", "machines");
             if (!machines.HasValue || machines.Value.ValueKind != JsonValueKind.Array)
@@ -623,7 +628,16 @@ namespace StardewAI.Core.Execution
 
             foreach (var machine in machines.Value.EnumerateArray())
             {
-                if (machine.ValueKind == JsonValueKind.Object &&
+                if (machine.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+                var machineLocation = ReadString(machine, "location_id");
+                if (string.IsNullOrWhiteSpace(machineLocation))
+                {
+                    machineLocation = "Farm";
+                }
+                if (string.Equals(machineLocation, locationId, StringComparison.OrdinalIgnoreCase) &&
                     ReadInt(machine, "tile_x") == targetX &&
                     ReadInt(machine, "tile_y") == targetY)
                 {
@@ -710,17 +724,22 @@ namespace StardewAI.Core.Execution
             }
 
             var targetLocation = ReadParameter(action, "target_location");
-            if (!string.IsNullOrWhiteSpace(targetLocation) &&
-                !string.Equals(targetLocation, "Farm", StringComparison.OrdinalIgnoreCase) &&
+            var machineLocation = ReadParameter(action, "machine_location_id");
+            if (string.IsNullOrWhiteSpace(targetLocation) ||
                 !string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase))
             {
                 reasons.Add("load_machine_input_target_location_mismatch");
+            }
+            if (string.IsNullOrWhiteSpace(machineLocation) ||
+                !string.Equals(machineLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                reasons.Add("load_machine_input_machine_location_mismatch");
             }
 
             JsonElement? machine = null;
             if (targetX.HasValue && targetY.HasValue)
             {
-                machine = MachineAt(snapshot, targetX.Value, targetY.Value);
+                machine = MachineAt(snapshot, targetLocation, targetX.Value, targetY.Value);
                 if (!machine.HasValue)
                 {
                     reasons.Add("load_machine_input_not_verified_by_transparent_farm_state");

@@ -295,11 +295,11 @@ namespace StardewAI.Core.OptionRegistry
                 .FirstOrDefault();
         }
 
-        private MachineStandTileSelection FindBestMachineStandTile(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private MachineStandTileSelection FindBestMachineStandTile(SnapshotEnvelope snapshot, string locationId, int targetX, int targetY)
         {
             var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
             var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-            var occupiedMachineTiles = FarmMachineTileKeys(snapshot);
+            var occupiedMachineTiles = MachineTileKeys(snapshot, locationId);
             var candidates = new[]
                 {
                     new CandidateTile(targetX + 1, targetY),
@@ -359,7 +359,7 @@ namespace StardewAI.Core.OptionRegistry
             return new MachineStandTileSelection(null, reasons.ToArray());
         }
 
-        private static ISet<string> FarmMachineTileKeys(SnapshotEnvelope snapshot)
+        private static ISet<string> MachineTileKeys(SnapshotEnvelope snapshot, string locationId)
         {
             var result = new HashSet<string>(StringComparer.Ordinal);
             var machines = ReadStateFieldValue(snapshot, "farm", "machines");
@@ -370,7 +370,16 @@ namespace StardewAI.Core.OptionRegistry
 
             foreach (var machine in machines.Value.EnumerateArray())
             {
-                if (machine.ValueKind == JsonValueKind.Object)
+                if (machine.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+                var machineLocation = ReadString(machine, "location_id");
+                if (string.IsNullOrWhiteSpace(machineLocation))
+                {
+                    machineLocation = "Farm";
+                }
+                if (string.Equals(machineLocation, locationId, StringComparison.OrdinalIgnoreCase))
                 {
                     result.Add(TileKey(ReadInt(machine, "tile_x"), ReadInt(machine, "tile_y")));
                 }

@@ -71,7 +71,7 @@ public sealed class MachineHarvestExperienceMainlineTests
             "inventory":{"value":[{"slot_index":0,"item_id":"390","qualified_item_id":"(O)390","stack":10,"quality":0,"maximum_stack_size":999,"is_empty":false},{"slot_index":1,"is_empty":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm":{"machines":{"value":[{
-            "tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,
+            "location_id":"Farm","location_kind":"farm_outdoor","tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,
             "harvest_experience_raw":"{{{raw}}}","harvest_experience_entries":[],
             "harvest_experience_deltas":{{{deltas}}},"harvest_experience_deltas_json":{{{escapedDeltas}}},
             "harvest_mastery_experience_delta":3,"harvest_experience_projection_status":"exact_native_pair_parser_and_gain_sink",

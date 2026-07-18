@@ -3,6 +3,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Machines;
+using StardewValley.Locations;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using StardewAI.TransparentBridge.State;
@@ -22,8 +23,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         {
             if (cachedMachineProbeRows.Length > 0 &&
                 cachedMachineProbeTick >= 0 &&
-                currentTick - cachedMachineProbeTick <= MachineProbeCacheMaxAgeTicks &&
-                CachedMachineProbeRowsHaveLoadableInput())
+                currentTick - cachedMachineProbeTick <= MachineProbeCacheMaxAgeTicks)
             {
                 return cachedMachineProbeRows;
             }
@@ -41,20 +41,6 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         }
     }
 
-    private static bool CachedMachineProbeRowsHaveLoadableInput()
-    {
-        foreach (var row in cachedMachineProbeRows)
-        {
-            var loadableInputs = row.GetType().GetProperty("loadable_inputs")?.GetValue(row) as Array;
-            if (loadableInputs is { Length: > 0 })
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static object[] ReadMachines(Farm farm)
     {
         var minimalMachineProfile = string.Equals(SnapshotProfileContext.Current, "machine", StringComparison.OrdinalIgnoreCase);
@@ -63,14 +49,44 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private static object[] ReadMachines(Farm farm, bool includeLoadableInputs, bool minimalMachineProfile, long machineProbeCacheTick)
     {
-        return farm.objects.Pairs
-            .Where(pair => pair.Value.bigCraftable.Value && pair.Value.GetMachineData() is not null)
-            .OrderBy(pair => pair.Key.Y)
-            .ThenBy(pair => pair.Key.X)
-            .Take(MaxMachineRowsPerSnapshot)
-            .Select(pair =>
+        var currentLocationId = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var machineRows = ReadPlayerMachineLocations(farm)
+            .SelectMany(location => location.Location.objects.Pairs
+                .Where(pair => pair.Value.bigCraftable.Value && pair.Value.GetMachineData() is not null)
+                .Select(pair => new
+                {
+                    location.Location,
+                    location.Kind,
+                    Pair = pair
+                }))
+            .OrderBy(row => row.Location.NameOrUniqueName, StringComparer.Ordinal)
+            .ThenBy(row => row.Pair.Key.Y)
+            .ThenBy(row => row.Pair.Key.X)
+            .ToArray();
+        var probeEligibleRows = machineRows
+            .Where(row => string.Equals(row.Location.NameOrUniqueName, currentLocationId, StringComparison.OrdinalIgnoreCase) &&
+                row.Pair.Value.MinutesUntilReady <= 0 &&
+                !row.Pair.Value.readyForHarvest.Value &&
+                ReadBoolNullable(row.Pair.Value.GetMachineData()!, "HasInput") == true)
+            .ToArray();
+        var probeRotationIndex = probeEligibleRows.Length == 0 || machineProbeCacheTick < 0
+            ? 0
+            : (int)((machineProbeCacheTick / 10) % probeEligibleRows.Length);
+        var probeMachineKeys = probeEligibleRows
+            .Skip(probeRotationIndex)
+            .Concat(probeEligibleRows.Take(probeRotationIndex))
+            .Take(MaxMachineInputProbeMachinesPerRefresh)
+            .Select(row => MachineLocationTileKey(row.Location.NameOrUniqueName, row.Pair.Key))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return machineRows
+            .Select(row =>
             {
-                var liveMachineData = pair.Value.GetMachineData();
+                var locationId = row.Location.NameOrUniqueName;
+                var probeLocationIsCurrent = string.Equals(locationId, currentLocationId, StringComparison.OrdinalIgnoreCase);
+                var probeWithinBudget = probeMachineKeys.Contains(MachineLocationTileKey(locationId, row.Pair.Key));
+                var liveMachineData = row.Pair.Value.GetMachineData();
+                var machineHasInput = ReadBoolNullable(liveMachineData!, "HasInput");
+                var machineIsIdle = row.Pair.Value.MinutesUntilReady <= 0 && !row.Pair.Value.readyForHarvest.Value;
                 var harvestExperience = ReadMachineHarvestExperience(liveMachineData, Game1.player);
                 object machineData = minimalMachineProfile
                     ? new
@@ -79,20 +95,39 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                         reason = "machine_profile_minimal_skips_machine_data"
                     }
                     : ReadMachineDataSummary(liveMachineData);
-                var loadableInputs = includeLoadableInputs
-                    ? ReadMachineLoadableInputs(pair.Value)
+                var loadableInputs = includeLoadableInputs && probeLocationIsCurrent && probeWithinBudget
+                    ? ReadMachineLoadableInputs(row.Pair.Value)
                     : Array.Empty<object>();
                 return new
                 {
-                    tile_x = (int)pair.Key.X,
-                    tile_y = (int)pair.Key.Y,
-                    qualified_item_id = pair.Value.QualifiedItemId,
-                    display_name = pair.Value.DisplayName,
-                    ready_for_harvest = pair.Value.readyForHarvest.Value,
-                    minutes_until_ready = pair.Value.MinutesUntilReady,
-                    machine_row_snapshot_limit = MaxMachineRowsPerSnapshot,
+                    location_id = locationId,
+                    location_kind = row.Kind,
+                    location_is_current = probeLocationIsCurrent,
+                    tile_x = (int)row.Pair.Key.X,
+                    tile_y = (int)row.Pair.Key.Y,
+                    qualified_item_id = row.Pair.Value.QualifiedItemId,
+                    display_name = row.Pair.Value.DisplayName,
+                    ready_for_harvest = row.Pair.Value.readyForHarvest.Value,
+                    minutes_until_ready = row.Pair.Value.MinutesUntilReady,
+                    machine_has_input = machineHasInput,
+                    machine_has_output = ReadBoolNullable(liveMachineData!, "HasOutput"),
+                    machine_row_count_total = machineRows.Length,
+                    machine_row_snapshot_status = "complete_no_row_truncation",
+                    machine_input_probe_machine_limit = MaxMachineInputProbeMachinesPerRefresh,
+                    machine_input_probe_eligible_count = probeEligibleRows.Length,
+                    machine_input_probe_rotation_index = probeRotationIndex,
                     loadable_input_probe_slot_limit = MaxMachineInputProbeSlotsPerMachine,
-                    loadable_input_probe_status = includeLoadableInputs ? "available_main_thread_cache" : "blocked_requires_main_thread_cache",
+                    loadable_input_probe_status = includeLoadableInputs
+                        ? !probeLocationIsCurrent
+                            ? "blocked_machine_location_not_current_requires_route_and_fresh_snapshot"
+                            : machineHasInput != true
+                                ? "not_applicable_machine_has_no_manual_input"
+                                : !machineIsIdle
+                                    ? "not_applicable_machine_not_idle"
+                                    : probeWithinBudget
+                                        ? "available_main_thread_cache"
+                                        : "blocked_main_thread_probe_budget_rotates_on_refresh"
+                        : "blocked_requires_main_thread_cache",
                     machine_probe_cache_tick = machineProbeCacheTick,
                     machine_data = machineData,
                     harvest_experience_raw = harvestExperience.Raw,
@@ -102,17 +137,49 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_mastery_experience_delta = harvestExperience.MasteryExperienceDelta,
                     harvest_experience_projection_status = harvestExperience.Status,
                     harvest_experience_native_contract = "Object.CheckForActionOnMachine_pair_parse_then_Farmer.gainExperience",
-                    held_item = SummarizeItem(pair.Value.heldObject.Value),
+                    held_item = SummarizeItem(row.Pair.Value.heldObject.Value),
                     loadable_inputs = loadableInputs
                 };
             })
-            .Where(machine => minimalMachineProfile ||
-                machine.minutes_until_ready > 0 ||
-                machine.ready_for_harvest ||
-                machine.held_item is not null ||
-                machine.loadable_inputs.Length > 0)
             .ToArray();
     }
+
+    private static string MachineLocationTileKey(string locationId, Vector2 tile)
+    {
+        return locationId + ":" + (int)tile.X + "," + (int)tile.Y;
+    }
+
+    private static MachineLocationRef[] ReadPlayerMachineLocations(Farm farm)
+    {
+        var result = new List<MachineLocationRef>
+        {
+            new(farm, "farm_outdoor")
+        };
+        var home = Game1.player is null ? null : Utility.getHomeOfFarmer(Game1.player);
+        AddMachineLocation(result, home, "farmhouse");
+        var cellarName = home?.GetCellarName();
+        if (!string.IsNullOrWhiteSpace(cellarName))
+        {
+            AddMachineLocation(result, Game1.getLocationFromName(cellarName), "cellar");
+        }
+
+        return result.ToArray();
+    }
+
+    private static void AddMachineLocation(ICollection<MachineLocationRef> result, GameLocation? location, string kind)
+    {
+        if (location is null || result.Any(row => string.Equals(
+            row.Location.NameOrUniqueName,
+            location.NameOrUniqueName,
+            StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        result.Add(new MachineLocationRef(location, kind));
+    }
+
+    private sealed record MachineLocationRef(GameLocation Location, string Kind);
 
     private static object ReadMachineDataSummary(object? machineData)
     {

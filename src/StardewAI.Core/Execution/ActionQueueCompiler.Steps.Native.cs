@@ -339,7 +339,8 @@ namespace StardewAI.Core.Execution
             }
 
             var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
-            var expectedEffect = "farm.machines[" + x.Value + "," + y.Value + "].held_item=null;player.inventory.updated";
+            var locationId = ReadParameter(action, "machine_location_id") ?? ReadParameter(action, "target_location") ?? string.Empty;
+            var expectedEffect = "farm.machines[" + locationId + ":" + x.Value + "," + y.Value + "].held_item=null;player.inventory.updated";
             expectedEffect += OptionalEffect(action, "qualified_item_id");
             expectedEffect += OptionalEffect(action, "item_id");
             expectedEffect += OptionalEffect(action, "output_stack");
@@ -350,7 +351,7 @@ namespace StardewAI.Core.Execution
             {
                 Step(
                     "collect_machine_output",
-                    "Farm(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
+                    locationId + "(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
                     expectedEffect,
                     30)
             };
@@ -417,7 +418,8 @@ namespace StardewAI.Core.Execution
             }
 
             var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
-            var expectedEffect = "farm.machines[" + x.Value + "," + y.Value + "].minutes_until_ready>0_or_ready=true;player.inventory[" + inputSlot.Value + "].stack_decreases";
+            var locationId = ReadParameter(action, "machine_location_id") ?? ReadParameter(action, "target_location") ?? string.Empty;
+            var expectedEffect = "farm.machines[" + locationId + ":" + x.Value + "," + y.Value + "].minutes_until_ready>0_or_ready=true;player.inventory[" + inputSlot.Value + "].stack_decreases";
             expectedEffect += OptionalEffect(action, "input_slot_index");
             expectedEffect += OptionalEffect(action, "qualified_item_id");
             expectedEffect += OptionalEffect(action, "item_id");
@@ -433,7 +435,7 @@ namespace StardewAI.Core.Execution
             {
                 Step(
                     "load_machine_input",
-                    "Farm(" + x.Value + "," + y.Value + "):slot" + inputSlot.Value + ":" + qualifiedItemId,
+                    locationId + "(" + x.Value + "," + y.Value + "):slot" + inputSlot.Value + ":" + qualifiedItemId,
                     expectedEffect,
                     30)
             };

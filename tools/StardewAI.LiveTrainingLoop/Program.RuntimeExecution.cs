@@ -20,7 +20,7 @@ static partial class Program
         JsonObject queue,
         string stateHash,
         string queueId,
-        JsonObject? socialContinuation)
+        JsonObject? objectiveContinuation)
     {
         var queueItems = ExecutableQueueItems(queue);
         if (!string.IsNullOrWhiteSpace(options.ExecutorOptionId))
@@ -44,10 +44,11 @@ static partial class Program
         JsonObject finalAfterSnapshot = beforeSnapshot;
         var attemptedCount = 0;
         var attemptedSemanticKeys = new HashSet<string>(StringComparer.Ordinal);
-        var activeSocialContinuation = socialContinuation is null
+        var activeObjectiveContinuation = objectiveContinuation is null
             ? null
-            : JsonNode.Parse(socialContinuation.ToJsonString(JsonOptions))?.AsObject();
-        var socialObjectiveCompleted = false;
+            : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions))?.AsObject();
+        var objectiveContinuationKind = ReadString(activeObjectiveContinuation, "kind");
+        var objectiveContinuationCompleted = false;
 
         for (var itemIndex = 0; itemIndex < queueItems.Length && attemptedCount < options.MaxQueueItemAttempts; itemIndex++)
         {
@@ -100,14 +101,24 @@ static partial class Program
             attemptedSemanticKeys.Add(itemSemanticKey);
 
             var executionStatus = ReadString(execution, "status");
-            if (QueueReplanFilter.CompletesSocialContinuation(item, activeSocialContinuation, executionStatus))
+            if (QueueReplanFilter.CompletesObjectiveContinuation(item, activeObjectiveContinuation, executionStatus))
             {
-                socialObjectiveCompleted = true;
-                activeSocialContinuation = null;
+                if (string.IsNullOrWhiteSpace(objectiveContinuationKind) &&
+                    string.Equals(ReadString(item, "option_id"), "executor.social_interact", StringComparison.Ordinal))
+                {
+                    objectiveContinuationKind = "social";
+                }
+                objectiveContinuationCompleted = true;
+                activeObjectiveContinuation = null;
             }
             else if (string.Equals(executionStatus, "applied", StringComparison.Ordinal))
             {
-                activeSocialContinuation = QueueReplanFilter.ReadSocialContinuation(item) ?? activeSocialContinuation;
+                var discoveredContinuation = QueueReplanFilter.ReadObjectiveContinuation(item);
+                if (discoveredContinuation is not null)
+                {
+                    activeObjectiveContinuation = discoveredContinuation;
+                    objectiveContinuationKind = ReadString(discoveredContinuation, "kind");
+                }
             }
 
             var replanDecision = QueueReplanFilter.DecideAfterExecution(
@@ -130,7 +141,7 @@ static partial class Program
 
             if (replanDecision.ShouldReplan)
             {
-                var replan = await BuildQueueFromDailyPlanAsync(http, options, currentStateHash, activeSocialContinuation);
+                var replan = await BuildQueueFromDailyPlanAsync(http, options, currentStateHash, activeObjectiveContinuation);
                 var replanSuffix = "-item-" + (attemptedCount + 1).ToString("D4");
                 var replanPlanPath = Path.Combine(options.SnapshotDir, "replan-model-plan-" + iteration.ToString("D4") + replanSuffix + ".json");
                 var replanDailyPlanPath = Path.Combine(options.SnapshotDir, "replan-daily-plan-response-" + iteration.ToString("D4") + replanSuffix + ".json");
@@ -190,10 +201,15 @@ static partial class Program
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
         aggregate["source"] = "real_runtime_executor";
-        aggregate["social_objective_completed"] = socialObjectiveCompleted;
-        aggregate["social_objective_continuation"] = activeSocialContinuation is null
+        aggregate["objective_continuation_completed"] = objectiveContinuationCompleted;
+        aggregate["objective_continuation"] = activeObjectiveContinuation is null
             ? null
-            : JsonNode.Parse(activeSocialContinuation.ToJsonString(JsonOptions));
+            : JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions));
+        var continuationIsSocial = string.Equals(objectiveContinuationKind, "social", StringComparison.Ordinal);
+        aggregate["social_objective_completed"] = objectiveContinuationCompleted && continuationIsSocial;
+        aggregate["social_objective_continuation"] = continuationIsSocial && activeObjectiveContinuation is not null
+            ? JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions))
+            : null;
         await File.WriteAllTextAsync(aggregateExecutionPath, aggregate.ToJsonString(JsonOptions), Encoding.UTF8);
         return aggregate;
     }

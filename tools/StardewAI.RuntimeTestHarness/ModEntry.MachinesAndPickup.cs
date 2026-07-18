@@ -419,6 +419,11 @@ public sealed partial class ModEntry : Mod
 
         var started = DateTimeOffset.UtcNow.ToString("O");
         var location = Game1.currentLocation;
+        if (location is null || string.IsNullOrWhiteSpace(request.LocationId) ||
+            !string.Equals(location.NameOrUniqueName, request.LocationId, StringComparison.OrdinalIgnoreCase))
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", MachineRequestedEffect(request), "location_id=" + (location?.NameOrUniqueName ?? "unavailable"), "collect_machine_output_location_mismatch");
+        }
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var requested = MachineRequestedEffect(request);
         var beforeObserved = MachineObservedEffect(location, target);
@@ -508,7 +513,7 @@ public sealed partial class ModEntry : Mod
                 {
                     new SimulatedFactChange
                     {
-                        Path = "farm.machines[" + target.X + "," + target.Y + "].held_item",
+                        Path = "farm.machines[" + location.NameOrUniqueName + ":" + target.X + "," + target.Y + "].held_item",
                         Before = beforeObserved,
                         After = afterObserved
                     },
@@ -742,6 +747,11 @@ public sealed partial class ModEntry : Mod
 
         var started = DateTimeOffset.UtcNow.ToString("O");
         var location = Game1.currentLocation;
+        if (location is null || string.IsNullOrWhiteSpace(request.LocationId) ||
+            !string.Equals(location.NameOrUniqueName, request.LocationId, StringComparison.OrdinalIgnoreCase))
+        {
+            return BlockedWithPrimitive(request, "load_machine_input", MachineInputRequestedEffect(request), "location_id=" + (location?.NameOrUniqueName ?? "unavailable"), "load_machine_input_location_mismatch");
+        }
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var requested = MachineInputRequestedEffect(request);
         var beforeObserved = MachineObservedEffect(location, target);
@@ -822,7 +832,7 @@ public sealed partial class ModEntry : Mod
                 {
                     new SimulatedFactChange
                     {
-                        Path = "farm.machines[" + target.X + "," + target.Y + "]",
+                        Path = "farm.machines[" + location.NameOrUniqueName + ":" + target.X + "," + target.Y + "]",
                         Before = beforeObserved,
                         After = afterObserved
                     },

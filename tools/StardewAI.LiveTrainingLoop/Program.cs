@@ -33,7 +33,7 @@ var lastQueueId = string.Empty;
 var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
-JsonObject? activeSocialContinuation = null;
+JsonObject? activeObjectiveContinuation = null;
 var socialObjectiveCompleted = false;
 
 for (var iteration = 1;
@@ -65,7 +65,7 @@ for (var iteration = 1;
     JsonObject queue;
     if (options.UseDailyPlan)
     {
-        var dailyPlan = await BuildQueueFromDailyPlanAsync(http, options, lastStateHash, activeSocialContinuation);
+        var dailyPlan = await BuildQueueFromDailyPlanAsync(http, options, lastStateHash, activeObjectiveContinuation);
         modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
         var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
@@ -105,7 +105,7 @@ for (var iteration = 1;
         }
 
         var execution = options.UseRealRuntimeExecutor
-            ? await ExecuteRealRuntimeAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeSocialContinuation)
+            ? await ExecuteRealRuntimeAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeObjectiveContinuation)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRealRuntimeExecutor)
@@ -125,7 +125,7 @@ for (var iteration = 1;
             }
 
             var realAppend = AppendRealExecutionRow(options, beforeSnapshot, queue, execution, lastStateHash, lastQueueId);
-            activeSocialContinuation = execution["social_objective_continuation"] is JsonObject continuation
+            activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
             socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
@@ -194,7 +194,9 @@ var report = new LiveTrainingLoopReport
     VerifiedActions = verifiedActions,
     RequiredVerifiedActions = options.RequiredVerifiedActions,
     SocialObjectiveCompleted = socialObjectiveCompleted,
-    ActiveSocialContinuation = activeSocialContinuation,
+    ActiveSocialContinuation = string.Equals(ReadString(activeObjectiveContinuation, "kind"), "social", StringComparison.Ordinal)
+        ? activeObjectiveContinuation
+        : null,
     LastStateHash = lastStateHash,
     LastQueueId = lastQueueId,
     Concurrency = 1,

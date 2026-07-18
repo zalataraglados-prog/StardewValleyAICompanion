@@ -35,6 +35,7 @@ namespace StardewAI.Core.Training
             }
 
             var parameters = new List<SmallModelActionParameter>();
+            parameters.Add(Parameter("machine_location_id", string.IsNullOrWhiteSpace(candidate.LocationId) ? "Farm" : candidate.LocationId));
             var qualifiedItemId = !string.IsNullOrWhiteSpace(candidate.QualifiedItemId)
                 ? candidate.QualifiedItemId
                 : ParseValue(candidate.ExpectedEffect, "qualified_item_id=");
@@ -119,6 +120,7 @@ namespace StardewAI.Core.Training
                 ? candidate.SlotIndex.ToString()
                 : ParseValue(candidate.ExpectedEffect, "input_slot_index=");
             var parameters = new List<SmallModelActionParameter>();
+            parameters.Add(Parameter("machine_location_id", string.IsNullOrWhiteSpace(candidate.LocationId) ? "Farm" : candidate.LocationId));
             if (!string.IsNullOrWhiteSpace(slotIndex))
             {
                 parameters.Add(Parameter("input_slot_index", slotIndex));

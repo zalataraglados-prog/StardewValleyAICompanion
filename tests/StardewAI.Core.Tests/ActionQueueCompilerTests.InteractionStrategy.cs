@@ -840,7 +840,7 @@ public sealed partial class ActionQueueCompilerTests
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","held_item":{"item_id":"388","qualified_item_id":"(O)388","stack":1,"quality":0,"maximum_stack_size":999}}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","held_item":{"item_id":"388","qualified_item_id":"(O)388","stack":1,"quality":0,"maximum_stack_size":999}}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """
@@ -864,7 +864,7 @@ public sealed partial class ActionQueueCompilerTests
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"held_item":null,"loadable_inputs":LOADABLE_INPUTS}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"held_item":null,"loadable_inputs":LOADABLE_INPUTS}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """.Replace("LOADABLE_INPUTS", includeInputProbe

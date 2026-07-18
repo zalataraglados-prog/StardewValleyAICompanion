@@ -65,12 +65,12 @@ public sealed partial class ModEntry : Mod
 
     private static string MachineRequestedEffect(TrainingExecutionRequest request)
     {
-        return "farm.machines[" + request.TargetTileX + "," + request.TargetTileY + "].held_item=null;player.inventory.updated";
+        return "farm.machines[" + request.LocationId + ":" + request.TargetTileX + "," + request.TargetTileY + "].held_item=null;player.inventory.updated";
     }
 
     private static string MachineInputRequestedEffect(TrainingExecutionRequest request)
     {
-        return "farm.machines[" + request.TargetTileX + "," + request.TargetTileY + "].minutes_until_ready>0_or_ready=true;player.inventory[" + request.InputSlotIndex + "].stack_decreases";
+        return "farm.machines[" + request.LocationId + ":" + request.TargetTileX + "," + request.TargetTileY + "].minutes_until_ready>0_or_ready=true;player.inventory[" + request.InputSlotIndex + "].stack_decreases";
     }
 
     private static string MachineObservedEffect(GameLocation location, Point target)

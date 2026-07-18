@@ -415,7 +415,7 @@ public sealed class DailyPlanCompilerTests
             ItemId = "388",
             QualifiedItemId = "(O)388",
             Quantity = 1,
-            ExpectedEffect = "move_to_adjacent=63,15;farm.machines[64,15].held_item=null;qualified_item_id=(O)388;item_id=388;output_stack=1;output_sale_price=20;output_total_value=20;machine_value_basis=held_item_sale_price_times_stack;machine_output_executor_status=runtime_collect",
+            ExpectedEffect = "move_to_adjacent=63,15;farm.machines[Farm:64,15].held_item=null;qualified_item_id=(O)388;item_id=388;output_stack=1;output_sale_price=20;output_total_value=20;machine_value_basis=held_item_sale_price_times_stack;machine_output_executor_status=runtime_collect",
             EstimatedTicks = 90,
             Available = true
         };
@@ -459,7 +459,7 @@ public sealed class DailyPlanCompilerTests
             QualifiedItemId = "(O)262",
             SlotIndex = 0,
             Quantity = 2,
-            ExpectedEffect = "move_to_adjacent=63,15;farm.machines[64,15].minutes_until_ready>0_or_ready=true;input_slot_index=0;qualified_item_id=(O)262;item_id=262;input_stack_available=2;input_sale_price=15;machine_input_opportunity_cost=15;machine_input_value_basis=predicted_output_total_value_minus_transparent_input_sale_price;machine_output_rule_count=3;machine_has_output_rule=true;machine_output_prediction_status=machine_data_exact_required_item_match;predicted_output_qualified_item_id=(O)346;predicted_output_item_id=346;predicted_output_stack=1;predicted_output_sale_price=200;predicted_output_price_source=output_item_sale_price;predicted_output_total_value=200;machine_additional_consumed_total_value=0;predicted_output_net_value=185;predicted_output_rule_required_item_id=(O)262;predicted_minutes_until_ready=1750;machine_input_probe_source=Object.performObjectDropInAction(probe:true);machine_input_executor_status=runtime_load",
+            ExpectedEffect = "move_to_adjacent=63,15;farm.machines[Farm:64,15].minutes_until_ready>0_or_ready=true;input_slot_index=0;qualified_item_id=(O)262;item_id=262;input_stack_available=2;input_sale_price=15;machine_input_opportunity_cost=15;machine_input_value_basis=predicted_output_total_value_minus_transparent_input_sale_price;machine_output_rule_count=3;machine_has_output_rule=true;machine_output_prediction_status=machine_data_exact_required_item_match;predicted_output_qualified_item_id=(O)346;predicted_output_item_id=346;predicted_output_stack=1;predicted_output_sale_price=200;predicted_output_price_source=output_item_sale_price;predicted_output_total_value=200;machine_additional_consumed_total_value=0;predicted_output_net_value=185;predicted_output_rule_required_item_id=(O)262;predicted_minutes_until_ready=1750;machine_input_probe_source=Object.performObjectDropInAction(probe:true);machine_input_executor_status=runtime_load",
             EstimatedTicks = 90,
             Available = true
         };

@@ -245,7 +245,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "inventory": {"value":[{"slot_index":0,"item_id":"390","qualified_item_id":"(O)390","stack":10,"quality":0,"maximum_stack_size":999,"is_empty":false},{"slot_index":1,"is_empty":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","held_item":{"item_id":"388","qualified_item_id":"(O)388","stack":1,"quality":0,"sale_price":20,"maximum_stack_size":999}}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","location_kind":"farm_outdoor","tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":true,"minutes_until_ready":0,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","held_item":{"item_id":"388","qualified_item_id":"(O)388","stack":1,"quality":0,"sale_price":20,"maximum_stack_size":999}}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -269,7 +269,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(15, candidate.TileY);
         Assert.Equal("(O)388", candidate.QualifiedItemId);
         Assert.Contains("move_to_adjacent=63,15", candidate.ExpectedEffect);
-        Assert.Contains("farm.machines[64,15].held_item=null", candidate.ExpectedEffect);
+        Assert.Contains("farm.machines[Farm:64,15].held_item=null", candidate.ExpectedEffect);
         Assert.Contains("output_sale_price=20", candidate.ExpectedEffect);
         Assert.Contains("output_total_value=20", candidate.ExpectedEffect);
         Assert.Contains("machine_value_basis=held_item_sale_price_times_stack", candidate.ExpectedEffect);
@@ -290,7 +290,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "inventory": {"value":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"machine_data":{"status":"available","has_output":true,"output_rule_count":3,"output_rules":[{"id":"keg_wheat","required_item_id":"(O)262","minutes_until_ready":1750,"output_item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200}}]},"held_item":null,"loadable_inputs":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":15,"probe_source":"Object.performObjectDropInAction(probe:true)"}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"machine_data":{"status":"available","has_output":true,"output_rule_count":3,"output_rules":[{"id":"keg_wheat","required_item_id":"(O)262","minutes_until_ready":1750,"output_item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200}}]},"held_item":null,"loadable_inputs":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":15,"probe_source":"Object.performObjectDropInAction(probe:true)"}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

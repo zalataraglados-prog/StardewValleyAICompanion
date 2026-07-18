@@ -23,12 +23,19 @@ namespace StardewAI.Core.OptionRegistry
 
             var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
             var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var playerLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue);
             return machines.Value.EnumerateArray()
                 .Where(machine => machine.ValueKind == JsonValueKind.Object)
                 .SelectMany(machine =>
                 {
                     var x = ReadInt(machine, "tile_x");
                     var y = ReadInt(machine, "tile_y");
+                    var machineLocation = ReadString(machine, "location_id");
+                    if (string.IsNullOrWhiteSpace(machineLocation))
+                    {
+                        machineLocation = "Farm";
+                    }
                     var heldItem = machine.TryGetProperty("held_item", out var held) && held.ValueKind == JsonValueKind.Object
                         ? held
                         : default;
@@ -59,7 +66,22 @@ namespace StardewAI.Core.OptionRegistry
                     var positiveExperienceDeltas = experienceDeltas
                         .Where(delta => delta.Delta > 0)
                         .ToArray();
-                    var standTile = FindBestMachineStandTile(snapshot, x, y);
+                    if (!string.Equals(machineLocation, playerLocation, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return MachineRemoteRouteCandidates(
+                            snapshot,
+                            machine,
+                            machineLocation,
+                            x,
+                            y,
+                            outputQualifiedId,
+                            outputItemId,
+                            outputStack,
+                            routeCandidates,
+                            playerLocation);
+                    }
+
+                    var standTile = FindBestMachineStandTile(snapshot, machineLocation, x, y);
                     var blockReasons = new List<string>();
                     if (ReadBool(machine, "ready_for_harvest") != true)
                     {
@@ -97,7 +119,8 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("expected_skill_experience_deltas_json", experienceDeltasJson),
                         Parameter("expected_mastery_experience_delta", (masteryExperienceDelta ?? 0).ToString()),
                         Parameter("skill_experience_projection_status", experienceProjectionStatus),
-                        Parameter("skill_experience_condition", "native_machine_output_collection")
+                        Parameter("skill_experience_condition", "native_machine_output_collection"),
+                        Parameter("machine_location_id", machineLocation)
                     };
                     if (positiveExperienceDeltas.Length == 1)
                     {
@@ -108,14 +131,14 @@ namespace StardewAI.Core.OptionRegistry
                     }
                     var outputCandidate = new EventCandidate
                     {
-                        CandidateId = "machine-output:Farm:" + x + "," + y + ":" + (string.IsNullOrWhiteSpace(outputQualifiedId) ? outputItemId : outputQualifiedId),
+                        CandidateId = "machine-output:" + machineLocation + ":" + x + "," + y + ":" + (string.IsNullOrWhiteSpace(outputQualifiedId) ? outputItemId : outputQualifiedId),
                         Kind = "collect_machine_output_tile",
                         Available = blockReasons.Count == 0,
-                        LocationId = "Farm",
+                        LocationId = machineLocation,
                         TileX = x,
                         TileY = y,
                         ExpectedEffect = (standTile.Tile is null ? string.Empty : "move_to_adjacent=" + standTile.Tile.X + "," + standTile.Tile.Y + ";") +
-                            "farm.machines[" + x + "," + y + "].held_item=null" +
+                            MachineStatePath(machineLocation, x, y) + ".held_item=null" +
                             (!string.IsNullOrWhiteSpace(outputQualifiedId) ? ";qualified_item_id=" + outputQualifiedId : string.Empty) +
                             (!string.IsNullOrWhiteSpace(outputItemId) ? ";item_id=" + outputItemId : string.Empty) +
                             ";output_stack=" + outputStack +
@@ -136,7 +159,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameters = parameters.ToArray()
                     };
                     var candidates = new List<EventCandidate> { outputCandidate };
-                    candidates.AddRange(MachineLoadInputCandidates(snapshot, machine, x, y, playerX, playerY));
+                    candidates.AddRange(MachineLoadInputCandidates(snapshot, machine, machineLocation, x, y, playerX, playerY, standTile));
                     return candidates;
                 })
                 .OrderBy(candidate => candidate.TileY ?? int.MaxValue)
@@ -226,14 +249,21 @@ namespace StardewAI.Core.OptionRegistry
 
         private sealed record StructuredSkillExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
-        private EventCandidate[] MachineLoadInputCandidates(SnapshotEnvelope snapshot, JsonElement machine, int x, int y, int playerX, int playerY)
+        private EventCandidate[] MachineLoadInputCandidates(
+            SnapshotEnvelope snapshot,
+            JsonElement machine,
+            string machineLocation,
+            int x,
+            int y,
+            int playerX,
+            int playerY,
+            MachineStandTileSelection standTile)
         {
             if (!machine.TryGetProperty("loadable_inputs", out var inputs) || inputs.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<EventCandidate>();
             }
 
-            var standTile = FindBestMachineStandTile(snapshot, x, y);
             var machineBusy = ReadInt(machine, "minutes_until_ready") > 0 || ReadBool(machine, "ready_for_harvest") == true;
             var machineData = machine.TryGetProperty("machine_data", out var data) && data.ValueKind == JsonValueKind.Object
                 ? data
@@ -276,14 +306,14 @@ namespace StardewAI.Core.OptionRegistry
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
                     return new EventCandidate
                     {
-                        CandidateId = "machine-input:Farm:" + x + "," + y + ":slot" + slotIndex + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
+                        CandidateId = "machine-input:" + machineLocation + ":" + x + "," + y + ":slot" + slotIndex + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
                         Kind = "load_machine_input_tile",
                         Available = blockReasons.Count == 0,
-                        LocationId = "Farm",
+                        LocationId = machineLocation,
                         TileX = x,
                         TileY = y,
                         ExpectedEffect = (standTile.Tile is null ? string.Empty : "move_to_adjacent=" + standTile.Tile.X + "," + standTile.Tile.Y + ";") +
-                            "farm.machines[" + x + "," + y + "].minutes_until_ready>0_or_ready=true" +
+                            MachineStatePath(machineLocation, x, y) + ".minutes_until_ready>0_or_ready=true" +
                             ";input_slot_index=" + slotIndex +
                             (!string.IsNullOrWhiteSpace(qualifiedItemId) ? ";qualified_item_id=" + qualifiedItemId : string.Empty) +
                             (!string.IsNullOrWhiteSpace(itemId) ? ";item_id=" + itemId : string.Empty) +
@@ -304,10 +334,16 @@ namespace StardewAI.Core.OptionRegistry
                         EstimatedTicks = Math.Max(90, distance * 60 + 30),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_machine_input_runtime_load",
-                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = new[] { Parameter("machine_location_id", machineLocation) }
                     };
                 })
                 .ToArray();
+        }
+
+        private static string MachineStatePath(string locationId, int x, int y)
+        {
+            return "farm.machines[" + locationId + ":" + x + "," + y + "]";
         }
 
         private static MachineOutputPrediction? PredictMachineOutputFromProbe(

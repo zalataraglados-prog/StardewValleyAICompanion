@@ -374,6 +374,8 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+            new SmallModelActionParameter { Name = "machine_location_id", Value = "Farm" },
             new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" },
             new SmallModelActionParameter { Name = "machine_harvest_experience_raw", Value = "" },
             new SmallModelActionParameter { Name = "expected_skill_experience_deltas_json", Value = "[]" },
@@ -391,7 +393,7 @@ public sealed partial class ActionQueueCompilerTests
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("collect_machine_output", step.StepType);
         Assert.Equal("Farm(64,15):(O)388", step.Target);
-        Assert.Contains("farm.machines[64,15].held_item=null", step.ExpectedEffect);
+        Assert.Contains("farm.machines[Farm:64,15].held_item=null", step.ExpectedEffect);
     }
 
     [Fact]
@@ -403,6 +405,8 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+            new SmallModelActionParameter { Name = "machine_location_id", Value = "Farm" },
             new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" },
             new SmallModelActionParameter { Name = "machine_harvest_experience_raw", Value = "" },
             new SmallModelActionParameter { Name = "expected_skill_experience_deltas_json", Value = "[]" },
@@ -426,6 +430,8 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+            new SmallModelActionParameter { Name = "machine_location_id", Value = "Farm" },
             new SmallModelActionParameter { Name = "input_slot_index", Value = "0" },
             new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)262" }
         };
@@ -451,6 +457,8 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+            new SmallModelActionParameter { Name = "machine_location_id", Value = "Farm" },
             new SmallModelActionParameter { Name = "input_slot_index", Value = "0" },
             new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)262" }
         };

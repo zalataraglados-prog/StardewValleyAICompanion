@@ -60,27 +60,31 @@ static partial class Program
         HttpClient http,
         LiveTrainingOptions options,
         string stateHash,
-        JsonObject? socialContinuation)
+        JsonObject? objectiveContinuation)
     {
         var rankRequest = JsonSerializer.Serialize(new
         {
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
-            candidate_option_ids = socialContinuation is null ? options.DailyPlanCandidateOptionIds : Array.Empty<string>(),
-            candidates = socialContinuation is null
+            candidate_option_ids = objectiveContinuation is null ? options.DailyPlanCandidateOptionIds : Array.Empty<string>(),
+            candidates = objectiveContinuation is null
                 ? Array.Empty<object>()
                 : new object[]
                 {
                     new
                     {
-                        option_id = ReadString(socialContinuation, "option_id"),
+                        option_id = ReadString(objectiveContinuation, "option_id"),
                         parameters = new[]
                         {
-                            new { name = "continuation.option_id", value = ReadString(socialContinuation, "option_id") },
-                            new { name = "continuation.npc_name", value = ReadString(socialContinuation, "npc_name") },
-                            new { name = "continuation.target_location", value = ReadString(socialContinuation, "target_location") },
-                            new { name = "continuation.slot_index", value = ReadString(socialContinuation, "slot_index") },
-                            new { name = "continuation.qualified_item_id", value = ReadString(socialContinuation, "qualified_item_id") }
+                            new { name = "continuation.option_id", value = ReadString(objectiveContinuation, "option_id") },
+                            new { name = "continuation.npc_name", value = ReadString(objectiveContinuation, "npc_name") },
+                            new { name = "continuation.target_location", value = ReadString(objectiveContinuation, "target_location") },
+                            new { name = "continuation.slot_index", value = ReadString(objectiveContinuation, "slot_index") },
+                            new { name = "continuation.qualified_item_id", value = ReadString(objectiveContinuation, "qualified_item_id") },
+                            new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },
+                            new { name = "continuation.machine_location_id", value = ReadString(objectiveContinuation, "machine_location_id") },
+                            new { name = "continuation.machine_tile_x", value = ReadString(objectiveContinuation, "machine_tile_x") },
+                            new { name = "continuation.machine_tile_y", value = ReadString(objectiveContinuation, "machine_tile_y") }
                         }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
                     }
                 },
@@ -88,14 +92,14 @@ static partial class Program
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
-        var selectedCandidates = QueueReplanFilter.FilterRankedCandidates(rankedCandidates, socialContinuation);
+        var selectedCandidates = QueueReplanFilter.FilterRankedCandidates(rankedCandidates, objectiveContinuation);
         ranking["social_continuation_filter"] = new JsonObject
         {
-            ["active"] = socialContinuation is not null,
-            ["objective"] = socialContinuation is null ? null : JsonNode.Parse(socialContinuation.ToJsonString(JsonOptions)),
+            ["active"] = objectiveContinuation is not null,
+            ["objective"] = objectiveContinuation is null ? null : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions)),
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = selectedCandidates.Count,
-            ["policy"] = "same_option_and_npc_with_optional_gift_identity;fail_closed_no_objective_switch"
+            ["policy"] = "social_same_npc_and_optional_gift_or_machine_same_executor_location_tile;fail_closed_no_objective_switch"
         };
         var compileRequest = JsonSerializer.Serialize(new
         {

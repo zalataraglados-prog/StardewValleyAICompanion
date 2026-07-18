@@ -21,20 +21,46 @@ public static class QueueReplanFilter
 
     public static JsonObject? ReadSocialContinuation(JsonObject? queueItem)
     {
+        var continuation = ReadObjectiveContinuation(queueItem);
+        return string.Equals(ReadString(continuation, "kind"), "social", StringComparison.Ordinal)
+            ? continuation
+            : null;
+    }
+
+    public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
+    {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
         var npcName = ReadParameter(queueItem, "continuation.npc_name");
-        if (string.IsNullOrWhiteSpace(optionId) || string.IsNullOrWhiteSpace(npcName))
+        if (!string.IsNullOrWhiteSpace(optionId) && !string.IsNullOrWhiteSpace(npcName))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "social",
+                ["option_id"] = optionId,
+                ["npc_name"] = npcName,
+                ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
+                ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
+                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+            };
+        }
+
+        var machineLocation = ReadParameter(queueItem, "continuation.machine_location_id");
+        var machineTileX = ReadParameter(queueItem, "continuation.machine_tile_x");
+        var machineTileY = ReadParameter(queueItem, "continuation.machine_tile_y");
+        if (string.IsNullOrWhiteSpace(optionId) || string.IsNullOrWhiteSpace(machineLocation) ||
+            string.IsNullOrWhiteSpace(machineTileX) || string.IsNullOrWhiteSpace(machineTileY))
         {
             return null;
         }
 
         return new JsonObject
         {
-            ["option_id"] = optionId,
-            ["npc_name"] = npcName,
-            ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
-            ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
-            ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+            ["kind"] = "machine",
+            ["option_id"] = "farm.process_machines",
+            ["execution_option_id"] = optionId,
+            ["machine_location_id"] = machineLocation,
+            ["machine_tile_x"] = machineTileX,
+            ["machine_tile_y"] = machineTileY
         };
     }
 
@@ -55,20 +81,35 @@ public static class QueueReplanFilter
 
     public static bool CompletesSocialContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
     {
+        return string.Equals(ReadString(continuation, "kind"), "social", StringComparison.Ordinal) &&
+            CompletesObjectiveContinuation(queueItem, continuation, executionStatus);
+    }
+
+    public static bool CompletesObjectiveContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
+    {
         if (!string.Equals(executionStatus, "applied", StringComparison.Ordinal) || queueItem is null)
         {
             return false;
         }
 
         var optionId = ReadString(queueItem, "option_id");
+        if (continuation is null)
+        {
+            return string.Equals(optionId, "executor.social_interact", StringComparison.Ordinal);
+        }
+
+        var continuationKind = ReadString(continuation, "kind");
+        if (string.Equals(continuationKind, "machine", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, ReadString(continuation, "execution_option_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "machine_location_id"), ReadString(continuation, "machine_location_id"), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(ReadParameter(queueItem, "target_tile_x"), ReadString(continuation, "machine_tile_x"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "target_tile_y"), ReadString(continuation, "machine_tile_y"), StringComparison.Ordinal);
+        }
+
         if (!string.Equals(optionId, "executor.social_interact", StringComparison.Ordinal))
         {
             return false;
-        }
-
-        if (continuation is null)
-        {
-            return true;
         }
 
         var npcName = ReadParameter(queueItem, "npc_name");
@@ -166,6 +207,11 @@ public static class QueueReplanFilter
             return false;
         }
 
+        if (string.Equals(ReadString(continuation, "kind"), "machine", StringComparison.Ordinal))
+        {
+            return MatchesMachineContinuation(candidate, continuation);
+        }
+
         var npcName = ReadCandidateParameter(candidate, "continuation.npc_name");
         if (string.IsNullOrWhiteSpace(npcName))
         {
@@ -178,6 +224,36 @@ public static class QueueReplanFilter
 
         return OptionalIdentityMatches(candidate, continuation, "slot_index", "continuation.slot_index") &&
             OptionalIdentityMatches(candidate, continuation, "qualified_item_id", "continuation.qualified_item_id");
+    }
+
+    private static bool MatchesMachineContinuation(JsonObject candidate, JsonObject continuation)
+    {
+        var expectedExecutionOption = ReadString(continuation, "execution_option_id");
+        var candidateExecutionOption = ReadCandidateParameter(candidate, "continuation.option_id");
+        var expectedLocation = ReadString(continuation, "machine_location_id");
+        var candidateLocation = ReadCandidateParameter(candidate, "continuation.machine_location_id");
+        var expectedX = ReadString(continuation, "machine_tile_x");
+        var expectedY = ReadString(continuation, "machine_tile_y");
+        var candidateX = ReadCandidateParameter(candidate, "continuation.machine_tile_x");
+        var candidateY = ReadCandidateParameter(candidate, "continuation.machine_tile_y");
+
+        if (string.IsNullOrWhiteSpace(candidateExecutionOption))
+        {
+            var kind = ReadString(candidate, "kind");
+            candidateExecutionOption = string.Equals(kind, "collect_machine_output_tile", StringComparison.Ordinal)
+                ? "executor.collect_machine_output"
+                : string.Equals(kind, "load_machine_input_tile", StringComparison.Ordinal)
+                    ? "executor.load_machine_input"
+                    : string.Empty;
+            candidateLocation = ReadString(candidate, "location_id");
+            candidateX = candidate["tile_x"]?.ToString() ?? string.Empty;
+            candidateY = candidate["tile_y"]?.ToString() ?? string.Empty;
+        }
+
+        return string.Equals(candidateExecutionOption, expectedExecutionOption, StringComparison.Ordinal) &&
+            string.Equals(candidateLocation, expectedLocation, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(candidateX, expectedX, StringComparison.Ordinal) &&
+            string.Equals(candidateY, expectedY, StringComparison.Ordinal);
     }
 
     private static bool OptionalIdentityMatches(JsonObject candidate, JsonObject continuation, string directName, string continuationName)
