@@ -177,6 +177,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ";machine_input_probe_deterministic_output_alternative_count=" + machineInfrastructure.DeterministicOutputAlternativeCount +
             ";machine_service_route_cost_status=" + machineInfrastructure.RouteCostStatus +
             ";machine_service_route_hop_lower_bound_total=" + machineInfrastructure.RouteHopLowerBoundTotal +
+            ";machine_crafting_projection_status=" + machineInfrastructure.MachineCraftingProjectionStatus +
+            ";machine_crafting_output_count_from_current_inventory=" + machineInfrastructure.CraftableMachineOutputCount +
+            ";machine_crafting_cask_recipe_known=" + machineInfrastructure.CaskRecipeKnown.ToString().ToLowerInvariant() +
+            ";machine_crafting_cask_count_from_current_inventory=" + machineInfrastructure.CaskCraftableCount +
             ";farmhouse_expansion_liquidity_consumption_basis_points=" + expansionLiquidityBasisPoints +
             ";machine_infrastructure_demand_semantics=current_inventory_alternatives_not_long_horizon_demand";
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");

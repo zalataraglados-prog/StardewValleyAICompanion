@@ -123,7 +123,22 @@ public sealed class MarriageHouseMainlineTests
           {"from_location":"FarmHouse","target_location":"Cellar","resolved":true}
         ]}
         """;
-        var snapshot = Snapshot(2, 3, 100000, "", 0, 150000, 0, "ready", -1, machines, routeGraph);
+        const string machineCrafting = """
+        {
+          "projection_status":"complete_known_machine_recipe_projection",
+          "unclassified_known_recipe_count":0,
+          "rows":[{
+            "output_is_cask":true,
+            "output_qualified_item_id":"(BC)163",
+            "output_count_per_craft":1,
+            "craftable_count_from_player_inventory":12,
+            "craftable_count_status":"exact_native_match_and_reverse_slot_consumption",
+            "craft_candidate_status":"ready_for_native_personal_crafting_menu",
+            "placement_location_rule":"Cellar_or_location_map_property_CanCaskHere"
+          }]
+        }
+        """;
+        var snapshot = Snapshot(2, 3, 100000, "", 0, 150000, 0, "ready", -1, machines, routeGraph, machineCrafting);
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
         var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates.Where(row => row.Available));
 
@@ -137,6 +152,10 @@ public sealed class MarriageHouseMainlineTests
         AssertParameter(candidate.Parameters, "machine_input_probe_loadable_alternative_count", "0");
         AssertParameter(candidate.Parameters, "machine_service_route_cost_status", "resolved_route_graph_hop_lower_bound");
         AssertParameter(candidate.Parameters, "machine_service_route_hop_lower_bound_total", "6");
+        AssertParameter(candidate.Parameters, "machine_crafting_projection_status", "complete_known_machine_recipe_projection");
+        AssertParameter(candidate.Parameters, "machine_crafting_cask_recipe_known", "true");
+        AssertParameter(candidate.Parameters, "machine_crafting_cask_count_from_current_inventory", "12");
+        AssertParameter(candidate.Parameters, "machine_crafting_cask_output_qualified_item_id", "(BC)163");
 
         var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
         Assert.Equal("pending", new ActionQueueCompiler().Compile(plan, snapshot).Status);
@@ -146,6 +165,7 @@ public sealed class MarriageHouseMainlineTests
     public void TransparencyAndRuntimeUseNativeCarpenterLifecycleWithoutDirectProgressWrites()
     {
         var adapter = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.MarriageHouse.cs"));
+        var machineCrafting = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.MachineCrafting.cs"));
         var runtime = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MarriageHouse.cs"));
 
         Assert.Contains("Upgrade(\"farmhouse_level_1\", 0, 1, 10000, \"(O)388\", 450)", adapter, StringComparison.Ordinal);
@@ -153,6 +173,9 @@ public sealed class MarriageHouseMainlineTests
         Assert.Contains("ConstructionDays = 3", adapter, StringComparison.Ordinal);
         Assert.Contains("UnlocksCellar", adapter, StringComparison.Ordinal);
         Assert.Contains("UnlocksCaskRecipe", adapter, StringComparison.Ordinal);
+        Assert.Contains("CraftingRecipe.ItemMatchesForCrafting", machineCrafting, StringComparison.Ordinal);
+        Assert.Contains("for (var slot = inventory.Count - 1;", machineCrafting, StringComparison.Ordinal);
+        Assert.DoesNotContain("consumeIngredients(", machineCrafting, StringComparison.Ordinal);
         Assert.Contains("active.House.checkAction", runtime, StringComparison.Ordinal);
         Assert.Contains("active.House.answerDialogue(response)", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Money -=", runtime, StringComparison.Ordinal);
@@ -212,7 +235,8 @@ public sealed class MarriageHouseMainlineTests
         string status,
         int days,
         string machineRowsJson = "[]",
-        string routeGraphJson = "{\"edges\":[]}")
+        string routeGraphJson = "{\"edges\":[]}",
+        string machineCraftingJson = "{\"projection_status\":\"complete_known_machine_recipe_projection\",\"unclassified_known_recipe_count\":0,\"rows\":[]}")
     {
         var upgradeId = "farmhouse_level_" + levelAfter;
         var meetsGrandpaHouseLevel = levelAfter >= 2 ? "true" : "false";
@@ -227,6 +251,7 @@ public sealed class MarriageHouseMainlineTests
             "tile_x":{"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_y":{"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            ,"machine_crafting":{"value":{{{machineCraftingJson}}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "world_progress": {
             "marriage_house":{"value":{

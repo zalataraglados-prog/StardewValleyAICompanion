@@ -37,9 +37,20 @@ internal sealed record MachineInfrastructureProjection
     public int ReachableMachineLocationCount { get; init; }
     public int UnreachableMachineLocationCount { get; init; }
     public int RouteHopLowerBoundTotal { get; init; }
+    public string MachineCraftingProjectionStatus { get; init; } = "unavailable";
+    public string MachineCraftableCountStatus { get; init; } = "unavailable";
+    public int KnownMachineRecipeCount { get; init; }
+    public int ReadyMachineRecipeCount { get; init; }
+    public int CraftableMachineOutputCount { get; init; }
+    public int UnclassifiedKnownRecipeCount { get; init; }
+    public bool CaskRecipeKnown { get; init; }
+    public int CaskCraftableCount { get; init; }
+    public string CaskCraftCandidateStatus { get; init; } = "unavailable";
+    public string CaskOutputQualifiedItemId { get; init; } = string.Empty;
+    public string CaskPlacementLocationRule { get; init; } = string.Empty;
 }
 
-internal static class MachineInfrastructureProjectionEvaluator
+internal static partial class MachineInfrastructureProjectionEvaluator
 {
     public static MachineInfrastructureProjection NotApplicable() => new()
     {
@@ -82,6 +93,17 @@ internal static class MachineInfrastructureProjectionEvaluator
             Pair("machine_service_unreachable_location_count", projection.UnreachableMachineLocationCount),
             Pair("machine_service_route_hop_lower_bound_total", projection.RouteHopLowerBoundTotal),
             Pair("machine_service_route_cost_semantics", "resolved_graph_hops_not_walking_ticks_or_round_trip_time"),
+            Pair("machine_crafting_projection_status", projection.MachineCraftingProjectionStatus),
+            Pair("machine_crafting_count_status", projection.MachineCraftableCountStatus),
+            Pair("machine_crafting_known_machine_recipe_count", projection.KnownMachineRecipeCount),
+            Pair("machine_crafting_ready_machine_recipe_count", projection.ReadyMachineRecipeCount),
+            Pair("machine_crafting_output_count_from_current_inventory", projection.CraftableMachineOutputCount),
+            Pair("machine_crafting_unclassified_known_recipe_count", projection.UnclassifiedKnownRecipeCount),
+            Pair("machine_crafting_cask_recipe_known", Lower(projection.CaskRecipeKnown)),
+            Pair("machine_crafting_cask_count_from_current_inventory", projection.CaskCraftableCount),
+            Pair("machine_crafting_cask_candidate_status", projection.CaskCraftCandidateStatus),
+            Pair("machine_crafting_cask_output_qualified_item_id", projection.CaskOutputQualifiedItemId),
+            Pair("machine_crafting_cask_placement_location_rule", projection.CaskPlacementLocationRule),
             Pair("machine_infrastructure_demand_semantics", "current_inventory_alternatives_not_long_horizon_demand")
         };
 
@@ -157,6 +179,7 @@ internal static class MachineInfrastructureProjectionEvaluator
                     ? "bounded_rotating_current_map_probe_partial"
                     : "bounded_probe_has_no_observed_idle_machine";
         var route = EvaluateRouteHops(snapshot, currentLocation, locationCounts.Keys);
+        var crafting = ReadMachineCraftingProjection(snapshot);
 
         return new MachineInfrastructureProjection
         {
@@ -188,7 +211,18 @@ internal static class MachineInfrastructureProjectionEvaluator
             MaximumObservedProcessMinutes = deterministicMinutes.DefaultIfEmpty(0).Max(),
             ReachableMachineLocationCount = route.ReachableCount,
             UnreachableMachineLocationCount = route.UnreachableCount,
-            RouteHopLowerBoundTotal = route.HopTotal
+            RouteHopLowerBoundTotal = route.HopTotal,
+            MachineCraftingProjectionStatus = crafting.Status,
+            MachineCraftableCountStatus = crafting.CountStatus,
+            KnownMachineRecipeCount = crafting.KnownRecipeCount,
+            ReadyMachineRecipeCount = crafting.ReadyRecipeCount,
+            CraftableMachineOutputCount = crafting.CraftableOutputCount,
+            UnclassifiedKnownRecipeCount = crafting.UnclassifiedKnownRecipeCount,
+            CaskRecipeKnown = crafting.CaskRecipeKnown,
+            CaskCraftableCount = crafting.CaskCraftableCount,
+            CaskCraftCandidateStatus = crafting.CaskCandidateStatus,
+            CaskOutputQualifiedItemId = crafting.CaskOutputQualifiedItemId,
+            CaskPlacementLocationRule = crafting.CaskPlacementLocationRule
         };
     }
 
@@ -289,4 +323,5 @@ internal static class MachineInfrastructureProjectionEvaluator
     private static string Lower(bool value) => value.ToString().ToLowerInvariant();
 
     private sealed record RouteHopProjection(string Status, int ReachableCount, int UnreachableCount, int HopTotal);
+
 }
