@@ -160,7 +160,7 @@ namespace StardewAI.Core.OptionRegistry
                     };
                     var candidates = new List<EventCandidate> { outputCandidate };
                     candidates.AddRange(MachineLoadInputCandidates(snapshot, machine, machineLocation, x, y, playerX, playerY, standTile));
-                    return candidates;
+                    return candidates.ToArray();
                 })
                 .OrderBy(candidate => candidate.TileY ?? int.MaxValue)
                 .ThenBy(candidate => candidate.TileX ?? int.MaxValue)

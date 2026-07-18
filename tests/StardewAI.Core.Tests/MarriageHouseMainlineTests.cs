@@ -148,10 +148,8 @@ public sealed class MarriageHouseMainlineTests
         var adapter = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.MarriageHouse.cs"));
         var runtime = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MarriageHouse.cs"));
 
-        Assert.Contains("Price = 10000", adapter, StringComparison.Ordinal);
-        Assert.Contains("RequiredItemCount = 450", adapter, StringComparison.Ordinal);
-        Assert.Contains("Price = 65000", adapter, StringComparison.Ordinal);
-        Assert.Contains("RequiredItemCount = 100", adapter, StringComparison.Ordinal);
+        Assert.Contains("Upgrade(\"farmhouse_level_1\", 0, 1, 10000, \"(O)388\", 450)", adapter, StringComparison.Ordinal);
+        Assert.Contains("Upgrade(\"farmhouse_level_2\", 1, 2, 65000, \"(O)709\", 100)", adapter, StringComparison.Ordinal);
         Assert.Contains("ConstructionDays = 3", adapter, StringComparison.Ordinal);
         Assert.Contains("UnlocksCellar", adapter, StringComparison.Ordinal);
         Assert.Contains("UnlocksCaskRecipe", adapter, StringComparison.Ordinal);

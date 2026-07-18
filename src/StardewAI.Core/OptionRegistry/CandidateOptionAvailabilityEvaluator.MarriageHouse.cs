@@ -243,8 +243,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     {
         var currentGrandpaFactor = ReadBool(row, "grandpa_factor_satisfied");
         var expectedMeetsLevel = levelAfter >= 2;
-        var expectedGrandpaFactorAfter = ReadBool(row, "married_or_roommate") && expectedMeetsLevel;
-        var expectedDelta = !currentGrandpaFactor && expectedGrandpaFactorAfter ? 1 : 0;
+        var expectedGrandpaFactorAfter = ReadBool(row, "married_or_roommate") == true && expectedMeetsLevel;
+        var expectedDelta = currentGrandpaFactor != true && expectedGrandpaFactorAfter ? 1 : 0;
         var expectedCellarUnlock = levelBefore == 2 && levelAfter == 3;
         var expectedCapacityStatus = expectedCellarUnlock
             ? "cellar_static_map_capacity_available"
