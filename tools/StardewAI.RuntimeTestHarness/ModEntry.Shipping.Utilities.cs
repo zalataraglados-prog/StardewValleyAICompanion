@@ -453,6 +453,8 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.harvest_bush" &&
             request.OptionId != "executor.collect_crab_pot" &&
             request.OptionId != "executor.collect_animal_product" &&
+            request.OptionId != "executor.pet_interact" &&
+            request.OptionId != "executor.fill_pet_bowl" &&
             request.OptionId != "executor.pan_ore_spot" &&
             request.OptionId != "executor.collect_fish_pond_output" &&
             request.OptionId != "executor.complete_fish_pond_request" &&

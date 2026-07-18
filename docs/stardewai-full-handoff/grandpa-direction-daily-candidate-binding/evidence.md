@@ -2,7 +2,7 @@
 
 ## Verification Status
 
-This handoff was superseded by a tested controller revision on 2026-07-17. Focused Core tests passed 103/103, full Core tests passed 946/946, Backend tests passed 49/49, and an E-drive isolated native shipping smoke passed its immediate postcondition.
+This handoff was superseded by a tested controller revision on 2026-07-17. Focused Core tests passed 103/103, full Core tests passed 946/946, Backend tests passed 49/49, and an E-drive isolated native shipping smoke passed its immediate postcondition. Later tested slices are summarized in `AUDIT.md`; the 2026-07-18 pet-care slice remains static-only pending runtime validation.
 
 ## Catalog Completeness
 
@@ -32,9 +32,9 @@ Covered by unrun test definitions: `BindBlocksCompleteCommunityCenterWithUnresol
 
 ## No Speculative Field/Capability Checks
 
-`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Eight non-direct directions are unconditionally blocked as planned contract gaps. Covered by `BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Five non-direct directions are unconditionally blocked as planned contract gaps. Covered by the unrun current test definition `BindFiveNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
 
-Eight non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
+Five non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
 
 ## Candidate Identity Preserved
 
@@ -67,6 +67,12 @@ Candidates with non-empty `BlockReasons` are rejected even when `TimelineStatus`
 - Unknown or contradictory evidence fails closed with `candidate_direction_evidence_rejected`
 - Covered by `FullShipmentDirectionBindsOnlyExactContributingCandidate`, `FullShipmentDirectionRejectsAlreadyShippedCandidateEvenWhenContributionFlagConflicts`, and `BindFullShipmentRejectsCandidateWithoutExactContributionEvidence`
 
+### earn_pet_love
+- Permitted: `pet_daily_interaction` and `fill_pet_bowl` kinds, `farm.care_for_pets` option
+- Requires an exact pet GUID and a positive typed friendship contribution; bowl candidates additionally require the exact delayed `Pet.dayUpdate` settlement marker
+- Pet gift trigger is deterministic, but exact gift selection is recorded only after native execution because that branch uses global RNG
+- Static chain is complete; runtime validation has not been run in this no-test work period
+
 ## Corrected Readiness and Provenance
 
 ### Readiness
@@ -82,7 +88,7 @@ Covered by unrun test definitions: `BindDoesNotIncludeDuplicateGrandpaProvenance
 Covered by an unrun test definition: `BindClonesCandidateArraysToPreventAliasing`.
 
 ### Missing Fields Populated
-Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. Verified for all eight non-direct rows by `BindEightNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. The current unrun test definition checks all five non-direct rows in `BindFiveNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
 
 ### Metadata Sourced from Adapter
 Domain, label, feedback_key, related_factor_ids, potential_points, priority_score, known, blocked are all from the adapter's `CandidateDirection`, not the catalog.
@@ -96,9 +102,10 @@ Covered by an unrun test definition: `BindDirectionMetadataIsSourcedFromAdapterN
 
 `BindBoundCandidateHandoffToDailyPlanCompilerDoesNotFail` (unrun test definition) confirms bound candidate feeds into `DailyPlanCompiler.Compile()` producing a valid plan envelope.
 
-## Build/Tests
+## Historical Build/Tests
 
 - Focused Core: 103/103 passed.
 - Full Core: 946/946 passed.
 - Backend: 49/49 passed.
 - E-drive isolated native shipping immediate postcondition: passed.
+- Current pet-care additions: not built or run; static review only.

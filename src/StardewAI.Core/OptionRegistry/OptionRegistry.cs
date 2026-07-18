@@ -33,6 +33,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("farm.care_for_pets", "farm", "Perform one transparent pet-care obligation",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "player.inventory", "player.energy", "farm.pets", "farm.pet_bowls", "quests.mail_received", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one daily pet interaction or unwatered assigned bowl selected", "native Pet.checkAction or WateringCan lifecycle handed to the mechanical executor", "immediate and next-day friendship/mail settlement kept distinct" },
+                new[] { "block_already_satisfied_pet_care", "block_custom_pet_check_action", "block_missing_safe_slot_or_watering_can", "block_unverified_route", "block_projection_drift", "block_deterministic_claim_for_global_rng_gift_selection" }));
+
             Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -598,6 +606,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "farm.animals", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native Milk Pail or Shears lifecycle targets the exact animal", "produce, inventory, energy, friendship, and Farming XP deltas are verified" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_animal_or_inventory_mutation" }));
+
+            Register(Option("executor.pet_interact", "farm", "Pet one verified pet through native checkAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.safe_item_context", "farm.pets", "menus.active_menu" },
+                new[] { "native daily pet interaction completes", "friendship, lastPetDay, timesPet, mail, and observed gift debris are recorded" },
+                new[] { "block_custom_pet_check_action", "block_already_petted_or_granted", "block_unsafe_selected_item", "block_projection_drift", "block_direct_pet_or_mail_mutation" }));
+
+            Register(Option("executor.fill_pet_bowl", "farm", "Fill one verified pet bowl through native WateringCan lifecycle",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.energy", "player.inventory", "farm.pet_bowls", "menus.active_menu" },
+                new[] { "pet bowl watered state becomes true", "next-day Pet.dayUpdate friendship/mail settlement remains pending" },
+                new[] { "block_unassigned_or_watered_bowl", "block_missing_or_empty_watering_can", "block_projection_drift", "block_direct_bowl_or_friendship_mutation" }));
 
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,

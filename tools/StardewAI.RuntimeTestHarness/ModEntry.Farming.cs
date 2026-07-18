@@ -369,6 +369,7 @@ public sealed partial class ModEntry : Mod
             var recheck = tool.PrimitiveKind switch
             {
                 "water_crop" => ValidateWaterCropTarget(Game1.getFarm(), tool.Target, tool.Tool as WateringCan),
+                "fill_pet_bowl" => ValidatePetBowlTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "harvest_ginger" => ValidateGingerHarvestTarget(Game1.currentLocation, tool.Target, tool.Tool as Hoe, tool.Pending.Request),
                 _ => ValidateTillSoilTarget(Game1.getFarm(), tool.Target, tool.Tool as Hoe)
             };
@@ -427,6 +428,11 @@ public sealed partial class ModEntry : Mod
         if (tool.PrimitiveKind == "harvest_ginger")
         {
             CompleteHarvestGingerNativeTool(tool);
+            return;
+        }
+        if (tool.PrimitiveKind == "fill_pet_bowl")
+        {
+            CompleteFillPetBowlNativeTool(tool);
             return;
         }
 
@@ -518,6 +524,10 @@ public sealed partial class ModEntry : Mod
         {
             return GingerHarvestObservedEffect(Game1.currentLocation, tool.Target);
         }
+        if (tool.PrimitiveKind == "fill_pet_bowl")
+        {
+            return PetBowlObservedEffect(Game1.currentLocation, tool.Target);
+        }
 
         var farm = Game1.getFarm();
         return tool.PrimitiveKind == "water_crop"
@@ -530,6 +540,7 @@ public sealed partial class ModEntry : Mod
         return tool.PrimitiveKind switch
         {
             "water_crop" => new[] { "native_watering_can_lifecycle_watered_target_crop" },
+            "fill_pet_bowl" => new[] { "native_watering_can_lifecycle_filled_pet_bowl", "pet_friendship_remains_pending_until_Pet.dayUpdate" },
             "harvest_ginger" => new[] { "native_hoe_lifecycle_removed_ginger_crop", "native_ginger_debris_created", "native_foraging_experience_delta_seven" },
             _ => new[] { "native_hoe_lifecycle_created_hoe_dirt" }
         };
@@ -540,6 +551,7 @@ public sealed partial class ModEntry : Mod
         return tool.PrimitiveKind switch
         {
             "water_crop" => new[] { "target_crop_water_state_unchanged_after_native_tool_lifecycle" },
+            "fill_pet_bowl" => new[] { "pet_bowl_water_state_unchanged_after_native_tool_lifecycle" },
             "harvest_ginger" => new[] { "ginger_native_postcondition_mismatch" },
             _ => new[] { "target_tile_unchanged_after_native_hoe_lifecycle" }
         };

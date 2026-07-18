@@ -101,6 +101,10 @@ namespace StardewAI.Core.Training
             {
                 return CollectAnimalProductSteps(candidate);
             }
+            if (candidate.Kind == "pet_daily_interaction" || candidate.Kind == "fill_pet_bowl")
+            {
+                return PetCareSteps(candidate);
+            }
             if (candidate.Kind == "pan_ore_spot")
             {
                 return PanOreSpotSteps(candidate);

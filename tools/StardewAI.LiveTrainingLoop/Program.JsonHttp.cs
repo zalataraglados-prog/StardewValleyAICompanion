@@ -97,6 +97,11 @@ static partial class Program
         return string.Empty;
     }
 
+    private static bool? ReadNullableBoolQueueParameter(JsonObject? item, string name)
+    {
+        return bool.TryParse(ReadQueueParameterString(item, name), out var value) ? value : null;
+    }
+
     private static int ReadInt(JsonObject value, string property)
     {
         return value[property]?.GetValue<int>() ?? 0;

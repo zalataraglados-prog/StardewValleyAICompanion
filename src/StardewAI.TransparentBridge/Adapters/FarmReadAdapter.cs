@@ -35,6 +35,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         "machines",
         "chests",
         "animals",
+        "pets",
+        "pet_bowls",
         "resource_clumps",
         "debris",
         "warps",
@@ -86,6 +88,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Game1.getFarm().objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
             ["chests"] = Field(ReadChests(farm), "Game1.getFarm().objects[*] as Chest", tick, "vanilla_1_6_farm"),
             ["animals"] = Field(ReadAnimals(farm), "Game1.locations[*].animals plus Game1.getFarm().buildings[*].GetIndoors().animals", tick, "vanilla_1_6_farm_and_animal_houses"),
+            ["pets"] = Field(ReadPets(), "Utility.getAllPets(); Pet fields; Data/Pets; Pet.checkAction and Pet.dayUpdate projections", tick, "vanilla_1_6_pet"),
+            ["pet_bowls"] = Field(ReadPetBowls(farm), "Game1.locations[*].buildings as PetBowl; PetBowl.performToolAction and Pet.dayUpdate projections", tick, "vanilla_1_6_pet_bowl"),
             ["resource_clumps"] = Field(ReadResourceClumps(farm), "Game1.getFarm().resourceClumps", tick, "vanilla_1_6_farm"),
             ["debris"] = Field(ReadDebris(farm), "Game1.getFarm().debris", tick, "vanilla_1_6_farm"),
             ["warps"] = Field(ReadWarps(farm), "Game1.getFarm().warps", tick, "vanilla_1_6_farm")

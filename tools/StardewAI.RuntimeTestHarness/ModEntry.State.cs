@@ -107,6 +107,11 @@ public sealed partial class ModEntry : Mod
             return new ActiveNativeTool(pending, "water_crop", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null);
         }
 
+        public static ActiveNativeTool WaterPetBowl(PendingExecution pending, string locationId, Point target, List<Point> path, WateringCan tool, double staminaBefore, int? waterBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeWatered, double expectedEnergyCost)
+        {
+            return new ActiveNativeTool(pending, "fill_pet_bowl", locationId, target, path, tool, staminaBefore, waterBefore, startedAt, estimatedTicks, requestedEffect, beforeWatered, null, expectedEnergyCost: expectedEnergyCost);
+        }
+
         public static ActiveNativeTool Till(PendingExecution pending, string locationId, Point target, List<Point> path, Hoe tool, double staminaBefore, string startedAt, int estimatedTicks, string requestedEffect, bool beforeHadHoeDirt)
         {
             return new ActiveNativeTool(pending, "till_soil", locationId, target, path, tool, staminaBefore, null, startedAt, estimatedTicks, requestedEffect, null, beforeHadHoeDirt);

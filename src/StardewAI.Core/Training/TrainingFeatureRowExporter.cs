@@ -220,6 +220,8 @@ namespace StardewAI.Core.Training
                 case "executor.collect_fish_pond_output":
                 case "executor.complete_fish_pond_request":
                 case "executor.collect_animal_product":
+                case "executor.pet_interact":
+                case "executor.fill_pet_bowl":
                 case "executor.pan_ore_spot":
                 case "executor.harvest_ginger":
                 case "executor.harvest_bush":
@@ -231,6 +233,7 @@ namespace StardewAI.Core.Training
                 case "fishing.collect_crab_pots":
                 case "fishing.service_fish_ponds":
                 case "farm.collect_animal_products":
+                case "farm.care_for_pets":
                 case "foraging.pan_ore_spot":
                 case "foraging.harvest_ginger":
                 case "foraging.harvest_bushes":

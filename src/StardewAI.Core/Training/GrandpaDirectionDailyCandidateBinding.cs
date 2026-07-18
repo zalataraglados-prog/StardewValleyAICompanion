@@ -444,6 +444,10 @@ namespace StardewAI.Core.Training
             {
                 return HasSkillExperienceEvidence(candidate, out rejectionReason);
             }
+            if (string.Equals(directionId, "earn_pet_love", StringComparison.Ordinal))
+            {
+                return HasPetLoveEvidence(candidate, out rejectionReason);
+            }
             if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
             {
                 return true;
@@ -485,6 +489,33 @@ namespace StardewAI.Core.Training
                 return false;
             }
 
+            return true;
+        }
+
+        private static bool HasPetLoveEvidence(
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!TryReadUniqueParameter(candidate, "pet_love_progress_delta", out var deltaText) ||
+                !int.TryParse(deltaText, out var delta) || delta <= 0)
+            {
+                rejectionReason = "pet_love_positive_progress_missing";
+                return false;
+            }
+            if (!TryReadUniqueParameter(candidate, "target_runtime_identity", out var petId) ||
+                !Guid.TryParse(petId, out _))
+            {
+                rejectionReason = "pet_love_pet_identity_missing";
+                return false;
+            }
+            if (candidate.Kind == "fill_pet_bowl" &&
+                (!TryReadUniqueParameter(candidate, "delayed_settlement", out var settlement) ||
+                 settlement != "Pet.dayUpdate consumes watered=true and applies min(1000,friendship+6)"))
+            {
+                rejectionReason = "pet_love_delayed_settlement_missing";
+                return false;
+            }
             return true;
         }
 

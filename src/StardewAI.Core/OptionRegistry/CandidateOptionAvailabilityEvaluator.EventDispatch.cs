@@ -14,6 +14,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 ["farm.maintain_crops"] = (snapshot, _) => FarmMaintenanceCandidates(snapshot),
                 ["farm.collect_animal_products"] = (snapshot, _) => AnimalProductCandidates(snapshot),
+                ["farm.care_for_pets"] = (snapshot, _) => PetCareCandidates(snapshot),
                 ["farm.process_machines"] = (snapshot, _) => MachineProcessingCandidates(snapshot),
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),

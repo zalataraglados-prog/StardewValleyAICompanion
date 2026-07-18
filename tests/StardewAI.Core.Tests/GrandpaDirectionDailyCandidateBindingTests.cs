@@ -64,20 +64,21 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void SixDirectionsHaveDirectBindingEnabled()
+    public void SevenDirectionsHaveDirectBindingEnabled()
     {
         var directDirections = GrandpaDirectionCatalog.Entries
             .Where(e => e.DirectBindingEnabled)
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(6, directDirections.Length);
+        Assert.Equal(7, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
         Assert.Contains("complete_full_shipment", directDirections);
         Assert.Contains("obtain_skull_key", directDirections);
         Assert.Contains("raise_skill_levels", directDirections);
+        Assert.Contains("earn_pet_love", directDirections);
     }
 
     [Fact]
@@ -414,7 +415,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksEarnPetLoveAsPlannedContractGap()
+    public void BindEarnPetLoveNeedsPetCareCandidates()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
@@ -425,7 +426,70 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         }, snapshot);
 
         Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Contains("no_current_permitted_candidate", result.BlockReasons);
+    }
+
+    [Fact]
+    public void BindEarnPetLoveAcceptsExactPositivePetCandidate()
+    {
+        var snapshot = GrandpaSnapshot();
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "pet-daily-interaction:8c4b11d3-3660-4f5c-a4dc-f65bf8d6395a",
+            OptionId = "farm.care_for_pets",
+            Kind = "pet_daily_interaction",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("target_runtime_identity", "8c4b11d3-3660-4f5c-a4dc-f65bf8d6395a"),
+                Parameter("pet_love_progress_delta", "12")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "earn_pet_love",
+            RankedCandidates = new[] { candidate }
+        }, snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Single(result.BoundCandidates);
+        Assert.Equal(candidate.CandidateId, result.BoundCandidates[0].CandidateId);
+    }
+
+    [Fact]
+    public void BindEarnPetLoveRejectsBowlCandidateWithoutExactDelayedSettlement()
+    {
+        var snapshot = GrandpaSnapshot();
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "fill-pet-bowl:Farm:54,8",
+            OptionId = "farm.care_for_pets",
+            Kind = "fill_pet_bowl",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("target_runtime_identity", "8c4b11d3-3660-4f5c-a4dc-f65bf8d6395a"),
+                Parameter("pet_love_progress_delta", "6")
+            }
+        };
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "earn_pet_love",
+            RankedCandidates = new[] { candidate }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains(result.BlockReasons, reason => reason.Contains("pet_love_delayed_settlement_missing", StringComparison.Ordinal));
     }
 
     [Fact]

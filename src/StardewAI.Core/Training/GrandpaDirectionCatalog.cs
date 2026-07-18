@@ -129,12 +129,12 @@ namespace StardewAI.Core.Training
                 new[] { "MarriageEligibilityCapability", "HouseUpgradeTrackingCapability" },
                 "marriage_and_house_upgrade blocked: planned contract gap. Requires transparent spouse/roommate and farmhouse-upgrade tracking.",
                 false),
-            CreateBlocked("earn_pet_love",
-                "grandpa.blocked.earn_pet_love",
-                new[] { "quests.mail_received", "farm.pet", "npcs.pet_friendship" },
-                new[] { "PetLoveTrackingCapability" },
-                "earn_pet_love blocked: planned contract gap. Requires transparent pet-friendship tracking.",
-                false)
+            CreateDirect("earn_pet_love",
+                "grandpa.direct.earn_pet_love",
+                new[] { "farm.care_for_pets" },
+                new[] { "pet_daily_interaction", "fill_pet_bowl" },
+                "Cannot bind pet-care candidates because exact current or delayed friendship evidence is unavailable.",
+                new[] { "quests.mail_received", "farm.pets", "farm.pet_bowls" })
         };
 
         private static GrandpaDirectionCatalogEntry CreateDirect(

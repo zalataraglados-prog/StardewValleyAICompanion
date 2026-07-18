@@ -84,6 +84,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.maintain_crops" ||
                 optionId == "farm.process_machines" ||
                 optionId == "farm.collect_animal_products" ||
+                optionId == "farm.care_for_pets" ||
                 optionId == "skills.read_books" ||
                 optionId == "fishing.catch_fish" ||
                 optionId == "fishing.collect_crab_pots" ||
@@ -139,6 +140,8 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.collect_fish_pond_output" ||
                 optionId == "executor.complete_fish_pond_request" ||
                 optionId == "executor.collect_animal_product" ||
+                optionId == "executor.pet_interact" ||
+                optionId == "executor.fill_pet_bowl" ||
                 optionId == "executor.pan_ore_spot" ||
                 optionId == "executor.collect_machine_output" ||
                 optionId == "executor.load_machine_input" ||

@@ -166,6 +166,10 @@ namespace StardewAI.Core.Execution
                 case "farm.collect_animal_products":
                 case "executor.collect_animal_product":
                     return EstimateCompiledSteps(item, "native_animal_tool_steps.v1");
+                case "farm.care_for_pets":
+                case "executor.pet_interact":
+                case "executor.fill_pet_bowl":
+                    return EstimateCompiledSteps(item, "native_pet_care_steps.v1");
                 case "foraging.pan_ore_spot":
                 case "executor.pan_ore_spot":
                     return EstimateCompiledSteps(item, "native_pan_steps.v1");
@@ -334,7 +338,8 @@ namespace StardewAI.Core.Execution
                 return assumptionRegistry.GetRequired("fish_pond_service");
             }
 
-            if (item.OptionId is "farm.collect_animal_products" or "executor.collect_animal_product")
+            if (item.OptionId is "farm.collect_animal_products" or "executor.collect_animal_product" or
+                "farm.care_for_pets" or "executor.pet_interact" or "executor.fill_pet_bowl")
             {
                 return assumptionRegistry.GetRequired("animals");
             }

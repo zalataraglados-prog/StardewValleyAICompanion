@@ -129,7 +129,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindSixNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
+    public void BindFiveNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
     {
         var blockedDirections = new[]
         {
@@ -137,8 +137,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             "obtain_rusty_key",
             "complete_community_center",
             "complete_joja_development",
-            "marriage_and_house_upgrade",
-            "earn_pet_love"
+            "marriage_and_house_upgrade"
         };
 
         var snapshot = GrandpaSnapshot();

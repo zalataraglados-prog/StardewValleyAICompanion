@@ -527,6 +527,72 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("cooking_recipes_added_count")]
         public int? CookingRecipesAddedCount { get; set; }
 
+        [JsonPropertyName("expected_last_pet_day_before")]
+        public int? ExpectedLastPetDayBefore { get; set; }
+
+        [JsonPropertyName("expected_last_pet_day_before_missing")]
+        public bool ExpectedLastPetDayBeforeMissing { get; set; }
+
+        [JsonPropertyName("expected_last_pet_day_after")]
+        public int? ExpectedLastPetDayAfter { get; set; }
+
+        [JsonPropertyName("expected_times_pet_before")]
+        public int? ExpectedTimesPetBefore { get; set; }
+
+        [JsonPropertyName("expected_times_pet_after")]
+        public int? ExpectedTimesPetAfter { get; set; }
+
+        [JsonPropertyName("expected_granted_friendship_before")]
+        public bool? ExpectedGrantedFriendshipBefore { get; set; }
+
+        [JsonPropertyName("expected_granted_friendship_after")]
+        public bool? ExpectedGrantedFriendshipAfter { get; set; }
+
+        [JsonPropertyName("expected_pet_love_mail_before")]
+        public bool? ExpectedPetLoveMailBefore { get; set; }
+
+        [JsonPropertyName("expected_pet_love_mail_after")]
+        public bool? ExpectedPetLoveMailAfter { get; set; }
+
+        [JsonPropertyName("expected_marnie_pet_adoption_mail_before_or_pending")]
+        public bool? ExpectedMarniePetAdoptionMailBeforeOrPending { get; set; }
+
+        [JsonPropertyName("expected_marnie_pet_adoption_mail_after_or_pending")]
+        public bool? ExpectedMarniePetAdoptionMailAfterOrPending { get; set; }
+
+        [JsonPropertyName("pet_gift_trigger_expected")]
+        public bool? PetGiftTriggerExpected { get; set; }
+
+        [JsonPropertyName("pet_gift_selection_status")]
+        public string PetGiftSelectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_bowl_watered_before")]
+        public bool? ExpectedBowlWateredBefore { get; set; }
+
+        [JsonPropertyName("expected_bowl_watered_after")]
+        public bool? ExpectedBowlWateredAfter { get; set; }
+
+        [JsonPropertyName("expected_water_before")]
+        public int? ExpectedWaterBefore { get; set; }
+
+        [JsonPropertyName("expected_water_after")]
+        public int? ExpectedWaterAfter { get; set; }
+
+        [JsonPropertyName("expected_watering_can_bottomless")]
+        public bool? ExpectedWateringCanBottomless { get; set; }
+
+        [JsonPropertyName("expected_next_day_friendship_after")]
+        public int? ExpectedNextDayFriendshipAfter { get; set; }
+
+        [JsonPropertyName("expected_next_day_pet_love_mail")]
+        public bool? ExpectedNextDayPetLoveMail { get; set; }
+
+        [JsonPropertyName("expected_next_day_marnie_pet_adoption_mail")]
+        public bool? ExpectedNextDayMarniePetAdoptionMail { get; set; }
+
+        [JsonPropertyName("delayed_settlement")]
+        public string DelayedSettlement { get; set; } = string.Empty;
+
         [JsonPropertyName("expected_mine_level_delta")]
         public int? ExpectedMineLevelDelta { get; set; }
 
@@ -1027,5 +1093,74 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("dialogue_event_up_after")]
         public bool? DialogueEventUpAfter { get; set; }
+
+        [JsonPropertyName("pet_id")]
+        public string PetId { get; set; } = string.Empty;
+
+        [JsonPropertyName("pet_friendship_before")]
+        public int? PetFriendshipBefore { get; set; }
+
+        [JsonPropertyName("pet_friendship_after")]
+        public int? PetFriendshipAfter { get; set; }
+
+        [JsonPropertyName("pet_last_pet_day_before")]
+        public int? PetLastPetDayBefore { get; set; }
+
+        [JsonPropertyName("pet_last_pet_day_before_missing")]
+        public bool? PetLastPetDayBeforeMissing { get; set; }
+
+        [JsonPropertyName("pet_last_pet_day_after")]
+        public int? PetLastPetDayAfter { get; set; }
+
+        [JsonPropertyName("pet_times_pet_before")]
+        public int? PetTimesPetBefore { get; set; }
+
+        [JsonPropertyName("pet_times_pet_after")]
+        public int? PetTimesPetAfter { get; set; }
+
+        [JsonPropertyName("pet_granted_friendship_before")]
+        public bool? PetGrantedFriendshipBefore { get; set; }
+
+        [JsonPropertyName("pet_granted_friendship_after")]
+        public bool? PetGrantedFriendshipAfter { get; set; }
+
+        [JsonPropertyName("pet_love_mail_before")]
+        public bool? PetLoveMailBefore { get; set; }
+
+        [JsonPropertyName("pet_love_mail_after")]
+        public bool? PetLoveMailAfter { get; set; }
+
+        [JsonPropertyName("marnie_pet_adoption_mail_before_or_pending")]
+        public bool? MarniePetAdoptionMailBeforeOrPending { get; set; }
+
+        [JsonPropertyName("marnie_pet_adoption_mail_after_or_pending")]
+        public bool? MarniePetAdoptionMailAfterOrPending { get; set; }
+
+        [JsonPropertyName("pet_gift_trigger_expected")]
+        public bool? PetGiftTriggerExpected { get; set; }
+
+        [JsonPropertyName("pet_gift_debris_count_before")]
+        public int? PetGiftDebrisCountBefore { get; set; }
+
+        [JsonPropertyName("pet_gift_debris_count_after")]
+        public int? PetGiftDebrisCountAfter { get; set; }
+
+        [JsonPropertyName("pet_bowl_watered_before")]
+        public bool? PetBowlWateredBefore { get; set; }
+
+        [JsonPropertyName("pet_bowl_watered_after")]
+        public bool? PetBowlWateredAfter { get; set; }
+
+        [JsonPropertyName("pet_next_day_friendship_expected_after")]
+        public int? PetNextDayFriendshipExpectedAfter { get; set; }
+
+        [JsonPropertyName("pet_next_day_love_mail_expected_after")]
+        public bool? PetNextDayLoveMailExpectedAfter { get; set; }
+
+        [JsonPropertyName("pet_next_day_marnie_adoption_mail_expected_after")]
+        public bool? PetNextDayMarnieAdoptionMailExpectedAfter { get; set; }
+
+        [JsonPropertyName("pet_next_day_settlement_status")]
+        public string PetNextDaySettlementStatus { get; set; } = string.Empty;
     }
 }

@@ -150,6 +150,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_animal_product_candidates");
             }
 
+            if (optionId == "farm.care_for_pets")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_pet_care_candidates",
+                    "no_available_pet_care_candidates");
+            }
+
             if (optionId == "skills.read_books")
             {
                 return EventCandidateAvailabilityReasons(

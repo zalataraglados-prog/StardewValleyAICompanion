@@ -132,12 +132,9 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             };
         }
 
-        var toolbarCount = Math.Min(12, player.Items.Count);
-        var emptySlot = Enumerable.Range(0, toolbarCount).FirstOrDefault(index => player.Items[index] is null);
-        var hasEmptySlot = toolbarCount > 0 && emptySlot >= 0 && emptySlot < toolbarCount && player.Items[emptySlot] is null;
-        var toolSlot = Enumerable.Range(0, toolbarCount).FirstOrDefault(index => player.Items[index] is Tool);
-        var hasToolSlot = toolbarCount > 0 && toolSlot >= 0 && toolSlot < toolbarCount && player.Items[toolSlot] is Tool;
-        var safeSlot = hasEmptySlot ? emptySlot : hasToolSlot ? toolSlot : (int?)null;
+        var safeSlot = FindSafeItemSlot(player);
+        var hasEmptySlot = safeSlot.HasValue && player.Items[safeSlot.Value] is null;
+        var hasToolSlot = safeSlot.HasValue && player.Items[safeSlot.Value] is Tool;
 
         return new
         {
@@ -148,6 +145,26 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             safe_slot_kind = hasEmptySlot ? "empty" : hasToolSlot ? "tool" : "unavailable",
             policy = "prefer_empty_slot_then_tool_slot"
         };
+    }
+
+    internal static int? FindSafeItemSlot(Farmer player)
+    {
+        var toolbarCount = Math.Min(12, player.Items.Count);
+        for (var index = 0; index < toolbarCount; index++)
+        {
+            if (player.Items[index] is null)
+            {
+                return index;
+            }
+        }
+        for (var index = 0; index < toolbarCount; index++)
+        {
+            if (player.Items[index] is Tool)
+            {
+                return index;
+            }
+        }
+        return null;
     }
 
     private static object ReadInventoryCapacity(Farmer? player)
