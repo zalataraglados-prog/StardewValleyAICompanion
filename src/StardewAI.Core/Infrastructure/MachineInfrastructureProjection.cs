@@ -104,7 +104,7 @@ internal static partial class MachineInfrastructureProjectionEvaluator
             Pair("machine_crafting_cask_candidate_status", projection.CaskCraftCandidateStatus),
             Pair("machine_crafting_cask_output_qualified_item_id", projection.CaskOutputQualifiedItemId),
             Pair("machine_crafting_cask_placement_location_rule", projection.CaskPlacementLocationRule),
-            Pair("machine_infrastructure_demand_semantics", "current_inventory_alternatives_not_long_horizon_demand")
+            Pair("machine_infrastructure_demand_semantics", "live_backlog_and_live_crop_wave_latest_build_window_committed_future_planting_queue_pending")
         };
 
     public static MachineInfrastructureProjection Evaluate(SnapshotEnvelope snapshot)

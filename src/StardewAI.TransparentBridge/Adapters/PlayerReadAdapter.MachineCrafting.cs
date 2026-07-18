@@ -87,6 +87,7 @@ public sealed partial class PlayerReadAdapter
                 output_context_tags = output.Item.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
                 output_big_craftable = output.BigCraftable,
                 output_machine_data_status = output.MachineDataStatus,
+                output_machine_data = FarmReadAdapter.ReadCompleteMachineDataSummary((output.Item as StardewValley.Object)?.GetMachineData()),
                 output_count_per_craft = recipe.numberProducedPerCraft,
                 output_is_cask = output.IsCask,
                 placement_location_rule = output.IsCask
@@ -309,6 +310,7 @@ public sealed partial class PlayerReadAdapter
             }
 
             var acceptingLocations = new List<string>();
+            var acceptingContexts = new List<object>();
             foreach (var context in contexts)
             {
                 try
@@ -323,6 +325,11 @@ public sealed partial class PlayerReadAdapter
                     if (probe.performObjectDropInAction(input, probe: true, player))
                     {
                         acceptingLocations.Add(context.Location.NameOrUniqueName);
+                        acceptingContexts.Add(new
+                        {
+                            location_id = context.Location.NameOrUniqueName,
+                            predicted_output = FarmReadAdapter.ReadPredictedMachineOutput(probe, input)
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -348,6 +355,7 @@ public sealed partial class PlayerReadAdapter
                     quality = input.Quality,
                     accepting_location_ids = acceptingLocations.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     accepting_location_count = acceptingLocations.Count,
+                    accepting_contexts = acceptingContexts.ToArray(),
                     probe_source = "detached_machine.performObjectDropInAction(probe:true)_across_native_player_controlled_location_topology"
                 });
             }

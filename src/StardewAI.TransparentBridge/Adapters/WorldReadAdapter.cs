@@ -17,6 +17,7 @@ public sealed class WorldReadAdapter : ReadAdapterBase
             ["year"] = Field(Context.IsWorldReady ? (int?)Game1.year : null, "Game1.year", tick),
             ["season"] = Field(Context.IsWorldReady ? Game1.currentSeason : null, "Game1.currentSeason", tick),
             ["day"] = Field(Context.IsWorldReady ? (int?)Game1.dayOfMonth : null, "Game1.dayOfMonth", tick),
+            ["total_days"] = Field(Context.IsWorldReady ? (int?)Game1.Date.TotalDays : null, "Game1.Date.TotalDays", tick),
             ["time"] = Field(Context.IsWorldReady ? (int?)Game1.timeOfDay : null, "Game1.timeOfDay", tick),
             ["is_green_rain"] = Field(Context.IsWorldReady ? (bool?)Game1.isGreenRain : null, "Game1.isGreenRain", tick),
             ["weather"] = Field(Context.IsWorldReady ? CurrentWeather() : null, "Game1.isRaining/isSnowing/isLightning/isDebrisWeather", tick)

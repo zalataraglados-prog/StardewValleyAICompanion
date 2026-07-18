@@ -71,13 +71,26 @@ namespace StardewAI.Core.Execution
             }
             if (!demand.HasDemand ||
                 !string.Equals(ReadParameter(action, "machine_demand_class"), demand.DemandClass, StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "machine_scale"), demand.MachineScale, StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "machine_horizon_status"), demand.HorizonStatus, StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "machine_timing_status"), demand.TimingStatus, StringComparison.Ordinal) ||
                 ReadIntParameter(action, "machine_demand_priority") != demand.Priority ||
                 !string.Equals(ReadParameter(action, "priority_task_required"), Lower(demand.PriorityTaskRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "priority_task_sources_json"), JsonSerializer.Serialize(demand.PriorityTaskSources), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "production_capacity_required"), Lower(demand.ProductionCapacityRequired), StringComparison.Ordinal) ||
                 ReadIntParameter(action, "potential_input_count") != demand.PotentialInputCount ||
+                ReadIntParameter(action, "backlog_input_units") != demand.BacklogInputUnits ||
                 ReadIntParameter(action, "placed_same_machine_count") != demand.PlacedSameMachineCount ||
                 ReadIntParameter(action, "idle_same_machine_count") != demand.IdleSameMachineCount ||
+                ReadIntParameter(action, "process_cycle_minutes") != demand.ProcessCycleMinutes ||
+                ReadIntParameter(action, "next_arrival_days") != demand.NextArrivalDays ||
+                ReadIntParameter(action, "next_arrival_units") != demand.NextArrivalUnits ||
+                ReadIntParameter(action, "capacity_before_next_arrival") != demand.CapacityBeforeNextArrival ||
+                ReadIntParameter(action, "capacity_deficit_units") != demand.CapacityDeficitUnits ||
+                ReadIntParameter(action, "required_additional_machine_count") != demand.RequiredAdditionalMachineCount ||
+                ReadIntParameter(action, "latest_build_lead_minutes") != demand.LatestBuildLeadMinutes ||
+                ReadIntParameter(action, "minutes_until_next_arrival") != demand.MinutesUntilNextArrival ||
+                !string.Equals(ReadParameter(action, "machine_build_window_open"), Lower(demand.BuildWindowOpen), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "collection_path_required"), Lower(demand.CollectionPathRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "collection_path_source"), demand.CollectionPathSource, StringComparison.Ordinal))
             {

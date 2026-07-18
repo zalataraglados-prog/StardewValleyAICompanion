@@ -82,12 +82,16 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             {
                 var dirt = (HoeDirt)pair.Value;
                 var crop = dirt.crop;
+                var cropData = crop.GetData();
                 var experience = ReadCropHarvestExperience(crop);
+                var readyForHarvest = dirt.readyForHarvest();
                 return new
                 {
                     tile_x = (int)pair.Key.X,
                     tile_y = (int)pair.Key.Y,
                     harvest_item_id = crop.indexOfHarvest.Value,
+                    harvest_item_qualified_id = QualifyObjectId(crop.indexOfHarvest.Value),
+                    phase_days = crop.phaseDays.ToArray(),
                     current_phase = crop.currentPhase.Value,
                     phase_count = crop.phaseDays.Count,
                     day_of_current_phase = crop.dayOfCurrentPhase.Value,
@@ -95,7 +99,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     forage_crop = crop.forageCrop.Value,
                     forage_crop_id = crop.whichForageCrop.Value,
                     fully_grown = crop.fullyGrown.Value,
-                    ready_for_harvest = dirt.readyForHarvest(),
+                    ready_for_harvest = readyForHarvest,
+                    days_until_next_harvest_if_watered = ReadDaysUntilNextHarvestIfWatered(crop, readyForHarvest),
+                    next_harvest_projection_condition = "crop_remains_in_season_and_receives_each_required_daily_growth_update",
+                    harvest_min_stack = cropData?.HarvestMinStack,
+                    harvest_max_stack = cropData?.HarvestMaxStack,
+                    extra_harvest_chance = cropData?.ExtraHarvestChance,
                     watered = dirt.isWatered(),
                     needs_watering = dirt.needsWatering(),
                     harvest_experience_skill_id = experience.SkillId,
@@ -109,6 +118,38 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .OrderBy(crop => crop.tile_y)
             .ThenBy(crop => crop.tile_x)
             .ToArray();
+    }
+
+    private static int? ReadDaysUntilNextHarvestIfWatered(Crop crop, bool readyForHarvest)
+    {
+        if (crop.dead.Value || crop.phaseDays.Count == 0)
+        {
+            return null;
+        }
+        if (readyForHarvest)
+        {
+            return 0;
+        }
+        if (crop.fullyGrown.Value)
+        {
+            return Math.Max(0, crop.dayOfCurrentPhase.Value);
+        }
+
+        var finalGrowthPhase = crop.phaseDays.Count - 1;
+        var currentPhase = Math.Clamp(crop.currentPhase.Value, 0, finalGrowthPhase);
+        var remaining = 0;
+        for (var phase = currentPhase; phase < finalGrowthPhase; phase++)
+        {
+            var phaseDays = crop.phaseDays[phase];
+            if (phaseDays <= 0 || phaseDays >= 99999)
+            {
+                continue;
+            }
+            remaining += phase == currentPhase
+                ? Math.Max(0, phaseDays - crop.dayOfCurrentPhase.Value)
+                : phaseDays;
+        }
+        return remaining;
     }
 
     private static object[] ReadTerrainFeatures(Farm farm)

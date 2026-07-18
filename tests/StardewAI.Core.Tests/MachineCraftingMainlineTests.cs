@@ -99,6 +99,92 @@ public sealed class MachineCraftingMainlineTests
     }
 
     [Fact]
+    public void FactoryCapacityBuildIsDeferredUntilLatestUsefulWindow()
+    {
+        var snapshot = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 5,
+            cropDaysUntilHarvest: 20,
+            processMinutes: 4000);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.False(candidate.Available);
+        Assert.Equal("factory_scale_batch", Parameter(candidate.Parameters, "machine_scale"));
+        Assert.Equal("deferred_until_latest_build_window", Parameter(candidate.Parameters, "machine_demand_class"));
+        Assert.Equal("deferred_too_early_machine_would_idle", Parameter(candidate.Parameters, "machine_timing_status"));
+        Assert.Contains("machine_build_deferred_too_early", candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void FactoryCapacityBuildOpensWhenLatestWindowIsReached()
+    {
+        var snapshot = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 5,
+            cropDaysUntilHarvest: 5,
+            processMinutes: 4000);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("factory_scale_batch", Parameter(candidate.Parameters, "machine_scale"));
+        Assert.Equal("production_capacity_requirement", Parameter(candidate.Parameters, "machine_demand_class"));
+        Assert.Equal("true", Parameter(candidate.Parameters, "machine_build_window_open"));
+        Assert.Equal("3", Parameter(candidate.Parameters, "required_additional_machine_count"));
+    }
+
+    [Fact]
+    public void ExistingFleetThatClearsBacklogBeforeHarvestSuppressesExpansion()
+    {
+        var snapshot = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 2,
+            cropDaysUntilHarvest: 3,
+            processMinutes: 1000,
+            placedMachineCount: 1);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.False(candidate.Available);
+        Assert.Equal("deferred_existing_fleet_clears_backlog_within_horizon", Parameter(candidate.Parameters, "machine_timing_status"));
+        Assert.Equal("0", Parameter(candidate.Parameters, "capacity_deficit_units"));
+    }
+
+    [Fact]
+    public void NativeRaccoonSmokedFishRequirementCreatesCollectionScaleTaskDemand()
+    {
+        var snapshot = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 0,
+            processMinutes: 50,
+            recipeName: "Fish Smoker",
+            machineQualifiedId: "(BC)FishSmoker",
+            machineItemId: "FishSmoker",
+            inputQualifiedId: "(O)136",
+            inputItemId: "136",
+            predictedOutputQualifiedId: "(O)SmokedFish",
+            predictedOutputItemId: "SmokedFish",
+            predictedPreservedItemId: "136",
+            includeRaccoonRequest: true);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("collection_scale_one_off", Parameter(candidate.Parameters, "machine_scale"));
+        Assert.Equal("priority_task_requirement", Parameter(candidate.Parameters, "machine_demand_class"));
+        Assert.Contains("raccoon_bundle:ingredient:1", Parameter(candidate.Parameters, "priority_task_sources_json"));
+    }
+
+    [Fact]
     public void MachinePlacementUsesNativeLocationTopologyInsteadOfFarmAllowlist()
     {
         var topology = File.ReadAllText(FindRepositoryFile(
@@ -120,7 +206,23 @@ public sealed class MachineCraftingMainlineTests
         Assert.DoesNotContain("with_Farm_context", crafting, StringComparison.Ordinal);
     }
 
-    private static SnapshotEnvelope Snapshot(int timesCrafted, bool ready, int potentialInputs = 1, bool includeQuest = false)
+    private static SnapshotEnvelope Snapshot(
+        int timesCrafted,
+        bool ready,
+        int potentialInputs = 1,
+        bool includeQuest = false,
+        int cropDaysUntilHarvest = -1,
+        int processMinutes = 1000,
+        int placedMachineCount = 0,
+        string recipeName = "Keg",
+        string machineQualifiedId = "(BC)12",
+        string machineItemId = "12",
+        string inputQualifiedId = "(O)262",
+        string inputItemId = "262",
+        string predictedOutputQualifiedId = "(O)346",
+        string predictedOutputItemId = "346",
+        string predictedPreservedItemId = "",
+        bool includeRaccoonRequest = false)
     {
         var status = ready ? "ready_for_native_personal_crafting_menu" : "blocked_output_cannot_fit_after_material_consumption";
         var stateJson = """
@@ -130,21 +232,43 @@ public sealed class MachineCraftingMainlineTests
             "inventory": {"value":[{"slot_index":0,"item_id":"388","qualified_item_id":"(O)388","stack":30,"quality":0,"maximum_stack_size":999,"is_empty":false},{"slot_index":1,"item_id":"390","qualified_item_id":"(O)390","stack":1,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory_capacity": {"value":{"occupied_stacks":2,"empty_slots":0,"has_empty_slot":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "machine_crafting": {"value":{"projection_status":"complete_known_machine_recipe_projection","rows":[{
-              "recipe_name":"Keg","times_crafted":TIMES_CRAFTED,"output_selection_status":"exact_single_machine_output","output_item_id":"12","output_qualified_item_id":"(BC)12","output_count_per_craft":1,"output_context_tags":["item_keg"],
+              "recipe_name":"RECIPE_NAME","times_crafted":TIMES_CRAFTED,"output_selection_status":"exact_single_machine_output","output_item_id":"MACHINE_ITEM_ID","output_qualified_item_id":"MACHINE_QUALIFIED_ID","output_count_per_craft":1,"output_context_tags":["item_machine"],"output_machine_data":{"status":"available","output_rules":[{"minutes_until_ready":PROCESS_MINUTES,"output_item":{"item_id":"PREDICTED_OUTPUT_ITEM_ID","qualified_item_id":"PREDICTED_OUTPUT_QUALIFIED_ID","preserve_id":"PREDICTED_PRESERVED_ITEM_ID"}}]},
               "ingredient_rows":[{"requirement_id_or_category":"388","required_count":30,"available_count_before_this_ingredient":30,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":0,"qualified_item_id":"(O)388","amount":30}]}],
-              "has_ingredients_for_one":true,"craftable_count_from_player_inventory":1,"potential_loadable_input_count":POTENTIAL_INPUTS,"output_inventory_acceptance_after_material_consumption":READY,"craft_candidate_status":"STATUS"
+              "has_ingredients_for_one":true,"craftable_count_from_player_inventory":1,"potential_loadable_input_count":POTENTIAL_INPUTS,"potential_loadable_inputs":POTENTIAL_ROWS,"output_inventory_acceptance_after_material_consumption":READY,"craft_candidate_status":"STATUS"
             }]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {"machines":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+          "farm": {
+            "crops":{"value":CROP_ROWS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "machines":{"value":MACHINE_ROWS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "quests": {
             "active_quests":{"value":ACTIVE_QUESTS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "special_orders":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
+          "world_progress":{"raccoon_request":{"value":RACCOON_REQUEST,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+          "time":{"time":{"value":600,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
           "menus": {"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}}
         }
         """
         .Replace("TIMES_CRAFTED", timesCrafted.ToString())
         .Replace("POTENTIAL_INPUTS", potentialInputs.ToString())
+        .Replace("POTENTIAL_ROWS", potentialInputs > 0
+            ? "[{\"slot_index\":2,\"item_id\":\"" + inputItemId + "\",\"qualified_item_id\":\"" + inputQualifiedId + "\",\"stack\":" + potentialInputs + ",\"accepting_contexts\":[{\"location_id\":\"Farm\",\"predicted_output\":{\"status\":\"available\",\"effective_minutes_until_ready\":" + processMinutes + ",\"preserved_item_id\":\"" + predictedPreservedItemId + "\",\"item\":{\"item_id\":\"" + predictedOutputItemId + "\",\"qualified_item_id\":\"" + predictedOutputQualifiedId + "\"}}}]}]"
+            : "[]")
+        .Replace("RECIPE_NAME", recipeName)
+        .Replace("MACHINE_QUALIFIED_ID", machineQualifiedId)
+        .Replace("MACHINE_ITEM_ID", machineItemId)
+        .Replace("PROCESS_MINUTES", processMinutes.ToString())
+        .Replace("PREDICTED_OUTPUT_ITEM_ID", predictedOutputItemId)
+        .Replace("PREDICTED_OUTPUT_QUALIFIED_ID", predictedOutputQualifiedId)
+        .Replace("PREDICTED_PRESERVED_ITEM_ID", predictedPreservedItemId)
+        .Replace("CROP_ROWS", cropDaysUntilHarvest >= 0
+            ? "[{\"harvest_item_id\":\"" + inputItemId + "\",\"harvest_item_qualified_id\":\"" + inputQualifiedId + "\",\"days_until_next_harvest_if_watered\":" + cropDaysUntilHarvest + ",\"harvest_min_stack\":1,\"dead\":false}]"
+            : "[]")
+        .Replace("MACHINE_ROWS", "[" + string.Join(",", Enumerable.Range(0, placedMachineCount).Select(index => "{\"qualified_item_id\":\"" + machineQualifiedId + "\",\"minutes_until_ready\":-1,\"ready_for_harvest\":false}")) + "]")
+        .Replace("RACCOON_REQUEST", includeRaccoonRequest
+            ? "{\"projection_status\":\"exact_native_Raccoon.GetBundle\",\"request_available\":true,\"ingredients\":[{\"ingredient_index\":1,\"item_id\":\"SmokedFish\",\"preserves_item_id\":\"136\",\"completed\":false}]}"
+            : "null")
         .Replace("ACTIVE_QUESTS", includeQuest
             ? "[{\"id\":\"craft-keg\",\"completed\":false,\"runtime_type\":\"CraftingQuest\",\"per_type_fields\":{\"item_id\":\"12\"}}]"
             : "[]")

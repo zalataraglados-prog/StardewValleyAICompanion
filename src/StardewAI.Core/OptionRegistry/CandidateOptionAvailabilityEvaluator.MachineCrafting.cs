@@ -58,7 +58,11 @@ namespace StardewAI.Core.OptionRegistry
             }
             if (!demand.HasDemand)
             {
-                blockReasons.Add("machine_recipe_has_no_proven_task_production_or_collection_requirement");
+                blockReasons.Add(demand.DemandClass == "blocked_incomplete_capacity_horizon"
+                    ? "machine_capacity_horizon_incomplete"
+                    : demand.DemandClass == "deferred_until_latest_build_window"
+                        ? "machine_build_deferred_too_early"
+                        : "machine_recipe_has_no_proven_task_production_or_collection_requirement");
             }
 
             return new EventCandidate
@@ -75,6 +79,9 @@ namespace StardewAI.Core.OptionRegistry
                     ";times_crafted_before=" + timesCrafted +
                     ";times_crafted_after=" + (timesCrafted + outputCount) +
                     ";machine_demand_class=" + demand.DemandClass +
+                    ";machine_scale=" + demand.MachineScale +
+                    ";machine_horizon_status=" + demand.HorizonStatus +
+                    ";machine_timing_status=" + demand.TimingStatus +
                     ";machine_demand_priority=" + demand.Priority +
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
@@ -97,13 +104,26 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("ingredient_rows_json", ingredientRowsJson),
                     Parameter("crafting_source", "native_personal_crafting_menu"),
                     Parameter("machine_demand_class", demand.DemandClass),
+                    Parameter("machine_scale", demand.MachineScale),
+                    Parameter("machine_horizon_status", demand.HorizonStatus),
+                    Parameter("machine_timing_status", demand.TimingStatus),
                     Parameter("machine_demand_priority", demand.Priority.ToString()),
                     Parameter("priority_task_required", demand.PriorityTaskRequired.ToString().ToLowerInvariant()),
                     Parameter("priority_task_sources_json", JsonSerializer.Serialize(demand.PriorityTaskSources)),
                     Parameter("production_capacity_required", demand.ProductionCapacityRequired.ToString().ToLowerInvariant()),
                     Parameter("potential_input_count", demand.PotentialInputCount.ToString()),
+                    Parameter("backlog_input_units", demand.BacklogInputUnits.ToString()),
                     Parameter("placed_same_machine_count", demand.PlacedSameMachineCount.ToString()),
                     Parameter("idle_same_machine_count", demand.IdleSameMachineCount.ToString()),
+                    Parameter("process_cycle_minutes", demand.ProcessCycleMinutes.ToString()),
+                    Parameter("next_arrival_days", demand.NextArrivalDays.ToString()),
+                    Parameter("next_arrival_units", demand.NextArrivalUnits.ToString()),
+                    Parameter("capacity_before_next_arrival", demand.CapacityBeforeNextArrival.ToString()),
+                    Parameter("capacity_deficit_units", demand.CapacityDeficitUnits.ToString()),
+                    Parameter("required_additional_machine_count", demand.RequiredAdditionalMachineCount.ToString()),
+                    Parameter("latest_build_lead_minutes", demand.LatestBuildLeadMinutes.ToString()),
+                    Parameter("minutes_until_next_arrival", demand.MinutesUntilNextArrival.ToString()),
+                    Parameter("machine_build_window_open", demand.BuildWindowOpen.ToString().ToLowerInvariant()),
                     Parameter("collection_path_required", demand.CollectionPathRequired.ToString().ToLowerInvariant()),
                     Parameter("collection_path_source", demand.CollectionPathSource)
                 }

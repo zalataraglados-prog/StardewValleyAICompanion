@@ -164,7 +164,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return locationId + ":" + (int)tile.X + "," + (int)tile.Y;
     }
 
-    private static object ReadMachineDataSummary(object? machineData)
+    private static object ReadMachineDataSummary(object? machineData) => ReadMachineDataSummary(machineData, completeCatalog: false);
+
+    internal static object ReadCompleteMachineDataSummary(object? machineData) => ReadMachineDataSummary(machineData, completeCatalog: true);
+
+    private static object ReadMachineDataSummary(object? machineData, bool completeCatalog)
     {
         if (machineData is null)
         {
@@ -183,11 +187,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             has_output = ReadBoolNullable(machineData, "HasOutput"),
             use_first_valid_output = ReadBoolNullable(machineData, "UseFirstValidOutput"),
             output_rule_count = ReadCount(machineData, "OutputRules"),
-            output_rules = ReadMachineOutputRules(machineData)
+            output_rule_snapshot_status = completeCatalog ? "complete_no_rule_or_output_truncation" : "bounded_runtime_machine_summary",
+            output_rules = ReadMachineOutputRules(machineData, completeCatalog)
         };
     }
 
-    private static object[] ReadMachineOutputRules(object machineData)
+    private static object[] ReadMachineOutputRules(object machineData, bool completeCatalog)
     {
         var outputRules = ReadMemberValue(machineData, "OutputRules");
         if (outputRules is not System.Collections.IEnumerable enumerable)
@@ -195,10 +200,14 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             return Array.Empty<object>();
         }
 
-        return enumerable
+        var rules = enumerable
             .Cast<object?>()
-            .Where(rule => rule is not null)
-            .Take(12)
+            .Where(rule => rule is not null);
+        if (!completeCatalog)
+        {
+            rules = rules.Take(12);
+        }
+        return rules
             .Select(rule => new
             {
                 id = ReadString(rule!, "Id") ?? string.Empty,
@@ -211,24 +220,28 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 max_items = ReadIntNullable(rule!, "MaxItems"),
                 minutes_until_ready = ReadIntNullable(rule!, "MinutesUntilReady"),
                 output_item = ReadMachineOutputItem(ReadMemberValue(rule!, "OutputItem")),
-                output_items = ReadMachineOutputItemList(ReadMemberValue(rule!, "OutputItems")),
+                output_items = ReadMachineOutputItemList(ReadMemberValue(rule!, "OutputItems"), completeCatalog),
                 additional_consumed_item_count = ReadCount(rule!, "AdditionalConsumedItems"),
-                additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(rule!, "AdditionalConsumedItems"))
+                additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(rule!, "AdditionalConsumedItems"), completeCatalog)
             })
             .ToArray();
     }
 
-    private static object[] ReadMachineAdditionalConsumedItems(object? items)
+    private static object[] ReadMachineAdditionalConsumedItems(object? items, bool completeCatalog)
     {
         if (items is not System.Collections.IEnumerable enumerable)
         {
             return Array.Empty<object>();
         }
 
-        return enumerable
+        var rows = enumerable
             .Cast<object?>()
-            .Where(item => item is not null)
-            .Take(8)
+            .Where(item => item is not null);
+        if (!completeCatalog)
+        {
+            rows = rows.Take(8);
+        }
+        return rows
             .Select(item =>
             {
                 var itemId = ReadString(item!, "ItemId") ?? string.Empty;
@@ -272,17 +285,21 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         };
     }
 
-    private static object[] ReadMachineOutputItemList(object? outputs)
+    private static object[] ReadMachineOutputItemList(object? outputs, bool completeCatalog)
     {
         if (outputs is not System.Collections.IEnumerable enumerable)
         {
             return Array.Empty<object>();
         }
 
-        return enumerable
+        var rows = enumerable
             .Cast<object?>()
-            .Where(output => output is not null)
-            .Take(8)
+            .Where(output => output is not null);
+        if (!completeCatalog)
+        {
+            rows = rows.Take(8);
+        }
+        return rows
             .Select(ReadMachineOutputItem)
             .Where(output => output is not null)
             .Cast<object>()
@@ -386,7 +403,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return predicted;
     }
 
-    private static object ReadPredictedMachineOutput(StardewValley.Object machine, Item inputItem)
+    internal static object ReadPredictedMachineOutput(StardewValley.Object machine, Item inputItem)
     {
         var machineData = machine.GetMachineData();
         if (machineData is null || Game1.player is null || machine.Location is null)
