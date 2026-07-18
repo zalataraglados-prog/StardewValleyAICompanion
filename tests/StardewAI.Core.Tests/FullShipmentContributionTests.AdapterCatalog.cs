@@ -151,10 +151,10 @@ public sealed partial class FullShipmentContributionTests
     }
 
     [Fact]
-    public void CatalogHas12EntriesAndFullShipmentIsDirect()
+    public void CatalogHas11EntriesAndFullShipmentIsDirect()
     {
         var entries = GrandpaDirectionCatalog.Entries;
-        Assert.Equal(12, entries.Length);
+        Assert.Equal(11, entries.Length);
 
         var fullShipment = entries.Single(e => e.DirectionId == "complete_full_shipment");
         Assert.True(fullShipment.DirectBindingEnabled);

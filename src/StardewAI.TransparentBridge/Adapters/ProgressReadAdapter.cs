@@ -85,14 +85,17 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
     public override StateAdapterResult Collect(long tick)
     {
         var master = Context.IsWorldReady ? Game1.MasterPlayer : null;
+        var actor = Context.IsWorldReady ? Game1.player : null;
         var world = Context.IsWorldReady ? Game1.netWorldState?.Value : null;
         var museum = Context.IsWorldReady ? Game1.getLocationFromName("ArchaeologyHouse") as LibraryMuseum : null;
         var communityCenter = Context.IsWorldReady ? Game1.getLocationFromName("CommunityCenter") as CommunityCenter : null;
+        var jojaMart = Context.IsWorldReady ? Game1.getLocationFromName("JojaMart") as JojaMart : null;
 
         var fields = new Dictionary<string, object>
         {
             ["community_center"] = Field(ReadCommunityCenter(world, master, communityCenter), "NetWorldState.BundleData/Bundles/BundleRewards; CommunityCenter bundle mutex/note state; Bundle.IsValidItemForThisIngredientDescription; host JojaMember/ccIsComplete received-or-pending flags", tick),
             ["joja_membership"] = Field(Context.IsWorldReady ? master?.mailReceived.Contains("JojaMember") : null, "Game1.MasterPlayer.mailReceived.Contains(\"JojaMember\")", tick),
+            ["joja_development"] = Field(ReadJojaDevelopment(master, actor, jojaMart), "JojaMart.JoinJoja map action/checkAction/answerDialogue; JojaCDMenu button mapping and getPriceFromButtonNumber; actor mail/events/money", tick),
             ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece; Data/MuseumRewards[museum60]; Events/Farm[66]", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
@@ -177,6 +180,136 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             BundleRows = bundleRows
         };
     }
+
+    private static JojaDevelopmentProgressRef? ReadJojaDevelopment(Farmer? master, Farmer? actor, JojaMart? jojaMart)
+    {
+        if (master is null || actor is null || jojaMart is null)
+        {
+            return null;
+        }
+        var hostJoja = master.hasOrWillReceiveMail("JojaMember");
+        var hostCc = master.hasOrWillReceiveMail("ccIsComplete") || master.hasCompletedCommunityCenter();
+        var routeState = hostJoja && hostCc ? "conflicting_irreversible_flags" : hostJoja ? "joja_locked" : hostCc ? "community_center_locked" : "undecided";
+        var actionTile = FindActionTile(jojaMart, "JoinJoja");
+        var actorMembershipReceived = actor.mailReceived.Contains("JojaMember");
+        var actorMembershipPending = HasPendingMail(actor, "JojaMember");
+        var projectSpecs = new[]
+        {
+            (Button: 0, Id: "vault", Cc: "ccVault", Joja: "jojaVault", Price: 40000),
+            (Button: 1, Id: "boiler_room", Cc: "ccBoilerRoom", Joja: "jojaBoilerRoom", Price: 15000),
+            (Button: 2, Id: "crafts_room", Cc: "ccCraftsRoom", Joja: "jojaCraftsRoom", Price: 25000),
+            (Button: 3, Id: "pantry", Cc: "ccPantry", Joja: "jojaPantry", Price: 35000),
+            (Button: 4, Id: "fish_tank", Cc: "ccFishTank", Joja: "jojaFishTank", Price: 20000)
+        };
+        var pendingProjectMailIds = projectSpecs
+            .Select(spec => spec.Joja)
+            .Where(mail => HasPendingMail(actor, mail))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(mail => mail, StringComparer.Ordinal)
+            .ToArray();
+        var current = ReferenceEquals(Game1.currentLocation, jojaMart);
+        var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
+        var projects = projectSpecs.Select(spec =>
+        {
+            var actorCcComplete = actor.hasOrWillReceiveMail(spec.Cc);
+            var jojaComplete = actor.hasOrWillReceiveMail(spec.Joja);
+            var anyFarmerCcComplete = Utility.doesAnyFarmerHaveOrWillReceiveMail(spec.Cc);
+            var complete = anyFarmerCcComplete;
+            var status = routeState != "joja_locked"
+                ? routeState == "conflicting_irreversible_flags" ? "joja_route_state_conflict" : "joja_membership_not_irreversibly_locked"
+                : !actorMembershipReceived
+                    ? actorMembershipPending ? "joja_membership_pending_until_tomorrow" : "actor_joja_membership_not_received"
+                    : actor.eventsSeen.Contains("502261")
+                        ? "joja_completion_ceremony_already_seen"
+                        : pendingProjectMailIds.Length > 0
+                            ? "joja_project_order_pending_until_tomorrow"
+                            : complete
+                                ? "joja_project_complete_or_pending"
+                                : actor.Money < spec.Price
+                                    ? "insufficient_money"
+                                    : !current
+                                        ? "joja_mart_not_current_location"
+                                        : actionTile is null
+                                            ? "join_joja_action_tile_unavailable"
+                                            : !menuClear
+                                                ? "joja_menu_or_dialogue_not_clear"
+                                                : "ready";
+            return new JojaDevelopmentProjectRef
+            {
+                ButtonNumber = spec.Button,
+                ProjectId = spec.Id,
+                CcMailId = spec.Cc,
+                JojaMailId = spec.Joja,
+                Price = spec.Price,
+                CompleteOrPending = complete,
+                CcMailReceivedOrPending = actorCcComplete,
+                AnyFarmerCcMailReceivedOrPending = anyFarmerCcComplete,
+                JojaMailReceivedOrPending = jojaComplete,
+                ActionStatus = status
+            };
+        }).ToArray();
+        var membershipStatus = routeState != "undecided"
+            ? routeState == "conflicting_irreversible_flags" ? "joja_route_state_conflict" : "irreversible_route_already_locked"
+            : actorMembershipReceived || actorMembershipPending
+                ? "joja_membership_received_or_pending"
+                : !Game1.IsMasterGame
+                    ? "joja_membership_host_only"
+                    : !actor.eventsSeen.Contains("611439")
+                        ? "joja_membership_event_611439_not_seen"
+                        : actor.Money < JojaMart.JojaMembershipPrice
+                                ? "insufficient_money"
+                                : !current
+                                    ? "joja_mart_not_current_location"
+                                    : actionTile is null
+                                        ? "join_joja_action_tile_unavailable"
+                                        : !menuClear
+                                            ? "joja_menu_or_dialogue_not_clear"
+                                            : "ready";
+        return new JojaDevelopmentProgressRef
+        {
+            LocationAccessible = Game1.isLocationAccessible("JojaMart"),
+            IsCurrentLocation = current,
+            JoinActionTileX = actionTile?.X,
+            JoinActionTileY = actionTile?.Y,
+            JoinActionRaw = actionTile?.Action ?? string.Empty,
+            HostRouteState = routeState,
+            ActorMembershipReceived = actorMembershipReceived,
+            ActorMembershipPending = actorMembershipPending,
+            ActorGreetingReceived = actor.mailReceived.Contains("JojaGreeting"),
+            ActorMembershipEventSeen = actor.eventsSeen.Contains("611439"),
+            CompletionCeremonyEventSeen = actor.eventsSeen.Contains("502261"),
+            MembershipPrice = JojaMart.JojaMembershipPrice,
+            Money = actor.Money,
+            MembershipActionStatus = membershipStatus,
+            ProjectOrderPending = pendingProjectMailIds.Length > 0,
+            PendingProjectMailIds = pendingProjectMailIds,
+            AllProjectsCompleteOrPending = projects.All(project => project.CompleteOrPending),
+            Projects = projects
+        };
+    }
+
+    private static MapActionTileRef? FindActionTile(GameLocation location, string expectedAction)
+    {
+        var buildings = location.Map?.GetLayer("Buildings");
+        if (buildings is null)
+        {
+            return null;
+        }
+        for (var y = 0; y < buildings.LayerHeight; y++)
+        {
+            for (var x = 0; x < buildings.LayerWidth; x++)
+            {
+                var action = location.doesTileHaveProperty(x, y, "Action", "Buildings");
+                if (string.Equals(action, expectedAction, StringComparison.Ordinal))
+                {
+                    return new MapActionTileRef(x, y, action);
+                }
+            }
+        }
+        return null;
+    }
+
+    private sealed record MapActionTileRef(int X, int Y, string Action);
 
     private static CommunityCenterBundleProgressRef[] ReadCommunityCenterBundles(
         StardewValley.Network.NetWorldState world,

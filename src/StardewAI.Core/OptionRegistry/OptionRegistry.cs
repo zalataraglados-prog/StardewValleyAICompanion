@@ -57,6 +57,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact native-selected bundle ingredient is selected", "route and complete BundleData projection are verified", "native JunimoNoteMenu donation lifecycle is handed to the mechanical executor" },
                 new[] { "block_joja_locked_or_route_conflict", "block_incomplete_bundle_projection", "block_bundle_mutex_or_note_unavailable", "block_unverified_route", "block_projection_drift", "block_direct_bundle_inventory_reward_mail_or_route_mutation" }));
 
+            Register(Option("joja.advance_development", "joja", "Purchase one transparent Joja membership or development project",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.joja_development", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact membership or project purchase is selected", "price and irreversible route state are verified", "first native Morris greeting is compiler-owned when required", "native Joja dialogue/menu lifecycle is handed to the mechanical executor" },
+                new[] { "block_community_center_locked_or_route_conflict", "block_missing_membership_event", "block_pending_project_order", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_mail_event_quest_or_world_mutation" }));
+
             Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -654,6 +662,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.community_center", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the exact Junimo note", "native CommunityCenter.checkBundle opens the area menu", "native JunimoNoteMenu clicks donate exactly one full ingredient stack" },
                 new[] { "block_joja_locked_or_route_conflict", "block_bundle_projection_or_mutex_drift", "block_inventory_or_note_tile_drift", "block_unverified_route", "block_direct_bundle_inventory_reward_mail_or_route_mutation" }));
+
+            Register(Option("executor.purchase_joja_membership", "joja", "Purchase verified Joja membership through native Morris dialogue",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.joja_development", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the JoinJoja counter", "native Morris confirmation deducts exactly 5000g", "JojaMember is queued for tomorrow" },
+                new[] { "block_irreversible_route_drift", "block_event_greeting_or_money_drift", "block_unverified_route", "block_direct_money_mail_event_or_quest_mutation" }));
+
+            Register(Option("executor.purchase_joja_project", "joja", "Purchase one verified Joja development project through native JojaCDMenu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.joja_development", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the JoinJoja counter", "native JojaCDMenu clicks one exact project checkbox", "paired cc and joja completion mails are queued for tomorrow" },
+                new[] { "block_membership_or_project_order_drift", "block_project_price_or_button_drift", "block_unverified_route", "block_direct_money_mail_event_or_world_mutation" }));
 
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,

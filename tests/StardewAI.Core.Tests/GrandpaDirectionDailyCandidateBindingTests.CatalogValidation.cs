@@ -14,7 +14,7 @@ namespace StardewAI.Core.Tests;
 public sealed partial class GrandpaDirectionDailyCandidateBindingTests
 {
     [Fact]
-    public void All12DirectionsExistInCatalogAndCorrespondToAdapter()
+    public void All11DirectionsExistInCatalogAndCorrespondToAdapter()
     {
         var snapshot = GrandpaSnapshot();
         var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
@@ -133,7 +133,6 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     {
         var blockedDirections = new[]
         {
-            "complete_joja_development",
             "marriage_and_house_upgrade"
         };
 
@@ -207,28 +206,20 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindCcJojaRowsAlwaysReportUnresolvedRouteCommitment()
+    public void BindCommunityCenterReportsUnresolvedRouteCommitment()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
 
-        foreach (var ccJojaId in new[] { "complete_community_center", "complete_joja_development" })
+        var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
-            var result = binding.Bind(new GrandpaDirectionBindingRequest
-            {
-                StateHash = snapshot.StateHash,
-                DirectionId = ccJojaId
-            }, snapshot);
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_community_center"
+        }, snapshot);
 
-            Assert.Equal("blocked", result.BindingStatus);
-            Assert.Contains("cc_joja_route_commitment_unavailable", result.BlockReasons);
-            Assert.False(result.Audit.CcJojaRouteCommitmentResolved);
-            if (ccJojaId == "complete_joja_development")
-            {
-                Assert.NotEmpty(result.MissingTransparentFields);
-                Assert.NotEmpty(result.MissingCapabilities);
-            }
-        }
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains("cc_joja_route_commitment_unavailable", result.BlockReasons);
+        Assert.False(result.Audit.CcJojaRouteCommitmentResolved);
     }
 
     [Fact]

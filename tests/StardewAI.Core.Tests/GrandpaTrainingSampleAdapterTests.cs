@@ -148,7 +148,6 @@ public sealed class GrandpaTrainingSampleAdapterTests
             {
                 Factor("community_center_access_or_completion", "world_progress", known: true, satisfied: false, maxPoints: 1),
                 Factor("community_center_accessible_bonus", "world_progress", known: true, satisfied: false, maxPoints: 2),
-                Factor("joja_development_completed", "world_progress", known: true, satisfied: false, maxPoints: 1),
                 Factor("friendships_5", "social", known: true, satisfied: false, maxPoints: 1),
                 Factor("friendships_10", "social", known: true, satisfied: false, maxPoints: 1),
                 Factor("achievement_full_shipment", "economy", known: true, satisfied: false, maxPoints: 1),
@@ -168,7 +167,6 @@ public sealed class GrandpaTrainingSampleAdapterTests
 
         var directionIds = sample.CandidateDirections.Select(direction => direction.DirectionId).ToArray();
         Assert.Contains("complete_community_center", directionIds);
-        Assert.Contains("complete_joja_development", directionIds);
         Assert.Contains("raise_friendships", directionIds);
         Assert.Contains("complete_full_shipment", directionIds);
         Assert.Contains("raise_skill_levels", directionIds);

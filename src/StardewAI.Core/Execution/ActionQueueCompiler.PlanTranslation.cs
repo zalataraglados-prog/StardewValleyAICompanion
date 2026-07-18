@@ -106,6 +106,8 @@ namespace StardewAI.Core.Execution
                 "fill_pet_bowl" => "executor.fill_pet_bowl",
                 "donate_museum_item" => "executor.donate_museum_item",
                 "donate_community_center_item" => "executor.donate_community_center_item",
+                "purchase_joja_membership" => "executor.purchase_joja_membership",
+                "purchase_joja_project" => "executor.purchase_joja_project",
                 "select_safe_item_slot" => "executor.select_safe_item_slot",
                 "pan_ore_spot" => "executor.pan_ore_spot",
                 "collect_machine_output" => "executor.collect_machine_output",

@@ -16,17 +16,16 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void CatalogHas12NonOverlappingEntries()
+    public void CatalogHas11NonOverlappingEntries()
     {
         var entries = GrandpaDirectionCatalog.Entries;
-        Assert.Equal(12, entries.Length);
+        Assert.Equal(11, entries.Length);
 
         var directionIds = entries.Select(e => e.DirectionId).OrderBy(id => id, StringComparer.Ordinal).ToArray();
         var expected = new[]
         {
             "complete_community_center",
             "complete_full_shipment",
-            "complete_joja_development",
             "complete_master_angler",
             "complete_museum_collection",
             "earn_money",
@@ -398,22 +397,6 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         {
             StateHash = snapshot.StateHash,
             DirectionId = "complete_community_center"
-        }, snapshot);
-
-        Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains("cc_joja_route_commitment_unavailable", result.BlockReasons);
-        Assert.False(result.Audit.CcJojaRouteCommitmentResolved);
-    }
-
-    [Fact]
-    public void BindBlocksCompleteJojaDevelopmentWithUnresolvedRouteCommitment()
-    {
-        var snapshot = GrandpaSnapshot();
-        var binding = new GrandpaDirectionDailyCandidateBinding();
-        var result = binding.Bind(new GrandpaDirectionBindingRequest
-        {
-            StateHash = snapshot.StateHash,
-            DirectionId = "complete_joja_development"
         }, snapshot);
 
         Assert.Equal("blocked", result.BindingStatus);

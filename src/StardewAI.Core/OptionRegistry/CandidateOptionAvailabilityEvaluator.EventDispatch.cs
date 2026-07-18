@@ -17,6 +17,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["farm.care_for_pets"] = (snapshot, _) => PetCareCandidates(snapshot),
                 ["museum.donate_items"] = (snapshot, _) => MuseumDonationCandidates(snapshot),
                 ["community_center.donate_bundle_items"] = (snapshot, _) => CommunityCenterDonationCandidates(snapshot),
+                ["joja.advance_development"] = (snapshot, _) => JojaDevelopmentCandidates(snapshot),
                 ["farm.process_machines"] = (snapshot, _) => MachineProcessingCandidates(snapshot),
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),

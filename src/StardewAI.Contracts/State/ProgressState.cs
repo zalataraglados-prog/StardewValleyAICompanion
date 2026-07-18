@@ -715,6 +715,96 @@ namespace StardewAI.Contracts.State
         public string ActionStatus { get; set; } = string.Empty;
     }
 
+    public sealed class JojaDevelopmentProgressRef
+    {
+        [JsonPropertyName("location_accessible")]
+        public bool LocationAccessible { get; set; }
+
+        [JsonPropertyName("is_current_location")]
+        public bool IsCurrentLocation { get; set; }
+
+        [JsonPropertyName("join_action_tile_x")]
+        public int? JoinActionTileX { get; set; }
+
+        [JsonPropertyName("join_action_tile_y")]
+        public int? JoinActionTileY { get; set; }
+
+        [JsonPropertyName("join_action_raw")]
+        public string JoinActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("host_route_state")]
+        public string HostRouteState { get; set; } = string.Empty;
+
+        [JsonPropertyName("actor_membership_received")]
+        public bool ActorMembershipReceived { get; set; }
+
+        [JsonPropertyName("actor_membership_pending")]
+        public bool ActorMembershipPending { get; set; }
+
+        [JsonPropertyName("actor_greeting_received")]
+        public bool ActorGreetingReceived { get; set; }
+
+        [JsonPropertyName("actor_membership_event_seen")]
+        public bool ActorMembershipEventSeen { get; set; }
+
+        [JsonPropertyName("completion_ceremony_event_seen")]
+        public bool CompletionCeremonyEventSeen { get; set; }
+
+        [JsonPropertyName("membership_price")]
+        public int MembershipPrice { get; set; }
+
+        [JsonPropertyName("money")]
+        public int Money { get; set; }
+
+        [JsonPropertyName("membership_action_status")]
+        public string MembershipActionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("project_order_pending")]
+        public bool ProjectOrderPending { get; set; }
+
+        [JsonPropertyName("pending_project_mail_ids")]
+        public string[] PendingProjectMailIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("all_projects_complete_or_pending")]
+        public bool AllProjectsCompleteOrPending { get; set; }
+
+        [JsonPropertyName("projects")]
+        public JojaDevelopmentProjectRef[] Projects { get; set; } = System.Array.Empty<JojaDevelopmentProjectRef>();
+    }
+
+    public sealed class JojaDevelopmentProjectRef
+    {
+        [JsonPropertyName("button_number")]
+        public int ButtonNumber { get; set; }
+
+        [JsonPropertyName("project_id")]
+        public string ProjectId { get; set; } = string.Empty;
+
+        [JsonPropertyName("cc_mail_id")]
+        public string CcMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("joja_mail_id")]
+        public string JojaMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("price")]
+        public int Price { get; set; }
+
+        [JsonPropertyName("complete_or_pending")]
+        public bool CompleteOrPending { get; set; }
+
+        [JsonPropertyName("cc_mail_received_or_pending")]
+        public bool CcMailReceivedOrPending { get; set; }
+
+        [JsonPropertyName("any_farmer_cc_mail_received_or_pending")]
+        public bool AnyFarmerCcMailReceivedOrPending { get; set; }
+
+        [JsonPropertyName("joja_mail_received_or_pending")]
+        public bool JojaMailReceivedOrPending { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
+    }
+
     public sealed class MuseumProgressRef
     {
         [JsonPropertyName("pieces")]

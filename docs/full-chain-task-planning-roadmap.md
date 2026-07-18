@@ -15,6 +15,7 @@ The implementation chain is:
 
 ## Current Proven Slice
 
+- **Joja development route** - `world_progress.joja_development` now projects the live `JoinJoja` endpoint, host route commitment, actor membership/greeting/event state, current money, pending order state, and all five native development rows with exact button, paired mail IDs, prices, and both actor/any-farmer completion evidence. The small model chooses only `purchase_joja_membership` or one `purchase_joja_project`; the compiler owns stand selection, button, price, expected balance, and native callback contract. The action queue rebinds every irreversible field against the latest snapshot. Runtime walks to the counter and uses only `JojaMart.checkAction`, native dialogue callbacks, `JojaMart.answerDialogue`, and `JojaCDMenu.receiveLeftClick`; it never writes money, mail, event, quest, or world progress directly. Decompiled `Utility.getGrandpaScore` does not award a separate Joja point, so this remains a full-game progression option and is deliberately absent from Grandpa score directions. Full solution regression passes, while isolated in-game membership and five-project smokes remain pending.
 - `move_to_tile` plan step compiles to `executor.move_to_tile`.
 - Runtime movement is collision-safe and returns `applied` or `blocked`.
 - Applied and blocked movement produce `plan_execution_episode.v1` artifacts.

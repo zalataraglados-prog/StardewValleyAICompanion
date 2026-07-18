@@ -19,7 +19,6 @@ namespace StardewAI.Core.Goals
             "player.level",
             "world_progress.achievements",
             "world_progress.community_center",
-            "world_progress.joja_membership",
             "npcs.friendships",
             "quests.mail_received",
             "game.year",
@@ -34,7 +33,6 @@ namespace StardewAI.Core.Goals
             AddAchievementFactor(model, factors, "achievement_complete_collection", "Achievement 5", 5);
             AddBooleanFactor(model, factors, "skull_key", "Skull Key", "player.has_skull_key", true, "Game1.player.hasSkullKey");
             AddCommunityCenterFactors(model, factors);
-            AddWorldProgressBooleanFactor(model, factors, "joja_development_completed", "Joja development membership path", "world_progress.joja_membership", true, "Game1.MasterPlayer.mailReceived.Contains(\"JojaMember\")");
             AddMarriageHouseFactor(model, factors);
             AddBooleanFactor(model, factors, "rusty_key", "Rusty Key", "player.has_rusty_key", true, "Game1.player.hasRustyKey");
             AddAchievementFactor(model, factors, "achievement_master_angler", "Achievement 26", 26);

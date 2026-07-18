@@ -113,6 +113,10 @@ namespace StardewAI.Core.Training
             {
                 return CommunityCenterDonationSteps(candidate);
             }
+            if (candidate.Kind == "purchase_joja_membership" || candidate.Kind == "purchase_joja_project")
+            {
+                return JojaDevelopmentSteps(candidate);
+            }
             if (candidate.Kind == "pan_ore_spot")
             {
                 return PanOreSpotSteps(candidate);

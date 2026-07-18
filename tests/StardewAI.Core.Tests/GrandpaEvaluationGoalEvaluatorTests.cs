@@ -79,6 +79,24 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
         Assert.Contains(report.Factors, factor => factor.Id == "money_50000" && !factor.Known && factor.Points == 0);
     }
 
+    [Fact]
+    public void JojaMembershipDoesNotCreateANonNativeGrandpaPoint()
+    {
+        const string player = """
+        {"total_money_earned":0,"has_skull_key":false,"has_rusty_key":false,"married_or_roommate":false,"farmhouse_upgrade_level":0,"level":0,"active_object_qualified_id":null}
+        """;
+        const string npcs = """{"friendships":[]}""";
+        const string quests = """{"mail_received":[]}""";
+        var withoutMembership = new GrandpaEvaluationGoalEvaluator().Evaluate(Model(
+            player, """{"achievements":[],"community_center":{"location_accessible":false,"completed":false},"joja_membership":false}""", npcs, quests));
+        var withMembership = new GrandpaEvaluationGoalEvaluator().Evaluate(Model(
+            player, """{"achievements":[],"community_center":{"location_accessible":false,"completed":false},"joja_membership":true}""", npcs, quests));
+
+        Assert.Equal(withoutMembership.CurrentScore, withMembership.CurrentScore);
+        Assert.DoesNotContain(withMembership.Factors, factor => factor.Id.Contains("joja", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain("world_progress.joja_membership", withMembership.RequiredFactPaths);
+    }
+
     private static WorldModelEnvelope Model(string player, string worldProgress, string npcs, string quests, string game = "{}", string farm = "{}")
     {
         return new WorldModelEnvelope

@@ -509,12 +509,11 @@ public sealed class GrandpaDirectionCompileChainTests
     }
 
     [Fact]
-    public void All12DirectionIdsAreCoveredByAdapter()
+    public void All11DirectionIdsAreCoveredByAdapter()
     {
         var expectedDirectionIds = new[]
         {
             "complete_community_center",
-            "complete_joja_development",
             "raise_friendships",
             "complete_full_shipment",
             "raise_skill_levels",
@@ -527,7 +526,7 @@ public sealed class GrandpaDirectionCompileChainTests
             "earn_pet_love"
         };
 
-        Assert.Equal(12, expectedDirectionIds.Length);
+        Assert.Equal(11, expectedDirectionIds.Length);
 
         var snapshot = GrandpaSnapshot();
         var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
@@ -597,7 +596,7 @@ public sealed class GrandpaDirectionCompileChainTests
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
 
         Assert.False(sample.Target.Complete);
-        Assert.Equal(12, sample.CandidateDirections.Length);
+        Assert.Equal(11, sample.CandidateDirections.Length);
 
         var candidateDirectionIds = sample.CandidateDirections
             .Select(c => c.DirectionId)
@@ -608,7 +607,6 @@ public sealed class GrandpaDirectionCompileChainTests
         {
             "complete_community_center",
             "complete_full_shipment",
-            "complete_joja_development",
             "complete_master_angler",
             "complete_museum_collection",
             "earn_money",

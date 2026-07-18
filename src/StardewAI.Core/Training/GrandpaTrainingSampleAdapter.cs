@@ -64,7 +64,6 @@ namespace StardewAI.Core.Training
                 Spec("complete_museum_collection", "world_progress", "Complete museum collection achievement", "grandpa.achievement.5", new[] { "achievement_complete_collection" }),
                 Spec("obtain_skull_key", "exploration", "Obtain Skull Key", "grandpa.skull_key", new[] { "skull_key" }),
                 Spec("complete_community_center", "world_progress", "Complete Community Center", "grandpa.community_center", new[] { "community_center_access_or_completion", "community_center_accessible_bonus" }),
-                Spec("complete_joja_development", "world_progress", "Complete Joja development", "grandpa.joja_development", new[] { "joja_development_completed" }),
                 Spec("marriage_and_house_upgrade", "social", "Marry or get roommate and upgrade farmhouse", "grandpa.marriage_house", new[] { "married_or_roommate_house_2" }),
                 Spec("obtain_rusty_key", "world_progress", "Obtain Rusty Key", "grandpa.rusty_key", new[] { "rusty_key" }),
                 Spec("complete_master_angler", "world_progress", "Complete Master Angler achievement", "grandpa.achievement.26", new[] { "achievement_master_angler" }),

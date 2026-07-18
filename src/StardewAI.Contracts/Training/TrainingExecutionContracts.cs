@@ -632,6 +632,48 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("route_state")]
         public string RouteState { get; set; } = string.Empty;
 
+        [JsonPropertyName("purchase_kind")]
+        public string PurchaseKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("join_action_raw")]
+        public string JoinActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("project_id")]
+        public string ProjectId { get; set; } = string.Empty;
+
+        [JsonPropertyName("button_number")]
+        public int? ButtonNumber { get; set; }
+
+        [JsonPropertyName("cc_mail_id")]
+        public string CcMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("joja_mail_id")]
+        public string JojaMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_money_before")]
+        public int? ExpectedMoneyBefore { get; set; }
+
+        [JsonPropertyName("price")]
+        public int? Price { get; set; }
+
+        [JsonPropertyName("expected_money_after")]
+        public int? ExpectedMoneyAfter { get; set; }
+
+        [JsonPropertyName("expected_mail_for_tomorrow")]
+        public string ExpectedMailForTomorrow { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_greeting_before")]
+        public bool? ExpectedGreetingBefore { get; set; }
+
+        [JsonPropertyName("expected_greeting_after")]
+        public bool? ExpectedGreetingAfter { get; set; }
+
+        [JsonPropertyName("required_event_id")]
+        public string RequiredEventId { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_contract")]
+        public string NativeContract { get; set; } = string.Empty;
+
         [JsonPropertyName("bundle_data_key")]
         public string BundleDataKey { get; set; } = string.Empty;
 
