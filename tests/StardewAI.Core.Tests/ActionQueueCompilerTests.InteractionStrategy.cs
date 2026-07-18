@@ -98,7 +98,8 @@ public sealed partial class ActionQueueCompilerTests
             "active_menu": {"value":{"is_open":false},"status":"available"}
           },
           "mining": {
-            "floor_objectives": {"value":{"skull_key_reward_chests":[{"tile_x":11,"tile_y":10,"contains_skull_key":true,"special_item_which":4,"interaction_kind":"overlay_object","expected_action_type":"SkullKeyChest"}]},"status":"available"}
+            "floor_objectives": {"value":{"skull_key_reward_chests":[{"tile_x":11,"tile_y":10,"contains_skull_key":true,"special_item_which":4,"interaction_kind":"overlay_object","expected_action_type":"SkullKeyChest"}]},"status":"available"},
+            "reward_chests": {"value":[],"status":"available"}
           },
           "locations": {
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available"}
@@ -139,7 +140,8 @@ public sealed partial class ActionQueueCompilerTests
             "active_menu": {"value":{"is_open":false},"status":"available"}
           },
           "mining": {
-            "floor_objectives": {"value":{"skull_key_reward_chests":[]},"status":"available"}
+            "floor_objectives": {"value":{"skull_key_reward_chests":[]},"status":"available"},
+            "reward_chests": {"value":[],"status":"available"}
           },
           "locations": {
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available"}

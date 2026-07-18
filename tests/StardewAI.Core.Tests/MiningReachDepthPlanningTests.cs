@@ -475,6 +475,7 @@ public sealed class MiningReachDepthPlanningTests
             "resource_clumps": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.resourceClumps"},"adapter":"test","read_at_tick":1,"confidence":1},
             "monsters": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.characters"},"adapter":"test","read_at_tick":1,"confidence":1},
             "floor_objectives": {"value":{"must_kill_all_monsters_to_advance":false,"enemy_count":0,"ladder_has_spawned":false},"status":"available","source":{"kind":"game_object","path":"MineShaft.mustKillAllMonstersToAdvance"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "reward_chests": {"value":[],"status":"available","source":{"kind":"game_object","path":"MineShaft.overlayObjects"},"adapter":"test","read_at_tick":1,"confidence":1},
             "player_resources": {"value":{"health":HEALTH,"max_health":100,"energy":ENERGY,"max_energy":270,"mining_level":5,"combat_level":4,"current_time":1200,"deepest_mine_level":DEEPEST_MINE_LEVEL,"staircase_count":2,"selected_slot_index":1,"food_slots":[],"cardinal_movement":{"tile_duration_ms":100.0,"status":"exact_mine_cardinal_input_without_collision_delay"}},"status":"available","source":{"kind":"game_object","path":"Game1.player"},"adapter":"test","read_at_tick":1,"confidence":1},
             "completeness": {"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }

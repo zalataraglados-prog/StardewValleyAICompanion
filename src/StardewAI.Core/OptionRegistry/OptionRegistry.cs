@@ -175,7 +175,7 @@ namespace StardewAI.Core.OptionRegistry
                 new[]
                 {
                     "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
-                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
+                    "mining.monsters", "mining.floor_objectives", "mining.reward_chests", "mining.player_resources"
                 },
                 new[] { "rolling-horizon current-floor action compiled", "after-state replanning continues until target depth" },
                 new[] { "block_unavailable_required_state", "block_impossible_target_depth", "block_unsupported_current_floor_step" }));
@@ -187,7 +187,7 @@ namespace StardewAI.Core.OptionRegistry
                 new[]
                 {
                     "player.has_skull_key", "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
-                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
+                    "mining.monsters", "mining.floor_objectives", "mining.reward_chests", "mining.player_resources"
                 },
                 new[] { "ordinary mine floor 120 reached", "native reward chest claimed", "player.has_skull_key observed true" },
                 new[] { "block_wrong_mine_family", "block_missing_skull_key_chest", "block_unverified_skull_key_postcondition" }));
@@ -207,7 +207,7 @@ namespace StardewAI.Core.OptionRegistry
                 new[]
                 {
                     "mining.current_mine", "mining.tiles", "mining.objects", "mining.resource_clumps",
-                    "mining.monsters", "mining.floor_objectives", "mining.player_resources"
+                    "mining.monsters", "mining.floor_objectives", "mining.reward_chests", "mining.player_resources"
                 },
                 new[] { "rolling-horizon Quarry Mine action compiled", "native altar grants the Golden Scythe", "claimed altar performs the native return warp" },
                 new[] { "block_not_quarry_mine_77377", "block_missing_golden_scythe_altar", "block_full_inventory", "block_unsupported_current_floor_step" }));

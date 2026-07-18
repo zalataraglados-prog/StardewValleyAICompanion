@@ -25,6 +25,7 @@ namespace StardewAI.Core.Execution
         public const string ClaimGoldenScythe = "claim_golden_scythe";
         public const string MoveToSkullKeyChest = "move_to_skull_key_chest";
         public const string ClaimSkullKey = "claim_skull_key";
+        public const string ClaimRewardChest = "claim_reward_chest";
         public const string Blocked = "blocked";
     }
 
@@ -148,6 +149,18 @@ namespace StardewAI.Core.Execution
         public string CombatDurationStatus { get; set; } = string.Empty;
 
         public string TargetQualifiedItemId { get; set; } = string.Empty;
+
+        public int? TargetQuantity { get; set; }
+
+        public int? TargetQuality { get; set; }
+
+        public string RewardBranch { get; set; } = string.Empty;
+
+        public string ExpectedOutputItemsJson { get; set; } = string.Empty;
+
+        public int? NativeGainExperienceCallAmount { get; set; }
+
+        public int? ExpectedStardropMaxStaminaDelta { get; set; }
 
         public string[] ExpectedDropQualifiedItemIds { get; set; } = Array.Empty<string>();
 

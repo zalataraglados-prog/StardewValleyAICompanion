@@ -20,6 +20,7 @@ namespace StardewAI.Core.OptionRegistry
             "resource_clumps",
             "monsters",
             "floor_objectives",
+            "reward_chests",
             "player_resources"
         };
 

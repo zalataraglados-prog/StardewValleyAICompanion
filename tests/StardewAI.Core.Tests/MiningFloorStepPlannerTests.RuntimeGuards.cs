@@ -467,6 +467,7 @@ public sealed partial class MiningFloorStepPlannerTests
             "resource_clumps": {"status":"available","value":[]},
             "monsters": {"status":"available","value":MONSTERS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED,"skull_key_applicable":SKULL_KEY_APPLICABLE,"skull_key_acquired":HAS_SKULL_KEY,"skull_key_reward_chests":SKULL_KEY_REWARD_CHESTS}},
+            "reward_chests": {"status":"available","value":[]},
             "player_resources": {"status":"available","value":RESOURCES}
           }
         }
@@ -510,6 +511,7 @@ public sealed partial class MiningFloorStepPlannerTests
             "monster_drop_catalogs": {"status":"available","value":DROP_CATALOGS},
             "debris": {"status":"available","value":DEBRIS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":false}},
+            "reward_chests": {"status":"available","value":[]},
             "player_resources": {"status":"available","value":RESOURCES}
           }
         }

@@ -47,6 +47,38 @@ public sealed class MineRewardChestMainlineTests
         Assert.Contains("mine_reward_chest_not_ready_by_transparent_state", queue.Items.Single().BlockingReasons);
     }
 
+    [Fact]
+    public void ReachDepthClaimsLoadedRewardBeforeLeavingFloor()
+    {
+        var snapshot = Snapshot(StateJson("ready", false));
+
+        var step = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
+        {
+            Kind = MiningObjectiveKinds.ReachDepth,
+            TargetDepth = 20
+        });
+
+        Assert.Equal(MiningFloorStepKinds.ClaimRewardChest, step.StepKind);
+        Assert.Equal("(W)11", step.TargetQualifiedItemId);
+        Assert.Equal("ordinary_fixed_reward", step.RewardBranch);
+        Assert.Equal("executor.claim_mine_reward_chest", MiningFloorStepCompiler.ExecutionOptionId(step));
+    }
+
+    [Fact]
+    public void SkullKeyTraversalClaimsIntermediateLoadedReward()
+    {
+        var snapshot = Snapshot(StateJson("ready", false));
+
+        var step = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
+        {
+            Kind = MiningObjectiveKinds.AcquireSkullKey,
+            TargetDepth = 120
+        });
+
+        Assert.Equal(MiningFloorStepKinds.ClaimRewardChest, step.StepKind);
+        Assert.Equal("ordinary_fixed_reward", step.RewardBranch);
+    }
+
     private static string StateJson(string status, bool skullKey)
     {
         return $$"""
@@ -61,9 +93,13 @@ public sealed class MineRewardChestMainlineTests
           "menus":{"active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
           "mining":{
             "current_mine":{"value":{"location_id":"UndergroundMine20","mine_level":20,"mine_kind":"ordinary_mines"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tiles":{"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "player_resources":{"value":{"inventory_capacity":{"empty_slots":1}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "reward_chests":{"value":[{"tile_x":12,"tile_y":10,"runtime_type":"StardewValley.Objects.Chest","mine_level":20,"mine_kind":"ordinary_mines","reward_branch":"ordinary_fixed_reward","status":"{{status}}","contains_skull_key":{{skullKey.ToString().ToLowerInvariant()}},"is_stardrop":false,
+            "tiles":{"value":{"player_tile":{"tile_x":1,"tile_y":2},"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":6,"height":5,"blocked_rows":["111111","100001","100101","100001","111111"]},"exits":[],"ladders":[],"shafts":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "objects":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "resource_clumps":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "monsters":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "floor_objectives":{"value":{"must_kill_all_monsters_to_advance":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "player_resources":{"value":{"health":100,"max_health":100,"energy":200,"max_energy":270,"current_time":1000,"selected_slot_index":0,"inventory_capacity":{"empty_slots":1}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "reward_chests":{"value":[{"tile_x":3,"tile_y":2,"runtime_type":"StardewValley.Objects.Chest","mine_level":20,"mine_kind":"ordinary_mines","reward_branch":"ordinary_fixed_reward","status":"{{status}}","contains_skull_key":{{skullKey.ToString().ToLowerInvariant()}},"is_stardrop":false,
               "item":{"runtime_type":"StardewValley.Tools.MeleeWeapon","item_id":"11","qualified_item_id":"(W)11","quantity":1,"quality":0,"inventory_accepts":true},
               "expected_output_items_json":"[{\"runtimeType\":\"StardewValley.Tools.MeleeWeapon\",\"qualifiedItemId\":\"(W)11\",\"quality\":0,\"unitStateSha256\":\"test\",\"quantity\":1}]",
               "native_gain_experience_call_amount":45,"expected_luck_experience_delta":0,"expected_stardrop_max_stamina_delta":0,"native_contract":"one_reward_open_then_wait_dumpContents_then_empty_chest_cleanup_checkAction"}],

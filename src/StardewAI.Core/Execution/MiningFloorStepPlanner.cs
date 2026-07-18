@@ -34,9 +34,14 @@ namespace StardewAI.Core.Execution
                 !TryFieldValue(mining, "objects", out var objects) ||
                 !TryFieldValue(mining, "resource_clumps", out var resourceClumps) ||
                 !TryFieldValue(mining, "monsters", out var monsters) ||
-                !TryFieldValue(mining, "floor_objectives", out var objectives))
+                !TryFieldValue(mining, "floor_objectives", out var objectives) ||
+                !TryFieldValue(mining, "reward_chests", out var rewardChests))
             {
                 return Blocked("mining_required_group_unavailable");
+            }
+            if (rewardChests.ValueKind != JsonValueKind.Array)
+            {
+                return Blocked("mining_reward_chests_invalid");
             }
 
             if (!TryCollision(tiles, out var grid, out var start))
@@ -94,7 +99,8 @@ namespace StardewAI.Core.Execution
             }
 
             var mandatoryRetreatReason = hasResources ? MandatoryRetreatReason(resources, objective, currentDepth) : string.Empty;
-            if (!string.IsNullOrEmpty(mandatoryRetreatReason))
+            var targetDepthOnlyRetreat = string.Equals(mandatoryRetreatReason, "retreat_required:target_depth_reached", StringComparison.Ordinal);
+            if (!string.IsNullOrEmpty(mandatoryRetreatReason) && !targetDepthOnlyRetreat)
             {
                 var retreat = SelectMineExit(tiles, search, grid, mandatoryRetreatReason);
                 return retreat ?? Blocked("retreat_required_but_exit_unreachable:" + mandatoryRetreatReason);
@@ -215,6 +221,29 @@ namespace StardewAI.Core.Execution
 
                 return SelectTargetObject(objects, search, grid, objective.TargetQualifiedItemIds, objective.TargetSourceQualifiedItemIds, restoreSlot) ??
                     Blocked("no_reachable_target_resource_or_artifact_source");
+            }
+
+            if (objective.Kind is MiningObjectiveKinds.ReachDepth or MiningObjectiveKinds.AcquireSkullKey)
+            {
+                var reward = SelectMineRewardChest(rewardChests, search, grid);
+                if (reward is not null)
+                {
+                    var rewardThreat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
+                    if (rewardThreat is not null)
+                    {
+                        rewardThreat.Reason = "mandatory_reward_chest_interrupted_by_immediate_monster_threat";
+                        rewardThreat.SafetyWindowStatus = "blocked_by_immediate_monster_threat";
+                        rewardThreat.RestoreSlotIndex = restoreSlot;
+                        return rewardThreat;
+                    }
+                    return reward;
+                }
+            }
+
+            if (targetDepthOnlyRetreat)
+            {
+                return SelectMineExit(tiles, search, grid, mandatoryRetreatReason) ??
+                    Blocked("target_depth_reached_but_native_exit_unreachable");
             }
 
             if (TryFieldValue(mining, "debris", out var opportunisticDebris) &&

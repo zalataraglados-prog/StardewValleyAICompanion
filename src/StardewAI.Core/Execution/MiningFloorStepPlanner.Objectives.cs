@@ -98,6 +98,37 @@ namespace StardewAI.Core.Execution
             return step;
         }
 
+        private static MiningFloorStepPlan? SelectMineRewardChest(JsonElement rewardChests, SearchResult search, bool[,] grid)
+        {
+            return rewardChests.EnumerateArray()
+                .Where(chest => string.Equals(ReadString(chest, "status"), "ready", StringComparison.Ordinal) && !ReadBool(chest, "contains_skull_key"))
+                .Select(chest => new
+                {
+                    Chest = chest,
+                    Candidate = TargetCandidate(chest, search, grid, estimatedSwings: 0, deterministicLadder: false)
+                })
+                .Where(row => row.Candidate is not null)
+                .OrderBy(row => row.Candidate!.Distance)
+                .ThenBy(row => row.Candidate!.TargetY)
+                .ThenBy(row => row.Candidate!.TargetX)
+                .Select(row =>
+                {
+                    var item = row.Chest.TryGetProperty("item", out var itemValue) ? itemValue : default;
+                    var step = Build(MiningFloorStepKinds.ClaimRewardChest, "mandatory_loaded_floor_reward_before_descent", row.Candidate!);
+                    step.TargetRuntimeType = ReadString(row.Chest, "runtime_type");
+                    step.TargetQualifiedItemId = ReadString(item, "qualified_item_id");
+                    step.TargetQuantity = ReadInt(item, "quantity");
+                    step.TargetQuality = ReadInt(item, "quality");
+                    step.RewardBranch = ReadString(row.Chest, "reward_branch");
+                    step.ExpectedOutputItemsJson = ReadString(row.Chest, "expected_output_items_json");
+                    step.NativeGainExperienceCallAmount = ReadInt(row.Chest, "native_gain_experience_call_amount");
+                    step.ExpectedStardropMaxStaminaDelta = ReadInt(row.Chest, "expected_stardrop_max_stamina_delta");
+                    step.SafetyWindowStatus = "reward_chest_route_and_immediate_threat_clear";
+                    return step;
+                })
+                .FirstOrDefault();
+        }
+
         private static int ReadInventoryEmptySlots(JsonElement resources)
         {
             if (!resources.TryGetProperty("inventory_capacity", out var capacity) ||

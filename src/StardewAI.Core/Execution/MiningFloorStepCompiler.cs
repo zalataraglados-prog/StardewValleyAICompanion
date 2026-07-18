@@ -29,6 +29,7 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.ClaimGoldenScythe => "executor.interact",
                 MiningFloorStepKinds.MoveToSkullKeyChest => "executor.move_to_tile",
                 MiningFloorStepKinds.ClaimSkullKey => "executor.interact",
+                MiningFloorStepKinds.ClaimRewardChest => "executor.claim_mine_reward_chest",
                 _ => string.Empty
             };
         }
@@ -68,6 +69,12 @@ namespace StardewAI.Core.Execution
             Add(parameters, "expected_arrival_tile_x", plan.ExpectedArrivalTileX);
             Add(parameters, "expected_arrival_tile_y", plan.ExpectedArrivalTileY);
             Add(parameters, "qualified_item_id", plan.TargetQualifiedItemId);
+            Add(parameters, "quantity", plan.TargetQuantity);
+            Add(parameters, "expected_output_quality", plan.TargetQuality);
+            Add(parameters, "reward_branch", plan.RewardBranch);
+            Add(parameters, "expected_output_items_json", plan.ExpectedOutputItemsJson);
+            Add(parameters, "native_gain_experience_call_amount", plan.NativeGainExperienceCallAmount);
+            Add(parameters, "expected_stardrop_max_stamina_delta", plan.ExpectedStardropMaxStaminaDelta);
             Add(parameters, "expected_drop_qualified_item_ids", string.Join(",", plan.ExpectedDropQualifiedItemIds));
             Add(parameters, "source_match_status", plan.SourceMatchStatus);
             Add(parameters, "target_drop_chance_preview", plan.TargetDropChancePreview);
@@ -115,6 +122,15 @@ namespace StardewAI.Core.Execution
                 parameters.Add(Parameter("interaction_kind", "overlay_object"));
                 parameters.Add(Parameter("expected_action_type", "SkullKeyChest"));
                 parameters.Add(Parameter("required_postcondition", "player.has_skull_key=true"));
+            }
+            else if (plan.StepKind == MiningFloorStepKinds.ClaimRewardChest)
+            {
+                parameters.Add(Parameter("interaction_kind", "overlay_object"));
+                parameters.Add(Parameter("expected_action_type", "MineRewardChest"));
+                parameters.Add(Parameter("expected_skill_id", "luck"));
+                parameters.Add(Parameter("expected_skill_experience_delta", "0"));
+                parameters.Add(Parameter("is_stardrop", (plan.TargetQualifiedItemId == "(O)434").ToString().ToLowerInvariant()));
+                parameters.Add(Parameter("native_contract", "one_reward_open_then_wait_dumpContents_then_empty_chest_cleanup_checkAction"));
             }
             return parameters.ToArray();
         }
