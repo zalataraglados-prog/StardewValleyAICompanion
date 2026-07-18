@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -504,6 +505,11 @@ namespace StardewAI.Core.Training
                 return false;
             }
 
+            if (TryReadUniqueParameter(candidate, "expected_skill_experience_deltas_json", out var deltasJson))
+            {
+                return HasStructuredSkillExperienceEvidence(deltasJson, out rejectionReason);
+            }
+
             if (TryReadUniqueParameter(candidate, "skill_experience_skill_id", out var skillId))
             {
                 if (!IsVanillaSkillId(skillId))
@@ -551,6 +557,80 @@ namespace StardewAI.Core.Training
             }
             return true;
         }
+
+        private static bool HasStructuredSkillExperienceEvidence(string json, out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    rejectionReason = "structured_skill_experience_not_array";
+                    return false;
+                }
+
+                var seenSkillIndexes = new HashSet<int>();
+                var hasPositive = false;
+                foreach (var row in document.RootElement.EnumerateArray())
+                {
+                    if (row.ValueKind != JsonValueKind.Object ||
+                        !TryReadStructuredString(row, "skillId", "SkillId", out var rowSkillId) ||
+                        !TryReadStructuredInt(row, "skillIndex", "SkillIndex", out var skillIndex) ||
+                        !TryReadStructuredInt(row, "delta", "Delta", out var delta) ||
+                        skillIndex is < 0 or > 5 || delta < 0 ||
+                        !string.Equals(rowSkillId, SkillIdFromIndex(skillIndex), StringComparison.Ordinal) ||
+                        !seenSkillIndexes.Add(skillIndex))
+                    {
+                        rejectionReason = "structured_skill_experience_row_invalid";
+                        return false;
+                    }
+                    hasPositive |= delta > 0;
+                }
+
+                if (!hasPositive)
+                {
+                    rejectionReason = "multi_skill_experience_not_positive";
+                    return false;
+                }
+                return true;
+            }
+            catch (JsonException)
+            {
+                rejectionReason = "structured_skill_experience_json_invalid";
+                return false;
+            }
+        }
+
+        private static bool TryReadStructuredString(JsonElement row, string camelName, string pascalName, out string value)
+        {
+            value = string.Empty;
+            if ((!row.TryGetProperty(camelName, out var property) && !row.TryGetProperty(pascalName, out property)) ||
+                property.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+            value = property.GetString() ?? string.Empty;
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static bool TryReadStructuredInt(JsonElement row, string camelName, string pascalName, out int value)
+        {
+            value = 0;
+            return (row.TryGetProperty(camelName, out var property) || row.TryGetProperty(pascalName, out property)) &&
+                property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out value);
+        }
+
+        private static string SkillIdFromIndex(int index) => index switch
+        {
+            0 => "farming",
+            1 => "fishing",
+            2 => "foraging",
+            3 => "mining",
+            4 => "combat",
+            5 => "luck",
+            _ => string.Empty
+        };
 
         private static bool TryReadPositiveExperienceBounds(
             PolicyEventCandidatePrediction candidate,

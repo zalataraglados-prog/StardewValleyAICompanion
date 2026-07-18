@@ -48,6 +48,16 @@ namespace StardewAI.Core.OptionRegistry
                         ? Math.Max(0, ReadInt(heldItem, "sale_price"))
                         : 0;
                     var outputTotalValue = outputSalePrice * outputStack;
+                    var experienceProjectionStatus = ReadString(machine, "harvest_experience_projection_status");
+                    var experienceDeltasJson = ReadString(machine, "harvest_experience_deltas_json");
+                    var masteryExperienceDelta = ReadIntOptional(machine, "harvest_mastery_experience_delta");
+                    var experienceEvidenceValid = TryReadMachineHarvestExperienceDeltas(
+                        machine,
+                        experienceDeltasJson,
+                        out var experienceDeltas);
+                    var positiveExperienceDeltas = experienceDeltas
+                        .Where(delta => delta.Delta > 0)
+                        .ToArray();
                     var standTile = FindBestMachineStandTile(snapshot, x, y);
                     var blockReasons = new List<string>();
                     if (ReadBool(machine, "ready_for_harvest") != true)
@@ -71,7 +81,30 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add("machine_output_inventory_cannot_accept_item");
                     }
 
+                    if (!experienceProjectionStatus.StartsWith("exact_", StringComparison.Ordinal) ||
+                        string.IsNullOrWhiteSpace(experienceDeltasJson) ||
+                        !masteryExperienceDelta.HasValue ||
+                        !experienceEvidenceValid)
+                    {
+                        blockReasons.Add("machine_harvest_experience_projection_unavailable");
+                    }
+
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
+                    var parameters = new List<SmallModelActionParameter>
+                    {
+                        Parameter("machine_harvest_experience_raw", ReadString(machine, "harvest_experience_raw")),
+                        Parameter("expected_skill_experience_deltas_json", experienceDeltasJson),
+                        Parameter("expected_mastery_experience_delta", (masteryExperienceDelta ?? 0).ToString()),
+                        Parameter("skill_experience_projection_status", experienceProjectionStatus),
+                        Parameter("skill_experience_condition", "native_machine_output_collection")
+                    };
+                    if (positiveExperienceDeltas.Length == 1)
+                    {
+                        var delta = positiveExperienceDeltas[0];
+                        parameters.Add(Parameter("skill_experience_skill_id", delta.SkillId));
+                        parameters.Add(Parameter("skill_experience_on_success_min", delta.Delta.ToString()));
+                        parameters.Add(Parameter("skill_experience_on_success_max", delta.Delta.ToString()));
+                    }
                     var outputCandidate = new EventCandidate
                     {
                         CandidateId = "machine-output:Farm:" + x + "," + y + ":" + (string.IsNullOrWhiteSpace(outputQualifiedId) ? outputItemId : outputQualifiedId),
@@ -88,6 +121,9 @@ namespace StardewAI.Core.OptionRegistry
                             ";output_sale_price=" + outputSalePrice +
                             ";output_total_value=" + outputTotalValue +
                             ";machine_value_basis=held_item_sale_price_times_stack" +
+                            ";expected_skill_experience_deltas_json=" + experienceDeltasJson +
+                            ";expected_mastery_experience_delta=" + (masteryExperienceDelta ?? 0) +
+                            ";skill_experience_projection_status=" + experienceProjectionStatus +
                             ";machine_output_executor_status=runtime_collect",
                         ItemId = outputItemId,
                         QualifiedItemId = outputQualifiedId,
@@ -95,7 +131,8 @@ namespace StardewAI.Core.OptionRegistry
                         EstimatedTicks = Math.Max(90, distance * 60 + 30),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_machine_output_runtime_collect",
-                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = parameters.ToArray()
                     };
                     var candidates = new List<EventCandidate> { outputCandidate };
                     candidates.AddRange(MachineLoadInputCandidates(snapshot, machine, x, y, playerX, playerY));
@@ -106,6 +143,86 @@ namespace StardewAI.Core.OptionRegistry
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
         }
+
+        private static bool TryReadMachineHarvestExperienceDeltas(
+            JsonElement machine,
+            string serializedDeltas,
+            out MachineHarvestExperienceDelta[] deltas)
+        {
+            deltas = Array.Empty<MachineHarvestExperienceDelta>();
+            if (!machine.TryGetProperty("harvest_experience_deltas", out var rows) || rows.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            if (!TryParseMachineHarvestExperienceDeltas(rows, out var transparentDeltas))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(serializedDeltas);
+                if (!TryParseMachineHarvestExperienceDeltas(document.RootElement, out var serializedRows) ||
+                    !transparentDeltas.SequenceEqual(serializedRows))
+                {
+                    return false;
+                }
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            deltas = transparentDeltas;
+            return true;
+        }
+
+        private static bool TryParseMachineHarvestExperienceDeltas(
+            JsonElement rows,
+            out MachineHarvestExperienceDelta[] deltas)
+        {
+            deltas = Array.Empty<MachineHarvestExperienceDelta>();
+            if (rows.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var parsed = new List<MachineHarvestExperienceDelta>();
+            var seenSkillIndexes = new HashSet<int>();
+            foreach (var row in rows.EnumerateArray())
+            {
+                var skillId = ReadString(row, "skillId", ReadString(row, "SkillId"));
+                var skillIndex = ReadInt(row, "skillIndex", ReadInt(row, "SkillIndex", -1));
+                var delta = ReadInt(row, "delta", ReadInt(row, "Delta", -1));
+                if (row.ValueKind != JsonValueKind.Object ||
+                    skillIndex is < 0 or > 5 ||
+                    delta < 0 ||
+                    !string.Equals(skillId, MachineHarvestSkillId(skillIndex), StringComparison.Ordinal) ||
+                    !seenSkillIndexes.Add(skillIndex))
+                {
+                    return false;
+                }
+
+                parsed.Add(new MachineHarvestExperienceDelta(skillId, skillIndex, delta));
+            }
+
+            deltas = parsed.ToArray();
+            return true;
+        }
+
+        private static string MachineHarvestSkillId(int skillIndex) => skillIndex switch
+        {
+            0 => "farming",
+            1 => "fishing",
+            2 => "foraging",
+            3 => "mining",
+            4 => "combat",
+            5 => "luck",
+            _ => string.Empty
+        };
+
+        private sealed record MachineHarvestExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
         private EventCandidate[] MachineLoadInputCandidates(SnapshotEnvelope snapshot, JsonElement machine, int x, int y, int playerX, int playerY)
         {

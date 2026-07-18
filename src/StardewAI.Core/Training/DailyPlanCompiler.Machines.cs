@@ -57,6 +57,19 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "output_sale_price");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "output_total_value");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_value_basis");
+            parameters.Add(Parameter("machine_harvest_experience_raw", CandidateParameter(candidate, "machine_harvest_experience_raw")));
+            parameters.Add(Parameter("expected_skill_experience_deltas_json", CandidateParameter(candidate, "expected_skill_experience_deltas_json")));
+            parameters.Add(Parameter("expected_mastery_experience_delta", CandidateParameter(candidate, "expected_mastery_experience_delta")));
+            parameters.Add(Parameter("skill_experience_projection_status", CandidateParameter(candidate, "skill_experience_projection_status")));
+            parameters.Add(Parameter("skill_experience_condition", CandidateParameter(candidate, "skill_experience_condition")));
+            foreach (var name in new[] { "skill_experience_skill_id", "skill_experience_on_success_min", "skill_experience_on_success_max" })
+            {
+                var value = CandidateParameter(candidate, name);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    parameters.Add(Parameter(name, value));
+                }
+            }
 
             steps.Add(new SmallModelPlanStep
             {

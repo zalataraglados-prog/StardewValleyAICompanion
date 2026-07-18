@@ -183,7 +183,7 @@ public sealed class MachineFamilyMainlineTests
     private static string MachineRow(int x, int y, MachineFamily family, bool ready, int minutes, bool held, bool loadable)
     {
         return """
-        {"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"machine_data":{"status":"available","has_output":true,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
+        {"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","machine_data":{"status":"available","has_output":true,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
         """
         .Replace("TILE_X", x.ToString())
         .Replace("TILE_Y", y.ToString())

@@ -9,6 +9,7 @@ using StardewAI.TransparentBridge.State;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -69,13 +70,15 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .Take(MaxMachineRowsPerSnapshot)
             .Select(pair =>
             {
+                var liveMachineData = pair.Value.GetMachineData();
+                var harvestExperience = ReadMachineHarvestExperience(liveMachineData, Game1.player);
                 object machineData = minimalMachineProfile
                     ? new
                     {
                         status = "blocked",
                         reason = "machine_profile_minimal_skips_machine_data"
                     }
-                    : ReadMachineDataSummary(pair.Value.GetMachineData());
+                    : ReadMachineDataSummary(liveMachineData);
                 var loadableInputs = includeLoadableInputs
                     ? ReadMachineLoadableInputs(pair.Value)
                     : Array.Empty<object>();
@@ -92,6 +95,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     loadable_input_probe_status = includeLoadableInputs ? "available_main_thread_cache" : "blocked_requires_main_thread_cache",
                     machine_probe_cache_tick = machineProbeCacheTick,
                     machine_data = machineData,
+                    harvest_experience_raw = harvestExperience.Raw,
+                    harvest_experience_entries = harvestExperience.Entries,
+                    harvest_experience_deltas = harvestExperience.Deltas,
+                    harvest_experience_deltas_json = JsonSerializer.Serialize(harvestExperience.Deltas),
+                    harvest_mastery_experience_delta = harvestExperience.MasteryExperienceDelta,
+                    harvest_experience_projection_status = harvestExperience.Status,
+                    harvest_experience_native_contract = "Object.CheckForActionOnMachine_pair_parse_then_Farmer.gainExperience",
                     held_item = SummarizeItem(pair.Value.heldObject.Value),
                     loadable_inputs = loadableInputs
                 };

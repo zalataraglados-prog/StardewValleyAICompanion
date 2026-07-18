@@ -446,6 +446,13 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_inventory_cannot_accept_item");
         }
 
+        if (!TryReadExpectedMachineHarvestExperience(request, out var expectedExperience, out var expectedMasteryDelta) ||
+            !TryProjectMachineHarvestExperience(machine, out var projectedExperience, out var projectedMasteryDelta) ||
+            !expectedExperience.SequenceEqual(projectedExperience) || expectedMasteryDelta != projectedMasteryDelta)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_experience_projection_drifted");
+        }
+
         var playerTile = Game1.player.TilePoint;
         if (Math.Abs(playerTile.X - target.X) + Math.Abs(playerTile.Y - target.Y) != 1)
         {
@@ -454,14 +461,26 @@ public sealed partial class ModEntry : Mod
 
         var beforeInventory = InventoryStackSignature();
         var beforeItemCount = CountInventoryItem(outputId);
+        var experienceBefore = Enumerable.Range(0, 6).Select(index => Game1.player.experiencePoints[index]).ToArray();
+        var masteryBefore = (int)Game1.stats.Get("MasteryExp");
         var acted = machine.checkForAction(Game1.player);
         var afterInventory = InventoryStackSignature();
         var afterItemCount = CountInventoryItem(outputId);
         var afterObserved = MachineObservedEffect(location, target);
+        var actualExperience = Enumerable.Range(0, 6)
+            .Select(index => new MachineHarvestExperienceDelta(
+                Farmer.getSkillNameFromIndex(index).ToLowerInvariant(),
+                index,
+                Game1.player.experiencePoints[index] - experienceBefore[index]))
+            .Where(delta => delta.Delta != 0 || expectedExperience.Any(expected => expected.SkillIndex == delta.SkillIndex))
+            .ToArray();
+        var actualMasteryDelta = (int)Game1.stats.Get("MasteryExp") - masteryBefore;
+        var experienceVerified = actualExperience.SequenceEqual(expectedExperience) && actualMasteryDelta == expectedMasteryDelta;
         var verified = acted &&
             machine.heldObject.Value is null &&
             !machine.readyForHarvest.Value &&
-            (!string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterItemCount > beforeItemCount);
+            (!string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterItemCount > beforeItemCount) &&
+            experienceVerified;
 
         return new TrainingExecutionResult
         {
@@ -477,10 +496,12 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "collect_machine_output",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "machine_output_collected", "inventory_updated", "qualified_item_id=" + outputId }
-                : new[] { acted ? "checkForAction_returned_true" : "checkForAction_returned_false", machine.heldObject.Value is null ? "held_item_cleared" : "held_item_still_present" },
+                ? new[] { "machine_output_collected", "inventory_updated", "machine_harvest_skill_and_mastery_experience_verified", "qualified_item_id=" + outputId }
+                : new[] { acted ? "checkForAction_returned_true" : "checkForAction_returned_false", machine.heldObject.Value is null ? "held_item_cleared" : "held_item_still_present", experienceVerified ? "machine_harvest_experience_verified" : "machine_harvest_experience_mismatch" },
             RequestedEffect = requested,
-            ObservedEffect = afterObserved,
+            ObservedEffect = afterObserved +
+                ";skill_experience_deltas_json=" + JsonSerializer.Serialize(actualExperience) +
+                ";mastery_experience_delta=" + actualMasteryDelta,
             BlockReasons = verified ? Array.Empty<string>() : new[] { acted ? "collect_machine_output_post_state_mismatch" : "collect_machine_output_action_failed" },
             ChangedFacts = verified
                 ? new[]
@@ -498,9 +519,132 @@ public sealed partial class ModEntry : Mod
                         After = afterInventory
                     }
                 }
+                .Concat(actualExperience
+                    .Where(delta => delta.Delta != 0)
+                    .Select(delta => new SimulatedFactChange
+                    {
+                        Path = "player.skills." + delta.SkillId + ".experience",
+                        Before = experienceBefore[delta.SkillIndex].ToString(CultureInfo.InvariantCulture),
+                        After = Game1.player.experiencePoints[delta.SkillIndex].ToString(CultureInfo.InvariantCulture)
+                    }))
+                .Concat(actualMasteryDelta == 0
+                    ? Array.Empty<SimulatedFactChange>()
+                    : new[]
+                    {
+                        new SimulatedFactChange
+                        {
+                            Path = "stats.MasteryExp",
+                            Before = masteryBefore.ToString(CultureInfo.InvariantCulture),
+                            After = Game1.stats.Get("MasteryExp").ToString(CultureInfo.InvariantCulture)
+                        }
+                    })
+                .ToArray()
                 : Array.Empty<SimulatedFactChange>()
         };
     }
+
+    private static bool TryReadExpectedMachineHarvestExperience(
+        TrainingExecutionRequest request,
+        out MachineHarvestExperienceDelta[] deltas,
+        out int masteryDelta)
+    {
+        deltas = Array.Empty<MachineHarvestExperienceDelta>();
+        masteryDelta = 0;
+        if (string.IsNullOrWhiteSpace(request.ExpectedSkillExperienceDeltasJson) ||
+            !request.ExpectedMasteryExperienceDelta.HasValue)
+        {
+            return false;
+        }
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<MachineHarvestExperienceDelta[]>(request.ExpectedSkillExperienceDeltasJson, JsonOptions);
+            if (parsed is null || parsed.Any(delta =>
+                delta.SkillIndex is < 0 or > 5 ||
+                delta.Delta < 0 ||
+                !string.Equals(delta.SkillId, Farmer.getSkillNameFromIndex(delta.SkillIndex).ToLowerInvariant(), StringComparison.Ordinal)) ||
+                parsed.Select(delta => delta.SkillIndex).Distinct().Count() != parsed.Length)
+            {
+                return false;
+            }
+            deltas = parsed.OrderBy(delta => delta.SkillIndex).ToArray();
+            masteryDelta = request.ExpectedMasteryExperienceDelta.Value;
+            return masteryDelta >= 0;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryProjectMachineHarvestExperience(
+        StardewValley.Object machine,
+        out MachineHarvestExperienceDelta[] deltas,
+        out int masteryDelta)
+    {
+        deltas = Array.Empty<MachineHarvestExperienceDelta>();
+        masteryDelta = 0;
+        var raw = machine.GetMachineData()?.ExperienceGainOnHarvest ?? string.Empty;
+        if (string.IsNullOrEmpty(raw))
+        {
+            return true;
+        }
+
+        var tokens = raw.Split(' ');
+        var aggregate = new Dictionary<int, int>();
+        var experience = Enumerable.Range(0, 6).Select(index => Game1.player.experiencePoints[index]).ToArray();
+        var levels = Enumerable.Range(0, 6).Select(Game1.player.GetUnmodifiedSkillLevel).ToArray();
+        try
+        {
+            for (var index = 0; index < tokens.Length; index += 2)
+            {
+                var skillIndex = Farmer.getSkillNumberFromName(tokens[index]);
+                if (skillIndex == -1 || !ArgUtility.TryGetInt(tokens, index + 1, out var amount, out _, "int amount"))
+                {
+                    continue;
+                }
+
+                var levelBeforeCall = levels.Sum() / 2;
+                var effectiveDelta = skillIndex == Farmer.luckSkill || amount <= 0 ? 0 : amount;
+                aggregate[skillIndex] = aggregate.TryGetValue(skillIndex, out var current)
+                    ? checked(current + effectiveDelta)
+                    : effectiveDelta;
+                if (effectiveDelta <= 0)
+                {
+                    continue;
+                }
+                if (levelBeforeCall >= 25)
+                {
+                    masteryDelta = checked(masteryDelta + Math.Max(1, skillIndex == Farmer.farmingSkill ? effectiveDelta / 2 : effectiveDelta));
+                }
+
+                var oldExperience = experience[skillIndex];
+                var newExperience = checked(oldExperience + effectiveDelta);
+                var gainedLevel = Farmer.checkForLevelGain(oldExperience, newExperience);
+                experience[skillIndex] = newExperience;
+                if (gainedLevel != -1)
+                {
+                    levels[skillIndex] = gainedLevel;
+                }
+            }
+        }
+        catch (OverflowException)
+        {
+            deltas = Array.Empty<MachineHarvestExperienceDelta>();
+            masteryDelta = 0;
+            return false;
+        }
+
+        deltas = aggregate
+            .OrderBy(pair => pair.Key)
+            .Select(pair => new MachineHarvestExperienceDelta(
+                Farmer.getSkillNameFromIndex(pair.Key).ToLowerInvariant(),
+                pair.Key,
+                pair.Value))
+            .ToArray();
+        return true;
+    }
+
+    private sealed record MachineHarvestExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
     private TrainingExecutionResult ExecuteSetupMachineInputTarget(TrainingExecutionRequest request)
     {

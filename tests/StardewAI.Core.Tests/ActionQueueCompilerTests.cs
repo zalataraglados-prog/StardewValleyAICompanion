@@ -374,7 +374,12 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
-            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" }
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" },
+            new SmallModelActionParameter { Name = "machine_harvest_experience_raw", Value = "" },
+            new SmallModelActionParameter { Name = "expected_skill_experience_deltas_json", Value = "[]" },
+            new SmallModelActionParameter { Name = "expected_mastery_experience_delta", Value = "0" },
+            new SmallModelActionParameter { Name = "skill_experience_projection_status", Value = "exact_no_configured_experience" },
+            new SmallModelActionParameter { Name = "skill_experience_condition", Value = "native_machine_output_collection" }
         };
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
@@ -398,7 +403,12 @@ public sealed partial class ActionQueueCompilerTests
         {
             new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
             new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
-            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" }
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)388" },
+            new SmallModelActionParameter { Name = "machine_harvest_experience_raw", Value = "" },
+            new SmallModelActionParameter { Name = "expected_skill_experience_deltas_json", Value = "[]" },
+            new SmallModelActionParameter { Name = "expected_mastery_experience_delta", Value = "0" },
+            new SmallModelActionParameter { Name = "skill_experience_projection_status", Value = "exact_no_configured_experience" },
+            new SmallModelActionParameter { Name = "skill_experience_condition", Value = "native_machine_output_collection" }
         };
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);

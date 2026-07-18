@@ -596,6 +596,18 @@ namespace StardewAI.Core.Execution
                         reasons.Add("collect_machine_output_inventory_cannot_accept_item");
                     }
                 }
+
+                var expectedDeltasJson = ReadParameter(action, "expected_skill_experience_deltas_json");
+                var expectedMasteryDelta = ReadIntParameter(action, "expected_mastery_experience_delta");
+                if (string.IsNullOrWhiteSpace(expectedDeltasJson) || !expectedMasteryDelta.HasValue ||
+                    !string.Equals(ReadParameter(action, "machine_harvest_experience_raw"), ReadString(machine.Value, "harvest_experience_raw"), StringComparison.Ordinal) ||
+                    !string.Equals(expectedDeltasJson, ReadString(machine.Value, "harvest_experience_deltas_json"), StringComparison.Ordinal) ||
+                    expectedMasteryDelta.Value != ReadInt(machine.Value, "harvest_mastery_experience_delta") ||
+                    !string.Equals(ReadParameter(action, "skill_experience_projection_status"), ReadString(machine.Value, "harvest_experience_projection_status"), StringComparison.Ordinal) ||
+                    !string.Equals(ReadParameter(action, "skill_experience_condition"), "native_machine_output_collection", StringComparison.Ordinal))
+                {
+                    reasons.Add("collect_machine_output_experience_projection_drifted");
+                }
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

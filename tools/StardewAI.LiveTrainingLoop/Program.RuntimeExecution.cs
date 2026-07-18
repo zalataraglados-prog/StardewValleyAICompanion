@@ -287,6 +287,8 @@ static partial class Program
         var expectedStatIncrementsJson = ReadQueueParameterString(item, "expected_stat_increments_json");
         var expectedSkillId = ReadQueueParameterString(item, "expected_skill_id");
         var expectedSkillExperienceDelta = ReadQueueParameterInt(item, "expected_skill_experience_delta");
+        var expectedSkillExperienceDeltasJson = ReadQueueParameterString(item, "expected_skill_experience_deltas_json");
+        var expectedMasteryExperienceDelta = ReadQueueParameterInt(item, "expected_mastery_experience_delta");
         var expectedStardropMaxStaminaDelta = ReadQueueParameterInt(item, "expected_stardrop_max_stamina_delta");
         var buildingTileX = ReadQueueParameterInt(item, "building_tile_x");
         var buildingTileY = ReadQueueParameterInt(item, "building_tile_y");
@@ -461,6 +463,8 @@ static partial class Program
         executionRequest.ExpectedStatIncrementsJson = expectedStatIncrementsJson;
         executionRequest.ExpectedSkillId = expectedSkillId;
         executionRequest.ExpectedSkillExperienceDelta = expectedSkillExperienceDelta;
+        executionRequest.ExpectedSkillExperienceDeltasJson = expectedSkillExperienceDeltasJson;
+        executionRequest.ExpectedMasteryExperienceDelta = expectedMasteryExperienceDelta;
         executionRequest.ExpectedStardropMaxStaminaDelta = expectedStardropMaxStaminaDelta;
         executionRequest.BuildingTileX = buildingTileX;
         executionRequest.BuildingTileY = buildingTileY;

@@ -61,6 +61,7 @@ namespace StardewAI.Core.Training
                 new[]
                 {
                     "farm.maintain_crops",
+                    "farm.process_machines",
                     "farm.collect_animal_products",
                     "foraging.collect_spawned_objects",
                     "foraging.harvest_ginger",
@@ -79,6 +80,7 @@ namespace StardewAI.Core.Training
                 {
                     "harvest_crop_tile",
                     "harvest_giant_crop_tile",
+                    "collect_machine_output_tile",
                     "collect_animal_product",
                     "collect_spawned_object",
                     "harvest_ginger",
