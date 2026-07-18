@@ -90,6 +90,26 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileCurrentLocationResourceClumpStep(SmallModelAction action)
+        {
+            var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+            var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+            var maximumSwings = ReadIntParameter(action, "max_tool_swings");
+            if (!anchorX.HasValue || !anchorY.HasValue || !maximumSwings.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "break_resource_clump",
+                    (ReadParameter(action, "target_location") ?? "current_location") + "(" + anchorX.Value + "," + anchorY.Value + ")",
+                    "current_location.resource_clumps[" + anchorX.Value + "," + anchorY.Value + "].present=false_or_blocked",
+                    Math.Clamp(maximumSwings.Value, 1, 64) * 60)
+            };
+        }
+
         private static CompiledActionStep[] CompileTillSoilStep(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var x = ReadIntParameter(action, "target_tile_x");

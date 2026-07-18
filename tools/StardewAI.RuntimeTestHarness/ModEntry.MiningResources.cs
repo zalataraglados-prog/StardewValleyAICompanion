@@ -485,6 +485,7 @@ public sealed partial class ModEntry : Mod
         }
 
         var farmRequest = request.OptionId == "executor.break_farm_resource_clump";
+        var currentLocationRequest = request.OptionId == "executor.break_current_location_resource_clump";
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
             !request.ResourceClumpTileX.HasValue || !request.ResourceClumpTileY.HasValue ||
@@ -515,6 +516,10 @@ public sealed partial class ModEntry : Mod
             }
             location = farm;
         }
+        else if (currentLocationRequest)
+        {
+            location = Game1.currentLocation;
+        }
         else if (Game1.currentLocation is MineShaft mine)
         {
             location = mine;
@@ -539,7 +544,11 @@ public sealed partial class ModEntry : Mod
             candidate.width.Value == request.ResourceClumpWidth.Value &&
             candidate.height.Value == request.ResourceClumpHeight.Value &&
             candidate.parentSheetIndex.Value == request.ResourceClumpParentSheetIndex.Value);
-        var factPathPrefix = farmRequest ? "farm.resource_clumps" : "mining.resource_clumps";
+        var factPathPrefix = farmRequest
+            ? "farm.resource_clumps"
+            : currentLocationRequest
+                ? "current_location.resource_clumps"
+                : "mining.resource_clumps";
         var requested = factPathPrefix + "[" + anchor.X + "," + anchor.Y + "].present=false;native_tool=" + request.RequiredToolKind;
         if (clump is null)
         {
@@ -555,7 +564,9 @@ public sealed partial class ModEntry : Mod
         }
         if (!TryResourceClumpRequirement(clump.parentSheetIndex.Value, out var requiredToolKind, out var minimumUpgradeLevel) ||
             !string.Equals(requiredToolKind, request.RequiredToolKind, StringComparison.Ordinal) ||
-            (farmRequest && clump.parentSheetIndex.Value is not ResourceClump.stumpIndex and not ResourceClump.hollowLogIndex))
+            (farmRequest && clump.parentSheetIndex.Value is not ResourceClump.stumpIndex and not ResourceClump.hollowLogIndex) ||
+            (currentLocationRequest && (clump.GetType() != typeof(ResourceClump) || !clump.IsGreenRainBush() ||
+                !string.Equals(request.TargetRuntimeType, typeof(ResourceClump).FullName, StringComparison.Ordinal))))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_type_unsupported_or_requirement_mismatch"));
             return;
@@ -578,6 +589,27 @@ public sealed partial class ModEntry : Mod
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_energy_exhausted"));
             return;
+        }
+
+        var expectedOutputs = Array.Empty<ClearanceOutputItemExpectation>();
+        var outputCountsBefore = Array.Empty<int>();
+        var possibleSecretNoteQualifiedItemId = string.Empty;
+        var secretNoteCountBefore = 0;
+        if (currentLocationRequest)
+        {
+            if (request.ExpectedForagingExperienceDelta != 15 ||
+                !TryParseClearanceOutputItems(request.ExpectedOutputItemsJson, out expectedOutputs) ||
+                expectedOutputs.Length is < 2 or > 3 ||
+                !GreenRainCoreProjectionMatches(clump, expectedOutputs))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "green_rain_resource_clump_output_projection_drifted"));
+                return;
+            }
+            outputCountsBefore = expectedOutputs
+                .Select(output => CountResourceClumpOutput(location, output))
+                .ToArray();
+            possibleSecretNoteQualifiedItemId = location.InIslandContext() ? "(O)842" : "(O)79";
+            secretNoteCountBefore = CountBushOutput(location, possibleSecretNoteQualifiedItemId, 0);
         }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
@@ -611,7 +643,12 @@ public sealed partial class ModEntry : Mod
             maxMovementTiles,
             request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
             factPathPrefix,
-            farmRequest,
+            farmRequest || currentLocationRequest,
+            expectedOutputs,
+            outputCountsBefore,
+            currentLocationRequest ? 15 : null,
+            possibleSecretNoteQualifiedItemId,
+            secretNoteCountBefore,
             requested);
     }
 
@@ -779,6 +816,11 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteResourceClump(ActiveResourceClump active)
     {
+        if (!ResourceClumpProjectedOutputsMatch(active))
+        {
+            CompleteResourceClumpBlocked(active, "green_rain_resource_clump_output_or_experience_mismatch");
+            return;
+        }
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeResourceClump = null;
@@ -805,6 +847,25 @@ public sealed partial class ModEntry : Mod
                 Path = "player.skills.foraging.experience",
                 Before = active.ForagingExperienceBefore.ToString(CultureInfo.InvariantCulture),
                 After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(CultureInfo.InvariantCulture)
+            });
+        }
+        for (var index = 0; index < active.ExpectedOutputs.Length; index++)
+        {
+            var output = active.ExpectedOutputs[index];
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "current_location.output.item_multiset[" + output.QualifiedItemId + ",quality=" + output.Quality + "," + output.UnitStateSha256 + "]",
+                Before = active.OutputCountsBefore[index].ToString(CultureInfo.InvariantCulture),
+                After = CountResourceClumpOutput(active.Location, output).ToString(CultureInfo.InvariantCulture)
+            });
+        }
+        if (!string.IsNullOrWhiteSpace(active.PossibleSecretNoteQualifiedItemId))
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "current_location.output.count[" + active.PossibleSecretNoteQualifiedItemId + ",quality=0]",
+                Before = active.SecretNoteCountBefore.ToString(CultureInfo.InvariantCulture),
+                After = CountBushOutput(active.Location, active.PossibleSecretNoteQualifiedItemId, 0).ToString(CultureInfo.InvariantCulture)
             });
         }
         active.Pending.Completion.SetResult(new TrainingExecutionResult
@@ -835,6 +896,7 @@ public sealed partial class ModEntry : Mod
                 "native_" + active.RequiredToolKind + "_lifecycle_removed_resource_clump",
                 "multi_tile_clump_identity_verified",
                 "natural_resource_clump_drops_left_as_game_debris",
+                active.ExpectedOutputs.Length > 0 ? "seeded_core_output_and_foraging_experience_verified" : "generic_resource_clump_contract_verified",
                 "native_swing_count=" + active.SwingCount
             },
             RequestedEffect = active.RequestedEffect,
@@ -842,7 +904,8 @@ public sealed partial class ModEntry : Mod
                 ";parent_sheet_index=" + active.ParentSheetIndex +
                 ";size=" + active.Width + "x" + active.Height +
                 ";health_sequence=" + string.Join(",", active.ObservedHealth.Select(value => value.ToString("0.###", CultureInfo.InvariantCulture))) +
-                ";native_swings=" + active.SwingCount,
+                ";native_swings=" + active.SwingCount +
+                ResourceClumpOutputObservation(active),
             ChangedFacts = changedFacts.ToArray()
         });
     }
@@ -888,6 +951,7 @@ public sealed partial class ModEntry : Mod
             ResourceClump.quarryBoulderIndex or ResourceClump.meteoriteIndex => ("pickaxe", 3),
             ResourceClump.boulderIndex => ("pickaxe", 2),
             ResourceClump.mineRock1Index or ResourceClump.mineRock2Index or ResourceClump.mineRock3Index or ResourceClump.mineRock4Index => ("pickaxe", 0),
+            ResourceClump.greenRainBush1Index or ResourceClump.greenRainBush2Index => ("axe", 0),
             _ => (string.Empty, 0)
         };
         return !string.IsNullOrWhiteSpace(requiredToolKind);
@@ -897,6 +961,95 @@ public sealed partial class ModEntry : Mod
     {
         return requiredToolKind == "axe" && tool is Axe ||
             requiredToolKind == "pickaxe" && tool is Pickaxe;
+    }
+
+    private static bool GreenRainCoreProjectionMatches(ResourceClump clump, IReadOnlyList<ClearanceOutputItemExpectation> expected)
+    {
+        var random = Utility.CreateRandom(
+            Game1.uniqueIDForThisGame,
+            Game1.stats.DaysPlayed,
+            clump.Tile.X * 7.0,
+            clump.Tile.Y * 11.0);
+        var projected = new Dictionary<ClearanceOutputItemKey, int>
+        {
+            [ResourceClumpOutputKey(ItemRegistry.Create("(O)Moss"))] = random.Next(2, 4),
+            [ResourceClumpOutputKey(ItemRegistry.Create("(O)771"))] = random.Next(2, 4)
+        };
+        if (random.NextDouble() < 0.05)
+        {
+            projected[ResourceClumpOutputKey(ItemRegistry.Create("(O)MossySeed"))] = 1;
+        }
+        if (expected.Any(output => output.Quality != 0) || expected.Count != projected.Count)
+        {
+            return false;
+        }
+        foreach (var output in expected)
+        {
+            if (!projected.TryGetValue(output.Key, out var quantity) || quantity != output.Quantity)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool ResourceClumpProjectedOutputsMatch(ActiveResourceClump active)
+    {
+        if (active.ExpectedOutputs.Length == 0)
+        {
+            return true;
+        }
+        if (active.ExpectedForagingExperienceDelta.HasValue &&
+            Game1.player.experiencePoints[Farmer.foragingSkill] - active.ForagingExperienceBefore != active.ExpectedForagingExperienceDelta.Value)
+        {
+            return false;
+        }
+        for (var index = 0; index < active.ExpectedOutputs.Length; index++)
+        {
+            var output = active.ExpectedOutputs[index];
+            if (CountResourceClumpOutput(active.Location, output) - active.OutputCountsBefore[index] != output.Quantity)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static string ResourceClumpOutputObservation(ActiveResourceClump active)
+    {
+        if (active.ExpectedOutputs.Length == 0)
+        {
+            return string.Empty;
+        }
+        var core = string.Join(",", active.ExpectedOutputs.Select((output, index) =>
+            output.QualifiedItemId + "@" + output.UnitStateSha256[..8] + ":" +
+            (CountResourceClumpOutput(active.Location, output) - active.OutputCountsBefore[index])));
+        var secretNoteDelta = string.IsNullOrWhiteSpace(active.PossibleSecretNoteQualifiedItemId)
+            ? 0
+            : CountBushOutput(active.Location, active.PossibleSecretNoteQualifiedItemId, 0) - active.SecretNoteCountBefore;
+        return ";core_output_delta=" + core +
+            ";possible_secret_note_id=" + active.PossibleSecretNoteQualifiedItemId +
+            ";possible_secret_note_delta=" + secretNoteDelta +
+            ";foraging_xp_delta=" + (Game1.player.experiencePoints[Farmer.foragingSkill] - active.ForagingExperienceBefore);
+    }
+
+    private static int CountResourceClumpOutput(GameLocation location, ClearanceOutputItemExpectation expected)
+    {
+        var debris = location.debris
+            .Where(row => row.item is Item item && ResourceClumpOutputKey(item) == expected.Key)
+            .Sum(row => row.item!.Stack);
+        var inventory = Game1.player.Items
+            .Where(item => item is not null && ResourceClumpOutputKey(item) == expected.Key)
+            .Sum(item => item!.Stack);
+        return debris + inventory;
+    }
+
+    private static ClearanceOutputItemKey ResourceClumpOutputKey(Item item)
+    {
+        var unit = item.getOne();
+        unit.Stack = 1;
+        unit.HasBeenInInventory = false;
+        return ClearanceOutputItemKey.From(unit);
     }
 
     private static string ResourceClumpObservedEffect(GameLocation location, Point anchor)

@@ -126,6 +126,11 @@ namespace StardewAI.Core.Training
                 return ClearFarmResourceClumpSteps(candidate);
             }
 
+            if (candidate.Kind == "clear_green_rain_resource_clump")
+            {
+                return ClearGreenRainResourceClumpSteps(candidate);
+            }
+
             if (candidate.Kind == "plant_seed_tile")
             {
                 return PlantSeedTileSteps(candidate);

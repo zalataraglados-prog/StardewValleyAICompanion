@@ -65,13 +65,15 @@ namespace StardewAI.Core.Training
                     "foraging.collect_spawned_objects",
                     "foraging.harvest_ginger",
                     "foraging.harvest_bushes",
+                    "foraging.clear_green_rain_bushes",
                     "foraging.pan_ore_spot",
                     "fishing.catch_fish",
                     "fishing.collect_crab_pots",
                     "fishing.service_fish_ponds",
                     "mining.reach_depth",
                     "executor.clear_obstacle",
-                    "executor.break_farm_resource_clump"
+                    "executor.break_farm_resource_clump",
+                    "executor.break_current_location_resource_clump"
                 },
                 new[]
                 {
@@ -81,6 +83,7 @@ namespace StardewAI.Core.Training
                     "collect_spawned_object",
                     "harvest_ginger",
                     "harvest_bush",
+                    "clear_green_rain_resource_clump",
                     "pan_ore_spot",
                     "catch_fish",
                     "collect_crab_pot",

@@ -90,6 +90,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "foraging.collect_spawned_objects" ||
                 optionId == "foraging.harvest_ginger" ||
                 optionId == "foraging.harvest_bushes" ||
+                optionId == "foraging.clear_green_rain_bushes" ||
                 optionId == "foraging.pan_ore_spot" ||
                 optionId == "mining.reach_depth" ||
                 optionId == "mining.obtain_skull_key" ||
@@ -120,6 +121,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.buy_shop_item" ||
                 optionId == "executor.clear_obstacle" ||
                 optionId == "executor.break_farm_resource_clump" ||
+                optionId == "executor.break_current_location_resource_clump" ||
                 optionId == "executor.till_soil" ||
                 optionId == "executor.plant_seed" ||
                 optionId == "executor.harvest_crop" ||

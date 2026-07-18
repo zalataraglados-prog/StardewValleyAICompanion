@@ -26,6 +26,7 @@ namespace StardewAI.Core.Execution
                 ["executor.wait_ticks"] = (action, _) => CompileWaitTicksStep(action),
                 ["executor.clear_obstacle"] = (action, _) => CompileClearObstacleStep(action),
                 ["executor.break_farm_resource_clump"] = (action, _) => CompileFarmResourceClumpStep(action),
+                ["executor.break_current_location_resource_clump"] = (action, _) => CompileCurrentLocationResourceClumpStep(action),
                 ["executor.till_soil"] = CompileTillSoilStep,
                 ["executor.plant_seed"] = (action, _) => CompilePlantSeedStep(action),
                 ["executor.harvest_crop"] = (action, _) => CompileHarvestCropStep(action),

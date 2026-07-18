@@ -53,7 +53,8 @@ static partial class Program
               string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal)
                 ? applied ? 0.08 : -0.08
             : string.Equals(optionId, "executor.break_resource_clump", StringComparison.Ordinal) ||
-              string.Equals(optionId, "executor.break_farm_resource_clump", StringComparison.Ordinal)
+              string.Equals(optionId, "executor.break_farm_resource_clump", StringComparison.Ordinal) ||
+              string.Equals(optionId, "executor.break_current_location_resource_clump", StringComparison.Ordinal)
                 ? applied ? 0.08 : -0.08
             : string.Equals(optionId, "executor.collect_spawned_object", StringComparison.Ordinal)
                 ? applied ? 0.05 : -0.05

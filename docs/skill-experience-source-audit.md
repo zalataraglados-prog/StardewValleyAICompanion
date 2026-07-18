@@ -21,6 +21,8 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | `MilkPail.DoFunction`, `Shears.DoFunction`, and compatible `FarmAnimal` interaction | Farming | all outdoor and animal-house animals expose live eligibility, output quality/unit state, Animal Cracker quantity, tool slot, inventory gate, stats, `-4` energy, `+5` friendship, and `+5` Farming XP; candidate, compiler rebind, moving-target native executor, and both isolated tool smokes are verified |
 | `Pan.DoFunction` / `Pan.getPanItems` | Mining and Foraging | active ore point, exact Pan upgrade/enchantments, luck/DaysPlayed/TimesPanned inputs, native deterministic reward multiset, aggregate inventory acceptance, direct ore/diamond receipt stats, Mining XP, Foraging XP, and post-use point status are projected; generic `Farmer.OnItemReceived` quest/special-order/collection callbacks and upgraded-Pan respawn use explicit runtime-observed status; compiler rebind and native copper/steel smokes are verified |
 | `FishPond.doAction` output harvest and `ResolveNeeds` request completion | Fishing | every exact vanilla pond exposes output/request branch priority, edge interaction geometry, output unit-state/inventory acceptance, toolbar-bound request items, population-gate before/after state, and exact Fishing XP (`10 + floor(output price * 0.04)` or `20 + SpawnTime * 5`); compiler rebind, native `GameLocation.checkAction`, inventory/pond/XP verification, and isolated output/request smokes are verified; generic output receipt callbacks remain explicitly runtime-observed |
+| mine treasure `Chest` collection | Luck call site, effective XP zero | every loaded MineShaft reward chest exposes exact chest/reward identity and native lifecycle; candidate/compiler/runtime chain is implemented. Decompiled `gainExperience(5, 25 + mineLevel)` is ignored by `Farmer.gainExperience` for skill 5, so the exact observed Luck XP delta is zero rather than a trainable skill gain; runtime validation pending |
+| Green Rain bush-like `ResourceClump` destruction | Foraging | every exact loaded vanilla index-44/46 clump exposes footprint, Axe slot/damage/hits, exact `+15` XP, day/save/anchor-seeded Moss/Fiber/Mossy Seed outputs, and bounded global-RNG secret-note probability without consuming RNG; candidate/compiler/native executor rebind and verify deterministic effects; runtime validation pending |
 
 ## Missing Mechanical Candidate Families
 
@@ -28,8 +30,6 @@ These are required before native skill-source enumeration can be called complete
 
 | native source | skills | required slice |
 |---|---|---|
-| mine treasure `Chest` collection | Luck | exact eligible chest identity, current mine level, native chest lifecycle, output and XP verification |
-| Green Rain bush-like `ResourceClump` destruction | Foraging | runtime type/state, deterministic drops, tool budget, dedicated clearance contract |
 | skill books, repeated power books, and Purple Book | one or multiple skills | inventory/consumption policy, exact context-tag branch, native read animation/result executor |
 | machine `ExperienceGainOnHarvest` | data-selected skill(s) | expose parsed machine data XP pairs and bind them to the existing native output-collection candidate |
 

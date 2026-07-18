@@ -160,6 +160,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact berry, tea, or golden-walnut bush selected", "native checkAction and Bush.performUseAction handed to the mechanical executor" },
                 new[] { "block_unready_bush", "block_custom_bush_runtime", "block_unverified_perimeter_route", "block_projection_drift", "block_direct_bush_or_reward_mutation" }));
 
+            Register(Option("foraging.clear_green_rain_bushes", "foraging", "Clear one loaded Green Rain ResourceClump",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.resource_clumps", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact loaded vanilla Green Rain clump selected", "seeded core drops and bounded secret-note probability preserved", "native axe ResourceClump lifecycle handed to the mechanical executor" },
+                new[] { "block_custom_or_non_green_rain_clump", "block_missing_axe", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("foraging.pan_ore_spot", "foraging", "Pan one transparent active ore spot",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -478,6 +486,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "farm.resource_clumps", "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact resource clump", "natural drops remain game debris" },
                 new[] { "block_unknown_clump", "block_missing_required_axe_upgrade", "block_unverified_perimeter", "block_menu_unsafe_tool_use", "block_direct_resource_clump_mutation" }));
+
+            Register(Option("executor.break_current_location_resource_clump", "foraging", "Remove one verified loaded Green Rain ResourceClump",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "current_location.resource_clumps", "current_location.debris", "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact clump", "seeded core debris and Foraging XP are verified while optional secret-note output is recorded" },
+                new[] { "block_target_identity_drift", "block_missing_axe", "block_unreachable_perimeter", "block_output_projection_drift", "block_menu_unsafe_tool_use" }));
 
             Register(Option("executor.plant_seed", "farm", "Plant one verified seed on one verified tile",
                 OptionBehaviorCategories.Mechanical,

@@ -223,6 +223,7 @@ namespace StardewAI.Core.Training
                 case "executor.pan_ore_spot":
                 case "executor.harvest_ginger":
                 case "executor.harvest_bush":
+                case "executor.break_current_location_resource_clump":
                 case "executor.claim_mine_reward_chest":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":
@@ -233,6 +234,7 @@ namespace StardewAI.Core.Training
                 case "foraging.pan_ore_spot":
                 case "foraging.harvest_ginger":
                 case "foraging.harvest_bushes":
+                case "foraging.clear_green_rain_bushes":
                 case "mining.claim_reward_chests":
                     return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":

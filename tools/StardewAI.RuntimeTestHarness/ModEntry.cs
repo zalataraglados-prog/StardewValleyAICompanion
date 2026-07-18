@@ -356,7 +356,8 @@ public sealed partial class ModEntry : Mod
             }
 
             if (pending.Request.OptionId == "executor.break_resource_clump" ||
-                pending.Request.OptionId == "executor.break_farm_resource_clump")
+                pending.Request.OptionId == "executor.break_farm_resource_clump" ||
+                pending.Request.OptionId == "executor.break_current_location_resource_clump")
             {
                 StartResourceClump(pending);
                 return;

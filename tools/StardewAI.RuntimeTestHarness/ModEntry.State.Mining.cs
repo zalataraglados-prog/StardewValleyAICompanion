@@ -107,6 +107,11 @@ public sealed partial class ModEntry : Mod
             int restoreSlotIndex,
             string factPathPrefix,
             bool trackForagingExperience,
+            ClearanceOutputItemExpectation[] expectedOutputs,
+            int[] outputCountsBefore,
+            int? expectedForagingExperienceDelta,
+            string possibleSecretNoteQualifiedItemId,
+            int secretNoteCountBefore,
             string requestedEffect)
         {
             Pending = pending;
@@ -128,6 +133,11 @@ public sealed partial class ModEntry : Mod
             RestoreSlotIndex = restoreSlotIndex;
             FactPathPrefix = factPathPrefix;
             TrackForagingExperience = trackForagingExperience;
+            ExpectedOutputs = expectedOutputs;
+            OutputCountsBefore = outputCountsBefore;
+            ExpectedForagingExperienceDelta = expectedForagingExperienceDelta;
+            PossibleSecretNoteQualifiedItemId = possibleSecretNoteQualifiedItemId;
+            SecretNoteCountBefore = secretNoteCountBefore;
             RequestedEffect = requestedEffect;
             StaminaBefore = Game1.player.Stamina;
             ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
@@ -156,6 +166,11 @@ public sealed partial class ModEntry : Mod
         public int RestoreSlotIndex { get; }
         public string FactPathPrefix { get; }
         public bool TrackForagingExperience { get; }
+        public ClearanceOutputItemExpectation[] ExpectedOutputs { get; }
+        public int[] OutputCountsBefore { get; }
+        public int? ExpectedForagingExperienceDelta { get; }
+        public string PossibleSecretNoteQualifiedItemId { get; }
+        public int SecretNoteCountBefore { get; }
         public string RequestedEffect { get; }
         public double StaminaBefore { get; }
         public int ForagingExperienceBefore { get; }
