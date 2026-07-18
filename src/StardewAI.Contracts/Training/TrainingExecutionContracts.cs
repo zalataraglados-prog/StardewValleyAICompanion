@@ -374,6 +374,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("stand_tile_y")]
         public int? StandTileY { get; set; }
 
+        [JsonPropertyName("interaction_tile_x")]
+        public int? InteractionTileX { get; set; }
+
+        [JsonPropertyName("interaction_tile_y")]
+        public int? InteractionTileY { get; set; }
+
         [JsonPropertyName("bobber_tile_x")]
         public int? BobberTileX { get; set; }
 

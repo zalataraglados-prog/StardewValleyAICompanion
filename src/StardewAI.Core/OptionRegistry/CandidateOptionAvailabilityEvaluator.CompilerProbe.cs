@@ -89,6 +89,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "fishing.service_fish_ponds" ||
                 optionId == "foraging.collect_spawned_objects" ||
                 optionId == "foraging.harvest_ginger" ||
+                optionId == "foraging.harvest_bushes" ||
                 optionId == "foraging.pan_ore_spot" ||
                 optionId == "mining.reach_depth" ||
                 optionId == "mining.obtain_skull_key" ||
@@ -128,6 +129,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.pickup_debris" ||
                 optionId == "executor.collect_spawned_object" ||
                 optionId == "executor.harvest_ginger" ||
+                optionId == "executor.harvest_bush" ||
                 optionId == "executor.collect_crab_pot" ||
                 optionId == "executor.collect_fish_pond_output" ||
                 optionId == "executor.complete_fish_pond_request" ||

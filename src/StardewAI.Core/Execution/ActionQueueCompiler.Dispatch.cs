@@ -33,6 +33,7 @@ namespace StardewAI.Core.Execution
                 ["executor.pickup_debris"] = (action, _) => CompilePickupDebrisStep(action),
                 ["executor.collect_spawned_object"] = (action, _) => CompileCollectSpawnedObjectStep(action),
                 ["executor.harvest_ginger"] = (action, _) => CompileHarvestGingerStep(action),
+                ["executor.harvest_bush"] = (action, _) => CompileHarvestBushStep(action),
                 ["executor.collect_crab_pot"] = (action, _) => CompileCollectCrabPotStep(action),
                 ["executor.collect_fish_pond_output"] = (action, _) => CompileCollectFishPondOutputStep(action),
                 ["executor.complete_fish_pond_request"] = (action, _) => CompileCompleteFishPondRequestStep(action),

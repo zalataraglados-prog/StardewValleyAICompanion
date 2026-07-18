@@ -152,6 +152,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact ginger crop selected", "native Hoe lifecycle handed to the mechanical executor" },
                 new[] { "block_no_ginger_crop", "block_missing_hoe", "block_insufficient_energy", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("foraging.harvest_bushes", "foraging", "Shake one transparent harvest-ready bush",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills", "current_location.large_terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact berry, tea, or golden-walnut bush selected", "native checkAction and Bush.performUseAction handed to the mechanical executor" },
+                new[] { "block_unready_bush", "block_custom_bush_runtime", "block_unverified_perimeter_route", "block_projection_drift", "block_direct_bush_or_reward_mutation" }));
+
             Register(Option("foraging.pan_ore_spot", "foraging", "Pan one transparent active ore spot",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -510,6 +518,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "current_location.terrain_features", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native Hoe hit removes only the ginger crop", "ginger debris, energy, and Foraging XP deltas are verified" },
                 new[] { "block_target_not_exact_ginger", "block_missing_hoe", "block_insufficient_energy", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_crop_or_debris_mutation" }));
+
+            Register(Option("executor.harvest_bush", "foraging", "Harvest one verified bush through native checkAction and Bush shake",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills", "current_location.large_terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one transparent perimeter stand tile", "native checkAction shakes the exact Bush", "offset, output, XP, and golden-walnut tracker deltas are verified by branch" },
+                new[] { "block_target_not_exact_bush", "block_unready_bush", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_bush_debris_inventory_nut_or_skill_mutation" }));
 
             Register(Option("executor.collect_crab_pot", "fishing", "Collect one verified ready crab pot through native checkAction",
                 OptionBehaviorCategories.Mechanical,

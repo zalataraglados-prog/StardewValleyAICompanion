@@ -75,6 +75,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "Crop.hitWithHoe", "HoeDirt.performToolAction", "Hoe.DoFunction", "Farmer.gainExperience" }),
             Assumption(
+                "bush_harvest",
+                new[] { "foraging.harvest_bushes", "executor.harvest_bush" },
+                new[] { "exact_vanilla_bush", "native_ready_and_bloom_state", "perimeter_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_shake_and_unique_mutex_ticks" },
+                Array.Empty<string>(),
+                new[] { "GameLocation.checkAction", "Bush.performUseAction", "Bush.shake", "FarmerTeam.MarkCollectedNut", "Farmer.gainExperience" }),
+            Assumption(
                 "navigation",
                 new[] { "exploration.visit_location", "social.gift_npc", "economy.buy_supplies", "quest.advance" },
                 new[] { "passability_verified", "warp_verified", "destination_available", "time_budget" },

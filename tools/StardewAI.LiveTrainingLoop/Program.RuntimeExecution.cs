@@ -346,6 +346,8 @@ static partial class Program
         var fishingLocationId = ReadQueueParameterString(item, "location_id");
         var fishingStandTileX = ReadQueueParameterInt(item, "stand_tile_x");
         var fishingStandTileY = ReadQueueParameterInt(item, "stand_tile_y");
+        var interactionTileX = ReadQueueParameterInt(item, "interaction_tile_x");
+        var interactionTileY = ReadQueueParameterInt(item, "interaction_tile_y");
         var fishingBobberTileX = ReadQueueParameterInt(item, "bobber_tile_x");
         var fishingBobberTileY = ReadQueueParameterInt(item, "bobber_tile_y");
         var fishingRodSlotIndex = ReadQueueParameterInt(item, "rod_slot_index");
@@ -579,6 +581,11 @@ static partial class Program
         {
             executionRequest.StandTileX = fishingStandTileX.Value;
             executionRequest.StandTileY = fishingStandTileY.Value;
+        }
+        if (interactionTileX.HasValue && interactionTileY.HasValue)
+        {
+            executionRequest.InteractionTileX = interactionTileX.Value;
+            executionRequest.InteractionTileY = interactionTileY.Value;
         }
         if (fishingBobberTileX.HasValue && fishingBobberTileY.HasValue)
         {

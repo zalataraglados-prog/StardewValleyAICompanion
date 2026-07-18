@@ -25,6 +25,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["fishing.service_fish_ponds"] = (snapshot, _) => FishPondServiceCandidates(snapshot),
                 ["foraging.collect_spawned_objects"] = (snapshot, _) => SpawnedObjectForagingCandidates(snapshot),
                 ["foraging.harvest_ginger"] = (snapshot, _) => GingerHarvestCandidates(snapshot),
+                ["foraging.harvest_bushes"] = (snapshot, _) => BushHarvestCandidates(snapshot),
                 ["foraging.pan_ore_spot"] = (snapshot, _) => PanningCandidates(snapshot),
                 ["mining.reach_depth"] = MiningReachDepthCandidateBuilder.Build,
                 ["mining.acquire_golden_scythe"] = MiningGoldenScytheCandidateBuilder.Build,

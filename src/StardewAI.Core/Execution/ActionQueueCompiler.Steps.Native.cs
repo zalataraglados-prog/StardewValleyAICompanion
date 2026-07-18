@@ -231,6 +231,27 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileHarvestBushStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            var itemId = ReadParameter(action, "qualified_item_id");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(itemId))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var estimatedTicks = Math.Max(1, ReadIntParameter(action, "estimated_minutes") ?? 1) * 60;
+            return new[]
+            {
+                Step(
+                    "harvest_bush",
+                    "current_location(" + x.Value + "," + y.Value + "):native_bush_shake",
+                    "current_location.large_terrain_features[" + x.Value + "," + y.Value + "].tile_sheet_offset=0;output=" + itemId,
+                    estimatedTicks)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectAnimalProductStep(SmallModelAction action)
         {
             var animalId = ReadParameter(action, "target_runtime_identity");

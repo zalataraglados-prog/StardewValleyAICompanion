@@ -172,6 +172,9 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_ginger":
                 case "executor.harvest_ginger":
                     return EstimateCompiledSteps(item, "native_ginger_hoe_steps.v1");
+                case "foraging.harvest_bushes":
+                case "executor.harvest_bush":
+                    return EstimateCompiledSteps(item, "native_bush_shake_steps.v1");
                 case "fishing.service_fish_ponds":
                 case "executor.collect_fish_pond_output":
                 case "executor.complete_fish_pond_request":
@@ -338,6 +341,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_ginger" or "executor.harvest_ginger")
             {
                 return assumptionRegistry.GetRequired("ginger_harvest");
+            }
+
+            if (item.OptionId is "foraging.harvest_bushes" or "executor.harvest_bush")
+            {
+                return assumptionRegistry.GetRequired("bush_harvest");
             }
 
             var activity = Parameter(item, "target_activity");
