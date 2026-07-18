@@ -129,43 +129,61 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindRemainingNonDirectDirectionsReturnBlockedWithPlannedRequirements()
+    public void BindMarriageAndHouseUpgradeAcceptsOnlyTypedFarmhouseAxisCandidate()
     {
-        var blockedDirections = new[]
-        {
-            "marriage_and_house_upgrade"
-        };
-
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
-
-        foreach (var directionId in blockedDirections)
+        var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
-            var result = binding.Bind(new GrandpaDirectionBindingRequest
+            StateHash = snapshot.StateHash,
+            DirectionId = "marriage_and_house_upgrade",
+            RankedCandidates = new[]
             {
-                StateHash = snapshot.StateHash,
-                DirectionId = directionId,
-                RankedCandidates = new[]
+                new PolicyEventCandidatePrediction
                 {
-                    new PolicyEventCandidatePrediction
-                    {
-                        CandidateId = "any",
-                        OptionId = "any",
-                        Kind = "any",
-                        Available = true,
-                        AllowedNow = true,
-                        AllowedToday = true,
-                        TimelineStatus = "ready_now"
-                    }
+                    CandidateId = "farmhouse-upgrade:farmhouse_level_1",
+                    OptionId = "housing.advance_farmhouse",
+                    Kind = "purchase_farmhouse_upgrade",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now"
                 }
-            }, snapshot);
+            }
+        }, snapshot);
 
-            Assert.Equal("blocked", result.BindingStatus);
-            Assert.Equal("blocked", result.BindingCoverageStatus);
-            Assert.NotEmpty(result.BlockReasons);
-            Assert.NotEmpty(result.MissingTransparentFields);
-            Assert.NotEmpty(result.MissingCapabilities);
-        }
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("ready", result.BindingCoverageStatus);
+        Assert.Equal("housing.advance_farmhouse", Assert.Single(result.BoundCandidates).OptionId);
+        Assert.Empty(result.MissingTransparentFields);
+        Assert.Empty(result.MissingCapabilities);
+    }
+
+    [Fact]
+    public void BindMarriageAndHouseUpgradeRejectsLevelThreeExpansionCandidate()
+    {
+        var snapshot = GrandpaSnapshot();
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "marriage_and_house_upgrade",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "farmhouse-upgrade:farmhouse_level_3",
+                    OptionId = "housing.advance_farmhouse",
+                    Kind = "purchase_farmhouse_expansion",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now"
+                }
+            }
+        }, snapshot);
+
+        Assert.Equal("blocked", result.BindingStatus);
+        Assert.Contains("no_current_permitted_candidate", result.BlockReasons);
     }
 
     [Fact]

@@ -46,6 +46,7 @@ namespace StardewAI.Core.Execution
                 ["executor.donate_community_center_item"] = (action, _) => CompileDonateCommunityCenterItemStep(action),
                 ["executor.purchase_joja_membership"] = (action, _) => CompilePurchaseJojaStep(action),
                 ["executor.purchase_joja_project"] = (action, _) => CompilePurchaseJojaStep(action),
+                ["executor.purchase_farmhouse_upgrade"] = (action, _) => CompilePurchaseFarmhouseUpgradeStep(action),
                 ["executor.pan_ore_spot"] = (action, _) => CompilePanOreSpotStep(action),
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),

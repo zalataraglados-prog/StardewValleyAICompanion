@@ -94,10 +94,10 @@ namespace StardewAI.Contracts.Training
         public string Binder { get; set; } = "StardewAI.Core.Training.GrandpaDirectionDailyCandidateBinding";
 
         [JsonPropertyName("policy")]
-        public string Policy { get; set; } = "Conservative direct binding for seven evidence-backed directions: earn_money, raise_friendships, complete_master_angler, complete_full_shipment, obtain_skull_key, raise_skill_levels, and earn_pet_love. Direction-specific typed evidence is mandatory; five remaining directions are blocked as planned contract gaps.";
+        public string Policy { get; set; } = "Conservative typed binding for all Grandpa directions. marriage_and_house_upgrade currently binds only its native farmhouse-upgrade axis; partnership completion remains fail-closed when no exact candidate exists.";
 
         [JsonPropertyName("catalog_version")]
-        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v3";
+        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v4";
 
         [JsonPropertyName("state_hash_verified")]
         public bool StateHashVerified { get; set; }

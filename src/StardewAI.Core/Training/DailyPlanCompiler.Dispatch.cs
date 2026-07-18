@@ -117,6 +117,10 @@ namespace StardewAI.Core.Training
             {
                 return JojaDevelopmentSteps(candidate);
             }
+            if (candidate.Kind == "purchase_farmhouse_upgrade" || candidate.Kind == "purchase_farmhouse_expansion")
+            {
+                return FarmhouseUpgradeSteps(candidate);
+            }
             if (candidate.Kind == "pan_ore_spot")
             {
                 return PanOreSpotSteps(candidate);

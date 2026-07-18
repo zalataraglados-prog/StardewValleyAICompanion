@@ -674,6 +674,18 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("native_contract")]
         public string NativeContract { get; set; } = string.Empty;
 
+        [JsonPropertyName("expected_house_upgrade_level_before")]
+        public int? ExpectedHouseUpgradeLevelBefore { get; set; }
+
+        [JsonPropertyName("expected_house_upgrade_level_after_construction")]
+        public int? ExpectedHouseUpgradeLevelAfterConstruction { get; set; }
+
+        [JsonPropertyName("expected_days_until_house_upgrade_before")]
+        public int? ExpectedDaysUntilHouseUpgradeBefore { get; set; }
+
+        [JsonPropertyName("expected_days_until_house_upgrade_after")]
+        public int? ExpectedDaysUntilHouseUpgradeAfter { get; set; }
+
         [JsonPropertyName("bundle_data_key")]
         public string BundleDataKey { get; set; } = string.Empty;
 

@@ -333,6 +333,10 @@ static partial class Program
         var expectedGreetingAfter = ReadNullableBoolQueueParameter(item, "expected_greeting_after");
         var requiredEventId = ReadQueueParameterString(item, "required_event_id");
         var nativeContract = ReadQueueParameterString(item, "native_contract");
+        var expectedHouseUpgradeLevelBefore = ReadQueueParameterInt(item, "expected_house_upgrade_level_before");
+        var expectedHouseUpgradeLevelAfterConstruction = ReadQueueParameterInt(item, "expected_house_upgrade_level_after_construction");
+        var expectedDaysUntilHouseUpgradeBefore = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_before");
+        var expectedDaysUntilHouseUpgradeAfter = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_after");
         var bundleDataKey = ReadQueueParameterString(item, "bundle_data_key");
         var bundleId = ReadQueueParameterInt(item, "bundle_id");
         var bundleAreaId = ReadQueueParameterInt(item, "bundle_area_id");
@@ -599,6 +603,10 @@ static partial class Program
         executionRequest.ExpectedGreetingAfter = expectedGreetingAfter;
         executionRequest.RequiredEventId = requiredEventId;
         executionRequest.NativeContract = nativeContract;
+        executionRequest.ExpectedHouseUpgradeLevelBefore = expectedHouseUpgradeLevelBefore;
+        executionRequest.ExpectedHouseUpgradeLevelAfterConstruction = expectedHouseUpgradeLevelAfterConstruction;
+        executionRequest.ExpectedDaysUntilHouseUpgradeBefore = expectedDaysUntilHouseUpgradeBefore;
+        executionRequest.ExpectedDaysUntilHouseUpgradeAfter = expectedDaysUntilHouseUpgradeAfter;
         executionRequest.BundleDataKey = bundleDataKey;
         executionRequest.BundleId = bundleId;
         executionRequest.BundleAreaId = bundleAreaId;

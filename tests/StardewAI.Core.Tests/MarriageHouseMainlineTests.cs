@@ -1,0 +1,226 @@
+using System.Text.Json;
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
+
+namespace StardewAI.Core.Tests;
+
+public sealed class MarriageHouseMainlineTests
+{
+    [Theory]
+    [InlineData(0, 1, 10000, "(O)388", 450, 20000, 500)]
+    [InlineData(1, 2, 65000, "(O)709", 100, 80000, 125)]
+    public void ExactFarmhouseUpgradeFlowsThroughCandidatePlanAndActionQueue(
+        int levelBefore,
+        int levelAfter,
+        int price,
+        string itemId,
+        int requiredCount,
+        int money,
+        int inventoryCount)
+    {
+        var snapshot = Snapshot(levelBefore, levelAfter, price, itemId, requiredCount, money, inventoryCount, "ready", -1);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates.Where(row => row.Available));
+
+        Assert.Equal("purchase_farmhouse_upgrade", candidate.Kind);
+        AssertParameter(candidate.Parameters, "expected_house_upgrade_level_before", levelBefore.ToString());
+        AssertParameter(candidate.Parameters, "expected_house_upgrade_level_after_construction", levelAfter.ToString());
+        AssertParameter(candidate.Parameters, "price", price.ToString());
+        AssertParameter(candidate.Parameters, "required_stack", requiredCount.ToString());
+
+        var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
+        Assert.Equal("purchase_farmhouse_upgrade", Assert.Single(plan.Steps).Kind);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Empty(item.BlockingReasons);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.purchase_farmhouse_upgrade", item.OptionId);
+        Assert.Equal("purchase_farmhouse_upgrade", Assert.Single(item.NormalizedCommand.Steps).StepType);
+    }
+
+    [Fact]
+    public void ConstructionInProgressIsExcludedUpstream()
+    {
+        var snapshot = Snapshot(1, 2, 65000, "(O)709", 100, 80000, 125, "farmhouse_upgrade_already_in_progress", 2);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains("farmhouse_upgrade_already_in_progress", candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void CompilerRejectsFarmhouseUpgradeWhenMoneyProjectionDrifts()
+    {
+        var original = Snapshot(0, 1, 10000, "(O)388", 450, 20000, 500, "ready", -1);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(original, new[] { "housing.advance_farmhouse" }, true);
+        var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), original.StateHash);
+        var drifted = Snapshot(0, 1, 10000, "(O)388", 450, 19999, 500, "ready", -1);
+        plan.StateHash = drifted.StateHash;
+
+        var queue = new ActionQueueCompiler().Compile(plan, drifted);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("farmhouse_upgrade_projection_drifted", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void CandidateRejectsNonNativeUpgradeTuple()
+    {
+        var snapshot = Snapshot(0, 1, 9000, "(O)388", 450, 20000, 500, "ready", -1);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains("farmhouse_upgrade_native_tuple_invalid", candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void LevelThreeExpansionIsNotAGrandpaHouseAxisCandidate()
+    {
+        var snapshot = Snapshot(2, 3, 100000, "", 0, 150000, 0, "ready", -1);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates.Where(row => row.Available));
+
+        Assert.Equal("purchase_farmhouse_expansion", candidate.Kind);
+        Assert.NotEqual("purchase_farmhouse_upgrade", candidate.Kind);
+
+        var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("executor.purchase_farmhouse_upgrade", Assert.Single(queue.Items).OptionId);
+        Assert.Equal("pending", queue.Status);
+    }
+
+    [Fact]
+    public void TransparencyAndRuntimeUseNativeCarpenterLifecycleWithoutDirectProgressWrites()
+    {
+        var adapter = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.cs"));
+        var runtime = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MarriageHouse.cs"));
+
+        Assert.Contains("Price = 10000", adapter, StringComparison.Ordinal);
+        Assert.Contains("RequiredItemCount = 450", adapter, StringComparison.Ordinal);
+        Assert.Contains("Price = 65000", adapter, StringComparison.Ordinal);
+        Assert.Contains("RequiredItemCount = 100", adapter, StringComparison.Ordinal);
+        Assert.Contains("ConstructionDays = 3", adapter, StringComparison.Ordinal);
+        Assert.Contains("active.House.checkAction", runtime, StringComparison.Ordinal);
+        Assert.Contains("active.House.answerDialogue(response)", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Money -=", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("Items.ReduceId", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("daysUntilHouseUpgrade.Value = 3", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("HouseUpgradeLevel = request", runtime, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ContractKeepsImmediateConstructionAndEventualGrandpaStateSeparate()
+    {
+        var row = new MarriageHouseProgressRef
+        {
+            MarriedOrRoommate = false,
+            Engaged = true,
+            FarmhouseUpgradeLevel = 1,
+            DaysUntilFarmhouseUpgrade = 3,
+            GrandpaFactorSatisfied = false,
+            HouseUpgrade = new FarmhouseUpgradeProgressRef { LevelBefore = 1, LevelAfter = 2, ConstructionDays = 3 }
+        };
+        var json = JsonSerializer.Serialize(row, JsonOptions);
+
+        Assert.Contains("\"engaged\":true", json, StringComparison.Ordinal);
+        Assert.Contains("\"days_until_farmhouse_upgrade\":3", json, StringComparison.Ordinal);
+        Assert.Contains("\"level_after\":2", json, StringComparison.Ordinal);
+        Assert.Contains("\"grandpa_factor_satisfied\":false", json, StringComparison.Ordinal);
+    }
+
+    private static SnapshotEnvelope Snapshot(
+        int levelBefore,
+        int levelAfter,
+        int price,
+        string itemId,
+        int requiredCount,
+        int money,
+        int inventoryCount,
+        string status,
+        int days)
+    {
+        var upgradeId = "farmhouse_level_" + levelAfter;
+        var json = $$$"""
+        {
+          "player": {
+            "location_id":{"value":"ScienceHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x":{"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y":{"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress": {
+            "marriage_house":{"value":{
+              "location_accessible":true,
+              "is_current_location":true,
+              "carpenter_action_tile_x":10,
+              "carpenter_action_tile_y":10,
+              "carpenter_action_raw":"Carpenter",
+              "is_master_game":true,
+              "robin_present_at_counter":true,
+              "building_under_construction":false,
+              "married_or_roommate":false,
+              "engaged":false,
+              "spouse":"",
+              "pending_roommate":false,
+              "farmhouse_upgrade_level":{{{levelBefore}}},
+              "days_until_farmhouse_upgrade":{{{days}}},
+              "money":{{{money}}},
+              "grandpa_factor_satisfied":false,
+              "house_upgrade":{
+                "upgrade_id":"{{{upgradeId}}}",
+                "level_before":{{{levelBefore}}},
+                "level_after":{{{levelAfter}}},
+                "price":{{{price}}},
+                "required_item_id":"{{{itemId}}}",
+                "required_item_count":{{{requiredCount}}},
+                "inventory_item_count":{{{inventoryCount}}},
+                "construction_days":3,
+                "action_status":"{{{status}}}"
+              }
+            },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid":{"value":{"location_id":"ScienceHouse","width":64,"height":64,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """;
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOptions)!;
+        return new SnapshotEnvelope
+        {
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-07-18T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static void AssertParameter(StardewAI.Contracts.Execution.SmallModelActionParameter[] parameters, string name, string value) =>
+        Assert.Contains(parameters, parameter => parameter.Name == name && parameter.Value == value);
+
+    private static string FindRepositoryFile(params string[] parts)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(parts).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+            directory = directory.Parent;
+        }
+        throw new FileNotFoundException("Repository file not found.", Path.Combine(parts));
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+}

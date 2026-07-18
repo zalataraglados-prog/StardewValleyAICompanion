@@ -65,6 +65,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact membership or project purchase is selected", "price and irreversible route state are verified", "first native Morris greeting is compiler-owned when required", "native Joja dialogue/menu lifecycle is handed to the mechanical executor" },
                 new[] { "block_community_center_locked_or_route_conflict", "block_missing_membership_event", "block_pending_project_order", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_mail_event_quest_or_world_mutation" }));
 
+            Register(Option("housing.advance_farmhouse", "housing", "Purchase the next transparent farmhouse upgrade",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.marriage_house", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact vanilla farmhouse upgrade is selected", "money and material costs are verified", "native Carpenter dialogue lifecycle is handed to the mechanical executor" },
+                new[] { "block_active_construction", "block_robin_absent", "block_insufficient_money_or_materials", "block_unverified_route", "block_projection_drift", "block_direct_money_inventory_or_house_mutation" }));
+
             Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -678,6 +686,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.joja_development", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the JoinJoja counter", "native JojaCDMenu clicks one exact project checkbox", "paired cc and joja completion mails are queued for tomorrow" },
                 new[] { "block_membership_or_project_order_drift", "block_project_price_or_button_drift", "block_unverified_route", "block_direct_money_mail_event_or_world_mutation" }));
+
+            Register(Option("executor.purchase_farmhouse_upgrade", "housing", "Purchase one verified farmhouse upgrade through native Carpenter dialogue",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.marriage_house", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches Robin's counter", "native Carpenter Upgrade and Yes responses deduct exact costs", "three-day construction countdown starts" },
+                new[] { "block_active_construction", "block_robin_or_upgrade_tuple_drift", "block_unverified_route", "block_direct_money_inventory_or_house_mutation" }));
 
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,

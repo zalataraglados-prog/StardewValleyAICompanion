@@ -56,6 +56,8 @@ The evaluator consumes `world_model.v1`, not raw snapshots. Required facts:
 
 Missing facts are reported in `missing_fact_paths`; they are not guessed.
 
+The actionable farmhouse side is projected separately as `world_progress.marriage_house`. It contains the exact next upgrade price/material tuple, the three-day construction countdown, Carpenter endpoint, Robin presence, competing construction state, and current partnership state. The Grandpa direction may use this house-axis candidate before level 2, but partnership completion remains fail-closed until bouquet/proposal/roommate acquisition and waiting stages have their own exact native chain.
+
 `game.year`, `farm.grandpa_score`, and `player.active_object_qualified_id` are planning context. They do not add points, but they determine whether the initial year-3 evaluation is available and whether post-year-3 diamond re-evaluation can be planned.
 
 ## API

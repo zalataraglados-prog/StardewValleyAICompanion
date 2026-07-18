@@ -63,14 +63,14 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void TenDirectionsHaveDirectBindingEnabled()
+    public void ElevenDirectionsHaveDirectOrPartialBindingEnabled()
     {
         var directDirections = GrandpaDirectionCatalog.Entries
             .Where(e => e.DirectBindingEnabled)
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(10, directDirections.Length);
+        Assert.Equal(11, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
@@ -79,6 +79,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Contains("raise_skill_levels", directDirections);
         Assert.Contains("earn_pet_love", directDirections);
         Assert.Contains("complete_museum_collection", directDirections);
+        Assert.Contains("marriage_and_house_upgrade", directDirections);
         Assert.Contains("obtain_rusty_key", directDirections);
         Assert.Contains("complete_community_center", directDirections);
     }
@@ -405,7 +406,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksMarriageAndHouseUpgradeAsPlannedContractGap()
+    public void BindMarriageAndHouseUpgradeFailsClosedWithoutCurrentHouseCandidate()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
@@ -416,7 +417,9 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         }, snapshot);
 
         Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Contains("no_current_permitted_candidate", result.BlockReasons);
+        Assert.Empty(result.MissingTransparentFields);
+        Assert.Empty(result.MissingCapabilities);
     }
 
     [Fact]
