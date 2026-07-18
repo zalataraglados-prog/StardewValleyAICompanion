@@ -77,6 +77,11 @@ namespace StardewAI.Core.Training
                 return CollectCrabPotSteps(candidate);
             }
 
+            if (candidate.Kind == "collect_fish_pond_output" || candidate.Kind == "complete_fish_pond_request")
+            {
+                return FishPondSteps(candidate);
+            }
+
             if (candidate.Kind == "collect_animal_product")
             {
                 return CollectAnimalProductSteps(candidate);

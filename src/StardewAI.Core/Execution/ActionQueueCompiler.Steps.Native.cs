@@ -296,6 +296,36 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileCollectFishPondOutputStep(SmallModelAction action)
+        {
+            return CompileFishPondStep(action, "collect_fish_pond_output", "fish_pond.output=null;player.inventory.updated;player.skills.fishing.experience_increases");
+        }
+
+        private static CompiledActionStep[] CompileCompleteFishPondRequestStep(SmallModelAction action)
+        {
+            return CompileFishPondStep(action, "complete_fish_pond_request", "fish_pond.has_completed_request=true;fish_pond.population_gate_increases;player.inventory.updated;player.skills.fishing.experience_increases");
+        }
+
+        private static CompiledActionStep[] CompileFishPondStep(SmallModelAction action, string primitive, string effect)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var buildingX = ReadIntParameter(action, "building_tile_x");
+            var buildingY = ReadIntParameter(action, "building_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue || !buildingX.HasValue || !buildingY.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+            return new[]
+            {
+                Step(
+                    primitive,
+                    "FarmPond(" + buildingX.Value + "," + buildingY.Value + "):target(" + targetX.Value + "," + targetY.Value + ")",
+                    effect,
+                    Math.Max(30, (ReadIntParameter(action, "estimated_minutes") ?? 2) * 60))
+            };
+        }
+
         private static CompiledActionStep[] CompileLoadMachineInputStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");

@@ -54,6 +54,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "CrabPot.checkForAction", "Farmer.caughtFish", "Farmer.gainExperience" }),
             Assumption(
+                "fish_pond_service",
+                new[] { "fishing.service_fish_ponds", "executor.collect_fish_pond_output", "executor.complete_fish_pond_request" },
+                new[] { "exact_pond_identity", "native_branch_priority", "inventory_or_toolbar_capacity", "reachable_pond_edge_tile", "menu_clear" },
+                new[] { "route_length", "output_receipt_callbacks", "request_mutex_completion" },
+                Array.Empty<string>(),
+                new[] { "FishPond.doAction", "FishPond.ResolveNeeds", "Farmer.gainExperience" }),
+            Assumption(
                 "panning",
                 new[] { "foraging.pan_ore_spot", "executor.pan_ore_spot" },
                 new[] { "active_ore_pan_point", "exact_pan_tool", "inventory_capacity", "reachable_shore_tile", "menu_clear" },

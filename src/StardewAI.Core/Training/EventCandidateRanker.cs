@@ -111,6 +111,14 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.04;
                     }
+                    if (candidate.Kind == "collect_fish_pond_output")
+                    {
+                        urgencySignal = 0.045;
+                    }
+                    if (candidate.Kind == "complete_fish_pond_request")
+                    {
+                        urgencySignal = 0.055;
+                    }
                     if (candidate.Kind == "pan_ore_spot")
                     {
                         urgencySignal = 0.04;

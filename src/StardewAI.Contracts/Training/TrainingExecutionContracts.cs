@@ -200,6 +200,51 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_skill_experience_delta")]
         public int? ExpectedSkillExperienceDelta { get; set; }
 
+        [JsonPropertyName("building_tile_x")]
+        public int? BuildingTileX { get; set; }
+
+        [JsonPropertyName("building_tile_y")]
+        public int? BuildingTileY { get; set; }
+
+        [JsonPropertyName("fish_type_item_id")]
+        public string FishTypeItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_fish_count")]
+        public int? ExpectedFishCount { get; set; }
+
+        [JsonPropertyName("expected_maximum_occupants_before")]
+        public int? ExpectedMaximumOccupantsBefore { get; set; }
+
+        [JsonPropertyName("expected_maximum_occupants_after")]
+        public int? ExpectedMaximumOccupantsAfter { get; set; }
+
+        [JsonPropertyName("expected_last_unlocked_population_gate_before")]
+        public int? ExpectedLastUnlockedPopulationGateBefore { get; set; }
+
+        [JsonPropertyName("expected_last_unlocked_population_gate_after")]
+        public int? ExpectedLastUnlockedPopulationGateAfter { get; set; }
+
+        [JsonPropertyName("expected_days_since_spawn_before")]
+        public int? ExpectedDaysSinceSpawnBefore { get; set; }
+
+        [JsonPropertyName("expected_days_since_spawn_after")]
+        public int? ExpectedDaysSinceSpawnAfter { get; set; }
+
+        [JsonPropertyName("expected_needed_item_count_after")]
+        public int? ExpectedNeededItemCountAfter { get; set; }
+
+        [JsonPropertyName("expected_has_completed_request_after")]
+        public int? ExpectedHasCompletedRequestAfter { get; set; }
+
+        [JsonPropertyName("request_item_runtime_type")]
+        public string RequestItemRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("request_item_toolbar_slots_json")]
+        public string RequestItemToolbarSlotsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_receipt_callbacks_status")]
+        public string NativeReceiptCallbacksStatus { get; set; } = string.Empty;
+
         [JsonPropertyName("expected_container_bait_qualified_item_id")]
         public string ExpectedContainerBaitQualifiedItemId { get; set; } = string.Empty;
 

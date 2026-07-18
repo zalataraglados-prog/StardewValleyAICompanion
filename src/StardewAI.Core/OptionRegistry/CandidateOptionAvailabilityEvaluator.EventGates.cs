@@ -110,6 +110,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_crab_pot_candidates");
             }
 
+            if (optionId == "fishing.service_fish_ponds")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_fish_pond_candidates",
+                    "no_available_fish_pond_candidates");
+            }
+
             if (optionId == "farm.collect_animal_products")
             {
                 return EventCandidateAvailabilityReasons(

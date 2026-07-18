@@ -95,6 +95,8 @@ namespace StardewAI.Core.Execution
                 "pickup_debris" => "executor.pickup_debris",
                 "collect_spawned_object" => "executor.collect_spawned_object",
                 "collect_crab_pot" => "executor.collect_crab_pot",
+                "collect_fish_pond_output" => "executor.collect_fish_pond_output",
+                "complete_fish_pond_request" => "executor.complete_fish_pond_request",
                 "collect_animal_product" => "executor.collect_animal_product",
                 "pan_ore_spot" => "executor.pan_ore_spot",
                 "collect_machine_output" => "executor.collect_machine_output",

@@ -66,6 +66,7 @@ namespace StardewAI.Core.Training
                     "foraging.pan_ore_spot",
                     "fishing.catch_fish",
                     "fishing.collect_crab_pots",
+                    "fishing.service_fish_ponds",
                     "mining.reach_depth",
                     "executor.clear_obstacle",
                     "executor.break_farm_resource_clump"
@@ -79,6 +80,8 @@ namespace StardewAI.Core.Training
                     "pan_ore_spot",
                     "catch_fish",
                     "collect_crab_pot",
+                    "collect_fish_pond_output",
+                    "complete_fish_pond_request",
                     "mining_reach_depth_plan_envelope",
                     "clear_obstacle_tile",
                     "clear_farm_resource_clump"

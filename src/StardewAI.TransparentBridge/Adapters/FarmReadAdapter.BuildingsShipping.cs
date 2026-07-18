@@ -111,6 +111,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return new
         {
             type,
+            runtime_type = building.GetType().FullName,
             tile_x = tileX,
             tile_y = tileY,
             tiles_wide = building.tilesWide.Value,
@@ -123,7 +124,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             door_resolution_status = humanDoor.X >= 0 && humanDoor.Y >= 0
                 ? (hasIndoors ? "resolved_building_door_connector" : "missing_indoor_location")
                 : (hasIndoors ? "unresolved_human_door" : "unresolved_both_door_and_indoor"),
-            door = doorData
+            door = doorData,
+            fish_pond = ReadFishPondProjection(building, Game1.getFarm(), Game1.player)
         };
     }
 

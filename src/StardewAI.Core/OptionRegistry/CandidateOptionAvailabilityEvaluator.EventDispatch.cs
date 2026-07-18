@@ -22,6 +22,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["recovery.stabilize_day"] = (snapshot, _) => RecoveryCandidates(snapshot),
                 ["fishing.catch_fish"] = (snapshot, _) => FishingEventCandidateBuilder.Build(snapshot),
                 ["fishing.collect_crab_pots"] = (snapshot, _) => CrabPotCollectCandidates(snapshot),
+                ["fishing.service_fish_ponds"] = (snapshot, _) => FishPondServiceCandidates(snapshot),
                 ["foraging.collect_spawned_objects"] = (snapshot, _) => SpawnedObjectForagingCandidates(snapshot),
                 ["foraging.pan_ore_spot"] = (snapshot, _) => PanningCandidates(snapshot),
                 ["mining.reach_depth"] = MiningReachDepthCandidateBuilder.Build,

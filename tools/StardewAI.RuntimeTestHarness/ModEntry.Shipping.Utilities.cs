@@ -419,6 +419,8 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_till_soil_target" &&
             request.OptionId != "debug.setup_fish_frenzy" &&
             request.OptionId != "debug.setup_fish_pond" &&
+            request.OptionId != "debug.setup_fish_pond_output" &&
+            request.OptionId != "debug.setup_fish_pond_request" &&
             request.OptionId != "debug.setup_mine_fishing_floor" &&
             request.OptionId != "debug.setup_mining_floor" &&
             request.OptionId != "debug.setup_skull_cavern_shaft" &&
@@ -449,6 +451,8 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.collect_crab_pot" &&
             request.OptionId != "executor.collect_animal_product" &&
             request.OptionId != "executor.pan_ore_spot" &&
+            request.OptionId != "executor.collect_fish_pond_output" &&
+            request.OptionId != "executor.complete_fish_pond_request" &&
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
             request.OptionId != "executor.catch_fish" &&

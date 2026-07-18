@@ -86,6 +86,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "farm.collect_animal_products" ||
                 optionId == "fishing.catch_fish" ||
                 optionId == "fishing.collect_crab_pots" ||
+                optionId == "fishing.service_fish_ponds" ||
                 optionId == "foraging.collect_spawned_objects" ||
                 optionId == "foraging.pan_ore_spot" ||
                 optionId == "mining.reach_depth" ||
@@ -126,6 +127,8 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.pickup_debris" ||
                 optionId == "executor.collect_spawned_object" ||
                 optionId == "executor.collect_crab_pot" ||
+                optionId == "executor.collect_fish_pond_output" ||
+                optionId == "executor.complete_fish_pond_request" ||
                 optionId == "executor.collect_animal_product" ||
                 optionId == "executor.pan_ore_spot" ||
                 optionId == "executor.collect_machine_output" ||

@@ -18,6 +18,7 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | `CrabPot.checkForAction` | Fishing | exact ready output, deterministic `Book_Crabbing` doubling, inventory gate, `+5` XP, bait/reset state, and native interaction evidence; the ambient RNG catch-size argument is recorded at execution |
 | `MilkPail.DoFunction`, `Shears.DoFunction`, and compatible `FarmAnimal` interaction | Farming | all outdoor and animal-house animals expose live eligibility, output quality/unit state, Animal Cracker quantity, tool slot, inventory gate, stats, `-4` energy, `+5` friendship, and `+5` Farming XP; candidate, compiler rebind, moving-target native executor, and both isolated tool smokes are verified |
 | `Pan.DoFunction` / `Pan.getPanItems` | Mining and Foraging | active ore point, exact Pan upgrade/enchantments, luck/DaysPlayed/TimesPanned inputs, native deterministic reward multiset, aggregate inventory acceptance, direct ore/diamond receipt stats, Mining XP, Foraging XP, and post-use point status are projected; generic `Farmer.OnItemReceived` quest/special-order/collection callbacks and upgraded-Pan respawn use explicit runtime-observed status; compiler rebind and native copper/steel smokes are verified |
+| `FishPond.doAction` output harvest and `ResolveNeeds` request completion | Fishing | every exact vanilla pond exposes output/request branch priority, edge interaction geometry, output unit-state/inventory acceptance, toolbar-bound request items, population-gate before/after state, and exact Fishing XP (`10 + floor(output price * 0.04)` or `20 + SpawnTime * 5`); compiler rebind, native `GameLocation.checkAction`, inventory/pond/XP verification, and isolated output/request smokes are verified; generic output receipt callbacks remain explicitly runtime-observed |
 
 ## Missing Mechanical Candidate Families
 
@@ -25,7 +26,6 @@ These are required before native skill-source enumeration can be called complete
 
 | native source | skills | required slice |
 |---|---|---|
-| `FishPond.CheckForAction` harvest and pond quest completion | Fishing | pond state, output/quest requirements, XP formula inputs, native interaction executor |
 | `HoeDirt.performToolAction` ginger branch | Foraging | hoe-harvest candidate distinct from ordinary player crop harvest |
 | `Bush.shake` berry harvest | Foraging | harvestable bush state, season/day/quantity, native interaction executor |
 | mine treasure `Chest` collection | Luck | exact eligible chest identity, current mine level, native chest lifecycle, output and XP verification |

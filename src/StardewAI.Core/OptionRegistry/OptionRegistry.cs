@@ -128,6 +128,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready crab pot selected", "native checkAction handed to the mechanical executor" },
                 new[] { "block_unready_crab_pot", "block_inventory_full", "block_unverified_route", "block_incomplete_output_projection" }));
 
+            Register(Option("fishing.service_fish_ponds", "fishing", "Collect one ready fish-pond output or complete one ready pond request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.safe_item_context", "farm.buildings", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact fish-pond branch selected", "native FishPond.doAction handed to the mechanical executor" },
+                new[] { "block_unready_fish_pond", "block_output_precedes_request", "block_inventory_or_toolbar", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("foraging.collect_spawned_objects", "foraging", "Collect one transparent spawned object candidate",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -494,6 +502,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native checkAction collects the exact held output", "inventory, bait, fish collection, and Fishing XP deltas are observed" },
                 new[] { "block_unready_crab_pot", "block_inventory_full", "block_menu_unsafe_interact", "block_projection_drift" }));
+
+            Register(Option("executor.collect_fish_pond_output", "fishing", "Collect one verified fish-pond output through native checkAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.safe_item_context", "farm.buildings", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one verified pond-edge stand tile", "native FishPond.doAction collects the exact output", "inventory and Fishing XP deltas are verified" },
+                new[] { "block_unready_fish_pond_output", "block_inventory_full", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_pond_inventory_or_skill_mutation" }));
+
+            Register(Option("executor.complete_fish_pond_request", "fishing", "Complete one verified fish-pond population request through native checkAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "farm.buildings", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one verified pond-edge stand tile", "native FishPond.doAction consumes each request item", "population gate and Fishing XP deltas are verified" },
+                new[] { "block_unready_fish_pond_request", "block_output_precedence", "block_request_item_toolbar_shortage", "block_drop_in_interception", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_pond_inventory_or_skill_mutation" }));
 
             Register(Option("executor.collect_animal_product", "farm", "Collect one verified animal product with its native tool",
                 OptionBehaviorCategories.Mechanical,
