@@ -448,6 +448,14 @@ namespace StardewAI.Core.Training
             {
                 return HasPetLoveEvidence(candidate, out rejectionReason);
             }
+            if (string.Equals(directionId, "complete_museum_collection", StringComparison.Ordinal))
+            {
+                return HasMuseumCollectionEvidence(candidate, out rejectionReason);
+            }
+            if (string.Equals(directionId, "obtain_rusty_key", StringComparison.Ordinal))
+            {
+                return HasRustyKeyDonationEvidence(candidate, out rejectionReason);
+            }
             if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
             {
                 return true;
@@ -517,6 +525,53 @@ namespace StardewAI.Core.Training
                 return false;
             }
             return true;
+        }
+
+        private static bool HasMuseumCollectionEvidence(
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!TryReadUniqueIntParameter(candidate, "expected_donated_count_before", out var before) ||
+                !TryReadUniqueIntParameter(candidate, "expected_donated_count_after", out var after) ||
+                !TryReadUniqueIntParameter(candidate, "museum_total_donatable_items", out var total) ||
+                before < 0 || after != before + 1 || after > total)
+            {
+                rejectionReason = "museum_collection_positive_progress_missing";
+                return false;
+            }
+            return true;
+        }
+
+        private static bool HasRustyKeyDonationEvidence(
+            PolicyEventCandidatePrediction candidate,
+            out string rejectionReason)
+        {
+            rejectionReason = string.Empty;
+            if (!TryReadUniqueIntParameter(candidate, "expected_donated_count_before", out var before) ||
+                !TryReadUniqueIntParameter(candidate, "expected_donated_count_after", out var after) ||
+                !TryReadUniqueIntParameter(candidate, "rusty_key_donation_threshold", out var threshold) ||
+                before < 0 || before >= threshold || after != before + 1 || after > threshold)
+            {
+                rejectionReason = "rusty_key_threshold_progress_missing";
+                return false;
+            }
+            if (!TryReadUniqueParameter(candidate, "rusty_key_reward_action", out var action) ||
+                action != "MarkEventSeen Host 295672")
+            {
+                rejectionReason = "rusty_key_native_reward_action_missing";
+                return false;
+            }
+            return true;
+        }
+
+        private static bool TryReadUniqueIntParameter(
+            PolicyEventCandidatePrediction candidate,
+            string name,
+            out int value)
+        {
+            value = 0;
+            return TryReadUniqueParameter(candidate, name, out var text) && int.TryParse(text, out value);
         }
 
         private static bool HasSkillExperienceEvidence(

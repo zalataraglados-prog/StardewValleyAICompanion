@@ -62,6 +62,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCrabPotCollect? activeCrabPotCollect;
     private ActiveAnimalProductHarvest? activeAnimalProductHarvest;
     private ActivePetInteraction? activePetInteraction;
+    private ActiveMuseumDonation? activeMuseumDonation;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
     private ActiveDescendLadder? activeDescendLadder;
@@ -310,10 +311,11 @@ public sealed partial class ModEntry : Mod
         TickMineRewardChest();
         TickAnimalProductHarvest();
         TickPetInteraction();
+        TickMuseumDonation();
         TickPanOreSpot();
         TickFishPondService();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeBushHarvest is not null || activeCrabPotCollect is not null || activeAnimalProductHarvest is not null || activePetInteraction is not null || activePanOreSpot is not null || activeFishPondService is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null || activeMineRewardChest is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeBushHarvest is not null || activeCrabPotCollect is not null || activeAnimalProductHarvest is not null || activePetInteraction is not null || activeMuseumDonation is not null || activePanOreSpot is not null || activeFishPondService is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null || activeMineRewardChest is not null)
         {
             return;
         }
@@ -687,6 +689,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.donate_museum_item")
+            {
+                StartMuseumDonation(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_pan_ore_spot")
             {
                 pending.Completion.SetResult(ExecuteSetupPanOreSpot(pending.Request));
@@ -765,6 +773,7 @@ public sealed partial class ModEntry : Mod
             activeMineRewardChest = null;
             activeAnimalProductHarvest = null;
             activePetInteraction = null;
+            activeMuseumDonation = null;
             activePanOreSpot = null;
             activeFishPondService = null;
             CrabPotCaughtFishPatch.Reset();

@@ -20,3 +20,23 @@ Artifact: artifacts/runtime-ship-inventory-smoke/runtime-ship-inventory-smoke-20
 
 Known build warning:
 MiningMonsterDropResolver.cs uses player.houseUpgradeLevel NetInt directly. This pre-existing SMAPI AvoidNetField warning is unrelated to the binding change.
+
+Museum donation update, 2026-07-18:
+Focused command:
+dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --filter "FullyQualifiedName~GrandpaDirectionDailyCandidateBindingTests|FullyQualifiedName~MuseumDonationMainlineTests"
+Result: PASS, 71/71
+
+Full Core command:
+dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --no-restore
+Result: PASS, 989/989
+
+Full solution build:
+dotnet build StardewValleyAICompanion.sln --no-restore
+Result: PASS, 0 errors; 5 pre-existing warnings.
+
+Runtime status:
+Not yet executed in game. Native menu lifecycle, projection drift rejection, dynamic collection completion, Rusty Key threshold evidence, and direct-state-write source guards are covered statically.
+
+Backend command:
+dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --no-restore
+Result: PASS, 60/60

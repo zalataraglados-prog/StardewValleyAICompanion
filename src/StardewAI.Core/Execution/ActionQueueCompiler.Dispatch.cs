@@ -42,6 +42,7 @@ namespace StardewAI.Core.Execution
                 ["executor.collect_animal_product"] = (action, _) => CompileCollectAnimalProductStep(action),
                 ["executor.pet_interact"] = (action, _) => CompilePetInteractStep(action),
                 ["executor.fill_pet_bowl"] = (action, _) => CompileFillPetBowlStep(action),
+                ["executor.donate_museum_item"] = (action, _) => CompileDonateMuseumItemStep(action),
                 ["executor.pan_ore_spot"] = (action, _) => CompilePanOreSpotStep(action),
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),

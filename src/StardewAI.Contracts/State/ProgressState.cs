@@ -563,6 +563,105 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("donated_count")]
         public int DonatedCount { get; set; }
+
+        [JsonPropertyName("total_donatable_items")]
+        public int TotalDonatableItems { get; set; }
+
+        [JsonPropertyName("collection_complete")]
+        public bool CollectionComplete { get; set; }
+
+        [JsonPropertyName("complete_collection_achievement_received")]
+        public bool CompleteCollectionAchievementReceived { get; set; }
+
+        [JsonPropertyName("rusty_key_donation_threshold")]
+        public int RustyKeyDonationThreshold { get; set; }
+
+        [JsonPropertyName("rusty_key_reward_id")]
+        public string RustyKeyRewardId { get; set; } = string.Empty;
+
+        [JsonPropertyName("rusty_key_reward_action")]
+        public string RustyKeyRewardAction { get; set; } = string.Empty;
+
+        [JsonPropertyName("rusty_key_reward_claimed")]
+        public bool RustyKeyRewardClaimed { get; set; }
+
+        [JsonPropertyName("rusty_key_prerequisite_event_seen")]
+        public bool RustyKeyPrerequisiteEventSeen { get; set; }
+
+        [JsonPropertyName("rusty_key_event_seen")]
+        public bool RustyKeyEventSeen { get; set; }
+
+        [JsonPropertyName("has_rusty_key")]
+        public bool HasRustyKey { get; set; }
+
+        [JsonPropertyName("museum_location_id")]
+        public string MuseumLocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("museum_is_current_location")]
+        public bool MuseumIsCurrentLocation { get; set; }
+
+        [JsonPropertyName("museum_mutex_locked")]
+        public bool? MuseumMutexLocked { get; set; }
+
+        [JsonPropertyName("gunther_action_tile_x")]
+        public int? GuntherActionTileX { get; set; }
+
+        [JsonPropertyName("gunther_action_tile_y")]
+        public int? GuntherActionTileY { get; set; }
+
+        [JsonPropertyName("gunther_action_raw")]
+        public string GuntherActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("free_donation_tile_x")]
+        public int? FreeDonationTileX { get; set; }
+
+        [JsonPropertyName("free_donation_tile_y")]
+        public int? FreeDonationTileY { get; set; }
+
+        [JsonPropertyName("free_donation_tile_count")]
+        public int FreeDonationTileCount { get; set; }
+
+        [JsonPropertyName("donation_candidates")]
+        public MuseumDonationCandidateRef[] DonationCandidates { get; set; } = new MuseumDonationCandidateRef[0];
+    }
+
+    public sealed class MuseumDonationCandidateRef
+    {
+        [JsonPropertyName("slot_index")]
+        public int SlotIndex { get; set; }
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("stack_before")]
+        public int StackBefore { get; set; }
+
+        [JsonPropertyName("stack_after")]
+        public int StackAfter { get; set; }
+
+        [JsonPropertyName("donated_count_before")]
+        public int DonatedCountBefore { get; set; }
+
+        [JsonPropertyName("donated_count_after")]
+        public int DonatedCountAfter { get; set; }
+
+        [JsonPropertyName("completes_collection")]
+        public bool CompletesCollection { get; set; }
+
+        [JsonPropertyName("reaches_rusty_key_threshold")]
+        public bool ReachesRustyKeyThreshold { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
     }
 
     public sealed class MuseumPieceProgressRef

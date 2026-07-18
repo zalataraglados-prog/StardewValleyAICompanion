@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Reflection;
+using Netcode;
 using StardewAI.Contracts.State;
 using StardewValley.Network;
 using StardewModdingAPI;
@@ -88,7 +90,7 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
         {
             ["community_center"] = Field(ReadCommunityCenter(world, master), "Game1.netWorldState.Value.Bundles/BundleRewards; Game1.MasterPlayer.mailReceived cc* flags", tick),
             ["joja_membership"] = Field(Context.IsWorldReady ? master?.mailReceived.Contains("JojaMember") : null, "Game1.MasterPlayer.mailReceived.Contains(\"JojaMember\")", tick),
-            ["museum"] = Field(ReadMuseum(museum), "LibraryMuseum.museumPieces", tick),
+            ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece; Data/MuseumRewards[museum60]; Events/Farm[66]", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
             ["artifact_collection"] = Field(ToSortedArrayDictionary(master?.archaeologyFound), "Game1.MasterPlayer.archaeologyFound", tick),
@@ -130,26 +132,142 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
         };
     }
 
-    private static MuseumProgressRef? ReadMuseum(LibraryMuseum? museum)
+    private static MuseumProgressRef? ReadMuseum(LibraryMuseum? museum, Farmer? master)
     {
-        return museum is null
-            ? null
-            : new MuseumProgressRef
-            {
-                Pieces = museum.museumPieces.Pairs
-                    .Select(piece => new MuseumPieceProgressRef
-                    {
-                        TileX = (int)piece.Key.X,
-                        TileY = (int)piece.Key.Y,
-                        ItemId = piece.Value
-                    })
-                    .OrderBy(piece => piece.TileY)
-                    .ThenBy(piece => piece.TileX)
-                    .ThenBy(piece => piece.ItemId, StringComparer.Ordinal)
-                    .ToArray(),
-                DonatedCount = museum.museumPieces.Count()
-            };
+        if (museum is null || master is null || Game1.player is null)
+        {
+            return null;
+        }
+
+        var donatedCount = museum.museumPieces.Count();
+        var total = LibraryMuseum.totalArtifacts;
+        var freeTiles = ReadFreeMuseumDonationTiles(museum);
+        var guntherAction = ReadGuntherActionTile(museum);
+        var mutex = typeof(LibraryMuseum)
+            .GetField("mutex", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.GetValue(museum) as NetMutex;
+        var rewards = DataLoader.MuseumRewards(Game1.content);
+        rewards.TryGetValue("museum60", out var rustyKeyReward);
+        var rustyKeyThreshold = rustyKeyReward?.TargetContextTags
+            .FirstOrDefault(requirement => string.IsNullOrEmpty(requirement.Tag))
+            ?.Count ?? 0;
+        var rustyKeyActions = rustyKeyReward?.RewardActions;
+        var rustyKeyAction = rustyKeyActions?.Count == 1 ? rustyKeyActions[0] : string.Empty;
+        var museumIsCurrent = ReferenceEquals(Game1.currentLocation, museum);
+        var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
+        var sharedStatus = !museumIsCurrent
+            ? "museum_not_current_location"
+            : rustyKeyThreshold <= 0 || string.IsNullOrWhiteSpace(rustyKeyAction)
+                ? "museum_rusty_key_reward_projection_unavailable"
+                : !menuClear
+                    ? "museum_menu_or_dialogue_not_clear"
+                    : mutex?.IsLocked() == true
+                        ? "museum_mutex_locked"
+                        : guntherAction is null
+                            ? "gunther_action_tile_unavailable"
+                            : freeTiles.Length == 0
+                                ? "museum_no_free_donation_tile"
+                                : "ready";
+
+        return new MuseumProgressRef
+        {
+            Pieces = museum.museumPieces.Pairs
+                .Select(piece => new MuseumPieceProgressRef
+                {
+                    TileX = (int)piece.Key.X,
+                    TileY = (int)piece.Key.Y,
+                    ItemId = piece.Value
+                })
+                .OrderBy(piece => piece.TileY)
+                .ThenBy(piece => piece.TileX)
+                .ThenBy(piece => piece.ItemId, StringComparer.Ordinal)
+                .ToArray(),
+            DonatedCount = donatedCount,
+            TotalDonatableItems = total,
+            CollectionComplete = donatedCount >= total,
+            CompleteCollectionAchievementReceived = Game1.player.achievements.Contains(5),
+            RustyKeyDonationThreshold = rustyKeyThreshold,
+            RustyKeyRewardId = "museum60",
+            RustyKeyRewardAction = rustyKeyAction,
+            RustyKeyRewardClaimed = Game1.player.mailReceived.Contains("museum60"),
+            RustyKeyPrerequisiteEventSeen = master.eventsSeen.Contains("295672"),
+            RustyKeyEventSeen = master.eventsSeen.Contains("66"),
+            HasRustyKey = master.hasRustyKey,
+            MuseumLocationId = museum.NameOrUniqueName,
+            MuseumIsCurrentLocation = museumIsCurrent,
+            MuseumMutexLocked = mutex?.IsLocked(),
+            GuntherActionTileX = guntherAction?.X,
+            GuntherActionTileY = guntherAction?.Y,
+            GuntherActionRaw = guntherAction?.Action ?? string.Empty,
+            FreeDonationTileX = freeTiles.FirstOrDefault()?.X,
+            FreeDonationTileY = freeTiles.FirstOrDefault()?.Y,
+            FreeDonationTileCount = freeTiles.Length,
+            DonationCandidates = Game1.player.Items
+                .Select((item, slot) => new { item, slot })
+                .Where(entry => entry.item is StardewValley.Object && entry.item.Stack > 0)
+                .Where(entry => LibraryMuseum.IsItemSuitableForDonation(entry.item.QualifiedItemId))
+                .Select(entry => new MuseumDonationCandidateRef
+                {
+                    SlotIndex = entry.slot,
+                    ItemId = entry.item.ItemId,
+                    QualifiedItemId = entry.item.QualifiedItemId,
+                    DisplayName = entry.item.DisplayName,
+                    RuntimeType = entry.item.GetType().FullName ?? string.Empty,
+                    StackBefore = entry.item.Stack,
+                    StackAfter = entry.item.Stack - 1,
+                    DonatedCountBefore = donatedCount,
+                    DonatedCountAfter = donatedCount + 1,
+                    CompletesCollection = donatedCount + 1 >= total,
+                    ReachesRustyKeyThreshold = donatedCount < rustyKeyThreshold && donatedCount + 1 >= rustyKeyThreshold,
+                    ActionStatus = sharedStatus
+                })
+                .OrderBy(candidate => candidate.SlotIndex)
+                .ToArray()
+        };
     }
+
+    private static MuseumTileRef[] ReadFreeMuseumDonationTiles(LibraryMuseum museum)
+    {
+        var bounds = museum.getMuseumDonationBounds();
+        var tiles = new List<MuseumTileRef>();
+        for (var x = bounds.X; x <= bounds.Right; x++)
+        {
+            for (var y = bounds.Y; y <= bounds.Bottom; y++)
+            {
+                if (museum.isTileSuitableForMuseumPiece(x, y))
+                {
+                    tiles.Add(new MuseumTileRef(x, y, string.Empty));
+                }
+            }
+        }
+        return tiles.ToArray();
+    }
+
+    private static MuseumTileRef? ReadGuntherActionTile(LibraryMuseum museum)
+    {
+        var layers = museum.map?.Layers?.Cast<xTile.Layers.Layer>().ToArray();
+        if (layers is null || layers.Length == 0)
+        {
+            return null;
+        }
+
+        var width = layers.Max(layer => layer.LayerWidth);
+        var height = layers.Max(layer => layer.LayerHeight);
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var action = museum.doesTileHaveProperty(x, y, "Action", "Buildings");
+                if (string.Equals(action?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), "Gunther", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new MuseumTileRef(x, y, action!);
+                }
+            }
+        }
+        return null;
+    }
+
+    private sealed record MuseumTileRef(int X, int Y, string Action);
 
     private static PerfectionProgressRef? ReadPerfection(StardewValley.Network.NetWorldState? world)
     {

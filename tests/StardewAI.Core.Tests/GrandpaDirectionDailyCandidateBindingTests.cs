@@ -64,14 +64,14 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void SevenDirectionsHaveDirectBindingEnabled()
+    public void NineDirectionsHaveDirectBindingEnabled()
     {
         var directDirections = GrandpaDirectionCatalog.Entries
             .Where(e => e.DirectBindingEnabled)
             .Select(e => e.DirectionId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(7, directDirections.Length);
+        Assert.Equal(9, directDirections.Length);
         Assert.Contains("earn_money", directDirections);
         Assert.Contains("raise_friendships", directDirections);
         Assert.Contains("complete_master_angler", directDirections);
@@ -79,6 +79,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Contains("obtain_skull_key", directDirections);
         Assert.Contains("raise_skill_levels", directDirections);
         Assert.Contains("earn_pet_love", directDirections);
+        Assert.Contains("complete_museum_collection", directDirections);
+        Assert.Contains("obtain_rusty_key", directDirections);
     }
 
     [Fact]
@@ -338,33 +340,52 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindBlocksCompleteMuseumCollectionAsPlannedContractGap()
+    public void BindCompleteMuseumCollectionAcceptsExactPositiveDonationProgress()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "complete_museum_collection"
+            DirectionId = "complete_museum_collection",
+            RankedCandidates = new[]
+            {
+                MuseumDonationCandidate(
+                    "museum:collection-final",
+                    Parameter("expected_donated_count_before", "94"),
+                    Parameter("expected_donated_count_after", "95"),
+                    Parameter("museum_total_donatable_items", "95"))
+            }
         }, snapshot);
 
-        Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("grandpa.direct.complete_museum_collection", result.BindingRuleId);
+        Assert.Single(result.BoundCandidates);
     }
 
     [Fact]
-    public void BindBlocksObtainRustyKeyAsPlannedContractGap()
+    public void BindObtainRustyKeyAcceptsExactThresholdDonationProgress()
     {
         var snapshot = GrandpaSnapshot();
         var binding = new GrandpaDirectionDailyCandidateBinding();
         var result = binding.Bind(new GrandpaDirectionBindingRequest
         {
             StateHash = snapshot.StateHash,
-            DirectionId = "obtain_rusty_key"
+            DirectionId = "obtain_rusty_key",
+            RankedCandidates = new[]
+            {
+                MuseumDonationCandidate(
+                    "museum:rusty-key-threshold",
+                    Parameter("expected_donated_count_before", "59"),
+                    Parameter("expected_donated_count_after", "60"),
+                    Parameter("rusty_key_donation_threshold", "60"),
+                    Parameter("rusty_key_reward_action", "MarkEventSeen Host 295672"))
+            }
         }, snapshot);
 
-        Assert.Equal("blocked", result.BindingStatus);
-        Assert.Contains(result.BlockReasons, r => r.Contains("planned contract gap"));
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("grandpa.direct.obtain_rusty_key", result.BindingRuleId);
+        Assert.Single(result.BoundCandidates);
     }
 
     [Fact]
@@ -774,6 +795,23 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         var bound = result.BoundCandidates[0];
         Assert.DoesNotContain(bound.Parameters, p =>
             p.Name.Contains("achievement") || p.Name.Contains("master_angler_complete"));
+    }
+
+    private static PolicyEventCandidatePrediction MuseumDonationCandidate(
+        string candidateId,
+        params SmallModelActionParameter[] parameters)
+    {
+        return new PolicyEventCandidatePrediction
+        {
+            CandidateId = candidateId,
+            OptionId = "museum.donate_items",
+            Kind = "donate_museum_item",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = parameters
+        };
     }
 
 }

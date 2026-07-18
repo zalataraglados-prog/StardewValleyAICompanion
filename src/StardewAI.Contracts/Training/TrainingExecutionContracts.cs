@@ -593,6 +593,42 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("delayed_settlement")]
         public string DelayedSettlement { get; set; } = string.Empty;
 
+        [JsonPropertyName("inventory_slot_index")]
+        public int? InventorySlotIndex { get; set; }
+
+        [JsonPropertyName("donation_tile_x")]
+        public int? DonationTileX { get; set; }
+
+        [JsonPropertyName("donation_tile_y")]
+        public int? DonationTileY { get; set; }
+
+        [JsonPropertyName("expected_stack_before")]
+        public int? ExpectedStackBefore { get; set; }
+
+        [JsonPropertyName("expected_stack_after")]
+        public int? ExpectedStackAfter { get; set; }
+
+        [JsonPropertyName("expected_donated_count_before")]
+        public int? ExpectedDonatedCountBefore { get; set; }
+
+        [JsonPropertyName("expected_donated_count_after")]
+        public int? ExpectedDonatedCountAfter { get; set; }
+
+        [JsonPropertyName("museum_total_donatable_items")]
+        public int? MuseumTotalDonatableItems { get; set; }
+
+        [JsonPropertyName("expected_collection_complete_after")]
+        public bool? ExpectedCollectionCompleteAfter { get; set; }
+
+        [JsonPropertyName("rusty_key_donation_threshold")]
+        public int? RustyKeyDonationThreshold { get; set; }
+
+        [JsonPropertyName("reaches_rusty_key_threshold")]
+        public bool? ReachesRustyKeyThreshold { get; set; }
+
+        [JsonPropertyName("rusty_key_reward_action")]
+        public string RustyKeyRewardAction { get; set; } = string.Empty;
+
         [JsonPropertyName("expected_mine_level_delta")]
         public int? ExpectedMineLevelDelta { get; set; }
 

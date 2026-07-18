@@ -41,6 +41,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one daily pet interaction or unwatered assigned bowl selected", "native Pet.checkAction or WateringCan lifecycle handed to the mechanical executor", "immediate and next-day friendship/mail settlement kept distinct" },
                 new[] { "block_already_satisfied_pet_care", "block_custom_pet_check_action", "block_missing_safe_slot_or_watering_can", "block_unverified_route", "block_projection_drift", "block_deterministic_claim_for_global_rng_gift_selection" }));
 
+            Register(Option("museum.donate_items", "museum", "Donate one transparent museum item",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.museum", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact undonated inventory item selected", "native MuseumMenu donation lifecycle handed to the mechanical executor", "collection and Rusty Key threshold progress recorded" },
+                new[] { "block_non_donatable_or_already_donated_item", "block_museum_mutex", "block_missing_free_display_tile", "block_unverified_route", "block_projection_drift", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
+
             Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -622,6 +630,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.energy", "player.inventory", "farm.pet_bowls", "menus.active_menu" },
                 new[] { "pet bowl watered state becomes true", "next-day Pet.dayUpdate friendship/mail settlement remains pending" },
                 new[] { "block_unassigned_or_watered_bowl", "block_missing_or_empty_watering_can", "block_projection_drift", "block_direct_bowl_or_friendship_mutation" }));
+
+            Register(Option("executor.donate_museum_item", "museum", "Donate one verified item through native MuseumMenu clicks",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.museum", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the Gunther counter", "native LibraryMuseum.OpenDonationMenu and MuseumMenu.receiveLeftClick donate exactly one item", "menu close settles museum rewards through native callbacks" },
+                new[] { "block_museum_not_current", "block_museum_mutex", "block_inventory_or_display_tile_drift", "block_unverified_route", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
 
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,

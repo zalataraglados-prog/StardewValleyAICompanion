@@ -306,6 +306,18 @@ static partial class Program
         var expectedNextDayPetLoveMail = ReadNullableBoolQueueParameter(item, "expected_next_day_pet_love_mail");
         var expectedNextDayMarniePetAdoptionMail = ReadNullableBoolQueueParameter(item, "expected_next_day_marnie_pet_adoption_mail");
         var delayedSettlement = ReadQueueParameterString(item, "delayed_settlement");
+        var inventorySlotIndex = ReadQueueParameterInt(item, "inventory_slot_index");
+        var donationTileX = ReadQueueParameterInt(item, "donation_tile_x");
+        var donationTileY = ReadQueueParameterInt(item, "donation_tile_y");
+        var expectedStackBefore = ReadQueueParameterInt(item, "expected_stack_before");
+        var expectedStackAfter = ReadQueueParameterInt(item, "expected_stack_after");
+        var expectedDonatedCountBefore = ReadQueueParameterInt(item, "expected_donated_count_before");
+        var expectedDonatedCountAfter = ReadQueueParameterInt(item, "expected_donated_count_after");
+        var museumTotalDonatableItems = ReadQueueParameterInt(item, "museum_total_donatable_items");
+        var expectedCollectionCompleteAfter = ReadNullableBoolQueueParameter(item, "expected_collection_complete_after");
+        var rustyKeyDonationThreshold = ReadQueueParameterInt(item, "rusty_key_donation_threshold");
+        var reachesRustyKeyThreshold = ReadNullableBoolQueueParameter(item, "reaches_rusty_key_threshold");
+        var rustyKeyRewardAction = ReadQueueParameterString(item, "rusty_key_reward_action");
         var expectedStatIncrementsJson = ReadQueueParameterString(item, "expected_stat_increments_json");
         var expectedSkillId = ReadQueueParameterString(item, "expected_skill_id");
         var expectedSkillExperienceDelta = ReadQueueParameterInt(item, "expected_skill_experience_delta");
@@ -532,6 +544,18 @@ static partial class Program
         executionRequest.ExpectedNextDayPetLoveMail = expectedNextDayPetLoveMail;
         executionRequest.ExpectedNextDayMarniePetAdoptionMail = expectedNextDayMarniePetAdoptionMail;
         executionRequest.DelayedSettlement = delayedSettlement;
+        executionRequest.InventorySlotIndex = inventorySlotIndex;
+        executionRequest.DonationTileX = donationTileX;
+        executionRequest.DonationTileY = donationTileY;
+        executionRequest.ExpectedStackBefore = expectedStackBefore;
+        executionRequest.ExpectedStackAfter = expectedStackAfter;
+        executionRequest.ExpectedDonatedCountBefore = expectedDonatedCountBefore;
+        executionRequest.ExpectedDonatedCountAfter = expectedDonatedCountAfter;
+        executionRequest.MuseumTotalDonatableItems = museumTotalDonatableItems;
+        executionRequest.ExpectedCollectionCompleteAfter = expectedCollectionCompleteAfter;
+        executionRequest.RustyKeyDonationThreshold = rustyKeyDonationThreshold;
+        executionRequest.ReachesRustyKeyThreshold = reachesRustyKeyThreshold;
+        executionRequest.RustyKeyRewardAction = rustyKeyRewardAction;
         executionRequest.ExpectedStatIncrementsJson = expectedStatIncrementsJson;
         executionRequest.ExpectedSkillId = expectedSkillId;
         executionRequest.ExpectedSkillExperienceDelta = expectedSkillExperienceDelta;
@@ -680,6 +704,11 @@ static partial class Program
         if (!string.IsNullOrWhiteSpace(fishingLocationId))
         {
             executionRequest.LocationId = fishingLocationId;
+        }
+        var targetLocationId = ReadQueueParameterString(item, "target_location");
+        if (!string.IsNullOrWhiteSpace(targetLocationId))
+        {
+            executionRequest.LocationId = targetLocationId;
         }
         var socialTargetLocation = SocialLocationMapping.ResolveLocationId(item, optionId);
         if (!string.IsNullOrWhiteSpace(socialTargetLocation))

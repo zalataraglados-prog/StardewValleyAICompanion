@@ -32,9 +32,9 @@ Covered by unrun test definitions: `BindBlocksCompleteCommunityCenterWithUnresol
 
 ## No Speculative Field/Capability Checks
 
-`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Five non-direct directions are unconditionally blocked as planned contract gaps. Covered by the unrun current test definition `BindFiveNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Three non-direct directions are unconditionally blocked as planned contract gaps. Covered by `BindThreeNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
 
-Five non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
+Three non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
 
 ## Candidate Identity Preserved
 
@@ -88,7 +88,15 @@ Covered by unrun test definitions: `BindDoesNotIncludeDuplicateGrandpaProvenance
 Covered by an unrun test definition: `BindClonesCandidateArraysToPreventAliasing`.
 
 ### Missing Fields Populated
-Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. The current unrun test definition checks all five non-direct rows in `BindFiveNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+Blocked results populate `MissingTransparentFields` and `MissingCapabilities` from the catalog entry. The current test checks all three non-direct rows in `BindThreeNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+
+## 2026-07-18 Museum Shared Chain Evidence
+
+- Local 1.6.15 decompile: `LibraryMuseum.totalArtifacts` dynamically enumerates all object IDs with `IsItemSuitableForDonation(..., checkDonatedItems: false)`; collection completion is not a hardcoded item count.
+- Loaded game data: `Data/MuseumRewards[museum60]` requires 60 donations and runs `MarkEventSeen Host 295672`. `Data/Events/Farm` event `66/e 295672/t 600 700/H` runs `rustyKey`; the decompiled event command sets the native Rusty Key state.
+- Native donation: `LibraryMuseum.OpenDonationMenu` obtains its `NetMutex`; `MuseumMenu.receiveLeftClick` adds exactly one museum piece, consumes one stack, completes quest 24, and checks archaeology achievements; `OnDonationMenuClosed` releases the mutex and calls `getRewardsForPlayer` for non-item reward settlement.
+- Implemented chain: `world_progress.museum` -> `museum.donate_items` -> `donate_museum_item` -> `executor.donate_museum_item` -> runtime native menu lifecycle -> typed postcondition receipt.
+- Verification: focused Grandpa/museum tests 71/71 and full Core 989/989 passed. In-game isolated museum smoke remains pending and must not be represented as runtime proof.
 
 ### Metadata Sourced from Adapter
 Domain, label, feedback_key, related_factor_ids, potential_points, priority_score, known, blocked are all from the adapter's `CandidateDirection`, not the catalog.
