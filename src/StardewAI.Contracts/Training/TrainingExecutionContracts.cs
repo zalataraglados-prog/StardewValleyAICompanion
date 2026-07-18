@@ -629,6 +629,48 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("rusty_key_reward_action")]
         public string RustyKeyRewardAction { get; set; } = string.Empty;
 
+        [JsonPropertyName("route_state")]
+        public string RouteState { get; set; } = string.Empty;
+
+        [JsonPropertyName("bundle_data_key")]
+        public string BundleDataKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("bundle_id")]
+        public int? BundleId { get; set; }
+
+        [JsonPropertyName("bundle_area_id")]
+        public int? BundleAreaId { get; set; }
+
+        [JsonPropertyName("bundle_area_name")]
+        public string BundleAreaName { get; set; } = string.Empty;
+
+        [JsonPropertyName("bundle_ingredient_index")]
+        public int? BundleIngredientIndex { get; set; }
+
+        [JsonPropertyName("expected_item_quality")]
+        public int? ExpectedItemQuality { get; set; }
+
+        [JsonPropertyName("required_stack")]
+        public int? RequiredStack { get; set; }
+
+        [JsonPropertyName("inventory_item_total_before")]
+        public int? InventoryItemTotalBefore { get; set; }
+
+        [JsonPropertyName("inventory_item_total_after")]
+        public int? InventoryItemTotalAfter { get; set; }
+
+        [JsonPropertyName("bundle_required_slot_count")]
+        public int? BundleRequiredSlotCount { get; set; }
+
+        [JsonPropertyName("expected_bundle_completed_count_before")]
+        public int? ExpectedBundleCompletedCountBefore { get; set; }
+
+        [JsonPropertyName("expected_bundle_completed_count_after")]
+        public int? ExpectedBundleCompletedCountAfter { get; set; }
+
+        [JsonPropertyName("expected_bundle_complete_after")]
+        public bool? ExpectedBundleCompleteAfter { get; set; }
+
         [JsonPropertyName("expected_mine_level_delta")]
         public int? ExpectedMineLevelDelta { get; set; }
 

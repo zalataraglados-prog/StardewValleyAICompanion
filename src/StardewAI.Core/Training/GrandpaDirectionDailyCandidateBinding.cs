@@ -7,6 +7,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.WorldModel;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Training
 {
@@ -242,29 +243,54 @@ namespace StardewAI.Core.Training
                 };
             }
 
+            var ccJojaRouteCommitmentResolved = false;
             if (catalogEntry.CcJojaSensitive)
             {
-                var result = BuildBlocked(
-                    request,
-                    snapshot,
-                    catalogEntry,
-                    new[] { "cc_joja_route_commitment_unavailable" },
-                    "cc_joja_route_commitment_unresolved",
-                    direction);
-                result.Audit.CcJojaRouteCommitmentResolved = false;
-                result.Audit.DirectionRejectedReason = "cc_joja_route_commitment_unresolved";
-                return result;
+                var communityCenter = ReadStateFieldValue(snapshot, "world_progress", "community_center");
+                var routeState = communityCenter.HasValue && communityCenter.Value.ValueKind == JsonValueKind.Object
+                    ? ReadString(communityCenter.Value, "route_state")
+                    : string.Empty;
+                if (routeState is not ("undecided" or "community_center_locked" or "joja_locked"))
+                {
+                    var result = BuildBlocked(
+                        request,
+                        snapshot,
+                        catalogEntry,
+                        new[] { routeState == "conflicting_irreversible_flags" ? "cc_joja_route_commitment_conflict" : "cc_joja_route_commitment_unavailable" },
+                        routeState == "conflicting_irreversible_flags" ? "cc_joja_route_commitment_conflict" : "cc_joja_route_commitment_unresolved",
+                        direction);
+                    result.Audit.CcJojaRouteCommitmentResolved = false;
+                    return result;
+                }
+                ccJojaRouteCommitmentResolved = true;
+                var routeAllowsDirection = request.DirectionId == "complete_community_center"
+                    ? routeState is "undecided" or "community_center_locked"
+                    : routeState == "joja_locked";
+                if (!routeAllowsDirection)
+                {
+                    var result = BuildBlocked(
+                        request,
+                        snapshot,
+                        catalogEntry,
+                        new[] { "cc_joja_direction_locked_out_by_irreversible_route" },
+                        "cc_joja_direction_locked_out_by_irreversible_route",
+                        direction);
+                    result.Audit.CcJojaRouteCommitmentResolved = true;
+                    return result;
+                }
             }
 
             if (!catalogEntry.DirectBindingEnabled)
             {
-                return BuildBlocked(
+                var result = BuildBlocked(
                     request,
                     snapshot,
                     catalogEntry,
                     new[] { catalogEntry.BlockReasonTemplate },
                     "direct_binding_disabled_planned_contract_gap",
                     direction);
+                result.Audit.CcJojaRouteCommitmentResolved = ccJojaRouteCommitmentResolved;
+                return result;
             }
 
             var rankedCandidates = request.RankedCandidates ?? Array.Empty<PolicyEventCandidatePrediction>();
@@ -389,13 +415,15 @@ namespace StardewAI.Core.Training
             {
                 var reasons = new List<string> { "no_current_permitted_candidate" };
                 reasons.AddRange(rejectionDetails);
-                return BuildBlocked(
+                var result = BuildBlocked(
                     request,
                     snapshot,
                     catalogEntry,
                     reasons.ToArray(),
                     "no_current_permitted_candidate",
                     direction);
+                result.Audit.CcJojaRouteCommitmentResolved = ccJojaRouteCommitmentResolved;
+                return result;
             }
 
             return new GrandpaDirectionBindingResult
@@ -425,7 +453,7 @@ namespace StardewAI.Core.Training
                     StateHashVerified = true,
                     DirectionSetRebuiltFromSnapshot = true,
                     DirectionRejectedReason = string.Empty,
-                    CcJojaRouteCommitmentResolved = false
+                    CcJojaRouteCommitmentResolved = ccJojaRouteCommitmentResolved
                 }
             };
         }

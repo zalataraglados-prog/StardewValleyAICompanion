@@ -24,17 +24,17 @@ Covered by an unrun test definition: `CatalogEntriesArePlanPolicyOnlyNoScoreMeta
 - Null snapshot for known state_hash returns `"state_hash_unknown_backend_resolves_no_snapshot"`. Covered by an unrun test definition: `BindRejectsNullSnapshotWithKnownStateHash`.
 - Mismatched state hash returns `"state_hash_mismatch_request_state_hash_does_not_match_snapshot_state_hash"`. Covered by an unrun test definition: `BindRejectsStateHashMismatch`.
 
-## CC/Joja Route Commitment (Unresolved)
+## CC/Joja Route Commitment and Community Center Chain
 
-Both `complete_community_center` and `complete_joja_development` unconditionally block with `cc_joja_route_commitment_unavailable`. No speculative bool traversal. Audit field `CcJojaRouteCommitmentResolved` is always `false`.
+Route commitment is now exported from live irreversible evidence as `undecided`, `community_center_locked`, `joja_locked`, or `conflicting_irreversible_flags`. Missing/conflicting evidence fails closed. `complete_community_center` directly binds exact `community_center.donate_bundle_items` / `donate_community_center_item` candidates when the route allows it. `complete_joja_development` remains blocked because its payment executor is not implemented.
 
-Covered by unrun test definitions: `BindBlocksCompleteCommunityCenterWithUnresolvedRouteCommitment`, `BindBlocksCompleteJojaDevelopmentWithUnresolvedRouteCommitment`, and `BindCcJojaRowsAlwaysReportUnresolvedRouteCommitment`.
+The native Community Center chain is `world_progress.community_center.bundle_rows` -> candidate -> daily plan -> action queue -> runtime `CommunityCenter.checkBundle` and `JunimoNoteMenu` clicks. Optional-slot Bundle completion projects the decompiled behavior that all ingredient bits become true. Whole-inventory qualified-item totals are verified because native completion may merge the remainder into another slot.
 
 ## No Speculative Field/Capability Checks
 
-`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Three non-direct directions are unconditionally blocked as planned contract gaps. Covered by `BindThreeNonDirectDirectionsAllReturnBlockedWithPlannedRequirements`.
+`FieldReadableInSnapshot()` and `CapabilityAvailable()` are removed. Two non-direct directions remain blocked as planned contract gaps.
 
-Three non-direct rows all return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
+The remaining non-direct rows return non-empty `MissingTransparentFields` and `MissingCapabilities` from their catalog entries.
 
 ## Candidate Identity Preserved
 
@@ -111,6 +111,11 @@ Covered by an unrun test definition: `BindDirectionMetadataIsSourcedFromAdapterN
 `BindBoundCandidateHandoffToDailyPlanCompilerDoesNotFail` (unrun test definition) confirms bound candidate feeds into `DailyPlanCompiler.Compile()` producing a valid plan envelope.
 
 ## Historical Build/Tests
+
+- Current solution build: 0 errors, 5 existing warnings.
+- Current Core: 995/995 passed.
+- Current Backend: 60/60 passed.
+- Community Center in-game isolated native smoke: pending; no runtime-success claim is made.
 
 - Focused Core: 103/103 passed.
 - Full Core: 946/946 passed.

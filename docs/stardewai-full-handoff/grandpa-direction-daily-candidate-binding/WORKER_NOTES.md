@@ -4,6 +4,17 @@
 
 Revised the grandpa direction daily candidate binding system per controller audit. This is a typed direction-to-daily-candidate binding system that decomposes validated `strategy.grandpa_progress` directions into concrete candidates passable to `DailyPlanCompiler`.
 
+## 2026-07-18 Community Center Superseding Update
+
+This section supersedes older statements below that describe both CC/Joja routes as unconditionally unresolved.
+
+- The catalog now has 10 direct directions and 2 planned gaps.
+- `world_progress.community_center` exports irreversible route state, separate CC mail/native completion evidence, every live BundleData row, row-accounting totals, note/mutex state, exact ingredients, and native-selected donation candidates.
+- `complete_community_center` binds `community_center.donate_bundle_items` / `donate_community_center_item` only for `undecided` or `community_center_locked` routes.
+- The action chain reaches `executor.donate_community_center_item`; runtime uses only `CommunityCenter.checkBundle`, `JunimoNoteMenu.receiveLeftClick`, and `exitThisMenu` for mutation.
+- Joja remains blocked pending membership and development-project payment execution.
+- Verification: solution 0 errors (5 existing warnings), Core 995/995, Backend 60/60. Isolated in-game Community Center smoke is still pending.
+
 ## 2026-07-17 Historical Controller Milestone
 
 At this milestone, `complete_full_shipment` became the fourth direct direction. It binds only `economy.ship_items` / `ship_inventory_item_to_bin` candidates carrying exact typed full-shipment contribution evidence. The native compiler, executor, immediate receipt, and delayed `basicShipped` settlement recorder were implemented. At that time the remaining blocked count was eight. Focused Core 103/103, full Core 946/946, Backend 49/49, and E-drive isolated native shipping immediate smoke all passed.

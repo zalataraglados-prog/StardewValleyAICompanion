@@ -109,6 +109,10 @@ namespace StardewAI.Core.Training
             {
                 return MuseumDonationSteps(candidate);
             }
+            if (candidate.Kind == "donate_community_center_item")
+            {
+                return CommunityCenterDonationSteps(candidate);
+            }
             if (candidate.Kind == "pan_ore_spot")
             {
                 return PanOreSpotSteps(candidate);

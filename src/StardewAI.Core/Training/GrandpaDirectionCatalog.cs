@@ -111,11 +111,12 @@ namespace StardewAI.Core.Training
                 new[] { "donate_museum_item" },
                 "Cannot bind museum donation candidates because exact progress toward the 60-donation Rusty Key threshold is unavailable.",
                 new[] { "player.has_rusty_key", "world_progress.museum", "player.inventory", "locations.collision_grid", "menus.active_menu" }),
-            CreateBlocked("complete_community_center",
-                "grandpa.blocked.complete_community_center",
-                new[] { "world_progress.community_center.bundles", "world_progress.community_center.completed" },
-                new[] { "CommunityCenterBundleTrackingCapability" },
-                "complete_community_center blocked: planned contract gap. CC/Joja route commitment is unresolved from transparent state.",
+            CreateDirect("complete_community_center",
+                "grandpa.direct.complete_community_center",
+                new[] { "community_center.donate_bundle_items" },
+                new[] { "donate_community_center_item" },
+                "Cannot bind Community Center donation candidates because route or exact bundle evidence is unavailable.",
+                new[] { "world_progress.community_center.route_state", "world_progress.community_center.bundle_rows", "player.inventory", "locations.collision_grid", "menus.active_menu" },
                 true),
             CreateBlocked("complete_joja_development",
                 "grandpa.blocked.complete_joja_development",
@@ -143,7 +144,8 @@ namespace StardewAI.Core.Training
             string[] permittedOptionIds,
             string[] permittedCandidateKinds,
             string blockReasonTemplate,
-            string[]? coveredTransparentFields = null)
+            string[]? coveredTransparentFields = null,
+            bool ccJojaSensitive = false)
         {
             return new GrandpaDirectionCatalogEntry
             {
@@ -156,7 +158,7 @@ namespace StardewAI.Core.Training
                 CoveredTransparentFields = coveredTransparentFields ?? Array.Empty<string>(),
                 RequiredCapabilities = Array.Empty<string>(),
                 BlockReasonTemplate = blockReasonTemplate,
-                CcJojaSensitive = false
+                CcJojaSensitive = ccJojaSensitive
             };
         }
 

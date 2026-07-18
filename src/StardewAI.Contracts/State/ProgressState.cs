@@ -554,6 +554,165 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("completed_area_mail_flags")]
         public string[] CompletedAreaMailFlags { get; set; } = new string[0];
+
+        [JsonPropertyName("route_state")]
+        public string RouteState { get; set; } = string.Empty;
+
+        [JsonPropertyName("route_state_reason")]
+        public string RouteStateReason { get; set; } = string.Empty;
+
+        [JsonPropertyName("max_grandpa_score_route")]
+        public string MaxGrandpaScoreRoute { get; set; } = string.Empty;
+
+        [JsonPropertyName("joja_membership_received")]
+        public bool JojaMembershipReceived { get; set; }
+
+        [JsonPropertyName("joja_membership_pending")]
+        public bool JojaMembershipPending { get; set; }
+
+        [JsonPropertyName("community_center_complete_flag_received_or_pending")]
+        public bool CommunityCenterCompleteFlagReceivedOrPending { get; set; }
+
+        [JsonPropertyName("community_center_complete_native")]
+        public bool CommunityCenterCompleteNative { get; set; }
+
+        [JsonPropertyName("community_center_is_current_location")]
+        public bool CommunityCenterIsCurrentLocation { get; set; }
+
+        [JsonPropertyName("bundle_data_row_count")]
+        public int BundleDataRowCount { get; set; }
+
+        [JsonPropertyName("projected_bundle_row_count")]
+        public int ProjectedBundleRowCount { get; set; }
+
+        [JsonPropertyName("unavailable_bundle_row_count")]
+        public int UnavailableBundleRowCount { get; set; }
+
+        [JsonPropertyName("bundle_rows")]
+        public CommunityCenterBundleProgressRef[] BundleRows { get; set; } = System.Array.Empty<CommunityCenterBundleProgressRef>();
+    }
+
+    public sealed class CommunityCenterBundleProgressRef
+    {
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("projection_failure")]
+        public string ProjectionFailure { get; set; } = string.Empty;
+
+        [JsonPropertyName("bundle_data_key")]
+        public string BundleDataKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("bundle_id")]
+        public int BundleId { get; set; }
+
+        [JsonPropertyName("area_id")]
+        public int AreaId { get; set; }
+
+        [JsonPropertyName("area_name")]
+        public string AreaName { get; set; } = string.Empty;
+
+        [JsonPropertyName("internal_name")]
+        public string InternalName { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("reward_description")]
+        public string RewardDescription { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_slot_count")]
+        public int RequiredSlotCount { get; set; }
+
+        [JsonPropertyName("completed_ingredient_count")]
+        public int CompletedIngredientCount { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("note_appears")]
+        public bool NoteAppears { get; set; }
+
+        [JsonPropertyName("note_tile_x")]
+        public int? NoteTileX { get; set; }
+
+        [JsonPropertyName("note_tile_y")]
+        public int? NoteTileY { get; set; }
+
+        [JsonPropertyName("area_mutex_locked")]
+        public bool? AreaMutexLocked { get; set; }
+
+        [JsonPropertyName("ingredients")]
+        public CommunityCenterIngredientProgressRef[] Ingredients { get; set; } = System.Array.Empty<CommunityCenterIngredientProgressRef>();
+
+        [JsonPropertyName("donation_candidates")]
+        public CommunityCenterDonationCandidateRef[] DonationCandidates { get; set; } = System.Array.Empty<CommunityCenterDonationCandidateRef>();
+    }
+
+    public sealed class CommunityCenterIngredientProgressRef
+    {
+        [JsonPropertyName("ingredient_index")]
+        public int IngredientIndex { get; set; }
+
+        [JsonPropertyName("item_id_or_category")]
+        public string ItemIdOrCategory { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_stack")]
+        public int RequiredStack { get; set; }
+
+        [JsonPropertyName("minimum_quality")]
+        public int MinimumQuality { get; set; }
+
+        [JsonPropertyName("completed")]
+        public bool Completed { get; set; }
+    }
+
+    public sealed class CommunityCenterDonationCandidateRef
+    {
+        [JsonPropertyName("inventory_slot_index")]
+        public int InventorySlotIndex { get; set; }
+
+        [JsonPropertyName("ingredient_index")]
+        public int IngredientIndex { get; set; }
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("quality")]
+        public int Quality { get; set; }
+
+        [JsonPropertyName("stack_before")]
+        public int StackBefore { get; set; }
+
+        [JsonPropertyName("stack_after")]
+        public int StackAfter { get; set; }
+
+        [JsonPropertyName("required_stack")]
+        public int RequiredStack { get; set; }
+
+        [JsonPropertyName("inventory_item_total_before")]
+        public int InventoryItemTotalBefore { get; set; }
+
+        [JsonPropertyName("inventory_item_total_after")]
+        public int InventoryItemTotalAfter { get; set; }
+
+        [JsonPropertyName("completed_ingredient_count_before")]
+        public int CompletedIngredientCountBefore { get; set; }
+
+        [JsonPropertyName("completed_ingredient_count_after")]
+        public int CompletedIngredientCountAfter { get; set; }
+
+        [JsonPropertyName("completes_bundle")]
+        public bool CompletesBundle { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
     }
 
     public sealed class MuseumProgressRef

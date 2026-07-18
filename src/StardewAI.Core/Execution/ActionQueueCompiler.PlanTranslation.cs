@@ -105,6 +105,7 @@ namespace StardewAI.Core.Execution
                 "pet_interact" => "executor.pet_interact",
                 "fill_pet_bowl" => "executor.fill_pet_bowl",
                 "donate_museum_item" => "executor.donate_museum_item",
+                "donate_community_center_item" => "executor.donate_community_center_item",
                 "select_safe_item_slot" => "executor.select_safe_item_slot",
                 "pan_ore_spot" => "executor.pan_ore_spot",
                 "collect_machine_output" => "executor.collect_machine_output",

@@ -129,11 +129,10 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
-    public void BindThreeNonDirectDirectionsAllReturnBlockedWithPlannedRequirements()
+    public void BindRemainingNonDirectDirectionsReturnBlockedWithPlannedRequirements()
     {
         var blockedDirections = new[]
         {
-            "complete_community_center",
             "complete_joja_development",
             "marriage_and_house_upgrade"
         };
@@ -171,6 +170,43 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
+    public void BindCommunityCenterDonationWhenTransparentRouteAllowsIt()
+    {
+        var snapshot = GrandpaSnapshot();
+        var state = snapshot.State.ToDictionary(pair => pair.Key, pair => pair.Value);
+        var worldProgressJson = state["world_progress"].GetRawText().Replace(
+            "\"location_accessible\":false,\"completed\":false",
+            "\"location_accessible\":false,\"completed\":false,\"route_state\":\"undecided\"",
+            StringComparison.Ordinal);
+        state["world_progress"] = JsonSerializer.Deserialize<JsonElement>(worldProgressJson, JsonOptions);
+        snapshot = SnapshotFromState(state);
+
+        var result = new GrandpaDirectionDailyCandidateBinding().Bind(new GrandpaDirectionBindingRequest
+        {
+            StateHash = snapshot.StateHash,
+            DirectionId = "complete_community_center",
+            RankedCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = "community-center-donate:0:1:0",
+                    OptionId = "community_center.donate_bundle_items",
+                    Kind = "donate_community_center_item",
+                    Available = true,
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    TimelineStatus = "ready_now"
+                }
+            }
+        }, snapshot);
+
+        Assert.Equal("ready", result.BindingStatus);
+        Assert.Equal("grandpa.direct.complete_community_center", result.BindingRuleId);
+        Assert.True(result.Audit.CcJojaRouteCommitmentResolved);
+        Assert.Single(result.BoundCandidates);
+    }
+
+    [Fact]
     public void BindCcJojaRowsAlwaysReportUnresolvedRouteCommitment()
     {
         var snapshot = GrandpaSnapshot();
@@ -187,8 +223,11 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             Assert.Equal("blocked", result.BindingStatus);
             Assert.Contains("cc_joja_route_commitment_unavailable", result.BlockReasons);
             Assert.False(result.Audit.CcJojaRouteCommitmentResolved);
-            Assert.NotEmpty(result.MissingTransparentFields);
-            Assert.NotEmpty(result.MissingCapabilities);
+            if (ccJojaId == "complete_joja_development")
+            {
+                Assert.NotEmpty(result.MissingTransparentFields);
+                Assert.NotEmpty(result.MissingCapabilities);
+            }
         }
     }
 

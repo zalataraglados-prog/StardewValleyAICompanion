@@ -12,12 +12,14 @@ Current as of 2026-07-18.
 | raise_skill_levels | Direct, runtime pending | Current exact positive-XP candidates only; all local-decompile non-debug `gainExperience` source families are represented, with Luck/nonpositive sink calls kept at zero |
 | complete_museum_collection | Direct, runtime pending | Exact `donate_museum_item` candidates with `before + 1 == after <= LibraryMuseum.totalArtifacts`; final donation projects native achievement 5 settlement |
 | obtain_rusty_key | Direct, runtime pending | Exact donation progress while below the loaded `museum60` threshold; threshold crossing carries `MarkEventSeen Host 295672`, followed by native Farm event 66 key acquisition |
-| complete_community_center | Blocked | Bundle action chain and route commitment are unresolved |
-| complete_joja_development | Blocked | Joja action chain and route commitment are unresolved |
+| complete_community_center | Direct, runtime pending | Exact current-location `donate_community_center_item` candidates; live route state must be `undecided` or `community_center_locked` |
+| complete_joja_development | Blocked | Route state is readable, but membership and project-payment action chains are not implemented |
 | marriage_and_house_upgrade | Blocked | Marriage/house prerequisite candidate chain is missing |
 | earn_pet_love | Direct, runtime pending | Exact positive-progress `pet_daily_interaction` or `fill_pet_bowl`; the latter records delayed `Pet.dayUpdate` settlement rather than immediate friendship |
 
-Overall coverage is 9 direct directions and 3 fail-closed planned gaps. Static additions that have not yet been runtime-tested remain marked runtime pending rather than being counted as runtime-complete.
+Overall coverage is 10 direct directions and 2 fail-closed planned gaps. Static additions that have not yet been runtime-tested remain marked runtime pending rather than being counted as runtime-complete.
+
+The Community Center chain reads every live `NetWorldState.BundleData` row, keeps malformed rows as explicit `projection_status=unavailable`, and exports raw/projected/unavailable row counts. Route state is derived from irreversible `JojaMember`, `ccIsComplete`, and native completion evidence, including an explicit conflicting-flags state. Donation candidates use the game's `Bundle.GetBundleIngredientDescriptionIndexForItem` ordering and matcher, so one inventory stack maps to the same unique ingredient the native menu will select. The compiler rechecks route, note, mutex, BundleData row, completion bits, item identity/quality/stack, and whole-inventory item total. Runtime walks to the note and drives `CommunityCenter.checkBundle`, `JunimoNoteMenu.receiveLeftClick`, and `exitThisMenu`; it never writes bundle completion or inventory directly. This chain is build/test complete but still requires an isolated in-game smoke.
 
 `complete_full_shipment` is not admitted by option name alone. The binder requires all of the following on the ranked candidate: `CanShip == true`, `FullShipmentKnown == true`, `FullShipmentEligible == true`, `FullShipmentCurrentShippedCount == 0`, `FullShipmentAlreadyShipped == false`, and `FullShipmentContributes == true`. Contradictory or unknown evidence blocks the candidate.
 

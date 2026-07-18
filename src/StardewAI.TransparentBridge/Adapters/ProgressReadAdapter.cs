@@ -1,11 +1,13 @@
 using System.Linq;
 using System.Reflection;
+using Microsoft.Xna.Framework;
 using Netcode;
 using StardewAI.Contracts.State;
 using StardewValley.Network;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Menus;
 using StardewValley.Quests;
 using StardewValley.SpecialOrders;
 using StardewValley.SpecialOrders.Objectives;
@@ -85,10 +87,11 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
         var master = Context.IsWorldReady ? Game1.MasterPlayer : null;
         var world = Context.IsWorldReady ? Game1.netWorldState?.Value : null;
         var museum = Context.IsWorldReady ? Game1.getLocationFromName("ArchaeologyHouse") as LibraryMuseum : null;
+        var communityCenter = Context.IsWorldReady ? Game1.getLocationFromName("CommunityCenter") as CommunityCenter : null;
 
         var fields = new Dictionary<string, object>
         {
-            ["community_center"] = Field(ReadCommunityCenter(world, master), "Game1.netWorldState.Value.Bundles/BundleRewards; Game1.MasterPlayer.mailReceived cc* flags", tick),
+            ["community_center"] = Field(ReadCommunityCenter(world, master, communityCenter), "NetWorldState.BundleData/Bundles/BundleRewards; CommunityCenter bundle mutex/note state; Bundle.IsValidItemForThisIngredientDescription; host JojaMember/ccIsComplete received-or-pending flags", tick),
             ["joja_membership"] = Field(Context.IsWorldReady ? master?.mailReceived.Contains("JojaMember") : null, "Game1.MasterPlayer.mailReceived.Contains(\"JojaMember\")", tick),
             ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece; Data/MuseumRewards[museum60]; Events/Farm[66]", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
@@ -106,14 +109,32 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
         return Section("world_progress", fields, Array.Empty<string>());
     }
 
-    private static CommunityCenterProgressRef? ReadCommunityCenter(StardewValley.Network.NetWorldState? world, Farmer? master)
+    private static CommunityCenterProgressRef? ReadCommunityCenter(
+        StardewValley.Network.NetWorldState? world,
+        Farmer? master,
+        CommunityCenter? communityCenter)
     {
-        if (world is null || master is null)
+        if (world is null || master is null || communityCenter is null || Game1.player is null)
         {
             return null;
         }
 
         var areaFlags = new[] { "ccBoilerRoom", "ccCraftsRoom", "ccPantry", "ccFishTank", "ccVault", "ccBulletin" };
+
+        var jojaReceived = master.mailReceived.Contains("JojaMember");
+        var jojaPending = HasPendingMail(master, "JojaMember");
+        var ccCompleteFlag = master.hasOrWillReceiveMail("ccIsComplete");
+        var ccCompleteNative = master.hasCompletedCommunityCenter();
+        var jojaLocked = jojaReceived || jojaPending;
+        var communityCenterLocked = ccCompleteFlag || ccCompleteNative;
+        var routeState = jojaLocked && communityCenterLocked
+            ? "conflicting_irreversible_flags"
+            : jojaLocked
+                ? "joja_locked"
+                : communityCenterLocked
+                    ? "community_center_locked"
+                    : "undecided";
+        var bundleRows = ReadCommunityCenterBundles(world, communityCenter, routeState);
 
         return new CommunityCenterProgressRef
         {
@@ -128,8 +149,196 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             CompletedAreaMailFlags = areaFlags
                 .Where(flag => master.mailReceived.Contains(flag))
                 .OrderBy(flag => flag, StringComparer.Ordinal)
+                .ToArray(),
+            RouteState = routeState,
+            RouteStateReason = routeState switch
+            {
+                "conflicting_irreversible_flags" => "joja_and_community_center_irreversible_flags_both_present",
+                "joja_locked" => jojaReceived ? "host_received_JojaMember" : "host_has_pending_JojaMember",
+                "community_center_locked" => ccCompleteFlag
+                    ? "host_ccIsComplete_received_or_pending"
+                    : "host_native_community_center_completion_true",
+                _ => "neither_irreversible_route_flag_present"
+            },
+            MaxGrandpaScoreRoute = routeState switch
+            {
+                "joja_locked" => "joja",
+                "conflicting_irreversible_flags" => "unavailable_conflicting_irreversible_flags",
+                _ => "community_center"
+            },
+            JojaMembershipReceived = jojaReceived,
+            JojaMembershipPending = jojaPending,
+            CommunityCenterCompleteFlagReceivedOrPending = ccCompleteFlag,
+            CommunityCenterCompleteNative = ccCompleteNative,
+            CommunityCenterIsCurrentLocation = ReferenceEquals(Game1.currentLocation, communityCenter),
+            BundleDataRowCount = world.BundleData.Count,
+            ProjectedBundleRowCount = bundleRows.Length,
+            UnavailableBundleRowCount = bundleRows.Count(row => row.ProjectionStatus != "exact"),
+            BundleRows = bundleRows
+        };
+    }
+
+    private static CommunityCenterBundleProgressRef[] ReadCommunityCenterBundles(
+        StardewValley.Network.NetWorldState world,
+        CommunityCenter communityCenter,
+        string routeState)
+    {
+        return world.BundleData
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => ReadCommunityCenterBundle(pair.Key, pair.Value, communityCenter, routeState))
+            .ToArray();
+    }
+
+    private static CommunityCenterBundleProgressRef ReadCommunityCenterBundle(
+        string dataKey,
+        string raw,
+        CommunityCenter communityCenter,
+        string routeState)
+    {
+        var keyParts = dataKey.Split('/');
+        var fields = raw.Split('/');
+        if (keyParts.Length < 2 || fields.Length < Bundle.FieldCount ||
+            !int.TryParse(keyParts[1], out var bundleId))
+        {
+            return FailedCommunityCenterBundle(dataKey, "bundle_data_key_or_field_count_invalid");
+        }
+        var areaName = keyParts[0];
+        var areaId = CommunityCenter.getAreaNumberFromName(areaName);
+        if (areaId < 0 || !communityCenter.bundles.TryGetValue(bundleId, out var completedBits))
+        {
+            return FailedCommunityCenterBundle(dataKey, "bundle_area_or_completion_bits_unavailable", bundleId, areaId, areaName);
+        }
+        var ingredientParts = ArgUtility.SplitBySpace(fields[Bundle.IngredientsIndex]);
+        if (ingredientParts.Length % 3 != 0 || completedBits.Length < ingredientParts.Length / 3)
+        {
+            return FailedCommunityCenterBundle(dataKey, "bundle_ingredient_shape_or_completion_bits_invalid", bundleId, areaId, areaName);
+        }
+        var ingredients = new List<BundleIngredientDescription>();
+        for (var index = 0; index < ingredientParts.Length / 3; index++)
+        {
+            if (!int.TryParse(ingredientParts[index * 3 + 1], out var stack) || stack <= 0 ||
+                !int.TryParse(ingredientParts[index * 3 + 2], out var quality) || quality < 0)
+            {
+                return FailedCommunityCenterBundle(dataKey, "bundle_ingredient_stack_or_quality_invalid", bundleId, areaId, areaName);
+            }
+            ingredients.Add(new BundleIngredientDescription(ingredientParts[index * 3], stack, quality, completedBits[index]));
+        }
+        var requiredSlots = ArgUtility.GetInt(fields, Bundle.NumberOfSlotsIndex, ingredients.Count);
+        var completedCount = ingredients.Count(ingredient => ingredient.completed);
+        var noteTile = CommunityCenterNoteTile(communityCenter, areaId);
+        var noteAppears = areaId < communityCenter.areasComplete.Count && communityCenter.shouldNoteAppearInArea(areaId) && communityCenter.isJunimoNoteAtArea(areaId);
+        var mutex = areaId >= 0 && areaId < communityCenter.bundleMutexes.Count ? communityCenter.bundleMutexes[areaId] : null;
+        var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
+        var sharedStatus = routeState == "conflicting_irreversible_flags"
+            ? "community_center_route_state_conflict"
+            : routeState == "joja_locked"
+            ? "community_center_route_locked_out_by_joja"
+            : !ReferenceEquals(Game1.currentLocation, communityCenter)
+                ? "community_center_not_current_location"
+                : !menuClear
+                    ? "community_center_menu_or_dialogue_not_clear"
+                    : !noteAppears || noteTile is null
+                        ? "community_center_area_note_unavailable"
+                        : mutex?.IsLocked() == true
+                            ? "community_center_area_mutex_locked"
+                            : "ready";
+        var matcher = new Bundle(fields[Bundle.NameIndex], fields[Bundle.DisplayNameIndex], ingredients, completedBits, fields[Bundle.RewardIndex]);
+
+        return new CommunityCenterBundleProgressRef
+        {
+            ProjectionStatus = "exact",
+            ProjectionFailure = string.Empty,
+            BundleDataKey = dataKey,
+            BundleId = bundleId,
+            AreaId = areaId,
+            AreaName = areaName,
+            InternalName = fields[Bundle.NameIndex],
+            DisplayName = fields[Bundle.DisplayNameIndex],
+            RewardDescription = fields[Bundle.RewardIndex],
+            RequiredSlotCount = requiredSlots,
+            CompletedIngredientCount = completedCount,
+            Complete = completedCount >= requiredSlots,
+            NoteAppears = noteAppears,
+            NoteTileX = noteTile?.X,
+            NoteTileY = noteTile?.Y,
+            AreaMutexLocked = mutex?.IsLocked(),
+            Ingredients = ingredients.Select((ingredient, index) => new CommunityCenterIngredientProgressRef
+            {
+                IngredientIndex = index,
+                ItemIdOrCategory = ingredient.category?.ToString() ?? ingredient.id ?? string.Empty,
+                RequiredStack = ingredient.stack,
+                MinimumQuality = ingredient.quality,
+                Completed = ingredient.completed
+            }).ToArray(),
+            DonationCandidates = Game1.player.Items
+                .Select((item, slot) => new { item, slot })
+                .Where(entry => entry.item is not null && entry.item.Stack > 0)
+                .Select(entry => new
+                {
+                    entry.item,
+                    entry.slot,
+                    index = matcher.GetBundleIngredientDescriptionIndexForItem(entry.item)
+                })
+                .Where(entry => entry.index >= 0 && entry.index < ingredients.Count)
+                .Select(entry => new { entry.item, entry.slot, ingredient = ingredients[entry.index], entry.index })
+                .Where(entry => !entry.ingredient.completed && entry.item.Stack >= entry.ingredient.stack)
+                .Select(entry => new CommunityCenterDonationCandidateRef
+                {
+                    InventorySlotIndex = entry.slot,
+                    IngredientIndex = entry.index,
+                    ItemId = entry.item.ItemId,
+                    QualifiedItemId = entry.item.QualifiedItemId,
+                    RuntimeType = entry.item.GetType().FullName ?? string.Empty,
+                    Quality = entry.item.Quality,
+                    StackBefore = entry.item.Stack,
+                    StackAfter = entry.item.Stack - entry.ingredient.stack,
+                    RequiredStack = entry.ingredient.stack,
+                    InventoryItemTotalBefore = Game1.player.Items
+                        .Where(item => item?.QualifiedItemId == entry.item.QualifiedItemId)
+                        .Sum(item => item?.Stack ?? 0),
+                    InventoryItemTotalAfter = Game1.player.Items
+                        .Where(item => item?.QualifiedItemId == entry.item.QualifiedItemId)
+                        .Sum(item => item?.Stack ?? 0) - entry.ingredient.stack,
+                    CompletedIngredientCountBefore = completedCount,
+                    CompletedIngredientCountAfter = completedCount + 1 >= requiredSlots ? ingredients.Count : completedCount + 1,
+                    CompletesBundle = completedCount + 1 >= requiredSlots,
+                    ActionStatus = sharedStatus
+                })
+                .OrderBy(candidate => candidate.InventorySlotIndex)
+                .ThenBy(candidate => candidate.IngredientIndex)
                 .ToArray()
         };
+    }
+
+    private static CommunityCenterBundleProgressRef FailedCommunityCenterBundle(
+        string dataKey,
+        string failure,
+        int bundleId = -1,
+        int areaId = -1,
+        string areaName = "")
+    {
+        return new CommunityCenterBundleProgressRef
+        {
+            ProjectionStatus = "unavailable",
+            ProjectionFailure = failure,
+            BundleDataKey = dataKey,
+            BundleId = bundleId,
+            AreaId = areaId,
+            AreaName = areaName
+        };
+    }
+
+    private static Point? CommunityCenterNoteTile(CommunityCenter communityCenter, int areaId)
+    {
+        var method = typeof(CommunityCenter).GetMethod("getNotePosition", BindingFlags.Instance | BindingFlags.NonPublic);
+        return method?.Invoke(communityCenter, new object[] { areaId }) is Point point && point != Point.Zero ? point : null;
+    }
+
+    private static bool HasPendingMail(Farmer farmer, string mailId)
+    {
+        return farmer.mailForTomorrow.Any(value =>
+            string.Equals(value, mailId, StringComparison.Ordinal) ||
+            value.StartsWith(mailId + "%&NL&%", StringComparison.Ordinal));
     }
 
     private static MuseumProgressRef? ReadMuseum(LibraryMuseum? museum, Farmer? master)
