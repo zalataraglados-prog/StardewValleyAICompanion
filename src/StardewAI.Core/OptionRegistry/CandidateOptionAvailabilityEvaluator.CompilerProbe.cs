@@ -93,6 +93,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "foraging.pan_ore_spot" ||
                 optionId == "mining.reach_depth" ||
                 optionId == "mining.obtain_skull_key" ||
+                optionId == "mining.claim_reward_chests" ||
                 optionId == "mining.acquire_golden_scythe" ||
                 optionId == "volcano.reach_caldera" ||
                 optionId == "economy.buy_supplies" ||
@@ -130,6 +131,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.collect_spawned_object" ||
                 optionId == "executor.harvest_ginger" ||
                 optionId == "executor.harvest_bush" ||
+                optionId == "executor.claim_mine_reward_chest" ||
                 optionId == "executor.collect_crab_pot" ||
                 optionId == "executor.collect_fish_pond_output" ||
                 optionId == "executor.complete_fish_pond_request" ||

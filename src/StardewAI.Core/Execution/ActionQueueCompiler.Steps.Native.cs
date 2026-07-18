@@ -252,6 +252,25 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileClaimMineRewardChestStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            if (!x.HasValue || !y.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "claim_mine_reward_chest",
+                    "mining.reward_chests[" + x.Value + "," + y.Value + "]:native_single_open",
+                    "mining.reward_chests[" + x.Value + "," + y.Value + "].removed=true;player.inventory_or_stardrop_progress.updated;player.skills.luck.experience.unchanged",
+                    Math.Max(120, (ReadIntParameter(action, "estimated_minutes") ?? 2) * 60))
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectAnimalProductStep(SmallModelAction action)
         {
             var animalId = ReadParameter(action, "target_runtime_identity");

@@ -200,6 +200,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_skill_experience_delta")]
         public int? ExpectedSkillExperienceDelta { get; set; }
 
+        [JsonPropertyName("expected_stardrop_max_stamina_delta")]
+        public int? ExpectedStardropMaxStaminaDelta { get; set; }
+
         [JsonPropertyName("building_tile_x")]
         public int? BuildingTileX { get; set; }
 

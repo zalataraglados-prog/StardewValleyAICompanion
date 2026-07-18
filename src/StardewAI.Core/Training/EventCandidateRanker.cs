@@ -115,6 +115,10 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = candidate.QualifiedItemId == "(O)73" ? 0.07 : 0.04;
                     }
+                    if (candidate.Kind == "claim_mine_reward_chest")
+                    {
+                        urgencySignal = candidate.QualifiedItemId == "(O)434" ? 0.09 : 0.05;
+                    }
                     if (candidate.Kind == "collect_crab_pot")
                     {
                         urgencySignal = 0.04;

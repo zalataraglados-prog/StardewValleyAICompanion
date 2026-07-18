@@ -82,6 +82,11 @@ namespace StardewAI.Core.Training
                 return HarvestBushSteps(candidate);
             }
 
+            if (candidate.Kind == "claim_mine_reward_chest")
+            {
+                return ClaimMineRewardChestSteps(candidate);
+            }
+
             if (candidate.Kind == "collect_crab_pot")
             {
                 return CollectCrabPotSteps(candidate);

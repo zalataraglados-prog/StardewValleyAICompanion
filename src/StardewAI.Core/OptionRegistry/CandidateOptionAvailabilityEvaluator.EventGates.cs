@@ -70,6 +70,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_mining_obtain_skull_key_candidates");
             }
 
+            if (optionId == "mining.claim_reward_chests")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mine_reward_chest_candidates",
+                    "no_available_mine_reward_chest_candidates");
+            }
+
             if (optionId == "volcano.reach_caldera")
             {
                 return EventCandidateAvailabilityReasons(

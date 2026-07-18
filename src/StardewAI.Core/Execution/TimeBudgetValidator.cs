@@ -175,6 +175,9 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_bushes":
                 case "executor.harvest_bush":
                     return EstimateCompiledSteps(item, "native_bush_shake_steps.v1");
+                case "mining.claim_reward_chests":
+                case "executor.claim_mine_reward_chest":
+                    return EstimateCompiledSteps(item, "native_mineshaft_reward_chest_steps.v1");
                 case "fishing.service_fish_ponds":
                 case "executor.collect_fish_pond_output":
                 case "executor.complete_fish_pond_request":
@@ -346,6 +349,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_bushes" or "executor.harvest_bush")
             {
                 return assumptionRegistry.GetRequired("bush_harvest");
+            }
+
+            if (item.OptionId is "mining.claim_reward_chests" or "executor.claim_mine_reward_chest")
+            {
+                return assumptionRegistry.GetRequired("mining_and_combat");
             }
 
             var activity = Parameter(item, "target_activity");

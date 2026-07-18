@@ -30,6 +30,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.reach_depth"] = MiningReachDepthCandidateBuilder.Build,
                 ["mining.acquire_golden_scythe"] = MiningGoldenScytheCandidateBuilder.Build,
                 ["mining.obtain_skull_key"] = MiningSkullKeyCandidateBuilder.Build,
+                ["mining.claim_reward_chests"] = (snapshot, _) => MineRewardChestCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["quest.advance"] = (snapshot, _) => QuestCandidates(snapshot),
                 ["economy.ship_items"] = (snapshot, _) => ShipCandidates(snapshot)

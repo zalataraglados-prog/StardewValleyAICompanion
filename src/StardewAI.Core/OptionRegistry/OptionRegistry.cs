@@ -192,6 +192,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "ordinary mine floor 120 reached", "native reward chest claimed", "player.has_skull_key observed true" },
                 new[] { "block_wrong_mine_family", "block_missing_skull_key_chest", "block_unverified_skull_key_postcondition" }));
 
+            Register(Option("mining.claim_reward_chests", "mining", "Claim one transparent ordinary-mine or Skull Cavern reward chest",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "mining.player_resources", "player.inventory", "player.skills", "menus.active_menu" },
+                new[] { "one exact live reward chest selected", "one native reward-open starts the lid animation", "after dumpContents empties the chest a separate empty-chest cleanup removes it" },
+                new[] { "block_skull_key_specialized_chain", "block_unknown_chest_family", "block_non_vanilla_chest_shape", "block_inventory_full", "block_projection_drift", "block_claim_click_before_dump" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -304,6 +312,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "time.time" },
                 new[] { "execution waits without mutation" },
                 new[] { "block_unbounded_wait" }));
+
+            Register(Option("executor.claim_mine_reward_chest", "mining", "Claim one verified MineShaft reward chest through its native open animation",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "player.inventory", "player.skills", "menus.active_menu" },
+                new[] { "BFS reaches one adjacent stand tile", "one native reward-open starts the lid animation", "only after native dumpContents empties the chest does an empty-chest cleanup interaction remove it" },
+                new[] { "block_target_not_exact_reward_chest", "block_inventory_full", "block_menu_or_player_busy", "block_projection_drift", "block_claim_click_before_dump", "block_direct_reward_or_experience_mutation" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,
