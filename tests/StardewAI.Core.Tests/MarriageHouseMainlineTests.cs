@@ -97,11 +97,49 @@ public sealed class MarriageHouseMainlineTests
         AssertParameter(candidate.Parameters, "projected_cellar_static_placeable_tiles", "250");
         AssertParameter(candidate.Parameters, "projected_cellar_existing_machine_count", "33");
         AssertParameter(candidate.Parameters, "projected_cellar_machine_counts_by_qualified_id_json", "{\"(BC)163\":33}");
+        AssertParameter(candidate.Parameters, "machine_fleet_projection_status", "complete_empty_machine_fleet");
+        AssertParameter(candidate.Parameters, "machine_infrastructure_demand_semantics", "current_inventory_alternatives_not_long_horizon_demand");
 
         var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         Assert.Equal("executor.purchase_farmhouse_upgrade", Assert.Single(queue.Items).OptionId);
         Assert.Equal("pending", queue.Status);
+    }
+
+    [Fact]
+    public void LevelThreeExpansionCarriesCompleteFleetAndRouteEvidenceWithoutInventingRemoteInputDemand()
+    {
+        const string machines = """
+        [
+          {"location_id":"Farm","minutes_until_ready":100,"ready_for_harvest":false,"machine_has_input":true,"machine_row_count_total":3,"machine_row_snapshot_status":"complete_no_row_truncation","machine_input_probe_eligible_count":0,"loadable_input_probe_status":"not_applicable_machine_not_idle","loadable_inputs":[]},
+          {"location_id":"FarmHouse","minutes_until_ready":0,"ready_for_harvest":true,"machine_has_input":true,"machine_row_count_total":3,"machine_row_snapshot_status":"complete_no_row_truncation","machine_input_probe_eligible_count":0,"loadable_input_probe_status":"not_applicable_machine_not_idle","loadable_inputs":[]},
+          {"location_id":"Cellar","minutes_until_ready":0,"ready_for_harvest":false,"machine_has_input":true,"machine_row_count_total":3,"machine_row_snapshot_status":"complete_no_row_truncation","machine_input_probe_eligible_count":0,"loadable_input_probe_status":"blocked_machine_location_not_current_requires_route_and_fresh_snapshot","loadable_inputs":[]}
+        ]
+        """;
+        const string routeGraph = """
+        {"edges":[
+          {"from_location":"ScienceHouse","target_location":"Farm","resolved":true},
+          {"from_location":"Farm","target_location":"FarmHouse","resolved":true},
+          {"from_location":"FarmHouse","target_location":"Cellar","resolved":true}
+        ]}
+        """;
+        var snapshot = Snapshot(2, 3, 100000, "", 0, 150000, 0, "ready", -1, machines, routeGraph);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "housing.advance_farmhouse" }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates.Where(row => row.Available));
+
+        AssertParameter(candidate.Parameters, "machine_fleet_projection_status", "complete_machine_rows");
+        AssertParameter(candidate.Parameters, "machine_fleet_total_count", "3");
+        AssertParameter(candidate.Parameters, "machine_fleet_processing_count", "1");
+        AssertParameter(candidate.Parameters, "machine_fleet_ready_output_count", "1");
+        AssertParameter(candidate.Parameters, "machine_fleet_idle_manual_input_count", "1");
+        AssertParameter(candidate.Parameters, "machine_fleet_actionable_service_count", "2");
+        AssertParameter(candidate.Parameters, "machine_input_probe_status", "blocked_remote_idle_manual_inputs_require_route_and_fresh_snapshot");
+        AssertParameter(candidate.Parameters, "machine_input_probe_loadable_alternative_count", "0");
+        AssertParameter(candidate.Parameters, "machine_service_route_cost_status", "resolved_route_graph_hop_lower_bound");
+        AssertParameter(candidate.Parameters, "machine_service_route_hop_lower_bound_total", "6");
+
+        var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
+        Assert.Equal("pending", new ActionQueueCompiler().Compile(plan, snapshot).Status);
     }
 
     [Fact]
@@ -174,7 +212,9 @@ public sealed class MarriageHouseMainlineTests
         int money,
         int inventoryCount,
         string status,
-        int days)
+        int days,
+        string machineRowsJson = "[]",
+        string routeGraphJson = "{\"edges\":[]}")
     {
         var upgradeId = "farmhouse_level_" + levelAfter;
         var meetsGrandpaHouseLevel = levelAfter >= 2 ? "true" : "false";
@@ -238,8 +278,15 @@ public sealed class MarriageHouseMainlineTests
               }
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
+          "farm": {
+            "machines":{"value":{{{machineRowsJson}}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "time": {
+            "time":{"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "locations": {
-            "collision_grid":{"value":{"location_id":"ScienceHouse","width":64,"height":64,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "collision_grid":{"value":{"location_id":"ScienceHouse","width":64,"height":64,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph":{"value":{{{routeGraphJson}}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

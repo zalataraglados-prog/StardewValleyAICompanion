@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
@@ -28,7 +29,11 @@ public sealed partial class ActionQueueCompiler
             ";eventual.capability.cask_recipe=" + (ReadParameter(action, "unlocks_cask_recipe") ?? string.Empty) +
             ";eventual.capability.indoor_machine_placement_location=" + (ReadParameter(action, "adds_indoor_machine_placement_location") ?? string.Empty) +
             ";projected_cellar_static_placeable_tiles=" + (ReadParameter(action, "projected_cellar_static_placeable_tiles") ?? string.Empty) +
-            ";projected_cellar_existing_machine_count=" + (ReadParameter(action, "projected_cellar_existing_machine_count") ?? string.Empty);
+            ";projected_cellar_existing_machine_count=" + (ReadParameter(action, "projected_cellar_existing_machine_count") ?? string.Empty) +
+            ";machine_fleet_projection_status=" + (ReadParameter(action, "machine_fleet_projection_status") ?? string.Empty) +
+            ";machine_fleet_total_count=" + (ReadParameter(action, "machine_fleet_total_count") ?? string.Empty) +
+            ";machine_input_probe_status=" + (ReadParameter(action, "machine_input_probe_status") ?? string.Empty) +
+            ";machine_service_route_cost_status=" + (ReadParameter(action, "machine_service_route_cost_status") ?? string.Empty);
         return new[] { Step("purchase_farmhouse_upgrade", "housing:" + target, effect, 300) };
     }
 
@@ -62,6 +67,16 @@ public sealed partial class ActionQueueCompiler
             !levelBefore.HasValue || !levelAfter.HasValue || daysBefore != -1 || daysAfter != 3 ||
             !moneyBefore.HasValue || !price.HasValue || !moneyAfter.HasValue || moneyAfter != moneyBefore - price ||
             !requiredCount.HasValue || !inventoryBefore.HasValue || !inventoryAfter.HasValue || inventoryAfter != inventoryBefore - requiredCount ||
+            ReadIntParameter(action, "farmhouse_expansion_capital_cost") != (levelAfter == 3 ? price : 0) ||
+            ReadIntParameter(action, "farmhouse_expansion_remaining_money") != (levelAfter == 3 ? moneyAfter : moneyBefore) ||
+            ReadIntParameter(action, "farmhouse_expansion_liquidity_consumption_basis_points") !=
+                (levelAfter == 3 && moneyBefore > 0 ? (int)Math.Min(10000L, (long)price.Value * 10000L / moneyBefore.Value) : 0) ||
+            ReadParameter(action, "farmhouse_expansion_capital_opportunity_cost_status") != (levelAfter == 3
+                ? "exact_purchase_liquidity_cost_future_alternative_value_unmodeled"
+                : "not_applicable") ||
+            ReadParameter(action, "projected_cellar_capacity_semantics") != (levelAfter == 3
+                ? "live_map_placeable_unoccupied_tiles_not_committed_machine_demand"
+                : "not_applicable") ||
             ReadParameter(action, "target_location") != "ScienceHouse" || ReadParameter(action, "carpenter_action_raw") != "Carpenter" ||
             ReadParameter(action, "purchase_kind") != "farmhouse_upgrade" ||
             ReadParameter(action, "native_contract") != "GameLocation.checkAction_Carpenter_then_answerDialogue_carpenter_Upgrade_then_upgrade_Yes" ||
@@ -101,7 +116,8 @@ public sealed partial class ActionQueueCompiler
             ReadParameter(action, "unlocks_cask_recipe") != Lower(ReadBool(upgrade, "unlocks_cask_recipe")) ||
             ReadParameter(action, "adds_indoor_machine_placement_location") != Lower(ReadBool(upgrade, "adds_indoor_machine_placement_location")) ||
             ReadParameter(action, "machine_capacity_projection_status") != ReadString(upgrade, "machine_capacity_projection_status") ||
-            !FarmhouseInfrastructureParametersMatch(action, progress.Value, levelAfter.Value))
+            !FarmhouseInfrastructureParametersMatch(action, progress.Value, levelAfter.Value) ||
+            !MachineInfrastructureParametersMatch(action, snapshot, levelAfter.Value))
         {
             reasons.Add("farmhouse_upgrade_projection_drifted");
         }
@@ -147,5 +163,14 @@ public sealed partial class ActionQueueCompiler
             infrastructure.TryGetProperty("machine_counts_by_qualified_id", out var machineCounts) &&
             machineCounts.ValueKind == JsonValueKind.Object &&
             ReadParameter(action, "projected_cellar_machine_counts_by_qualified_id_json") == machineCounts.GetRawText();
+    }
+
+    private static bool MachineInfrastructureParametersMatch(SmallModelAction action, SnapshotEnvelope snapshot, int levelAfter)
+    {
+        var projection = levelAfter == 3
+            ? MachineInfrastructureProjectionEvaluator.Evaluate(snapshot)
+            : MachineInfrastructureProjectionEvaluator.NotApplicable();
+        return MachineInfrastructureProjectionEvaluator.ParameterValues(projection)
+            .All(pair => string.Equals(ReadParameter(action, pair.Key), pair.Value, StringComparison.Ordinal));
     }
 }

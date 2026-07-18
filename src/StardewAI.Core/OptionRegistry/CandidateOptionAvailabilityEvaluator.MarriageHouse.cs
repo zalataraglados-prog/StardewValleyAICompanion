@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
@@ -49,6 +50,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 ? machineCounts.GetRawText()
                 : "{}";
         var money = ReadInt(row, "money");
+        var expansionLiquidityBasisPoints = unlocksCellar && money > 0
+            ? (int)Math.Min(10000L, (long)price * 10000L / money)
+            : 0;
+        var machineInfrastructure = unlocksCellar
+            ? MachineInfrastructureProjectionEvaluator.Evaluate(snapshot)
+            : MachineInfrastructureProjectionEvaluator.NotApplicable();
         var actionX = NullableReadInt(row, "carpenter_action_tile_x");
         var actionY = NullableReadInt(row, "carpenter_action_tile_y");
         var stand = actionX.HasValue && actionY.HasValue ? FindBestStandTile(snapshot, actionX.Value, actionY.Value) : null;
@@ -135,8 +142,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameter("projected_cellar_existing_object_count", (unlocksCellar ? cellarObjectCount : 0).ToString()),
                 Parameter("projected_cellar_existing_machine_count", (unlocksCellar ? cellarMachineCount : 0).ToString()),
                 Parameter("projected_cellar_machine_counts_by_qualified_id_json", unlocksCellar ? cellarMachineCountsJson : "{}"),
+                Parameter("farmhouse_expansion_capital_cost", (unlocksCellar ? price : 0).ToString()),
+                Parameter("farmhouse_expansion_remaining_money", (unlocksCellar ? money - price : money).ToString()),
+                Parameter("farmhouse_expansion_liquidity_consumption_basis_points", expansionLiquidityBasisPoints.ToString()),
+                Parameter("farmhouse_expansion_capital_opportunity_cost_status", unlocksCellar
+                    ? "exact_purchase_liquidity_cost_future_alternative_value_unmodeled"
+                    : "not_applicable"),
+                Parameter("projected_cellar_capacity_semantics", unlocksCellar
+                    ? "live_map_placeable_unoccupied_tiles_not_committed_machine_demand"
+                    : "not_applicable"),
                 Parameter("native_contract", "GameLocation.checkAction_Carpenter_then_answerDialogue_carpenter_Upgrade_then_upgrade_Yes")
-            };
+            }.Concat(MachineInfrastructureProjectionEvaluator.ParameterValues(machineInfrastructure)
+                .Select(pair => Parameter(pair.Key, pair.Value)))
+            .ToArray();
         var expectedEffect = "player.money=" + (money - price) +
             ";player.days_until_farmhouse_upgrade=" + constructionDays +
             (requiredCount > 0 ? ";inventory." + requiredItemId + "=" + (inventoryCount - requiredCount) : string.Empty) +
@@ -147,7 +165,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ";eventual.capability.indoor_machine_placement_location=" + addsIndoorMachineLocation.ToString().ToLowerInvariant() +
             ";machine_capacity_projection_status=" + capacityProjectionStatus +
             ";projected_cellar_static_placeable_tiles=" + (unlocksCellar ? cellarPlaceableTiles : 0) +
-            ";projected_cellar_existing_machine_count=" + (unlocksCellar ? cellarMachineCount : 0);
+            ";projected_cellar_existing_machine_count=" + (unlocksCellar ? cellarMachineCount : 0) +
+            ";machine_fleet_projection_status=" + machineInfrastructure.FleetStatus +
+            ";machine_fleet_total_count=" + machineInfrastructure.TotalCount +
+            ";machine_fleet_processing_count=" + machineInfrastructure.ProcessingCount +
+            ";machine_fleet_ready_output_count=" + machineInfrastructure.ReadyOutputCount +
+            ";machine_fleet_idle_manual_input_count=" + machineInfrastructure.IdleManualInputCount +
+            ";machine_fleet_actionable_service_count=" + machineInfrastructure.ActionableServiceCount +
+            ";machine_input_probe_status=" + machineInfrastructure.InputProbeStatus +
+            ";machine_input_probe_loadable_machine_count=" + machineInfrastructure.LoadableMachineCount +
+            ";machine_input_probe_deterministic_output_alternative_count=" + machineInfrastructure.DeterministicOutputAlternativeCount +
+            ";machine_service_route_cost_status=" + machineInfrastructure.RouteCostStatus +
+            ";machine_service_route_hop_lower_bound_total=" + machineInfrastructure.RouteHopLowerBoundTotal +
+            ";farmhouse_expansion_liquidity_consumption_basis_points=" + expansionLiquidityBasisPoints +
+            ";machine_infrastructure_demand_semantics=current_inventory_alternatives_not_long_horizon_demand";
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
