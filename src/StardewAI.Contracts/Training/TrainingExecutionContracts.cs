@@ -338,6 +338,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("qualified_item_id")]
         public string QualifiedItemId { get; set; } = string.Empty;
 
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
         [JsonPropertyName("mine_level")]
         public int? MineLevel { get; set; }
 
@@ -442,6 +445,87 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("slot_index")]
         public int? SlotIndex { get; set; }
+
+        [JsonPropertyName("book_runtime_type")]
+        public string BookRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_category")]
+        public int? BookCategory { get; set; }
+
+        [JsonPropertyName("book_stack_before")]
+        public int? BookStackBefore { get; set; }
+
+        [JsonPropertyName("book_stack_after")]
+        public int? BookStackAfter { get; set; }
+
+        [JsonPropertyName("book_native_branch")]
+        public string BookNativeBranch { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_native_branch_status")]
+        public string BookNativeBranchStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_context_tags_native_order_json")]
+        public string BookContextTagsNativeOrderJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_matched_experience_tag")]
+        public string BookMatchedExperienceTag { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_skill_level_deltas_json")]
+        public string BookSkillLevelDeltasJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_new_levels_before_json")]
+        public string BookNewLevelsBeforeJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_new_levels_after_json")]
+        public string BookNewLevelsAfterJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_native_feedback_callbacks")]
+        public string BookNativeFeedbackCallbacks { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_stat_key")]
+        public string BookStatKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_stat_before")]
+        public string BookStatBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("book_stat_after")]
+        public string BookStatAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("read_a_book_mail_before")]
+        public bool? ReadABookMailBefore { get; set; }
+
+        [JsonPropertyName("read_a_book_mail_after")]
+        public bool? ReadABookMailAfter { get; set; }
+
+        [JsonPropertyName("well_read_achievement_before")]
+        public bool? WellReadAchievementBefore { get; set; }
+
+        [JsonPropertyName("well_read_achievement_after")]
+        public bool? WellReadAchievementAfter { get; set; }
+
+        [JsonPropertyName("well_read_achievement_will_unlock")]
+        public bool? WellReadAchievementWillUnlock { get; set; }
+
+        [JsonPropertyName("well_read_hatter_mail_before")]
+        public bool? WellReadHatterMailBefore { get; set; }
+
+        [JsonPropertyName("well_read_hatter_mail_after")]
+        public bool? WellReadHatterMailAfter { get; set; }
+
+        [JsonPropertyName("well_read_dialogue_event_seen_before")]
+        public bool? WellReadDialogueEventSeenBefore { get; set; }
+
+        [JsonPropertyName("well_read_dialogue_event_seen_after")]
+        public bool? WellReadDialogueEventSeenAfter { get; set; }
+
+        [JsonPropertyName("well_read_ui_sound_platform_callbacks")]
+        public string WellReadUiSoundPlatformCallbacks { get; set; } = string.Empty;
+
+        [JsonPropertyName("cooking_recipes_added_json")]
+        public string CookingRecipesAddedJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("cooking_recipes_added_count")]
+        public int? CookingRecipesAddedCount { get; set; }
 
         [JsonPropertyName("expected_mine_level_delta")]
         public int? ExpectedMineLevelDelta { get; set; }

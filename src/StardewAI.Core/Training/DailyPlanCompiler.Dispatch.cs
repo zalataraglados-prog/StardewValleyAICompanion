@@ -116,6 +116,11 @@ namespace StardewAI.Core.Training
                 return LoadMachineInputSteps(candidate);
             }
 
+            if (candidate.Kind == "read_inventory_book")
+            {
+                return ReadInventoryBookSteps(candidate);
+            }
+
             if (candidate.Kind == "clear_obstacle_tile")
             {
                 return ClearObstacleTileSteps(candidate);

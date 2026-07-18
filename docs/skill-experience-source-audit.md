@@ -24,14 +24,11 @@ Scope: vanilla runtime `gainExperience` call sites from the local Stardew Valley
 | mine treasure `Chest` collection | Luck call site, effective XP zero | every loaded MineShaft reward chest exposes exact chest/reward identity and native lifecycle; candidate/compiler/runtime chain is implemented. Decompiled `gainExperience(5, 25 + mineLevel)` is ignored by `Farmer.gainExperience` for skill 5, so the exact observed Luck XP delta is zero rather than a trainable skill gain; runtime validation pending |
 | Green Rain bush-like `ResourceClump` destruction | Foraging | every exact loaded vanilla index-44/46 clump exposes footprint, Axe slot/damage/hits, exact `+15` XP, day/save/anchor-seeded Moss/Fiber/Mossy Seed outputs, and bounded global-RNG secret-note probability without consuming RNG; candidate/compiler/native executor rebind and verify deterministic effects; runtime validation pending |
 | machine `ExperienceGainOnHarvest` | data-selected skill(s) | every loaded machine row exposes the raw token string, every parsed/skipped pair, aggregate effective deltas for all vanilla skill indexes, Luck/nonpositive sink behavior, and the exact order-sensitive Mastery XP delta. Ready-output candidates preserve structured multi-skill JSON; compiler and runtime reparse current machine data and verify all six experience slots plus `MasteryExp`; runtime validation pending |
+| `Object.readBook` through `Object.performUseAction` | one skill, skills 0-4, or no skill depending on current item branch | every inventory category `-102/-103` object exposes the exact native branch: skill book `250`, repeated tagged power book `100`, repeated untagged power book `20` to skills 0-4, Purple Book `250` to skills 0-4, first power-book stat/mail/Well Read consequences, or first Queen of Sauce recipe set. Native tag enumeration order, sequential Mastery XP, permanent skill-level transitions, ordered `newLevels` additions, one-item consumption, Well Read achievement/hatter-mail/dialogue side effects, and custom override blocks are preserved through candidate/compiler/runtime. A bounded wait follows the native one-second reading animation before another action may run; runtime validation pending |
 
-## Missing Mechanical Candidate Families
+## Remaining Runtime Validation
 
-These are required before native skill-source enumeration can be called complete:
-
-| native source | skills | required slice |
-|---|---|---|
-| skill books, repeated power books, and Purple Book | one or multiple skills | inventory/consumption policy, exact context-tag branch, native read animation/result executor |
+The local-decompile non-debug `gainExperience` call-site enumeration has no remaining mechanical candidate family. Static coverage is not runtime completion: focused/full regression and isolated native smokes for the runtime-pending rows above are still required.
 
 ## Non-Policy Sources
 

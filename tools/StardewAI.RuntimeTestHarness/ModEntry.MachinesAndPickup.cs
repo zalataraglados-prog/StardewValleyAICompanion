@@ -446,7 +446,7 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_inventory_cannot_accept_item");
         }
 
-        if (!TryReadExpectedMachineHarvestExperience(request, out var expectedExperience, out var expectedMasteryDelta) ||
+        if (!TryReadExpectedSkillExperience(request, out var expectedExperience, out var expectedMasteryDelta) ||
             !TryProjectMachineHarvestExperience(machine, out var projectedExperience, out var projectedMasteryDelta) ||
             !expectedExperience.SequenceEqual(projectedExperience) || expectedMasteryDelta != projectedMasteryDelta)
         {
@@ -468,7 +468,7 @@ public sealed partial class ModEntry : Mod
         var afterItemCount = CountInventoryItem(outputId);
         var afterObserved = MachineObservedEffect(location, target);
         var actualExperience = Enumerable.Range(0, 6)
-            .Select(index => new MachineHarvestExperienceDelta(
+            .Select(index => new SkillExperienceDelta(
                 Farmer.getSkillNameFromIndex(index).ToLowerInvariant(),
                 index,
                 Game1.player.experiencePoints[index] - experienceBefore[index]))
@@ -543,12 +543,12 @@ public sealed partial class ModEntry : Mod
         };
     }
 
-    private static bool TryReadExpectedMachineHarvestExperience(
+    private static bool TryReadExpectedSkillExperience(
         TrainingExecutionRequest request,
-        out MachineHarvestExperienceDelta[] deltas,
+        out SkillExperienceDelta[] deltas,
         out int masteryDelta)
     {
-        deltas = Array.Empty<MachineHarvestExperienceDelta>();
+        deltas = Array.Empty<SkillExperienceDelta>();
         masteryDelta = 0;
         if (string.IsNullOrWhiteSpace(request.ExpectedSkillExperienceDeltasJson) ||
             !request.ExpectedMasteryExperienceDelta.HasValue)
@@ -557,7 +557,7 @@ public sealed partial class ModEntry : Mod
         }
         try
         {
-            var parsed = JsonSerializer.Deserialize<MachineHarvestExperienceDelta[]>(request.ExpectedSkillExperienceDeltasJson, JsonOptions);
+            var parsed = JsonSerializer.Deserialize<SkillExperienceDelta[]>(request.ExpectedSkillExperienceDeltasJson, JsonOptions);
             if (parsed is null || parsed.Any(delta =>
                 delta.SkillIndex is < 0 or > 5 ||
                 delta.Delta < 0 ||
@@ -578,10 +578,10 @@ public sealed partial class ModEntry : Mod
 
     private static bool TryProjectMachineHarvestExperience(
         StardewValley.Object machine,
-        out MachineHarvestExperienceDelta[] deltas,
+        out SkillExperienceDelta[] deltas,
         out int masteryDelta)
     {
-        deltas = Array.Empty<MachineHarvestExperienceDelta>();
+        deltas = Array.Empty<SkillExperienceDelta>();
         masteryDelta = 0;
         var raw = machine.GetMachineData()?.ExperienceGainOnHarvest ?? string.Empty;
         if (string.IsNullOrEmpty(raw))
@@ -629,14 +629,14 @@ public sealed partial class ModEntry : Mod
         }
         catch (OverflowException)
         {
-            deltas = Array.Empty<MachineHarvestExperienceDelta>();
+            deltas = Array.Empty<SkillExperienceDelta>();
             masteryDelta = 0;
             return false;
         }
 
         deltas = aggregate
             .OrderBy(pair => pair.Key)
-            .Select(pair => new MachineHarvestExperienceDelta(
+            .Select(pair => new SkillExperienceDelta(
                 Farmer.getSkillNameFromIndex(pair.Key).ToLowerInvariant(),
                 pair.Key,
                 pair.Value))
@@ -644,7 +644,7 @@ public sealed partial class ModEntry : Mod
         return true;
     }
 
-    private sealed record MachineHarvestExperienceDelta(string SkillId, int SkillIndex, int Delta);
+    private sealed record SkillExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
     private TrainingExecutionResult ExecuteSetupMachineInputTarget(TrainingExecutionRequest request)
     {

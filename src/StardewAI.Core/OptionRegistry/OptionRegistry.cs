@@ -33,6 +33,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.inventory", "player.book_candidates", "player.skills_detail", "menus.active_menu" },
+                new[] { "one exact inventory book branch selected", "native book use and item consumption handed to the mechanical executor" },
+                new[] { "block_native_book_use_gate", "block_incomplete_book_projection", "block_projection_drift", "block_direct_skill_stat_mail_or_recipe_mutation" }));
+
             Register(Option("economy.buy_supplies", "economy", "Buy supplies preview",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -614,6 +622,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.inventory", "farm.machines", "menus.active_menu" },
                 new[] { "machine input consumed and processing started" },
                 new[] { "block_unverified_machine_input", "block_machine_busy", "block_menu_unsafe_interact" }));
+
+            Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.book_candidates", "player.skills_detail", "menus.active_menu" },
+                new[] { "native book animation starts and one item is consumed", "skill XP, permanent level, new-level queue, mastery, stat, mail, recipe, and feedback deltas are verified", "native animation settling wait is scheduled" },
+                new[] { "block_native_book_use_gate", "block_inventory_identity_drift", "block_projection_drift", "block_direct_skill_stat_mail_or_recipe_mutation" }));
 
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,

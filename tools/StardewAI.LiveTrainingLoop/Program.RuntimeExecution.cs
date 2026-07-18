@@ -335,6 +335,7 @@ static partial class Program
         var expectedArrivalTileY = ReadQueueParameterInt(item, "expected_arrival_tile_y");
         var shopItemId = ReadQueueParameterString(item, "shop_item_id");
         var qualifiedItemId = ReadQueueParameterString(item, "qualified_item_id");
+        var itemId = ReadQueueParameterString(item, "item_id");
         var quantity = ReadQueueParameterInt(item, "quantity");
         var maxUnitPrice = ReadQueueParameterInt(item, "max_unit_price");
         var expectedShopId = ReadQueueParameterString(item, "expected_shop_id");
@@ -346,6 +347,33 @@ static partial class Program
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
         var slotIndex = ReadQueueParameterInt(item, "slot_index");
+        var bookRuntimeType = ReadQueueParameterString(item, "book_runtime_type");
+        var bookCategory = ReadQueueParameterInt(item, "book_category");
+        var bookStackBefore = ReadQueueParameterInt(item, "book_stack_before");
+        var bookStackAfter = ReadQueueParameterInt(item, "book_stack_after");
+        var bookNativeBranch = ReadQueueParameterString(item, "book_native_branch");
+        var bookNativeBranchStatus = ReadQueueParameterString(item, "book_native_branch_status");
+        var bookContextTagsNativeOrderJson = ReadQueueParameterString(item, "book_context_tags_native_order_json");
+        var bookMatchedExperienceTag = ReadQueueParameterString(item, "book_matched_experience_tag");
+        var bookSkillLevelDeltasJson = ReadQueueParameterString(item, "book_skill_level_deltas_json");
+        var bookNewLevelsBeforeJson = ReadQueueParameterString(item, "book_new_levels_before_json");
+        var bookNewLevelsAfterJson = ReadQueueParameterString(item, "book_new_levels_after_json");
+        var bookNativeFeedbackCallbacks = ReadQueueParameterString(item, "book_native_feedback_callbacks");
+        var bookStatKey = ReadQueueParameterString(item, "book_stat_key");
+        var bookStatBefore = ReadQueueParameterString(item, "book_stat_before");
+        var bookStatAfter = ReadQueueParameterString(item, "book_stat_after");
+        var readABookMailBefore = bool.TryParse(ReadQueueParameterString(item, "read_a_book_mail_before"), out var parsedReadABookMailBefore) ? parsedReadABookMailBefore : (bool?)null;
+        var readABookMailAfter = bool.TryParse(ReadQueueParameterString(item, "read_a_book_mail_after"), out var parsedReadABookMailAfter) ? parsedReadABookMailAfter : (bool?)null;
+        var wellReadAchievementBefore = bool.TryParse(ReadQueueParameterString(item, "well_read_achievement_before"), out var parsedWellReadAchievementBefore) ? parsedWellReadAchievementBefore : (bool?)null;
+        var wellReadAchievementAfter = bool.TryParse(ReadQueueParameterString(item, "well_read_achievement_after"), out var parsedWellReadAchievementAfter) ? parsedWellReadAchievementAfter : (bool?)null;
+        var wellReadAchievementWillUnlock = bool.TryParse(ReadQueueParameterString(item, "well_read_achievement_will_unlock"), out var parsedWellReadAchievementWillUnlock) ? parsedWellReadAchievementWillUnlock : (bool?)null;
+        var wellReadHatterMailBefore = bool.TryParse(ReadQueueParameterString(item, "well_read_hatter_mail_before"), out var parsedWellReadHatterMailBefore) ? parsedWellReadHatterMailBefore : (bool?)null;
+        var wellReadHatterMailAfter = bool.TryParse(ReadQueueParameterString(item, "well_read_hatter_mail_after"), out var parsedWellReadHatterMailAfter) ? parsedWellReadHatterMailAfter : (bool?)null;
+        var wellReadDialogueEventSeenBefore = bool.TryParse(ReadQueueParameterString(item, "well_read_dialogue_event_seen_before"), out var parsedWellReadDialogueEventSeenBefore) ? parsedWellReadDialogueEventSeenBefore : (bool?)null;
+        var wellReadDialogueEventSeenAfter = bool.TryParse(ReadQueueParameterString(item, "well_read_dialogue_event_seen_after"), out var parsedWellReadDialogueEventSeenAfter) ? parsedWellReadDialogueEventSeenAfter : (bool?)null;
+        var wellReadUiSoundPlatformCallbacks = ReadQueueParameterString(item, "well_read_ui_sound_platform_callbacks");
+        var cookingRecipesAddedJson = ReadQueueParameterString(item, "cooking_recipes_added_json");
+        var cookingRecipesAddedCount = ReadQueueParameterInt(item, "cooking_recipes_added_count");
         var fishingLocationId = ReadQueueParameterString(item, "location_id");
         var fishingStandTileX = ReadQueueParameterInt(item, "stand_tile_x");
         var fishingStandTileY = ReadQueueParameterInt(item, "stand_tile_y");
@@ -530,6 +558,10 @@ static partial class Program
         {
             executionRequest.QualifiedItemId = qualifiedItemId;
         }
+        if (!string.IsNullOrWhiteSpace(itemId))
+        {
+            executionRequest.ItemId = itemId;
+        }
         if (quantity.HasValue)
         {
             executionRequest.Quantity = quantity.Value;
@@ -574,6 +606,33 @@ static partial class Program
         {
             executionRequest.SlotIndex = slotIndex.Value;
         }
+        executionRequest.BookRuntimeType = bookRuntimeType;
+        executionRequest.BookCategory = bookCategory;
+        executionRequest.BookStackBefore = bookStackBefore;
+        executionRequest.BookStackAfter = bookStackAfter;
+        executionRequest.BookNativeBranch = bookNativeBranch;
+        executionRequest.BookNativeBranchStatus = bookNativeBranchStatus;
+        executionRequest.BookContextTagsNativeOrderJson = bookContextTagsNativeOrderJson;
+        executionRequest.BookMatchedExperienceTag = bookMatchedExperienceTag;
+        executionRequest.BookSkillLevelDeltasJson = bookSkillLevelDeltasJson;
+        executionRequest.BookNewLevelsBeforeJson = bookNewLevelsBeforeJson;
+        executionRequest.BookNewLevelsAfterJson = bookNewLevelsAfterJson;
+        executionRequest.BookNativeFeedbackCallbacks = bookNativeFeedbackCallbacks;
+        executionRequest.BookStatKey = bookStatKey;
+        executionRequest.BookStatBefore = bookStatBefore;
+        executionRequest.BookStatAfter = bookStatAfter;
+        executionRequest.ReadABookMailBefore = readABookMailBefore;
+        executionRequest.ReadABookMailAfter = readABookMailAfter;
+        executionRequest.WellReadAchievementBefore = wellReadAchievementBefore;
+        executionRequest.WellReadAchievementAfter = wellReadAchievementAfter;
+        executionRequest.WellReadAchievementWillUnlock = wellReadAchievementWillUnlock;
+        executionRequest.WellReadHatterMailBefore = wellReadHatterMailBefore;
+        executionRequest.WellReadHatterMailAfter = wellReadHatterMailAfter;
+        executionRequest.WellReadDialogueEventSeenBefore = wellReadDialogueEventSeenBefore;
+        executionRequest.WellReadDialogueEventSeenAfter = wellReadDialogueEventSeenAfter;
+        executionRequest.WellReadUiSoundPlatformCallbacks = wellReadUiSoundPlatformCallbacks;
+        executionRequest.CookingRecipesAddedJson = cookingRecipesAddedJson;
+        executionRequest.CookingRecipesAddedCount = cookingRecipesAddedCount;
         if (!string.IsNullOrWhiteSpace(fishingLocationId))
         {
             executionRequest.LocationId = fishingLocationId;

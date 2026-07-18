@@ -150,6 +150,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_animal_product_candidates");
             }
 
+            if (optionId == "skills.read_books")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_inventory_book_candidates",
+                    "no_available_inventory_book_candidates");
+            }
+
             if (hasBoundParameters)
             {
                 return Array.Empty<string>();

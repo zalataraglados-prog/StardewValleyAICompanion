@@ -51,8 +51,9 @@ namespace StardewAI.Core.OptionRegistry
                     var experienceProjectionStatus = ReadString(machine, "harvest_experience_projection_status");
                     var experienceDeltasJson = ReadString(machine, "harvest_experience_deltas_json");
                     var masteryExperienceDelta = ReadIntOptional(machine, "harvest_mastery_experience_delta");
-                    var experienceEvidenceValid = TryReadMachineHarvestExperienceDeltas(
+                    var experienceEvidenceValid = TryReadStructuredSkillExperienceDeltas(
                         machine,
+                        "harvest_experience_deltas",
                         experienceDeltasJson,
                         out var experienceDeltas);
                     var positiveExperienceDeltas = experienceDeltas
@@ -144,18 +145,19 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static bool TryReadMachineHarvestExperienceDeltas(
-            JsonElement machine,
+        private static bool TryReadStructuredSkillExperienceDeltas(
+            JsonElement source,
+            string rowsProperty,
             string serializedDeltas,
-            out MachineHarvestExperienceDelta[] deltas)
+            out StructuredSkillExperienceDelta[] deltas)
         {
-            deltas = Array.Empty<MachineHarvestExperienceDelta>();
-            if (!machine.TryGetProperty("harvest_experience_deltas", out var rows) || rows.ValueKind != JsonValueKind.Array)
+            deltas = Array.Empty<StructuredSkillExperienceDelta>();
+            if (!source.TryGetProperty(rowsProperty, out var rows) || rows.ValueKind != JsonValueKind.Array)
             {
                 return false;
             }
 
-            if (!TryParseMachineHarvestExperienceDeltas(rows, out var transparentDeltas))
+            if (!TryParseStructuredSkillExperienceDeltas(rows, out var transparentDeltas))
             {
                 return false;
             }
@@ -163,7 +165,7 @@ namespace StardewAI.Core.OptionRegistry
             try
             {
                 using var document = JsonDocument.Parse(serializedDeltas);
-                if (!TryParseMachineHarvestExperienceDeltas(document.RootElement, out var serializedRows) ||
+                if (!TryParseStructuredSkillExperienceDeltas(document.RootElement, out var serializedRows) ||
                     !transparentDeltas.SequenceEqual(serializedRows))
                 {
                     return false;
@@ -178,17 +180,17 @@ namespace StardewAI.Core.OptionRegistry
             return true;
         }
 
-        private static bool TryParseMachineHarvestExperienceDeltas(
+        private static bool TryParseStructuredSkillExperienceDeltas(
             JsonElement rows,
-            out MachineHarvestExperienceDelta[] deltas)
+            out StructuredSkillExperienceDelta[] deltas)
         {
-            deltas = Array.Empty<MachineHarvestExperienceDelta>();
+            deltas = Array.Empty<StructuredSkillExperienceDelta>();
             if (rows.ValueKind != JsonValueKind.Array)
             {
                 return false;
             }
 
-            var parsed = new List<MachineHarvestExperienceDelta>();
+            var parsed = new List<StructuredSkillExperienceDelta>();
             var seenSkillIndexes = new HashSet<int>();
             foreach (var row in rows.EnumerateArray())
             {
@@ -198,20 +200,20 @@ namespace StardewAI.Core.OptionRegistry
                 if (row.ValueKind != JsonValueKind.Object ||
                     skillIndex is < 0 or > 5 ||
                     delta < 0 ||
-                    !string.Equals(skillId, MachineHarvestSkillId(skillIndex), StringComparison.Ordinal) ||
+                    !string.Equals(skillId, NativeSkillId(skillIndex), StringComparison.Ordinal) ||
                     !seenSkillIndexes.Add(skillIndex))
                 {
                     return false;
                 }
 
-                parsed.Add(new MachineHarvestExperienceDelta(skillId, skillIndex, delta));
+                parsed.Add(new StructuredSkillExperienceDelta(skillId, skillIndex, delta));
             }
 
             deltas = parsed.ToArray();
             return true;
         }
 
-        private static string MachineHarvestSkillId(int skillIndex) => skillIndex switch
+        private static string NativeSkillId(int skillIndex) => skillIndex switch
         {
             0 => "farming",
             1 => "fishing",
@@ -222,7 +224,7 @@ namespace StardewAI.Core.OptionRegistry
             _ => string.Empty
         };
 
-        private sealed record MachineHarvestExperienceDelta(string SkillId, int SkillIndex, int Delta);
+        private sealed record StructuredSkillExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
         private EventCandidate[] MachineLoadInputCandidates(SnapshotEnvelope snapshot, JsonElement machine, int x, int y, int playerX, int playerY)
         {
