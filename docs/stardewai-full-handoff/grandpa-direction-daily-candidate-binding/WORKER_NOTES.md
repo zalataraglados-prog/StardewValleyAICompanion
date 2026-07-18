@@ -119,8 +119,8 @@ Revised the grandpa direction daily candidate binding system per controller audi
 | raise_friendships | Yes | social_talk_current, social_gift_current | Active |
 | complete_master_angler | Yes | catch_fish | Active |
 | complete_full_shipment | Yes | ship_inventory_item_to_bin | Active with exact contribution evidence |
-| raise_skill_levels | No | - | Blocked (planned contract gap) |
-| obtain_skull_key | No | - | Blocked (planned contract gap) |
+| raise_skill_levels | Yes | harvest_crop_tile, harvest_giant_crop_tile, collect_machine_output_tile, read_inventory_book, collect_animal_product, collect_spawned_object, harvest_ginger, harvest_bush, clear_green_rain_resource_clump, pan_ore_spot, catch_fish, collect_crab_pot, collect_fish_pond_output, complete_fish_pond_request, mining_reach_depth_plan_envelope, clear_obstacle_tile, clear_farm_resource_clump | Active for exact positive-XP candidates; static source-family completion, runtime-pending additions remain fail-closed until validated |
+| obtain_skull_key | Yes | mining_obtain_skull_key_plan_envelope | Active for the typed ordinary-mine floor-120 reward chain |
 | complete_museum_collection | No | - | Blocked (planned contract gap) |
 | obtain_rusty_key | No | - | Blocked (planned contract gap) |
 | complete_community_center | No | - | Blocked (planned contract gap + CC/Joja route unresolved) |
@@ -132,5 +132,5 @@ Revised the grandpa direction daily candidate binding system per controller audi
 
 1. **State hash binding**: Backend must have the snapshot pre-ingested for the exact state_hash. Late ingest ordering is a possible production concern.
 2. **CC/Joja route commitment**: Remains unresolved because transparent state does not prove which route the player committed to. Both rows stay blocked until new transparent evidence is exported.
-3. **Planned contract gaps**: 8 of 12 directions remain blocked until their transparent candidate/compiler/executor chains are complete.
+3. **Planned contract gaps**: 6 of 12 directions remain blocked until their transparent candidate/compiler/executor chains are complete.
 4. **Runtime boundary**: Full shipment has native immediate runtime proof and prior delayed settlement proof; the other direct directions retain their own dedicated runtime evidence.

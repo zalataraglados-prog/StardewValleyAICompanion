@@ -8,10 +8,10 @@ Accepted and tested on 2026-07-17.
 - Direction metadata remains sourced from the live adapter/evaluator output.
 - Candidate identity, score, reward, rank, action fields, timing fields, and arrays are preserved.
 - Provenance conflicts and duplicate provenance names fail closed.
-- Five directions are directly bindable: `earn_money`, `raise_friendships`, `complete_master_angler`, `complete_full_shipment`, and `obtain_skull_key`.
+- Six directions are directly bindable: `earn_money`, `raise_friendships`, `complete_master_angler`, `complete_full_shipment`, `obtain_skull_key`, and `raise_skill_levels`. The last direction is statically complete but its newly added source-specific runtime paths remain pending validation.
 - Full-shipment binding has a direction-specific typed evidence gate. Generic profitable shipping remains valid for `earn_money`, but cannot advance `complete_full_shipment` without exact contribution evidence.
 - Skull Key binding requires the exact `mining.obtain_skull_key` envelope, ordinary-mine family, target depth 120, mandatory reward-chest interaction, `player.has_skull_key=true` postcondition, mining-perfect executor profile, and executable current-floor boundary. Missing, duplicate, or conflicting contract parameters fail closed.
-- The remaining seven directions are explicit planned gaps. CC/Joja route commitment remains unresolved.
+- The remaining six directions are explicit planned gaps. CC/Joja route commitment remains unresolved.
 
 ## Verification
 
@@ -25,4 +25,4 @@ Accepted and tested on 2026-07-17.
 
 ## Next Slice
 
-Choose the next one of the seven blocked Grandpa directions. `raise_skill_levels` is the narrowest independent candidate if exact five-skill experience/level deltas and gain-producing actions are bound before policy training.
+Choose the next one of the six blocked Grandpa directions. `earn_pet_love` is the narrowest independent candidate: add exact pet identity/friendship/daily-interaction transparency, then bind a native pet interaction without conflating the pet-water bonus or Marnie mail threshold with the immediate petting result.

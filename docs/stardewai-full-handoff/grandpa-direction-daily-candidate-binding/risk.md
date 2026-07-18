@@ -11,7 +11,7 @@
 **Mitigation**: Explicitly documented as unresolved. Both rows cannot be bound until new transparent evidence for route commitment is exported.
 
 ### HIGH: Blocked directions can never bind until contract gaps closed
-**Risk**: 8 of 12 directions are unconditionally blocked as planned contract gaps. No speculative field/capability checking is performed -- the catalog merely records what would be needed.
+**Risk**: 6 of 12 directions are unconditionally blocked as planned contract gaps. No speculative field/capability checking is performed -- the catalog merely records what would be needed. Newly added `raise_skill_levels` source families remain runtime-pending and fail closed on incomplete evidence.
 **Mitigation**: Intentional design choice. The binder does not speculate about snapshot contents.
 
 ### MEDIUM: Provenance parameter deduplication and duplicate rejection
