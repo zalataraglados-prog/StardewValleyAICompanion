@@ -79,6 +79,8 @@ public sealed partial class PlayerReadAdapter
                 : ReadUnavailableMaterialRows(recipe, player.Items);
             var craftable = ProjectCraftableCount(recipe, player.Items);
             var output = outputs[0];
+            var acceptsOutputAfterConsumption = craftable.Count > 0 &&
+                InventoryAcceptsAfterConsumption(player.Items, remaining, output.Item);
             rows.Add(new
             {
                 recipe_name = recipe.name,
@@ -107,8 +109,16 @@ public sealed partial class PlayerReadAdapter
                     ? "bounded_at_999_requires_larger_projection"
                     : "exact_native_match_and_reverse_slot_consumption",
                 output_inventory_acceptance_for_one = player.couldInventoryAcceptThisItem(output.Item),
+                output_inventory_acceptance_after_material_consumption = acceptsOutputAfterConsumption,
+                output_inventory_acceptance_status = craftable.Count == 0
+                    ? "not_applicable_materials_unavailable"
+                    : acceptsOutputAfterConsumption
+                        ? "exact_acceptance_after_projected_native_consumption"
+                        : "blocked_output_cannot_fit_after_projected_native_consumption",
                 craft_candidate_status = outputs.Length == 1 && recipe.itemToProduce.Count == 1 && craftable.Count > 0
-                    ? "ready_for_native_personal_crafting_menu"
+                    ? acceptsOutputAfterConsumption
+                        ? "ready_for_native_personal_crafting_menu"
+                        : "blocked_output_cannot_fit_after_material_consumption"
                     : outputs.Length != 1 || recipe.itemToProduce.Count != 1
                         ? "blocked_non_deterministic_output"
                         : "blocked_insufficient_player_inventory_materials",
@@ -247,6 +257,24 @@ public sealed partial class PlayerReadAdapter
             }
         }
         return total;
+    }
+
+    private static bool InventoryAcceptsAfterConsumption(IList<Item?> inventory, int[] remainingStacks, Item output)
+    {
+        for (var slot = 0; slot < inventory.Count; slot++)
+        {
+            var item = inventory[slot];
+            if (item is null || remainingStacks[slot] <= 0)
+            {
+                return true;
+            }
+            if (item.canStackWith(output) &&
+                item.maximumStackSize() - remainingStacks[slot] >= output.Stack)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private sealed record MachineRecipeOutput(

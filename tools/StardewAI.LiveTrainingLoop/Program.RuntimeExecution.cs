@@ -428,6 +428,13 @@ static partial class Program
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
+        var recipeName = ReadQueueParameterString(item, "recipe_name");
+        var outputQualifiedItemId = ReadQueueParameterString(item, "output_qualified_item_id");
+        var outputItemId = ReadQueueParameterString(item, "output_item_id");
+        var outputCount = ReadQueueParameterInt(item, "output_count");
+        var timesCraftedBefore = ReadQueueParameterInt(item, "times_crafted_before");
+        var ingredientRowsJson = ReadQueueParameterString(item, "ingredient_rows_json");
+        var craftingSource = ReadQueueParameterString(item, "crafting_source");
         var slotIndex = ReadQueueParameterInt(item, "slot_index");
         var bookRuntimeType = ReadQueueParameterString(item, "book_runtime_type");
         var bookCategory = ReadQueueParameterInt(item, "book_category");
@@ -750,6 +757,13 @@ static partial class Program
         {
             executionRequest.InputSlotIndex = inputSlotIndex.Value;
         }
+        executionRequest.RecipeName = recipeName;
+        executionRequest.OutputQualifiedItemId = outputQualifiedItemId;
+        executionRequest.OutputItemId = outputItemId;
+        executionRequest.OutputCount = outputCount;
+        executionRequest.TimesCraftedBefore = timesCraftedBefore;
+        executionRequest.IngredientRowsJson = ingredientRowsJson;
+        executionRequest.CraftingSource = craftingSource;
         if (slotIndex.HasValue)
         {
             executionRequest.SlotIndex = slotIndex.Value;

@@ -244,6 +244,8 @@ public static class QueueReplanFilter
                 ? "executor.collect_machine_output"
                 : string.Equals(kind, "load_machine_input_tile", StringComparison.Ordinal)
                     ? "executor.load_machine_input"
+                    : string.Equals(kind, "craft_machine_item", StringComparison.Ordinal)
+                        ? "executor.craft_machine_item"
                     : string.Empty;
             candidateLocation = ReadString(candidate, "location_id");
             candidateX = candidate["tile_x"]?.ToString() ?? string.Empty;

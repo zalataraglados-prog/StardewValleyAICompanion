@@ -374,6 +374,27 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("input_slot_index")]
         public int? InputSlotIndex { get; set; }
 
+        [JsonPropertyName("recipe_name")]
+        public string RecipeName { get; set; } = string.Empty;
+
+        [JsonPropertyName("output_qualified_item_id")]
+        public string OutputQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("output_item_id")]
+        public string OutputItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("output_count")]
+        public int? OutputCount { get; set; }
+
+        [JsonPropertyName("times_crafted_before")]
+        public int? TimesCraftedBefore { get; set; }
+
+        [JsonPropertyName("ingredient_rows_json")]
+        public string IngredientRowsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("crafting_source")]
+        public string CraftingSource { get; set; } = string.Empty;
+
         [JsonPropertyName("debug_fill_inventory")]
         public bool DebugFillInventory { get; set; }
 

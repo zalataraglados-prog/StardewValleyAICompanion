@@ -136,6 +136,11 @@ namespace StardewAI.Core.Training
                 return LoadMachineInputSteps(candidate);
             }
 
+            if (candidate.Kind == "craft_machine_item")
+            {
+                return CraftMachineItemSteps(candidate);
+            }
+
             if (candidate.Kind == "read_inventory_book")
             {
                 return ReadInventoryBookSteps(candidate);

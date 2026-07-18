@@ -145,6 +145,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.pan_ore_spot" ||
                 optionId == "executor.collect_machine_output" ||
                 optionId == "executor.load_machine_input" ||
+                optionId == "executor.craft_machine_item" ||
                 optionId == "executor.read_book" ||
                 optionId == "executor.choose_dialogue_response" ||
                 optionId == "executor.social_interact";

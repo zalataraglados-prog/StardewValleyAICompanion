@@ -15,6 +15,15 @@ namespace StardewAI.Core.OptionRegistry
     {
         private EventCandidate[] MachineProcessingCandidates(SnapshotEnvelope snapshot)
         {
+            return MachineServiceCandidates(snapshot)
+                .Concat(MachineCraftingCandidates(snapshot))
+                .OrderBy(candidate => candidate.Kind, StringComparer.Ordinal)
+                .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        private EventCandidate[] MachineServiceCandidates(SnapshotEnvelope snapshot)
+        {
             var machines = ReadStateFieldValue(snapshot, "farm", "machines");
             if (!machines.HasValue || machines.Value.ValueKind != JsonValueKind.Array)
             {

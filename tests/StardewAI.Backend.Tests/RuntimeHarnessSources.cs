@@ -9,6 +9,11 @@ internal static class RuntimeHarnessSources
         return System.IO.File.ReadAllText(Path.Combine(FindHarnessDirectory(), fileName));
     }
 
+    public static string RepositoryFile(params string[] segments)
+    {
+        return System.IO.File.ReadAllText(Path.Combine(new[] { FindRepositoryRoot() }.Concat(segments).ToArray()));
+    }
+
     private static string Load()
     {
         var harness = FindHarnessDirectory();
@@ -21,14 +26,18 @@ internal static class RuntimeHarnessSources
 
     private static string FindHarnessDirectory()
     {
+        return Path.Combine(FindRepositoryRoot(), "tools", "StardewAI.RuntimeTestHarness");
+    }
+
+    private static string FindRepositoryRoot()
+    {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
         while (directory is not null && !System.IO.File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
         {
             directory = directory.Parent;
         }
 
-        var root = directory?.FullName
+        return directory?.FullName
             ?? throw new InvalidOperationException("Cannot find repository root.");
-        return Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness");
     }
 }

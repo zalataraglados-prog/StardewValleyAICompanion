@@ -22,7 +22,7 @@ namespace StardewAI.Core.OptionRegistry
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "player.location_id", "player.inventory", "player.inventory_capacity", "farm.machines" },
-                new[] { "machine queue inspected", "machine action steps produced" },
+                new[] { "machine queue and learned machine recipes inspected", "machine service or native crafting action steps produced" },
                 new[] { "never_sell_protected_items", "block_unavailable_required_state" }));
 
             Register(Option("farm.collect_animal_products", "farm", "Collect one transparent ready animal product",
@@ -718,6 +718,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.inventory", "farm.machines", "menus.active_menu" },
                 new[] { "machine input consumed and processing started" },
                 new[] { "block_unverified_machine_input", "block_machine_busy", "block_menu_unsafe_interact" }));
+
+            Register(Option("executor.craft_machine_item", "farm", "Craft one verified learned machine through the native personal CraftingPage",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.machine_crafting", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact machine output enters player inventory", "native recipe count, quest callbacks, and achievement checks run" },
+                new[] { "block_unknown_or_unlearned_recipe", "block_recipe_or_inventory_projection_drift", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
