@@ -22,7 +22,13 @@ public sealed partial class ActionQueueCompiler
         var target = ReadParameter(action, "project_id") + ":price=" + price.Value;
         var effect = "player.money=" + moneyAfter.Value +
             ";player.days_until_farmhouse_upgrade=3" +
-            ";eventual.player.farmhouse_upgrade_level=" + levelAfter.Value;
+            ";eventual.player.farmhouse_upgrade_level=" + levelAfter.Value +
+            ";eventual.grandpa_score_delta=" + (ReadParameter(action, "direct_grandpa_score_delta_after_construction") ?? string.Empty) +
+            ";eventual.capability.cellar=" + (ReadParameter(action, "unlocks_cellar") ?? string.Empty) +
+            ";eventual.capability.cask_recipe=" + (ReadParameter(action, "unlocks_cask_recipe") ?? string.Empty) +
+            ";eventual.capability.indoor_machine_placement_location=" + (ReadParameter(action, "adds_indoor_machine_placement_location") ?? string.Empty) +
+            ";projected_cellar_static_placeable_tiles=" + (ReadParameter(action, "projected_cellar_static_placeable_tiles") ?? string.Empty) +
+            ";projected_cellar_existing_machine_count=" + (ReadParameter(action, "projected_cellar_existing_machine_count") ?? string.Empty);
         return new[] { Step("purchase_farmhouse_upgrade", "housing:" + target, effect, 300) };
     }
 
@@ -87,7 +93,15 @@ public sealed partial class ActionQueueCompiler
             ReadInt(upgrade, "level_before") != levelBefore.Value || ReadInt(upgrade, "level_after") != levelAfter.Value ||
             ReadInt(upgrade, "price") != price.Value || ReadString(upgrade, "required_item_id") != itemId ||
             ReadInt(upgrade, "required_item_count") != requiredCount.Value || ReadInt(upgrade, "inventory_item_count") != inventoryBefore.Value ||
-            ReadInt(upgrade, "construction_days") != daysAfter.Value)
+            ReadInt(upgrade, "construction_days") != daysAfter.Value ||
+            ReadParameter(action, "meets_grandpa_house_level_after_construction") != Lower(ReadBool(upgrade, "meets_grandpa_house_level_after_construction")) ||
+            ReadParameter(action, "grandpa_factor_satisfied_after_construction") != Lower(ReadBool(upgrade, "grandpa_factor_satisfied_after_construction")) ||
+            ReadIntParameter(action, "direct_grandpa_score_delta_after_construction") != ReadInt(upgrade, "direct_grandpa_score_delta_after_construction") ||
+            ReadParameter(action, "unlocks_cellar") != Lower(ReadBool(upgrade, "unlocks_cellar")) ||
+            ReadParameter(action, "unlocks_cask_recipe") != Lower(ReadBool(upgrade, "unlocks_cask_recipe")) ||
+            ReadParameter(action, "adds_indoor_machine_placement_location") != Lower(ReadBool(upgrade, "adds_indoor_machine_placement_location")) ||
+            ReadParameter(action, "machine_capacity_projection_status") != ReadString(upgrade, "machine_capacity_projection_status") ||
+            !FarmhouseInfrastructureParametersMatch(action, progress.Value, levelAfter.Value))
         {
             reasons.Add("farmhouse_upgrade_projection_drifted");
         }
@@ -102,4 +116,36 @@ public sealed partial class ActionQueueCompiler
             (2, 3, 100000, "", 0) => true,
             _ => false
         };
+
+    private static string Lower(bool value) => value.ToString().ToLowerInvariant();
+
+    private static bool FarmhouseInfrastructureParametersMatch(SmallModelAction action, JsonElement progress, int levelAfter)
+    {
+        if (levelAfter != 3)
+        {
+            return ReadParameter(action, "projected_cellar_location_id") == string.Empty &&
+                ReadIntParameter(action, "projected_cellar_map_width") == 0 &&
+                ReadIntParameter(action, "projected_cellar_map_height") == 0 &&
+                ReadIntParameter(action, "projected_cellar_static_placeable_tiles") == 0 &&
+                ReadIntParameter(action, "projected_cellar_existing_object_count") == 0 &&
+                ReadIntParameter(action, "projected_cellar_existing_machine_count") == 0 &&
+                ReadParameter(action, "projected_cellar_machine_counts_by_qualified_id_json") == "{}";
+        }
+
+        if (!progress.TryGetProperty("cellar_infrastructure", out var infrastructure) || infrastructure.ValueKind != JsonValueKind.Object ||
+            ReadString(infrastructure, "projection_status") != "cellar_static_map_capacity_available")
+        {
+            return false;
+        }
+
+        return ReadParameter(action, "projected_cellar_location_id") == ReadString(infrastructure, "location_id") &&
+            ReadIntParameter(action, "projected_cellar_map_width") == ReadInt(infrastructure, "map_width") &&
+            ReadIntParameter(action, "projected_cellar_map_height") == ReadInt(infrastructure, "map_height") &&
+            ReadIntParameter(action, "projected_cellar_static_placeable_tiles") == ReadInt(infrastructure, "static_placeable_tile_count") &&
+            ReadIntParameter(action, "projected_cellar_existing_object_count") == ReadInt(infrastructure, "occupied_object_count") &&
+            ReadIntParameter(action, "projected_cellar_existing_machine_count") == ReadInt(infrastructure, "machine_count") &&
+            infrastructure.TryGetProperty("machine_counts_by_qualified_id", out var machineCounts) &&
+            machineCounts.ValueKind == JsonValueKind.Object &&
+            ReadParameter(action, "projected_cellar_machine_counts_by_qualified_id_json") == machineCounts.GetRawText();
+    }
 }

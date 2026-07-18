@@ -7,7 +7,7 @@ namespace StardewAI.Core.Tests;
 public sealed class GrandpaEvaluationGoalEvaluatorTests
 {
     [Fact]
-    public void EvaluateReportsFourCandlesAtTwelvePoints()
+    public void EvaluateReportsMaximumScoreOnlyWhenAllTwentyOnePointsAreEarned()
     {
         var model = Model(
             player: """
@@ -15,8 +15,8 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
               "total_money_earned": 1000000,
               "has_skull_key": true,
               "has_rusty_key": true,
-              "married_or_roommate": false,
-              "farmhouse_upgrade_level": 1,
+              "married_or_roommate": true,
+              "farmhouse_upgrade_level": 2,
               "level": 25,
               "active_object_qualified_id": "(O)72"
             }
@@ -35,7 +35,12 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
                 {"npc_name":"B","points":2000},
                 {"npc_name":"C","points":2000},
                 {"npc_name":"D","points":2000},
-                {"npc_name":"E","points":2000}
+                {"npc_name":"E","points":2000},
+                {"npc_name":"F","points":2000},
+                {"npc_name":"G","points":2000},
+                {"npc_name":"H","points":2000},
+                {"npc_name":"I","points":2000},
+                {"npc_name":"J","points":2000}
               ]
             }
             """,
@@ -58,12 +63,37 @@ public sealed class GrandpaEvaluationGoalEvaluatorTests
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(model);
 
         Assert.True(report.TargetMet);
+        Assert.Equal(21, report.TargetScore);
+        Assert.Equal(21, report.CurrentScore);
+        Assert.Equal(0, report.PointsNeeded);
         Assert.Equal(4, report.CurrentCandles);
-        Assert.True(report.CurrentScore >= 12);
+        Assert.True(report.FourCandleMilestoneMet);
         Assert.Empty(report.MissingFactPaths);
         Assert.True(report.EvaluationContext.ReevaluationAvailable);
         Assert.True(report.EvaluationContext.HoldingReevaluationItem);
         Assert.Contains(report.Factors, factor => factor.Id == "money_1000000" && factor.Points == 2);
+    }
+
+    [Fact]
+    public void EvaluateKeepsFourCandlesAsMilestoneInsteadOfCompletion()
+    {
+        var report = new GrandpaEvaluationGoalEvaluator().Evaluate(Model(
+            player: """
+            {"total_money_earned":1000000,"has_skull_key":true,"has_rusty_key":true,"married_or_roommate":false,"farmhouse_upgrade_level":0,"level":0,"active_object_qualified_id":null}
+            """,
+            worldProgress: """
+            {"achievements":[5],"community_center":{"location_accessible":false,"completed":true}}
+            """,
+            npcs: """{"friendships":[]}""",
+            quests: """{"mail_received":["petLoveMessage"]}""",
+            game: """{"year":3}""",
+            farm: """{"grandpa_score":4}"""));
+
+        Assert.Equal(12, report.CurrentScore);
+        Assert.Equal(4, report.CurrentCandles);
+        Assert.True(report.FourCandleMilestoneMet);
+        Assert.False(report.TargetMet);
+        Assert.Equal(9, report.PointsNeeded);
     }
 
     [Fact]

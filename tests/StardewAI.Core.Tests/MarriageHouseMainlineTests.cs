@@ -88,6 +88,15 @@ public sealed class MarriageHouseMainlineTests
 
         Assert.Equal("purchase_farmhouse_expansion", candidate.Kind);
         Assert.NotEqual("purchase_farmhouse_upgrade", candidate.Kind);
+        Assert.Equal("transparent_native_farmhouse_upgrade_indirect_infrastructure", candidate.AvailabilityClass);
+        AssertParameter(candidate.Parameters, "direct_grandpa_score_delta_after_construction", "0");
+        AssertParameter(candidate.Parameters, "unlocks_cellar", "true");
+        AssertParameter(candidate.Parameters, "unlocks_cask_recipe", "true");
+        AssertParameter(candidate.Parameters, "adds_indoor_machine_placement_location", "true");
+        AssertParameter(candidate.Parameters, "machine_capacity_projection_status", "cellar_static_map_capacity_available");
+        AssertParameter(candidate.Parameters, "projected_cellar_static_placeable_tiles", "250");
+        AssertParameter(candidate.Parameters, "projected_cellar_existing_machine_count", "33");
+        AssertParameter(candidate.Parameters, "projected_cellar_machine_counts_by_qualified_id_json", "{\"(BC)163\":33}");
 
         var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
@@ -98,7 +107,7 @@ public sealed class MarriageHouseMainlineTests
     [Fact]
     public void TransparencyAndRuntimeUseNativeCarpenterLifecycleWithoutDirectProgressWrites()
     {
-        var adapter = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.cs"));
+        var adapter = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "Adapters", "ProgressReadAdapter.MarriageHouse.cs"));
         var runtime = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MarriageHouse.cs"));
 
         Assert.Contains("Price = 10000", adapter, StringComparison.Ordinal);
@@ -106,6 +115,8 @@ public sealed class MarriageHouseMainlineTests
         Assert.Contains("Price = 65000", adapter, StringComparison.Ordinal);
         Assert.Contains("RequiredItemCount = 100", adapter, StringComparison.Ordinal);
         Assert.Contains("ConstructionDays = 3", adapter, StringComparison.Ordinal);
+        Assert.Contains("UnlocksCellar", adapter, StringComparison.Ordinal);
+        Assert.Contains("UnlocksCaskRecipe", adapter, StringComparison.Ordinal);
         Assert.Contains("active.House.checkAction", runtime, StringComparison.Ordinal);
         Assert.Contains("active.House.answerDialogue(response)", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Money -=", runtime, StringComparison.Ordinal);
@@ -124,7 +135,26 @@ public sealed class MarriageHouseMainlineTests
             FarmhouseUpgradeLevel = 1,
             DaysUntilFarmhouseUpgrade = 3,
             GrandpaFactorSatisfied = false,
-            HouseUpgrade = new FarmhouseUpgradeProgressRef { LevelBefore = 1, LevelAfter = 2, ConstructionDays = 3 }
+            CellarUnlocked = false,
+            CellarInfrastructure = new CellarInfrastructureProgressRef
+            {
+                ProjectionStatus = "cellar_static_map_capacity_available",
+                LocationId = "Cellar",
+                MapWidth = 20,
+                MapHeight = 20,
+                StaticPlaceableTileCount = 250,
+                OccupiedObjectCount = 33,
+                MachineCount = 33
+            },
+            HouseUpgrade = new FarmhouseUpgradeProgressRef
+            {
+                LevelBefore = 1,
+                LevelAfter = 2,
+                ConstructionDays = 3,
+                MeetsGrandpaHouseLevelAfterConstruction = true,
+                GrandpaFactorSatisfiedAfterConstruction = false,
+                DirectGrandpaScoreDeltaAfterConstruction = 0
+            }
         };
         var json = JsonSerializer.Serialize(row, JsonOptions);
 
@@ -132,6 +162,7 @@ public sealed class MarriageHouseMainlineTests
         Assert.Contains("\"days_until_farmhouse_upgrade\":3", json, StringComparison.Ordinal);
         Assert.Contains("\"level_after\":2", json, StringComparison.Ordinal);
         Assert.Contains("\"grandpa_factor_satisfied\":false", json, StringComparison.Ordinal);
+        Assert.Contains("\"meets_grandpa_house_level_after_construction\":true", json, StringComparison.Ordinal);
     }
 
     private static SnapshotEnvelope Snapshot(
@@ -146,6 +177,11 @@ public sealed class MarriageHouseMainlineTests
         int days)
     {
         var upgradeId = "farmhouse_level_" + levelAfter;
+        var meetsGrandpaHouseLevel = levelAfter >= 2 ? "true" : "false";
+        var unlocksCellar = levelBefore == 2 && levelAfter == 3 ? "true" : "false";
+        var capacityStatus = unlocksCellar == "true"
+            ? "cellar_static_map_capacity_available"
+            : "no_new_machine_location_from_this_upgrade";
         var json = $$$"""
         {
           "player": {
@@ -172,6 +208,16 @@ public sealed class MarriageHouseMainlineTests
               "days_until_farmhouse_upgrade":{{{days}}},
               "money":{{{money}}},
               "grandpa_factor_satisfied":false,
+              "cellar_infrastructure":{
+                "projection_status":"cellar_static_map_capacity_available",
+                "location_id":"Cellar",
+                "map_width":20,
+                "map_height":20,
+                "static_placeable_tile_count":250,
+                "occupied_object_count":33,
+                "machine_count":33,
+                "machine_counts_by_qualified_id":{"(BC)163":33}
+              },
               "house_upgrade":{
                 "upgrade_id":"{{{upgradeId}}}",
                 "level_before":{{{levelBefore}}},
@@ -181,6 +227,13 @@ public sealed class MarriageHouseMainlineTests
                 "required_item_count":{{{requiredCount}}},
                 "inventory_item_count":{{{inventoryCount}}},
                 "construction_days":3,
+                "meets_grandpa_house_level_after_construction":{{{meetsGrandpaHouseLevel}}},
+                "grandpa_factor_satisfied_after_construction":false,
+                "direct_grandpa_score_delta_after_construction":0,
+                "unlocks_cellar":{{{unlocksCellar}}},
+                "unlocks_cask_recipe":{{{unlocksCellar}}},
+                "adds_indoor_machine_placement_location":{{{unlocksCellar}}},
+                "machine_capacity_projection_status":"{{{capacityStatus}}}",
                 "action_status":"{{{status}}}"
               }
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

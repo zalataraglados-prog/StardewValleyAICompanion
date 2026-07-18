@@ -3,25 +3,40 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.Goals
 {
+    public static class GrandpaEvaluationGoalDefinition
+    {
+        public const string SchemaVersion = "grandpa_evaluation_goal.v2";
+        public const string GoalId = "goal.grandpa_max_score_year3";
+        public const string StrategicGoal = "grandpa_max_score_year3";
+        public const int FourCandleScore = 12;
+        public const int MaximumRuleScore = 21;
+    }
+
     public sealed class GrandpaEvaluationGoalReport
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "grandpa_evaluation_goal.v1";
+        public string SchemaVersion { get; set; } = GrandpaEvaluationGoalDefinition.SchemaVersion;
 
         [JsonPropertyName("goal_id")]
-        public string GoalId { get; set; } = "goal.grandpa_four_candles_year3";
+        public string GoalId { get; set; } = GrandpaEvaluationGoalDefinition.GoalId;
 
         [JsonPropertyName("target_score")]
-        public int TargetScore { get; set; } = 12;
+        public int TargetScore { get; set; } = GrandpaEvaluationGoalDefinition.MaximumRuleScore;
 
         [JsonPropertyName("max_rule_score")]
-        public int MaxRuleScore { get; set; } = 21;
+        public int MaxRuleScore { get; set; } = GrandpaEvaluationGoalDefinition.MaximumRuleScore;
+
+        [JsonPropertyName("four_candle_score_threshold")]
+        public int FourCandleScoreThreshold { get; set; } = GrandpaEvaluationGoalDefinition.FourCandleScore;
 
         [JsonPropertyName("current_score")]
         public int CurrentScore { get; set; }
 
         [JsonPropertyName("current_candles")]
         public int CurrentCandles { get; set; }
+
+        [JsonPropertyName("four_candle_milestone_met")]
+        public bool FourCandleMilestoneMet { get; set; }
 
         [JsonPropertyName("points_needed")]
         public int PointsNeeded { get; set; }
@@ -90,7 +105,7 @@ namespace StardewAI.Contracts.Goals
         public string CandlesSource { get; set; } = "StardewValley.Utility.getGrandpaCandlesFromScore(int)";
 
         [JsonPropertyName("policy")]
-        public string Policy { get; set; } = "Scores are computed only from readable world_model.v1 facts; missing facts are reported, not guessed.";
+        public string Policy { get; set; } = "The optimization target is all 21 rule points; four candles at 12 points are only a milestone. Scores use readable world_model.v1 facts and never guess missing facts.";
     }
 
     public sealed class GrandpaEvaluationContext

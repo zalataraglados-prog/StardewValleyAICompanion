@@ -8,17 +8,17 @@
 | `strategy.grandpa_progress.priority_score` | policy, compiler, trainer | yes for direction ranking | Validated for exact equality against live `CandidateDirection.PriorityScore` from adapter | EVD-080 | same grandpa evaluation factors | `strategy_plan_step.v1.priority_score` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.feedback_key` | compiler, budget_validator | yes for feedback routing | Validated for exact equality against live `CandidateDirection.FeedbackKey` from adapter | EVD-080 | same candidate direction metadata | `strategy_plan_step.v1.feedback_key` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.required_minutes` | budget_validator, trainer | yes for time budget planning | Validated for exact equality against `GrandpaStrategyFeatureRowBuilder.EstimateRequiredMinutes(candidate)`; computed from live candidate domain, not trusted from model | EVD-080 | domain-based heuristic from candidate direction | `strategy_plan_step.v1.required_minutes`, `time_budget.v1.items[].estimated_minutes` | static_covered / tests_not_run |
-| `strategy.grandpa_progress.strategic_goal` | policy, compiler | yes for candidate set rebuild | Required to be exactly `grandpa_four_candles_year3`; missing or any other value is blocked with precise reason; the compiler uses `grandpa_four_candles_year3` to rebuild the candidate set via `WorldModelProjector` | EVD-080 | N/A (constant goal id) | `small_model_action.v1.parameters[strategic_goal]` | static_covered / tests_not_run |
+| `strategy.grandpa_progress.strategic_goal` | policy, compiler | yes for candidate set rebuild | Required to be exactly `grandpa_max_score_year3`; missing or any other value is blocked with precise reason; the compiler uses `grandpa_max_score_year3` to rebuild the candidate set via `WorldModelProjector` | EVD-080 | N/A (constant goal id) | `small_model_action.v1.parameters[strategic_goal]` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.optional_minutes` | budget_validator | no (always 0) | Hardcoded to 0 in validated strategy steps until a transparent typed source exists; parameter must be present and exactly 0; missing or nonzero is rejected with precise reason | EVD-080 | N/A (always zero) | `strategy_plan_step.v1.optional_minutes` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.hard_preconditions` | executor | no (not yet transparent) | `CandidateDirection` has no typed source for hard preconditions; nonempty model-supplied values are rejected as unverified; validated steps emit empty array | EVD-080 | N/A (no transparent source) | `strategy_plan_step.v1.hard_preconditions` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.resource_budget` | executor | no (not yet transparent) | `CandidateDirection` has no typed source for resource budget; nonempty model-supplied values are rejected as unverified; validated steps emit empty array | EVD-080 | N/A (no transparent source) | `strategy_plan_step.v1.resource_budget` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.executor_handoff_option` | executor | no (not yet transparent) | `CandidateDirection` has no typed source for executor handoff; nonempty model-supplied values are rejected as unverified; validated steps emit empty string | EVD-080 | N/A (no transparent source) | `strategy_plan_step.v1.executor_handoff_option` | static_covered / tests_not_run |
 | `strategy.grandpa_progress.fail_closed_direction` | compiler, trainer audit | yes for safe blocking | When no Known+unblocked+positive-potential direction exists, policy emits empty direction_id + block_reason; compiler rebuilds candidate set, finds no match, and blocks with `strategy_direction_absent` | EVD-080 | candidate directions + planner state from transparent snapshot | `small_model_action.v1.parameters[block_reason]`, `action_queue.v1.blocking_reasons` | static_covered / tests_not_run |
-| All 12 known grandpa direction IDs | adapter coverage test | yes for completeness verification | Adapter's `BuildDirections()` is the sole authoritative source of direction IDs; the compiler validates against the live candidate set, not a static whitelist; test `All12DirectionIdsAreCoveredByAdapter` proves adapter coverage | EVD-080 | direction ID specs in adapter | `strategy_direction_absent:<id>_not_in_current_snapshot_candidate_set` blocking reason for non-matching IDs | static_covered / tests_not_run |
+| All 11 native Grandpa direction IDs | adapter coverage test | yes for completeness verification | Adapter `BuildDirections()` is the authoritative source; the compiler validates against the live candidate set, not a static whitelist. Joja development is excluded because it is not a native Grandpa score factor. | EVD-080, EVD-125 | direction ID specs in adapter | `strategy_direction_absent:<id>_not_in_current_snapshot_candidate_set` blocking reason for non-matching IDs | static_covered / tests_not_run |
 
 ## Direction ID Coverage
 
-All 12 direction IDs from the adapter are the authoritative source:
+All 11 native scoring direction IDs from the adapter are the authoritative source:
 
 | # | Direction ID | Domain | Related Factors | Potential Points Range |
 |---|---|---|---|---|
@@ -26,13 +26,12 @@ All 12 direction IDs from the adapter are the authoritative source:
 | 2 | complete_museum_collection | world_progress | achievement_complete_collection | 0-1 |
 | 3 | obtain_skull_key | exploration | skull_key | 0-1 |
 | 4 | complete_community_center | world_progress | community_center_access_or_completion, community_center_accessible_bonus | 0-2 |
-| 5 | complete_joja_development | world_progress | joja_development_completed | 0-1 |
-| 6 | marriage_and_house_upgrade | social | married_or_roommate_house_2 | 0-1 |
-| 7 | obtain_rusty_key | world_progress | rusty_key | 0-1 |
-| 8 | complete_master_angler | world_progress | achievement_master_angler | 0-1 |
-| 9 | complete_full_shipment | economy | achievement_full_shipment | 0-1 |
-| 10 | raise_friendships | social | friendships_5, friendships_10 | 0-2 |
-| 11 | raise_skill_levels | skills | player_level_15, player_level_25 | 0-2 |
-| 12 | earn_pet_love | farm | pet_love | 0-1 |
+| 5 | marriage_and_house_upgrade | social | married_or_roommate_house_2 | 0-1 |
+| 6 | obtain_rusty_key | world_progress | rusty_key | 0-1 |
+| 7 | complete_master_angler | world_progress | achievement_master_angler | 0-1 |
+| 8 | complete_full_shipment | economy | achievement_full_shipment | 0-1 |
+| 9 | raise_friendships | social | friendships_5, friendships_10 | 0-2 |
+| 10 | raise_skill_levels | skills | player_level_15, player_level_25 | 0-2 |
+| 11 | earn_pet_love | farm | pet_love | 0-1 |
 
-No new required model input field is missing or unavailable after this slice. All direction metadata flows from the same live `CandidateDirection` source through both policy generation and compiler validation. The compiler independently rebuilds the candidate set to validate, rather than trusting model-supplied values or a static whitelist.
+All direction metadata flows from the same live `CandidateDirection` source through policy generation and compiler validation. The compiler independently rebuilds the candidate set instead of trusting model output. This does not close unrelated executor or long-horizon infrastructure gaps.

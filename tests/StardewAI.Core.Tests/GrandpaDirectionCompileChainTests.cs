@@ -18,7 +18,7 @@ public sealed class GrandpaDirectionCompileChainTests
     public void ClassifierDoesNotOutputAutoSelectBestDirection()
     {
         var classifier = new TaskIntentClassifier();
-        var grandpa = classifier.Classify("grandpa_four_candles_year3");
+        var grandpa = classifier.Classify("grandpa_max_score_year3");
 
         Assert.Equal("strategy.grandpa_progress", grandpa.OptionId);
         Assert.DoesNotContain(grandpa.Parameters, param => param.Name == "direction_id");
@@ -33,7 +33,7 @@ public sealed class GrandpaDirectionCompileChainTests
     public void PolicySelectsKnownUnblockedPositivePotentialDirection()
     {
         var snapshot = GrandpaSnapshot();
-        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_max_score_year3", "training_singleplayer");
 
         Assert.Equal("strategy.grandpa_progress", output.Actions[0].OptionId);
         var directionId = output.Actions[0].Parameters.First(param => param.Name == "direction_id").Value;
@@ -51,7 +51,7 @@ public sealed class GrandpaDirectionCompileChainTests
     public void PolicyFailsClosedWhenTargetAlreadyComplete()
     {
         var snapshot = TargetCompleteSnapshot();
-        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_max_score_year3", "training_singleplayer");
 
         var directionId = output.Actions[0].Parameters.First(param => param.Name == "direction_id").Value;
         Assert.Empty(directionId);
@@ -82,7 +82,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", "auto_select_best_direction")
                     }
                 }
@@ -115,7 +115,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", string.Empty),
                         Parameter("requires_direction_selection", "failed_no_eligible_candidate"),
                         Parameter("block_reason", "target_already_met")
@@ -151,7 +151,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", "earn_money"),
                         Parameter("direction_domain", "economy"),
                         Parameter("potential_points", "7"),
@@ -191,7 +191,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", "earn_money"),
                         Parameter("direction_domain", "economy"),
                         Parameter("potential_points", "7"),
@@ -216,14 +216,14 @@ public sealed class GrandpaDirectionCompileChainTests
     public void ValidPolicyOutputCompilesToStepMatchingRecomputedCandidate()
     {
         var snapshot = GrandpaSnapshot();
-        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var queue = new ActionQueueCompiler().Compile(output, snapshot);
 
         Assert.Equal("pending", queue.Status);
         var plan = Assert.Single(queue.Items[0].NormalizedCommand.StrategyPlan);
         Assert.NotEmpty(plan.DirectionId);
 
-        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(worldModel);
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
         var candidate = Assert.Single(sample.CandidateDirections
@@ -440,7 +440,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", "earn_money"),
                         Parameter("direction_domain", "economy"),
                         Parameter("potential_points", "7"),
@@ -529,7 +529,7 @@ public sealed class GrandpaDirectionCompileChainTests
         Assert.Equal(11, expectedDirectionIds.Length);
 
         var snapshot = GrandpaSnapshot();
-        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(worldModel);
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
 
@@ -546,7 +546,7 @@ public sealed class GrandpaDirectionCompileChainTests
     public void DirectionWithUnknownFactorIsNotSelected()
     {
         var classifier = new TaskIntentClassifier();
-        var grandpa = classifier.Classify("grandpa_four_candles_year3");
+        var grandpa = classifier.Classify("grandpa_max_score_year3");
 
         Assert.Equal("strategy.grandpa_progress", grandpa.OptionId);
         Assert.Contains(grandpa.Parameters, param =>
@@ -572,7 +572,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", string.Empty),
                         Parameter("requires_direction_selection", "failed_no_eligible_candidate"),
                         Parameter("block_reason", "target_already_met")
@@ -591,7 +591,7 @@ public sealed class GrandpaDirectionCompileChainTests
     public void AllDirectionsPresentInValidSnapshotAreCoveredByAdapter()
     {
         var snapshot = GrandpaSnapshot();
-        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(worldModel);
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
 
@@ -640,7 +640,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "recovery.stabilize_day",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3")
+                        Parameter("strategic_goal", "grandpa_max_score_year3")
                     }
                 }
             }
@@ -654,7 +654,7 @@ public sealed class GrandpaDirectionCompileChainTests
 
     private static SmallModelActionEnvelope BuildEarnMoneyRequest(SnapshotEnvelope snapshot)
     {
-        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(worldModel);
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
         var candidate = sample.CandidateDirections.First(c => c.DirectionId == "earn_money");
@@ -675,7 +675,7 @@ public sealed class GrandpaDirectionCompileChainTests
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", "grandpa_max_score_year3"),
                         Parameter("direction_id", candidate.DirectionId),
                         Parameter("direction_domain", candidate.Domain),
                         Parameter("potential_points", candidate.PotentialPoints.ToString()),
@@ -782,7 +782,7 @@ public sealed class GrandpaDirectionCompileChainTests
             "joja_membership": {"value":true,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
-            "friendships": {"value":[{"npc":"Abigail","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "friendships": {"value":[{"npc":"A","points":2500},{"npc":"B","points":2500},{"npc":"C","points":2500},{"npc":"D","points":2500},{"npc":"E","points":2500},{"npc":"F","points":2500},{"npc":"G","points":2500},{"npc":"H","points":2500},{"npc":"I","points":2500},{"npc":"J","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {
             "mail_received": {"value":["petLoveMessage"],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

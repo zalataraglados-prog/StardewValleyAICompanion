@@ -2,6 +2,14 @@
 
 Date: 2026-07-17
 
+## 2026-07-18 Follow-up
+
+- Line count remains a review signal, not an automatic split rule. Cohesive single-domain algorithms may remain long; files that combine contracts, transparent reads, candidate policy, compilation, and runtime behavior may not.
+- The new marriage/farmhouse work follows domain ownership: state contracts moved to `ProgressState.MarriageHouse.cs`, bridge reads moved to `ProgressReadAdapter.MarriageHouse.cs`, execution-request fields moved to `TrainingExecutionRequest.MarriageHouse.cs`, and candidate/compiler/runtime behavior remains in existing marriage-house domain files.
+- `TrainingExecutionContracts.cs` remains the largest production contract file because `TrainingExecutionRequest` is still a flat wire schema. New domains should use partial files now; replacing the flat v1 wire contract with nested domain payloads requires a separately versioned migration.
+- `ProgressState.cs` remains a broad schema catalog. Continue extracting one complete domain at a time when that domain changes; do not create duplicate DTO versions merely to lower the line count.
+- The Grandpa goal is now a 21-point optimization target with 12 points/four candles retained as a milestone. Level-3 farmhouse infrastructure fields are kept separate from direct score fields.
+
 ## Implementation Status
 
 The file-level cleanup described below was completed on 2026-07-17 without behavior changes:

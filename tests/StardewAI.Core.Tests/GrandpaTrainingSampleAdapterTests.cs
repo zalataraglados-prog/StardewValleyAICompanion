@@ -18,8 +18,8 @@ public sealed class GrandpaTrainingSampleAdapterTests
         var report = new GrandpaEvaluationGoalReport
         {
             CurrentScore = 9,
-            TargetScore = 12,
-            PointsNeeded = 3,
+            TargetScore = 21,
+            PointsNeeded = 12,
             TargetMet = false,
             Factors = new[]
             {
@@ -105,8 +105,8 @@ public sealed class GrandpaTrainingSampleAdapterTests
         var report = new GrandpaEvaluationGoalReport
         {
             CurrentScore = 9,
-            TargetScore = 12,
-            PointsNeeded = 3,
+            TargetScore = 21,
+            PointsNeeded = 12,
             TargetMet = false,
             Factors = new[]
             {

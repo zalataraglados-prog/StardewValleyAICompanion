@@ -77,7 +77,7 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
-        public async Task GrandpaEvaluationEndpointReturnsFourCandleGoalReport()
+        public async Task GrandpaEvaluationEndpointReturnsMaximumScoreGoalReport()
         {
             using var client = factory.CreateClient();
             var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent());
@@ -88,9 +88,11 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var root = json.RootElement;
-            Assert.Equal("grandpa_evaluation_goal.v1", root.GetProperty("schema_version").GetString());
-            Assert.Equal(12, root.GetProperty("target_score").GetInt32());
+            Assert.Equal("grandpa_evaluation_goal.v2", root.GetProperty("schema_version").GetString());
+            Assert.Equal(21, root.GetProperty("target_score").GetInt32());
+            Assert.Equal(12, root.GetProperty("four_candle_score_threshold").GetInt32());
             Assert.Equal(4, root.GetProperty("current_candles").GetInt32());
+            Assert.True(root.GetProperty("four_candle_milestone_met").GetBoolean());
             Assert.True(root.GetProperty("target_met").GetBoolean());
             Assert.Empty(root.GetProperty("missing_fact_paths").EnumerateArray());
         }
@@ -890,8 +892,8 @@ namespace StardewAI.Backend.Tests
                 "level": {{FieldJson(25)}},
                 "has_skull_key": {{FieldJson(true)}},
                 "has_rusty_key": {{FieldJson(true)}},
-                "married_or_roommate": {{FieldJson(false)}},
-                "farmhouse_upgrade_level": {{FieldJson(1)}},
+                "married_or_roommate": {{FieldJson(true)}},
+                "farmhouse_upgrade_level": {{FieldJson(2)}},
                 "current_tool": {{FieldJson("(T)Axe")}},
                 "current_item_qualified_id": {{FieldJson("(O)72")}},
                 "active_object_qualified_id": {{FieldJson("(O)72")}},
@@ -915,7 +917,7 @@ namespace StardewAI.Backend.Tests
               },
               "npcs": {
                 "positions": {{FieldJson("[]", raw: true)}},
-                "friendships": {{FieldJson("[{\"npc_name\":\"A\",\"points\":2000},{\"npc_name\":\"B\",\"points\":2000},{\"npc_name\":\"C\",\"points\":2000},{\"npc_name\":\"D\",\"points\":2000},{\"npc_name\":\"E\",\"points\":2000}]", raw: true)}},
+                "friendships": {{FieldJson("[{\"npc_name\":\"A\",\"points\":2000},{\"npc_name\":\"B\",\"points\":2000},{\"npc_name\":\"C\",\"points\":2000},{\"npc_name\":\"D\",\"points\":2000},{\"npc_name\":\"E\",\"points\":2000},{\"npc_name\":\"F\",\"points\":2000},{\"npc_name\":\"G\",\"points\":2000},{\"npc_name\":\"H\",\"points\":2000},{\"npc_name\":\"I\",\"points\":2000},{\"npc_name\":\"J\",\"points\":2000}]", raw: true)}},
                 "schedules": {{UnavailableFieldJson("npc_schedules_unavailable_without_complete_read_only_decompile_proof")}}
               },
               "quests": {

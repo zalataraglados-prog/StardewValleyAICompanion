@@ -33,7 +33,6 @@
 - `strategy.grandpa_progress` 是长期目标 option。
 - 输出层增加 `direction_id`，候选包括：
   - `complete_community_center`
-  - `complete_joja_development`
   - `raise_friendships`
   - `complete_full_shipment`
   - `raise_skill_levels`
@@ -44,6 +43,7 @@
   - `obtain_skull_key`
   - `earn_money`
   - `earn_pet_love`
+- Joja 发展保留为完整游戏路线，不进入爷爷 21 分候选，因为原生 `Utility.getGrandpaScore()` 没有该得分项。
 - 每个方向必须带：domain、potential_points、priority_score、feedback_key、required_minutes、hard_preconditions。
 - `unlock community center` 只能作为前置条件，不作为爷爷得分方向。
 - 社区中心和 Joja 路线互斥，完成任一路线都能满足对应进度收益，但不能同时推荐两个互斥方向。

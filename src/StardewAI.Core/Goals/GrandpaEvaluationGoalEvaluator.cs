@@ -51,8 +51,9 @@ namespace StardewAI.Core.Goals
             {
                 CurrentScore = currentScore,
                 CurrentCandles = CandlesFromScore(currentScore),
-                PointsNeeded = Math.Max(0, 12 - currentScore),
-                TargetMet = currentScore >= 12,
+                FourCandleMilestoneMet = currentScore >= GrandpaEvaluationGoalDefinition.FourCandleScore,
+                PointsNeeded = Math.Max(0, GrandpaEvaluationGoalDefinition.MaximumRuleScore - currentScore),
+                TargetMet = currentScore >= GrandpaEvaluationGoalDefinition.MaximumRuleScore,
                 RequiredFactPaths = RequiredFactPaths,
                 MissingFactPaths = missingFacts,
                 Factors = factors.ToArray(),

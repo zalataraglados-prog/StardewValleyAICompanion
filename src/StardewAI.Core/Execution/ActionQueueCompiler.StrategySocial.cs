@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
@@ -56,9 +57,9 @@ namespace StardewAI.Core.Execution
             {
                 return (new[] { "strategy_strategic_goal_missing:strategic_goal_parameter_required" }, null);
             }
-            if (!string.Equals(goal, "grandpa_four_candles_year3", StringComparison.Ordinal))
+            if (!string.Equals(goal, GrandpaEvaluationGoalDefinition.StrategicGoal, StringComparison.Ordinal))
             {
-                return (new[] { "strategy_strategic_goal_invalid:strategic_goal_must_be_grandpa_four_candles_year3_but_was_" + goal }, null);
+                return (new[] { "strategy_strategic_goal_invalid:strategic_goal_must_be_" + GrandpaEvaluationGoalDefinition.StrategicGoal + "_but_was_" + goal }, null);
             }
 
             var worldModel = new WorldModelProjector().Project(snapshot, goal, executionMode);

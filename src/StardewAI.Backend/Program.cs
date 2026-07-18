@@ -4,6 +4,7 @@ using StardewAI.Contracts.Audit;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Events;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
@@ -176,7 +177,7 @@ app.MapGet("/api/v1/goals/grandpa-evaluation/latest", (StateStore store, WorldMo
         return Results.NotFound(new { detail = "no snapshots ingested" });
     }
 
-    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var model = projector.Project(latest, GrandpaEvaluationGoalDefinition.StrategicGoal, "strategic");
     return Results.Ok(evaluator.Evaluate(model));
 });
 
@@ -188,7 +189,7 @@ app.MapGet("/api/v1/training/grandpa-evaluation/latest", (StateStore store, Worl
         return Results.NotFound(new { detail = "no snapshots ingested" });
     }
 
-    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var model = projector.Project(latest, GrandpaEvaluationGoalDefinition.StrategicGoal, "strategic");
     var report = evaluator.Evaluate(model);
     return Results.Ok(adapter.Build(model, report));
 });
@@ -201,7 +202,7 @@ app.MapGet("/api/v1/training/grandpa-evaluation/latest/feature-rows", (int? maxR
         return Results.NotFound(new { detail = "no snapshots ingested" });
     }
 
-    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var model = projector.Project(latest, GrandpaEvaluationGoalDefinition.StrategicGoal, "strategic");
     var report = evaluator.Evaluate(model);
     var sample = adapter.Build(model, report);
     return Results.Ok(builder.Build(model, sample, maxRows.GetValueOrDefault(5)));
@@ -215,7 +216,7 @@ app.MapPost("/api/v1/training/grandpa-evaluation/latest/feature-rows/append", (T
         return Results.NotFound(new { detail = "no snapshots ingested" });
     }
 
-    var model = projector.Project(latest, "grandpa_four_candles_year3", "strategic");
+    var model = projector.Project(latest, GrandpaEvaluationGoalDefinition.StrategicGoal, "strategic");
     var report = evaluator.Evaluate(model);
     var sample = adapter.Build(model, report);
     var rows = builder.Build(model, sample, maxRows.GetValueOrDefault(5));

@@ -7,10 +7,10 @@
 
 ## Changes from Previous Draft (Audit Remediation)
 
-- **Removed**: Static 12-ID whitelist in compiler. Direction identity is now validated via the live adapter candidate set.
+- **Removed**: Static direction whitelist in compiler. Direction identity is now validated via the live adapter candidate set.
 - **Added**: Full chain rebuild (WorldModelProjector -> GrandpaEvaluationGoalEvaluator -> GrandpaTrainingSampleAdapter) inside compilation for transparent validation.
 - **Added**: Exact equality validation of all metadata fields (domain, potential, priority, feedback, required minutes) against live candidate.
-- **Added**: `strategic_goal` must be exactly `grandpa_four_candles_year3`; missing or any other value is blocked.
+- **Added**: `strategic_goal` must be exactly `grandpa_max_score_year3`; missing or any other value is blocked.
 - **Added**: `optional_minutes` must be present and exactly 0; missing or nonzero is blocked.
 - **Added**: Rejection of nonempty model-supplied `hard_preconditions`, `resource_budget`, `executor_handoff` as unverified.
 - **Changed**: `StrategyPlan` is now empty when any validation blocks the item; no partially invalid steps.
@@ -28,7 +28,7 @@
 
 - No new runtime, network, or game state mutation paths were added.
 - Static tests assert 25 behavioral invariants including tamper-resistance, strategic_goal validation, optional_minutes validation, and empty-plan-on-block.
-- The adapter's 12 direction IDs are verified by coverage tests but are not used as an authority; the live candidate set is authoritative.
+- The adapter's 11 native scoring directions are verified by coverage tests but are not used as an authority; the live candidate set is authoritative.
 - All runtime validation commands are recorded as pending for the controller after user-play constraint is lifted.
 
 ## Executor Capability Reconciliation

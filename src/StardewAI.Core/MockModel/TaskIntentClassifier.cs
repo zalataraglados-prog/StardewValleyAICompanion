@@ -1,5 +1,6 @@
 using System;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Goals;
 
 namespace StardewAI.Core.MockModel
 {
@@ -67,7 +68,7 @@ namespace StardewAI.Core.MockModel
                 };
             }
 
-            if (ContainsAny(text, "grandpa", "four_candles", "four candles", "candles", "grandpa_four_candles_year3", "爷爷"))
+            if (ContainsAny(text, "grandpa", "four_candles", "four candles", "candles", "grandpa_four_candles_year3", GrandpaEvaluationGoalDefinition.StrategicGoal, "爷爷"))
             {
                 return new TaskIntentClassification
                 {
@@ -75,7 +76,7 @@ namespace StardewAI.Core.MockModel
                     OptionId = "strategy.grandpa_progress",
                     Parameters = new[]
                     {
-                        Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                        Parameter("strategic_goal", GrandpaEvaluationGoalDefinition.StrategicGoal),
                         Parameter("requires_direction_selection", "true"),
                         Parameter("classifier_note", "direction_deferred_to_snapshot_aware_policy")
                     }

@@ -70,7 +70,6 @@ OwlAI 是 StardewAI 的专用实现 worker。Codex 仍保留最终审计职责�
 必须覆盖 direction：
 
 - `complete_community_center`
-- `complete_joja_development`
 - `raise_friendships`
 - `complete_full_shipment`
 - `raise_skill_levels`
@@ -81,6 +80,8 @@ OwlAI 是 StardewAI 的专用实现 worker。Codex 仍保留最终审计职责�
 - `obtain_skull_key`
 - `earn_money`
 - `earn_pet_love`
+
+说明：Joja 发展是完整游戏路线候选，但反编译的 `Utility.getGrandpaScore()` 没有 Joja 得分项，因此不得作为爷爷 21 分方向。
 
 ## Worker 第三阶段任务：演示验收
 

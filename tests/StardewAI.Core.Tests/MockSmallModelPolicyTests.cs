@@ -27,13 +27,13 @@ public sealed class MockSmallModelPolicyTests
     {
         var classifier = new TaskIntentClassifier();
 
-        var grandpa = classifier.Classify("grandpa_four_candles_year3");
+        var grandpa = classifier.Classify("grandpa_max_score_year3");
 
         Assert.Equal(TaskIntentCategory.EconomicStrategic, grandpa.Category);
         Assert.Equal("strategy.grandpa_progress", grandpa.OptionId);
         Assert.Contains(grandpa.Parameters, item =>
             item.Name == "strategic_goal" &&
-            item.Value == "grandpa_four_candles_year3");
+            item.Value == "grandpa_max_score_year3");
         Assert.Contains(grandpa.Parameters, item =>
             item.Name == "requires_direction_selection" &&
             item.Value == "true");
@@ -65,7 +65,7 @@ public sealed class MockSmallModelPolicyTests
     {
         var snapshot = Snapshot();
 
-        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var output = new MockSmallModelPolicy().Generate(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var queue = new ActionQueueCompiler().Compile(output, snapshot);
 
         Assert.Equal("strategy.grandpa_progress", output.Actions[0].OptionId);

@@ -129,7 +129,7 @@ namespace StardewAI.Core.MockModel
 
             return new[]
             {
-                Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                Parameter("strategic_goal", GrandpaEvaluationGoalDefinition.StrategicGoal),
                 Parameter("target_score", report.TargetScore.ToString()),
                 Parameter("direction_id", string.Empty),
                 Parameter("direction_domain", "blocked"),
@@ -152,7 +152,7 @@ namespace StardewAI.Core.MockModel
         {
             return new[]
             {
-                Parameter("strategic_goal", "grandpa_four_candles_year3"),
+                Parameter("strategic_goal", GrandpaEvaluationGoalDefinition.StrategicGoal),
                 Parameter("target_score", report.TargetScore.ToString()),
                 Parameter("direction_id", direction.DirectionId),
                 Parameter("direction_domain", string.IsNullOrWhiteSpace(direction.Domain) ? "unknown" : direction.Domain),

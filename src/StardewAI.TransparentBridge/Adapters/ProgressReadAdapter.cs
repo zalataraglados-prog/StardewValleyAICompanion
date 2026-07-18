@@ -74,7 +74,7 @@ public sealed class ProgressQuestReadAdapter : ReadAdapterBase
     }
 }
 
-public sealed class WorldProgressReadAdapter : ReadAdapterBase
+public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
 {
     private const int GoldenWalnutPerfectionTarget = 130;
     private const int GoldenWalnutQiRoomUnlockTarget = 100;
@@ -97,7 +97,7 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             ["community_center"] = Field(ReadCommunityCenter(world, master, communityCenter), "NetWorldState.BundleData/Bundles/BundleRewards; CommunityCenter bundle mutex/note state; Bundle.IsValidItemForThisIngredientDescription; host JojaMember/ccIsComplete received-or-pending flags", tick),
             ["joja_membership"] = Field(Context.IsWorldReady ? master?.mailReceived.Contains("JojaMember") : null, "Game1.MasterPlayer.mailReceived.Contains(\"JojaMember\")", tick),
             ["joja_development"] = Field(ReadJojaDevelopment(master, actor, jojaMart), "JojaMart.JoinJoja map action/checkAction/answerDialogue; JojaCDMenu button mapping and getPriceFromButtonNumber; actor mail/events/money", tick),
-            ["marriage_house"] = Field(ReadMarriageHouse(actor, scienceHouse), "GameLocation.Carpenter action/carpenters/answerDialogue carpenter_Upgrade and upgrade_Yes; Farmer houseUpgradeLevel/daysUntilHouseUpgrade/isMarriedOrRoommates/isEngaged/hasCurrentOrPendingRoommate; exact vanilla 1.6 upgrade prices and materials", tick),
+            ["marriage_house"] = Field(ReadMarriageHouse(actor, scienceHouse), "GameLocation.Carpenter action/carpenters/answerDialogue carpenter_Upgrade and upgrade_Yes; Farmer houseUpgradeLevel/daysUntilHouseUpgrade/isMarriedOrRoommates/isEngaged/hasCurrentOrPendingRoommate; FarmHouse.setMapForUpgradeLevel/AddCellarTiles/createCellarWarps/GetCellarName; Cellar map/objects plus GameLocation.isTilePlaceable/IsTileBlockedBy static capacity; exact vanilla 1.6 upgrade costs and Cask recipe unlock", tick),
             ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece; Data/MuseumRewards[museum60]; Events/Farm[66]", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
@@ -287,104 +287,6 @@ public sealed class WorldProgressReadAdapter : ReadAdapterBase
             PendingProjectMailIds = pendingProjectMailIds,
             AllProjectsCompleteOrPending = projects.All(project => project.CompleteOrPending),
             Projects = projects
-        };
-    }
-
-    private static MarriageHouseProgressRef? ReadMarriageHouse(Farmer? actor, GameLocation? scienceHouse)
-    {
-        if (actor is null || scienceHouse is null)
-        {
-            return null;
-        }
-
-        var actionTile = FindActionTile(scienceHouse, "Carpenter");
-        var current = ReferenceEquals(Game1.currentLocation, scienceHouse);
-        var robin = scienceHouse.characters.FirstOrDefault(npc => string.Equals(npc.Name, "Robin", StringComparison.Ordinal));
-        var robinAtCounter = actionTile is not null && robin is not null &&
-            Vector2.Distance(robin.Tile, new Vector2(actionTile.X, actionTile.Y)) <= 3f;
-        var level = actor.HouseUpgradeLevel;
-        var days = actor.daysUntilHouseUpgrade.Value;
-        var buildingUnderConstruction = Game1.IsThereABuildingUnderConstruction();
-        var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
-        var spec = level switch
-        {
-            0 => new FarmhouseUpgradeProgressRef
-            {
-                UpgradeId = "farmhouse_level_1",
-                LevelBefore = 0,
-                LevelAfter = 1,
-                Price = 10000,
-                RequiredItemId = "(O)388",
-                RequiredItemCount = 450,
-                ConstructionDays = 3
-            },
-            1 => new FarmhouseUpgradeProgressRef
-            {
-                UpgradeId = "farmhouse_level_2",
-                LevelBefore = 1,
-                LevelAfter = 2,
-                Price = 65000,
-                RequiredItemId = "(O)709",
-                RequiredItemCount = 100,
-                ConstructionDays = 3
-            },
-            2 => new FarmhouseUpgradeProgressRef
-            {
-                UpgradeId = "farmhouse_level_3",
-                LevelBefore = 2,
-                LevelAfter = 3,
-                Price = 100000,
-                RequiredItemId = string.Empty,
-                RequiredItemCount = 0,
-                ConstructionDays = 3
-            },
-            _ => null
-        };
-
-        if (spec is not null)
-        {
-            spec.InventoryItemCount = string.IsNullOrEmpty(spec.RequiredItemId) ? 0 : actor.Items.CountId(spec.RequiredItemId);
-            spec.ActionStatus = level >= 3
-                ? "all_farmhouse_upgrades_complete"
-                : days >= 0
-                    ? "farmhouse_upgrade_already_in_progress"
-                    : buildingUnderConstruction
-                        ? "another_building_under_construction"
-                        : actor.Money < spec.Price
-                            ? "insufficient_money"
-                            : spec.InventoryItemCount < spec.RequiredItemCount
-                                ? "insufficient_required_material"
-                                : !current
-                                    ? "science_house_not_current_location"
-                                    : actionTile is null
-                                        ? "carpenter_action_tile_unavailable"
-                                        : !robinAtCounter
-                                            ? "robin_not_present_at_counter"
-                                            : !menuClear
-                                                ? "carpenter_menu_or_dialogue_not_clear"
-                                                : "ready";
-        }
-
-        var married = actor.isMarriedOrRoommates();
-        return new MarriageHouseProgressRef
-        {
-            LocationAccessible = Game1.isLocationAccessible("ScienceHouse"),
-            IsCurrentLocation = current,
-            CarpenterActionTileX = actionTile?.X,
-            CarpenterActionTileY = actionTile?.Y,
-            CarpenterActionRaw = actionTile?.Action ?? string.Empty,
-            IsMasterGame = Game1.IsMasterGame,
-            RobinPresentAtCounter = robinAtCounter,
-            BuildingUnderConstruction = buildingUnderConstruction,
-            MarriedOrRoommate = married,
-            Engaged = actor.isEngaged(),
-            Spouse = actor.spouse ?? string.Empty,
-            PendingRoommate = actor.hasCurrentOrPendingRoommate(),
-            FarmhouseUpgradeLevel = level,
-            DaysUntilFarmhouseUpgrade = days,
-            Money = actor.Money,
-            GrandpaFactorSatisfied = married && level >= 2,
-            HouseUpgrade = spec
         };
     }
 

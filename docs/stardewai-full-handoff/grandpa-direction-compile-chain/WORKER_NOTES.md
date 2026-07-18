@@ -10,13 +10,13 @@
 
 1. Controller audit REJECTED first draft. Rewrote `ValidateStrategyPlan` to rebuild the CURRENT candidate set from the supplied `SnapshotEnvelope` using the full `WorldModelProjector -> GrandpaEvaluationGoalEvaluator -> GrandpaTrainingSampleAdapter` chain. The compiler no longer trusts model-supplied `direction_known`, `direction_blocked`, `potential_points`, `domain`, or `feedback_key` values. It finds the exact current `CandidateDirection` by `direction_id` within the live adapter candidate set.
 
-2. Strict validation: rejects if the current candidate is absent, unknown, blocked, or non-positive. Validates `direction_domain`, `potential_points`, `priority_score`, `feedback_key`, and `required_minutes` for exact equality with the live candidate and `GrandpaStrategyFeatureRowBuilder.EstimateRequiredMinutes(candidate)`. Requires `strategic_goal` to be exactly `grandpa_four_candles_year3` (missing or any other value blocked). Requires `optional_minutes` present and exactly 0 (missing or nonzero blocked). Model-supplied booleans (`direction_known`, `direction_blocked`) are redundant audit hints only and cannot make a candidate valid.
+2. Strict validation: rejects if the current candidate is absent, unknown, blocked, or non-positive. Validates `direction_domain`, `potential_points`, `priority_score`, `feedback_key`, and `required_minutes` for exact equality with the live candidate and `GrandpaStrategyFeatureRowBuilder.EstimateRequiredMinutes(candidate)`. Requires `strategic_goal` to be exactly `grandpa_max_score_year3` (missing or any other value blocked). Requires `optional_minutes` present and exactly 0 (missing or nonzero blocked). Model-supplied booleans (`direction_known`, `direction_blocked`) are redundant audit hints only and cannot make a candidate valid.
 
 3. `CandidateDirection` has no typed `hard_preconditions`, `resource_budget`, or `executor_handoff` source. The compiler rejects nonempty model-supplied values for these fields. The verified `StrategyPlanStep` always emits empty arrays/string for these fields.
 
 4. Strategy validation is computed once in `CompileAction` via a tuple return from `ValidateStrategyPlan`. If strategy validation or any global stale-state/compiler validation blocks the item, `NormalizedCommand.StrategyPlan` is empty. No partially invalid step with -1/default values is ever emitted.
 
-5. Removed the static 12-ID whitelist (`IsKnownGrandpaDirectionId`) as an authority. The adapter's live candidate set is the sole authoritative source. An absent or satisfied direction is rejected because it is not in the current candidate set, not because its ID is missing from a whitelist. The `All12DirectionIdsAreCoveredByAdapter` test verifies the adapter continues to define all 12 direction IDs.
+5. Removed the static direction whitelist (`IsKnownGrandpaDirectionId`) as an authority. The adapter's live candidate set is the sole authoritative source. The current adapter defines 11 native Grandpa scoring directions; Joja development is intentionally not one of them.
 
 6. Preserved the useful classifier placeholder removal and `MockSmallModelPolicy` no-fallback behavior. Made no-eligible tests deterministic: `PolicyFailsClosedWhenTargetAlreadyComplete` uses a target-complete snapshot where the adapter returns zero directions.
 
@@ -53,7 +53,7 @@
 - CompilerRejectsHardPreconditionsValue (tamper)
 - CompilerRejectsResourceBudgetValue (tamper)
 - CompilerRejectsExecutorHandoffValue (tamper)
-- All12DirectionIdsAreCoveredByAdapter (adapter as authority)
+- Adapter direction coverage (11 native scoring directions)
 - DirectionWithUnknownFactorIsNotSelected
 - BlockedItemHasEmptyStrategyPlan
 - AllDirectionsPresentInValidSnapshotAreCoveredByAdapter

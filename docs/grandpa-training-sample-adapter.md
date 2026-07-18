@@ -1,6 +1,6 @@
 # Grandpa Training Sample Adapter
 
-This slice converts `world_model.v1` plus `grandpa_evaluation_goal.v1` into `training_sample.v1`.
+This slice converts `world_model.v1` plus `grandpa_evaluation_goal.v2` into `training_sample.v1`.
 
 It does not require an executor. Without an executor, feedback comes from observed transparent state deltas after human play or any external action source:
 
@@ -14,7 +14,7 @@ The adapter never invents feedback. `feedback.available_now` is `false` until an
 
 `GET /api/v1/training/grandpa-evaluation/latest` returns:
 
-- target score state: current score, target score, points needed, complete flag
+- target score state: current score, 21-point target, points needed, complete flag
 - planner state: missing transparent facts and blocking reasons
 - candidate directions: deterministic ways to gain remaining Grandpa points
 - feedback placeholder: `observed_state_delta`
@@ -41,6 +41,6 @@ Each direction exposes potential points, related factor IDs, blocked status, and
 
 - `dotnet build` passes.
 - `dotnet test --no-restore` passes.
-- Complete goal states produce no candidate directions.
+- Only 21-point complete goal states produce no candidate directions; reaching four candles at 12 points does not stop direction generation.
 - Incomplete goal states produce candidate directions.
 - Missing transparent facts block the sample instead of producing guessed feedback.

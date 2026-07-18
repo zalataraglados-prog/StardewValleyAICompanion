@@ -28,6 +28,26 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var requiredCount = ReadInt(upgrade, "required_item_count");
         var inventoryCount = ReadInt(upgrade, "inventory_item_count");
         var constructionDays = ReadInt(upgrade, "construction_days");
+        var meetsGrandpaHouseLevel = ReadBool(upgrade, "meets_grandpa_house_level_after_construction") == true;
+        var grandpaFactorAfter = ReadBool(upgrade, "grandpa_factor_satisfied_after_construction") == true;
+        var directGrandpaScoreDelta = ReadInt(upgrade, "direct_grandpa_score_delta_after_construction");
+        var unlocksCellar = ReadBool(upgrade, "unlocks_cellar") == true;
+        var unlocksCaskRecipe = ReadBool(upgrade, "unlocks_cask_recipe") == true;
+        var addsIndoorMachineLocation = ReadBool(upgrade, "adds_indoor_machine_placement_location") == true;
+        var capacityProjectionStatus = ReadString(upgrade, "machine_capacity_projection_status");
+        var cellarInfrastructure = row.TryGetProperty("cellar_infrastructure", out var infrastructure) && infrastructure.ValueKind == JsonValueKind.Object
+            ? infrastructure
+            : default;
+        var cellarLocationId = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadString(cellarInfrastructure, "location_id") : string.Empty;
+        var cellarMapWidth = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadInt(cellarInfrastructure, "map_width") : 0;
+        var cellarMapHeight = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadInt(cellarInfrastructure, "map_height") : 0;
+        var cellarPlaceableTiles = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadInt(cellarInfrastructure, "static_placeable_tile_count") : 0;
+        var cellarObjectCount = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadInt(cellarInfrastructure, "occupied_object_count") : 0;
+        var cellarMachineCount = cellarInfrastructure.ValueKind == JsonValueKind.Object ? ReadInt(cellarInfrastructure, "machine_count") : 0;
+        var cellarMachineCountsJson = cellarInfrastructure.ValueKind == JsonValueKind.Object &&
+            cellarInfrastructure.TryGetProperty("machine_counts_by_qualified_id", out var machineCounts) && machineCounts.ValueKind == JsonValueKind.Object
+                ? machineCounts.GetRawText()
+                : "{}";
         var money = ReadInt(row, "money");
         var actionX = NullableReadInt(row, "carpenter_action_tile_x");
         var actionY = NullableReadInt(row, "carpenter_action_tile_y");
@@ -54,6 +74,29 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             reasons.Add("farmhouse_upgrade_native_tuple_invalid");
         }
+        if (!HasCompleteBenefitProjection(upgrade) ||
+            !FarmhouseUpgradeBenefitsExact(
+                row,
+                levelBefore,
+                levelAfter,
+                meetsGrandpaHouseLevel,
+                grandpaFactorAfter,
+                directGrandpaScoreDelta,
+                unlocksCellar,
+                unlocksCaskRecipe,
+                addsIndoorMachineLocation,
+                capacityProjectionStatus))
+        {
+            reasons.Add("farmhouse_upgrade_benefit_projection_invalid");
+        }
+        if (unlocksCellar &&
+            (capacityProjectionStatus != "cellar_static_map_capacity_available" ||
+             cellarInfrastructure.ValueKind != JsonValueKind.Object ||
+             ReadString(cellarInfrastructure, "projection_status") != capacityProjectionStatus ||
+             string.IsNullOrWhiteSpace(cellarLocationId) || cellarMapWidth <= 0 || cellarMapHeight <= 0 || cellarPlaceableTiles <= 0))
+        {
+            reasons.Add("farmhouse_upgrade_cellar_capacity_projection_unavailable");
+        }
 
         var parameters = stand is null || !actionX.HasValue || !actionY.HasValue
             ? Array.Empty<SmallModelActionParameter>()
@@ -78,12 +121,33 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameter("required_stack", requiredCount.ToString()),
                 Parameter("inventory_item_total_before", inventoryCount.ToString()),
                 Parameter("inventory_item_total_after", (inventoryCount - requiredCount).ToString()),
+                Parameter("meets_grandpa_house_level_after_construction", meetsGrandpaHouseLevel.ToString().ToLowerInvariant()),
+                Parameter("grandpa_factor_satisfied_after_construction", grandpaFactorAfter.ToString().ToLowerInvariant()),
+                Parameter("direct_grandpa_score_delta_after_construction", directGrandpaScoreDelta.ToString()),
+                Parameter("unlocks_cellar", unlocksCellar.ToString().ToLowerInvariant()),
+                Parameter("unlocks_cask_recipe", unlocksCaskRecipe.ToString().ToLowerInvariant()),
+                Parameter("adds_indoor_machine_placement_location", addsIndoorMachineLocation.ToString().ToLowerInvariant()),
+                Parameter("machine_capacity_projection_status", capacityProjectionStatus),
+                Parameter("projected_cellar_location_id", unlocksCellar ? cellarLocationId : string.Empty),
+                Parameter("projected_cellar_map_width", (unlocksCellar ? cellarMapWidth : 0).ToString()),
+                Parameter("projected_cellar_map_height", (unlocksCellar ? cellarMapHeight : 0).ToString()),
+                Parameter("projected_cellar_static_placeable_tiles", (unlocksCellar ? cellarPlaceableTiles : 0).ToString()),
+                Parameter("projected_cellar_existing_object_count", (unlocksCellar ? cellarObjectCount : 0).ToString()),
+                Parameter("projected_cellar_existing_machine_count", (unlocksCellar ? cellarMachineCount : 0).ToString()),
+                Parameter("projected_cellar_machine_counts_by_qualified_id_json", unlocksCellar ? cellarMachineCountsJson : "{}"),
                 Parameter("native_contract", "GameLocation.checkAction_Carpenter_then_answerDialogue_carpenter_Upgrade_then_upgrade_Yes")
             };
         var expectedEffect = "player.money=" + (money - price) +
             ";player.days_until_farmhouse_upgrade=" + constructionDays +
             (requiredCount > 0 ? ";inventory." + requiredItemId + "=" + (inventoryCount - requiredCount) : string.Empty) +
-            ";eventual.player.farmhouse_upgrade_level=" + levelAfter;
+            ";eventual.player.farmhouse_upgrade_level=" + levelAfter +
+            ";eventual.grandpa_score_delta=" + directGrandpaScoreDelta +
+            ";eventual.capability.cellar=" + unlocksCellar.ToString().ToLowerInvariant() +
+            ";eventual.capability.cask_recipe=" + unlocksCaskRecipe.ToString().ToLowerInvariant() +
+            ";eventual.capability.indoor_machine_placement_location=" + addsIndoorMachineLocation.ToString().ToLowerInvariant() +
+            ";machine_capacity_projection_status=" + capacityProjectionStatus +
+            ";projected_cellar_static_placeable_tiles=" + (unlocksCellar ? cellarPlaceableTiles : 0) +
+            ";projected_cellar_existing_machine_count=" + (unlocksCellar ? cellarMachineCount : 0);
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
@@ -101,7 +165,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 ExpectedEffect = expectedEffect,
                 Quantity = 1,
                 EstimatedTicks = Math.Max(300, distance * 60 + 300),
-                AvailabilityClass = "transparent_native_farmhouse_upgrade",
+                AvailabilityClass = unlocksCellar
+                    ? "transparent_native_farmhouse_upgrade_indirect_infrastructure"
+                    : "transparent_native_farmhouse_upgrade",
                 AllowedNow = reasons.Count == 0,
                 BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
                 Parameters = parameters
@@ -117,4 +183,48 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             (2, 3, 100000, "", 0) => true,
             _ => false
         };
+
+    private static bool HasCompleteBenefitProjection(JsonElement upgrade) =>
+        HasBooleanProperty(upgrade, "meets_grandpa_house_level_after_construction") &&
+        HasBooleanProperty(upgrade, "grandpa_factor_satisfied_after_construction") &&
+        upgrade.TryGetProperty("direct_grandpa_score_delta_after_construction", out var delta) && delta.TryGetInt32(out _) &&
+        HasBooleanProperty(upgrade, "unlocks_cellar") &&
+        HasBooleanProperty(upgrade, "unlocks_cask_recipe") &&
+        HasBooleanProperty(upgrade, "adds_indoor_machine_placement_location") &&
+        upgrade.TryGetProperty("machine_capacity_projection_status", out var status) && status.ValueKind == JsonValueKind.String &&
+        !string.IsNullOrWhiteSpace(status.GetString());
+
+    private static bool HasBooleanProperty(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) &&
+        (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False);
+
+    private static bool FarmhouseUpgradeBenefitsExact(
+        JsonElement row,
+        int levelBefore,
+        int levelAfter,
+        bool meetsGrandpaHouseLevel,
+        bool grandpaFactorAfter,
+        int directGrandpaScoreDelta,
+        bool unlocksCellar,
+        bool unlocksCaskRecipe,
+        bool addsIndoorMachineLocation,
+        string capacityProjectionStatus)
+    {
+        var currentGrandpaFactor = ReadBool(row, "grandpa_factor_satisfied");
+        var expectedMeetsLevel = levelAfter >= 2;
+        var expectedGrandpaFactorAfter = ReadBool(row, "married_or_roommate") && expectedMeetsLevel;
+        var expectedDelta = !currentGrandpaFactor && expectedGrandpaFactorAfter ? 1 : 0;
+        var expectedCellarUnlock = levelBefore == 2 && levelAfter == 3;
+        var expectedCapacityStatus = expectedCellarUnlock
+            ? "cellar_static_map_capacity_available"
+            : "no_new_machine_location_from_this_upgrade";
+
+        return meetsGrandpaHouseLevel == expectedMeetsLevel &&
+            grandpaFactorAfter == expectedGrandpaFactorAfter &&
+            directGrandpaScoreDelta == expectedDelta &&
+            unlocksCellar == expectedCellarUnlock &&
+            unlocksCaskRecipe == expectedCellarUnlock &&
+            addsIndoorMachineLocation == expectedCellarUnlock &&
+            string.Equals(capacityProjectionStatus, expectedCapacityStatus, StringComparison.Ordinal);
+    }
 }

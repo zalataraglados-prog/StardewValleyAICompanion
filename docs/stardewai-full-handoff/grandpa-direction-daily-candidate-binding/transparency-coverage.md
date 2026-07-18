@@ -1,5 +1,7 @@
 # Grandpa Direction Daily Candidate Binding Coverage
 
+> The current system treats Joja development as a full-game route, not as a Grandpa score direction. See EVD-125/EVD-127.
+
 Current as of 2026-07-18.
 
 | Direction | Status | Candidate boundary |
@@ -13,7 +15,6 @@ Current as of 2026-07-18.
 | complete_museum_collection | Direct, runtime pending | Exact `donate_museum_item` candidates with `before + 1 == after <= LibraryMuseum.totalArtifacts`; final donation projects native achievement 5 settlement |
 | obtain_rusty_key | Direct, runtime pending | Exact donation progress while below the loaded `museum60` threshold; threshold crossing carries `MarkEventSeen Host 295672`, followed by native Farm event 66 key acquisition |
 | complete_community_center | Direct, runtime pending | Exact current-location `donate_community_center_item` candidates; live route state must be `undecided` or `community_center_locked` |
-| complete_joja_development | Blocked | Route state is readable, but membership and project-payment action chains are not implemented |
 | marriage_and_house_upgrade | Blocked | Marriage/house prerequisite candidate chain is missing |
 | earn_pet_love | Direct, runtime pending | Exact positive-progress `pet_daily_interaction` or `fill_pet_bowl`; the latter records delayed `Pet.dayUpdate` settlement rather than immediate friendship |
 

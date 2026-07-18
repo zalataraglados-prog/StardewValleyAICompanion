@@ -1,5 +1,7 @@
 # WORKER_NOTES.md - Grandpa Direction Daily Candidate Binding (Final)
 
+> Historical slice. Superseded by EVD-125/EVD-127: Joja development is implemented as a full-game route but is not a native Grandpa score direction; the current optimization target is all 21 native points.
+
 ## Summary
 
 Revised the grandpa direction daily candidate binding system per controller audit. This is a typed direction-to-daily-candidate binding system that decomposes validated `strategy.grandpa_progress` directions into concrete candidates passable to `DailyPlanCompiler`.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
@@ -136,7 +137,7 @@ namespace StardewAI.Core.Training
 
             var worldModel = projector.Project(
                 snapshot,
-                "grandpa_four_candles_year3",
+                GrandpaEvaluationGoalDefinition.StrategicGoal,
                 "strategic");
 
             var report = evaluator.Evaluate(worldModel);

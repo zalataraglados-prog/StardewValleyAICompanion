@@ -1,5 +1,7 @@
 # evidence.md - Grandpa Direction Daily Candidate Binding (Final)
 
+> Historical slice. Superseded by EVD-125/EVD-127: Joja development is not a native Grandpa score direction, and the current target is all 21 native rule points.
+
 ## Verification Status
 
 This handoff was superseded by a tested controller revision on 2026-07-17. Focused Core tests passed 103/103, full Core tests passed 946/946, Backend tests passed 49/49, and an E-drive isolated native shipping smoke passed its immediate postcondition. Later tested slices are summarized in `AUDIT.md`; the 2026-07-18 pet-care slice remains static-only pending runtime validation.

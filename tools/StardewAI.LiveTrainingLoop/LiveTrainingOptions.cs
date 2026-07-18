@@ -19,7 +19,7 @@ public sealed class LiveTrainingOptions
     public string RunId { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
     public string ArtifactRunId { get; set; } = string.Empty;
     public string SaveIsolationPath { get; set; } = @"E:\StardewValleyAICompanion-runtime\saves";
-    public string Goal { get; set; } = "grandpa_four_candles_year3";
+    public string Goal { get; set; } = StardewAI.Contracts.Goals.GrandpaEvaluationGoalDefinition.StrategicGoal;
     public int MaxAttempts { get; set; } = 3;
     public int RequiredVerifiedActions { get; set; }
     public int TrainEvery { get; set; } = 1;

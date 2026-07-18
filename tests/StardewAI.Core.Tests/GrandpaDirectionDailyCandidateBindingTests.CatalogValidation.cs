@@ -17,7 +17,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     public void All11DirectionsExistInCatalogAndCorrespondToAdapter()
     {
         var snapshot = GrandpaSnapshot();
-        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_four_candles_year3", "training_singleplayer");
+        var worldModel = new WorldModelProjector().Project(snapshot, "grandpa_max_score_year3", "training_singleplayer");
         var report = new GrandpaEvaluationGoalEvaluator().Evaluate(worldModel);
         var sample = new GrandpaTrainingSampleAdapter().Build(worldModel, report);
 
@@ -438,7 +438,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             "shipping_collection": {"value":{"status":"available"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
-            "friendships": {"value":[{"npc":"Abigail","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "friendships": {"value":[{"npc":"A","points":2500},{"npc":"B","points":2500},{"npc":"C","points":2500},{"npc":"D","points":2500},{"npc":"E","points":2500},{"npc":"F","points":2500},{"npc":"G","points":2500},{"npc":"H","points":2500},{"npc":"I","points":2500},{"npc":"J","points":2500}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {
             "mail_received": {"value":["petLoveMessage"],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
