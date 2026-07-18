@@ -61,6 +61,7 @@ namespace StardewAI.Core.Training
                 new[]
                 {
                     "farm.maintain_crops",
+                    "farm.collect_animal_products",
                     "foraging.collect_spawned_objects",
                     "fishing.catch_fish",
                     "fishing.collect_crab_pots",
@@ -72,6 +73,7 @@ namespace StardewAI.Core.Training
                 {
                     "harvest_crop_tile",
                     "harvest_giant_crop_tile",
+                    "collect_animal_product",
                     "collect_spawned_object",
                     "catch_fish",
                     "collect_crab_pot",

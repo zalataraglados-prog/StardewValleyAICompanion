@@ -85,7 +85,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),
             ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Game1.getFarm().objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
             ["chests"] = Field(ReadChests(farm), "Game1.getFarm().objects[*] as Chest", tick, "vanilla_1_6_farm"),
-            ["animals"] = Field(ReadAnimals(farm), "Game1.getFarm().animals", tick, "vanilla_1_6_farm"),
+            ["animals"] = Field(ReadAnimals(farm), "Game1.locations[*].animals plus Game1.getFarm().buildings[*].GetIndoors().animals", tick, "vanilla_1_6_farm_and_animal_houses"),
             ["resource_clumps"] = Field(ReadResourceClumps(farm), "Game1.getFarm().resourceClumps", tick, "vanilla_1_6_farm"),
             ["debris"] = Field(ReadDebris(farm), "Game1.getFarm().debris", tick, "vanilla_1_6_farm"),
             ["warps"] = Field(ReadWarps(farm), "Game1.getFarm().warps", tick, "vanilla_1_6_farm")

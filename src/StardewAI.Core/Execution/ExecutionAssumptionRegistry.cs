@@ -83,11 +83,11 @@ namespace StardewAI.Core.Execution
                 new[] { "MachineDataUtility" }),
             Assumption(
                 "animals",
-                new[] { "farm.maintain_crops" },
+                new[] { "farm.collect_animal_products", "executor.collect_animal_product" },
                 new[] { "animal_location_verified", "tool_or_item_available", "inventory_capacity", "time_budget" },
                 new[] { "produce_quality", "friendship_mood", "incubator_or_birth_timing" },
                 new[] { "missed_pet", "poor_milking_shearing_micro" },
-                new[] { "FarmAnimal" }),
+                new[] { "FarmAnimal", "MilkPail.DoFunction", "Shears.DoFunction" }),
             Assumption(
                 "shops_and_menus",
                 new[] { "economy.buy_supplies", "economy.sell_items" },

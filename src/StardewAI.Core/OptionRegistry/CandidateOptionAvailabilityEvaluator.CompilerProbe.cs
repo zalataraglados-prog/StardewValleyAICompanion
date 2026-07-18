@@ -83,6 +83,7 @@ namespace StardewAI.Core.OptionRegistry
             return optionId == "recovery.stabilize_day" ||
                 optionId == "farm.maintain_crops" ||
                 optionId == "farm.process_machines" ||
+                optionId == "farm.collect_animal_products" ||
                 optionId == "fishing.catch_fish" ||
                 optionId == "fishing.collect_crab_pots" ||
                 optionId == "foraging.collect_spawned_objects" ||
@@ -124,6 +125,7 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "executor.pickup_debris" ||
                 optionId == "executor.collect_spawned_object" ||
                 optionId == "executor.collect_crab_pot" ||
+                optionId == "executor.collect_animal_product" ||
                 optionId == "executor.collect_machine_output" ||
                 optionId == "executor.load_machine_input" ||
                 optionId == "executor.choose_dialogue_response" ||

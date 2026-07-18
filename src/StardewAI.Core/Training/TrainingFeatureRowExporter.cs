@@ -217,10 +217,12 @@ namespace StardewAI.Core.Training
                 case "farm.process_machines":
                 case "executor.catch_fish":
                 case "executor.collect_crab_pot":
+                case "executor.collect_animal_product":
                     return OptionBehaviorCategories.Mechanical;
                 case "exploration.visit_location":
                 case "fishing.catch_fish":
                 case "fishing.collect_crab_pots":
+                case "farm.collect_animal_products":
                     return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":
                 case "economy.sell_items":

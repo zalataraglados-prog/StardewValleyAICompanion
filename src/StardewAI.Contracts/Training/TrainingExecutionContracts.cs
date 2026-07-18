@@ -134,6 +134,24 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_output_items_json")]
         public string ExpectedOutputItemsJson { get; set; } = string.Empty;
 
+        [JsonPropertyName("expected_output_quality")]
+        public int? ExpectedOutputQuality { get; set; }
+
+        [JsonPropertyName("expected_animal_cracker_multiplier")]
+        public int? ExpectedAnimalCrackerMultiplier { get; set; }
+
+        [JsonPropertyName("expected_energy_delta")]
+        public int? ExpectedEnergyDelta { get; set; }
+
+        [JsonPropertyName("expected_friendship_before")]
+        public int? ExpectedFriendshipBefore { get; set; }
+
+        [JsonPropertyName("expected_friendship_after")]
+        public int? ExpectedFriendshipAfter { get; set; }
+
+        [JsonPropertyName("expected_stat_increments_json")]
+        public string ExpectedStatIncrementsJson { get; set; } = string.Empty;
+
         [JsonPropertyName("expected_skill_id")]
         public string ExpectedSkillId { get; set; } = string.Empty;
 

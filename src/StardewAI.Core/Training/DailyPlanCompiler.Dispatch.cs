@@ -77,6 +77,11 @@ namespace StardewAI.Core.Training
                 return CollectCrabPotSteps(candidate);
             }
 
+            if (candidate.Kind == "collect_animal_product")
+            {
+                return CollectAnimalProductSteps(candidate);
+            }
+
             if (candidate.Kind == "collect_machine_output_tile")
             {
                 return CollectMachineOutputSteps(candidate);

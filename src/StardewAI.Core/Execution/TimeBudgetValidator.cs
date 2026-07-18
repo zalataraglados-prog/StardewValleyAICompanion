@@ -163,6 +163,9 @@ namespace StardewAI.Core.Execution
                     return Fixed(30, "crop_farming_rule.v1");
                 case "farm.process_machines":
                     return Fixed(20, "machine_processing_rule.v1");
+                case "farm.collect_animal_products":
+                case "executor.collect_animal_product":
+                    return EstimateCompiledSteps(item, "native_animal_tool_steps.v1");
                 case "economy.buy_supplies":
                     return Fixed(90, "shop_menu_rule.v1");
                 case "economy.sell_items":
@@ -305,6 +308,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "fishing.collect_crab_pots" or "executor.collect_crab_pot")
             {
                 return assumptionRegistry.GetRequired("crab_pot_collection");
+            }
+
+            if (item.OptionId is "farm.collect_animal_products" or "executor.collect_animal_product")
+            {
+                return assumptionRegistry.GetRequired("animals");
             }
 
             var activity = Parameter(item, "target_activity");

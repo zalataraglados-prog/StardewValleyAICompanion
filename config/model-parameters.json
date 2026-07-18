@@ -61,6 +61,7 @@
     "initial_families": [
       "farm.maintain_crops",
       "farm.process_machines",
+      "farm.collect_animal_products",
       "economy.buy_supplies",
       "economy.sell_items",
       "social.gift_npc",

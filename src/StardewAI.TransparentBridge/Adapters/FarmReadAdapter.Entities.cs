@@ -3,7 +3,9 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Machines;
+using StardewValley.GameData.FarmAnimals;
 using StardewValley.Objects;
+using StardewValley.Tools;
 using StardewValley.TerrainFeatures;
 using StardewAI.TransparentBridge.State;
 using System.Reflection;
@@ -45,22 +47,122 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private static object[] ReadAnimals(Farm farm)
     {
-        return farm.animals.Pairs
-            .Select(pair => new
-            {
-                animal_id = pair.Key,
-                name = pair.Value.Name,
-                display_name = pair.Value.displayName,
-                type = pair.Value.type.Value,
-                building_type_i_live_in = pair.Value.buildingTypeILiveIn.Value,
-                age = pair.Value.age.Value,
-                friendship_toward_farmer = pair.Value.friendshipTowardFarmer.Value,
-                produce_quality = pair.Value.produceQuality.Value,
-                tile_x = pair.Value.TilePoint.X,
-                tile_y = pair.Value.TilePoint.Y
-            })
-            .OrderBy(animal => animal.animal_id)
+        var locations = Game1.locations
+            .Concat(farm.buildings.Select(building => building.GetIndoors()).Where(location => location is not null)!)
+            .Append(farm)
+            .Distinct()
             .ToArray();
+        var animals = locations
+            .SelectMany(location => location.animals.Pairs.Select(pair => new
+            {
+                AnimalId = pair.Key,
+                Animal = pair.Value,
+                LocationId = location.NameOrUniqueName
+            }))
+            .GroupBy(entry => entry.AnimalId)
+            .Select(group => group.First())
+            .ToArray();
+
+        return animals
+            .OrderBy(entry => entry.AnimalId)
+            .Select(entry => ReadAnimal(entry.AnimalId, entry.Animal, entry.LocationId, Game1.player))
+            .ToArray();
+    }
+
+    private static object ReadAnimal(long animalId, FarmAnimal animal, string locationId, Farmer player)
+    {
+        var data = animal.GetAnimalData();
+        var harvestTool = data?.HarvestTool ?? string.Empty;
+        var toolSlot = player.Items
+            .Select((item, index) => new { item, index })
+            .FirstOrDefault(entry => entry.item is Tool tool && string.Equals(tool.Name, harvestTool, StringComparison.Ordinal))
+            ?.index ?? -1;
+        var currentProduce = animal.currentProduce.Value ?? string.Empty;
+        var output = string.IsNullOrWhiteSpace(currentProduce)
+            ? null
+            : ItemRegistry.Create<StardewValley.Object>("(O)" + currentProduce);
+        if (output is not null)
+        {
+            output.CanBeSetDown = false;
+            output.Quality = animal.produceQuality.Value;
+            output.Stack = animal.hasEatenAnimalCracker.Value ? 2 : 1;
+            output.HasBeenInInventory = true;
+        }
+        var outputProjection = output is null ? null : ClearanceOutputItemProjection.From(output);
+        var outputItemsJson = outputProjection is null
+            ? string.Empty
+            : System.Text.Json.JsonSerializer.Serialize(new[] { outputProjection });
+        var inventoryAcceptsOutput = output is not null && player.couldInventoryAcceptThisItem(output);
+        var statIncrements = output is null || data?.StatToIncrementOnProduce is null
+            ? Array.Empty<object>()
+            : data.StatToIncrementOnProduce
+                .Where(stat => (stat.RequiredItemId is null || ItemRegistry.HasItemId(output, stat.RequiredItemId)) &&
+                    (stat.RequiredTags is null || stat.RequiredTags.Count == 0 || ItemContextTagManager.DoAllTagsMatch(stat.RequiredTags, output.GetContextTags())))
+                .Select(stat => (object)new
+                {
+                    stat_name = stat.StatName,
+                    amount = output.Stack,
+                    before = Game1.stats.Get(stat.StatName),
+                    after = Game1.stats.Get(stat.StatName) + (uint)output.Stack
+                })
+                .ToArray();
+        var adult = animal.isAdult();
+        var supportedTool = harvestTool is "Milk Pail" or "Shears";
+        var harvestStatus = data is null
+            ? "animal_data_unavailable"
+            : data.HarvestType != FarmAnimalHarvestType.HarvestWithTool
+                ? "animal_produce_not_tool_harvested"
+                : !supportedTool
+                    ? "unsupported_animal_harvest_tool"
+                    : string.IsNullOrWhiteSpace(currentProduce)
+                        ? "animal_produce_not_ready"
+                        : !adult
+                            ? "animal_not_adult"
+                            : toolSlot < 0
+                                ? "animal_harvest_tool_missing"
+                                : !inventoryAcceptsOutput
+                                    ? "animal_product_inventory_cannot_accept_output"
+                                    : "ready";
+
+        return new
+        {
+            animal_id = animalId,
+            runtime_type = animal.GetType().FullName,
+            location_id = locationId,
+            name = animal.Name,
+            display_name = animal.displayName,
+            type = animal.type.Value,
+            owner_id = animal.ownerID.Value,
+            building_type_i_live_in = animal.buildingTypeILiveIn.Value,
+            age = animal.age.Value,
+            days_to_mature = data?.DaysToMature,
+            is_adult = adult,
+            friendship_toward_farmer = animal.friendshipTowardFarmer.Value,
+            friendship_after_harvest = Math.Min(1000, animal.friendshipTowardFarmer.Value + 5),
+            produce_quality = animal.produceQuality.Value,
+            current_produce_item_id = currentProduce,
+            current_produce_qualified_item_id = output?.QualifiedItemId ?? string.Empty,
+            has_eaten_animal_cracker = animal.hasEatenAnimalCracker.Value,
+            harvest_type = data?.HarvestType.ToString() ?? string.Empty,
+            harvest_tool = harvestTool,
+            harvest_tool_runtime_type = toolSlot >= 0 ? player.Items[toolSlot]?.GetType().FullName ?? string.Empty : string.Empty,
+            harvest_tool_slot_index = toolSlot,
+            harvest_status = harvestStatus,
+            inventory_accepts_harvest_output = inventoryAcceptsOutput,
+            harvest_output_runtime_type = outputProjection?.RuntimeType ?? string.Empty,
+            harvest_output_qualified_item_id = outputProjection?.QualifiedItemId ?? string.Empty,
+            harvest_output_quality = outputProjection?.Quality ?? 0,
+            harvest_output_quantity = outputProjection?.Quantity ?? 0,
+            harvest_output_unit_state_sha256 = outputProjection?.UnitStateSha256 ?? string.Empty,
+            harvest_expected_output_items_json = outputItemsJson,
+            harvest_stat_increments_json = System.Text.Json.JsonSerializer.Serialize(statIncrements),
+            harvest_energy_cost = 4,
+            harvest_farming_experience_delta = 5,
+            harvest_friendship_delta = 5,
+            harvest_projection_status = outputProjection is null ? "unavailable" : "exact",
+            tile_x = animal.TilePoint.X,
+            tile_y = animal.TilePoint.Y
+        };
     }
 
     private static object[] ReadResourceClumps(Farm farm)

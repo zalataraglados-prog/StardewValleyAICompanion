@@ -25,6 +25,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "machine queue inspected", "machine action steps produced" },
                 new[] { "never_sell_protected_items", "block_unavailable_required_state" }));
 
+            Register(Option("farm.collect_animal_products", "farm", "Collect one transparent ready animal product",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "farm.animals", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
+                new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("economy.buy_supplies", "economy", "Buy supplies preview",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -478,6 +486,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "native checkAction collects the exact held output", "inventory, bait, fish collection, and Fishing XP deltas are observed" },
                 new[] { "block_unready_crab_pot", "block_inventory_full", "block_menu_unsafe_interact", "block_projection_drift" }));
+
+            Register(Option("executor.collect_animal_product", "farm", "Collect one verified animal product with its native tool",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "farm.animals", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one adjacent stand tile", "native Milk Pail or Shears lifecycle targets the exact animal", "produce, inventory, energy, friendship, and Farming XP deltas are verified" },
+                new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_menu_unsafe_tool_use", "block_projection_drift", "block_direct_animal_or_inventory_mutation" }));
 
             Register(Option("executor.collect_machine_output", "farm", "Collect one verified ready machine output",
                 OptionBehaviorCategories.Mechanical,

@@ -13,6 +13,7 @@ namespace StardewAI.Core.OptionRegistry
             return new Dictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>>(StringComparer.Ordinal)
             {
                 ["farm.maintain_crops"] = (snapshot, _) => FarmMaintenanceCandidates(snapshot),
+                ["farm.collect_animal_products"] = (snapshot, _) => AnimalProductCandidates(snapshot),
                 ["farm.process_machines"] = (snapshot, _) => MachineProcessingCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),

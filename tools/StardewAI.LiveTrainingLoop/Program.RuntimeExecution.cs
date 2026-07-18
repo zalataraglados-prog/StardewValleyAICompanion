@@ -265,6 +265,12 @@ static partial class Program
         var clearOutputProjectionStatus = ReadQueueParameterString(item, "clear_output_projection_status");
         var clearOutputItemsJson = ReadQueueParameterString(item, "clear_output_items_json");
         var expectedOutputItemsJson = ReadQueueParameterString(item, "expected_output_items_json");
+        var expectedOutputQuality = ReadQueueParameterInt(item, "expected_output_quality");
+        var expectedAnimalCrackerMultiplier = ReadQueueParameterInt(item, "expected_animal_cracker_multiplier");
+        var expectedEnergyDelta = ReadQueueParameterInt(item, "expected_energy_delta");
+        var expectedFriendshipBefore = ReadQueueParameterInt(item, "expected_friendship_before");
+        var expectedFriendshipAfter = ReadQueueParameterInt(item, "expected_friendship_after");
+        var expectedStatIncrementsJson = ReadQueueParameterString(item, "expected_stat_increments_json");
         var expectedSkillId = ReadQueueParameterString(item, "expected_skill_id");
         var expectedSkillExperienceDelta = ReadQueueParameterInt(item, "expected_skill_experience_delta");
         var expectedContainerBaitQualifiedItemId = ReadQueueParameterString(item, "expected_container_bait_qualified_item_id");
@@ -401,6 +407,12 @@ static partial class Program
         executionRequest.ClearOutputProjectionStatus = clearOutputProjectionStatus;
         executionRequest.ClearOutputItemsJson = clearOutputItemsJson;
         executionRequest.ExpectedOutputItemsJson = expectedOutputItemsJson;
+        executionRequest.ExpectedOutputQuality = expectedOutputQuality;
+        executionRequest.ExpectedAnimalCrackerMultiplier = expectedAnimalCrackerMultiplier;
+        executionRequest.ExpectedEnergyDelta = expectedEnergyDelta;
+        executionRequest.ExpectedFriendshipBefore = expectedFriendshipBefore;
+        executionRequest.ExpectedFriendshipAfter = expectedFriendshipAfter;
+        executionRequest.ExpectedStatIncrementsJson = expectedStatIncrementsJson;
         executionRequest.ExpectedSkillId = expectedSkillId;
         executionRequest.ExpectedSkillExperienceDelta = expectedSkillExperienceDelta;
         executionRequest.ExpectedContainerBaitQualifiedItemId = expectedContainerBaitQualifiedItemId;

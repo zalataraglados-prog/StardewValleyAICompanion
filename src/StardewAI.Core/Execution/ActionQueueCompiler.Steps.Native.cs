@@ -211,6 +211,26 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileCollectAnimalProductStep(SmallModelAction action)
+        {
+            var animalId = ReadParameter(action, "target_runtime_identity");
+            var tool = ReadParameter(action, "required_tool_kind");
+            var output = ReadParameter(action, "qualified_item_id");
+            if (string.IsNullOrWhiteSpace(animalId) || string.IsNullOrWhiteSpace(tool) || string.IsNullOrWhiteSpace(output))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "collect_animal_product",
+                    "animal:" + animalId + ":" + tool,
+                    "farm.animals[" + animalId + "].current_produce=null;player.inventory[" + output + "].stack_increases;player.skills.farming.experience_increases",
+                    120)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectMachineOutputStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");
