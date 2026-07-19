@@ -9,7 +9,7 @@ Included nodes:
 - current player inventory;
 - player storage chests across loaded persistent locations and farm-building interiors;
 - the current player's unlocked built-in fridge and placed mini-fridges;
-- global chest inventories, deduplicated by `Chest.GlobalInventoryId`;
+- global chest inventories, deduplicated by explicit `Chest.GlobalInventoryId` or the native `JunimoChest -> FarmerTeam.GlobalInventoryId_JunimoChest` branch;
 - Auto-Grabber internal `heldObject` chests;
 - machine buffers, separated into `ready_output` and `in_process` supply states.
 
@@ -18,7 +18,7 @@ Workbench rows are edges over existing chest nodes. They follow the decompiled `
 ## Native Sources
 
 - `Utility.ForEachLocation(includeInteriors:true, includeGenerated:false)` supplies persistent locations.
-- `Chest.GetItemsForPlayer(playerId)` supplies the player-specific or global inventory actually used by native chest actions; `Chest.Items` is not used for placed-chest quantity.
+- `Chest.GetItemsForPlayer(playerId)` supplies the player-specific or global inventory actually used by native chest actions; `Chest.Items` is not used for placed-chest quantity. Its separate `JunimoChest` branch resolves `FarmerTeam.GlobalInventoryId_JunimoChest` even when the explicit property is empty.
 - `GameLocation.GetFridge(true)` and `GetFridgePosition()` supply the unlocked map fridge.
 - `(BC)165` `Object.heldObject as Chest` supplies Auto-Grabber contents.
 - machine `heldObject`, `readyForHarvest`, and machine data separate collectable output from in-process material.
@@ -29,5 +29,6 @@ Workbench rows are edges over existing chest nodes. They follow the decompiled `
 
 ## Exit Boundary
 
-Static read, deduplication, quantity aggregation, Workbench connectivity, and exact-slot reservation projection are complete and offline-tested. This does not complete native chest transfer, Workbench crafting, storage placement/relocation, machine placement, or long-term service execution. An isolated full-profile snapshot is still required before runtime confidence is granted.
+Static read, deduplication, quantity aggregation, Workbench connectivity, and exact-slot reservation projection are complete and offline-tested. Hidden and silent isolated runtime smoke `runtime-material-inventory-graph-smoke-20260719-152511` passed 17/17 checks over a native matrix containing normal and Big Chests, two Junimo Chest access points sharing one implicit global inventory, built-in and mini fridges, an Auto-Grabber buffer, Workbench adjacency, and ready/in-process machine buffers.
 
+This does not complete native chest transfer, Workbench crafting, storage placement/relocation, machine placement, multiplayer ownership policy, or long-term service execution. Downstream machine construction must distinguish personal-inventory crafting, Workbench-connected crafting, and material staging; it must not treat graph-wide available quantity as directly consumable by the personal crafting menu.

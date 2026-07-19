@@ -555,6 +555,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_material_inventory_graph")
+            {
+                pending.Completion.SetResult(ExecuteSetupMaterialInventoryGraph(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_input_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineInputTarget(pending.Request));

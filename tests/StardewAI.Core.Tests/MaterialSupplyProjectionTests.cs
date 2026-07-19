@@ -13,6 +13,8 @@ public sealed class MaterialSupplyProjectionTests
 
         Assert.Contains("MachineLocationTopology.ReadPersistentLocations(farm, player)", source, StringComparison.Ordinal);
         Assert.Contains("chest.GetItemsForPlayer(player.UniqueMultiplayerID)", source, StringComparison.Ordinal);
+        Assert.Contains("chest.SpecialChestType == Chest.SpecialChestTypes.JunimoChest", source, StringComparison.Ordinal);
+        Assert.Contains("FarmerTeam.GlobalInventoryId_JunimoChest", source, StringComparison.Ordinal);
         Assert.Contains("location.GetFridge(onlyUnlocked: true)", source, StringComparison.Ordinal);
         Assert.Contains("item.QualifiedItemId == \"(BC)165\" && item.heldObject.Value is Chest", source, StringComparison.Ordinal);
         Assert.Contains("item.readyForHarvest.Value ? \"ready_output\" : \"in_process\"", source, StringComparison.Ordinal);

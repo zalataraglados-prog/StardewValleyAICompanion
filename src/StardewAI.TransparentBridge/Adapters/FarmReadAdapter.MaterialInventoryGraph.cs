@@ -113,7 +113,7 @@ public sealed partial class FarmReadAdapter
         string accessKind)
     {
         var locationId = locationRef.Location.NameOrUniqueName;
-        var globalInventoryId = chest.GlobalInventoryId ?? string.Empty;
+        var globalInventoryId = ResolveGlobalInventoryId(chest);
         var nodeId = globalInventoryId.Length > 0
             ? NodeId("global", globalInventoryId)
             : NodeId("chest", locationId, TileText(tile));
@@ -153,6 +153,18 @@ public sealed partial class FarmReadAdapter
             LockedByOtherPlayer = chest.GetMutex().IsLocked() && !chest.GetMutex().IsLockHeld()
         });
         chestNodeByTile[LocationTileKey(locationId, tile)] = nodeId;
+    }
+
+    private static string ResolveGlobalInventoryId(Chest chest)
+    {
+        if (!string.IsNullOrWhiteSpace(chest.GlobalInventoryId))
+        {
+            return chest.GlobalInventoryId;
+        }
+
+        return chest.SpecialChestType == Chest.SpecialChestTypes.JunimoChest
+            ? FarmerTeam.GlobalInventoryId_JunimoChest
+            : string.Empty;
     }
 
     private static void AddObjectBuffer(

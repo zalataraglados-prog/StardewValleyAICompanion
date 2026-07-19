@@ -435,6 +435,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_giant_crop_target" &&
             request.OptionId != "debug.setup_debris_target" &&
             request.OptionId != "debug.setup_machine_output_target" &&
+            request.OptionId != "debug.setup_material_inventory_graph" &&
             request.OptionId != "debug.setup_crab_pot_target" &&
             request.OptionId != "debug.setup_animal_product_target" &&
             request.OptionId != "debug.setup_pan_ore_spot" &&
