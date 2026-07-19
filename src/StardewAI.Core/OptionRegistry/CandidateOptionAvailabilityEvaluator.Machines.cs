@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -13,10 +14,12 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private EventCandidate[] MachineProcessingCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] MachineProcessingCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             return MachineServiceCandidates(snapshot)
-                .Concat(MachineCraftingCandidates(snapshot))
+                .Concat(MachineCraftingCandidates(snapshot, commitmentLedger))
                 .OrderBy(candidate => candidate.Kind, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
@@ -503,8 +506,11 @@ namespace StardewAI.Core.OptionRegistry
                     return MachineOutputPrediction.Unavailable("machine_data_exact_required_item_match_condition_not_evaluated");
                 }
 
-                var additionalConsumed = ReadAdditionalConsumedSummary(rule, inventoryStacks);
-                if (ReadInt(rule, "additional_consumed_item_count") > 0 && !additionalConsumed.HasValue)
+                var additionalSource = ReadInt(machineData, "additional_consumed_item_count") > 0
+                    ? machineData
+                    : rule;
+                var additionalConsumed = ReadAdditionalConsumedSummary(additionalSource, inventoryStacks);
+                if (ReadInt(additionalSource, "additional_consumed_item_count") > 0 && !additionalConsumed.HasValue)
                 {
                     return MachineOutputPrediction.Unavailable("machine_data_exact_required_item_match_additional_consumption_unpriced");
                 }
@@ -512,6 +518,18 @@ namespace StardewAI.Core.OptionRegistry
                 if (!rule.TryGetProperty("output_item", out var outputItem) || outputItem.ValueKind != JsonValueKind.Object)
                 {
                     return MachineOutputPrediction.Unavailable("machine_data_exact_required_item_match_without_output_item");
+                }
+
+                if (!string.IsNullOrWhiteSpace(ReadString(outputItem, "condition")) ||
+                    !string.IsNullOrWhiteSpace(ReadString(outputItem, "per_item_condition")))
+                {
+                    return MachineOutputPrediction.Unavailable("machine_data_exact_required_item_match_output_condition_not_evaluated");
+                }
+                if (!string.IsNullOrWhiteSpace(ReadString(outputItem, "output_method")) ||
+                    (outputItem.TryGetProperty("random_item_ids", out var randomIds) &&
+                     randomIds.ValueKind == JsonValueKind.Array && randomIds.GetArrayLength() > 0))
+                {
+                    return MachineOutputPrediction.Unavailable("machine_data_exact_required_item_match_dynamic_output_not_priced");
                 }
 
                 var copyPrice = ReadBool(outputItem, "copy_price") == true;
@@ -567,6 +585,10 @@ namespace StardewAI.Core.OptionRegistry
                 }
 
                 var minutesUntilReady = ReadInt(rule, "minutes_until_ready");
+                if (minutesUntilReady <= 0 && ReadInt(rule, "days_until_ready") > 0)
+                {
+                    minutesUntilReady = ReadInt(rule, "days_until_ready") * 1600;
+                }
                 if (minutesUntilReady > 0)
                 {
                     suffix += ";predicted_minutes_until_ready=" + minutesUntilReady;
@@ -650,7 +672,15 @@ namespace StardewAI.Core.OptionRegistry
             string matchedRuleId,
             IReadOnlyDictionary<string, int> inventoryStacks)
         {
-            if (machineData.ValueKind != JsonValueKind.Object ||
+            if (machineData.ValueKind != JsonValueKind.Object)
+            {
+                return new AdditionalConsumedSummary(0, string.Empty, string.Empty);
+            }
+            if (ReadInt(machineData, "additional_consumed_item_count") > 0)
+            {
+                return ReadAdditionalConsumedSummary(machineData, inventoryStacks);
+            }
+            if (
                 !machineData.TryGetProperty("output_rules", out var rules) ||
                 rules.ValueKind != JsonValueKind.Array)
             {

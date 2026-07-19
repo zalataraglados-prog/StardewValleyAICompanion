@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -12,7 +13,9 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private static EventCandidate[] MachineCraftingCandidates(SnapshotEnvelope snapshot)
+        private static EventCandidate[] MachineCraftingCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             var context = ReadStateFieldValue(snapshot, "player", "machine_crafting");
             if (!context.HasValue || context.Value.ValueKind != JsonValueKind.Object ||
@@ -23,12 +26,15 @@ namespace StardewAI.Core.OptionRegistry
 
             return rows.EnumerateArray()
                 .Where(row => row.ValueKind == JsonValueKind.Object)
-                .Select(row => BuildMachineCraftingCandidate(snapshot, row))
+                .Select(row => BuildMachineCraftingCandidate(snapshot, row, commitmentLedger))
                 .OrderBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
         }
 
-        private static EventCandidate BuildMachineCraftingCandidate(SnapshotEnvelope snapshot, JsonElement row)
+        private static EventCandidate BuildMachineCraftingCandidate(
+            SnapshotEnvelope snapshot,
+            JsonElement row,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             var recipeName = ReadString(row, "recipe_name");
             var outputQualifiedId = ReadString(row, "output_qualified_item_id");
@@ -38,7 +44,7 @@ namespace StardewAI.Core.OptionRegistry
             var ingredientRowsJson = row.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
-            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row);
+            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row, commitmentLedger);
             var blockReasons = new List<string>();
             if (!string.Equals(ReadString(row, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal))
             {
@@ -83,6 +89,8 @@ namespace StardewAI.Core.OptionRegistry
                     ";machine_horizon_status=" + demand.HorizonStatus +
                     ";machine_timing_status=" + demand.TimingStatus +
                     ";machine_demand_priority=" + demand.Priority +
+                    ";next_arrival_source=" + demand.NextArrivalSource +
+                    ";commitment_ledger_revision=" + demand.CommitmentLedgerRevision +
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
                     ";collection_path_required=" + demand.CollectionPathRequired.ToString().ToLowerInvariant() +
@@ -118,12 +126,19 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("process_cycle_minutes", demand.ProcessCycleMinutes.ToString()),
                     Parameter("next_arrival_days", demand.NextArrivalDays.ToString()),
                     Parameter("next_arrival_units", demand.NextArrivalUnits.ToString()),
+                    Parameter("next_arrival_service_interval_days", demand.NextArrivalServiceIntervalDays.ToString()),
                     Parameter("capacity_before_next_arrival", demand.CapacityBeforeNextArrival.ToString()),
                     Parameter("capacity_deficit_units", demand.CapacityDeficitUnits.ToString()),
+                    Parameter("capacity_between_arrival_waves", demand.CapacityBetweenArrivalWaves.ToString()),
+                    Parameter("arrival_wave_capacity_deficit_units", demand.ArrivalWaveCapacityDeficitUnits.ToString()),
                     Parameter("required_additional_machine_count", demand.RequiredAdditionalMachineCount.ToString()),
                     Parameter("latest_build_lead_minutes", demand.LatestBuildLeadMinutes.ToString()),
                     Parameter("minutes_until_next_arrival", demand.MinutesUntilNextArrival.ToString()),
                     Parameter("machine_build_window_open", demand.BuildWindowOpen.ToString().ToLowerInvariant()),
+                    Parameter("next_arrival_source", demand.NextArrivalSource),
+                    Parameter("commitment_ledger_id", demand.CommitmentLedgerId),
+                    Parameter("commitment_ledger_revision", demand.CommitmentLedgerRevision.ToString()),
+                    Parameter("commitment_ids_json", JsonSerializer.Serialize(demand.CommitmentIds)),
                     Parameter("collection_path_required", demand.CollectionPathRequired.ToString().ToLowerInvariant()),
                     Parameter("collection_path_source", demand.CollectionPathSource)
                 }

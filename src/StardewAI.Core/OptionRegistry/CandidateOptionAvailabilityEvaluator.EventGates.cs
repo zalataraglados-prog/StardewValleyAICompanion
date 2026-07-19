@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -256,11 +257,21 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate[] EventCandidates(SnapshotEnvelope snapshot, string optionId, string[] missingStateFactors, SmallModelActionParameter[] parameters)
+        private EventCandidate[] EventCandidates(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            string[] missingStateFactors,
+            SmallModelActionParameter[] parameters,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (missingStateFactors.Length > 0)
             {
                 return Array.Empty<EventCandidate>();
+            }
+
+            if (string.Equals(optionId, "farm.process_machines", StringComparison.Ordinal))
+            {
+                return MachineProcessingCandidates(snapshot, commitmentLedger);
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)

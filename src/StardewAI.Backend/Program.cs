@@ -8,6 +8,7 @@ using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Previews;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
@@ -49,6 +50,7 @@ builder.Services.AddSingleton<StardewTrainingSessionLauncher>();
 builder.Services.AddSingleton<TrainingReadyProbe>();
 builder.Services.AddSingleton<CandidateOptionAvailabilityEvaluator>();
 builder.Services.AddSingleton<GrandpaDirectionDailyCandidateBinding>();
+builder.Services.AddSingleton<IStrategyCommitmentRepository, FileStrategyCommitmentRepository>();
 
 var app = builder.Build();
 
@@ -80,6 +82,54 @@ app.MapGet("/api/v1/snapshots/latest", (StateStore store) =>
 {
     var latest = store.LatestSnapshot();
     return latest is null ? Results.NotFound(new { detail = "no snapshots ingested" }) : Results.Ok(latest);
+});
+
+app.MapGet("/api/v1/strategy/commitments/latest", (string? stateHash, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (!string.IsNullOrWhiteSpace(stateHash) && !store.Snapshots.TryGetValue(stateHash, out _))
+    {
+        return Results.NotFound(new { detail = "no matching snapshot available" });
+    }
+    var snapshot = !string.IsNullOrWhiteSpace(stateHash)
+        ? store.Snapshots[stateHash]
+        : store.LatestSnapshot();
+    return snapshot is null
+        ? Results.NotFound(new { detail = "no matching snapshot available" })
+        : Results.Ok(repository.Get(snapshot));
+});
+
+app.MapPost("/api/v1/strategy/commitments/crops/upsert", (CropPlantingCommitmentUpsertRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.Upsert(snapshot, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("CropStrategyCommitmentUpserted", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
+});
+
+app.MapPost("/api/v1/strategy/commitments/crops/{commitmentId}/cancel", (string commitmentId, StrategyCommitmentCancelRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))
+    {
+        return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
+    }
+    var result = repository.Cancel(snapshot, commitmentId, request);
+    if (!result.Accepted)
+    {
+        return result.Errors.Contains("ledger_revision_conflict", StringComparer.Ordinal)
+            ? Results.Conflict(result)
+            : Results.UnprocessableEntity(result);
+    }
+    store.AppendAudit("CropStrategyCommitmentCancelled", snapshot.GameTick, snapshot.StateHash);
+    return Results.Ok(result);
 });
 
 app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
@@ -240,7 +290,7 @@ app.MapPost("/api/v1/action-compiler/compile", (CompileRequest request, StateSto
     return Results.Ok(preview);
 });
 
-app.MapPost("/api/v1/small-model/action-queue/compile", (SmallModelActionEnvelope request, StateStore store, ActionQueueCompiler compiler) =>
+app.MapPost("/api/v1/small-model/action-queue/compile", (SmallModelActionEnvelope request, StateStore store, ActionQueueCompiler compiler, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
         ? selected
@@ -251,13 +301,13 @@ app.MapPost("/api/v1/small-model/action-queue/compile", (SmallModelActionEnvelop
         return Results.NotFound(new { detail = "no matching snapshot available" });
     }
 
-    var queue = compiler.Compile(request, snapshot);
+    var queue = compiler.Compile(request, snapshot, commitmentRepository.Get(snapshot));
     store.ActionQueues[queue.QueueId] = queue;
     store.AppendAudit("ActionQueueCompiled", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(queue);
 });
 
-app.MapPost("/api/v1/small-model/plan/action-queue/compile", (SmallModelPlanEnvelope request, StateStore store, ActionQueueCompiler compiler) =>
+app.MapPost("/api/v1/small-model/plan/action-queue/compile", (SmallModelPlanEnvelope request, StateStore store, ActionQueueCompiler compiler, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
         ? selected
@@ -268,7 +318,7 @@ app.MapPost("/api/v1/small-model/plan/action-queue/compile", (SmallModelPlanEnve
         return Results.NotFound(new { detail = "no matching snapshot available" });
     }
 
-    var queue = compiler.Compile(request, snapshot);
+    var queue = compiler.Compile(request, snapshot, commitmentRepository.Get(snapshot));
     store.ActionQueues[queue.QueueId] = queue;
     store.AppendAudit("PlanActionQueueCompiled", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(queue);
@@ -290,7 +340,7 @@ app.MapPost("/api/v1/mock-model/small-model-action", (MockModelActionRequest req
     return Results.Ok(output);
 });
 
-app.MapPost("/api/v1/planner/options/availability", (OptionAvailabilityRequest request, StateStore store, CandidateOptionAvailabilityEvaluator evaluator) =>
+app.MapPost("/api/v1/planner/options/availability", (OptionAvailabilityRequest request, StateStore store, CandidateOptionAvailabilityEvaluator evaluator, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
         ? selected
@@ -302,8 +352,8 @@ app.MapPost("/api/v1/planner/options/availability", (OptionAvailabilityRequest r
     }
 
     var availability = request.Candidates.Length > 0
-        ? evaluator.Evaluate(snapshot, request.Candidates, request.IncludeExecutorCalibrationOptions)
-        : evaluator.Evaluate(snapshot, request.CandidateOptionIds, request.IncludeExecutorCalibrationOptions);
+        ? evaluator.Evaluate(snapshot, request.Candidates, request.IncludeExecutorCalibrationOptions, commitmentRepository.Get(snapshot))
+        : evaluator.Evaluate(snapshot, request.CandidateOptionIds, request.IncludeExecutorCalibrationOptions, commitmentRepository.Get(snapshot));
     store.AppendAudit("OptionAvailabilityEvaluated", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(availability);
 });
@@ -463,7 +513,7 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
     return Results.Ok(predictor.Predict(report, request.CandidateOptionIds));
 });
 
-app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator) =>
+app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var report = request.TrainingReport;
     if (report is null)
@@ -486,8 +536,8 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
     }
 
     var availability = request.Candidates.Length > 0
-        ? availabilityEvaluator.Evaluate(snapshot, request.Candidates)
-        : availabilityEvaluator.Evaluate(snapshot, request.CandidateOptionIds);
+        ? availabilityEvaluator.Evaluate(snapshot, request.Candidates, commitmentLedger: commitmentRepository.Get(snapshot))
+        : availabilityEvaluator.Evaluate(snapshot, request.CandidateOptionIds, commitmentLedger: commitmentRepository.Get(snapshot));
     var rankedCandidates = request.IncludeBlockedOptions
         ? availability.Options.Select(option => option.OptionId).ToArray()
         : availability.Options.Where(option => option.Available).Select(option => option.OptionId).ToArray();
@@ -500,7 +550,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
     });
 });
 
-app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest request, StateStore store, DailyPlanCompiler dailyPlanCompiler, ActionQueueCompiler actionQueueCompiler) =>
+app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest request, StateStore store, DailyPlanCompiler dailyPlanCompiler, ActionQueueCompiler actionQueueCompiler, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
         ? selected
@@ -529,7 +579,7 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         return Results.NotFound(new { detail = "no matching snapshot available" });
     }
 
-    var actionQueue = actionQueueCompiler.Compile(plan, snapshot);
+    var actionQueue = actionQueueCompiler.Compile(plan, snapshot, commitmentRepository.Get(snapshot));
     store.ActionQueues[actionQueue.QueueId] = actionQueue;
     store.AppendAudit("DailyPlanActionQueueCompiled", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(new

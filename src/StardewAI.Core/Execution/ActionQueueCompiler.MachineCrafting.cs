@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -30,7 +31,10 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static string[] ValidateCraftMachineItemPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        private static string[] ValidateCraftMachineItemPlan(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (action.OptionId != "executor.craft_machine_item")
             {
@@ -54,7 +58,7 @@ namespace StardewAI.Core.Execution
             var expectedIngredientRows = row.Value.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
-            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row.Value);
+            var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row.Value, commitmentLedger);
             if (!string.Equals(ReadString(row.Value, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal) ||
                 ReadBool(row.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
@@ -85,12 +89,19 @@ namespace StardewAI.Core.Execution
                 ReadIntParameter(action, "process_cycle_minutes") != demand.ProcessCycleMinutes ||
                 ReadIntParameter(action, "next_arrival_days") != demand.NextArrivalDays ||
                 ReadIntParameter(action, "next_arrival_units") != demand.NextArrivalUnits ||
+                ReadIntParameter(action, "next_arrival_service_interval_days") != demand.NextArrivalServiceIntervalDays ||
                 ReadIntParameter(action, "capacity_before_next_arrival") != demand.CapacityBeforeNextArrival ||
                 ReadIntParameter(action, "capacity_deficit_units") != demand.CapacityDeficitUnits ||
+                ReadIntParameter(action, "capacity_between_arrival_waves") != demand.CapacityBetweenArrivalWaves ||
+                ReadIntParameter(action, "arrival_wave_capacity_deficit_units") != demand.ArrivalWaveCapacityDeficitUnits ||
                 ReadIntParameter(action, "required_additional_machine_count") != demand.RequiredAdditionalMachineCount ||
                 ReadIntParameter(action, "latest_build_lead_minutes") != demand.LatestBuildLeadMinutes ||
                 ReadIntParameter(action, "minutes_until_next_arrival") != demand.MinutesUntilNextArrival ||
                 !string.Equals(ReadParameter(action, "machine_build_window_open"), Lower(demand.BuildWindowOpen), StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "next_arrival_source"), demand.NextArrivalSource, StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "commitment_ledger_id"), demand.CommitmentLedgerId, StringComparison.Ordinal) ||
+                ReadIntParameter(action, "commitment_ledger_revision") != demand.CommitmentLedgerRevision ||
+                !string.Equals(ReadParameter(action, "commitment_ids_json"), JsonSerializer.Serialize(demand.CommitmentIds), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "collection_path_required"), Lower(demand.CollectionPathRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "collection_path_source"), demand.CollectionPathSource, StringComparison.Ordinal))
             {

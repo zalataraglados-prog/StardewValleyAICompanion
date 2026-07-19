@@ -20,6 +20,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .Select(pair =>
             {
                 var harvestItemId = ReadString(pair.Value, "HarvestItemId") ?? string.Empty;
+                var harvestItem = ReadHarvestItemProjection(harvestItemId);
                 return new
                 {
                     seed_id = pair.Key,
@@ -29,7 +30,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     regrow_days = ReadIntNullable(pair.Value, "RegrowDays"),
                     harvest_item_id = harvestItemId,
                     harvest_item_qualified_id = QualifyObjectId(harvestItemId),
-                    harvest_unit_sale_price = ReadHarvestUnitSalePrice(harvestItemId),
+                    harvest_context_tags = harvestItem.ContextTags,
+                    harvest_unit_sale_price = harvestItem.SalePrice,
                     harvest_min_stack = ReadIntNullable(pair.Value, "HarvestMinStack"),
                     harvest_max_stack = ReadIntNullable(pair.Value, "HarvestMaxStack"),
                     harvest_max_increase_per_farming_level = ReadFloatNullable(pair.Value, "HarvestMaxIncreasePerFarmingLevel"),
@@ -56,21 +58,24 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return ItemRegistry.QualifyItemId(itemId) ?? "(O)" + itemId;
     }
 
-    private static int? ReadHarvestUnitSalePrice(string itemId)
+    private static HarvestItemProjection ReadHarvestItemProjection(string itemId)
     {
         var qualifiedId = QualifyObjectId(itemId);
         if (string.IsNullOrWhiteSpace(qualifiedId))
         {
-            return null;
+            return new HarvestItemProjection(null, Array.Empty<string>());
         }
 
         try
         {
-            return ItemRegistry.Create(qualifiedId).salePrice();
+            var item = ItemRegistry.Create(qualifiedId);
+            return new HarvestItemProjection(
+                item.salePrice(),
+                item.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray());
         }
         catch
         {
-            return null;
+            return new HarvestItemProjection(null, Array.Empty<string>());
         }
     }
 
@@ -101,6 +106,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     fully_grown = crop.fullyGrown.Value,
                     ready_for_harvest = readyForHarvest,
                     days_until_next_harvest_if_watered = ReadDaysUntilNextHarvestIfWatered(crop, readyForHarvest),
+                    regrow_days = cropData?.RegrowDays,
                     next_harvest_projection_condition = "crop_remains_in_season_and_receives_each_required_daily_growth_update",
                     harvest_min_stack = cropData?.HarvestMinStack,
                     harvest_max_stack = cropData?.HarvestMaxStack,
@@ -119,6 +125,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .ThenBy(crop => crop.tile_x)
             .ToArray();
     }
+
+    private sealed record HarvestItemProjection(int? SalePrice, string[] ContextTags);
 
     private static int? ReadDaysUntilNextHarvestIfWatered(Crop crop, bool readyForHarvest)
     {

@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -34,19 +35,21 @@ namespace StardewAI.Core.OptionRegistry
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,
             string[] candidateOptionIds,
-            bool includeExecutorCalibrationOptions = false)
+            bool includeExecutorCalibrationOptions = false,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var candidates = candidateOptionIds.Length > 0
                 ? candidateOptionIds.Select(optionId => new OptionAvailabilityCandidate { OptionId = optionId }).ToArray()
                 : DefaultCandidates(includeExecutorCalibrationOptions);
 
-            return Evaluate(snapshot, candidates, includeExecutorCalibrationOptions);
+            return Evaluate(snapshot, candidates, includeExecutorCalibrationOptions, commitmentLedger);
         }
 
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,
             OptionAvailabilityCandidate[] candidates,
-            bool includeExecutorCalibrationOptions = false)
+            bool includeExecutorCalibrationOptions = false,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var effectiveCandidates = candidates.Length > 0
                 ? candidates
@@ -55,7 +58,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 StateHash = snapshot.StateHash,
                 CurrentTime = ReadStateFieldInt(snapshot, "time", "time"),
-                Options = effectiveCandidates.Select(candidate => EvaluateOne(snapshot, candidate)).ToArray()
+                Options = effectiveCandidates.Select(candidate => EvaluateOne(snapshot, candidate, commitmentLedger)).ToArray()
             };
         }
 
@@ -68,7 +71,10 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private OptionAvailability EvaluateOne(SnapshotEnvelope snapshot, OptionAvailabilityCandidate candidate)
+        private OptionAvailability EvaluateOne(
+            SnapshotEnvelope snapshot,
+            OptionAvailabilityCandidate candidate,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             OptionSpec option;
             try
@@ -94,9 +100,9 @@ namespace StardewAI.Core.OptionRegistry
             var notes = new List<string>();
             var compilerReasons = IsUnboundSocialCandidate(candidate) || IsSocialContinuationCandidate(candidate)
                 ? Array.Empty<string>()
-                : CompilerProbeBlockingReasons(snapshot, candidate);
+                : CompilerProbeBlockingReasons(snapshot, candidate, commitmentLedger);
             var economicCandidates = EconomicCandidates(snapshot, option.OptionId);
-            var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
+            var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(snapshot, option.OptionId, economicCandidates)

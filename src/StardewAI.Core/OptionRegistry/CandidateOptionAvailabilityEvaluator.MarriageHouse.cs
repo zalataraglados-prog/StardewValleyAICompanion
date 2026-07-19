@@ -182,7 +182,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ";machine_crafting_cask_recipe_known=" + machineInfrastructure.CaskRecipeKnown.ToString().ToLowerInvariant() +
             ";machine_crafting_cask_count_from_current_inventory=" + machineInfrastructure.CaskCraftableCount +
             ";farmhouse_expansion_liquidity_consumption_basis_points=" + expansionLiquidityBasisPoints +
-            ";machine_infrastructure_demand_semantics=live_backlog_and_live_crop_wave_latest_build_window_committed_future_planting_queue_pending";
+            ";machine_infrastructure_demand_semantics=live_backlog_live_crop_and_versioned_committed_crop_wave_latest_build_window";
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
         var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);

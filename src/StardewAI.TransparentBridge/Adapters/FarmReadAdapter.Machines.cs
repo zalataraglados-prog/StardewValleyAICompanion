@@ -185,7 +185,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             status = "available",
             has_input = ReadBoolNullable(machineData, "HasInput"),
             has_output = ReadBoolNullable(machineData, "HasOutput"),
-            use_first_valid_output = ReadBoolNullable(machineData, "UseFirstValidOutput"),
+            additional_consumed_item_count = ReadCount(machineData, "AdditionalConsumedItems"),
+            additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(machineData, "AdditionalConsumedItems"), completeCatalog),
+            prevent_time_pass_count = ReadCount(machineData, "PreventTimePass"),
+            ready_time_modifier_count = ReadCount(machineData, "ReadyTimeModifiers"),
+            only_complete_overnight = ReadBoolNullable(machineData, "OnlyCompleteOvernight"),
             output_rule_count = ReadCount(machineData, "OutputRules"),
             output_rule_snapshot_status = completeCatalog ? "complete_no_rule_or_output_truncation" : "bounded_runtime_machine_summary",
             output_rules = ReadMachineOutputRules(machineData, completeCatalog)
@@ -208,21 +212,72 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             rules = rules.Take(12);
         }
         return rules
-            .Select(rule => new
+            .Select(rule =>
             {
-                id = ReadString(rule!, "Id") ?? string.Empty,
-                required_item_id = ReadString(rule!, "RequiredItemId") ?? string.Empty,
-                condition = ReadString(rule!, "Condition") ?? string.Empty,
-                per_item_condition = ReadString(rule!, "PerItemCondition") ?? string.Empty,
-                output_method = ReadString(rule!, "OutputMethod") ?? string.Empty,
-                trigger_count = ReadCount(rule!, "Triggers"),
-                required_item_count = ReadCount(rule!, "RequiredItems"),
-                max_items = ReadIntNullable(rule!, "MaxItems"),
-                minutes_until_ready = ReadIntNullable(rule!, "MinutesUntilReady"),
-                output_item = ReadMachineOutputItem(ReadMemberValue(rule!, "OutputItem")),
-                output_items = ReadMachineOutputItemList(ReadMemberValue(rule!, "OutputItems"), completeCatalog),
-                additional_consumed_item_count = ReadCount(rule!, "AdditionalConsumedItems"),
-                additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(rule!, "AdditionalConsumedItems"), completeCatalog)
+                var outputItems = ReadMachineOutputItemList(ReadMemberValue(rule!, "OutputItem"), completeCatalog);
+                var requiredItemId = ReadUniqueMachineRuleRequiredItemId(ReadMemberValue(rule!, "Triggers"));
+                return new
+                {
+                    id = ReadString(rule!, "Id") ?? string.Empty,
+                    required_item_id = requiredItemId,
+                    required_item_id_summary_status = string.IsNullOrWhiteSpace(requiredItemId)
+                        ? "none_or_multiple_use_triggers"
+                        : "single_distinct_trigger_required_item_id",
+                    use_first_valid_output = ReadBoolNullable(rule!, "UseFirstValidOutput"),
+                    trigger_count = ReadCount(rule!, "Triggers"),
+                    triggers = ReadMachineOutputTriggers(ReadMemberValue(rule!, "Triggers"), completeCatalog),
+                    minutes_until_ready = ReadIntNullable(rule!, "MinutesUntilReady"),
+                    days_until_ready = ReadIntNullable(rule!, "DaysUntilReady"),
+                    invalid_count_message_present = !string.IsNullOrWhiteSpace(ReadString(rule!, "InvalidCountMessage")),
+                    recalculate_on_collect = ReadBoolNullable(rule!, "RecalculateOnCollect"),
+                    output_item = outputItems.Length == 1 ? outputItems[0] : null,
+                    output_items = outputItems
+                };
+            })
+            .ToArray();
+    }
+
+    private static string ReadUniqueMachineRuleRequiredItemId(object? triggers)
+    {
+        if (triggers is not System.Collections.IEnumerable enumerable)
+        {
+            return string.Empty;
+        }
+
+        var itemIds = enumerable.Cast<object?>()
+            .Where(trigger => trigger is not null &&
+                (ReadString(trigger!, "Trigger") ?? string.Empty)
+                    .Split(',')
+                    .Any(value => string.Equals(value.Trim(), "ItemPlacedInMachine", StringComparison.Ordinal)))
+            .Select(trigger => ReadString(trigger!, "RequiredItemId") ?? string.Empty)
+            .Where(itemId => itemId.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return itemIds.Length == 1 ? itemIds[0] : string.Empty;
+    }
+
+    private static object[] ReadMachineOutputTriggers(object? triggers, bool completeCatalog)
+    {
+        if (triggers is not System.Collections.IEnumerable enumerable)
+        {
+            return Array.Empty<object>();
+        }
+
+        var rows = enumerable
+            .Cast<object?>()
+            .Where(trigger => trigger is not null);
+        if (!completeCatalog)
+        {
+            rows = rows.Take(12);
+        }
+        return rows
+            .Select(trigger => new
+            {
+                trigger = ReadString(trigger!, "Trigger") ?? string.Empty,
+                condition = ReadString(trigger!, "Condition") ?? string.Empty,
+                required_item_id = ReadString(trigger!, "RequiredItemId") ?? string.Empty,
+                required_tags = ReadStringList(trigger!, "RequiredTags"),
+                required_count = ReadIntNullable(trigger!, "RequiredCount") ?? 0
             })
             .ToArray();
     }
@@ -245,7 +300,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .Select(item =>
             {
                 var itemId = ReadString(item!, "ItemId") ?? string.Empty;
-                var amount = ReadIntNullable(item!, "Amount") ?? 1;
+                var amount = ReadIntNullable(item!, "RequiredCount") ?? 1;
                 var salePrice = ReadItemSalePrice(itemId);
                 return new
                 {
@@ -269,8 +324,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var itemId = ReadString(output, "ItemId") ?? ReadString(output, "Item") ?? string.Empty;
         return new
         {
+            id = ReadString(output, "Id") ?? string.Empty,
             item_id = itemId,
             qualified_item_id = NormalizeObjectQualifiedId(itemId),
+            random_item_ids = ReadStringList(output, "RandomItemId"),
+            condition = ReadString(output, "Condition") ?? string.Empty,
+            per_item_condition = ReadString(output, "PerItemCondition") ?? string.Empty,
+            output_method = ReadString(output, "OutputMethod") ?? string.Empty,
             stack = ReadIntNullable(output, "Stack"),
             min_stack = ReadIntNullable(output, "MinStack"),
             max_stack = ReadIntNullable(output, "MaxStack"),
@@ -423,7 +483,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             Game1.player,
             machine.Location,
             out var outputRule,
-            out _,
+            out var triggerRule,
             out _,
             out _))
         {
@@ -482,16 +542,34 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             };
         }
 
-        var ruleMinutesUntilReady = ReadIntNullable(outputRule, "MinutesUntilReady");
-        var effectiveMinutesUntilReady = overrideMinutesUntilReady ?? ruleMinutesUntilReady;
+        var ruleMinutesUntilReady = ReadIntNullable(outputRule, "MinutesUntilReady") ?? -1;
+        var ruleDaysUntilReady = ReadIntNullable(outputRule, "DaysUntilReady") ?? -1;
+        var baseMinutesUntilReady = overrideMinutesUntilReady ??
+            (ruleDaysUntilReady >= 0
+                ? Utility.CalculateMinutesUntilMorning(Game1.timeOfDay, ruleDaysUntilReady)
+                : ruleMinutesUntilReady);
+        var effectiveMinutesUntilReady = baseMinutesUntilReady >= 0
+            ? (int)Utility.ApplyQuantityModifiers(
+                baseMinutesUntilReady,
+                machineData.ReadyTimeModifiers,
+                machineData.ReadyTimeModifierMode,
+                machine.Location,
+                Game1.player,
+                outputItem,
+                inputItem)
+            : baseMinutesUntilReady;
         return new
         {
             status = "available",
             source = "MachineDataUtility.GetOutputItem(probe:true)",
             matched_rule_id = outputRule.Id ?? string.Empty,
-            required_item_id = ReadString(outputRule, "RequiredItemId") ?? string.Empty,
+            required_item_id = triggerRule?.RequiredItemId ?? string.Empty,
+            required_tags = triggerRule?.RequiredTags?.ToArray() ?? Array.Empty<string>(),
+            required_count = triggerRule?.RequiredCount ?? 0,
             use_first_valid_output = outputRule.UseFirstValidOutput,
             rule_minutes_until_ready = ruleMinutesUntilReady,
+            rule_days_until_ready = ruleDaysUntilReady,
+            base_minutes_until_ready = baseMinutesUntilReady,
             effective_minutes_until_ready = effectiveMinutesUntilReady,
             item = SummarizeItem(outputItem),
             sale_price = outputItem.salePrice(),

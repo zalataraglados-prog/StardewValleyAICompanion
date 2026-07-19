@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -13,17 +14,23 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private string[] CompilerProbeBlockingReasons(SnapshotEnvelope snapshot, OptionAvailabilityCandidate candidate)
+        private string[] CompilerProbeBlockingReasons(
+            SnapshotEnvelope snapshot,
+            OptionAvailabilityCandidate candidate,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             if (candidate.Parameters.Length == 0 && candidate.OptionId != "executor.interact")
             {
                 return Array.Empty<string>();
             }
 
-            return CompilerProbeBlockingReasons(CompilerProbeItem(snapshot, candidate));
+            return CompilerProbeBlockingReasons(CompilerProbeItem(snapshot, candidate, commitmentLedger));
         }
 
-        private ActionQueueItem? CompilerProbeItem(SnapshotEnvelope snapshot, OptionAvailabilityCandidate candidate)
+        private ActionQueueItem? CompilerProbeItem(
+            SnapshotEnvelope snapshot,
+            OptionAvailabilityCandidate candidate,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var envelope = new SmallModelActionEnvelope
             {
@@ -50,7 +57,7 @@ namespace StardewAI.Core.OptionRegistry
                 }
             };
 
-            var queue = compiler.Compile(envelope, snapshot);
+            var queue = compiler.Compile(envelope, snapshot, commitmentLedger);
             return queue.Items.FirstOrDefault();
         }
 

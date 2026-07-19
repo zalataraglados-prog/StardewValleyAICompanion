@@ -26,6 +26,11 @@ For each learned machine recipe, the transparent bridge exposes every current pl
 4. `capacity_deficit_units`: backlog minus existing capacity, clamped at zero.
 5. `required_additional_machine_count`: minimum new machines that can absorb the deficit within the window.
 6. `latest_build_lead_minutes`: processing time needed by the most-loaded new machine.
+7. `next_arrival_service_interval_days`: native regrow interval for a repeating crop wave.
+8. `capacity_between_arrival_waves`: existing fleet cycles after subtracting work still busy when the next wave arrives.
+9. `arrival_wave_capacity_deficit_units`: conservative incoming units that the current fleet cannot clear before the following wave.
+
+The final additional-machine count is the larger of the current-backlog requirement and the repeating-wave requirement. This prevents a zero-backlog winter snapshot from hiding a committed Spring factory requirement, while the latest-useful window still prevents construction long before the first arrival.
 
 Expansion opens only when the current time is inside `latest_build_lead_minutes + 60`. Before that point the candidate is excluded upstream as `deferred_until_latest_build_window`; building then would create avoidable idle time. Active task and collection requirements remain higher priority than production expansion.
 
@@ -35,16 +40,20 @@ Live crop arrival is exact only under the recorded condition that the crop remai
 
 Task matching applies to both the machine item and its possible products. Learned-machine capability snapshots contain the complete native output-rule catalog without rule/output truncation. The current Raccoon request is read from `Raccoon.GetBundle()` only after the native interaction has materialized its season; cooldown and completed ingredient bits remain explicit. This allows a Fish Smoker to become a collection-scale task candidate even when no fish is currently in the player's inventory.
 
-## Deliberate fail-closed boundary
+## Versioned future crop commitments
 
-Current live crops are not the same as a committed future planting plan. Owned Strawberry Seeds in winter prove only inventory, not that the policy will plant a particular count on Spring 1. Therefore the machine horizon does not invent year-two arrivals from seed inventory.
+Current live crops are not the same as a committed future planting plan. Owned Strawberry Seeds in winter prove only inventory, not that the policy will plant a particular count on Spring 1. The machine horizon never invents year-two arrivals from seed inventory.
 
-Before full policy training, add a versioned long-horizon commitment ledger that records crop, tile count, planting date, expected first harvest, recurring harvest waves, cancellation/revision history, and source strategy decision. Machine demand must consume that ledger beside live crop waves. Until then, `committed_future_planting_queue` is a training-blocking strategic field gap for cross-season prebuilding, while current-backlog/live-crop timing is covered.
+`strategy_commitment_ledger.v1` now records outdoor seasonal crop, harvest context tags, tile count, planting date, controller-bound first/regrow harvest waves, cancellation/revision history, and source strategy decision. Machine demand consumes active ledger waves beside live crop waves and carries ledger revision plus commitment IDs through candidate, daily plan, and compiler rebinding. Stale or cancelled plans fail closed.
+
+When the committed crop is not yet in inventory, capability is proven from the complete native machine trigger catalog using the decompiled item-ID/tag/count semantics. The transparent summary follows the native 1.6 shape: output items are a rule-level list, while extra consumed items and time modifiers/blockers are machine-level. A dynamic trigger/output condition, custom output method, uncommitted extra input, time modifier/blocker, overnight-only machine, missing trigger detail, or missing duration is not treated as future capacity evidence.
+
+The remaining fail-closed boundary is broader supply planning: fertilizer/skill/paddy modifiers, greenhouse and Island planting, seed acquisition and tile reservation, storage stock, animal output, and future mining/smelting demand are not inferred by this crop-only ledger.
 
 ## Evidence
 
 - Local decompile: `Crop.newDay`, `Crop.harvest`, `Object.OutputMachine`, `MachineDataUtility.GetOutputItem`, and `Raccoon.GetBundle`.
 - Wiki cross-check only: `https://wiki.stardewvalley.net/Preserves_Jar`, `Strawberry`, `Cranberries`, `Cheese_Press`, `Charcoal_Kiln`, `Furnace`, `Fish_Smoker`, and `Smoked_Fish`.
 - Tutorial cross-check only: `https://forums.stardewvalley.net/threads/artisanal-goods-planning.1729/`.
-- Offline tests cover task > production > collection priority, factory build deferral, latest-window opening, existing-fleet suppression, and a native Raccoon Smoked Fish requirement.
+- Offline tests cover task > production > collection priority, factory build deferral, latest-window opening, existing-fleet suppression, native Raccoon Smoked Fish demand, cross-season commitment binding, no-inventory static trigger proof, dynamic-trigger fail-closed behavior, recurring-wave throughput, revision conflict, cancellation, completion, and stale-plan compiler rejection.
 - No game process or runtime smoke was started for this slice.

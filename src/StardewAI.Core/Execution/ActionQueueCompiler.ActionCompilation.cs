@@ -7,6 +7,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.OptionRegistry;
@@ -72,7 +73,13 @@ namespace StardewAI.Core.Execution
             return errors.ToArray();
         }
 
-        private ActionQueueItem CompileAction(SmallModelAction action, SnapshotEnvelope snapshot, string executionMode, ActionActorRef actor, bool globallyBlocked)
+        private ActionQueueItem CompileAction(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string executionMode,
+            ActionActorRef actor,
+            bool globallyBlocked,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             var blocking = new List<string>();
             SafetyResult safety;
@@ -136,7 +143,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidatePanOreSpotPlan(action, snapshot));
             blocking.AddRange(ValidateCollectMachineOutputPlan(action, snapshot));
             blocking.AddRange(ValidateLoadMachineInputPlan(action, snapshot));
-            blocking.AddRange(ValidateCraftMachineItemPlan(action, snapshot));
+            blocking.AddRange(ValidateCraftMachineItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateReadBookPlan(action, snapshot));
             blocking.AddRange(ValidateConnectorPlan(action, snapshot));
             blocking.AddRange(ValidateFaceDirectionPlan(action));

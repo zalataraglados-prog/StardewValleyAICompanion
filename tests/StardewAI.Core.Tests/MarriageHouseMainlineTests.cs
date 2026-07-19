@@ -98,7 +98,7 @@ public sealed class MarriageHouseMainlineTests
         AssertParameter(candidate.Parameters, "projected_cellar_existing_machine_count", "33");
         AssertParameter(candidate.Parameters, "projected_cellar_machine_counts_by_qualified_id_json", "{\"(BC)163\":33}");
         AssertParameter(candidate.Parameters, "machine_fleet_projection_status", "complete_empty_machine_fleet");
-        AssertParameter(candidate.Parameters, "machine_infrastructure_demand_semantics", "live_backlog_and_live_crop_wave_latest_build_window_committed_future_planting_queue_pending");
+        AssertParameter(candidate.Parameters, "machine_infrastructure_demand_semantics", "live_backlog_live_crop_and_versioned_committed_crop_wave_latest_build_window");
 
         var plan = new DailyPlanCompiler().Compile(new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability), snapshot.StateHash);
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);

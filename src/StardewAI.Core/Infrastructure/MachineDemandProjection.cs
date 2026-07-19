@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Infrastructure;
@@ -23,12 +24,19 @@ internal sealed record MachineDemandProjection(
     int ProcessCycleMinutes,
     int NextArrivalDays,
     int NextArrivalUnits,
+    int NextArrivalServiceIntervalDays,
     int CapacityBeforeNextArrival,
     int CapacityDeficitUnits,
+    int CapacityBetweenArrivalWaves,
+    int ArrivalWaveCapacityDeficitUnits,
     int RequiredAdditionalMachineCount,
     int LatestBuildLeadMinutes,
     int MinutesUntilNextArrival,
     bool BuildWindowOpen,
+    string NextArrivalSource,
+    string CommitmentLedgerId,
+    int CommitmentLedgerRevision,
+    string[] CommitmentIds,
     bool CollectionPathRequired,
     string CollectionPathSource)
 {
@@ -40,7 +48,10 @@ internal static class MachineDemandProjectionEvaluator
     private const int FullGameDayMinutes = 1600;
     private const int MinimumCraftAndPlacementLeadMinutes = 60;
 
-    public static MachineDemandProjection Evaluate(SnapshotEnvelope snapshot, JsonElement recipe)
+    public static MachineDemandProjection Evaluate(
+        SnapshotEnvelope snapshot,
+        JsonElement recipe,
+        StrategyCommitmentLedger? commitmentLedger = null)
     {
         var qualifiedId = ReadString(recipe, "output_qualified_item_id");
         var itemId = ReadString(recipe, "output_item_id");
@@ -55,8 +66,17 @@ internal static class MachineDemandProjectionEvaluator
         var potentialInputCount = Math.Max(0, ReadInt(recipe, "potential_loadable_input_count"));
         var backlogUnits = inputs.Sum(input => Math.Max(0, input.Stack));
         var fleet = ReadFleetCapacity(snapshot, qualifiedId);
-        var cycleMinutes = ReadConservativeCycleMinutes(predictedOutputs);
-        var cropWave = ReadNextCropWave(snapshot, inputs);
+        var cropWave = MachineCropWaveProjectionEvaluator.Evaluate(
+            snapshot,
+            recipe,
+            inputs.SelectMany(input => new[]
+            {
+                input.QualifiedItemId,
+                input.ItemId,
+                Unqualify(input.QualifiedItemId)
+            }).ToArray(),
+            commitmentLedger);
+        var cycleMinutes = Math.Max(ReadConservativeCycleMinutes(predictedOutputs), cropWave.ProcessMinutes);
         var windowMinutes = cropWave.Days >= 0
             ? MinutesUntilFutureMorning(snapshot, cropWave.Days)
             : backlogUnits > 0
@@ -69,18 +89,38 @@ internal static class MachineDemandProjectionEvaluator
         var capacityPerNewMachine = cycleMinutes > 0 && windowMinutes > 0
             ? windowMinutes / cycleMinutes
             : 0;
-        var requiredAdditional = deficit <= 0
+        var backlogAdditional = deficit <= 0
             ? 0
             : capacityPerNewMachine > 0
                 ? DivideRoundUp(deficit, capacityPerNewMachine)
                 : deficit;
-        var latestBuildLead = requiredAdditional > 0 && cycleMinutes > 0
-            ? DivideRoundUp(deficit, requiredAdditional) * cycleMinutes
+        var serviceWindowMinutes = cropWave.ServiceIntervalDays > 0
+            ? cropWave.ServiceIntervalDays * FullGameDayMinutes
             : 0;
-        var buildWindowOpen = deficit > 0 && (cropWave.Days < 0 ||
+        var capacityBetweenWaves = cycleMinutes > 0 && serviceWindowMinutes > 0
+            ? fleet.Rows.Sum(row =>
+                Math.Max(0, serviceWindowMinutes - Math.Max(0, row.BusyMinutes - windowMinutes)) / cycleMinutes)
+            : 0;
+        var arrivalWaveDeficit = serviceWindowMinutes > 0
+            ? Math.Max(0, cropWave.Units - capacityBetweenWaves)
+            : 0;
+        var capacityPerNewMachineBetweenWaves = cycleMinutes > 0 && serviceWindowMinutes > 0
+            ? serviceWindowMinutes / cycleMinutes
+            : 0;
+        var arrivalAdditional = arrivalWaveDeficit <= 0
+            ? 0
+            : capacityPerNewMachineBetweenWaves > 0
+                ? DivideRoundUp(arrivalWaveDeficit, capacityPerNewMachineBetweenWaves)
+                : arrivalWaveDeficit;
+        var requiredAdditional = Math.Max(backlogAdditional, arrivalAdditional);
+        var latestBuildLead = backlogAdditional > 0 && cycleMinutes > 0
+            ? DivideRoundUp(deficit, backlogAdditional) * cycleMinutes
+            : 0;
+        var buildWindowOpen = requiredAdditional > 0 && (cropWave.Days < 0 ||
             windowMinutes <= latestBuildLead + MinimumCraftAndPlacementLeadMinutes);
-        var horizonComplete = inputs.Length > 0 && backlogUnits > 0 && cycleMinutes > 0;
-        var productionRequired = horizonComplete && deficit > 0 && buildWindowOpen;
+        var horizonComplete = cycleMinutes > 0 &&
+            ((inputs.Length > 0 && backlogUnits > 0) || (cropWave.Days >= 0 && cropWave.ServiceIntervalDays > 0));
+        var productionRequired = horizonComplete && requiredAdditional > 0 && buildWindowOpen;
         var collectionRequired = ReadInt(recipe, "times_crafted") == 0;
 
         var machineScale = taskSources.Length > 0
@@ -98,26 +138,30 @@ internal static class MachineDemandProjectionEvaluator
                 ? "production_capacity_requirement"
                 : collectionRequired
                     ? "collection_path_requirement"
-                    : deficit > 0 && horizonComplete && !buildWindowOpen
+                    : requiredAdditional > 0 && horizonComplete && !buildWindowOpen
                         ? "deferred_until_latest_build_window"
                         : !horizonComplete && potentialInputCount > 0
                             ? "blocked_incomplete_capacity_horizon"
                             : "no_proven_current_requirement";
         var priority = taskSources.Length > 0 ? 300 : productionRequired ? 200 : collectionRequired ? 100 : 0;
-        var horizonStatus = inputs.Length == 0
+        var horizonStatus = cropWave.Days >= 0 && cropWave.ProcessMinutes > 0
+            ? cropWave.Source == "committed_strategy_ledger"
+                ? "committed_crop_wave_static_native_machine_trigger_and_conservative_base_growth"
+                : cropWave.Source == "live_and_committed_crop_wave"
+                    ? "live_and_committed_crop_wave_static_native_machine_trigger_earliest_boundary"
+                    : "live_crop_wave_static_native_machine_trigger_or_current_probe"
+            : inputs.Length == 0
             ? potentialInputCount > 0
                 ? "incomplete_legacy_input_count_without_lossless_rows"
                 : "complete_no_current_probed_input_backlog"
             : cycleMinutes <= 0
                 ? "incomplete_native_output_duration_unavailable"
-                : cropWave.Days >= 0
-                    ? "live_crop_wave_exact_if_required_growth_updates_continue"
-                    : "bounded_one_day_workshop_service_horizon_no_live_crop_wave";
+                : "bounded_one_day_workshop_service_horizon_no_live_crop_wave";
         var timingStatus = taskSources.Length > 0
             ? "open_priority_task"
             : collectionRequired && !productionRequired
                 ? "open_first_craft_collection_path"
-                : deficit <= 0
+                : requiredAdditional <= 0
                     ? "deferred_existing_fleet_clears_backlog_within_horizon"
                     : !horizonComplete
                         ? "blocked_projection_incomplete"
@@ -141,12 +185,19 @@ internal static class MachineDemandProjectionEvaluator
             cycleMinutes,
             cropWave.Days,
             cropWave.Units,
+            cropWave.ServiceIntervalDays,
             capacity,
             deficit,
+            capacityBetweenWaves,
+            arrivalWaveDeficit,
             requiredAdditional,
             latestBuildLead,
             windowMinutes,
             buildWindowOpen,
+            cropWave.Source,
+            cropWave.CommitmentIds.Length > 0 ? commitmentLedger?.LedgerId ?? string.Empty : string.Empty,
+            cropWave.CommitmentIds.Length > 0 ? commitmentLedger?.Revision ?? 0 : 0,
+            cropWave.CommitmentIds,
             collectionRequired,
             collectionRequired ? "craft_master_uncompleted_learned_recipe" : "already_crafted_at_least_once");
     }
@@ -198,20 +249,37 @@ internal static class MachineDemandProjectionEvaluator
         var outputs = new List<PredictedOutput>();
         foreach (var rule in rules.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
         {
-            var minutes = Math.Max(0, ReadInt(rule, "minutes_until_ready"));
-            if (rule.TryGetProperty("output_item", out var outputItem) && outputItem.ValueKind == JsonValueKind.Object)
+            var minutes = ReadRuleProcessMinutes(rule);
+            if (rule.TryGetProperty("output_item", out var outputItem) && outputItem.ValueKind == JsonValueKind.Object &&
+                IsStaticCapabilityOutput(outputItem))
             {
                 outputs.Add(ReadCapabilityOutput(outputItem, minutes));
             }
             if (rule.TryGetProperty("output_items", out var outputItems) && outputItems.ValueKind == JsonValueKind.Array)
             {
                 outputs.AddRange(outputItems.EnumerateArray()
-                    .Where(item => item.ValueKind == JsonValueKind.Object)
+                    .Where(item => item.ValueKind == JsonValueKind.Object && IsStaticCapabilityOutput(item))
                     .Select(item => ReadCapabilityOutput(item, minutes)));
             }
         }
         return outputs.Where(output => !string.IsNullOrWhiteSpace(output.ItemId)).ToArray();
     }
+
+    private static int ReadRuleProcessMinutes(JsonElement rule)
+    {
+        var minutes = ReadInt(rule, "minutes_until_ready", -1);
+        if (minutes >= 0)
+        {
+            return minutes;
+        }
+        var days = ReadInt(rule, "days_until_ready", -1);
+        return days > 0 ? checked(days * FullGameDayMinutes) : 0;
+    }
+
+    private static bool IsStaticCapabilityOutput(JsonElement output) =>
+        string.IsNullOrWhiteSpace(ReadString(output, "condition")) &&
+        string.IsNullOrWhiteSpace(ReadString(output, "per_item_condition")) &&
+        string.IsNullOrWhiteSpace(ReadString(output, "output_method"));
 
     private static PredictedOutput ReadCapabilityOutput(JsonElement output, int processMinutes) => new(
         ReadString(output, "qualified_item_id"),
@@ -238,37 +306,6 @@ internal static class MachineDemandProjectionEvaluator
     {
         var durations = outputs.Select(output => output.ProcessMinutes).Where(minutes => minutes > 0).Distinct().ToArray();
         return durations.Length == 0 ? 0 : durations.Max();
-    }
-
-    private static CropWave ReadNextCropWave(SnapshotEnvelope snapshot, IReadOnlyCollection<PotentialInput> inputs)
-    {
-        var acceptedIds = inputs
-            .SelectMany(input => new[] { input.QualifiedItemId, input.ItemId, Unqualify(input.QualifiedItemId) })
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var crops = ReadStateFieldValue(snapshot, "farm", "crops");
-        if (acceptedIds.Count == 0 || !crops.HasValue || crops.Value.ValueKind != JsonValueKind.Array)
-        {
-            return new CropWave(-1, 0);
-        }
-
-        var matching = crops.Value.EnumerateArray()
-            .Where(row => row.ValueKind == JsonValueKind.Object && ReadBool(row, "dead") != true &&
-                (acceptedIds.Contains(ReadString(row, "harvest_item_id")) ||
-                 acceptedIds.Contains(ReadString(row, "harvest_item_qualified_id"))))
-            .Select(row => new
-            {
-                Days = ReadInt(row, "days_until_next_harvest_if_watered", -1),
-                Units = Math.Max(1, ReadInt(row, "harvest_min_stack", 1))
-            })
-            .Where(row => row.Days >= 0)
-            .ToArray();
-        if (matching.Length == 0)
-        {
-            return new CropWave(-1, 0);
-        }
-        var nextDays = matching.Min(row => row.Days);
-        return new CropWave(nextDays, matching.Where(row => row.Days == nextDays).Sum(row => row.Units));
     }
 
     private static string[] ReadPriorityTaskSources(
@@ -413,5 +450,4 @@ internal static class MachineDemandProjectionEvaluator
     private sealed record PredictedOutput(string QualifiedItemId, string ItemId, string PreserveType, string PreservedItemId, int ProcessMinutes);
     private sealed record FleetRow(int BusyMinutes);
     private sealed record FleetProjection(FleetRow[] Rows);
-    private sealed record CropWave(int Days, int Units);
 }

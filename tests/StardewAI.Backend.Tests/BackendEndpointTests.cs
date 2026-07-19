@@ -3,7 +3,11 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using Xunit;
 
 namespace StardewAI.Backend.Tests
@@ -140,6 +144,72 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(option.GetProperty("missing_state_factors").EnumerateArray(), item => item.GetString() == "player.seed_inventory");
             Assert.Contains(option.GetProperty("missing_state_factors").EnumerateArray(), item => item.GetString() == "farm.crop_catalog");
             Assert.Contains(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "missing_required_state");
+        }
+
+        [Fact]
+        public async Task StrategyCommitmentEndpointsEnforceRevisionAndPreserveCancellation()
+        {
+            var repository = new InMemoryStrategyCommitmentRepository();
+            using var isolatedFactory = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IStrategyCommitmentRepository>();
+                services.AddSingleton<IStrategyCommitmentRepository>(repository);
+            }));
+            using var client = isolatedFactory.CreateClient();
+            var snapshotResponse = await client.PostAsync("/api/v1/snapshots", SampleSnapshotContent(includeStrategyCatalog: true));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var create = await client.PostAsJsonAsync("/api/v1/strategy/commitments/crops/upsert", new
+            {
+                state_hash = stateHash,
+                expected_ledger_revision = 0,
+                commitment_id = "year3-spring-strawberry",
+                source_decision_id = "strategy.test",
+                seed_id = "745",
+                tile_count = 40,
+                planting_year = 3,
+                planting_season = "spring",
+                planting_day_of_month = 1,
+                location_context = "outdoor_seasonal"
+            });
+            Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+            using var createJson = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+            Assert.Equal(1, createJson.RootElement.GetProperty("ledger").GetProperty("revision").GetInt32());
+
+            var stale = await client.PostAsJsonAsync("/api/v1/strategy/commitments/crops/upsert", new
+            {
+                state_hash = stateHash,
+                expected_ledger_revision = 0,
+                commitment_id = "year3-spring-strawberry",
+                source_decision_id = "strategy.test.stale",
+                seed_id = "745",
+                tile_count = 60,
+                planting_year = 3,
+                planting_season = "spring",
+                planting_day_of_month = 1,
+                location_context = "outdoor_seasonal"
+            });
+            Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+
+            var cancel = await client.PostAsJsonAsync("/api/v1/strategy/commitments/crops/year3-spring-strawberry/cancel", new
+            {
+                state_hash = stateHash,
+                expected_ledger_revision = 1,
+                reason = "test_replan"
+            });
+            Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+            var read = await client.GetAsync("/api/v1/strategy/commitments/latest?stateHash=" + stateHash);
+            Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+            using var readJson = JsonDocument.Parse(await read.Content.ReadAsStringAsync());
+            var commitment = Assert.Single(readJson.RootElement.GetProperty("crop_planting_commitments").EnumerateArray());
+            Assert.Equal("cancelled", commitment.GetProperty("status").GetString());
+            Assert.Equal(
+                HttpStatusCode.NotFound,
+                (await client.GetAsync("/api/v1/strategy/commitments/latest?stateHash=unknown")).StatusCode);
+            Assert.Equal("test_replan", commitment.GetProperty("cancel_reason").GetString());
         }
 
         [Fact]
@@ -853,7 +923,11 @@ namespace StardewAI.Backend.Tests
             Assert.Empty(readyRoot.GetProperty("block_reasons").EnumerateArray());
         }
 
-        private static StringContent SampleSnapshotContent(string? forcedHash = null, bool unavailableCarriesDefault = false, string? trainingRunId = null)
+        private static StringContent SampleSnapshotContent(
+            string? forcedHash = null,
+            bool unavailableCarriesDefault = false,
+            string? trainingRunId = null,
+            bool includeStrategyCatalog = false)
         {
             var stateJson = $$"""
             {
@@ -874,6 +948,7 @@ namespace StardewAI.Backend.Tests
                 "year": {{FieldJson(3)}},
                 "season": {{FieldJson("spring")}},
                 "day": {{FieldJson(1)}},
+                "total_days": {{FieldJson(224)}},
                 "time": {{FieldJson(610)}},
                 "weather": {{FieldJson("sun")}}
               },
@@ -910,7 +985,10 @@ namespace StardewAI.Backend.Tests
               },
               "farm": {
                 "grandpa_score": {{FieldJson(3)}},
-                "crops": {{FieldJson("[{\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}}
+                "crops": {{FieldJson("[{\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}},
+                "crop_catalog": {{(includeStrategyCatalog
+                    ? FieldJson("[{\"seed_id\":\"745\",\"seasons\":[\"spring\"],\"grow_days\":8,\"regrow_days\":4,\"harvest_item_id\":\"400\",\"harvest_item_qualified_id\":\"(O)400\",\"harvest_min_stack\":1}]", raw: true)
+                    : UnavailableFieldJson("crop_catalog_not_in_general_backend_fixture"))}}
               },
               "current_location": {
                 "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}}
@@ -1016,6 +1094,45 @@ namespace StardewAI.Backend.Tests
               "reason": "{{reason}}"
             }
             """;
+        }
+
+        private sealed class InMemoryStrategyCommitmentRepository : IStrategyCommitmentRepository
+        {
+            private readonly CropCommitmentLedgerService service = new();
+            private StrategyCommitmentLedger? ledger;
+
+            public StrategyCommitmentLedger Get(SnapshotEnvelope snapshot)
+            {
+                ledger ??= new StrategyCommitmentLedger
+                {
+                    LedgerId = "test-ledger",
+                    SaveId = snapshot.SaveId.Value ?? string.Empty,
+                    PlayerId = snapshot.PlayerId.Value ?? string.Empty,
+                    SourceStateHash = snapshot.StateHash
+                };
+                ledger = service.ReconcileCompleted(ledger, snapshot, "2026-07-19T00:00:00Z");
+                return ledger;
+            }
+
+            public StrategyCommitmentMutationResult Upsert(SnapshotEnvelope snapshot, CropPlantingCommitmentUpsertRequest request)
+            {
+                var result = service.Upsert(Get(snapshot), snapshot, request, "2026-07-19T00:00:00Z");
+                if (result.Accepted)
+                {
+                    ledger = result.Ledger;
+                }
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult Cancel(SnapshotEnvelope snapshot, string commitmentId, StrategyCommitmentCancelRequest request)
+            {
+                var result = service.Cancel(Get(snapshot), snapshot, commitmentId, request, "2026-07-19T00:00:00Z");
+                if (result.Accepted)
+                {
+                    ledger = result.Ledger;
+                }
+                return result;
+            }
         }
     }
 }

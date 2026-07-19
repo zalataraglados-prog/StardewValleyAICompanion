@@ -7,6 +7,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.OptionRegistry;
@@ -36,7 +37,10 @@ namespace StardewAI.Core.Execution
             this.verifier = verifier;
         }
 
-        public ActionQueueEnvelope Compile(SmallModelActionEnvelope modelOutput, SnapshotEnvelope snapshot)
+        public ActionQueueEnvelope Compile(
+            SmallModelActionEnvelope modelOutput,
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var diagnostics = new List<string>();
             if (modelOutput.SchemaVersion != "small_model_action.v1")
@@ -57,7 +61,7 @@ namespace StardewAI.Core.Execution
             diagnostics.AddRange(ValidateExecutionTarget(modelOutput.ExecutionMode, modelOutput.Actor));
 
             var items = modelOutput.Actions
-                .Select(action => CompileAction(action, snapshot, modelOutput.ExecutionMode, modelOutput.Actor, diagnostics.Count > 0))
+                .Select(action => CompileAction(action, snapshot, modelOutput.ExecutionMode, modelOutput.Actor, diagnostics.Count > 0, commitmentLedger))
                 .ToArray();
             var blocked = diagnostics.Count > 0 || items.Any(item => item.Status == "blocked");
 
@@ -76,7 +80,10 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        public ActionQueueEnvelope Compile(SmallModelPlanEnvelope planOutput, SnapshotEnvelope snapshot)
+        public ActionQueueEnvelope Compile(
+            SmallModelPlanEnvelope planOutput,
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var actions = new List<SmallModelAction>();
             var activeMenuOpenBeforeStep = ActiveMenuOpen(snapshot);
@@ -116,7 +123,7 @@ namespace StardewAI.Core.Execution
                 actionEnvelope.SchemaVersion = "unsupported_plan_schema:" + planOutput.SchemaVersion;
             }
 
-            var queue = Compile(actionEnvelope, snapshot);
+            var queue = Compile(actionEnvelope, snapshot, commitmentLedger);
             queue.CandidateAudit = planOutput.CandidateAudit;
             return queue;
         }
