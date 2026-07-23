@@ -117,6 +117,21 @@ public sealed class MaterialTransferProjectorTests
         Assert.Equal(1, change.StackAfter);
     }
 
+    [Fact]
+    public void BlocksTransferToOrFromNonActorOwnedChest()
+    {
+        var player = Node("player:1", "player_inventory", 12, "Farm", Slot(2, 40));
+        var chest = Node("chest:Farm:4,5", "chest", 36, "Farm");
+        chest.ActorUseAuthorized = false;
+        chest.OwnershipClass = "other_player_owned";
+        var graph = Graph(player, chest);
+        graph.AccessPoints = new[] { NormalChestAccess() };
+
+        var result = new MaterialTransferProjector().Project(graph, Intent(10));
+
+        Assert.Contains("material_transfer_node_not_actor_authorized", result.BlockingReasons);
+    }
+
     private static MaterialTransferIntent Intent(int quantity) => new()
     {
         SourceNodeId = "player:1",
@@ -143,6 +158,8 @@ public sealed class MaterialTransferProjectorTests
         NodeId = id,
         InventoryKind = kind,
         SupplyState = "available",
+        OwnershipClass = "actor_owned",
+        ActorUseAuthorized = true,
         Capacity = capacity,
         LocationId = location,
         Slots = slots

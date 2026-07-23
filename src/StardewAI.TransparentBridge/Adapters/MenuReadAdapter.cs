@@ -242,6 +242,9 @@ public sealed class MenuReadAdapter : ReadAdapterBase
     {
         return menu switch
         {
+            ShippingMenu shippingMenu =>
+                (Field(ReadShippingMenuState(shippingMenu), "ShippingMenu public fields", tick, AdapterId),
+                    Array.Empty<string>()),
             ItemGrabMenu itemGrabMenu when itemGrabMenu.source == ItemGrabMenu.source_chest =>
                 (Field(ReadChestMenuState(itemGrabMenu, tick), "ItemGrabMenu public fields for chest source", tick, AdapterId),
                     new[] { "menus.menu_specific_state.chest.source_item_details" }),
@@ -258,6 +261,20 @@ public sealed class MenuReadAdapter : ReadAdapterBase
                 (Field(ReadLevelUpMenuState(levelUpMenu), "LevelUpMenu public state and exact private currentSkill/currentLevel/professionsToChoose fields", tick, AdapterId),
                     Array.Empty<string>()),
             _ => (null, Array.Empty<string>())
+        };
+    }
+
+    private static object ReadShippingMenuState(ShippingMenu menu)
+    {
+        var canReceiveInput = menu.CanReceiveInput();
+        var okButtonPresent = menu.okButton is not null;
+        return new
+        {
+            kind = "shipping_summary",
+            can_receive_input = canReceiveInput,
+            current_page = menu.currentPage,
+            ok_button_present = okButtonPresent,
+            ready_for_native_ok = canReceiveInput && menu.currentPage == -1 && okButtonPresent
         };
     }
 

@@ -89,8 +89,8 @@ public sealed partial class ActionQueueCompilerTests
                     "status":"available",
                     "player_id":1,
                     "inventory_nodes":[
-                      {"node_id":"player:1","inventory_kind":"player_inventory","supply_state":"available","location_id":"Farm","capacity":12,"slots":[{"slot_index":2,"qualified_item_id":"(O)390","runtime_type":"StardewValley.Object","stack":40,"maximum_stack_size":999,"quality":0}]},
-                      {"node_id":"chest:Farm:4,5","inventory_kind":"chest","supply_state":"available","location_id":"Farm","tile_x":4,"tile_y":5,"capacity":36,"slots":[{"slot_index":0,"qualified_item_id":"(O)390","runtime_type":"StardewValley.Object","stack":5,"maximum_stack_size":999,"quality":0}]}
+                      {"node_id":"player:1","inventory_kind":"player_inventory","supply_state":"available","location_id":"Farm","ownership_class":"actor_owned","actor_use_authorized":true,"capacity":12,"slots":[{"slot_index":2,"qualified_item_id":"(O)390","runtime_type":"StardewValley.Object","stack":40,"maximum_stack_size":999,"quality":0}]},
+                      {"node_id":"chest:Farm:4,5","inventory_kind":"chest","supply_state":"available","location_id":"Farm","tile_x":4,"tile_y":5,"ownership_class":"actor_owned","actor_use_authorized":true,"capacity":36,"slots":[{"slot_index":0,"qualified_item_id":"(O)390","runtime_type":"StardewValley.Object","stack":5,"maximum_stack_size":999,"quality":0}]}
                     ],
                     "access_points":[{"access_point_id":"access:placed_chest:Farm:4,5","node_id":"chest:Farm:4,5","access_kind":"placed_chest","location_id":"Farm","tile_x":4,"tile_y":5,"special_chest_type":"None","locked_by_other_player":LOCKED}]
                   },

@@ -179,6 +179,45 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
+    public void StandaloneShippingSummaryRecoveryUsesNativeInputAndNeverDirectClosure()
+    {
+        var source = RuntimeHarnessSource;
+        var recoverySlice = Slice(
+            source,
+            "private void StartShippingSummaryClose",
+            "private static TrainingExecutionResult ShippingSummaryCloseResult");
+
+        Assert.Contains("shippingMenu.CanReceiveInput()", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("shippingMenu.currentPage == -1", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("shippingMenu.okButton", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiLeftButtonOverride", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.setMousePosition", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.getMouseX", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.getMouseY", recoverySlice, StringComparison.Ordinal);
+        Assert.Contains("shipping_summary_close_not_observed_after_retries", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.exitActiveMenu", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.activeClickableMenu = null", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("receiveLeftClick", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("GetMethod", recoverySlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("GetField", recoverySlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TransparentMenuAdapterPublishesTypedShippingSummaryState()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "MenuReadAdapter.cs"));
+        var shippingSlice = Slice(source, "private static object ReadShippingMenuState", "private static object ReadLevelUpMenuState");
+
+        Assert.Contains("kind = \"shipping_summary\"", shippingSlice, StringComparison.Ordinal);
+        Assert.Contains("menu.CanReceiveInput()", shippingSlice, StringComparison.Ordinal);
+        Assert.Contains("menu.currentPage", shippingSlice, StringComparison.Ordinal);
+        Assert.Contains("menu.okButton", shippingSlice, StringComparison.Ordinal);
+        Assert.Contains("ready_for_native_ok", shippingSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Reflection", shippingSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SettlementHelperIsCalledFromBothDayStartedAndPostSleep()
     {
         var source = RuntimeHarnessSource;

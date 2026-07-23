@@ -20,6 +20,11 @@ public sealed class MaterialSupplyProjectionTests
         Assert.Contains("item.readyForHarvest.Value ? \"ready_output\" : \"in_process\"", source, StringComparison.Ordinal);
         Assert.Contains("MaximumStackSize = item.maximumStackSize()", source, StringComparison.Ordinal);
         Assert.Contains("chest.SpecialChestType is Chest.SpecialChestTypes.None or Chest.SpecialChestTypes.BigChest", source, StringComparison.Ordinal);
+        Assert.Contains("chest.playerChest.Value", source, StringComparison.Ordinal);
+        Assert.Contains("\"shared_team_global\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"other_player_owned\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"deny_without_explicit_authorization\"", source, StringComparison.Ordinal);
+        Assert.Contains("workbench_native_container_not_actor_authorized", source, StringComparison.Ordinal);
         Assert.Contains(".Distinct(StringComparer.Ordinal)", source, StringComparison.Ordinal);
         Assert.Contains("[\"material_inventory_graph\"] = Field(ReadMaterialInventoryGraph", source, StringComparison.Ordinal);
     }
@@ -109,6 +114,25 @@ public sealed class MaterialSupplyProjectionTests
         Assert.Contains("material_inventory_duplicate_node_id:global:JunimoChests", result.BlockingReasons);
     }
 
+    [Fact]
+    public void ProjectExcludesSharedAndOtherPlayerNodesWithoutHidingThem()
+    {
+        var actorNode = Node("player:1", "available", Slot(0, "(O)388", 20));
+        var sharedNode = Node("global:JunimoChests", "available", Slot(0, "(O)388", 30));
+        sharedNode.ActorUseAuthorized = false;
+        sharedNode.OwnershipClass = "shared_team_global";
+        var otherNode = Node("chest:Farm:2,2", "available", Slot(0, "(O)388", 40));
+        otherNode.ActorUseAuthorized = false;
+        otherNode.OwnershipClass = "other_player_owned";
+
+        var result = new MaterialSupplyProjection().Project(Graph(actorNode, sharedNode, otherNode));
+
+        Assert.Equal("available", result.Status);
+        Assert.Equal(20, Assert.Single(result.Quantities).AvailableQuantity);
+        Assert.Equal(new[] { "chest:Farm:2,2", "global:JunimoChests" }, result.ExcludedNodeIds);
+        Assert.DoesNotContain(result.Slots, row => row.NodeId == sharedNode.NodeId || row.NodeId == otherNode.NodeId);
+    }
+
     private static MaterialInventoryGraph Graph(params MaterialInventoryNode[] nodes) => new()
     {
         InventoryNodes = nodes
@@ -118,6 +142,8 @@ public sealed class MaterialSupplyProjectionTests
     {
         NodeId = id,
         SupplyState = state,
+        OwnershipClass = "actor_owned",
+        ActorUseAuthorized = true,
         Slots = slots
     };
 
