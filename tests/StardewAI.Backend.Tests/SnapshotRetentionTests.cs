@@ -70,11 +70,11 @@ public sealed class SnapshotRetentionTests
                 retainedIterations: 2,
                 nextIteration: 4);
 
-            Assert.Equal(2, retained);
+            Assert.Equal(1, retained);
             Assert.False(File.Exists(Path.Combine(snapshots, files[0])));
             Assert.False(File.Exists(Path.Combine(snapshots, files[1])));
-            Assert.True(File.Exists(Path.Combine(snapshots, files[2])));
-            Assert.True(File.Exists(Path.Combine(snapshots, files[3])));
+            Assert.False(File.Exists(Path.Combine(snapshots, files[2])));
+            Assert.False(File.Exists(Path.Combine(snapshots, files[3])));
             Assert.True(File.Exists(Path.Combine(snapshots, files[4])));
             Assert.True(File.Exists(Path.Combine(snapshots, files[5])));
             Assert.True(File.Exists(Path.Combine(snapshots, files[6])));
