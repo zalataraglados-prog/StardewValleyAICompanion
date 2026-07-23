@@ -139,7 +139,7 @@ namespace StardewAI.Core.OptionRegistry
 
             if (optionId == "quest.advance")
             {
-                return "quest_native_executor_not_implemented";
+                return "quest_requires_typed_daily_candidate_binding";
             }
 
             if (optionId == "executor.harvest_crop")

@@ -92,7 +92,7 @@ name and MVID; runtime-semantics v3 additionally verifies byte length and SHA-25
 blocks the build before IL closure generation.
 
 The current authoritative derived profile is
-`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v19`, with
+`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v20`, with
 `I:\StardewAI-KnowledgeArtifacts\game-1.6.15` as the default Windows artifact root. The
 checked-in `knowledge-artifacts.lock.json` pins its manifests and binary hashes. It binds the
 Linux host runtime export to binaries copied from that same host and to their separate
@@ -111,6 +111,12 @@ decompile tree:
   inventoried from the exported payloads;
 - all 17 method references resolved to installed assembly evidence, with zero unresolved or
   ambiguous references.
+
+The subsequent quest-objective execution slice is documented in
+`docs/quest-objective-execution-coverage.md`. It replaces the blanket quest executor
+block with typed bindings for exact fishing, routing, NPC delivery/report, shipping,
+and mine-depth objectives. Objective kinds listed as remaining blockers in that
+document are still fail-closed.
 
 The exporter also runs the game's own parsers without evaluating conditions or executing
 commands. The current runtime registry contains 385 canonical/alias rows: 116 game-state-query
@@ -209,11 +215,11 @@ closes that boundary.
 
 ## Downstream capability join
 
-`downstream-capability-matrix.json` joins all 87 registered options to the executable
+`downstream-capability-matrix.json` joins all 88 registered options to the executable
 downstream surfaces:
 
-- 59 full-action options have explicit action-step compilers;
-- 57 runtime option IDs have explicit production dispatcher branches;
+- 60 full-action options have explicit action-step compilers;
+- 58 runtime option IDs have explicit production dispatcher branches;
 - every compiled `executor.*` primitive is present in the runtime capability catalog;
 - unknown runtime option IDs fail closed instead of falling back to a crop-maintenance no-op;
 - zero catalog-level downstream blockers remain.
@@ -224,10 +230,10 @@ execution require their typed target/identity/preview parameters before entering
 queue.
 
 Daily-plan candidate capability is tracked separately from the option catalog. The current
-catalog classifies 49 known candidate kinds: 47 compile into typed daily-plan steps and two
-remain explicit implementation blockers. `quest_candidate` and `special_order_candidate`
-still require objective-to-domain binding and native terminal interactions. They remain
-visible to strategic planning but cannot be emitted as successful executable plans. The
+catalog classifies 50 known candidate kinds: 48 compile into typed daily-plan steps and two
+remain explicit implementation blockers. Supported quest objectives are converted upstream
+to existing executable kinds or `quest_npc_interaction`; fallback `quest_candidate` and
+`special_order_candidate` rows identify objective kinds whose binding is still absent. The
 mining and volcano rolling-horizon envelopes compile through daily-plan primitives into
 their corresponding runtime option IDs.
 

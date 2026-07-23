@@ -171,7 +171,9 @@ namespace StardewAI.Core.Training
                 return PlantSeedTileSteps(candidate);
             }
 
-            if (candidate.Kind == "social_talk_current" || candidate.Kind == "social_gift_current")
+            if (candidate.Kind == "social_talk_current" ||
+                candidate.Kind == "social_gift_current" ||
+                candidate.Kind == "quest_npc_interaction")
             {
                 return SocialInteractionSteps(candidate);
             }

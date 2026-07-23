@@ -364,98 +364,12 @@ namespace StardewAI.Core.OptionRegistry
             var ordinaryCandidates = QuestCandidateBuilder.BuildOrdinaryCandidates(questRefs);
             var specialOrderCandidates = QuestCandidateBuilder.BuildSpecialOrderCandidates(orderRefs);
 
-            var candidates = new List<EventCandidate>();
-            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
-
-            foreach (var candidate in ordinaryCandidates)
-            {
-                var blockReasons = new List<string>(candidate.BlockedDiagnostics);
-                blockReasons.Add("quest_native_executor_not_implemented");
-                candidates.Add(new EventCandidate
-                {
-                    CandidateId = candidate.CandidateId,
-                    Kind = "quest_candidate",
-                    Available = false,
-                    LocationId = locationId,
-                    ExpectedEffect = "quest_candidate_family=" + candidate.Family +
-                        ";runtime_type=" + candidate.RuntimeType +
-                        ";next_action=" + candidate.NextActionCategory +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredTargetLocation) ? ";target_location=" + candidate.RequiredTargetLocation : string.Empty) +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredTargetNpc) ? ";target_npc=" + candidate.RequiredTargetNpc : string.Empty) +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredItemId) ? ";item_id=" + candidate.RequiredItemId : string.Empty) +
-                        ";target_count=" + candidate.RequiredTargetCount +
-                        ";current_count=" + candidate.CurrentProgressCount +
-                        ";time=unknown;energy=unknown",
-                    EstimatedTicks = -1,
-                    EnergyCost = -1,
-                    BlockReasons = blockReasons.ToArray(),
-                    Parameters = new[]
-                    {
-                        Parameter("candidate_family", candidate.Family),
-                        Parameter("candidate_runtime_type", candidate.RuntimeType),
-                        Parameter("candidate_next_action", candidate.NextActionCategory),
-                        Parameter("candidate_provenance", candidate.Provenance),
-                        Parameter("candidate_id", candidate.CandidateId),
-                        Parameter("quest_id", candidate.QuestId),
-                        Parameter("quest_key", candidate.QuestKey),
-                        Parameter("required_target_npc", candidate.RequiredTargetNpc),
-                        Parameter("required_target_location", candidate.RequiredTargetLocation),
-                        Parameter("required_item_id", candidate.RequiredItemId),
-                        Parameter("required_target_count", candidate.RequiredTargetCount.ToString()),
-                        Parameter("current_progress_count", candidate.CurrentProgressCount.ToString()),
-                        Parameter("is_complete", candidate.IsComplete.ToString().ToLowerInvariant()),
-                        Parameter("days_remaining", candidate.DaysRemaining.ToString()),
-                        Parameter("due_date", candidate.DueDate.ToString()),
-                        Parameter("planning_eligible", "true")
-                    }
-                });
-            }
-
-            foreach (var candidate in specialOrderCandidates)
-            {
-                var blockReasons = new List<string>(candidate.BlockedDiagnostics);
-                blockReasons.Add("quest_native_executor_not_implemented");
-                candidates.Add(new EventCandidate
-                {
-                    CandidateId = candidate.CandidateId,
-                    Kind = "special_order_candidate",
-                    Available = false,
-                    LocationId = locationId,
-                    ExpectedEffect = "quest_candidate_family=" + candidate.Family +
-                        ";runtime_type=" + candidate.RuntimeType +
-                        ";next_action=" + candidate.NextActionCategory +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredTargetLocation) ? ";target_location=" + candidate.RequiredTargetLocation : string.Empty) +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredTargetNpc) ? ";target_npc=" + candidate.RequiredTargetNpc : string.Empty) +
-                        (!string.IsNullOrWhiteSpace(candidate.RequiredItemId) ? ";item_id=" + candidate.RequiredItemId : string.Empty) +
-                        ";target_count=" + candidate.RequiredTargetCount +
-                        ";current_count=" + candidate.CurrentProgressCount +
-                        ";time=unknown;energy=unknown",
-                    EstimatedTicks = -1,
-                    EnergyCost = -1,
-                    BlockReasons = blockReasons.ToArray(),
-                    Parameters = new[]
-                    {
-                        Parameter("candidate_family", candidate.Family),
-                        Parameter("candidate_runtime_type", candidate.RuntimeType),
-                        Parameter("candidate_next_action", candidate.NextActionCategory),
-                        Parameter("candidate_provenance", candidate.Provenance),
-                        Parameter("candidate_id", candidate.CandidateId),
-                        Parameter("quest_id", candidate.QuestId),
-                        Parameter("quest_key", candidate.QuestKey),
-                        Parameter("required_target_npc", candidate.RequiredTargetNpc),
-                        Parameter("required_target_location", candidate.RequiredTargetLocation),
-                        Parameter("required_item_id", candidate.RequiredItemId),
-                        Parameter("required_target_count", candidate.RequiredTargetCount.ToString()),
-                        Parameter("current_progress_count", candidate.CurrentProgressCount.ToString()),
-                        Parameter("is_complete", candidate.IsComplete.ToString().ToLowerInvariant()),
-                        Parameter("days_remaining", candidate.DaysRemaining.ToString()),
-                        Parameter("due_date", candidate.DueDate.ToString()),
-                        Parameter("planning_eligible", "true")
-                    }
-                });
-            }
-
-            return candidates.ToArray();
+            return BindQuestCandidates(
+                snapshot,
+                questRefs,
+                orderRefs,
+                ordinaryCandidates,
+                specialOrderCandidates);
         }
 
         private static string ClearableTerrainFeatureKind(string type)

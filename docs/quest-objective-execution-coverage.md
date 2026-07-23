@@ -1,0 +1,81 @@
+# Quest objective execution coverage
+
+This document records the executable quest boundary added after the authoritative
+1.6.15 dictionary v19 build. It is an implementation coverage record, not a claim
+that every quest objective is executable.
+
+## Authority
+
+The implementation was checked against the matching Linux-server 1.6.15 decompile:
+
+- `NPC.tryToReceiveActiveObject` probes special-order delivery callbacks first, then
+  calls `Quest.OnItemOfferedToNpc` through `Farmer.NotifyQuests(..., onlyOneQuest: true)`.
+- ordinary report interactions call `Quest.OnNpcSocialized` through the native NPC
+  action path;
+- `ItemDeliveryQuest.OnItemOfferedToNpc` performs native item reduction, dialogue,
+  friendship, reward, and quest completion;
+- `DeliverObjective` registers its handler on `SpecialOrder.onItemDelivered`;
+- `ReachMineFloorObjective` subtracts 120 from Skull Cavern levels before updating
+  objective progress;
+- `DonateObjective` uses the native drop-box `QuestContainerMenu` lifecycle. Direct
+  mutation of `donatedItems` is therefore prohibited.
+
+The runtime terminal calls `GameLocation.checkAction`; it does not call quest
+completion methods with `probe:false` and does not write quest counters directly.
+
+## Executable binding
+
+`quest.advance` now converts supported live objectives into existing candidate kinds:
+
+| Objective | Bound candidate or terminal |
+| --- | --- |
+| ordinary fishing quest catch | existing `catch_fish` candidate filtered by exact item identity |
+| ordinary location quest | existing `route_connector_tile`, one connector per fresh snapshot |
+| ordinary item delivery | existing NPC route plus `quest_npc_interaction` terminal |
+| ordinary slay/fishing/resource report | existing NPC route plus native report terminal |
+| ordinary socialize quest | next exact `who_to_greet` NPC plus native report terminal |
+| ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
+| special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
+| special-order `ShipObjective` | existing one-item native shipping candidate filtered by native tag-set grammar |
+| special-order `ReachMineFloorObjective` | existing rolling perfect-mining candidate with exact ordinary/Skull level conversion |
+
+Every bound candidate carries the quest candidate ID, family, runtime type, selected
+objective index, and expected current/target counts. The action compiler rebinds those
+values to the fresh snapshot. The runtime then:
+
+1. resolves the same quest or special order;
+2. verifies NPC, tile, inventory slot, item identity, and progress counters;
+3. runs the native `probe:true` callback;
+4. verifies that the expected quest is the first receiver in native delivery order;
+5. calls native `GameLocation.checkAction`;
+6. accepts feedback only when that same objective changes count, completes, or is
+   removed.
+
+Cross-map NPC routes retain an exact quest continuation so replanning cannot silently
+switch to an ordinary social talk or another quest.
+
+## Explicit remaining blockers
+
+The following objective bindings remain fail-closed:
+
+- ordinary craft, collect, slay, harvest, construction, lost-item pickup, accept, and
+  base/no-action quest stages;
+- special-order collect, donate/drop-box, fish, gift, Junimo Kart score, and slay
+  objectives;
+- native color-tag matching for preserved `ColoredObject` inputs. The game checks
+  base context tags of the preserved parent, which is not yet projected on inventory
+  rows;
+- native drop-box menu insertion and confirmation;
+- runtime calibration of the new NPC quest terminal in an isolated save.
+
+The fallback `quest_candidate` and `special_order_candidate` kinds now mean
+objective-specific binding is absent. They are not blocked by the obsolete blanket
+`quest_native_executor_not_implemented` reason.
+
+## Verification
+
+- Core tests: 1,105 passed.
+- Backend tests: 67 passed.
+- Runtime harness: builds with zero errors and two pre-existing obsolete Cat/Dog
+  warnings.
+- No live game mutation test was run for this slice.

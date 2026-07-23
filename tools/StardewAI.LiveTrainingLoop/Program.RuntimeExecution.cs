@@ -204,8 +204,13 @@ static partial class Program
             ? null
             : JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions));
         var continuationIsSocial = string.Equals(objectiveContinuationKind, "social", StringComparison.Ordinal);
+        var continuationIsQuest = string.Equals(objectiveContinuationKind, "quest", StringComparison.Ordinal);
         aggregate["social_objective_completed"] = objectiveContinuationCompleted && continuationIsSocial;
         aggregate["social_objective_continuation"] = continuationIsSocial && activeObjectiveContinuation is not null
+            ? JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions))
+            : null;
+        aggregate["quest_objective_completed"] = objectiveContinuationCompleted && continuationIsQuest;
+        aggregate["quest_objective_continuation"] = continuationIsQuest && activeObjectiveContinuation is not null
             ? JsonNode.Parse(activeObjectiveContinuation.ToJsonString(JsonOptions))
             : null;
         await File.WriteAllTextAsync(aggregateExecutionPath, aggregate.ToJsonString(JsonOptions), Encoding.UTF8);
@@ -865,6 +870,15 @@ static partial class Program
         var socialGiftQualifiedItemId = ReadQueueParameterString(item, "qualified_item_id");
         var socialExpectedFriendshipDelta = ReadQueueParameterString(item, "expected_friendship_delta");
         var socialExpectedTalkedToTodayBefore = ReadQueueParameterString(item, "expected_talked_to_today_before");
+        var questCandidateId = ReadQueueParameterString(item, "quest_candidate_id");
+        var questFamily = ReadQueueParameterString(item, "quest_family");
+        var questId = ReadQueueParameterString(item, "quest_id");
+        var questKey = ReadQueueParameterString(item, "quest_key");
+        var questRuntimeType = ReadQueueParameterString(item, "quest_runtime_type");
+        var questInteractionKind = ReadQueueParameterString(item, "quest_interaction_kind");
+        var questObjectiveIndex = ReadQueueParameterInt(item, "quest_objective_index");
+        var questExpectedCurrentCount = ReadQueueParameterInt(item, "quest_expected_current_count");
+        var questExpectedTargetCount = ReadQueueParameterInt(item, "quest_expected_target_count");
         if (!string.IsNullOrWhiteSpace(socialNpcName))
         {
             executionRequest.SocialNpcName = socialNpcName;
@@ -894,6 +908,15 @@ static partial class Program
         {
             executionRequest.SocialExpectedTalkedToTodayBefore = bool.TryParse(socialExpectedTalkedToTodayBefore, out var parsedTalked) && parsedTalked;
         }
+        executionRequest.QuestCandidateId = questCandidateId;
+        executionRequest.QuestFamily = questFamily;
+        executionRequest.QuestId = questId;
+        executionRequest.QuestKey = questKey;
+        executionRequest.QuestRuntimeType = questRuntimeType;
+        executionRequest.QuestInteractionKind = questInteractionKind;
+        executionRequest.QuestObjectiveIndex = questObjectiveIndex;
+        executionRequest.QuestExpectedCurrentCount = questExpectedCurrentCount;
+        executionRequest.QuestExpectedTargetCount = questExpectedTargetCount;
 
         return executionRequest;
     }

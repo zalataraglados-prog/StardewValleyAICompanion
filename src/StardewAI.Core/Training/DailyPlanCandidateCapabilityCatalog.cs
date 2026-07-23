@@ -64,6 +64,7 @@ namespace StardewAI.Core.Training
                 Supported("recovery_sleep_before_collapse"),
                 Supported("recovery_sleep_immediately"),
                 Supported("route_connector_tile"),
+                Supported("quest_npc_interaction"),
                 Supported("ship_inventory_item_to_bin"),
                 Supported("social_continuation_retry_wait"),
                 Supported("social_gift_current"),
@@ -71,8 +72,8 @@ namespace StardewAI.Core.Training
                 Supported("volcano_reach_caldera_plan_envelope"),
                 Supported("water_crop_tile"),
                 Supported("sell_shop_item"),
-                Blocked("quest_candidate", "quest_native_executor_not_implemented"),
-                Blocked("special_order_candidate", "quest_native_executor_not_implemented")
+                Blocked("quest_candidate", "quest_objective_binding_not_executable"),
+                Blocked("special_order_candidate", "special_order_objective_binding_not_executable")
             });
 
         private static readonly IReadOnlyDictionary<string, DailyPlanCandidateCapability> ByKind =

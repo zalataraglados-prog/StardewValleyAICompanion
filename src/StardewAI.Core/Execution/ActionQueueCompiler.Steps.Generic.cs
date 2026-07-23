@@ -149,6 +149,30 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileQuestNpcInteractStep(SmallModelAction action)
+        {
+            var npcName = ReadParameter(action, "npc_name") ?? string.Empty;
+            var interactionKind = ReadParameter(action, "quest_interaction_kind") ?? string.Empty;
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (string.IsNullOrWhiteSpace(npcName) ||
+                interactionKind is not ("report" or "offer_item") ||
+                !targetX.HasValue ||
+                !targetY.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "quest_npc_interact",
+                    "quest:" + interactionKind + ":" + npcName + ":tile(" + targetX + "," + targetY + ")",
+                    "matching_live_quest_or_special_order_objective_advanced_by_native_npc_interaction",
+                    Math.Max(60, (ReadIntParameter(action, "estimated_minutes") ?? 1) * 60))
+            };
+        }
+
         private static SocialPlanEnvelope? CompileSocialPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "social.talk_npc" && action.OptionId != "social.gift_npc")
@@ -214,7 +238,7 @@ namespace StardewAI.Core.Execution
             {
                 TimeEstimate = "unknown",
                 EnergyCost = "unknown",
-                ExecutorBlockReason = "quest_native_executor_not_implemented"
+                ExecutorBlockReason = "quest_requires_typed_daily_candidate_binding"
             };
 
             var candidateId = ReadParameter(action, "candidate_id");

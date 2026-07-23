@@ -76,6 +76,7 @@ static partial class Program
                             new { name = "continuation.target_location", value = ReadString(objectiveContinuation, "target_location") },
                             new { name = "continuation.slot_index", value = ReadString(objectiveContinuation, "slot_index") },
                             new { name = "continuation.qualified_item_id", value = ReadString(objectiveContinuation, "qualified_item_id") },
+                            new { name = "continuation.quest_candidate_id", value = ReadString(objectiveContinuation, "quest_candidate_id") },
                             new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },
                             new { name = "continuation.machine_location_id", value = ReadString(objectiveContinuation, "machine_location_id") },
                             new { name = "continuation.machine_tile_x", value = ReadString(objectiveContinuation, "machine_tile_x") },

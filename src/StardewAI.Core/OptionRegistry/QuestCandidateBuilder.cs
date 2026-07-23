@@ -212,7 +212,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 TimeEstimate = "unknown",
                 EnergyCost = "unknown",
-                ExecutorBlockReason = "quest_native_executor_not_implemented",
+                ExecutorBlockReason = "quest_requires_typed_daily_candidate_binding",
                 SelectedCandidateId = match.CandidateId,
                 SelectedQuestKey = match.QuestKey,
                 SelectedQuestId = match.QuestId,
@@ -277,11 +277,16 @@ namespace StardewAI.Core.OptionRegistry
                 else
                 {
                     nextActionCategory = CategorizeOrdinaryNextAction(quest.QuestType, fields, diagnostics);
-                    targetNpc = fields.TargetNpc;
-                    targetLocation = fields.TargetLocation;
+                    targetNpc = string.IsNullOrWhiteSpace(fields.TargetNpc) ? fields.NpcName : fields.TargetNpc;
+                    targetLocation = string.IsNullOrWhiteSpace(fields.TargetLocation) ? fields.LocationOfItem : fields.TargetLocation;
                     itemId = fields.ItemId;
                     targetCount = fields.TargetCount;
                     currentCount = fields.CurrentCount;
+                    if (quest.QuestType == 5)
+                    {
+                        targetCount = fields.TotalToGreet;
+                        currentCount = Math.Max(0, fields.TotalToGreet - (fields.WhoToGreet?.Length ?? 0));
+                    }
                 }
             }
 
@@ -543,6 +548,7 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var anyIncomplete = false;
+            var hasFailOnCompletionObjective = false;
             var index = 0;
             foreach (var obj in objectives)
             {
@@ -560,6 +566,13 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         diagnostics.Add("fail_on_completion_objective_met");
                     }
+                    index++;
+                    continue;
+                }
+
+                if (obj.FailOnCompletion)
+                {
+                    hasFailOnCompletionObjective = true;
                     index++;
                     continue;
                 }
@@ -593,6 +606,11 @@ namespace StardewAI.Core.OptionRegistry
                 index++;
             }
 
+            if (!anyIncomplete && hasFailOnCompletionObjective)
+            {
+                diagnostics.Add("only_fail_on_completion_objectives_remain");
+                return "avoid_fail_on_completion_objective";
+            }
             return anyIncomplete ? "advance_objective" : "all_objectives_complete";
         }
 
