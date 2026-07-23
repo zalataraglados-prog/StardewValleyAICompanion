@@ -101,6 +101,23 @@ internal static class Program
                 row.BehaviorCategory,
                 row.CompilerResponsibility,
                 row.TrainingRole,
+                row.SemanticKind,
+                row.ParameterSchema,
+                row.RequiredFactPolicy,
+                row.RiskClass,
+                row.Irreversibility,
+                row.ConfirmationPolicy,
+                row.HostPolicy,
+                row.OwnershipPolicy,
+                row.ModAdapterPolicy,
+                row.CompilerBinding,
+                row.BeforeVerifierBinding,
+                row.AfterVerifierBinding,
+                row.RuntimeEvidenceId,
+                row.RuntimeStatus,
+                row.TrainingEligibility,
+                row.AutonomousCandidatePolicy,
+                row.ProductStatus,
                 row.RequiredStateFactors,
                 row.SafetyConstraints,
                 runtime_field_verification = snapshotCoverage is null
@@ -127,6 +144,42 @@ internal static class Program
                 },
                 required_state_factors = snapshotCoverage?.Fields,
                 options = optionRows
+            });
+            Write(outputRoot, "option-governance-matrix.json", new
+            {
+                schema_version = "stardewai.option_governance_matrix.v2",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority_policy = "Unknown governance fails registry initialization. Runtime status is evidence-scoped and cannot be inferred from compiler or Harness registration.",
+                option_count = optionRows.Length,
+                goal_template_count = optionRows.Count(row => row.SemanticKind == OptionSemanticKind.GoalTemplate),
+                composite_option_count = optionRows.Count(row => row.SemanticKind == OptionSemanticKind.CompositeOptionSpec),
+                primitive_option_count = optionRows.Count(row => row.SemanticKind == OptionSemanticKind.PrimitiveOptionSpec),
+                training_eligible_count = optionRows.Count(row => row.TrainingEligibility == OptionTrainingEligibility.Eligible),
+                runtime_verified_count = optionRows.Count(row =>
+                    row.RuntimeStatus == OptionRuntimeStatus.RuntimeVerified ||
+                    row.RuntimeStatus == OptionRuntimeStatus.LongDurationVerified),
+                options = optionRows.Select(row => new
+                {
+                    row.OptionId,
+                    row.Domain,
+                    row.SemanticKind,
+                    row.ParameterSchema,
+                    row.RequiredFactPolicy,
+                    row.RiskClass,
+                    row.Irreversibility,
+                    row.ConfirmationPolicy,
+                    row.HostPolicy,
+                    row.OwnershipPolicy,
+                    row.ModAdapterPolicy,
+                    row.CompilerBinding,
+                    row.BeforeVerifierBinding,
+                    row.AfterVerifierBinding,
+                    row.RuntimeEvidenceId,
+                    row.RuntimeStatus,
+                    row.TrainingEligibility,
+                    row.AutonomousCandidatePolicy,
+                    row.ProductStatus
+                }).ToArray()
             });
 
             var downstreamRows = registry.All
