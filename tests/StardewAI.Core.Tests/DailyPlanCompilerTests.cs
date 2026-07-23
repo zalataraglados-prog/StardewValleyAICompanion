@@ -190,8 +190,8 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Theory]
-    [InlineData("quest_candidate", "quest_native_executor_not_implemented")]
-    [InlineData("special_order_candidate", "quest_native_executor_not_implemented")]
+    [InlineData("quest_candidate", "quest_objective_binding_not_executable")]
+    [InlineData("special_order_candidate", "special_order_objective_binding_not_executable")]
     public void CompileReportsKnownImplementationBlockers(string kind, string blockReason)
     {
         var candidate = new PolicyEventCandidatePrediction

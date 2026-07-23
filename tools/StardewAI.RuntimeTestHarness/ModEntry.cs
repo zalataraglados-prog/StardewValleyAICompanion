@@ -852,6 +852,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.quest_npc_interact")
+            {
+                pending.Completion.SetResult(ExecuteQuestNpcInteract(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.sleep")
             {
                 StartSleep(pending);

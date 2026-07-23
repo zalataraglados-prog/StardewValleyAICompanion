@@ -61,6 +61,7 @@ namespace StardewAI.Contracts.Training
             "executor.descend_shaft",
             "executor.exit_mine",
             "executor.social_interact",
+            "executor.quest_npc_interact",
             "executor.select_safe_item_slot",
             "executor.close_menu",
             "executor.ship_inventory_item_to_bin"

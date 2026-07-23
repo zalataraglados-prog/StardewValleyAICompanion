@@ -30,6 +30,22 @@ public static class QueueReplanFilter
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
+        var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
+        if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(questCandidateId))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "quest",
+                ["option_id"] = optionId,
+                ["quest_candidate_id"] = questCandidateId,
+                ["npc_name"] = ReadParameter(queueItem, "continuation.npc_name"),
+                ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
+                ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
+                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+            };
+        }
+
         var npcName = ReadParameter(queueItem, "continuation.npc_name");
         if (!string.IsNullOrWhiteSpace(optionId) && !string.IsNullOrWhiteSpace(npcName))
         {
@@ -105,6 +121,14 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "machine_location_id"), ReadString(continuation, "machine_location_id"), StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(ReadParameter(queueItem, "target_tile_x"), ReadString(continuation, "machine_tile_x"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "target_tile_y"), ReadString(continuation, "machine_tile_y"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "quest", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.quest_npc_interact", StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "quest_candidate_id"),
+                    ReadString(continuation, "quest_candidate_id"),
+                    StringComparison.Ordinal);
         }
 
         if (!string.Equals(optionId, "executor.social_interact", StringComparison.Ordinal))
@@ -211,6 +235,13 @@ public static class QueueReplanFilter
         if (string.Equals(ReadString(continuation, "kind"), "machine", StringComparison.Ordinal))
         {
             return MatchesMachineContinuation(candidate, continuation);
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "quest", StringComparison.Ordinal))
+        {
+            return string.Equals(
+                ReadCandidateParameter(candidate, "quest_candidate_id"),
+                ReadString(continuation, "quest_candidate_id"),
+                StringComparison.Ordinal);
         }
 
         var npcName = ReadCandidateParameter(candidate, "continuation.npc_name");

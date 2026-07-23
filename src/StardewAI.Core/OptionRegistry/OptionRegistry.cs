@@ -127,7 +127,7 @@ namespace StardewAI.Core.OptionRegistry
                 TrainingRoles.StrategyValue,
                 new[] { "quests.active_quests", "quests.special_orders", "quests.completed_special_orders", "quests.accepted_special_order_types", "quests.mail_received", "player.inventory", "player.location_id", "time.time", "world_progress.community_center", "world_progress.achievements" },
                 new[] { "quest candidate selected", "quest compiler envelope produced with live evidence" },
-                new[] { "block_unavailable_required_state", "block_state_hash_mismatch", "quest_native_executor_not_implemented" }));
+                new[] { "block_unavailable_required_state", "block_state_hash_mismatch", "block_unbound_quest_objective_kind" }));
 
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
@@ -526,6 +526,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "npcs.social_interaction", "npcs.friendships", "npcs.gift_tastes", "player.inventory", "menus.active_menu", "locations.collision_grid" },
                 new[] { "social interaction executed with observed outcome" },
                 new[] { "block_unverified_movement", "block_unavailable_required_state" }));
+
+            Register(Option("executor.quest_npc_interact", "quest", "Advance one exact live quest objective through native NPC interaction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "npcs.social_interaction", "quests.active_quests", "quests.special_orders", "menus.active_menu", "locations.collision_grid" },
+                new[] { "matching quest or special-order objective advanced through native NPC action" },
+                new[] { "block_unverified_movement", "block_quest_identity_drift", "block_inventory_identity_drift", "block_unobserved_quest_progress" }));
 
             Register(Option("executor.clear_obstacle", "tool", "Clear removable obstacle on target tile",
                 OptionBehaviorCategories.Mechanical,

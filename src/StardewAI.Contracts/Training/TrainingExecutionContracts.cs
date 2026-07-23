@@ -759,7 +759,7 @@ namespace StardewAI.Contracts.Training
         public string RetreatReason { get; set; } = string.Empty;
     }
 
-    public sealed class TrainingExecutionResult
+    public sealed partial class TrainingExecutionResult
     {
         [JsonPropertyName("schema_version")]
         public string SchemaVersion { get; set; } = "training_execution_result.v1";

@@ -501,7 +501,7 @@ namespace StardewAI.Contracts.State
         public string EnergyCost { get; set; } = "unknown";
 
         [JsonPropertyName("executor_block_reason")]
-        public string ExecutorBlockReason { get; set; } = "quest_native_executor_not_implemented";
+        public string ExecutorBlockReason { get; set; } = "quest_requires_typed_daily_candidate_binding";
 
         [JsonPropertyName("live_evidence")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -70,6 +70,7 @@ namespace StardewAI.Core.Execution
                 ["executor.descend_shaft"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.exit_mine"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.social_interact"] = (action, _) => CompileSocialInteractStep(action),
+                ["executor.quest_npc_interact"] = (action, _) => CompileQuestNpcInteractStep(action),
                 ["executor.select_safe_item_slot"] = CompileSelectSafeItemSlotStep,
                 ["executor.close_menu"] = (_, snapshot) => CompileCloseMenuStep(snapshot),
                 ["executor.ship_inventory_item_to_bin"] = (action, _) => CompileShippingBinStep(action)
