@@ -258,12 +258,20 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void ReadFarmCapabilityDescribesBuildingDoorTraversal()
+    public void RegisteredFarmAdapterReadsBuildingDoorTraversal()
     {
-        var source = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "ModEntry.cs"));
-        Assert.Contains("live building-door/indoor traversal reads", source, StringComparison.Ordinal);
-        Assert.Contains("Building.humanDoor, Building.GetIndoors()", source, StringComparison.Ordinal);
-        Assert.Contains("transparent building-door connectors and indoor warp arrival tiles", source, StringComparison.Ordinal);
+        var bridgeSource = File.ReadAllText(FindRepositoryFile("src", "StardewAI.TransparentBridge", "ModEntry.cs"));
+        var farmSource = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.BuildingsShipping.cs"));
+
+        Assert.Contains("stateCollector?.Adapters", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("building.humanDoor", farmSource, StringComparison.Ordinal);
+        Assert.Contains("building.GetIndoors()", farmSource, StringComparison.Ordinal);
+        Assert.Contains("indoor_arrival_tile_x", farmSource, StringComparison.Ordinal);
+        Assert.Contains("resolved_building_door_connector", farmSource, StringComparison.Ordinal);
     }
 
 }

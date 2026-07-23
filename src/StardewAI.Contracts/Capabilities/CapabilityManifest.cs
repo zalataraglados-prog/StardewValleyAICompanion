@@ -2,6 +2,27 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.Capabilities
 {
+    public sealed class BinaryIdentity
+    {
+        [JsonPropertyName("assembly_name")]
+        public string AssemblyName { get; set; } = string.Empty;
+
+        [JsonPropertyName("assembly_version")]
+        public string AssemblyVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("mvid")]
+        public string Mvid { get; set; } = string.Empty;
+
+        [JsonPropertyName("byte_length")]
+        public long? ByteLength { get; set; }
+
+        [JsonPropertyName("sha256")]
+        public string Sha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("identity_status")]
+        public string IdentityStatus { get; set; } = "unavailable";
+    }
+
     public sealed class Capability
     {
         [JsonPropertyName("capability_id")]
@@ -39,6 +60,18 @@ namespace StardewAI.Contracts.Capabilities
 
         [JsonPropertyName("compatibility_status")]
         public string CompatibilityStatus { get; set; } = "unverified";
+
+        [JsonPropertyName("observed_game_version")]
+        public string ObservedGameVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("observed_smapi_version")]
+        public string ObservedSmapiVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("game_binary_identity")]
+        public BinaryIdentity GameBinaryIdentity { get; set; } = new BinaryIdentity();
+
+        [JsonPropertyName("smapi_binary_identity")]
+        public BinaryIdentity SmapiBinaryIdentity { get; set; } = new BinaryIdentity();
 
         [JsonPropertyName("can_write_game_state")]
         public bool CanWriteGameState { get; set; }

@@ -5,7 +5,7 @@ namespace StardewAI.Contracts.Events
     public sealed class EventStreamEnvelope
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "event_stream.v1";
+        public string SchemaVersion { get; set; } = "event_stream.v2";
 
         [JsonPropertyName("latest_snapshot_hash")]
         public string LatestSnapshotHash { get; set; } = string.Empty;

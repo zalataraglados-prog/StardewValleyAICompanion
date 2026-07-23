@@ -6,7 +6,7 @@ namespace StardewAI.Contracts.Events
     public sealed class GameEvent
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "event.v1";
+        public string SchemaVersion { get; set; } = "event.v2";
 
         [JsonPropertyName("event_id")]
         public string EventId { get; set; } = string.Empty;
@@ -29,11 +29,14 @@ namespace StardewAI.Contracts.Events
         [JsonPropertyName("in_game_time")]
         public int? InGameTime { get; set; }
 
-        [JsonPropertyName("state_hash_before")]
-        public string StateHashBefore { get; set; } = string.Empty;
+        [JsonPropertyName("observed_snapshot_hash")]
+        public string ObservedSnapshotHash { get; set; } = string.Empty;
 
-        [JsonPropertyName("state_hash_after")]
-        public string StateHashAfter { get; set; } = string.Empty;
+        [JsonPropertyName("published_snapshot_hash")]
+        public string? PublishedSnapshotHash { get; set; }
+
+        [JsonPropertyName("snapshot_relation")]
+        public string SnapshotRelation { get; set; } = "observed_after_snapshot";
 
         [JsonPropertyName("previous_event_hash")]
         public string PreviousEventHash { get; set; } = string.Empty;
