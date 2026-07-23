@@ -121,6 +121,11 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<string>();
             }
 
+            if (type == "LevelUpMenu")
+            {
+                return ValidateLevelUpMenuPlan(action, snapshot);
+            }
+
             if (type == "DialogueBox")
             {
                 var dialogueReasons = SafeOrdinaryDialogueBlockReasons(snapshot);
@@ -135,6 +140,43 @@ namespace StardewAI.Core.Execution
             }
 
             return new[] { "close_menu_type_not_whitelisted" };
+        }
+
+        private static string[] ValidateLevelUpMenuPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var state = ReadStateFieldValue(snapshot, "menus", "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(state.Value, "kind"), "level_up", StringComparison.Ordinal))
+            {
+                return new[] { "level_up_menu_transparent_state_missing" };
+            }
+
+            var reasons = new List<string>();
+            if (ReadBool(state.Value, "reflection_fields_complete") != true)
+                reasons.Add("level_up_menu_reflection_fields_incomplete");
+            if (ReadBool(state.Value, "is_active") != true)
+                reasons.Add("level_up_menu_not_active");
+            if (ReadBool(state.Value, "can_receive_input") != true)
+                reasons.Add("level_up_menu_input_not_ready");
+
+            if (ReadBool(state.Value, "is_profession_chooser") == true)
+            {
+                var requestedChoice = ReadIntParameter(action, "profession_choice_id");
+                var validChoices = state.Value.TryGetProperty("profession_choices", out var choices) &&
+                    choices.ValueKind == JsonValueKind.Array
+                    ? choices.EnumerateArray()
+                        .Where(row => row.TryGetProperty("profession_id", out var id) && id.TryGetInt32(out _))
+                        .Select(row => row.GetProperty("profession_id").GetInt32())
+                        .ToArray()
+                    : Array.Empty<int>();
+                if (!requestedChoice.HasValue)
+                    reasons.Add("profession_choice_id_required");
+                else if (!validChoices.Contains(requestedChoice.Value))
+                    reasons.Add("profession_choice_id_not_offered");
+            }
+
+            return reasons.ToArray();
         }
 
         private static string[] SafeOrdinaryDialogueBlockReasons(SnapshotEnvelope snapshot)

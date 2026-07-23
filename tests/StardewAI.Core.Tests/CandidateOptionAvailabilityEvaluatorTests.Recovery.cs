@@ -427,7 +427,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         """.Replace("ENTRY", entryOverride));
     }
 
-    private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride)
+    private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)
     {
         return Snapshot("""
         {
@@ -436,13 +436,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":true,"type":"ShopMenu"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "sell_context": {"value":{"kind":"shop_sell_context","read_only":false,"safety_timer":0,"held_item_present":false,"categories_to_sell":[-75],"tag_groups_to_sell":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "sell_context": {"value":SELL_CONTEXT,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
             "shipping_bins": {"value":[{"days_of_construction_left":0,"player_within_shipping_range":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
-        """.Replace("ITEM", inventoryItemOverride));
+        """
+            .Replace("ITEM", inventoryItemOverride)
+            .Replace(
+                "SELL_CONTEXT",
+                sellContextOverride ??
+                """{"kind":"shop_sell_context","shop_id":"SeedShop","currency":0,"read_only":false,"safety_timer":0,"held_item_present":false,"storage_shop":false,"sell_percentage":1.0,"custom_on_sell_present":false,"categories_to_sell":[-75],"tag_groups_to_sell":[]}"""));
     }
 
     private static OptionAvailabilityCandidate Candidate(string optionId, params SmallModelActionParameter[] parameters)

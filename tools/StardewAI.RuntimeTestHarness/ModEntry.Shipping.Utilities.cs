@@ -27,7 +27,7 @@ public sealed partial class ModEntry : Mod
 {
     private void CleanupAndBlock(ActiveShipInventoryToBin active, params string[] reasons)
     {
-        ReleaseShipRightButton();
+        ReleaseShipInputOverrides();
         if (Game1.activeClickableMenu is not null)
         {
             Game1.exitActiveMenu();
@@ -37,11 +37,69 @@ public sealed partial class ModEntry : Mod
             ShipRequestedEffect(active.Pending.Request), ShipObservedEffect(), reasons));
     }
 
-    private static Point BinScreenPosition(ShippingBin bin)
+    private static bool TryResolveShippingActionTile(ShippingBin bin, Point standTile, out Point actionTile)
     {
-        var worldX = (bin.tileX.Value + 1) * 64;
-        var worldY = bin.tileY.Value * 64 + 32;
-        return new Point(worldX - Game1.viewport.X, worldY - Game1.viewport.Y);
+        for (var x = bin.tileX.Value; x < bin.tileX.Value + bin.tilesWide.Value; x++)
+        {
+            var candidate = new Point(x, bin.tileY.Value);
+            if (Math.Abs(candidate.X - standTile.X) + Math.Abs(candidate.Y - standTile.Y) == 1)
+            {
+                actionTile = candidate;
+                return true;
+            }
+        }
+
+        actionTile = default;
+        return false;
+    }
+
+    private static bool TryOpenNativeShippingMenu(ShippingBin bin, out string reason)
+    {
+        reason = string.Empty;
+        var shipItemMethod = AccessTools.Method(typeof(ShippingBin), "shipItem", new[] { typeof(Item), typeof(Farmer) });
+        if (shipItemMethod is null)
+        {
+            reason = "native_shipping_callback_not_found";
+            return false;
+        }
+
+        ItemGrabMenu.behaviorOnItemSelect shipItem;
+        try
+        {
+            shipItem = (ItemGrabMenu.behaviorOnItemSelect)Delegate.CreateDelegate(
+                typeof(ItemGrabMenu.behaviorOnItemSelect),
+                bin,
+                shipItemMethod);
+        }
+        catch (Exception ex)
+        {
+            reason = "native_shipping_callback_bind_failed:" + ex.GetType().Name;
+            return false;
+        }
+
+        var menu = new ItemGrabMenu(
+            inventory: null,
+            reverseGrab: true,
+            showReceivingMenu: false,
+            Utility.highlightShippableObjects,
+            shipItem,
+            message: "",
+            behaviorOnItemGrab: null,
+            snapToBottom: true,
+            canBeExitedWithKey: true,
+            playRightClickSound: false,
+            allowRightClick: true,
+            showOrganizeButton: false,
+            source: 0,
+            sourceItem: null,
+            whichSpecialButton: -1,
+            context: bin);
+        menu.initializeUpperRightCloseButton();
+        menu.setBackgroundTransparency(b: false);
+        menu.setDestroyItemOnClick(b: true);
+        menu.initializeShippingBin();
+        Game1.activeClickableMenu = menu;
+        return true;
     }
 
     private static Point? InventorySlotScreenPosition(ItemGrabMenu menu, int slotIndex)
@@ -133,13 +191,10 @@ public sealed partial class ModEntry : Mod
         return 0;
     }
 
-    private void ReleaseShipRightButton()
+    private void ReleaseShipInputOverrides()
     {
-        for (var i = 0; i < 3; i++)
-        {
-            if (TryApplySmapiRightButtonOverride(pressed: false, out _))
-                return;
-        }
+        TryApplySmapiButtonOverride(SButton.X, pressed: false, out _);
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
     }
 
     private string WriteShipPendingReceipt(ActiveShipInventoryToBin active,
@@ -233,7 +288,7 @@ public sealed partial class ModEntry : Mod
         int afterSlotStack, string afterSlotQualifiedId,
         string pendingReceiptPath)
     {
-        ReleaseShipRightButton();
+        ReleaseShipInputOverrides();
         activeShipInventoryToBin = null;
 
         var startedAt = active.StartedAt;
@@ -332,7 +387,7 @@ public sealed partial class ModEntry : Mod
             smapiInputStateType = inputType;
             smapiOverrideButtonMethod = inputType.GetMethod(
                 "OverrideButton",
-                BindingFlags.Instance | BindingFlags.Public,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
                 binder: null,
                 types: new[] { typeof(SButton), typeof(bool) },
                 modifiers: null);
@@ -365,12 +420,113 @@ public sealed partial class ModEntry : Mod
             reasons.Add("unsupported_schema_version");
         }
 
-        if (Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_MODE") != "1")
+        var trainingMode = string.Equals(request.ExecutionMode, "training_singleplayer", StringComparison.Ordinal);
+        var companionMode = string.Equals(request.ExecutionMode, "coop_companion", StringComparison.Ordinal);
+        var dedicatedHostMode = string.Equals(request.ExecutionMode, "dedicated_host_ai", StringComparison.Ordinal);
+        if (!trainingMode && !companionMode && !dedicatedHostMode)
         {
-            reasons.Add("training_mode_env_required");
+            reasons.Add("unsupported_execution_mode");
         }
 
-        var expectedRunId = Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_RUN_ID") ?? string.Empty;
+        if (trainingMode)
+        {
+            if (Environment.GetEnvironmentVariable("STARDEWAI_TRAINING_MODE") != "1")
+            {
+                reasons.Add("training_mode_env_required");
+            }
+
+            if (Context.IsMultiplayer)
+            {
+                reasons.Add("training_singleplayer_world_required");
+            }
+        }
+
+        if (companionMode)
+        {
+            if (Environment.GetEnvironmentVariable("STARDEWAI_COMPANION_MODE") != "1")
+            {
+                reasons.Add("companion_mode_env_required");
+            }
+
+            if (!Context.IsMultiplayer)
+            {
+                reasons.Add("coop_world_required");
+            }
+            else if (Context.IsMainPlayer)
+            {
+                reasons.Add("coop_farmhand_required");
+            }
+
+            if (string.IsNullOrWhiteSpace(config.CompanionActorId) ||
+                !string.Equals(request.Actor, config.CompanionActorId, StringComparison.Ordinal))
+            {
+                reasons.Add("companion_actor_mismatch");
+            }
+
+            var currentFarmerId = Game1.player?.UniqueMultiplayerID.ToString(CultureInfo.InvariantCulture)
+                ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(config.CompanionFarmerId))
+            {
+                reasons.Add("companion_farmer_id_required");
+            }
+            else if (!string.Equals(currentFarmerId, config.CompanionFarmerId, StringComparison.Ordinal))
+            {
+                reasons.Add("companion_farmer_id_mismatch");
+            }
+
+            if (!request.OptionId.StartsWith("executor.", StringComparison.Ordinal) &&
+                !string.Equals(request.OptionId, "farm.maintain_crops", StringComparison.Ordinal))
+            {
+                reasons.Add("coop_debug_or_planning_option_forbidden");
+            }
+        }
+
+        if (dedicatedHostMode)
+        {
+            if (Environment.GetEnvironmentVariable("STARDEWAI_DEDICATED_HOST_MODE") != "1")
+            {
+                reasons.Add("dedicated_host_mode_env_required");
+            }
+
+            if (!Context.IsMultiplayer)
+            {
+                reasons.Add("dedicated_host_multiplayer_world_required");
+            }
+            else if (!Context.IsMainPlayer)
+            {
+                reasons.Add("dedicated_host_main_player_required");
+            }
+
+            if (string.IsNullOrWhiteSpace(config.DedicatedHostActorId) ||
+                !string.Equals(request.Actor, config.DedicatedHostActorId, StringComparison.Ordinal))
+            {
+                reasons.Add("dedicated_host_actor_mismatch");
+            }
+
+            var currentFarmerId = Game1.player?.UniqueMultiplayerID.ToString(CultureInfo.InvariantCulture)
+                ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(config.DedicatedHostFarmerId))
+            {
+                reasons.Add("dedicated_host_farmer_id_required");
+            }
+            else if (!string.Equals(currentFarmerId, config.DedicatedHostFarmerId, StringComparison.Ordinal))
+            {
+                reasons.Add("dedicated_host_farmer_id_mismatch");
+            }
+
+            if (!request.OptionId.StartsWith("executor.", StringComparison.Ordinal) &&
+                !string.Equals(request.OptionId, "farm.maintain_crops", StringComparison.Ordinal))
+            {
+                reasons.Add("dedicated_host_debug_or_planning_option_forbidden");
+            }
+        }
+
+        var expectedRunIdVariable = dedicatedHostMode
+            ? "STARDEWAI_DEDICATED_HOST_RUN_ID"
+            : companionMode
+                ? "STARDEWAI_COMPANION_RUN_ID"
+                : "STARDEWAI_TRAINING_RUN_ID";
+        var expectedRunId = Environment.GetEnvironmentVariable(expectedRunIdVariable) ?? string.Empty;
         if (string.IsNullOrWhiteSpace(request.RunId) || request.RunId != expectedRunId)
         {
             reasons.Add("run_id_mismatch");
@@ -445,6 +601,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.close_menu" &&
             request.OptionId != "executor.interact" &&
             request.OptionId != "executor.buy_shop_item" &&
+            request.OptionId != "executor.sell_shop_item" &&
             request.OptionId != "executor.plant_seed" &&
             request.OptionId != "executor.harvest_crop" &&
             request.OptionId != "executor.harvest_giant_crop" &&
@@ -468,11 +625,6 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.ship_inventory_item_to_bin")
         {
             reasons.Add("unsupported_option_id");
-        }
-
-        if (request.ExecutionMode != "training_singleplayer")
-        {
-            reasons.Add("unsupported_execution_mode");
         }
 
         return reasons;

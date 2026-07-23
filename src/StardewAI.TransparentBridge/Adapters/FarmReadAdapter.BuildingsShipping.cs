@@ -246,10 +246,22 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         }
 
         return tileEntries
-            .OrderBy(t => Math.Abs(player.TilePoint.X - t.x) + Math.Abs(player.TilePoint.Y - t.y))
+            .OrderByDescending(t => IsCardinalShippingActionStandTile(t.x, t.y, binX, binY, binW))
+            .ThenBy(t => Math.Abs(player.TilePoint.X - t.x) + Math.Abs(player.TilePoint.Y - t.y))
             .ThenBy(t => t.y)
             .ThenBy(t => t.x)
             .ToArray();
+    }
+
+    private static bool IsCardinalShippingActionStandTile(int x, int y, int binX, int binY, int binW)
+    {
+        for (var targetX = binX; targetX < binX + binW; targetX++)
+        {
+            if (Math.Abs(x - targetX) + Math.Abs(y - binY) == 1)
+                return true;
+        }
+
+        return false;
     }
 
     private static bool IsTileInBuildingFootprint(int x, int y, int binX, int binY, int binW, int binH)

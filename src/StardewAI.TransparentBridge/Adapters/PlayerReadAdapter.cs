@@ -1,6 +1,7 @@
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
+using System.Globalization;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -79,6 +80,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["current_tool"] = Field(player?.CurrentTool?.QualifiedItemId ?? player?.CurrentTool?.DisplayName, "Game1.player.CurrentTool", tick),
             ["current_item_qualified_id"] = Field(player?.CurrentItem?.QualifiedItemId, "Game1.player.CurrentItem.QualifiedItemId", tick),
             ["active_object_qualified_id"] = Field(player?.ActiveObject?.QualifiedItemId, "Game1.player.ActiveObject.QualifiedItemId", tick),
+            ["multiplayer_runtime"] = Field(ReadMultiplayerRuntime(player), "Context.IsMultiplayer/IsMainPlayer; Game1.IsServer/displayFarmer/getAllFarmers/getOnlineFarmers; Farmer hidden/ignoreCollisions/location/position", tick),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
             ["machine_placement"] = Field(ReadMachinePlacementContext(player), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Utility.isPlacementForbiddenHere; Object.canBePlacedHere with static and current collision masks; Object.placementAction runtime recheck contract", tick),
             ["safe_item_context"] = Field(ReadSafeItemContext(player), "Game1.player.CurrentToolIndex and Game1.player.Items toolbar safe slot scan", tick),
@@ -91,6 +93,68 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["inventory"] = Field(inventory, "Game1.player.Items", tick),
             ["seed_inventory"] = Field(seedInventory, "Game1.player.Items filtered by Object.SeedsCategory and Game1.cropData", tick)
         }).ToDictionary(item => item.Key, item => item.Value));
+    }
+
+    private static object ReadMultiplayerRuntime(Farmer? localPlayer)
+    {
+        if (!Context.IsWorldReady)
+        {
+            return new
+            {
+                context_is_multiplayer = false,
+                context_is_main_player = false,
+                game_is_server = false,
+                original_server_active = false,
+                server_enabled = false,
+                pause_when_out_of_focus = (bool?)null,
+                game_display_farmer = false,
+                local_player_id = (string?)null,
+                online_farmer_count = 0,
+                farmers = Array.Empty<object>()
+            };
+        }
+
+        var onlineIds = Game1.getOnlineFarmers()
+            .Select(farmer => farmer.UniqueMultiplayerID)
+            .ToHashSet();
+        var farmers = Game1.getAllFarmers()
+            .Select(farmer => new
+            {
+                player_id = farmer.UniqueMultiplayerID.ToString(CultureInfo.InvariantCulture),
+                name = farmer.Name,
+                display_name = farmer.displayName,
+                is_local_player = farmer.IsLocalPlayer,
+                is_main_player = farmer.IsMainPlayer,
+                is_online = onlineIds.Contains(farmer.UniqueMultiplayerID),
+                is_other_farmer = Game1.otherFarmers.ContainsKey(farmer.UniqueMultiplayerID),
+                location_id = farmer.currentLocation?.NameOrUniqueName,
+                tile_x = farmer.TilePoint.X,
+                tile_y = farmer.TilePoint.Y,
+                pixel_x = farmer.Position.X,
+                pixel_y = farmer.Position.Y,
+                facing_direction = farmer.FacingDirection,
+                hidden = farmer.hidden.Value,
+                ignore_collisions = farmer.ignoreCollisions,
+                can_move = farmer.CanMove,
+                using_tool = farmer.UsingTool
+            })
+            .OrderByDescending(farmer => farmer.is_main_player)
+            .ThenBy(farmer => farmer.player_id, StringComparer.Ordinal)
+            .ToArray();
+
+        return new
+        {
+            context_is_multiplayer = Context.IsMultiplayer,
+            context_is_main_player = Context.IsMainPlayer,
+            game_is_server = Game1.IsServer,
+            original_server_active = Game1.server is not null,
+            server_enabled = Game1.options?.enableServer == true,
+            pause_when_out_of_focus = Game1.options?.pauseWhenOutOfFocus,
+            game_display_farmer = Game1.displayFarmer,
+            local_player_id = localPlayer?.UniqueMultiplayerID.ToString(CultureInfo.InvariantCulture),
+            online_farmer_count = onlineIds.Count,
+            farmers
+        };
     }
 
     private static object? ReadSeedInventoryItem(Item? item, int index, GameLocation? location)

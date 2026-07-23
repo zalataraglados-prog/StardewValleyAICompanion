@@ -23,6 +23,20 @@ public sealed partial class PlayerReadAdapter
             };
         }
 
+        if (SnapshotProfileContext.Current is not ("machine" or "training_machine" or "full"))
+        {
+            return new
+            {
+                projection_status = "blocked_requires_machine_training_machine_or_full_profile",
+                known_recipe_count = player.craftingRecipes.Count(),
+                machine_recipe_count = 0,
+                unclassified_known_recipe_count = 0,
+                unclassified_known_recipe_names = Array.Empty<string>(),
+                unclassified_known_recipes = Array.Empty<object>(),
+                rows = Array.Empty<object>()
+            };
+        }
+
         var rows = new List<object>();
         var unclassified = new List<UnclassifiedRecipe>();
         foreach (var recipeName in player.craftingRecipes.Keys.OrderBy(name => name, StringComparer.Ordinal))

@@ -43,6 +43,50 @@ namespace StardewAI.Contracts.Execution
         public string ControlSurface { get; set; } = "companion_actor";
     }
 
+    public static class ExecutionTargetProfiles
+    {
+        public const string TrainingSingleplayer = "training_singleplayer";
+        public const string CoopCompanion = "coop_companion";
+        public const string DedicatedHostAi = "dedicated_host_ai";
+
+        public static bool IsSupported(string executionMode)
+        {
+            return string.Equals(executionMode, TrainingSingleplayer, StringComparison.Ordinal) ||
+                string.Equals(executionMode, CoopCompanion, StringComparison.Ordinal) ||
+                string.Equals(executionMode, DedicatedHostAi, StringComparison.Ordinal);
+        }
+
+        public static ActionActorRef CreateActor(string executionMode)
+        {
+            if (string.Equals(executionMode, DedicatedHostAi, StringComparison.Ordinal))
+            {
+                return new ActionActorRef
+                {
+                    ActorId = "ai_host.main",
+                    ActorType = "ai_host",
+                    ControlSurface = "dedicated_host_actor"
+                };
+            }
+
+            if (string.Equals(executionMode, CoopCompanion, StringComparison.Ordinal))
+            {
+                return new ActionActorRef
+                {
+                    ActorId = "ai_companion.main",
+                    ActorType = "ai_companion",
+                    ControlSurface = "companion_actor"
+                };
+            }
+
+            return new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            };
+        }
+    }
+
     public sealed class SmallModelAction
     {
         [JsonPropertyName("action_id")]

@@ -64,18 +64,17 @@ app.MapGet("/health", () => new
 
 app.MapPost("/api/v1/snapshots", async (HttpRequest request, StateStore store) =>
 {
-    using var reader = new StreamReader(request.Body);
-    var rawPayload = await reader.ReadToEndAsync();
-    var errors = SnapshotValidator.ValidateRaw(rawPayload, out var snapshot);
+    store.PrepareForSnapshotIngest();
+    var (errors, snapshot) = await SnapshotValidator.ValidateAsync(request.Body, request.HttpContext.RequestAborted);
     if (errors.Count > 0)
     {
         return Results.UnprocessableEntity(new { message = "snapshot validation failed", errors });
     }
 
-    store.Snapshots[snapshot!.StateHash] = snapshot;
-    store.RawPayloads[snapshot.StateHash] = new RawIngestRecord("snapshot", snapshot.StateHash, DateTimeOffset.UtcNow.ToString("O"), rawPayload);
-    store.AppendAudit("SnapshotIngested", snapshot.GameTick, snapshot.StateHash);
-    return Results.Ok(new { accepted = true, state_hash = snapshot.StateHash });
+    var acceptedSnapshot = snapshot!;
+    store.StoreSnapshot(acceptedSnapshot);
+    store.AppendAudit("SnapshotIngested", acceptedSnapshot.GameTick, acceptedSnapshot.StateHash);
+    return Results.Ok(new { accepted = true, state_hash = acceptedSnapshot.StateHash });
 });
 
 app.MapGet("/api/v1/snapshots/latest", (StateStore store) =>
@@ -686,6 +685,10 @@ public static class DatasetPathResolver
 
 public sealed class StateStore
 {
+    private const int MaxRetainedSnapshots = 2;
+    private readonly object snapshotGate = new();
+    private readonly Queue<string> snapshotOrder = new();
+
     public Dictionary<string, SnapshotEnvelope> Snapshots { get; } = new Dictionary<string, SnapshotEnvelope>();
     public List<GameEvent> Events { get; } = new List<GameEvent>();
     public Dictionary<string, Capability> Capabilities { get; } = new Dictionary<string, Capability>();
@@ -697,7 +700,49 @@ public sealed class StateStore
 
     public SnapshotEnvelope? LatestSnapshot()
     {
-        return Snapshots.Values.OrderByDescending(item => item.GameTick).FirstOrDefault();
+        lock (snapshotGate)
+        {
+            return Snapshots.Values.OrderByDescending(item => item.GameTick).FirstOrDefault();
+        }
+    }
+
+    public void PrepareForSnapshotIngest()
+    {
+        lock (snapshotGate)
+        {
+            while (snapshotOrder.Count >= MaxRetainedSnapshots)
+            {
+                RemoveOldestSnapshot();
+            }
+        }
+    }
+
+    public void StoreSnapshot(SnapshotEnvelope snapshot)
+    {
+        lock (snapshotGate)
+        {
+            if (!Snapshots.ContainsKey(snapshot.StateHash))
+            {
+                snapshotOrder.Enqueue(snapshot.StateHash);
+            }
+
+            Snapshots[snapshot.StateHash] = snapshot;
+            while (snapshotOrder.Count > MaxRetainedSnapshots)
+            {
+                RemoveOldestSnapshot();
+            }
+        }
+    }
+
+    private void RemoveOldestSnapshot()
+    {
+        if (!snapshotOrder.TryDequeue(out var stateHash))
+        {
+            return;
+        }
+
+        Snapshots.Remove(stateHash);
+        RawPayloads.Remove(stateHash);
     }
 
     public void AppendAudit(string eventType, long gameTick, string stateHash)
@@ -732,54 +777,48 @@ public static class SnapshotValidator
         "modded_state"
     };
 
-    public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)
+    public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
+        Stream rawPayload,
+        CancellationToken cancellationToken = default)
     {
-        snapshot = null;
-        var errors = new List<string>();
-        JsonDocument document;
         try
         {
-            document = JsonDocument.Parse(rawPayload);
+            var snapshot = await JsonSerializer.DeserializeAsync<SnapshotEnvelope>(rawPayload, JsonOptions, cancellationToken);
+            return (ValidateDeserialized(snapshot), snapshot);
         }
         catch (JsonException ex)
         {
-            errors.Add("invalid json: " + ex.Message);
-            return errors;
+            return (new List<string> { "invalid json: " + ex.Message }, null);
         }
+    }
 
-        using (document)
+    public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)
+    {
+        try
         {
-            var root = document.RootElement;
-            if (!root.TryGetProperty("schema_version", out var schemaVersion))
-            {
-                errors.Add("schema_version is required");
-                return errors;
-            }
-
-            if (schemaVersion.GetString() != "snapshot.v1")
-            {
-                errors.Add("unsupported schema_version: " + schemaVersion.GetString());
-                return errors;
-            }
-
             snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(rawPayload, JsonOptions);
-            if (snapshot is null)
-            {
-                errors.Add("snapshot deserialization failed");
-                return errors;
-            }
+            return ValidateDeserialized(snapshot);
+        }
+        catch (JsonException ex)
+        {
+            snapshot = null;
+            return new List<string> { "invalid json: " + ex.Message };
+        }
+    }
 
-            errors.AddRange(Validate(snapshot));
-            if (root.TryGetProperty("state", out _))
-            {
-                var computed = SnapshotHash.ComputeStateHash(snapshot.State);
-                if (!string.Equals(snapshot.StateHash, computed, StringComparison.OrdinalIgnoreCase))
-                {
-                    errors.Add("state_hash mismatch");
-                }
-            }
+    private static List<string> ValidateDeserialized(SnapshotEnvelope? snapshot)
+    {
+        if (snapshot is null)
+        {
+            return new List<string> { "snapshot deserialization failed" };
         }
 
+        var errors = Validate(snapshot);
+        var computed = SnapshotHash.ComputeStateHash(snapshot.State);
+        if (!string.Equals(snapshot.StateHash, computed, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("state_hash mismatch");
+        }
         return errors;
     }
 

@@ -20,6 +20,11 @@ namespace StardewAI.Core.OptionRegistry
             if (ActiveMenuOpenForCandidate(snapshot))
             {
                 var closeMenuReasons = CloseMenuCandidateBlockReasons(snapshot);
+                var closeMenuParameters = new List<SmallModelActionParameter>
+                {
+                    Parameter("execution_option_id", "executor.close_menu")
+                };
+                closeMenuParameters.AddRange(LevelUpMenuRecoveryParameters(snapshot));
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = "recovery:close_blocking_menu",
@@ -29,7 +34,7 @@ namespace StardewAI.Core.OptionRegistry
                     ExpectedEffect = "menu_not_blocking_execution",
                     EstimatedTicks = 10,
                     BlockReasons = closeMenuReasons,
-                    Parameters = new[] { Parameter("execution_option_id", "executor.close_menu") }
+                    Parameters = closeMenuParameters.ToArray()
                 });
             }
 
@@ -243,6 +248,46 @@ namespace StardewAI.Core.OptionRegistry
                 OptionId = "recovery.stabilize_day",
                 Parameters = new[] { Parameter("compiler_context.recovery_route_probe", "true") }
             };
+        }
+
+        private static SmallModelActionParameter[] LevelUpMenuRecoveryParameters(SnapshotEnvelope snapshot)
+        {
+            if (!string.Equals(ActiveMenuTypeForCandidate(snapshot), "LevelUpMenu", StringComparison.Ordinal))
+            {
+                return Array.Empty<SmallModelActionParameter>();
+            }
+
+            var state = ReadStateFieldValue(snapshot, "menus", "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(state.Value, "kind"), "level_up", StringComparison.Ordinal) ||
+                ReadBool(state.Value, "is_profession_chooser") != true ||
+                !state.Value.TryGetProperty("profession_choices", out var choices) ||
+                choices.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<SmallModelActionParameter>();
+            }
+
+            var choiceIds = choices.EnumerateArray()
+                .Where(row => row.TryGetProperty("profession_id", out var id) && id.TryGetInt32(out _))
+                .Select(row => row.GetProperty("profession_id").GetInt32())
+                .Distinct()
+                .ToArray();
+            var preferred = PreferredGrandpaPerfectionProfession(choiceIds);
+            return preferred.HasValue
+                ? new[]
+                {
+                    Parameter("profession_choice_id", preferred.Value.ToString()),
+                    Parameter("profession_choice_source", "baseline_grandpa_perfection_policy_v1")
+                }
+                : Array.Empty<SmallModelActionParameter>();
+        }
+
+        private static int? PreferredGrandpaPerfectionProfession(IReadOnlyCollection<int> choices)
+        {
+            var preferredOrder = new[] { 1, 4, 6, 8, 13, 16, 18, 21, 24, 26 };
+            return preferredOrder.Cast<int?>()
+                .FirstOrDefault(choice => choice.HasValue && choices.Contains(choice.Value));
         }
 
     }

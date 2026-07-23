@@ -105,7 +105,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void SellItemsPreviewAvailableWhenUnprotectedInventoryCandidateExistsButExecutorDisabled()
+    public void SellItemsAvailableWhenUnprotectedInventoryCandidateExists()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(SellSnapshot(inventoryItemOverride: """
@@ -124,10 +124,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             """), new[] { "economy.sell_items" })
             .Options[0];
 
-        Assert.False(option.Available);
-        Assert.Equal("preview_available", option.Status);
-        Assert.True(option.PreviewOnly);
-        Assert.Contains("sell_shipping_executor_disabled", option.BlockingReasons);
+        Assert.True(option.Available);
+        Assert.Equal("available", option.Status);
+        Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("no_value_available_sell_candidates", option.BlockingReasons);
         var candidate = Assert.Single(option.EconomicCandidates);
         Assert.True(candidate.Available);
@@ -135,6 +134,70 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(0, candidate.SlotIndex);
         Assert.False(candidate.CanShip);
         Assert.True(candidate.CanShopSell);
+        Assert.Equal("SeedShop", candidate.ShopId);
+        Assert.Equal(35, candidate.UnitPrice);
+        Assert.Equal(105, candidate.TotalValue);
+    }
+
+    [Fact]
+    public void SellItemsRejectsShopWithNoCategoryOrTagAcceptance()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellSnapshot(
+                inventoryItemOverride: """
+                  {
+                    "slot_index":0,
+                    "qualified_item_id":"(O)24",
+                    "stack":3,
+                    "category":-75,
+                    "context_tags":["item_parsnip"],
+                    "sell_to_store_price":35,
+                    "protected_from_auto_sell":false,
+                    "auto_sell_protection_reasons":[],
+                    "is_empty":false
+                  }
+                """,
+                sellContextOverride: """
+                  {"kind":"shop_sell_context","shop_id":"SeedShop","currency":0,"read_only":false,"safety_timer":0,"held_item_present":false,"storage_shop":false,"sell_percentage":1.0,"custom_on_sell_present":false,"categories_to_sell":[],"tag_groups_to_sell":[]}
+                """), new[] { "economy.sell_items" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.False(candidate.Available);
+        Assert.False(candidate.CanShopSell);
+        Assert.Contains("item_not_accepted_by_active_shop", candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void SellItemsUsesAllTagsAndNativeSellPercentage()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellSnapshot(
+                inventoryItemOverride: """
+                  {
+                    "slot_index":0,
+                    "item_id":"24",
+                    "qualified_item_id":"(O)24",
+                    "stack":3,
+                    "category":-75,
+                    "context_tags":["item_parsnip","color_yellow"],
+                    "sell_to_store_price":35,
+                    "protected_from_auto_sell":false,
+                    "auto_sell_protection_reasons":[],
+                    "is_empty":false
+                  }
+                """,
+                sellContextOverride: """
+                  {"kind":"shop_sell_context","shop_id":"TagShop","currency":0,"read_only":false,"safety_timer":0,"held_item_present":false,"storage_shop":false,"sell_percentage":0.5,"custom_on_sell_present":false,"categories_to_sell":[],"tag_groups_to_sell":[["item_parsnip","color_yellow"]]}
+                """), new[] { "economy.sell_items" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.True(candidate.Available);
+        Assert.True(candidate.CanShopSell);
+        Assert.Equal("TagShop", candidate.ShopId);
+        Assert.Equal(17, candidate.UnitPrice);
+        Assert.Equal(51, candidate.TotalValue);
     }
 
     [Fact]
@@ -161,7 +224,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("blocked", option.Status);
         Assert.Contains("no_value_available_sell_candidates", option.BlockingReasons);
         Assert.Contains("inventory_item_protected_from_auto_sell", option.BlockingReasons);
-        Assert.Contains("sell_shipping_executor_disabled", option.BlockingReasons);
         var candidate = Assert.Single(option.EconomicCandidates);
         Assert.False(candidate.Available);
         Assert.Contains("inventory_item_protected_from_auto_sell", candidate.BlockReasons);

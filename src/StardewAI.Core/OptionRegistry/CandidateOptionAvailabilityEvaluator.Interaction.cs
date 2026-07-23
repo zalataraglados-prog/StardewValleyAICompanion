@@ -464,12 +464,45 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<string>();
             }
 
+            if (type == "LevelUpMenu")
+            {
+                return LevelUpMenuBlockReasons(snapshot);
+            }
+
             if (type == "DialogueBox")
             {
                 return SafeOrdinaryDialogueBlockReasons(snapshot);
             }
 
             return new[] { "close_menu_type_not_whitelisted" };
+        }
+
+        private static string[] LevelUpMenuBlockReasons(SnapshotEnvelope snapshot)
+        {
+            var state = ReadStateFieldValue(snapshot, "menus", "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(state.Value, "kind"), "level_up", StringComparison.Ordinal))
+            {
+                return new[] { "level_up_menu_transparent_state_missing" };
+            }
+
+            var reasons = new List<string>();
+            if (ReadBool(state.Value, "reflection_fields_complete") != true)
+                reasons.Add("level_up_menu_reflection_fields_incomplete");
+            if (ReadBool(state.Value, "is_active") != true)
+                reasons.Add("level_up_menu_not_active");
+            if (ReadBool(state.Value, "can_receive_input") != true)
+                reasons.Add("level_up_menu_input_not_ready");
+            if (ReadBool(state.Value, "is_profession_chooser") == true &&
+                (!state.Value.TryGetProperty("profession_choices", out var choices) ||
+                 choices.ValueKind != JsonValueKind.Array ||
+                 choices.GetArrayLength() != 2))
+            {
+                reasons.Add("level_up_menu_profession_choices_not_exactly_two");
+            }
+
+            return reasons.ToArray();
         }
 
         private static string[] SafeOrdinaryDialogueBlockReasons(SnapshotEnvelope snapshot)

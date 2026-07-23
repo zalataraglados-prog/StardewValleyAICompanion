@@ -88,7 +88,8 @@ namespace StardewAI.Core.Execution
             var actions = new List<SmallModelAction>();
             var activeMenuOpenBeforeStep = ActiveMenuOpen(snapshot);
             var activeMenuTypeBeforeStep = activeMenuOpenBeforeStep ? ActiveMenuType(snapshot) : string.Empty;
-            var expandedSteps = ExpandMoveRouteRepairs(planOutput.Steps, snapshot);
+            var routedSteps = ExpandCrossLocationMovePrefix(planOutput.Steps, snapshot);
+            var expandedSteps = ExpandMoveRouteRepairs(routedSteps, snapshot);
             for (var index = 0; index < expandedSteps.Length; index++)
             {
                 var step = expandedSteps[index];

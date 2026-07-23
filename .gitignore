@@ -7,8 +7,9 @@ __pycache__/
 artifacts/
 TestResults/
 .worker-tasks/
-/scratch/simulate_find/
+/scratch/
 /test-results.txt
+/data/knowledge/
 *.user
 *.suo
 *.log

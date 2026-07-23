@@ -1,0 +1,50 @@
+{
+  "schema_version": "stardewai.knowledge_artifact_lock.v1",
+  "game_version": "1.6.15",
+  "artifact_root_environment_variable": "STARDEWAI_KNOWLEDGE_ROOT",
+  "default_windows_artifact_root": "I:\\StardewAI-KnowledgeArtifacts\\game-1.6.15",
+  "raw_export": {
+    "relative_path": "raw\\game-1.6.15-20260723T093543Z",
+    "manifest_bytes": 1195654,
+    "manifest_sha256": "01d34627beebe89911edc5b94cf5c4f609875b840d3e6310e4ea2120b2d0618b"
+  },
+  "derived_profile": {
+    "relative_path": "derived\\game-1.6.15-20260723T093543Z-linux-v19",
+    "build_manifest_bytes": 3906,
+    "build_manifest_sha256": "7edaefc1480dd4ebc81cc8a1667c17811f394ef0ef95ba242aeb9eaf647b6e18",
+    "status": "complete_authoritative_identity_graph_stage"
+  },
+  "runtime_binaries": {
+    "relative_path": "runtime-binaries\\linux-server-1.6.15-20260719",
+    "files": [
+      {
+        "name": "Stardew Valley.dll",
+        "bytes": 6268416,
+        "sha256": "f3e97f01d3fd2b1e6094fc8d2b59950aa6cb9d6cd1bf1b39d72d58edda8aad12"
+      },
+      {
+        "name": "StardewValley.GameData.dll",
+        "bytes": 95744,
+        "sha256": "352e3b9189cdee588f88b1f956db368c56caf89e45258b0f75377f2225dcf311"
+      }
+    ]
+  },
+  "snapshot": {
+    "relative_path": "snapshots\\live-full-snapshot-20260719.json",
+    "bytes": 3628148,
+    "sha256": "5d9aabfff2d6cf53b3e35b1d2a35cfd379c9b55a11d01ee16bda67c8a92aeece"
+  },
+  "decompile_evidence": {
+    "environment_variable": "STARDEWAI_DECOMPILE_ROOT",
+    "default_windows_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15"
+  },
+  "migration_verification": {
+    "verified_at_utc": "2026-07-23T12:02:16.0502656Z",
+    "raw_files": 588,
+    "derived_files": 20,
+    "runtime_binary_files": 2,
+    "snapshot_files": 1,
+    "mismatch_count": 0,
+    "source_copy_retained": true
+  }
+}

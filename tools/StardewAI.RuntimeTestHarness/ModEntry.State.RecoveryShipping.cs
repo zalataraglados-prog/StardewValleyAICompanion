@@ -119,15 +119,11 @@ public sealed partial class ModEntry : Mod
 
     private enum ShipPhase
     {
-        BinPosition,
-        BinPositionVerify,
+        BinFace,
         BinPress,
         BinRelease,
         WaitForShippingMenu,
-        SlotPosition,
-        SlotPositionVerify,
-        SlotPress,
-        SlotRelease,
+        SlotDispatch,
         WaitForSlotDispatch,
         VerifyAndClose
     }
@@ -218,7 +214,7 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActiveShipInventoryToBin
     {
-        public ActiveShipInventoryToBin(PendingExecution pending, ShippingBin bin, int slotIndex,
+        public ActiveShipInventoryToBin(PendingExecution pending, ShippingBin bin, Point actionTile, int slotIndex,
             string qualifiedItemId, string unqualifiedItemId, int quantity,
             int inventoryCountBefore, int binCountBefore, int binTotalCountBefore,
             int binDistinctCountBefore, string binSignatureBefore, int basicShippedCountBefore,
@@ -226,6 +222,7 @@ public sealed partial class ModEntry : Mod
         {
             Pending = pending;
             Bin = bin;
+            ActionTile = actionTile;
             SlotIndex = slotIndex;
             QualifiedItemId = qualifiedItemId;
             UnqualifiedItemId = unqualifiedItemId;
@@ -240,12 +237,13 @@ public sealed partial class ModEntry : Mod
             BeforeSlotStack = beforeSlotStack;
             BeforeSlotItemId = beforeSlotItemId;
             StartedAt = DateTimeOffset.UtcNow.ToString("O");
-            Phase = ShipPhase.BinPosition;
+            Phase = ShipPhase.BinFace;
             PhaseStartTick = 0;
         }
 
         public PendingExecution Pending { get; }
         public ShippingBin Bin { get; }
+        public Point ActionTile { get; }
         public int SlotIndex { get; }
         public string QualifiedItemId { get; }
         public string UnqualifiedItemId { get; }
@@ -262,9 +260,8 @@ public sealed partial class ModEntry : Mod
         public string StartedAt { get; }
         public ShipPhase Phase { get; set; }
         public int PhaseStartTick { get; set; }
-        public bool PositionSet { get; set; }
-        public bool PositionVerified { get; set; }
-        public Point PositionTarget { get; set; }
+        public bool FacingSet { get; set; }
+        public bool NativeActionDispatched { get; set; }
         public bool ButtonPressed { get; set; }
         public bool ButtonReleased { get; set; }
         public int ReleaseRetries { get; set; }

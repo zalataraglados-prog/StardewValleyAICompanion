@@ -539,6 +539,62 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileAllowsDedicatedHostAiOnlyForDedicatedHostActor()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "weather": {"value":"sun","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        request.ExecutionMode = ExecutionTargetProfiles.DedicatedHostAi;
+        request.Actor = ExecutionTargetProfiles.CreateActor(request.ExecutionMode);
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("dedicated_host_ai", queue.ExecutionMode);
+        Assert.Equal("ai_host.main", queue.Actor.ActorId);
+        Assert.Equal("ai_host", queue.Actor.ActorType);
+        Assert.Equal("dedicated_host_actor", queue.Actor.ControlSurface);
+    }
+
+    [Fact]
+    public void CompileRejectsDedicatedHostModeWithCompanionActor()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        request.ExecutionMode = ExecutionTargetProfiles.DedicatedHostAi;
+        request.Actor = ExecutionTargetProfiles.CreateActor(ExecutionTargetProfiles.CoopCompanion);
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("dedicated_host_ai_requires_ai_host", queue.CompilerDiagnostics);
+        Assert.Contains("dedicated_host_ai_requires_dedicated_host_actor", queue.CompilerDiagnostics);
+    }
+
+    [Fact]
     public void DryRunExecutorDoesNotMutateButReturnsExecutionShape()
     {
         var snapshot = Snapshot("""

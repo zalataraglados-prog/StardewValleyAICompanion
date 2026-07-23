@@ -434,6 +434,16 @@ public sealed partial class ModEntry : Mod
     private static void ApplyClearanceTool(GameLocation location, Point target, Tool tool)
     {
         var tile = new Vector2(target.X, target.Y);
+        if (location.objects.TryGetValue(tile, out var targetObject) && targetObject.IsWeeds())
+        {
+            if (targetObject.performToolAction(tool))
+            {
+                location.objects.Remove(tile);
+            }
+
+            return;
+        }
+
         if (location.terrainFeatures.TryGetValue(tile, out var feature))
         {
             if (feature.performToolAction(tool, 0, tile))

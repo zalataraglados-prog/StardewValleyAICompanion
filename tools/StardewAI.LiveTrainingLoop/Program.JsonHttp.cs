@@ -46,14 +46,19 @@ static partial class Program
         return JsonNode.Parse(body)?.AsObject() ?? new JsonObject();
     }
 
-    private static string ReadString(JsonObject value, string property)
+    private static string ReadString(JsonObject? value, string property)
     {
-        return value[property]?.GetValue<string>() ?? string.Empty;
+        return value is not null &&
+            value.TryGetPropertyValue(property, out var node) &&
+            node is JsonValue jsonValue &&
+            jsonValue.TryGetValue<string>(out var result)
+                ? result
+                : string.Empty;
     }
 
     private static string ReadStringOrEmpty(JsonObject? value, string property)
     {
-        return value?[property]?.GetValue<string>() ?? string.Empty;
+        return ReadString(value, property);
     }
 
     private static int? ReadQueueParameterInt(JsonObject? item, string name)

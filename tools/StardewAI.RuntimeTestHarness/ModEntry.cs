@@ -115,6 +115,19 @@ public sealed partial class ModEntry : Mod
         harmony.Patch(
             original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
             prefix: new HarmonyMethod(typeof(CrabPotCaughtFishPatch), nameof(CrabPotCaughtFishPatch.Prefix)));
+        if (IsVanillaAiHostMode() &&
+            string.Equals(
+                Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),
+                "1",
+                StringComparison.Ordinal))
+        {
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Game1), "Draw", new[] { typeof(GameTime) }),
+                prefix: new HarmonyMethod(typeof(HostLocalDrawPatch), nameof(HostLocalDrawPatch.Prefix)));
+            Monitor.Log(
+                "Suppressing host-local rendering; game updates, original multiplayer sync, and remote farmer rendering remain active.",
+                LogLevel.Info);
+        }
 
         Monitor.Log($"Redirected Stardew save folder to {config.SavesPath}", LogLevel.Info);
 
@@ -128,6 +141,12 @@ public sealed partial class ModEntry : Mod
             helper.Events.GameLoop.UpdateTicking += OnExecutorUpdateTicking;
             helper.Events.GameLoop.UpdateTicked += OnExecutorUpdateTicked;
             StartTrainingExecutorServer();
+        }
+
+        if (IsAiHostRuntimeMode())
+        {
+            helper.Events.GameLoop.SaveLoaded += OnDedicatedHostSaveLoaded;
+            helper.Events.GameLoop.UpdateTicked += OnDedicatedHostVisibilityTicked;
         }
 
         helper.Events.GameLoop.DayStarted += OnDayStartedForShippingReceipts;
@@ -152,6 +171,30 @@ public sealed partial class ModEntry : Mod
         if (int.TryParse(executorTimeout, out var timeoutSeconds))
         {
             config.ExecutorRequestTimeoutSeconds = timeoutSeconds;
+        }
+
+        var companionActorId = Environment.GetEnvironmentVariable("STARDEWAI_COMPANION_ACTOR_ID");
+        if (!string.IsNullOrWhiteSpace(companionActorId))
+        {
+            config.CompanionActorId = companionActorId;
+        }
+
+        var companionFarmerId = Environment.GetEnvironmentVariable("STARDEWAI_COMPANION_FARMER_ID");
+        if (!string.IsNullOrWhiteSpace(companionFarmerId))
+        {
+            config.CompanionFarmerId = companionFarmerId;
+        }
+
+        var dedicatedHostActorId = Environment.GetEnvironmentVariable("STARDEWAI_DEDICATED_HOST_ACTOR_ID");
+        if (!string.IsNullOrWhiteSpace(dedicatedHostActorId))
+        {
+            config.DedicatedHostActorId = dedicatedHostActorId;
+        }
+
+        var dedicatedHostFarmerId = Environment.GetEnvironmentVariable("STARDEWAI_DEDICATED_HOST_FARMER_ID");
+        if (!string.IsNullOrWhiteSpace(dedicatedHostFarmerId))
+        {
+            config.DedicatedHostFarmerId = dedicatedHostFarmerId;
         }
 
         var disableMovementTimeouts = Environment.GetEnvironmentVariable("STARDEWAI_DISABLE_MOVEMENT_TIMEOUTS");
@@ -188,6 +231,19 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (IsVanillaAiHostMode())
+        {
+            Game1.multiplayerMode = 2;
+            if (Game1.options is not null)
+            {
+                Game1.options.pauseWhenOutOfFocus = false;
+            }
+
+            Monitor.Log(
+                "Starting vanilla co-op host: multiplayerMode=2 before SaveGame.Load; no dedicated-server lifecycle mod is required.",
+                LogLevel.Info);
+        }
+
         Monitor.Log($"Loading isolated test save slot {config.SlotName}", LogLevel.Info);
         SaveGame.Load(config.SlotName);
         Game1.exitActiveMenu();
@@ -203,7 +259,10 @@ public sealed partial class ModEntry : Mod
 
         executorCancellation = new CancellationTokenSource();
         executorListener = new HttpListener();
-        executorListener.Prefixes.Add($"http://{config.ExecutorHost}:{config.ExecutorPort}/");
+        var httpPrefixHost = string.Equals(config.ExecutorHost, "0.0.0.0", StringComparison.Ordinal)
+            ? "*"
+            : config.ExecutorHost;
+        executorListener.Prefixes.Add($"http://{httpPrefixHost}:{config.ExecutorPort}/");
         executorListener.Start();
         Monitor.Log($"Training executor listening on http://{config.ExecutorHost}:{config.ExecutorPort}/", LogLevel.Info);
         _ = Task.Run(() => ServeTrainingExecutorAsync(executorCancellation.Token));
@@ -605,6 +664,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.sell_shop_item")
+            {
+                pending.Completion.SetResult(ExecuteSellShopItem(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.plant_seed")
             {
                 pending.Completion.SetResult(ExecutePlantSeed(pending.Request));
@@ -799,7 +864,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
-            pending.Completion.SetResult(ExecuteMaintainCropsNoOp(pending.Request));
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request,
+                "unsupported_executor_option",
+                "executor.option_id=" + pending.Request.OptionId,
+                "executor.dispatch=not_started",
+                "runtime_executor_option_not_supported:" + pending.Request.OptionId));
         }
         catch (Exception ex)
         {
@@ -942,6 +1012,15 @@ internal static class SavesFolderPatch
 
         Directory.CreateDirectory(RedirectPath);
         __result = RedirectPath;
+    }
+
+}
+
+internal static class HostLocalDrawPatch
+{
+    public static bool Prefix()
+    {
+        return false;
     }
 }
 

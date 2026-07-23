@@ -254,7 +254,41 @@ public sealed class MenuReadAdapter : ReadAdapterBase
             DialogueBox dialogueBox =>
                 (Field(ReadDialogueState(dialogueBox, tick), "DialogueBox public fields", tick, AdapterId),
                     new[] { "menus.menu_specific_state.dialogue.current_text" }),
+            LevelUpMenu levelUpMenu =>
+                (Field(ReadLevelUpMenuState(levelUpMenu), "LevelUpMenu public state and exact private currentSkill/currentLevel/professionsToChoose fields", tick, AdapterId),
+                    Array.Empty<string>()),
             _ => (null, Array.Empty<string>())
+        };
+    }
+
+    private static object ReadLevelUpMenuState(LevelUpMenu menu)
+    {
+        var currentSkill = ReadPrivateInt(menu, "currentSkill");
+        var currentLevel = ReadPrivateInt(menu, "currentLevel");
+        var timerBeforeStart = ReadPrivateInt(menu, "timerBeforeStart");
+        var professionIds = ReadPrivateIntList(menu, "professionsToChoose");
+        return new
+        {
+            kind = "level_up",
+            information_up = menu.informationUp,
+            is_active = menu.isActive,
+            is_profession_chooser = menu.isProfessionChooser,
+            has_updated_professions = menu.hasUpdatedProfessions,
+            can_receive_input = menu.CanReceiveInput(),
+            current_skill = currentSkill,
+            current_level = currentLevel,
+            timer_before_start = timerBeforeStart,
+            reflection_fields_complete = currentSkill.HasValue &&
+                currentLevel.HasValue &&
+                timerBeforeStart.HasValue &&
+                professionIds is not null,
+            profession_choices = (professionIds ?? Array.Empty<int>())
+                .Select(id => new
+                {
+                    profession_id = id,
+                    title = LevelUpMenu.getProfessionTitleFromNumber(id)
+                })
+                .ToArray()
         };
     }
 
@@ -491,6 +525,18 @@ public sealed class MenuReadAdapter : ReadAdapterBase
     private static float? ReadPrivateFloat(object source, string fieldName)
     {
         return source.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(source) as float?;
+    }
+
+    private static int? ReadPrivateInt(object source, string fieldName)
+    {
+        return source.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(source) as int?;
+    }
+
+    private static int[]? ReadPrivateIntList(object source, string fieldName)
+    {
+        return source.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(source) is IEnumerable<int> values
+            ? values.ToArray()
+            : null;
     }
 
     private static int ReadCurrencyBalance(int currency)

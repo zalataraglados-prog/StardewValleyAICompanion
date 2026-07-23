@@ -5,6 +5,6 @@
   "Description": "Read-only transparent state bridge for AI companion planning.",
   "UniqueID": "StardewAI.TransparentBridge",
   "EntryDll": "StardewAI.TransparentBridge.dll",
-  "MinimumApiVersion": "4.5.2",
+  "MinimumApiVersion": "4.3.2",
   "UpdateKeys": []
 }

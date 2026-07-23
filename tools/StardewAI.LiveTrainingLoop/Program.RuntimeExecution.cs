@@ -54,7 +54,6 @@ static partial class Program
         {
             var item = queueItems[itemIndex];
             var itemSemanticKey = QueueReplanFilter.SemanticQueueItemKey(item);
-            var effectiveBeforeSnapshot = currentBeforeSnapshot;
             var effectiveStateHash = currentStateHash;
             var executionRequest = BuildExecutionRequest(options, item, currentStateHash, queueId);
             var request = JsonSerializer.Serialize(executionRequest, JsonOptions);
@@ -79,7 +78,6 @@ static partial class Program
             execution["effective_queue_item"] = JsonNode.Parse(item.ToJsonString(JsonOptions));
             execution["effective_before_state_hash"] = effectiveStateHash;
             execution["effective_before_snapshot_path"] = currentBeforeSnapshotPath;
-            execution["effective_before_snapshot"] = JsonNode.Parse(effectiveBeforeSnapshot.ToJsonString(JsonOptions));
             execution["queue_continue_after_blocked"] = options.ContinueAfterBlockedQueueItems;
             execution["after_snapshot_path"] = afterPath;
             execution["execution_path"] = executionPath;
@@ -237,8 +235,8 @@ static partial class Program
             QueueItemId = queueItemId,
             BeforeStateHash = stateHash,
             OptionId = optionId,
-            ExecutionMode = "training_singleplayer",
-            Actor = "training_farmer.main",
+            ExecutionMode = options.TargetExecutionMode,
+            Actor = options.TargetActor.ActorId,
             SaveIsolationPath = options.SaveIsolationPath,
             RequestNonce = Guid.NewGuid().ToString("N"),
             CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
@@ -411,6 +409,8 @@ static partial class Program
         var socialContinuationDialogueRecovery = bool.TryParse(
             ReadQueueParameterString(item, "social_continuation_dialogue_recovery"),
             out var parsedSocialContinuationDialogueRecovery) && parsedSocialContinuationDialogueRecovery;
+        var professionChoiceId = ReadQueueParameterInt(item, "profession_choice_id");
+        var professionChoiceSource = ReadQueueParameterString(item, "profession_choice_source");
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -420,6 +420,7 @@ static partial class Program
         var itemId = ReadQueueParameterString(item, "item_id");
         var quantity = ReadQueueParameterInt(item, "quantity");
         var maxUnitPrice = ReadQueueParameterInt(item, "max_unit_price");
+        var expectedUnitPrice = ReadQueueParameterInt(item, "expected_unit_price");
         var expectedShopId = ReadQueueParameterString(item, "expected_shop_id");
         var expectedDialogueKey = ReadQueueParameterString(item, "expected_dialogue_key");
         var dialogueResponseKey = ReadQueueParameterString(item, "dialogue_response_key");
@@ -692,6 +693,8 @@ static partial class Program
             executionRequest.ExpectedActionType = expectedActionType;
         }
         executionRequest.SocialContinuationDialogueRecovery = socialContinuationDialogueRecovery;
+        executionRequest.ProfessionChoiceId = professionChoiceId;
+        executionRequest.ProfessionChoiceSource = professionChoiceSource;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;
@@ -724,6 +727,10 @@ static partial class Program
         if (maxUnitPrice.HasValue)
         {
             executionRequest.MaxUnitPrice = maxUnitPrice.Value;
+        }
+        if (expectedUnitPrice.HasValue)
+        {
+            executionRequest.ExpectedUnitPrice = expectedUnitPrice.Value;
         }
         if (!string.IsNullOrWhiteSpace(expectedShopId))
         {
