@@ -189,6 +189,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("quest_candidate_id", "quest:3:ItemDeliveryQuest"));
         Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "blocked"));
+
+        var dropBoxTerminal = QueueItem(
+            "queue.quest.dropbox",
+            "executor.quest_drop_box_donate",
+            "10",
+            "10",
+            "(O)24");
+        dropBoxTerminal["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("quest_candidate_id", "quest:3:ItemDeliveryQuest"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            dropBoxTerminal,
+            continuation,
+            "applied"));
     }
 
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)

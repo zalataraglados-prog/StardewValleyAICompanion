@@ -622,6 +622,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.choose_dialogue_response" &&
             request.OptionId != "executor.social_interact" &&
             request.OptionId != "executor.quest_npc_interact" &&
+            request.OptionId != "executor.quest_drop_box_donate" &&
             request.OptionId != "executor.sleep" &&
             request.OptionId != "executor.ship_inventory_item_to_bin")
         {

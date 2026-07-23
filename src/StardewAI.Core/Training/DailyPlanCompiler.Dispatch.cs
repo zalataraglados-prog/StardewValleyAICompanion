@@ -183,6 +183,11 @@ namespace StardewAI.Core.Training
                 return SocialContinuationRetryWaitSteps(candidate);
             }
 
+            if (candidate.Kind == "quest_drop_box_donation")
+            {
+                return QuestDropBoxDonationSteps(candidate);
+            }
+
             if (candidate.Kind == "ship_inventory_item_to_bin")
             {
                 return ShipInventoryItemToBinSteps(candidate);

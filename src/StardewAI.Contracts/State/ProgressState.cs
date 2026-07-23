@@ -320,6 +320,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("drop_box_game_location")]
         public string DropBoxGameLocation { get; set; } = string.Empty;
 
+        [JsonPropertyName("resolved_drop_box_game_location")]
+        public string ResolvedDropBoxGameLocation { get; set; } = string.Empty;
+
         [JsonPropertyName("drop_box_tile_x")]
         public float DropBoxTileX { get; set; }
 
