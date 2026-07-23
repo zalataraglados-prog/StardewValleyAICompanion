@@ -277,6 +277,7 @@ public sealed partial class ProgressContractsTests
         Assert.Equal("DonateObjective", result.RuntimeType);
         Assert.Equal("shipping", result.PerTypeFields.DropBox);
         Assert.Equal("Farm", result.PerTypeFields.DropBoxGameLocation);
+        Assert.Equal("Farm", result.PerTypeFields.ResolvedDropBoxGameLocation);
         Assert.Equal(10.5f, result.PerTypeFields.DropBoxTileX);
         Assert.Equal(20.5f, result.PerTypeFields.DropBoxTileY);
         Assert.Equal(5, result.PerTypeFields.MinimumCapacity);

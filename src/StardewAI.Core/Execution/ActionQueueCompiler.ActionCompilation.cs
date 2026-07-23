@@ -128,6 +128,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateSocialPlan(action, snapshot));
             blocking.AddRange(ValidateSocialInteractPlan(action, snapshot));
             blocking.AddRange(ValidateQuestNpcInteractPlan(action, snapshot));
+            blocking.AddRange(ValidateQuestDropBoxDonatePlan(action, snapshot));
             blocking.AddRange(ValidateRecoveryPlan(action, snapshot));
             blocking.AddRange(ValidateRouteActionBranches(action, snapshot));
             blocking.AddRange(ValidateRoutePathPreview(action, snapshot));

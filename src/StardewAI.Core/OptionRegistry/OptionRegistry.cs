@@ -535,6 +535,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "matching quest or special-order objective advanced through native NPC action" },
                 new[] { "block_unverified_movement", "block_quest_identity_drift", "block_inventory_identity_drift", "block_unobserved_quest_progress" }));
 
+            Register(Option("executor.quest_drop_box_donate", "quest", "Donate one exact inventory stack through a native special-order drop box",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "quests.special_orders", "current_location.map", "menus.active_menu", "locations.collision_grid" },
+                new[] { "matching special-order donation advanced through native QuestContainerMenu" },
+                new[] { "block_unverified_movement", "block_quest_identity_drift", "block_drop_box_action_drift", "block_inventory_identity_drift", "block_unobserved_quest_progress" }));
+
             Register(Option("executor.clear_obstacle", "tool", "Clear removable obstacle on target tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

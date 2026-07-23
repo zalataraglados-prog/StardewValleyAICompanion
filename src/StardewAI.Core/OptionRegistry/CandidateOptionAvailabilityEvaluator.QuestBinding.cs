@@ -111,6 +111,11 @@ namespace StardewAI.Core.OptionRegistry
                             fields.AcceptableContextTagSets,
                             Math.Max(1, candidate.RequiredTargetCount - candidate.CurrentProgressCount))
                     };
+                case "DonateObjective":
+                    return new[]
+                    {
+                        BindSpecialOrderDropBoxCandidate(snapshot, candidate, order, fields)
+                    };
                 case "ShipObjective":
                     return BindSpecialOrderShippingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ReachMineFloorObjective":
@@ -253,7 +258,7 @@ namespace StardewAI.Core.OptionRegistry
 
             var matchingSlots = inventory.Value.EnumerateArray()
                 .Where(item => item.ValueKind == JsonValueKind.Object && ReadBool(item, "is_empty") != true)
-                .Where(item => MatchesContextTagSets(item, contextTagSets))
+                .Where(item => QuestContextTagMatcher.Matches(item, contextTagSets))
                 .Select(item => ReadInt(item, "slot_index"))
                 .ToHashSet();
             var candidates = ShipCandidates(snapshot)
@@ -263,6 +268,173 @@ namespace StardewAI.Core.OptionRegistry
             return candidates.Length > 0
                 ? candidates
                 : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_shippable_matching_item_not_available") };
+        }
+
+        private EventCandidate BindSpecialOrderDropBoxCandidate(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest,
+            SpecialOrderProgressRef order,
+            PerTypeObjectiveFields fields)
+        {
+            if (string.IsNullOrWhiteSpace(fields.DropBox))
+            {
+                return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_id_missing");
+            }
+
+            var targetLocation = !string.IsNullOrWhiteSpace(fields.ResolvedDropBoxGameLocation)
+                ? fields.ResolvedDropBoxGameLocation
+                : fields.DropBoxGameLocation;
+            if (string.IsNullOrWhiteSpace(targetLocation))
+            {
+                return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_location_missing");
+            }
+
+            var inventoryItem = FindQuestInventoryItem(snapshot, string.Empty, fields.AcceptableContextTagSets, 1);
+            if (!inventoryItem.HasValue)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_matching_inventory_item_not_available");
+            }
+
+            var slotIndex = ReadInt(inventoryItem.Value, "slot_index");
+            var qualifiedItemId = ReadString(inventoryItem.Value, "qualified_item_id");
+            var itemStack = ReadInt(inventoryItem.Value, "stack");
+            if (order.Objectives.Any(objective =>
+                    string.Equals(objective.RuntimeType, "DonateObjective", StringComparison.Ordinal) &&
+                    QuestContextTagMatcher.ContainsUnprojectedColorTag(
+                        objective.PerTypeFields.AcceptableContextTagSets)))
+            {
+                return BlockedQuestCandidate(
+                    snapshot,
+                    quest,
+                    "special_order_drop_box_native_accept_capacity_has_unprojected_color_tags");
+            }
+            var acceptedCapacity = order.Objectives
+                .Where(objective =>
+                    string.Equals(objective.RuntimeType, "DonateObjective", StringComparison.Ordinal) &&
+                    objective.PerTypeFields.Available &&
+                    QuestContextTagMatcher.Matches(inventoryItem.Value, objective.PerTypeFields.AcceptableContextTagSets))
+                .Sum(objective => Math.Max(0, objective.MaxCount - objective.CurrentCount));
+            var expectedAcceptedCount = Math.Min(itemStack, acceptedCapacity);
+            if (expectedAcceptedCount <= 0)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_native_accept_capacity_zero");
+            }
+
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            if (!string.Equals(currentLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)
+                    .Where(candidate => candidate.Kind == "route_connector_tile")
+                    .ToArray();
+                var route = FindResolvedRoutePlan(snapshot, currentLocation, targetLocation, routeCandidates);
+                if (route?.FirstConnectorCandidate is null)
+                {
+                    return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_route_unavailable:" + targetLocation);
+                }
+
+                return AttachQuest(
+                    route.FirstConnectorCandidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("continuation.option_id", "quest.advance"),
+                        Parameter("continuation.quest_candidate_id", quest.CandidateId),
+                        Parameter("continuation.target_location", targetLocation),
+                        Parameter("continuation.slot_index", slotIndex.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("continuation.qualified_item_id", qualifiedItemId),
+                        Parameter("quest_drop_box_id", fields.DropBox),
+                        Parameter("quest_drop_box_target_location", targetLocation),
+                        Parameter("quest_route_remaining_connector_count", route.Path.Length.ToString(CultureInfo.InvariantCulture))
+                    });
+            }
+
+            var actionTiles = ReadStateFieldValue(snapshot, "current_location", "drop_box_action_tiles");
+            if (!actionTiles.HasValue || actionTiles.Value.ValueKind != JsonValueKind.Array)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "current_location_drop_box_action_tiles_unavailable");
+            }
+
+            JsonElement? selectedAction = null;
+            CandidateTile? selectedStand = null;
+            var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
+            var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
+            var bestDistance = int.MaxValue;
+            foreach (var action in actionTiles.Value.EnumerateArray())
+            {
+                if (action.ValueKind != JsonValueKind.Object ||
+                    !string.Equals(ReadString(action, "box_id"), fields.DropBox, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var actionX = ReadInt(action, "tile_x");
+                var actionY = ReadInt(action, "tile_y");
+                var stand = FindBestStandTile(snapshot, actionX, actionY);
+                if (stand is null)
+                {
+                    continue;
+                }
+
+                var distance = Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
+                if (distance < bestDistance)
+                {
+                    selectedAction = action.Clone();
+                    selectedStand = stand;
+                    bestDistance = distance;
+                }
+            }
+
+            if (!selectedAction.HasValue)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "matching_drop_box_action_tile_not_found:" + fields.DropBox);
+            }
+            if (selectedStand is null)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "matching_drop_box_action_tile_has_no_stand_tile:" + fields.DropBox);
+            }
+
+            var targetX = ReadInt(selectedAction.Value, "tile_x");
+            var targetY = ReadInt(selectedAction.Value, "tile_y");
+            var source = new EventCandidate
+            {
+                CandidateId = "quest_drop_box:" + quest.QuestKey + ":" + quest.SelectedObjectiveIndex,
+                Kind = "quest_drop_box_donation",
+                Available = true,
+                LocationId = currentLocation,
+                TileX = targetX,
+                TileY = targetY,
+                ItemId = ReadString(inventoryItem.Value, "item_id"),
+                QualifiedItemId = qualifiedItemId,
+                SlotIndex = slotIndex,
+                Quantity = expectedAcceptedCount,
+                AvailableStack = itemStack,
+                ExpectedEffect = "special_order.drop_box=" + fields.DropBox +
+                    ";native_accepted_count=" + expectedAcceptedCount +
+                    ";selected_objective_progress_increases=true",
+                EstimatedTicks = Math.Max(120, bestDistance * 12 + 120),
+                EnergyCost = 0,
+                AvailabilityClass = "typed_special_order_drop_box_native_menu",
+                AllowedNow = true,
+                AllowedToday = true,
+                Parameters = new[]
+                {
+                    Parameter("quest_drop_box_id", fields.DropBox),
+                    Parameter("quest_drop_box_target_location", targetLocation),
+                    Parameter("target_tile_x", targetX.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("target_tile_y", targetY.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("stand_tile_x", selectedStand.X.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("stand_tile_y", selectedStand.Y.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("route_distance_tiles", bestDistance.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("max_movement_tiles", Math.Max(1, bestDistance + 16).ToString(CultureInfo.InvariantCulture)),
+                    Parameter("slot_index", slotIndex.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("item_id", ReadString(inventoryItem.Value, "item_id")),
+                    Parameter("qualified_item_id", qualifiedItemId),
+                    Parameter("item_stack_before", itemStack.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("quest_drop_box_expected_accepted_count", expectedAcceptedCount.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("quest_drop_box_native_action", ReadString(selectedAction.Value, "action"))
+                }
+            };
+            return AttachQuest(source, quest);
         }
 
         private static IEnumerable<EventCandidate> BindSpecialOrderMineDepthCandidates(
@@ -311,49 +483,13 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     return item.Clone();
                 }
-                if (contextTagSets is { Length: > 0 } && MatchesContextTagSets(item, contextTagSets))
+                if (contextTagSets is { Length: > 0 } && QuestContextTagMatcher.Matches(item, contextTagSets))
                 {
                     return item.Clone();
                 }
             }
 
             return null;
-        }
-
-        private static bool MatchesContextTagSets(JsonElement item, string[] contextTagSets)
-        {
-            if (contextTagSets is null || contextTagSets.Length == 0)
-            {
-                return false;
-            }
-            var tags = ReadStringArray(item, "context_tags").ToHashSet(StringComparer.Ordinal);
-            foreach (var set in contextTagSets.Where(value => !string.IsNullOrWhiteSpace(value)))
-            {
-                var allGroupsMatch = true;
-                foreach (var rawGroup in set.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var group = rawGroup.Trim();
-                    // Native color tags on preserved ColoredObject inputs use base-context tags
-                    // that aren't projected on the inventory row yet, so fail closed here.
-                    if (group.StartsWith("color", StringComparison.Ordinal))
-                    {
-                        allGroupsMatch = false;
-                        break;
-                    }
-                    var alternatives = group.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(value => value.Trim());
-                    if (!alternatives.Any(tags.Contains))
-                    {
-                        allGroupsMatch = false;
-                        break;
-                    }
-                }
-                if (allGroupsMatch)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private static bool ItemIdentityMatches(string itemId, string qualifiedItemId, string required)

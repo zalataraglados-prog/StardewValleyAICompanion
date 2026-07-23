@@ -275,6 +275,7 @@ public sealed class ReadQuestProgressMapper : IQuestProgressMapper
             case DonateObjective dno:
                 fields.DropBox = dno.dropBox.Value ?? string.Empty;
                 fields.DropBoxGameLocation = dno.dropBoxGameLocation.Value ?? string.Empty;
+                fields.ResolvedDropBoxGameLocation = dno.GetDropboxLocationName() ?? string.Empty;
                 fields.DropBoxTileX = dno.dropBoxTileLocation.Value.X;
                 fields.DropBoxTileY = dno.dropBoxTileLocation.Value.Y;
                 fields.AcceptableContextTagSets = dno.acceptableContextTagSets?.ToArray() ?? Array.Empty<string>();

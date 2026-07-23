@@ -16,6 +16,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     public override StateAdapterResult Collect(long tick)
     {
         var location = Context.IsWorldReady ? Game1.currentLocation : null;
+        var actionIndex = location is null ? null : ReadMapActionIndex(location);
         var unavailable = location is null
             ? new[]
             {
@@ -30,6 +31,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.resource_clumps",
                 "current_location.planting_context",
                 "current_location.shop_action_tiles",
+                "current_location.drop_box_action_tiles",
                 "current_location.home_context",
                 "current_location.route_context",
                 "current_location.doors",
@@ -52,7 +54,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["large_terrain_features"] = Field(location is null ? null : ReadLargeTerrainFeatures(location), "Game1.currentLocation.largeTerrainFeatures; Bush native harvest projection", tick),
             ["resource_clumps"] = Field(location is null ? null : ReadCurrentLocationResourceClumps(location, Game1.player), "Game1.currentLocation.resourceClumps; ResourceClump.performToolAction/destroy decompiled projections", tick),
             ["planting_context"] = Field(location is null ? null : ReadPlantingContext(location), "Game1.currentLocation planting APIs and HoeDirt terrain features", tick),
-            ["shop_action_tiles"] = Field(location is null ? null : ReadShopActionTiles(location), "Game1.currentLocation map Action properties parsed by GameLocation.performAction", tick),
+            ["shop_action_tiles"] = Field(actionIndex?.ShopActionTiles, "Game1.currentLocation map Action properties parsed by GameLocation.performAction", tick),
+            ["drop_box_action_tiles"] = Field(actionIndex?.DropBoxActionTiles, "Game1.currentLocation map Action=DropBox <box_id>; GameLocation.performAction native drop-box dispatch", tick),
             ["home_context"] = Field(location is null ? null : ReadHomeContext(location), "Utility.getHomeOfFarmer(Game1.player); FarmHouse.getEntryLocation(); FarmHouse.GetPlayerBedSpot(); BedFurniture.IsBedHere", tick),
             ["route_context"] = Field(location is null ? null : ReadRouteContext(location), "Game1.currentLocation.isCollidingPosition local tile probes", tick),
             ["doors"] = Field(location is null ? null : ReadDoors(location), "Game1.currentLocation.doors", tick),
@@ -479,17 +482,28 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             .ToArray();
     }
 
-    private static object[] ReadShopActionTiles(GameLocation location)
+    private sealed class MapActionIndex
+    {
+        public object[] ShopActionTiles { get; set; } = Array.Empty<object>();
+        public object[] DropBoxActionTiles { get; set; } = Array.Empty<object>();
+    }
+
+    private static MapActionIndex ReadMapActionIndex(GameLocation location)
     {
         var map = location.map;
         if (map?.Layers is null || map.Layers.Count == 0)
         {
-            return Array.Empty<object>();
+            return new MapActionIndex
+            {
+                ShopActionTiles = Array.Empty<object>(),
+                DropBoxActionTiles = Array.Empty<object>()
+            };
         }
 
         var width = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerWidth);
         var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
-        var tiles = new List<object>();
+        var shopTiles = new List<object>();
+        var dropBoxTiles = new List<object>();
 
         for (var y = 0; y < height; y++)
         {
@@ -504,7 +518,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 var parsed = ParseShopAction(location, action, x, y);
                 if (parsed is not null)
                 {
-                    tiles.Add(new
+                    shopTiles.Add(new
                     {
                         tile_x = x,
                         tile_y = y,
@@ -514,10 +528,27 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                         service_time_status = ReadShopServiceTimeStatus(location, parsed, FindEntranceGateForCurrentLocation(location))
                     });
                 }
+
+                var parts = action.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0 && string.Equals(parts[0], "DropBox", StringComparison.OrdinalIgnoreCase))
+                {
+                    dropBoxTiles.Add(new
+                    {
+                        tile_x = x,
+                        tile_y = y,
+                        action,
+                        action_type = parts[0],
+                        box_id = Part(parts, 1) ?? string.Empty
+                    });
+                }
             }
         }
 
-        return tiles.ToArray();
+        return new MapActionIndex
+        {
+            ShopActionTiles = shopTiles.ToArray(),
+            DropBoxActionTiles = dropBoxTiles.ToArray()
+        };
     }
 
     private static object ReadShopServiceTimeStatus(GameLocation location, object parsed, EntranceGate? entranceGate)

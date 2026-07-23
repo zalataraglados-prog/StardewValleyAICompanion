@@ -124,7 +124,8 @@ public static class QueueReplanFilter
         }
         if (string.Equals(continuationKind, "quest", StringComparison.Ordinal))
         {
-            return string.Equals(optionId, "executor.quest_npc_interact", StringComparison.Ordinal) &&
+            return (string.Equals(optionId, "executor.quest_npc_interact", StringComparison.Ordinal) ||
+                    string.Equals(optionId, "executor.quest_drop_box_donate", StringComparison.Ordinal)) &&
                 string.Equals(
                     ReadParameter(queueItem, "quest_candidate_id"),
                     ReadString(continuation, "quest_candidate_id"),
