@@ -10,14 +10,14 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
-    private static readonly Vector2[] WorkbenchChestOffsets =
+    internal static readonly Vector2[] WorkbenchChestOffsets =
     {
         new(-1f, 1f), new(0f, 1f), new(1f, 1f),
         new(-1f, 0f), new(1f, 0f),
         new(-1f, -1f), new(0f, -1f), new(1f, -1f)
     };
 
-    private static MaterialInventoryGraph ReadMaterialInventoryGraph(Farm farm, Farmer player)
+    internal static MaterialInventoryGraph ReadMaterialInventoryGraph(Farm farm, Farmer player)
     {
         var nodes = new Dictionary<string, MaterialInventoryNode>(StringComparer.Ordinal);
         var accessPoints = new List<MaterialInventoryAccessPoint>();
@@ -241,15 +241,39 @@ public sealed partial class FarmReadAdapter
                 .Select(pair =>
                 {
                     var locationId = locationRef.Location.NameOrUniqueName;
-                    var connectedNodeIds = WorkbenchChestOffsets
+                    var workbench = (Workbench)pair.Value;
+                    var nativeChests = WorkbenchChestOffsets
                         .Select(offset => pair.Key + offset)
                         .Where(tile => locationRef.Location.objects.TryGetValue(tile, out var value) &&
                             value is Chest chest &&
                             chest.SpecialChestType is Chest.SpecialChestTypes.None or Chest.SpecialChestTypes.BigChest)
-                        .Select(tile => chestNodeByTile.TryGetValue(LocationTileKey(locationId, tile), out var nodeId)
-                            ? nodeId
-                            : string.Empty)
+                        .Select(tile => new
+                        {
+                            Tile = tile,
+                            Chest = (Chest)locationRef.Location.objects[tile],
+                            NodeId = chestNodeByTile.TryGetValue(LocationTileKey(locationId, tile), out var nodeId)
+                                ? nodeId
+                                : string.Empty
+                        })
+                        .ToArray();
+                    var blockingReasons = new List<string>();
+                    if (nativeChests.Any(row => row.NodeId.Length == 0))
+                    {
+                        blockingReasons.Add("workbench_native_container_not_owned_or_unmapped");
+                    }
+                    if (nativeChests.Any(row => row.Chest.GetMutex().IsLocked() && !row.Chest.GetMutex().IsLockHeld()))
+                    {
+                        blockingReasons.Add("workbench_native_container_locked_by_other_player");
+                    }
+                    if (workbench.mutex.IsLocked() && !workbench.mutex.IsLockHeld())
+                    {
+                        blockingReasons.Add("workbench_locked_by_other_player");
+                    }
+                    var nativeContainerNodeIds = nativeChests
+                        .Select(row => row.NodeId)
                         .Where(nodeId => nodeId.Length > 0)
+                        .ToArray();
+                    var connectedNodeIds = nativeContainerNodeIds
                         .Distinct(StringComparer.Ordinal)
                         .OrderBy(nodeId => nodeId, StringComparer.Ordinal)
                         .ToArray();
@@ -259,7 +283,14 @@ public sealed partial class FarmReadAdapter
                         LocationId = locationId,
                         TileX = (int)pair.Key.X,
                         TileY = (int)pair.Key.Y,
-                        ConnectedNodeIds = connectedNodeIds
+                        ConnectedNodeIds = connectedNodeIds,
+                        NativeContainerNodeIds = nativeContainerNodeIds,
+                        ProjectionStatus = blockingReasons.Count == 0
+                            ? "exact_native_container_order"
+                            : "blocked_native_container_ownership_or_lock",
+                        BlockingReasons = blockingReasons.ToArray(),
+                        LockedByOtherPlayer = blockingReasons.Any(reason =>
+                            reason.EndsWith("locked_by_other_player", StringComparison.Ordinal))
                     };
                 }))
             .OrderBy(row => row.WorkbenchAccessPointId, StringComparer.Ordinal)

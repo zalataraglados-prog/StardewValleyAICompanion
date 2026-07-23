@@ -1,5 +1,7 @@
 using StardewValley;
+using StardewValley.Inventories;
 using StardewValley.Objects;
+using StardewAI.Contracts.State;
 using StardewAI.TransparentBridge.State;
 
 namespace StardewAI.TransparentBridge.Adapters;
@@ -78,6 +80,7 @@ public sealed partial class PlayerReadAdapter
                 : ReadUnavailableMaterialRows(recipe, player.Items);
             var craftable = ProjectCraftableCount(recipe, player.Items);
             var output = outputs[0];
+            var workbenchSources = ReadWorkbenchCraftingSources(recipe, player, output.Item);
             var acceptsOutputAfterConsumption = craftable.Count > 0 &&
                 InventoryAcceptsAfterConsumption(player.Items, remaining, output.Item);
             var potentialInputs = ReadPotentialMachineInputs(output, player);
@@ -117,6 +120,8 @@ public sealed partial class PlayerReadAdapter
                 potential_input_probe_failure_count = potentialInputs.Failures.Length,
                 ingredients_player_inventory_only = true,
                 ingredient_rows = firstPlan,
+                workbench_crafting_sources = workbenchSources,
+                workbench_crafting_source_count = workbenchSources.Length,
                 has_ingredients_for_one = craftable.Count > 0,
                 craftable_count_from_player_inventory = craftable.Count,
                 craftable_count_status = craftable.Capped
@@ -290,6 +295,252 @@ public sealed partial class PlayerReadAdapter
             }
         }
         return false;
+    }
+
+    private static object[] ReadWorkbenchCraftingSources(
+        CraftingRecipe recipe,
+        Farmer player,
+        Item output)
+    {
+        var farm = Game1.getFarm();
+        if (farm is null)
+        {
+            return Array.Empty<object>();
+        }
+
+        var graph = FarmReadAdapter.ReadMaterialInventoryGraph(farm, player);
+        var locations = MachineLocationTopology.ReadPersistentLocations(farm, player)
+            .GroupBy(
+                row => row.Location.NameOrUniqueName,
+                StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().Location,
+                StringComparer.Ordinal);
+        var rows = new List<object>();
+        foreach (var link in graph.WorkbenchLinks)
+        {
+            if (!locations.TryGetValue(link.LocationId, out var location) ||
+                !location.objects.TryGetValue(new Microsoft.Xna.Framework.Vector2(link.TileX, link.TileY), out var value) ||
+                value is not Workbench)
+            {
+                rows.Add(new
+                {
+                    workbench_access_point_id = link.WorkbenchAccessPointId,
+                    location_id = link.LocationId,
+                    tile_x = link.TileX,
+                    tile_y = link.TileY,
+                    projection_status = "blocked_workbench_identity_drifted",
+                    blocking_reasons = new[] { "workbench_identity_drifted" },
+                    native_container_node_ids = link.NativeContainerNodeIds,
+                    ingredient_rows = Array.Empty<object>(),
+                    craftable_count = 0,
+                    craftable_count_status = "unavailable",
+                    output_inventory_acceptance_after_material_consumption = false,
+                    craft_candidate_status = "blocked_workbench_identity_drifted"
+                });
+                continue;
+            }
+
+            var nativeChests = FarmReadAdapter.WorkbenchChestOffsets
+                .Select(offset => new Microsoft.Xna.Framework.Vector2(link.TileX, link.TileY) + offset)
+                .Where(tile => location.objects.TryGetValue(tile, out var adjacent) &&
+                    adjacent is Chest chest &&
+                    chest.SpecialChestType is Chest.SpecialChestTypes.None or Chest.SpecialChestTypes.BigChest)
+                .Select(tile => (Chest)location.objects[tile])
+                .ToArray();
+            var inventories = nativeChests
+                .Select(chest => (IInventory)chest.Items)
+                .ToArray();
+            var topologyMatches =
+                link.ProjectionStatus == "exact_native_container_order" &&
+                inventories.Length == link.NativeContainerNodeIds.Length;
+            var playerRemaining = player.Items.Select(item => Math.Max(0, item?.Stack ?? 0)).ToArray();
+            var containerRemaining = inventories
+                .Select(inventory => inventory.Select(item => Math.Max(0, item?.Stack ?? 0)).ToArray())
+                .ToArray();
+            object[]? ingredientRows = null;
+            var satisfied = topologyMatches &&
+                TryConsumeOneWorkbenchCraft(
+                    recipe,
+                    player.Items,
+                    inventories,
+                    link.NativeContainerNodeIds,
+                    playerRemaining,
+                    containerRemaining,
+                    out ingredientRows);
+            ingredientRows ??= Array.Empty<object>();
+            var craftable = topologyMatches
+                ? ProjectWorkbenchCraftableCount(
+                    recipe,
+                    player.Items,
+                    inventories,
+                    link.NativeContainerNodeIds)
+                : new CraftCountProjection(0, false);
+            var acceptsOutput = satisfied &&
+                InventoryAcceptsAfterConsumption(player.Items, playerRemaining, output);
+            var reasons = link.BlockingReasons
+                .Concat(topologyMatches
+                    ? Array.Empty<string>()
+                    : new[] { "workbench_native_container_topology_drifted" })
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            rows.Add(new
+            {
+                workbench_access_point_id = link.WorkbenchAccessPointId,
+                location_id = link.LocationId,
+                tile_x = link.TileX,
+                tile_y = link.TileY,
+                projection_status = topologyMatches
+                    ? "exact_native_player_then_container_reverse_slot_consumption"
+                    : "blocked_workbench_topology_or_ownership",
+                blocking_reasons = reasons,
+                native_container_node_ids = link.NativeContainerNodeIds,
+                ingredient_rows = ingredientRows,
+                has_ingredients_for_one = satisfied,
+                craftable_count = craftable.Count,
+                craftable_count_status = craftable.Capped
+                    ? "bounded_at_999_requires_larger_projection"
+                    : "exact_native_player_then_container_reverse_slot_consumption",
+                output_inventory_acceptance_after_material_consumption = acceptsOutput,
+                craft_candidate_status = topologyMatches && satisfied
+                    ? acceptsOutput
+                        ? "ready_for_native_workbench_crafting_menu"
+                        : "blocked_output_cannot_fit_after_material_consumption"
+                    : reasons.Length > 0
+                        ? "blocked_workbench_topology_or_ownership"
+                        : "blocked_insufficient_workbench_materials",
+                native_contract = "Workbench.checkForAction->MultipleMutexRequest->CraftingPage(materialContainers)->CraftingRecipe.consumeIngredients"
+            });
+        }
+        return rows.ToArray();
+    }
+
+    private static CraftCountProjection ProjectWorkbenchCraftableCount(
+        CraftingRecipe recipe,
+        IList<Item?> playerInventory,
+        IReadOnlyList<IInventory> containers,
+        IReadOnlyList<string> containerNodeIds)
+    {
+        var playerRemaining = playerInventory.Select(item => Math.Max(0, item?.Stack ?? 0)).ToArray();
+        var containerRemaining = containers
+            .Select(inventory => inventory.Select(item => Math.Max(0, item?.Stack ?? 0)).ToArray())
+            .ToArray();
+        var count = 0;
+        while (count < MaxProjectedMachineCraftCount)
+        {
+            var nextPlayer = (int[])playerRemaining.Clone();
+            var nextContainers = containerRemaining.Select(row => (int[])row.Clone()).ToArray();
+            if (!TryConsumeOneWorkbenchCraft(
+                    recipe,
+                    playerInventory,
+                    containers,
+                    containerNodeIds,
+                    nextPlayer,
+                    nextContainers,
+                    out _))
+            {
+                return new CraftCountProjection(count, false);
+            }
+            playerRemaining = nextPlayer;
+            containerRemaining = nextContainers;
+            count++;
+        }
+
+        var overflowPlayer = (int[])playerRemaining.Clone();
+        var overflowContainers = containerRemaining.Select(row => (int[])row.Clone()).ToArray();
+        return new CraftCountProjection(
+            count,
+            TryConsumeOneWorkbenchCraft(
+                recipe,
+                playerInventory,
+                containers,
+                containerNodeIds,
+                overflowPlayer,
+                overflowContainers,
+                out _));
+    }
+
+    private static bool TryConsumeOneWorkbenchCraft(
+        CraftingRecipe recipe,
+        IList<Item?> playerInventory,
+        IReadOnlyList<IInventory> containers,
+        IReadOnlyList<string> containerNodeIds,
+        int[] playerRemaining,
+        int[][] containerRemaining,
+        out object[]? materialRows)
+    {
+        var rows = new List<object>();
+        var allSatisfied = true;
+        foreach (var ingredient in recipe.recipeList)
+        {
+            var required = ingredient.Value;
+            var available = MatchingStackTotal(playerInventory, playerRemaining, ingredient.Key);
+            for (var index = 0; index < containers.Count; index++)
+            {
+                available += MatchingStackTotal(containers[index], containerRemaining[index], ingredient.Key);
+            }
+
+            var consumed = new List<object>();
+            ConsumeWorkbenchIngredient(
+                playerInventory,
+                playerRemaining,
+                ingredient.Key,
+                ref required,
+                "player:" + Game1.player.UniqueMultiplayerID,
+                consumed);
+            for (var index = 0; index < containers.Count && required > 0; index++)
+            {
+                ConsumeWorkbenchIngredient(
+                    containers[index],
+                    containerRemaining[index],
+                    ingredient.Key,
+                    ref required,
+                    containerNodeIds[index],
+                    consumed);
+            }
+            rows.Add(new
+            {
+                requirement_id_or_category = ingredient.Key,
+                required_count = ingredient.Value,
+                available_count_before_this_ingredient = available,
+                satisfied = required == 0,
+                native_consumption_plan = consumed.ToArray()
+            });
+            allSatisfied &= required == 0;
+        }
+        materialRows = rows.ToArray();
+        return allSatisfied;
+    }
+
+    private static void ConsumeWorkbenchIngredient(
+        IList<Item?> inventory,
+        int[] remaining,
+        string requirement,
+        ref int required,
+        string sourceNodeId,
+        ICollection<object> consumed)
+    {
+        for (var slot = inventory.Count - 1; slot >= 0 && required > 0; slot--)
+        {
+            var item = inventory[slot];
+            if (item is null ||
+                remaining[slot] <= 0 ||
+                !CraftingRecipe.ItemMatchesForCrafting(item, requirement))
+            {
+                continue;
+            }
+            var amount = Math.Min(required, remaining[slot]);
+            remaining[slot] -= amount;
+            required -= amount;
+            consumed.Add(new
+            {
+                source_node_id = sourceNodeId,
+                slot_index = slot,
+                qualified_item_id = item.QualifiedItemId,
+                amount
+            });
+        }
     }
 
     private static PotentialMachineInputProjection ReadPotentialMachineInputs(MachineRecipeOutput output, Farmer player)

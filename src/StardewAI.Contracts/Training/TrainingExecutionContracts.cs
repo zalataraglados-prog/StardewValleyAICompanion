@@ -404,6 +404,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("crafting_source")]
         public string CraftingSource { get; set; } = string.Empty;
 
+        [JsonPropertyName("workbench_access_point_id")]
+        public string WorkbenchAccessPointId { get; set; } = string.Empty;
+
+        [JsonPropertyName("workbench_container_node_ids_json")]
+        public string WorkbenchContainerNodeIdsJson { get; set; } = string.Empty;
+
         [JsonPropertyName("debug_fill_inventory")]
         public bool DebugFillInventory { get; set; }
 

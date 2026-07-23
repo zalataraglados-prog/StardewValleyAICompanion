@@ -26,31 +26,84 @@ namespace StardewAI.Core.OptionRegistry
 
             return rows.EnumerateArray()
                 .Where(row => row.ValueKind == JsonValueKind.Object)
-                .Select(row => BuildMachineCraftingCandidate(snapshot, row, commitmentLedger))
+                .SelectMany(row => BuildMachineCraftingCandidates(snapshot, row, commitmentLedger))
                 .OrderBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
+        }
+
+        private static IEnumerable<EventCandidate> BuildMachineCraftingCandidates(
+            SnapshotEnvelope snapshot,
+            JsonElement row,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            yield return BuildMachineCraftingCandidate(snapshot, row, null, commitmentLedger);
+            if (!row.TryGetProperty("workbench_crafting_sources", out var sources) ||
+                sources.ValueKind != JsonValueKind.Array)
+            {
+                yield break;
+            }
+            foreach (var source in sources.EnumerateArray())
+            {
+                if (source.ValueKind == JsonValueKind.Object)
+                {
+                    yield return BuildMachineCraftingCandidate(snapshot, row, source, commitmentLedger);
+                }
+            }
         }
 
         private static EventCandidate BuildMachineCraftingCandidate(
             SnapshotEnvelope snapshot,
             JsonElement row,
+            JsonElement? workbenchSource,
             StrategyCommitmentLedger? commitmentLedger)
         {
+            var usesWorkbench = workbenchSource.HasValue;
+            var source = workbenchSource ?? row;
             var recipeName = ReadString(row, "recipe_name");
             var outputQualifiedId = ReadString(row, "output_qualified_item_id");
             var outputItemId = ReadString(row, "output_item_id");
             var outputCount = Math.Max(1, ReadInt(row, "output_count_per_craft", 1));
             var timesCrafted = Math.Max(0, ReadInt(row, "times_crafted"));
-            var ingredientRowsJson = row.TryGetProperty("ingredient_rows", out var ingredientRows)
+            var ingredientRowsJson = source.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
+            var craftingSource = usesWorkbench
+                ? "native_workbench_crafting_menu"
+                : "native_personal_crafting_menu";
+            var readyStatus = usesWorkbench
+                ? "ready_for_native_workbench_crafting_menu"
+                : "ready_for_native_personal_crafting_menu";
+            var candidateStatus = usesWorkbench
+                ? ReadString(source, "craft_candidate_status")
+                : ReadString(row, "craft_candidate_status");
+            var workbenchAccessPointId = usesWorkbench
+                ? ReadString(source, "workbench_access_point_id")
+                : string.Empty;
+            var sourceLocationId = usesWorkbench
+                ? ReadString(source, "location_id")
+                : ReadStateFieldString(snapshot, "player", "location_id");
+            var targetX = usesWorkbench ? NullableReadInt(source, "tile_x") : null;
+            var targetY = usesWorkbench ? NullableReadInt(source, "tile_y") : null;
+            var sameLocation = string.Equals(
+                sourceLocationId,
+                ReadStateFieldString(snapshot, "player", "location_id"),
+                StringComparison.Ordinal);
+            var stand = usesWorkbench && sameLocation && targetX.HasValue && targetY.HasValue
+                ? FindBestStandTile(snapshot, targetX.Value, targetY.Value)
+                : null;
+            var nativeContainerNodeIdsJson = usesWorkbench &&
+                source.TryGetProperty("native_container_node_ids", out var nodeIds)
+                    ? nodeIds.GetRawText()
+                    : "[]";
             var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row, commitmentLedger);
             var blockReasons = new List<string>();
-            if (!string.Equals(ReadString(row, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal))
+            if (!string.Equals(candidateStatus, readyStatus, StringComparison.Ordinal))
             {
-                blockReasons.Add("machine_recipe_not_ready_for_native_personal_crafting");
+                blockReasons.Add(usesWorkbench
+                    ? "machine_recipe_not_ready_for_native_workbench"
+                    : "machine_recipe_not_ready_for_native_personal_crafting");
             }
-            if (ReadBool(row, "output_inventory_acceptance_after_material_consumption") != true)
+            if (ReadBool(source, "output_inventory_acceptance_after_material_consumption") != true)
             {
                 blockReasons.Add("machine_recipe_output_cannot_fit_after_material_consumption");
             }
@@ -61,6 +114,16 @@ namespace StardewAI.Core.OptionRegistry
             if (string.IsNullOrWhiteSpace(recipeName) || string.IsNullOrWhiteSpace(outputQualifiedId))
             {
                 blockReasons.Add("machine_recipe_identity_unavailable");
+            }
+            if (usesWorkbench && string.IsNullOrWhiteSpace(workbenchAccessPointId))
+            {
+                blockReasons.Add("machine_workbench_access_point_unavailable");
+            }
+            if (usesWorkbench && stand is null)
+            {
+                blockReasons.Add(sameLocation
+                    ? "machine_workbench_adjacent_stand_tile_unavailable"
+                    : "machine_workbench_requires_current_location_rebind");
             }
             if (!demand.HasDemand)
             {
@@ -73,10 +136,11 @@ namespace StardewAI.Core.OptionRegistry
 
             return new EventCandidate
             {
-                CandidateId = "machine-craft:" + recipeName + ":" + outputQualifiedId,
+                CandidateId = "machine-craft:" + recipeName + ":" + outputQualifiedId +
+                    (usesWorkbench ? ":workbench:" + workbenchAccessPointId : string.Empty),
                 Kind = "craft_machine_item",
                 Available = blockReasons.Count == 0,
-                LocationId = ReadStateFieldString(snapshot, "player", "location_id"),
+                LocationId = sourceLocationId,
                 ExpectedEffect = "player.inventory.materials_consumed_by_native_recipe=true" +
                     ";recipe_name=" + recipeName +
                     ";output_qualified_item_id=" + outputQualifiedId +
@@ -94,13 +158,18 @@ namespace StardewAI.Core.OptionRegistry
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
                     ";collection_path_required=" + demand.CollectionPathRequired.ToString().ToLowerInvariant() +
-                    ";native_contract=CraftingPage.receiveLeftClick",
+                    ";crafting_source=" + craftingSource +
+                    ";native_contract=" + (usesWorkbench
+                        ? "Workbench.checkForAction->MultipleMutexRequest->CraftingPage.receiveLeftClick"
+                        : "CraftingPage.receiveLeftClick"),
                 ItemId = outputItemId,
                 QualifiedItemId = outputQualifiedId,
                 Quantity = outputCount,
                 EstimatedTicks = 30,
                 EnergyCost = 0,
-                AvailabilityClass = "transparent_machine_recipe_native_personal_crafting",
+                AvailabilityClass = usesWorkbench
+                    ? "transparent_machine_recipe_native_workbench_crafting"
+                    : "transparent_machine_recipe_native_personal_crafting",
                 BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                 Parameters = new[]
                 {
@@ -110,7 +179,14 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("output_count", outputCount.ToString()),
                     Parameter("times_crafted_before", timesCrafted.ToString()),
                     Parameter("ingredient_rows_json", ingredientRowsJson),
-                    Parameter("crafting_source", "native_personal_crafting_menu"),
+                    Parameter("crafting_source", craftingSource),
+                    Parameter("workbench_access_point_id", workbenchAccessPointId),
+                    Parameter("workbench_container_node_ids_json", nativeContainerNodeIdsJson),
+                    Parameter("location_id", sourceLocationId),
+                    Parameter("target_tile_x", targetX?.ToString() ?? string.Empty),
+                    Parameter("target_tile_y", targetY?.ToString() ?? string.Empty),
+                    Parameter("stand_tile_x", stand?.X.ToString() ?? string.Empty),
+                    Parameter("stand_tile_y", stand?.Y.ToString() ?? string.Empty),
                     Parameter("machine_demand_class", demand.DemandClass),
                     Parameter("machine_scale", demand.MachineScale),
                     Parameter("machine_horizon_status", demand.HorizonStatus),

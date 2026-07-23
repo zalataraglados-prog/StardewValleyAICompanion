@@ -441,6 +441,8 @@ static partial class Program
         var timesCraftedBefore = ReadQueueParameterInt(item, "times_crafted_before");
         var ingredientRowsJson = ReadQueueParameterString(item, "ingredient_rows_json");
         var craftingSource = ReadQueueParameterString(item, "crafting_source");
+        var workbenchAccessPointId = ReadQueueParameterString(item, "workbench_access_point_id");
+        var workbenchContainerNodeIdsJson = ReadQueueParameterString(item, "workbench_container_node_ids_json");
         var slotIndex = ReadQueueParameterInt(item, "slot_index");
         var bookRuntimeType = ReadQueueParameterString(item, "book_runtime_type");
         var bookCategory = ReadQueueParameterInt(item, "book_category");
@@ -776,6 +778,8 @@ static partial class Program
         executionRequest.TimesCraftedBefore = timesCraftedBefore;
         executionRequest.IngredientRowsJson = ingredientRowsJson;
         executionRequest.CraftingSource = craftingSource;
+        executionRequest.WorkbenchAccessPointId = workbenchAccessPointId;
+        executionRequest.WorkbenchContainerNodeIdsJson = workbenchContainerNodeIdsJson;
         if (slotIndex.HasValue)
         {
             executionRequest.SlotIndex = slotIndex.Value;

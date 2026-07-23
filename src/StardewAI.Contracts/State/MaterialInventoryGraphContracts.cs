@@ -149,6 +149,18 @@ public sealed class MaterialWorkbenchLink
     [JsonPropertyName("connected_node_ids")]
     public string[] ConnectedNodeIds { get; set; } = Array.Empty<string>();
 
+    [JsonPropertyName("native_container_node_ids")]
+    public string[] NativeContainerNodeIds { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("projection_status")]
+    public string ProjectionStatus { get; set; } = "unavailable";
+
+    [JsonPropertyName("blocking_reasons")]
+    public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("locked_by_other_player")]
+    public bool LockedByOtherPlayer { get; set; }
+
     [JsonPropertyName("native_rule")]
     public string NativeRule { get; set; } = "eight_adjacent_none_or_big_chests";
 }

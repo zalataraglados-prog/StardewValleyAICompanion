@@ -29,5 +29,30 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.Contains("executionRequest.OutputQualifiedItemId = outputQualifiedItemId", source);
         Assert.Contains("executionRequest.IngredientRowsJson = ingredientRowsJson", source);
         Assert.Contains("executionRequest.TimesCraftedBefore = timesCraftedBefore", source);
+        Assert.Contains("executionRequest.WorkbenchAccessPointId = workbenchAccessPointId", source);
+        Assert.Contains("executionRequest.WorkbenchContainerNodeIdsJson = workbenchContainerNodeIdsJson", source);
+    }
+
+    [Fact]
+    public void WorkbenchRuntimeUsesNativeLocksMenuAndClicks()
+    {
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+        var executor = RuntimeHarnessSources.File("ModEntry.WorkbenchCrafting.cs");
+        var bridge = RuntimeHarnessSources.RepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters",
+            "FarmReadAdapter.MaterialInventoryGraph.cs");
+
+        Assert.Contains("StartWorkbenchCraft(pending)", dispatch);
+        Assert.Contains("active.Location.checkAction(", executor);
+        Assert.Contains("active.Workbench.mutex.IsLockHeld()", executor);
+        Assert.Contains("row.Chest.GetMutex().IsLockHeld()", executor);
+        Assert.Contains("page.receiveLeftClick(", executor);
+        Assert.Contains("Game1.exitActiveMenu()", executor);
+        Assert.Contains("ProjectNativeWorkbenchIngredients", executor);
+        Assert.DoesNotContain(".consumeIngredients(", executor);
+        Assert.DoesNotContain(".Items.Add(", executor);
+        Assert.DoesNotContain(".Items.Remove(", executor);
+        Assert.Contains("NativeContainerNodeIds = nativeContainerNodeIds", bridge);
+        Assert.Contains("workbench_native_container_not_owned_or_unmapped", bridge);
     }
 }
