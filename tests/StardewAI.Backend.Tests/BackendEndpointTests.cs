@@ -41,7 +41,10 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("feasible", root.GetProperty("feasibility").GetString());
             Assert.True(root.GetProperty("preview_only").GetBoolean());
             Assert.Equal("disabled", root.GetProperty("execution_permission").GetString());
-            Assert.True(root.GetProperty("would_be_executable").GetBoolean());
+            Assert.True(root.GetProperty("would_be_read_eligible").GetBoolean());
+            Assert.True(root.GetProperty("would_bind").GetBoolean());
+            Assert.False(root.GetProperty("would_compile").GetBoolean());
+            Assert.False(root.GetProperty("would_be_executable").GetBoolean());
             Assert.Equal("farm.maintain_crops", root.GetProperty("selected_option").GetProperty("option_id").GetString());
         }
 
@@ -259,10 +262,10 @@ namespace StardewAI.Backend.Tests
             var root = json.RootElement;
             Assert.Equal("availability_policy_prediction.v1", root.GetProperty("schema_version").GetString());
             var ranked = root.GetProperty("prediction").GetProperty("ranked_options").EnumerateArray().ToArray();
-            Assert.DoesNotContain(ranked, item => item.GetProperty("option_id").GetString() == "economy.buy_supplies");
-            Assert.Contains(ranked, item => item.GetProperty("option_id").GetString() == "strategy.grandpa_progress");
+            Assert.Empty(ranked);
             var availability = root.GetProperty("availability").GetProperty("options").EnumerateArray().ToArray();
             Assert.Contains(availability, item => item.GetProperty("option_id").GetString() == "economy.buy_supplies" && !item.GetProperty("available").GetBoolean());
+            Assert.Contains(availability, item => item.GetProperty("option_id").GetString() == "strategy.grandpa_progress" && !item.GetProperty("available").GetBoolean());
         }
 
         [Fact]
@@ -410,8 +413,11 @@ namespace StardewAI.Backend.Tests
                 {
                     new
                     {
-                        option_id = "executor.interact",
-                        parameters = Array.Empty<object>()
+                        option_id = "executor.wait_ticks",
+                        parameters = new[]
+                        {
+                            new { name = "wait_ticks", value = "0" }
+                        }
                     }
                 }
             });
@@ -419,13 +425,14 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var option = json.RootElement.GetProperty("options")[0];
-            Assert.Equal("executor.interact", option.GetProperty("option_id").GetString());
+            Assert.Equal("executor.wait_ticks", option.GetProperty("option_id").GetString());
             Assert.False(option.GetProperty("available").GetBoolean());
             Assert.Equal("blocked", option.GetProperty("status").GetString());
-            Assert.Contains(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "interact_target_tile_required");
-            Assert.DoesNotContain(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "interact_executor_disabled");
+            Assert.Equal("bound", option.GetProperty("binding_status").GetString());
+            Assert.Equal("blocked", option.GetProperty("compile_status").GetString());
+            Assert.Contains(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "wait_ticks_1_600_required");
             Assert.DoesNotContain(option.GetProperty("blocking_reasons").EnumerateArray(), item => item.GetString() == "queue_global_compiler_block");
-            Assert.Equal(0, option.GetProperty("parameters").GetArrayLength());
+            Assert.Equal(1, option.GetProperty("parameters").GetArrayLength());
         }
 
         [Fact]

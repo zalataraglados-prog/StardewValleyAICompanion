@@ -58,10 +58,46 @@ namespace StardewAI.Contracts.Options
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum RequiredFactPolicy
+    public enum RequiredFactPolicyMode
     {
         Unknown,
         AllRequiredFailClosed
+    }
+
+    public sealed class RequiredFactRule
+    {
+        [JsonPropertyName("state_factor")]
+        public string StateFactor { get; set; } = "*";
+
+        [JsonPropertyName("allowed_statuses")]
+        public string[] AllowedStatuses { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("minimum_confidence")]
+        public double MinimumConfidence { get; set; }
+
+        [JsonPropertyName("maximum_age_ticks")]
+        public long MaximumAgeTicks { get; set; }
+
+        [JsonPropertyName("required_provenance_kinds")]
+        public string[] RequiredProvenanceKinds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("allowed_adapter_ids")]
+        public string[] AllowedAdapterIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("allowed_derivation_ids")]
+        public string[] AllowedDerivationIds { get; set; } = System.Array.Empty<string>();
+    }
+
+    public sealed class RequiredFactPolicy
+    {
+        [JsonPropertyName("mode")]
+        public RequiredFactPolicyMode Mode { get; set; } = RequiredFactPolicyMode.Unknown;
+
+        [JsonPropertyName("default_rule")]
+        public RequiredFactRule DefaultRule { get; set; } = new RequiredFactRule();
+
+        [JsonPropertyName("fact_overrides")]
+        public RequiredFactRule[] FactOverrides { get; set; } = System.Array.Empty<RequiredFactRule>();
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -191,7 +227,7 @@ namespace StardewAI.Contracts.Options
         public ParameterSchemaPolicy ParameterSchema { get; set; } = ParameterSchemaPolicy.Unknown;
 
         [JsonPropertyName("required_fact_policy")]
-        public RequiredFactPolicy RequiredFactPolicy { get; set; } = RequiredFactPolicy.Unknown;
+        public RequiredFactPolicy RequiredFactPolicy { get; set; } = new RequiredFactPolicy();
 
         [JsonPropertyName("required_state_factors")]
         public string[] RequiredStateFactors { get; set; } = new string[0];
@@ -294,6 +330,18 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("parameters")]
         public SmallModelActionParameter[] Parameters { get; set; } = System.Array.Empty<SmallModelActionParameter>();
+
+        [JsonPropertyName("explicit_confirmation_granted")]
+        public bool ExplicitConfirmationGranted { get; set; }
+
+        [JsonPropertyName("actor_is_host")]
+        public bool ActorIsHost { get; set; }
+
+        [JsonPropertyName("ownership_authorized")]
+        public bool OwnershipAuthorized { get; set; } = true;
+
+        [JsonPropertyName("adapter_id")]
+        public string AdapterId { get; set; } = "vanilla_native";
     }
 
     public sealed class OptionAvailabilityEnvelope
@@ -321,6 +369,27 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("available")]
         public bool Available { get; set; }
+
+        [JsonPropertyName("read_eligible")]
+        public bool ReadEligible { get; set; }
+
+        [JsonPropertyName("binding_status")]
+        public string BindingStatus { get; set; } = "unbound";
+
+        [JsonPropertyName("compile_status")]
+        public string CompileStatus { get; set; } = "not_evaluated";
+
+        [JsonPropertyName("execution_authorization")]
+        public string ExecutionAuthorization { get; set; } = "denied";
+
+        [JsonPropertyName("runtime_evidence_status")]
+        public OptionRuntimeStatus RuntimeEvidenceStatus { get; set; } = OptionRuntimeStatus.Unknown;
+
+        [JsonPropertyName("training_eligibility")]
+        public OptionTrainingEligibility TrainingEligibility { get; set; } = OptionTrainingEligibility.Unknown;
+
+        [JsonPropertyName("product_status")]
+        public OptionProductStatus ProductStatus { get; set; } = OptionProductStatus.Unknown;
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";

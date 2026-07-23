@@ -37,6 +37,21 @@ namespace StardewAI.Contracts.Previews
         [JsonPropertyName("would_be_executable")]
         public bool WouldBeExecutable { get; set; }
 
+        [JsonPropertyName("would_be_read_eligible")]
+        public bool WouldBeReadEligible { get; set; }
+
+        [JsonPropertyName("would_bind")]
+        public bool WouldBind { get; set; }
+
+        [JsonPropertyName("would_compile")]
+        public bool WouldCompile { get; set; }
+
+        [JsonPropertyName("would_require_confirmation")]
+        public bool WouldRequireConfirmation { get; set; }
+
+        [JsonPropertyName("would_be_execution_authorized")]
+        public bool WouldBeExecutionAuthorized { get; set; }
+
         [JsonPropertyName("required_state_factors")]
         public string[] RequiredStateFactors { get; set; } = new string[0];
 
