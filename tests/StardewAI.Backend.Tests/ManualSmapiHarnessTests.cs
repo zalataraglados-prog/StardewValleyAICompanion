@@ -38,7 +38,7 @@ namespace StardewAI.Backend.Tests
             Assert.Contains("can_write_game_state must be false", script);
             Assert.Contains("can_execute_commands must be false", script);
             Assert.Contains("changed_fields is required", script);
-            Assert.Contains("event_stream.v1", script);
+            Assert.Contains("event_stream.v2", script);
             Assert.Contains("event_hash", script);
             Assert.Contains("previous_event_hash", script);
             Assert.Contains("latest_snapshot_hash", script);

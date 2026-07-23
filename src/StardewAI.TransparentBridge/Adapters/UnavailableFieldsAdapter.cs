@@ -21,7 +21,7 @@ public sealed class UnavailableFieldsAdapter : ReadAdapterBase
             ["event_stream_websocket"] = Field(new
             {
                 endpoint = $"ws://{host}:{webSocketPort}/api/v1/events/ws",
-                schema_version = "event_stream.v1",
+                schema_version = "event_stream.v2",
                 mode = "read_only_push",
                 accepts_commands = false,
                 cursor_query = "after_sequence",

@@ -130,8 +130,8 @@ function Test-EventStreamShape {
     )
 
     if ($EventResponse.PSObject.Properties.Name -contains "schema_version") {
-        if ($EventResponse.schema_version -ne "event_stream.v1") {
-            throw "event stream schema_version must be event_stream.v1."
+        if ($EventResponse.schema_version -ne "event_stream.v2") {
+            throw "event stream schema_version must be event_stream.v2."
         }
         if ($EventResponse.latest_snapshot_hash -notin $SnapshotHashes) {
             throw "event stream latest_snapshot_hash must match a captured snapshot.state_hash."
@@ -148,10 +148,10 @@ function Test-EventStreamShape {
 
     $previous = $null
     foreach ($event in (Get-EventArray $EventResponse)) {
-        if ($event.schema_version -ne "event.v1") {
-            throw "event.schema_version must be event.v1 for event '$($event.event_id)'."
+        if ($event.schema_version -ne "event.v2") {
+            throw "event.schema_version must be event.v2 for event '$($event.event_id)'."
         }
-        foreach ($required in @("event_sequence", "previous_event_hash", "event_hash", "state_hash_before", "state_hash_after")) {
+        foreach ($required in @("event_sequence", "previous_event_hash", "event_hash", "observed_snapshot_hash", "published_snapshot_hash", "snapshot_relation")) {
             if (-not ($event.PSObject.Properties.Name -contains $required)) {
                 throw "event.$required is required for event '$($event.event_id)'."
             }
@@ -220,7 +220,10 @@ if ($IngestBackend) {
     $backendSummary.snapshot_ingest = Invoke-RawJsonPost "$BackendBaseUrl/api/v1/snapshots" (Invoke-RawJsonGet "$BridgeBaseUrl/api/v1/snapshot")
     $backendSummary.capabilities_ingest = Invoke-RawJsonPost "$BackendBaseUrl/api/v1/capabilities" (Invoke-RawJsonGet "$BridgeBaseUrl/api/v1/capabilities")
 
-    foreach ($event in (Get-EventArray $bridgeEvents | Where-Object { $_.state_hash_after -eq $backendSummary.snapshot_ingest.state_hash })) {
+    foreach ($event in (Get-EventArray $bridgeEvents | Where-Object {
+        $_.observed_snapshot_hash -eq $backendSummary.snapshot_ingest.state_hash -or
+        $_.published_snapshot_hash -eq $backendSummary.snapshot_ingest.state_hash
+    })) {
         Invoke-JsonPost "$BackendBaseUrl/api/v1/events" $event | Out-Null
         $backendSummary.event_ingest_count++
     }

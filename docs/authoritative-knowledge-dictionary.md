@@ -277,6 +277,30 @@ The zero option-catalog blocker statement therefore does not claim complete end-
 playability. Candidate generation, daily-plan compilation, action compilation, runtime
 dispatch, and postcondition verification are separate gates.
 
+## Transparent runtime boundary
+
+`StardewAI.TransparentBridge` is a read-only observer. It does not apply controller settings,
+simulate input, mutate `Game1.options`, or execute action commands. Recommended controller
+settings remain observable metadata owned by the runtime controller.
+
+The bridge capability manifest is generated from the adapters actually registered by the
+state collector. Game and SMAPI assembly names, versions, module IDs, byte lengths, and
+SHA-256 hashes are observed when available. This establishes binary identity only:
+`identity_observed_unverified` is not promoted to compatibility verification without indexed
+evidence for those exact hashes.
+
+`event_stream.v2` and `event.v2` bind events to real snapshots:
+
+- ordinary change events carry `observed_snapshot_hash` and
+  `snapshot_relation=observed_after_snapshot`;
+- `SnapshotPublished` carries the prior observed hash plus `published_snapshot_hash` and
+  `snapshot_relation=snapshot_published`;
+- the bridge never fabricates before/after hashes by hashing event labels.
+
+The backend rejects legacy event schemas, unknown snapshot hashes, invalid snapshot
+relations, duplicate capability IDs, and enabled command execution claims from the observer
+manifest.
+
 ## Wiki verification
 
 `wiki-verification-registry.json` pins reviewed Stardew Valley Wiki revisions for Grandpa's
