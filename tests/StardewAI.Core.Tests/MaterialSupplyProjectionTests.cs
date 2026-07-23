@@ -18,6 +18,7 @@ public sealed class MaterialSupplyProjectionTests
         Assert.Contains("location.GetFridge(onlyUnlocked: true)", source, StringComparison.Ordinal);
         Assert.Contains("item.QualifiedItemId == \"(BC)165\" && item.heldObject.Value is Chest", source, StringComparison.Ordinal);
         Assert.Contains("item.readyForHarvest.Value ? \"ready_output\" : \"in_process\"", source, StringComparison.Ordinal);
+        Assert.Contains("MaximumStackSize = item.maximumStackSize()", source, StringComparison.Ordinal);
         Assert.Contains("chest.SpecialChestType is Chest.SpecialChestTypes.None or Chest.SpecialChestTypes.BigChest", source, StringComparison.Ordinal);
         Assert.Contains(".Distinct(StringComparer.Ordinal)", source, StringComparison.Ordinal);
         Assert.Contains("[\"material_inventory_graph\"] = Field(ReadMaterialInventoryGraph", source, StringComparison.Ordinal);
