@@ -313,6 +313,7 @@ public sealed partial class FarmReadAdapter
         DisplayName = item.DisplayName,
         RuntimeType = item.GetType().FullName ?? string.Empty,
         Stack = item.Stack,
+        MaximumStackSize = item.maximumStackSize(),
         Quality = item.Quality,
         SalePrice = item.salePrice()
     };

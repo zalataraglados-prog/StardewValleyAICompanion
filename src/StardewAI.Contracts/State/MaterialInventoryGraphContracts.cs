@@ -89,6 +89,9 @@ public sealed class MaterialInventorySlot
     [JsonPropertyName("stack")]
     public int Stack { get; set; }
 
+    [JsonPropertyName("maximum_stack_size")]
+    public int MaximumStackSize { get; set; }
+
     [JsonPropertyName("quality")]
     public int Quality { get; set; }
 
