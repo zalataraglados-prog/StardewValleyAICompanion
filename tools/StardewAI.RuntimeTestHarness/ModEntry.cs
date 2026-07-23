@@ -81,6 +81,7 @@ public sealed partial class ModEntry : Mod
     private int? manualAutoCombatRestoreSlotIndex;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveMaterialTransfer? activeMaterialTransfer;
+    private ActiveWorkbenchCraft? activeWorkbenchCraft;
     private ActiveDialogueAdvance? activeDialogueAdvance;
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
@@ -371,6 +372,7 @@ public sealed partial class ModEntry : Mod
         TickExitMine();
         TickShipInventoryToBin();
         TickMaterialTransferSafely();
+        TickWorkbenchCraftSafely();
         TickDialogueAdvance();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
@@ -384,7 +386,7 @@ public sealed partial class ModEntry : Mod
         TickPanOreSpot();
         TickFishPondService();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeBushHarvest is not null || activeCrabPotCollect is not null || activeAnimalProductHarvest is not null || activePetInteraction is not null || activeMuseumDonation is not null || activeQuestDropBoxDonation is not null || activeCommunityCenterDonation is not null || activeJojaDevelopment is not null || activeFarmhouseUpgrade is not null || activePanOreSpot is not null || activeFishPondService is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeMaterialTransfer is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null || activeMineRewardChest is not null)
+        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeBushHarvest is not null || activeCrabPotCollect is not null || activeAnimalProductHarvest is not null || activePetInteraction is not null || activeMuseumDonation is not null || activeQuestDropBoxDonation is not null || activeCommunityCenterDonation is not null || activeJojaDevelopment is not null || activeFarmhouseUpgrade is not null || activePanOreSpot is not null || activeFishPondService is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeMaterialTransfer is not null || activeWorkbenchCraft is not null || activeDialogueAdvance is not null || activeSkullKeyChestInteraction is not null || activeMineRewardChest is not null)
         {
             return;
         }
@@ -828,6 +830,14 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.craft_machine_item")
             {
+                if (string.Equals(
+                        pending.Request.CraftingSource,
+                        "native_workbench_crafting_menu",
+                        StringComparison.Ordinal))
+                {
+                    StartWorkbenchCraft(pending);
+                    return;
+                }
                 pending.Completion.SetResult(ExecuteCraftMachineItem(pending.Request));
                 return;
             }
@@ -910,6 +920,7 @@ public sealed partial class ModEntry : Mod
             activePanOreSpot = null;
             activeFishPondService = null;
             activeMaterialTransfer = null;
+            activeWorkbenchCraft = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;

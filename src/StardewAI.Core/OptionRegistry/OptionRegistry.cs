@@ -756,13 +756,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "machine input consumed and processing started" },
                 new[] { "block_unverified_machine_input", "block_machine_busy", "block_menu_unsafe_interact" }));
 
-            Register(Option("executor.craft_machine_item", "farm", "Craft one verified learned machine through the native personal CraftingPage",
+            Register(Option("executor.craft_machine_item", "farm", "Craft one verified learned machine through the native personal or Workbench CraftingPage",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "player.location_id", "player.inventory", "player.machine_crafting", "menus.active_menu" },
-                new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact machine output enters player inventory", "native recipe count, quest callbacks, and achievement checks run" },
-                new[] { "block_unknown_or_unlearned_recipe", "block_recipe_or_inventory_projection_drift", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "Workbench sources acquire and release native workbench and container mutexes", "exact machine output enters player inventory", "native recipe count, quest callbacks, and achievement checks run" },
+                new[] { "block_unknown_or_unlearned_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_unowned_or_locked_workbench_container", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
