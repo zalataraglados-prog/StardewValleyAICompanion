@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\StardewAI.Backend\StardewAI.Backend.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.Contracts\StardewAI.Contracts.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.Core\StardewAI.Core.csproj" />
+    <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
   </ItemGroup>
 
 </Project>

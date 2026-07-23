@@ -45,6 +45,7 @@ public sealed class LiveTrainingOptions
     public int MaxQueueItemAttempts { get; set; } = 24;
     public int DailyPlanMaxCandidates { get; set; } = 4;
     public int MaxPersistedIterations { get; set; } = 64;
+    public string ArtifactRetentionMode { get; set; } = "stop";
     public int MinFreeSpaceMb { get; set; } = 8192;
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
@@ -228,6 +229,16 @@ public sealed class LiveTrainingOptions
             else if (current == "--max-queue-item-attempts" && i + 1 < args.Length && int.TryParse(args[++i], out var maxQueueItemAttempts))
             {
                 options.MaxQueueItemAttempts = Math.Max(1, maxQueueItemAttempts);
+            }
+            else if (current == "--artifact-retention-mode" && i + 1 < args.Length)
+            {
+                options.ArtifactRetentionMode = args[++i] switch
+                {
+                    "stop" => "stop",
+                    "rolling" => "rolling",
+                    var value => throw new ArgumentException(
+                        "--artifact-retention-mode must be stop or rolling, not '" + value + "'.")
+                };
             }
             else if (current == "--daily-plan-max-candidates" && i + 1 < args.Length && int.TryParse(args[++i], out var dailyPlanMaxCandidates))
             {
