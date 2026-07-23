@@ -1,4 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using StardewAI.Contracts.Options;
 
 namespace StardewAI.Core.OptionRegistry
@@ -6,6 +10,7 @@ namespace StardewAI.Core.OptionRegistry
     public sealed class OptionRegistry
     {
         private readonly Dictionary<string, OptionSpec> options = new Dictionary<string, OptionSpec>();
+        private readonly Dictionary<string, string> optionSources = new Dictionary<string, string>();
 
         public OptionRegistry()
         {
@@ -766,6 +771,8 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.current_tool_index", "player.active_object_qualified_id", "player.safe_item_context" },
                 new[] { "safe toolbar slot selected" },
                 new[] { "block_safe_slot_unavailable", "block_toolbar_slot_out_of_range" }));
+
+            ValidateRegistryCompleteness();
         }
 
         public OptionSpec GetRequired(string optionId)
@@ -780,9 +787,51 @@ namespace StardewAI.Core.OptionRegistry
 
         public IReadOnlyCollection<OptionSpec> All => options.Values;
 
-        private void Register(OptionSpec spec)
+        private void Register(
+            OptionSpec spec,
+            [CallerFilePath] string sourceFile = "",
+            [CallerLineNumber] int sourceLine = 0)
         {
-            options[spec.OptionId] = spec;
+            RegisterCore(spec, sourceFile, sourceLine);
+        }
+
+        internal void RegisterForValidation(OptionSpec spec, string sourceFile, int sourceLine)
+        {
+            RegisterCore(spec, sourceFile, sourceLine);
+        }
+
+        private void RegisterCore(OptionSpec spec, string sourceFile, int sourceLine)
+        {
+            OptionGovernanceCatalog.Validate(spec);
+            var source = $"{Path.GetFileName(sourceFile)}:{sourceLine}";
+            if (!options.TryAdd(spec.OptionId, spec))
+            {
+                var firstSource = optionSources.TryGetValue(spec.OptionId, out var registeredSource)
+                    ? registeredSource
+                    : "unknown";
+                throw new InvalidOperationException(
+                    $"Duplicate OptionSpec id '{spec.OptionId}'; first={firstSource}; conflicting={source}.");
+            }
+
+            optionSources.Add(spec.OptionId, source);
+        }
+
+        private void ValidateRegistryCompleteness()
+        {
+            const int expectedHighLevelCount = 31;
+            const int expectedPrimitiveCount = 58;
+            var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
+            var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
+            if (options.Count != OptionGovernanceCatalog.Count ||
+                highLevelCount != expectedHighLevelCount ||
+                primitiveCount != expectedPrimitiveCount)
+            {
+                throw new InvalidOperationException(
+                    "Option registry baseline mismatch: " +
+                    $"registry={options.Count};governance={OptionGovernanceCatalog.Count};" +
+                    $"high_level={highLevelCount}/{expectedHighLevelCount};" +
+                    $"executor_primitive={primitiveCount}/{expectedPrimitiveCount}.");
+            }
         }
 
         private static OptionSpec Option(
@@ -796,7 +845,7 @@ namespace StardewAI.Core.OptionRegistry
             string[] expectedEffects,
             string[] safetyConstraints)
         {
-            return new OptionSpec
+            return OptionGovernanceCatalog.Apply(new OptionSpec
             {
                 OptionId = id,
                 Domain = domain,
@@ -806,11 +855,8 @@ namespace StardewAI.Core.OptionRegistry
                 TrainingRole = trainingRole,
                 RequiredStateFactors = requiredStateFactors,
                 EstimatedEffects = expectedEffects,
-                SafetyConstraints = safetyConstraints,
-                IrreversibleEffects = new string[0],
-                RiskLevel = "low",
-                Recoverability = "recoverable"
-            };
+                SafetyConstraints = safetyConstraints
+            });
         }
     }
 }
