@@ -221,7 +221,7 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("--max-attempts", source);
         Assert.Contains("verifiedTargetMet ? \"ok\" : \"incomplete\"", source);
         Assert.Contains("Environment.ExitCode = 2", source);
-        Assert.Contains("real_runtime_unverified", source);
+        Assert.Contains("runtime_test_harness_unverified", source);
         Assert.Contains("ReadChangedFactDouble(execution, \"fishing.target_casting_power\")", source);
         Assert.Contains("ReadChangedFactDouble(execution, \"fishing.hook_attempt_count\")", source);
         Assert.Contains("ReadQueueParameterInt(item, \"rod_slot_index\")", source);

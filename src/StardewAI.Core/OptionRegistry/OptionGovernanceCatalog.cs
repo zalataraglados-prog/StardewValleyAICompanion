@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 using StardewAI.Core.Execution;
 
@@ -67,6 +68,18 @@ namespace StardewAI.Core.OptionRegistry
                     $"Option '{spec.OptionId}' has no explicit option_spec.v2 governance policy.");
             }
 
+            var capability = OptionCapabilityRegistrySource.GetRequired(spec.OptionId);
+            ValidateCompilerDeclaration(spec.OptionId, capability.CompilerStatus);
+            if (capability.AutonomousCandidateEnabled !=
+                    (policy.AutonomousCandidatePolicy == AutonomousCandidatePolicy.Allowed) ||
+                capability.PlayerConfirmationRequired !=
+                    (policy.ConfirmationPolicy == OptionConfirmationPolicy.ExplicitUserConfirmationRequired) ||
+                capability.HostOnly != (policy.HostPolicy == OptionHostPolicy.HostOnly))
+            {
+                throw new InvalidOperationException(
+                    $"Option '{spec.OptionId}' capability safety flags do not match its governance policy.");
+            }
+
             spec.SemanticKind = policy.SemanticKind;
             spec.ParameterSchema = NoParameterOptionIds.Contains(spec.OptionId)
                 ? ParameterSchemaPolicy.NoParameters
@@ -76,6 +89,16 @@ namespace StardewAI.Core.OptionRegistry
                         ? ParameterSchemaPolicy.CandidateBoundParameters
                         : ParameterSchemaPolicy.PrimitiveActionParameters;
             spec.RequiredFactPolicy = CreateRequiredFactPolicy();
+            spec.RegistrationStatus = capability.RegistrationStatus;
+            spec.ReadStatus = capability.ReadStatus;
+            spec.CandidateStatus = capability.CandidateStatus;
+            spec.CompilerStatus = capability.CompilerStatus;
+            spec.HarnessDispatchSupported = capability.HarnessDispatchSupported;
+            spec.ProductExecutorSupported = capability.ProductExecutorSupported;
+            spec.InternalExecutionPipelineSupported = capability.InternalExecutionPipelineSupported;
+            spec.BeforeVerifierStatus = capability.BeforeVerifierStatus;
+            spec.AfterVerifierStatus = capability.AfterVerifierStatus;
+            spec.ProductIntegrationStatus = capability.ProductIntegrationStatus;
             spec.RiskClass = policy.RiskClass;
             spec.Irreversibility = policy.Irreversibility;
             spec.ConfirmationPolicy = policy.ConfirmationPolicy;
@@ -90,8 +113,8 @@ namespace StardewAI.Core.OptionRegistry
             spec.BeforeVerifierBinding = "StardewAI.Core.Verifier.Verifier";
             spec.AfterVerifierBinding = "runtime-native-postcondition.pending-e3";
             spec.RuntimeEvidenceId = $"runtime-evidence.pending:{spec.OptionId}";
-            spec.RuntimeStatus = OptionRuntimeStatus.RegisteredOnly;
-            spec.TrainingEligibility = OptionTrainingEligibility.BlockedPendingRuntimeEvidence;
+            spec.RuntimeStatus = capability.RuntimeEvidenceStatus;
+            spec.TrainingEligibility = capability.TrainingEligibility;
             spec.AutonomousCandidatePolicy = policy.AutonomousCandidatePolicy;
             spec.ProductStatus = OptionProductStatus.Registered;
             spec.IrreversibleEffects = policy.Irreversibility == OptionIrreversibility.None
@@ -116,6 +139,13 @@ namespace StardewAI.Core.OptionRegistry
                 spec.RequiredFactPolicy.DefaultRule.AllowedAdapterIds.Length == 0 ||
                 spec.RequiredFactPolicy.DefaultRule.MinimumConfidence <= 0 ||
                 spec.RequiredFactPolicy.DefaultRule.MaximumAgeTicks <= 0 ||
+                spec.RegistrationStatus == CapabilityRegistrationStatus.Unknown ||
+                spec.ReadStatus == CapabilityReadStatus.Unknown ||
+                spec.CandidateStatus == CapabilityCandidateStatus.Unknown ||
+                spec.CompilerStatus == CapabilityCompilerStatus.Unknown ||
+                spec.BeforeVerifierStatus == CapabilityVerifierStatus.Unknown ||
+                spec.AfterVerifierStatus == CapabilityVerifierStatus.Unknown ||
+                spec.ProductIntegrationStatus == CapabilityProductIntegrationStatus.Unknown ||
                 spec.RiskClass == OptionRiskClass.Unknown ||
                 spec.Irreversibility == OptionIrreversibility.Unknown ||
                 spec.ConfirmationPolicy == OptionConfirmationPolicy.Unknown ||
@@ -315,6 +345,26 @@ namespace StardewAI.Core.OptionRegistry
                 rule.MaximumAgeTicks > 0 &&
                 rule.RequiredProvenanceKinds.Length > 0 &&
                 rule.AllowedAdapterIds.Length > 0;
+        }
+
+        private static void ValidateCompilerDeclaration(
+            string optionId,
+            CapabilityCompilerStatus declaredStatus)
+        {
+            var hasStep = ActionQueueCompiler.HasStepCompiler(optionId);
+            var hasParameter = ActionQueueCompiler.HasParameterCompiler(optionId);
+            var actualStatus = hasStep && hasParameter
+                ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared
+                : hasStep
+                    ? CapabilityCompilerStatus.StepCompilerDeclared
+                    : hasParameter
+                        ? CapabilityCompilerStatus.ParameterCompilerDeclared
+                        : CapabilityCompilerStatus.Unbound;
+            if (declaredStatus != actualStatus)
+            {
+                throw new InvalidOperationException(
+                    $"Option '{optionId}' compiler declaration mismatch: declared={declaredStatus}; actual={actualStatus}.");
+            }
         }
 
         private static KeyValuePair<string, OptionGovernancePolicy> P(

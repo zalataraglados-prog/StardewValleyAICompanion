@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Tests;
@@ -434,7 +435,7 @@ public sealed class SocialNativeSourceGuardTests
         Assert.DoesNotContain("social_native_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
         Assert.DoesNotContain("social_runtime_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
 
-        Assert.True(RuntimeExecutorCapabilityCatalog.IsSupported("executor.social_interact"));
+        Assert.True(RuntimeTestHarnessDispatchCatalog.IsSupported("executor.social_interact"));
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Plans;
 
@@ -229,6 +230,37 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("required_fact_policy")]
         public RequiredFactPolicy RequiredFactPolicy { get; set; } = new RequiredFactPolicy();
 
+        [JsonPropertyName("registration_status")]
+        public CapabilityRegistrationStatus RegistrationStatus { get; set; } = CapabilityRegistrationStatus.Unknown;
+
+        [JsonPropertyName("read_status")]
+        public CapabilityReadStatus ReadStatus { get; set; } = CapabilityReadStatus.Unknown;
+
+        [JsonPropertyName("candidate_status")]
+        public CapabilityCandidateStatus CandidateStatus { get; set; } = CapabilityCandidateStatus.Unknown;
+
+        [JsonPropertyName("compiler_status")]
+        public CapabilityCompilerStatus CompilerStatus { get; set; } = CapabilityCompilerStatus.Unknown;
+
+        [JsonPropertyName("harness_dispatch_supported")]
+        public bool HarnessDispatchSupported { get; set; }
+
+        [JsonPropertyName("product_executor_supported")]
+        public bool ProductExecutorSupported { get; set; }
+
+        [JsonPropertyName("internal_execution_pipeline_supported")]
+        public bool InternalExecutionPipelineSupported { get; set; }
+
+        [JsonPropertyName("before_verifier_status")]
+        public CapabilityVerifierStatus BeforeVerifierStatus { get; set; } = CapabilityVerifierStatus.Unknown;
+
+        [JsonPropertyName("after_verifier_status")]
+        public CapabilityVerifierStatus AfterVerifierStatus { get; set; } = CapabilityVerifierStatus.Unknown;
+
+        [JsonPropertyName("product_integration_status")]
+        public CapabilityProductIntegrationStatus ProductIntegrationStatus { get; set; } =
+            CapabilityProductIntegrationStatus.Unknown;
+
         [JsonPropertyName("required_state_factors")]
         public string[] RequiredStateFactors { get; set; } = new string[0];
 
@@ -356,7 +388,8 @@ namespace StardewAI.Contracts.Options
         public int CurrentTime { get; set; }
 
         [JsonPropertyName("availability_scope")]
-        public string AvailabilityScope { get; set; } = "field_availability_and_executor_gate";
+        public string AvailabilityScope { get; set; } =
+            "field_availability_and_internal_pipeline_gate_not_product_execution";
 
         [JsonPropertyName("options")]
         public OptionAvailability[] Options { get; set; } = System.Array.Empty<OptionAvailability>();
@@ -391,6 +424,16 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("product_status")]
         public OptionProductStatus ProductStatus { get; set; } = OptionProductStatus.Unknown;
 
+        [JsonPropertyName("product_integration_status")]
+        public CapabilityProductIntegrationStatus ProductIntegrationStatus { get; set; } =
+            CapabilityProductIntegrationStatus.Unknown;
+
+        [JsonPropertyName("harness_dispatch_supported")]
+        public bool HarnessDispatchSupported { get; set; }
+
+        [JsonPropertyName("product_executor_supported")]
+        public bool ProductExecutorSupported { get; set; }
+
         [JsonPropertyName("status")]
         public string Status { get; set; } = "blocked";
 
@@ -399,6 +442,9 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("executor_enabled")]
         public bool ExecutorEnabled { get; set; }
+
+        [JsonPropertyName("executor_enabled_scope")]
+        public string ExecutorEnabledScope { get; set; } = "internal_compiler_or_harness_pipeline";
 
         [JsonPropertyName("training_role")]
         public string TrainingRole { get; set; } = TrainingRoles.Unknown;

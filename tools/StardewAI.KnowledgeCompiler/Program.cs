@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
-using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -104,6 +104,16 @@ internal static class Program
                 row.SemanticKind,
                 row.ParameterSchema,
                 row.RequiredFactPolicy,
+                row.RegistrationStatus,
+                row.ReadStatus,
+                row.CandidateStatus,
+                row.CompilerStatus,
+                row.HarnessDispatchSupported,
+                row.ProductExecutorSupported,
+                row.InternalExecutionPipelineSupported,
+                row.BeforeVerifierStatus,
+                row.AfterVerifierStatus,
+                row.ProductIntegrationStatus,
                 row.RiskClass,
                 row.Irreversibility,
                 row.ConfirmationPolicy,
@@ -126,7 +136,7 @@ internal static class Program
             }).ToArray();
             Write(outputRoot, "option-field-matrix.json", new
             {
-                schema_version = "stardewai.option_field_matrix.v1",
+                schema_version = "stardewai.option_field_matrix.v2",
                 option_count = optionRows.Length,
                 distinct_required_state_factor_count = requiredFactors.Length,
                 live_snapshot = snapshotCoverage is null ? null : new
@@ -147,7 +157,7 @@ internal static class Program
             });
             Write(outputRoot, "option-governance-matrix.json", new
             {
-                schema_version = "stardewai.option_governance_matrix.v2",
+                schema_version = "stardewai.option_governance_matrix.v3",
                 generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
                 authority_policy = "Unknown governance fails registry initialization. Runtime status is evidence-scoped and cannot be inferred from compiler or Harness registration.",
                 option_count = optionRows.Length,
@@ -165,6 +175,16 @@ internal static class Program
                     row.SemanticKind,
                     row.ParameterSchema,
                     row.RequiredFactPolicy,
+                    row.RegistrationStatus,
+                    row.ReadStatus,
+                    row.CandidateStatus,
+                    row.CompilerStatus,
+                    row.HarnessDispatchSupported,
+                    row.ProductExecutorSupported,
+                    row.InternalExecutionPipelineSupported,
+                    row.BeforeVerifierStatus,
+                    row.AfterVerifierStatus,
+                    row.ProductIntegrationStatus,
                     row.RiskClass,
                     row.Irreversibility,
                     row.ConfirmationPolicy,
@@ -188,10 +208,13 @@ internal static class Program
                 {
                     var stepCompilerRegistered = ActionQueueCompiler.HasStepCompiler(row.OptionId);
                     var parameterCompilerRegistered = ActionQueueCompiler.HasParameterCompiler(row.OptionId);
-                    var runtimeDirectRegistered = RuntimeExecutorCapabilityCatalog.IsSupported(row.OptionId);
-                    var runtimeBindingMode = runtimeDirectRegistered
-                        ? "direct_runtime_dispatch"
-                        : row.OptionId == "recovery.stabilize_day"
+                    var harnessDispatchSupported = row.HarnessDispatchSupported;
+                    var productExecutorSupported = row.ProductExecutorSupported;
+                    var runtimeBindingMode = productExecutorSupported
+                        ? "product_executor"
+                        : harnessDispatchSupported
+                            ? "runtime_test_harness_only"
+                            : row.OptionId == "recovery.stabilize_day"
                             ? "compiler_parameter_execution_option_id"
                             : row.OptionId == "farm.process_machines"
                                 ? "daily_candidate_to_runtime_primitive"
@@ -199,10 +222,10 @@ internal static class Program
                     var downstreamStatus =
                         row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion && !stepCompilerRegistered
                             ? "blocking_missing_step_compiler"
-                            : row.OptionId.StartsWith("executor.", StringComparison.Ordinal) && !runtimeDirectRegistered
-                                ? "blocking_missing_runtime_dispatch"
-                                : row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion
-                                    ? "complete"
+                            : productExecutorSupported
+                                ? "product_executor_declared"
+                                : harnessDispatchSupported
+                                    ? "blocked_product_executor_not_integrated"
                                     : "candidate_or_strategy_stage";
                     return new
                     {
@@ -212,7 +235,10 @@ internal static class Program
                         row.TrainingRole,
                         step_compiler_registered = stepCompilerRegistered,
                         parameter_compiler_registered = parameterCompilerRegistered,
-                        runtime_direct_registered = runtimeDirectRegistered,
+                        harness_dispatch_supported = harnessDispatchSupported,
+                        product_executor_supported = productExecutorSupported,
+                        row.RuntimeStatus,
+                        row.TrainingEligibility,
                         runtime_binding_mode = runtimeBindingMode,
                         downstream_status = downstreamStatus
                     };
@@ -225,7 +251,7 @@ internal static class Program
                     severity = "blocking",
                     code = row.downstream_status,
                     subject = row.OptionId,
-                    detail = $"compiler={row.step_compiler_registered};runtime={row.runtime_direct_registered};binding={row.runtime_binding_mode}"
+                    detail = $"compiler={row.step_compiler_registered};harness={row.harness_dispatch_supported};product={row.product_executor_supported};binding={row.runtime_binding_mode}"
                 })
                 .ToArray();
             var dailyCandidateRows = DailyPlanCandidateCapabilityCatalog.All
@@ -253,13 +279,15 @@ internal static class Program
             }
             Write(outputRoot, "downstream-capability-matrix.json", new
             {
-                schema_version = "stardewai.downstream_capability_matrix.v1",
+                schema_version = "stardewai.downstream_capability_matrix.v2",
                 generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
                 authority_policy = "Readable fields, candidate generation, daily-plan compilation, action compilation, and runtime dispatch are distinct stages. A missing later stage remains explicit and cannot be replaced by a success no-op.",
                 option_count = downstreamRows.Length,
                 step_compiler_count = ActionQueueCompiler.StepCompilerOptionIds.Count,
                 parameter_compiler_count = ActionQueueCompiler.ParameterCompilerOptionIds.Count,
-                runtime_dispatch_count = RuntimeExecutorCapabilityCatalog.OptionIds.Count,
+                harness_dispatch_count = RuntimeTestHarnessDispatchCatalog.OptionIds.Count,
+                product_executor_count = ProductExecutorCapabilityCatalog.OptionIds.Count,
+                training_allowlist_count = OptionCapabilityRegistrySource.TrainingAllowlist.Count,
                 blocker_count = downstreamBlockers.Length,
                 blockers = downstreamBlockers,
                 options = downstreamRows,
