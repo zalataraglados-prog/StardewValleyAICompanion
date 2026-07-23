@@ -33,7 +33,7 @@ public static class RollingArtifactRetention
 
         var minimumIterationToKeep = Math.Max(
             1,
-            nextIteration - retainedIterations);
+            nextIteration - retainedIterations + 1);
         foreach (var path in Directory.EnumerateFiles(
             fullSnapshotDirectory,
             "*.json",
