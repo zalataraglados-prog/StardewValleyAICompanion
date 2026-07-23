@@ -53,22 +53,23 @@ for (var attemptOrdinal = 1;
     var iteration = nextArtifactIteration + attemptOrdinal - 1;
     try
     {
-    var artifactBudgetBlock = GetArtifactBudgetBlock(options, persistedIterationCount);
-    if (!string.IsNullOrWhiteSpace(artifactBudgetBlock))
-    {
-        stopReason = artifactBudgetBlock;
-        AppendProgress(options, "stopped", iteration, lastStateHash, lastQueueId, stopReason);
-        break;
-    }
-    attemptsStarted++;
-    var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
-        ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
-        : await http.GetStringAsync(options.BridgeSnapshotUrl);
-    var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
-    var snapshotJson = beforeSnapshot.ToJsonString(JsonlOptions);
-    var snapshotPath = Path.Combine(options.SnapshotDir, "before-snapshot-" + iteration.ToString("D4") + ".json");
-    await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
-    persistedIterationCount++;
+        persistedIterationCount = ApplyRollingArtifactRetention(options, iteration);
+        var artifactBudgetBlock = GetArtifactBudgetBlock(options, persistedIterationCount);
+        if (!string.IsNullOrWhiteSpace(artifactBudgetBlock))
+        {
+            stopReason = artifactBudgetBlock;
+            AppendProgress(options, "stopped", iteration, lastStateHash, lastQueueId, stopReason);
+            break;
+        }
+        attemptsStarted++;
+        var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
+            ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
+            : await http.GetStringAsync(options.BridgeSnapshotUrl);
+        var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        var snapshotJson = beforeSnapshot.ToJsonString(JsonlOptions);
+        var snapshotPath = Path.Combine(options.SnapshotDir, "before-snapshot-" + iteration.ToString("D4") + ".json");
+        await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
+        persistedIterationCount++;
 
     var ingest = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/snapshots", snapshotJson);
     lastStateHash = ReadString(ingest, "state_hash");
