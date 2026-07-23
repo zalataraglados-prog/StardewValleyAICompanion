@@ -74,7 +74,8 @@ namespace StardewAI.Core.Execution
                 ["executor.quest_drop_box_donate"] = (action, _) => CompileQuestDropBoxDonateStep(action),
                 ["executor.select_safe_item_slot"] = CompileSelectSafeItemSlotStep,
                 ["executor.close_menu"] = (_, snapshot) => CompileCloseMenuStep(snapshot),
-                ["executor.ship_inventory_item_to_bin"] = (action, _) => CompileShippingBinStep(action)
+                ["executor.ship_inventory_item_to_bin"] = (action, _) => CompileShippingBinStep(action),
+                ["executor.transfer_material"] = (action, _) => CompileMaterialTransferStep(action)
             };
 
         private static readonly IReadOnlyDictionary<string, ActionParameterCompiler> ActionParameterCompilers =
@@ -92,7 +93,8 @@ namespace StardewAI.Core.Execution
                 ["executor.buy_shop_item"] = BuildBuyShopItemParameters,
                 ["social.talk_npc"] = BuildSocialParameters,
                 ["social.gift_npc"] = BuildSocialParameters,
-                ["farm.maintain_crops"] = BuildCropMaintenanceParameters
+                ["farm.maintain_crops"] = BuildCropMaintenanceParameters,
+                ["executor.transfer_material"] = BuildMaterialTransferParameters
             };
 
         public static IReadOnlyCollection<string> StepCompilerOptionIds =>

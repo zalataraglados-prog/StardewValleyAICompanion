@@ -355,6 +355,33 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("dialogue_event_up_after")]
         public bool? DialogueEventUpAfter { get; set; }
 
+        [JsonPropertyName("material_transfer_intent")]
+        public MaterialTransferIntent? MaterialTransferIntent { get; set; }
+
+        [JsonPropertyName("material_transfer_projection")]
+        public MaterialTransferProjection? MaterialTransferProjection { get; set; }
+
+        [JsonPropertyName("material_transfer_click_count")]
+        public int? MaterialTransferClickCount { get; set; }
+
+        [JsonPropertyName("material_transfer_source_stack_before")]
+        public int? MaterialTransferSourceStackBefore { get; set; }
+
+        [JsonPropertyName("material_transfer_source_stack_after")]
+        public int? MaterialTransferSourceStackAfter { get; set; }
+
+        [JsonPropertyName("material_transfer_destination_quantity_before")]
+        public int? MaterialTransferDestinationQuantityBefore { get; set; }
+
+        [JsonPropertyName("material_transfer_destination_quantity_after")]
+        public int? MaterialTransferDestinationQuantityAfter { get; set; }
+
+        [JsonPropertyName("material_transfer_native_menu_opened")]
+        public bool? MaterialTransferNativeMenuOpened { get; set; }
+
+        [JsonPropertyName("material_transfer_native_lock_released")]
+        public bool? MaterialTransferNativeLockReleased { get; set; }
+
         [JsonPropertyName("audit")]
         public PlanExecutionEpisodeAudit Audit { get; set; } = new();
     }
