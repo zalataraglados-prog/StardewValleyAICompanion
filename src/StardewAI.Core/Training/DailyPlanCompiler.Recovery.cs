@@ -48,7 +48,7 @@ namespace StardewAI.Core.Training
                     EstimatedMinutes = 1,
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "menus.active_menu.is_open=true" },
                     ExpectedEffects = new[] { "menus.active_menu.is_open=false" },
-                    SafetyConstraints = new[] { "close_only_safe_whitelisted_menu", "recovery_menu_close" },
+                    SafetyConstraints = new[] { "close_only_verified_supported_menu", "shipping_summary_requires_native_ok_button", "recovery_menu_close" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = ContinuationParameters(candidate)
                 }

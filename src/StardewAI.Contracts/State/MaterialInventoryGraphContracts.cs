@@ -34,6 +34,9 @@ public sealed class MaterialInventoryGraph
 
     [JsonPropertyName("deduplicated_access_point_count")]
     public int DeduplicatedAccessPointCount { get; set; }
+
+    [JsonPropertyName("default_shared_resource_policy")]
+    public string DefaultSharedResourcePolicy { get; set; } = "deny_without_explicit_authorization";
 }
 
 public sealed class MaterialInventoryNode
@@ -58,6 +61,12 @@ public sealed class MaterialInventoryNode
 
     [JsonPropertyName("owner_player_id")]
     public long OwnerPlayerId { get; set; }
+
+    [JsonPropertyName("ownership_class")]
+    public string OwnershipClass { get; set; } = "unknown";
+
+    [JsonPropertyName("actor_use_authorized")]
+    public bool ActorUseAuthorized { get; set; }
 
     [JsonPropertyName("global_inventory_id")]
     public string GlobalInventoryId { get; set; } = string.Empty;
@@ -130,6 +139,9 @@ public sealed class MaterialInventoryAccessPoint
 
     [JsonPropertyName("locked_by_other_player")]
     public bool LockedByOtherPlayer { get; set; }
+
+    [JsonPropertyName("actor_use_authorized")]
+    public bool ActorUseAuthorized { get; set; }
 }
 
 public sealed class MaterialWorkbenchLink
@@ -181,6 +193,9 @@ public sealed class MaterialQuantityRow
 
     [JsonPropertyName("in_process_quantity")]
     public int InProcessQuantity { get; set; }
+
+    [JsonPropertyName("restricted_quantity")]
+    public int RestrictedQuantity { get; set; }
 
     [JsonPropertyName("source_slot_count")]
     public int SourceSlotCount { get; set; }

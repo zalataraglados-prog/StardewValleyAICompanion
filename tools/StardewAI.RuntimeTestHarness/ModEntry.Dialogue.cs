@@ -35,6 +35,12 @@ public sealed partial class ModEntry : Mod
         }
 
         var menu = Game1.activeClickableMenu;
+        if (menu is ShippingMenu shippingMenu)
+        {
+            StartShippingSummaryClose(pending, shippingMenu);
+            return;
+        }
+
         if (menu is not DialogueBox dialogueBox ||
             !CanAdvanceOrdinaryDialogue(dialogueBox, pending.Request.SocialContinuationDialogueRecovery))
         {

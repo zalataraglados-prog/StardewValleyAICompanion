@@ -8,6 +8,61 @@ namespace StardewAI.Core.Tests;
 public sealed partial class EventCandidateRankerTests
 {
     [Fact]
+    public void RankMakesAvailableMenuRecoveryExclusiveForCurrentPlan()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options = new[]
+            {
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "recovery:close_blocking_menu",
+                            Kind = "recovery_close_menu",
+                            Available = true,
+                            EstimatedTicks = 10
+                        }
+                    }
+                },
+                new OptionAvailability
+                {
+                    OptionId = "economy.sell_items",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "ship:stone",
+                            Kind = "ship_inventory_item_to_bin",
+                            Available = true,
+                            EstimatedTicks = 30
+                        }
+                    },
+                    EconomicCandidates = new[]
+                    {
+                        new EconomicCandidate
+                        {
+                            CandidateId = "sell:stone",
+                            Kind = "sell_shop_item",
+                            Available = true,
+                            TotalValue = 9999
+                        }
+                    }
+                }
+            }
+        };
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+
+        var candidate = Assert.Single(ranked);
+        Assert.Equal("recovery:close_blocking_menu", candidate.CandidateId);
+        Assert.Equal("recovery_close_menu", candidate.Kind);
+    }
+
+    [Fact]
     public void RankIncludesAvailableInteractEndpointCandidates()
     {
         var report = new BaselineTrainingReport

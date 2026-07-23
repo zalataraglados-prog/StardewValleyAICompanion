@@ -759,6 +759,16 @@ public sealed partial class ModEntry : Mod
             return CompletedCloseMenu(request, beforeOpen, beforeType, "no_op", "verified_no_active_menu", new[] { "active_menu_already_closed" });
         }
 
+        if (menu is ShippingMenu)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "close_menu",
+                "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(),
+                "shipping_summary_native_async_executor_required");
+        }
+
         if (menu is LevelUpMenu levelUpMenu)
         {
             return ExecuteLevelUpMenu(request, levelUpMenu, beforeOpen, beforeType);

@@ -569,6 +569,32 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileCloseMenuUsesNativeShippingSummaryPathWhenTransparentStateIsComplete()
+    {
+        var snapshot = ShippingSummaryMenuSnapshot();
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(queue.Items[0].BlockingReasons);
+        Assert.Contains(
+            queue.Items[0].NormalizedCommand.Parameters,
+            parameter => parameter.Name == "compiler_context.close_menu_executor" &&
+                parameter.Value == "ShippingMenu native OK-button completion path");
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksShippingSummaryWhenTransparentStateIsMissing()
+    {
+        var snapshot = CloseMenuSnapshot(true, "ShippingMenu");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("shipping_summary_transparent_state_missing", queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void CompileCloseMenuRequiresOfferedProfessionChoiceForLevelUpMenu()
     {
         var snapshot = Snapshot("""
@@ -632,6 +658,19 @@ public sealed partial class ActionQueueCompilerTests
         }
 
         return Snapshot(json);
+    }
+
+    private static SnapshotEnvelope ShippingSummaryMenuSnapshot()
+    {
+        return Snapshot("""
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"ShippingMenu","full_type":"StardewValley.Menus.ShippingMenu","is_sleep_prompt":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"shipping_summary","can_receive_input":false,"current_page":0,"ok_button_present":true,"ready_for_native_ok":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
     }
 
     [Fact]

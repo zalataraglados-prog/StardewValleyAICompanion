@@ -27,8 +27,14 @@ Workbench rows are edges over existing chest nodes. They follow the decompiled `
 
 `MaterialSupplyProjection` accepts reservations bound to exact `node_id`, `slot_index`, and `qualified_item_id`. It counts only `available` nodes as immediately spendable, subtracts reservations per slot, and blocks stale identity, unknown slot, duplicate node/slot identity, non-positive quantity, integer overflow, or over-reservation. Ready machine output and in-process material remain visible but are not silently treated as current crafting stock.
 
+## Multiplayer Non-Interference
+
+The graph reads every persistent player chest instead of hiding storage owned by another farmer. Each node carries `ownership_class` and `actor_use_authorized`. Native `Object.placementAction` writes the placing farmer's multiplayer ID to `owner`; the bridge classifies that exact field as actor-owned, shared unowned, shared team global, or other-player-owned.
+
+The default policy is `deny_without_explicit_authorization`. Shared, unowned, and other-player nodes remain transparent and contribute to `restricted_quantity`, but they are excluded from spendable projections, native chest transfer, and Workbench sources. The runtime rechecks chest owner and global-inventory identity immediately before native input. A later versioned cooperation policy may authorize selected shared nodes; absence of that policy cannot imply consent.
+
 ## Exit Boundary
 
 Static read, deduplication, quantity aggregation, Workbench connectivity, and exact-slot reservation projection are complete and offline-tested. Hidden and silent isolated runtime smoke `runtime-material-inventory-graph-smoke-20260719-152511` passed 17/17 checks over a native matrix containing normal and Big Chests, two Junimo Chest access points sharing one implicit global inventory, built-in and mini fridges, an Auto-Grabber buffer, Workbench adjacency, and ready/in-process machine buffers.
 
-This does not complete native chest transfer, Workbench crafting, storage placement/relocation, machine placement, multiplayer ownership policy, or long-term service execution. Downstream machine construction must distinguish personal-inventory crafting, Workbench-connected crafting, and material staging; it must not treat graph-wide available quantity as directly consumable by the personal crafting menu.
+Native normal-chest transfer and Workbench crafting are implemented, and the default-deny multiplayer resource boundary is enforced through read, projection, compiler, and runtime recheck. This does not complete explicit shared-resource authorization, persistent plan-horizon reservations, storage placement/relocation, generic machine placement, or long-term service execution. Downstream machine construction must distinguish personal-inventory crafting, authorized Workbench-connected crafting, and material staging; it must not treat graph-wide visible quantity as directly consumable.

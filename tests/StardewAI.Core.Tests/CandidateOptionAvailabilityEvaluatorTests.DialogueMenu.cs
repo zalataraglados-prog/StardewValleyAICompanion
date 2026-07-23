@@ -123,6 +123,26 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("level_up_menu_input_not_ready", candidate.BlockReasons);
     }
 
+    [Fact]
+    public void ShippingSummaryRecoveryIsAvailableBeforeAnimationFinishes()
+    {
+        var candidate = GetCloseMenuCandidate(ShippingSummaryRecoverySnapshot());
+
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == "execution_option_id" && row.Value == "executor.close_menu");
+    }
+
+    [Fact]
+    public void ShippingSummaryRecoveryBlocksWhenOkButtonProofIsMissing()
+    {
+        var candidate = GetCloseMenuCandidate(ShippingSummaryRecoverySnapshot(okButtonPresent: false));
+
+        Assert.False(candidate.Available);
+        Assert.Contains("shipping_summary_ok_button_missing", candidate.BlockReasons);
+    }
+
     private static EventCandidate GetCloseMenuCandidate(SnapshotEnvelope snapshot)
     {
         return new CandidateOptionAvailabilityEvaluator()
@@ -199,6 +219,37 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Replace("IS_SLEEP", isSleepPrompt ? "true" : "false")
             .Replace("TRANSITIONING", transitioning ? "true" : "false");
         return Snapshot(json);
+    }
+
+    private static SnapshotEnvelope ShippingSummaryRecoverySnapshot(bool okButtonPresent = true)
+    {
+        return Snapshot("""
+        {
+          "time": {
+            "time": {"value":600,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":9,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":9,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "current_item_qualified_id": {"value":"","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "active_object_qualified_id": {"value":"","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"FarmHouse","current_location_is_home":true,"bed_tile_x":3,"bed_tile_y":8,"bed_tile_has_bed":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"ShippingMenu","full_type":"StardewValley.Menus.ShippingMenu","is_sleep_prompt":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"shipping_summary","can_receive_input":false,"current_page":0,"ok_button_present":OK_BUTTON_PRESENT,"ready_for_native_ok":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":12,"height":12,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """.Replace("OK_BUTTON_PRESENT", okButtonPresent ? "true" : "false"));
     }
 
     private static SnapshotEnvelope LevelUpMenuRecoverySnapshot(

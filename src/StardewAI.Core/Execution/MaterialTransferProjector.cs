@@ -39,6 +39,10 @@ public sealed class MaterialTransferProjector
         {
             reasons.Add("material_transfer_nodes_not_available");
         }
+        if (!source.ActorUseAuthorized || !destination.ActorUseAuthorized)
+        {
+            reasons.Add("material_transfer_node_not_actor_authorized");
+        }
 
         var sourceIsPlayer = source.InventoryKind == "player_inventory";
         var destinationIsPlayer = destination.InventoryKind == "player_inventory";
