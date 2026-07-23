@@ -923,6 +923,26 @@ static partial class Program
         executionRequest.QuestDropBoxExpectedStackBefore = ReadQueueParameterInt(item, "item_stack_before");
         executionRequest.QuestDropBoxExpectedAcceptedCount =
             ReadQueueParameterInt(item, "quest_drop_box_expected_accepted_count");
+        var materialTransferIntentJson = ReadQueueParameterString(
+            item,
+            "material_transfer_intent_json");
+        var materialTransferProjectionJson = ReadQueueParameterString(
+            item,
+            "material_transfer_projection_json");
+        if (!string.IsNullOrWhiteSpace(materialTransferIntentJson))
+        {
+            executionRequest.MaterialTransferIntent =
+                JsonSerializer.Deserialize<MaterialTransferIntent>(
+                    materialTransferIntentJson,
+                    JsonOptions);
+        }
+        if (!string.IsNullOrWhiteSpace(materialTransferProjectionJson))
+        {
+            executionRequest.MaterialTransferProjection =
+                JsonSerializer.Deserialize<MaterialTransferProjection>(
+                    materialTransferProjectionJson,
+                    JsonOptions);
+        }
 
         return executionRequest;
     }

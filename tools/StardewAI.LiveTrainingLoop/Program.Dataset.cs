@@ -146,11 +146,32 @@ static partial class Program
             DialogueSpeakerNameBefore = ReadString(execution, "dialogue_speaker_name_before"),
             DialogueSpeakerNameAfter = ReadString(execution, "dialogue_speaker_name_after"),
             DialogueEventUpBefore = execution["dialogue_event_up_before"]?.GetValue<bool>(),
-            DialogueEventUpAfter = execution["dialogue_event_up_after"]?.GetValue<bool>()
+            DialogueEventUpAfter = execution["dialogue_event_up_after"]?.GetValue<bool>(),
+            MaterialTransferIntent = ReadExecutionObject<MaterialTransferIntent>(
+                execution,
+                "material_transfer_intent"),
+            MaterialTransferProjection = ReadExecutionObject<MaterialTransferProjection>(
+                execution,
+                "material_transfer_projection"),
+            MaterialTransferClickCount = execution["material_transfer_click_count"]?.GetValue<int>(),
+            MaterialTransferSourceStackBefore = execution["material_transfer_source_stack_before"]?.GetValue<int>(),
+            MaterialTransferSourceStackAfter = execution["material_transfer_source_stack_after"]?.GetValue<int>(),
+            MaterialTransferDestinationQuantityBefore = execution["material_transfer_destination_quantity_before"]?.GetValue<int>(),
+            MaterialTransferDestinationQuantityAfter = execution["material_transfer_destination_quantity_after"]?.GetValue<int>(),
+            MaterialTransferNativeMenuOpened = execution["material_transfer_native_menu_opened"]?.GetValue<bool>(),
+            MaterialTransferNativeLockReleased = execution["material_transfer_native_lock_released"]?.GetValue<bool>()
         };
 
         var episodePath = Path.Combine(options.SnapshotDir, "plan-execution-episode-" + iteration.ToString("D4") + ".json");
         File.WriteAllText(episodePath, JsonSerializer.Serialize(episode, JsonOptions), Encoding.UTF8);
+    }
+
+    private static T? ReadExecutionObject<T>(JsonObject execution, string property)
+        where T : class
+    {
+        return execution[property] is { } node
+            ? JsonSerializer.Deserialize<T>(node.ToJsonString(), JsonOptions)
+            : null;
     }
 
     private static string[] RewardTerms(string optionId, bool isMove, bool applied, int watered)
