@@ -10,7 +10,7 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
-    private static async Task<JsonObject> ExecuteRealRuntimeAsync(
+    private static async Task<JsonObject> ExecuteRuntimeTestHarnessAsync(
         HttpClient http,
         HttpClient executorHttp,
         LiveTrainingOptions options,
@@ -92,7 +92,7 @@ static partial class Program
                 execution["primitive_verification_status"] = "stale_after_snapshot";
                 execution["primitive_verification_reasons"] = new JsonArray("after_snapshot_not_fresh");
             }
-            execution["source"] = "real_runtime_executor";
+            execution["source"] = "runtime_test_harness_executor";
             currentBeforeSnapshot = afterSnapshot.Snapshot;
             currentBeforeSnapshotPath = afterPath;
             currentStateHash = ReadString(afterSnapshot.Snapshot, "state_hash");
@@ -198,7 +198,7 @@ static partial class Program
         aggregate["before_game_tick"] = ReadLong(beforeSnapshot, "game_tick");
         aggregate["after_game_tick"] = ReadLong(finalAfterSnapshot, "game_tick");
         aggregate["state_hash_changed"] = !string.Equals(stateHash, ReadString(finalAfterSnapshot, "state_hash"), StringComparison.Ordinal);
-        aggregate["source"] = "real_runtime_executor";
+        aggregate["source"] = "runtime_test_harness_executor";
         aggregate["objective_continuation_completed"] = objectiveContinuationCompleted;
         aggregate["objective_continuation"] = activeObjectiveContinuation is null
             ? null

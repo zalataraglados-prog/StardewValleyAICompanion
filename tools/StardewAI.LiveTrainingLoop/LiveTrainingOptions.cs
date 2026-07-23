@@ -35,7 +35,7 @@ public sealed class LiveTrainingOptions
     public int AfterSnapshotWaitMs { get; set; } = 2500;
     public int AfterSnapshotPollMs { get; set; } = 100;
     public bool RequireExecutorFeedback { get; set; } = true;
-    public bool UseRealRuntimeExecutor { get; set; } = true;
+    public bool UseRuntimeTestHarnessExecutor { get; set; } = true;
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
     public bool UseParameterizedAction { get; set; }
@@ -52,7 +52,7 @@ public sealed class LiveTrainingOptions
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
     public string FeedbackMode => RequireExecutorFeedback
-        ? UseRealRuntimeExecutor ? "real_runtime_executor" : "training_sandbox_feedback_gate"
+        ? UseRuntimeTestHarnessExecutor ? "runtime_test_harness_executor" : "training_sandbox_feedback_gate"
         : "disabled";
 
     public string RunDir => string.IsNullOrWhiteSpace(ManifestPath)
@@ -189,7 +189,7 @@ public sealed class LiveTrainingOptions
             }
             else if (current == "--use-sandbox-executor")
             {
-                options.UseRealRuntimeExecutor = false;
+                options.UseRuntimeTestHarnessExecutor = false;
             }
             else if (current == "--use-plan-output")
             {

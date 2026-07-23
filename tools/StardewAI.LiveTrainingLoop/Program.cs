@@ -137,24 +137,24 @@ for (var attemptOrdinal = 1;
                 "executing_pending_subset count=" + executableSubsetCount + " queue_status=" + queueStatus);
         }
 
-        var execution = options.UseRealRuntimeExecutor
-            ? await ExecuteRealRuntimeAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeObjectiveContinuation)
+        var execution = options.UseRuntimeTestHarnessExecutor
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeObjectiveContinuation)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
-        if (!feedbackAvailable && !options.UseRealRuntimeExecutor)
+        if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
         {
             AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "executor_feedback_unavailable status=" + ReadString(execution, "status"));
             await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
             continue;
         }
 
-        if (options.UseRealRuntimeExecutor)
+        if (options.UseRuntimeTestHarnessExecutor)
         {
             var primitiveVerified = string.Equals(ReadString(execution, "primitive_verification_status"), "verified", StringComparison.Ordinal) &&
                 string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal);
             if (!primitiveVerified)
             {
-                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "real_runtime_unverified status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
+                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "runtime_test_harness_unverified status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
@@ -167,7 +167,7 @@ for (var attemptOrdinal = 1;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             rowsAppended = realAppend.RowCount;
             verifiedActions++;
-            AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=real_runtime_executor");
+            AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
             var train = await TrainIfNeededAsync(http, options, iteration);
             if (train.TrainingReport is not null)
             {

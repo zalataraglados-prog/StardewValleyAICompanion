@@ -137,6 +137,11 @@ namespace StardewAI.Core.OptionRegistry
                 notes.Add("preview_only_candidate_not_runtime_executable");
             }
 
+            if (option.HarnessDispatchSupported && !option.ProductExecutorSupported)
+            {
+                notes.Add("runtime_test_harness_dispatch_is_not_product_executor_support");
+            }
+
             if (option.TrainingRole == TrainingRoles.ExecutorCalibration)
             {
                 notes.Add("executor_calibration_option_excluded_from_default_policy_ranking");
@@ -166,11 +171,13 @@ namespace StardewAI.Core.OptionRegistry
                         ? "confirmation_required"
                         : previewOnly
                             ? "preview_available"
-                            : compilerProbe.BindingStatus == "unbound"
-                                ? "unbound"
-                                : compilerProbe.CompileStatus == "blocked"
-                                    ? "blocked"
-                                    : "available";
+                            : !executorEnabled
+                                ? "product_not_integrated"
+                                : compilerProbe.BindingStatus == "unbound"
+                                    ? "unbound"
+                                    : compilerProbe.CompileStatus == "blocked"
+                                        ? "blocked"
+                                        : "available";
 
             return new OptionAvailability
             {
@@ -183,6 +190,9 @@ namespace StardewAI.Core.OptionRegistry
                 RuntimeEvidenceStatus = option.RuntimeStatus,
                 TrainingEligibility = option.TrainingEligibility,
                 ProductStatus = option.ProductStatus,
+                ProductIntegrationStatus = option.ProductIntegrationStatus,
+                HarnessDispatchSupported = option.HarnessDispatchSupported,
+                ProductExecutorSupported = option.ProductExecutorSupported,
                 Status = status,
                 PreviewOnly = previewOnly,
                 ExecutorEnabled = executorEnabled,
