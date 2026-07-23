@@ -645,8 +645,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "executor.plant_seed" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.True(option.ExecutorEnabled);
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
@@ -791,8 +793,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "executor.clear_obstacle" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.True(option.ExecutorEnabled);
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
@@ -833,8 +837,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "executor.clear_obstacle" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
         Assert.Empty(candidate.BlockReasons);
@@ -923,8 +929,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             """), new[] { "economy.buy_supplies" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.True(option.ExecutorEnabled);
         Assert.Empty(option.MissingStateFactors);

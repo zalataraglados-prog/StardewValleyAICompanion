@@ -19,7 +19,10 @@ public sealed class FishingMainlineTests
             .Evaluate(snapshot, new[] { "fishing.catch_fish" });
 
         var option = Assert.Single(availability.Options);
-        Assert.True(option.Available, string.Join(";", option.BlockingReasons));
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         var sourceCandidate = Assert.Single(option.EventCandidates);
         Assert.True(sourceCandidate.Available);
         Assert.Equal("catch_fish", sourceCandidate.Kind);

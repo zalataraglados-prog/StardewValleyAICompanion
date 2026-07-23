@@ -88,6 +88,15 @@ IDs, missing bindings, and irreversible actions without confirmation fail regist
 initialization. Compiler or Harness registration does not promote an option to runtime
 verified or training eligible; those statuses require separately indexed E3 or E4 evidence.
 
+Candidate evaluation now exposes separate `read_eligible`, `binding_status`,
+`compile_status`, `execution_authorization`, `runtime_evidence_status`,
+`training_eligibility`, and `product_status` fields. Production snapshots apply the
+per-option RequiredFact policy to field status, confidence, age, provenance, Adapter ID,
+and explicitly authorized derivations. An empty parameter set is `unbound/not_evaluated`
+unless the option schema explicitly declares that it takes no parameters. Only a real
+ActionQueue compiler probe can produce `compile_status=ready`; a readable option is not
+therefore executable, runtime verified, or training eligible.
+
 The join found and removed the obsolete `player.skills` option dependency. All affected
 options now use the canonical transparent field `player.skills_detail`; no compatibility alias
 or duplicate read path was added.
@@ -101,7 +110,7 @@ name and MVID; runtime-semantics v3 additionally verifies byte length and SHA-25
 blocks the build before IL closure generation.
 
 The current authoritative derived profile is
-`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v22`, with
+`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v23`, with
 `I:\StardewAI-KnowledgeArtifacts\game-1.6.15` as the default Windows artifact root. The
 checked-in `knowledge-artifacts.lock.json` pins its manifests and binary hashes. It binds the
 Linux host runtime export to binaries copied from that same host and to their separate

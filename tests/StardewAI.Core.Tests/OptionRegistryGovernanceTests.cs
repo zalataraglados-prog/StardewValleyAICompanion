@@ -95,7 +95,7 @@ public sealed class OptionRegistryGovernanceTests
         Assert.DoesNotContain(
             Registry(),
             row => row.AutonomousCandidatePolicy == AutonomousCandidatePolicy.Unknown ||
-                row.RequiredFactPolicy == RequiredFactPolicy.Unknown ||
+                row.RequiredFactPolicy.Mode == RequiredFactPolicyMode.Unknown ||
                 row.ParameterSchema == ParameterSchemaPolicy.Unknown ||
                 row.TrainingEligibility == OptionTrainingEligibility.Unknown ||
                 row.RuntimeStatus == OptionRuntimeStatus.Unknown ||
