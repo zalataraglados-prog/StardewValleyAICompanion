@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewAI.Contracts.State;
+using StardewAI.TransparentBridge.State;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
@@ -17,6 +19,40 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     {
         var location = Context.IsWorldReady ? Game1.currentLocation : null;
         var actionIndex = location is null ? null : ReadMapActionIndex(location);
+        var storageRequested =
+            SnapshotProfileContext
+                .IncludesPersistentMaterialInventoryGraph;
+        var farm =
+            location is null || !storageRequested
+                ? null
+                : Game1.getFarm();
+        var storageInfrastructure =
+            location is null || farm is null
+                ? null
+                : FarmReadAdapter.ReadStorageInfrastructure(
+                    FarmReadAdapter.ReadCachedMaterialInventoryGraph(
+                        farm,
+                        Game1.player,
+                        tick),
+                    location.NameOrUniqueName);
+        object chestsField =
+            location is null
+                ? Field(
+                    (StorageInfrastructureProjection?)null,
+                    "Game1.currentLocation unavailable",
+                    tick,
+                    "vanilla_1_6_storage_infrastructure")
+                : !storageRequested
+                    ? Unavailable(
+                        "not_requested_by_snapshot_profile",
+                        "SnapshotProfileContext.IncludesPersistentMaterialInventoryGraph",
+                        tick,
+                        "snapshot_profile")
+                    : Field(
+                        storageInfrastructure,
+                        "farm.material_inventory_graph access_points filtered to Game1.currentLocation.NameOrUniqueName; canonical contents remain farm.material_inventory_graph.inventory_nodes[node_id]",
+                        tick,
+                        "vanilla_1_6_storage_infrastructure");
         var unavailable = location is null
             ? new[]
             {
@@ -49,7 +85,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["flags"] = Field(location is null ? null : ReadFlags(location), "Game1.currentLocation.IsOutdoors/IsFarm", tick),
             ["objects"] = Field(location is null ? null : ReadObjects(location), "Game1.currentLocation.objects", tick),
             ["debris"] = Field(location is null ? null : ReadCurrentLocationDebris(location), "Game1.currentLocation.debris live item and chunk fields", tick),
-            ["chests"] = Field(location is null ? null : ReadChests(location), "Game1.currentLocation.objects[*] as Chest", tick),
+            ["chests"] = chestsField,
             ["terrain_features"] = Field(location is null ? null : ReadTerrainFeatures(location), "Game1.currentLocation.terrainFeatures", tick),
             ["large_terrain_features"] = Field(location is null ? null : ReadLargeTerrainFeatures(location), "Game1.currentLocation.largeTerrainFeatures; Bush native harvest projection", tick),
             ["resource_clumps"] = Field(location is null ? null : ReadCurrentLocationResourceClumps(location, Game1.player), "Game1.currentLocation.resourceClumps; ResourceClump.performToolAction/destroy decompiled projections", tick),
@@ -192,35 +228,6 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_catch_size_max = crabPot.CatchSizeMax,
             crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus
         };
-    }
-
-    private static object[] ReadChests(GameLocation location)
-    {
-        return location.objects.Pairs
-            .Where(pair => pair.Value is Chest)
-            .OrderBy(pair => pair.Key.Y)
-            .ThenBy(pair => pair.Key.X)
-            .Select(pair =>
-            {
-                var chest = (Chest)pair.Value;
-                return new
-                {
-                    tile_x = (int)pair.Key.X,
-                    tile_y = (int)pair.Key.Y,
-                    qualified_item_id = chest.QualifiedItemId,
-                    display_name = chest.DisplayName,
-                    special_chest_type = chest.SpecialChestType.ToString(),
-                    item_count = chest.Items.Count,
-                    items = chest.Items
-                        .Select((item, index) => new
-                        {
-                            slot_index = index,
-                            item = SummarizeItem(item)
-                        })
-                        .ToArray()
-                };
-            })
-            .ToArray();
     }
 
     private static object? SummarizeItem(Item? item)

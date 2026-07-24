@@ -12,7 +12,14 @@ public sealed class MaterialSupplyProjectionTests
         var source = FarmReadAdapterSources.All;
 
         Assert.Contains("MachineLocationTopology.ReadPersistentLocations(farm, player)", source, StringComparison.Ordinal);
-        Assert.Contains("chest.GetItemsForPlayer(player.UniqueMultiplayerID)", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "chest.GetItemsForPlayer(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "player.UniqueMultiplayerID",
+            source,
+            StringComparison.Ordinal);
         Assert.Contains("chest.SpecialChestType == Chest.SpecialChestTypes.JunimoChest", source, StringComparison.Ordinal);
         Assert.Contains("FarmerTeam.GlobalInventoryId_JunimoChest", source, StringComparison.Ordinal);
         Assert.Contains("location.GetFridge(onlyUnlocked: true)", source, StringComparison.Ordinal);
@@ -26,7 +33,14 @@ public sealed class MaterialSupplyProjectionTests
         Assert.Contains("\"deny_without_explicit_authorization\"", source, StringComparison.Ordinal);
         Assert.Contains("workbench_native_container_not_actor_authorized", source, StringComparison.Ordinal);
         Assert.Contains(".Distinct(StringComparer.Ordinal)", source, StringComparison.Ordinal);
-        Assert.Contains("[\"material_inventory_graph\"] = Field(ReadMaterialInventoryGraph", source, StringComparison.Ordinal);
+        Assert.Contains("ReadCachedMaterialInventoryGraph(", source, StringComparison.Ordinal);
+        Assert.Contains("[\"material_inventory_graph\"] = Field(materialInventoryGraph", source, StringComparison.Ordinal);
+        Assert.Contains("ReadStorageInfrastructure(materialInventoryGraph)", source, StringComparison.Ordinal);
+        Assert.Contains("chest.GetActualCapacity()", source, StringComparison.Ordinal);
+        Assert.Contains("chest.GetMutex()", source, StringComparison.Ordinal);
+        Assert.Contains("\"native_remove_available_empty\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"native_shove_available_nonempty\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("[\"chests\"] = Field(ReadChests(", source, StringComparison.Ordinal);
     }
 
     [Fact]
