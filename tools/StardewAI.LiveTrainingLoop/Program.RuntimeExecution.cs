@@ -43,6 +43,7 @@ static partial class Program
         JsonObject? finalExecution = null;
         JsonObject finalAfterSnapshot = beforeSnapshot;
         var attemptedCount = 0;
+        var dispatchGateReplanCount = 0;
         var attemptedSemanticKeys = new HashSet<string>(StringComparer.Ordinal);
         var activeObjectiveContinuation = objectiveContinuation is null
             ? null
@@ -53,6 +54,109 @@ static partial class Program
         for (var itemIndex = 0; itemIndex < queueItems.Length && attemptedCount < options.MaxQueueItemAttempts; itemIndex++)
         {
             var item = queueItems[itemIndex];
+            var dispatchReadiness = await ReadDispatchReadinessAsync(
+                http,
+                options,
+                item,
+                currentStateHash,
+                queueId);
+            if (dispatchReadiness is not null &&
+                dispatchReadiness["ready"]?.GetValue<bool>() != true)
+            {
+                var rejectedQueueId = queueId;
+                dispatchGateReplanCount++;
+                var dispatchSuffix = "-dispatch-" + dispatchGateReplanCount.ToString("D4");
+                var dispatchPath = Path.Combine(
+                    options.SnapshotDir,
+                    "dispatch-readiness-" + iteration.ToString("D4") +
+                    dispatchSuffix + ".json");
+                await File.WriteAllTextAsync(
+                    dispatchPath,
+                    dispatchReadiness.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+
+                var canReplan = options.UseDailyPlan &&
+                    string.IsNullOrWhiteSpace(options.ExecutorOptionId) &&
+                    dispatchGateReplanCount < options.MaxQueueItemAttempts;
+                if (!canReplan)
+                {
+                    finalExecution = DispatchRejectedExecution(
+                        item,
+                        dispatchReadiness,
+                        queueId,
+                        currentStateHash,
+                        "dispatch_guard_replan_unavailable_or_exhausted");
+                    stepResults.Add(JsonNode.Parse(finalExecution.ToJsonString(JsonOptions)));
+                    break;
+                }
+
+                var replan = await BuildQueueFromDailyPlanAsync(
+                    http,
+                    options,
+                    currentStateHash,
+                    activeObjectiveContinuation);
+                var replanPlanPath = Path.Combine(
+                    options.SnapshotDir,
+                    "replan-model-plan-" + iteration.ToString("D4") +
+                    dispatchSuffix + ".json");
+                var replanDailyPlanPath = Path.Combine(
+                    options.SnapshotDir,
+                    "replan-daily-plan-response-" + iteration.ToString("D4") +
+                    dispatchSuffix + ".json");
+                var replanQueuePath = Path.Combine(
+                    options.SnapshotDir,
+                    "replan-compiled-queue-" + iteration.ToString("D4") +
+                    dispatchSuffix + ".json");
+                var replanRankingPath = Path.Combine(
+                    options.SnapshotDir,
+                    "replan-ranking-response-" + iteration.ToString("D4") +
+                    dispatchSuffix + ".json");
+                await File.WriteAllTextAsync(
+                    replanPlanPath,
+                    replan.Plan.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+                await File.WriteAllTextAsync(
+                    replanDailyPlanPath,
+                    replan.Response.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+                await File.WriteAllTextAsync(
+                    replanQueuePath,
+                    replan.Queue.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+                await File.WriteAllTextAsync(
+                    replanRankingPath,
+                    replan.Ranking.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+
+                queue = replan.Queue;
+                queueId = ReadString(queue, "queue_id");
+                dispatchReadiness["replan_queue_id"] = queueId;
+                dispatchReadiness["replan_plan_path"] = replanPlanPath;
+                dispatchReadiness["replan_response_path"] = replanDailyPlanPath;
+                dispatchReadiness["replan_queue_path"] = replanQueuePath;
+                dispatchReadiness["replan_ranking_path"] = replanRankingPath;
+                await File.WriteAllTextAsync(
+                    dispatchPath,
+                    dispatchReadiness.ToJsonString(JsonOptions),
+                    Encoding.UTF8);
+                queueItems = QueueReplanFilter.FilterUnattempted(
+                    ExecutableQueueItems(queue),
+                    attemptedSemanticKeys);
+                if (queueItems.Length == 0)
+                {
+                    finalExecution = DispatchRejectedExecution(
+                        item,
+                        dispatchReadiness,
+                        rejectedQueueId,
+                        currentStateHash,
+                        "dispatch_guard_replan_has_no_executable_items");
+                    stepResults.Add(JsonNode.Parse(finalExecution.ToJsonString(JsonOptions)));
+                    break;
+                }
+                itemIndex = -1;
+                continue;
+            }
+
             var itemSemanticKey = QueueReplanFilter.SemanticQueueItemKey(item);
             var effectiveStateHash = currentStateHash;
             var executionRequest = BuildExecutionRequest(options, item, currentStateHash, queueId);
@@ -190,6 +294,7 @@ static partial class Program
         aggregate["planned_item_count"] = originalPlannedItemCount;
         aggregate["final_pending_item_count"] = queueItems.Length;
         aggregate["executed_item_count"] = attemptedCount;
+        aggregate["dispatch_gate_replan_count"] = dispatchGateReplanCount;
         aggregate["max_queue_item_attempts"] = options.MaxQueueItemAttempts;
         aggregate["step_results"] = stepResults;
         aggregate["after_snapshot_path"] = aggregateAfterPath;

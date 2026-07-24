@@ -1,3 +1,14 @@
+2026-07-24 material-ledger dispatch freshness gate
+
+- Release solution build PASS: 0 errors; only pre-existing warnings were emitted.
+- Core full regression PASS: 1168/1168.
+- Backend full regression PASS: 81/81.
+- Focused dispatch service PASS: 4/4.
+- Focused backend endpoint and runtime-chain guards PASS: 5/5.
+- A stale machine-crafting queue is rejected before any runtime request and triggers
+  bounded daily-plan recompilation against the current controller ledger.
+- No game process was started and no server deployment was changed.
+
 2026-07-24 persistent material reservation ledger
 
 - Release solution build PASS: 0 errors, 7 pre-existing warnings.
