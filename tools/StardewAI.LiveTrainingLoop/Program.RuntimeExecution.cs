@@ -1053,6 +1053,9 @@ static partial class Program
                     JsonOptions);
         }
 
+        ApplyStoragePlacementRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }

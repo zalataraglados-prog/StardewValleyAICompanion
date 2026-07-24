@@ -870,6 +870,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.place_storage")
+            {
+                pending.Completion.SetResult(
+                    ExecutePlaceStorage(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.read_book")
             {
                 pending.Completion.SetResult(ExecuteReadBook(pending.Request));

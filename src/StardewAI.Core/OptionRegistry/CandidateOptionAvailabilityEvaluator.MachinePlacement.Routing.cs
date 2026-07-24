@@ -31,7 +31,7 @@ namespace StardewAI.Core.OptionRegistry
             var qualifiedItemId = ReadString(row, "qualified_item_id");
             var stack = Math.Max(0, ReadInt(row, "stack"));
             var reservationGuard =
-                new MachinePlacementMaterialReservationGuard().Evaluate(
+                new InventoryPlacementMaterialReservationGuard().Evaluate(
                     commitmentLedger,
                     slotIndex,
                     qualifiedItemId);
@@ -65,7 +65,7 @@ namespace StardewAI.Core.OptionRegistry
             string itemId,
             string qualifiedItemId,
             int stack,
-            MachinePlacementMaterialReservationGuardResult reservationGuard)
+            InventoryPlacementMaterialReservationGuardResult reservationGuard)
         {
             var targetLocationId = ReadString(location, "location_id");
             var routePlan = FindResolvedRoutePlan(

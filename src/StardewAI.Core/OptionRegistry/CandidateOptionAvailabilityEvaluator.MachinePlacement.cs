@@ -68,7 +68,7 @@ namespace StardewAI.Core.OptionRegistry
                 ? SelectMachinePlacementTile(snapshot, location.Value, currentLocationId)
                 : null;
             var reservationGuard =
-                new MachinePlacementMaterialReservationGuard().Evaluate(
+                new InventoryPlacementMaterialReservationGuard().Evaluate(
                     commitmentLedger,
                     slotIndex,
                     qualifiedItemId);
