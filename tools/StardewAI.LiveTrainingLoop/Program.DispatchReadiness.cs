@@ -10,9 +10,14 @@ static partial class Program
         string stateHash,
         string queueId)
     {
+        var optionId = ReadStringOrEmpty(item, "option_id");
         if (!string.Equals(
-                ReadStringOrEmpty(item, "option_id"),
+                optionId,
                 "executor.craft_machine_item",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
+                "executor.place_machine",
                 StringComparison.Ordinal))
         {
             return null;

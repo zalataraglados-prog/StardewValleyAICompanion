@@ -20,6 +20,7 @@ namespace StardewAI.Core.OptionRegistry
         {
             return MachineServiceCandidates(snapshot)
                 .Concat(MachineCraftingCandidates(snapshot, commitmentLedger))
+                .Concat(MachinePlacementCandidates(snapshot, commitmentLedger))
                 .OrderBy(candidate => candidate.Kind, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
