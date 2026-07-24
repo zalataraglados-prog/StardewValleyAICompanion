@@ -61,6 +61,37 @@ public static class QueueReplanFilter
         }
 
         var machineLocation = ReadParameter(queueItem, "continuation.machine_location_id");
+        var machinePlacementSlot = ReadParameter(
+            queueItem,
+            "continuation.machine_inventory_slot_index");
+        var machinePlacementQualifiedItemId = ReadParameter(
+            queueItem,
+            "continuation.machine_qualified_item_id");
+        if (string.Equals(
+                optionId,
+                "executor.place_machine",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(machineLocation) &&
+            !string.IsNullOrWhiteSpace(machinePlacementSlot) &&
+            !string.IsNullOrWhiteSpace(
+                machinePlacementQualifiedItemId))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "machine_placement",
+                ["option_id"] = "farm.process_machines",
+                ["execution_option_id"] = optionId,
+                ["machine_location_id"] = machineLocation,
+                ["machine_inventory_slot_index"] =
+                    machinePlacementSlot,
+                ["machine_qualified_item_id"] =
+                    machinePlacementQualifiedItemId,
+                ["machine_item_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.machine_item_id")
+            };
+        }
+
         var machineTileX = ReadParameter(queueItem, "continuation.machine_tile_x");
         var machineTileY = ReadParameter(queueItem, "continuation.machine_tile_y");
         if (string.IsNullOrWhiteSpace(optionId) || string.IsNullOrWhiteSpace(machineLocation) ||
@@ -115,6 +146,38 @@ public static class QueueReplanFilter
         }
 
         var continuationKind = ReadString(continuation, "kind");
+        if (string.Equals(
+                continuationKind,
+                "machine_placement",
+                StringComparison.Ordinal))
+        {
+            return string.Equals(
+                    optionId,
+                    "executor.place_machine",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "location_id"),
+                    ReadString(
+                        continuation,
+                        "machine_location_id"),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    ReadParameter(
+                        queueItem,
+                        "inventory_slot_index"),
+                    ReadString(
+                        continuation,
+                        "machine_inventory_slot_index"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        queueItem,
+                        "qualified_item_id"),
+                    ReadString(
+                        continuation,
+                        "machine_qualified_item_id"),
+                    StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "machine", StringComparison.Ordinal))
         {
             return string.Equals(optionId, ReadString(continuation, "execution_option_id"), StringComparison.Ordinal) &&
@@ -237,6 +300,15 @@ public static class QueueReplanFilter
         {
             return MatchesMachineContinuation(candidate, continuation);
         }
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "machine_placement",
+                StringComparison.Ordinal))
+        {
+            return MatchesMachinePlacementContinuation(
+                candidate,
+                continuation);
+        }
         if (string.Equals(ReadString(continuation, "kind"), "quest", StringComparison.Ordinal))
         {
             return string.Equals(
@@ -289,6 +361,60 @@ public static class QueueReplanFilter
             string.Equals(candidateLocation, expectedLocation, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(candidateX, expectedX, StringComparison.Ordinal) &&
             string.Equals(candidateY, expectedY, StringComparison.Ordinal);
+    }
+
+    private static bool MatchesMachinePlacementContinuation(
+        JsonObject candidate,
+        JsonObject continuation)
+    {
+        var kind = ReadString(candidate, "kind");
+        var location = ReadString(candidate, "location_id");
+        var slot = candidate["slot_index"]?.ToString() ??
+            string.Empty;
+        var qualifiedItemId = ReadString(
+            candidate,
+            "qualified_item_id");
+        if (string.Equals(
+                kind,
+                "route_connector_tile",
+                StringComparison.Ordinal))
+        {
+            location = ReadCandidateParameter(
+                candidate,
+                "continuation.machine_location_id");
+            slot = ReadCandidateParameter(
+                candidate,
+                "continuation.machine_inventory_slot_index");
+            qualifiedItemId = ReadCandidateParameter(
+                candidate,
+                "continuation.machine_qualified_item_id");
+        }
+        else if (!string.Equals(
+                     kind,
+                     "place_machine_item",
+                     StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return string.Equals(
+                location,
+                ReadString(
+                    continuation,
+                    "machine_location_id"),
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                slot,
+                ReadString(
+                    continuation,
+                    "machine_inventory_slot_index"),
+                StringComparison.Ordinal) &&
+            string.Equals(
+                qualifiedItemId,
+                ReadString(
+                    continuation,
+                    "machine_qualified_item_id"),
+                StringComparison.Ordinal);
     }
 
     private static bool OptionalIdentityMatches(JsonObject candidate, JsonObject continuation, string directName, string continuationName)
