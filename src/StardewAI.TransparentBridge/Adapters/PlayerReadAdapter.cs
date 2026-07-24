@@ -83,6 +83,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["multiplayer_runtime"] = Field(ReadMultiplayerRuntime(player), "Context.IsMultiplayer/IsMainPlayer; Game1.IsServer/displayFarmer/getAllFarmers/getOnlineFarmers; Farmer hidden/ignoreCollisions/location/position", tick),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
             ["machine_placement"] = Field(ReadMachinePlacementContext(player), "Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Utility.isPlacementForbiddenHere; Object.canBePlacedHere with static and current collision masks; Object.placementAction runtime recheck contract", tick),
+            ["storage_placement"] = Field(ReadStoragePlacementContext(player), "Game1.player.Items as Chest; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Utility.isPlacementForbiddenHere; Chest.canBePlacedHere with transient actors excluded", tick),
             ["safe_item_context"] = Field(ReadSafeItemContext(player), "Game1.player.CurrentToolIndex and Game1.player.Items toolbar safe slot scan", tick),
             ["inventory_capacity"] = Field(ReadInventoryCapacity(player), "Game1.player.Items and maxItems", tick),
             ["active_menu"] = Field(Game1.activeClickableMenu?.GetType().FullName ?? "none", "Game1.activeClickableMenu", tick)
