@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Strategy;
@@ -283,6 +284,101 @@ namespace StardewAI.Backend.Tests
                 readJson.RootElement.GetProperty("material_reservations").EnumerateArray());
             Assert.Equal("cancelled", reservation.GetProperty("status").GetString());
             Assert.Equal("goal_replanned", reservation.GetProperty("cancel_reason").GetString());
+        }
+
+        [Fact]
+        public async Task DispatchReadinessRejectsQueueAfterMaterialLedgerChanges()
+        {
+            var repository = new InMemoryStrategyCommitmentRepository();
+            using var isolatedFactory = factory.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<IStrategyCommitmentRepository>();
+                    services.AddSingleton<IStrategyCommitmentRepository>(repository);
+                }));
+            using var client = isolatedFactory.CreateClient();
+            var snapshotResponse = await client.PostAsync(
+                "/api/v1/snapshots",
+                SampleSnapshotContent(includeMaterialGraph: true));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(
+                await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString()!;
+
+            var create = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/materials/upsert",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 0,
+                    reservation_id = "keg-wood",
+                    source_decision_id = "strategy.keg",
+                    goal_id = "goal.keg",
+                    node_id = "player:123",
+                    slot_index = 1,
+                    qualified_item_id = "(O)388",
+                    quantity = 20,
+                    purpose = "reserve wood for keg"
+                });
+            Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+            const string queueId = "dispatch-readiness-test";
+            const string queueItemId = "dispatch-readiness-item";
+            var item = new ActionQueueItem
+            {
+                QueueItemId = queueItemId,
+                OptionId = "executor.craft_machine_item",
+                Status = "pending",
+                NormalizedCommand = new NormalizedCommand
+                {
+                    Parameters = new[]
+                    {
+                        Parameter("material_reservation_guard_status", "ready"),
+                        Parameter("material_reservation_ledger_id", "test-ledger"),
+                        Parameter("material_reservation_ledger_revision", "1"),
+                        Parameter("material_reservation_ids_json", "[\"keg-wood\"]"),
+                        Parameter("commitment_ledger_id", "test-ledger"),
+                        Parameter("commitment_ledger_revision", "1")
+                    }
+                }
+            };
+            isolatedFactory.Services.GetRequiredService<StateStore>().ActionQueues[queueId] =
+                new ActionQueueEnvelope
+                {
+                    QueueId = queueId,
+                    StateHash = stateHash,
+                    Items = new[] { item }
+                };
+
+            var readinessUrl =
+                "/api/v1/action-queues/" + queueId + "/items/" + queueItemId +
+                "/dispatch-readiness?stateHash=" + stateHash;
+            var ready = await client.GetAsync(readinessUrl);
+            Assert.Equal(HttpStatusCode.OK, ready.StatusCode);
+            using (var readyJson = JsonDocument.Parse(
+                       await ready.Content.ReadAsStringAsync()))
+            {
+                Assert.True(readyJson.RootElement.GetProperty("ready").GetBoolean());
+            }
+
+            var cancel = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/materials/keg-wood/cancel",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 1,
+                    reason = "goal_replanned"
+                });
+            Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+            var blocked = await client.GetAsync(readinessUrl);
+            Assert.Equal(HttpStatusCode.OK, blocked.StatusCode);
+            using var blockedJson = JsonDocument.Parse(
+                await blocked.Content.ReadAsStringAsync());
+            Assert.False(blockedJson.RootElement.GetProperty("ready").GetBoolean());
+            Assert.Contains(
+                blockedJson.RootElement.GetProperty("blocking_reasons").EnumerateArray(),
+                row => row.GetString() == "dispatch_strategy_ledger_revision_drifted");
         }
 
         [Fact]
@@ -1176,6 +1272,12 @@ namespace StardewAI.Backend.Tests
             }
             """;
         }
+
+        private static SmallModelActionParameter Parameter(string name, string value) => new()
+        {
+            Name = name,
+            Value = value
+        };
 
         private sealed class InMemoryStrategyCommitmentRepository : IStrategyCommitmentRepository
         {
