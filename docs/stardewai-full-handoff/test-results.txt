@@ -3057,3 +3057,19 @@ Result: PASS; StardewAI.Core.Tests 957, StardewAI.Backend.Tests 49.
 
 Command: PowerShell parser over `scripts\Invoke-RuntimeMiningSnapshotSmoke.ps1`
 Result: PASS.
+
+2026-07-24 native machine placement and remote location continuation
+
+Runtime: `artifacts\runtime-machine-placement-smoke\runtime-machine-placement-smoke-20260724-164517\summary.json`
+Result: PASS; the isolated hidden runtime loaded a Keg `(BC)12` into inventory, transparent placement evidence approved Farm tile `60,15`, native `Utility.tryToPlaceItem` placed the exact machine, inventory changed `1 -> 0`, and the refreshed state hash changed.
+
+Commands:
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj -c Release`
+- `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj -c Release`
+- `dotnet build StardewValleyAICompanion.sln -c Release --no-restore --nologo`
+Result: PASS; Core 1176/1176, Backend 81/81, Release build 0 errors.
+
+Remote placement contract:
+- A remote legal location emits one transparent connector and retains inventory slot, machine identity, and target location.
+- Every connector requires a fresh snapshot; exact tile and adjacent stand are selected only after the target map is loaded.
+- Focused placement and continuation regression: 21/21 PASS.

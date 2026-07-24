@@ -171,6 +171,13 @@ public sealed partial class ModEntry : Mod
             config.SlotName = slotName;
         }
 
+        var autoLoad = Environment.GetEnvironmentVariable(
+            "STARDEWAI_TEST_AUTO_LOAD");
+        if (bool.TryParse(autoLoad, out var autoLoadEnabled))
+        {
+            config.AutoLoad = autoLoadEnabled;
+        }
+
         var executorTimeout = Environment.GetEnvironmentVariable("STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS");
         if (int.TryParse(executorTimeout, out var timeoutSeconds))
         {
@@ -631,6 +638,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_machine_input_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineInputTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_machine_placement_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupMachinePlacementTarget(pending.Request));
                 return;
             }
 

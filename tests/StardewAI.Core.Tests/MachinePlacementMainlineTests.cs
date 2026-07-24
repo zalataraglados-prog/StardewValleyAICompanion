@@ -69,6 +69,47 @@ public sealed class MachinePlacementMainlineTests
     }
 
     [Fact]
+    public void RemotePlacementEmitsOneConnectorWithPlacementContinuation()
+    {
+        var snapshot = Snapshot(includeRemoteLocation: true);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true,
+                Ledger(revision: 3));
+        var candidate = Assert.Single(
+            availability.Options[0].EventCandidates.Where(
+                row => row.CandidateId.StartsWith(
+                    "machine-place-route:Cellar:",
+                    StringComparison.Ordinal)));
+
+        Assert.True(
+            candidate.Available,
+            string.Join(";", candidate.BlockReasons));
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Equal(
+            "executor.place_machine",
+            Parameter(
+                candidate.Parameters,
+                "continuation.option_id"));
+        Assert.Equal(
+            "Cellar",
+            Parameter(
+                candidate.Parameters,
+                "continuation.machine_location_id"));
+        Assert.Equal(
+            "4",
+            Parameter(
+                candidate.Parameters,
+                "continuation.machine_inventory_slot_index"));
+        Assert.Contains(
+            "exact_tile_selected_after_target_map_load=true",
+            candidate.ExpectedEffect,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void CompilerRejectsExactTileProjectionDrift()
     {
         var initial = Snapshot();
@@ -259,14 +300,35 @@ public sealed class MachinePlacementMainlineTests
 
     private static SnapshotEnvelope Snapshot(
         int rangeStartX = 7,
-        int rangeEndX = 8)
+        int rangeEndX = 8,
+        bool includeRemoteLocation = false)
     {
+        var remotePlacementLocation = includeRemoteLocation
+            ? """
+                ,{
+                  "location_id":"Cellar",
+                  "location_is_current":false,
+                  "machine_operational_context_valid":true,
+                  "placement_probe_status":"native_legal_tiles_available",
+                  "static_legal_tile_count":2,
+                  "static_legal_tile_ranges":[{"y":6,"start_x":5,"end_x":6}]
+                }
+              """
+            : string.Empty;
+        var remoteRouting = includeRemoteLocation
+            ? """
+            ,
+            "route_graph":{"value":{"edges":[{"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Cellar","target_x":5,"target_y":5,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors":{"value":{"location_id":"FarmHouse","connector_count":1,"connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"Cellar","target_x":5,"target_y":5,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            """
+            : string.Empty;
         var stateJson = """
         {
           "player": {
             "location_id":{"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x":{"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_y":{"value":5,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy":{"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory":{"value":[{"slot_index":4,"item_id":"12","qualified_item_id":"(BC)12","stack":1,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory_capacity":{"value":{"occupied_stacks":1,"empty_slots":11,"has_empty_slot":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "machine_placement":{"value":{
@@ -287,15 +349,20 @@ public sealed class MachinePlacementMainlineTests
                   "placement_probe_status":"native_legal_tiles_available",
                   "static_legal_tile_count":LEGAL_COUNT,
                   "static_legal_tile_ranges":[{"y":5,"start_x":START_X,"end_x":END_X}]
-                }]
+                }REMOTE_PLACEMENT_LOCATION]
               }]
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
             "machines":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
+          "current_location": {
+            "map":{"value":{"width":20,"height":20},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "warps":{"value":[{"x":2,"y":3,"target_location":"Cellar","target_x":5,"target_y":5}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "locations": {
-            "collision_grid":{"value":{"width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "collision_grid":{"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}REMOTE_ROUTING
           },
           "menus": {
             "active_menu":{"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -312,7 +379,11 @@ public sealed class MachinePlacementMainlineTests
             Math.Max(0, rangeEndX - rangeStartX + 1).ToString())
         .Replace(
             "FINGERPRINT",
-            "machine-placement:" + rangeStartX + "-" + rangeEndX);
+            "machine-placement:" + rangeStartX + "-" + rangeEndX)
+        .Replace(
+            "REMOTE_PLACEMENT_LOCATION",
+            remotePlacementLocation)
+        .Replace("REMOTE_ROUTING", remoteRouting);
         var state = JsonSerializer.Deserialize<
             Dictionary<string, JsonElement>>(
                 stateJson,

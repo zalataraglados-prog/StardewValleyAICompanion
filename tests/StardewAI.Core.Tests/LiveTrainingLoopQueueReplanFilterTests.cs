@@ -164,6 +164,69 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void MachinePlacementContinuationSelectsTargetMapThenCompletesNativePlacement()
+    {
+        var route = QueueItem(
+            "queue.machine.place.route",
+            "executor.traverse_connector",
+            "2",
+            "3",
+            string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter(
+                "continuation.option_id",
+                "executor.place_machine"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter(
+                "continuation.machine_location_id",
+                "Cellar"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter(
+                "continuation.machine_inventory_slot_index",
+                "4"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter(
+                "continuation.machine_qualified_item_id",
+                "(BC)12"));
+        var continuation =
+            QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal(
+            "machine_placement",
+            continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            MachinePlacementCandidate("FarmHouse", 4, "(BC)12"),
+            MachinePlacementCandidate("Cellar", 5, "(BC)12"),
+            MachinePlacementCandidate("Cellar", 4, "(BC)12")
+        };
+        var selected = Assert.Single(
+            QueueReplanFilter.FilterRankedCandidates(
+                candidates,
+                continuation));
+        Assert.Equal(
+            4,
+            selected!["slot_index"]!.GetValue<int>());
+
+        var place = QueueItem(
+            "queue.machine.place",
+            "executor.place_machine",
+            "5",
+            "6",
+            "(BC)12");
+        place["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("location_id", "Cellar"));
+        place["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("inventory_slot_index", "4"));
+        Assert.True(
+            QueueReplanFilter.CompletesObjectiveContinuation(
+                place,
+                continuation,
+                "applied"));
+    }
+
+    [Fact]
     public void QuestContinuationKeepsExactQuestAcrossNpcRouteUntilNativeTerminal()
     {
         var route = QueueItem("queue.quest.route", "executor.traverse_connector", "4", "8", string.Empty);
@@ -243,6 +306,22 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["location_id"] = locationId,
             ["tile_x"] = tileX,
             ["tile_y"] = tileY,
+            ["parameters"] = new JsonArray()
+        };
+    }
+
+    private static JsonObject MachinePlacementCandidate(
+        string locationId,
+        int slotIndex,
+        string qualifiedItemId)
+    {
+        return new JsonObject
+        {
+            ["option_id"] = "farm.process_machines",
+            ["kind"] = "place_machine_item",
+            ["location_id"] = locationId,
+            ["slot_index"] = slotIndex,
+            ["qualified_item_id"] = qualifiedItemId,
             ["parameters"] = new JsonArray()
         };
     }
