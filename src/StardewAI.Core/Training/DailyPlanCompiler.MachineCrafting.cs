@@ -53,6 +53,10 @@ namespace StardewAI.Core.Training
                 "commitment_ledger_id",
                 "commitment_ledger_revision",
                 "commitment_ids_json",
+                "material_reservation_guard_status",
+                "material_reservation_ledger_id",
+                "material_reservation_ledger_revision",
+                "material_reservation_ids_json",
                 "collection_path_required",
                 "collection_path_source"
             })

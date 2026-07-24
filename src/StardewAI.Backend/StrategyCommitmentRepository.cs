@@ -13,6 +13,15 @@ public interface IStrategyCommitmentRepository
     StrategyCommitmentMutationResult Upsert(SnapshotEnvelope snapshot, CropPlantingCommitmentUpsertRequest request);
 
     StrategyCommitmentMutationResult Cancel(SnapshotEnvelope snapshot, string commitmentId, StrategyCommitmentCancelRequest request);
+
+    StrategyCommitmentMutationResult UpsertMaterial(
+        SnapshotEnvelope snapshot,
+        MaterialReservationUpsertRequest request);
+
+    StrategyCommitmentMutationResult CancelMaterial(
+        SnapshotEnvelope snapshot,
+        string reservationId,
+        StrategyCommitmentCancelRequest request);
 }
 
 public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentRepository
@@ -27,6 +36,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
     private readonly object sync = new();
     private readonly string root;
     private readonly CropCommitmentLedgerService service = new();
+    private readonly MaterialReservationLedgerService materialService = new();
     private readonly Dictionary<string, StrategyCommitmentLedger> cache = new(StringComparer.Ordinal);
 
     public FileStrategyCommitmentRepository()
@@ -84,6 +94,50 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         }
     }
 
+    public StrategyCommitmentMutationResult UpsertMaterial(
+        SnapshotEnvelope snapshot,
+        MaterialReservationUpsertRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = materialService.Upsert(
+                current,
+                snapshot,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+            {
+                Save(key, result.Ledger);
+            }
+            return result;
+        }
+    }
+
+    public StrategyCommitmentMutationResult CancelMaterial(
+        SnapshotEnvelope snapshot,
+        string reservationId,
+        StrategyCommitmentCancelRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = materialService.Cancel(
+                current,
+                snapshot,
+                reservationId,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+            {
+                Save(key, result.Ledger);
+            }
+            return result;
+        }
+    }
+
     private StrategyCommitmentLedger Load(string key, SnapshotEnvelope snapshot)
     {
         if (cache.TryGetValue(key, out var cached))
@@ -111,6 +165,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
             {
                 commitment.HarvestContextTags ??= Array.Empty<string>();
             }
+            ledger.MaterialReservations ??= Array.Empty<MaterialReservation>();
             ledger.History ??= Array.Empty<StrategyCommitmentHistoryEntry>();
         }
         else

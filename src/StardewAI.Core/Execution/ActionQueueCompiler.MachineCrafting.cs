@@ -81,6 +81,11 @@ namespace StardewAI.Core.Execution
                 ? ReadString(source.Value, "craft_candidate_status")
                 : ReadString(row.Value, "craft_candidate_status");
             var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row.Value, commitmentLedger);
+            var reservationGuard = new MachineCraftingMaterialReservationGuard().Evaluate(
+                snapshot,
+                ingredientRows,
+                usesWorkbench,
+                commitmentLedger);
             if (!string.Equals(actualReadyStatus, expectedReadyStatus, StringComparison.Ordinal) ||
                 ReadBool(source.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
@@ -162,6 +167,27 @@ namespace StardewAI.Core.Execution
                 !string.Equals(ReadParameter(action, "collection_path_source"), demand.CollectionPathSource, StringComparison.Ordinal))
             {
                 reasons.Add("craft_machine_item_demand_projection_drifted");
+            }
+            if (!reservationGuard.Ready)
+            {
+                reasons.AddRange(reservationGuard.BlockingReasons);
+            }
+            if (!string.Equals(
+                    ReadParameter(action, "material_reservation_guard_status"),
+                    reservationGuard.Status,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "material_reservation_ledger_id"),
+                    reservationGuard.LedgerId,
+                    StringComparison.Ordinal) ||
+                ReadIntParameter(action, "material_reservation_ledger_revision") !=
+                    reservationGuard.LedgerRevision ||
+                !string.Equals(
+                    ReadParameter(action, "material_reservation_ids_json"),
+                    JsonSerializer.Serialize(reservationGuard.ReservationIds),
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("craft_machine_item_material_reservation_projection_drifted");
             }
 
             return reasons.ToArray();

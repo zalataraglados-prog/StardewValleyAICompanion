@@ -1,3 +1,12 @@
+2026-07-24 persistent material reservation ledger
+
+- Release solution build PASS: 0 errors, 7 pre-existing warnings.
+- Core full regression PASS: 1164/1164.
+- Backend full regression PASS: 79/79.
+- Focused strategy/material/machine regression PASS: 34/34.
+- Focused strategy endpoint regression PASS: 2/2.
+- No game process was started and no server deployment was changed.
+
 2026-07-14 fishing runtime regression status
 
 - Core full regression PASS: 399/399.

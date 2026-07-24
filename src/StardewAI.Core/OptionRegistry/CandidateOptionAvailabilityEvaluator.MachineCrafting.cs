@@ -96,6 +96,11 @@ namespace StardewAI.Core.OptionRegistry
                     ? nodeIds.GetRawText()
                     : "[]";
             var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row, commitmentLedger);
+            var reservationGuard = new MachineCraftingMaterialReservationGuard().Evaluate(
+                snapshot,
+                ingredientRows,
+                usesWorkbench,
+                commitmentLedger);
             var blockReasons = new List<string>();
             if (!string.Equals(candidateStatus, readyStatus, StringComparison.Ordinal))
             {
@@ -133,6 +138,10 @@ namespace StardewAI.Core.OptionRegistry
                         ? "machine_build_deferred_too_early"
                         : "machine_recipe_has_no_proven_task_production_or_collection_requirement");
             }
+            if (!reservationGuard.Ready)
+            {
+                blockReasons.AddRange(reservationGuard.BlockingReasons);
+            }
 
             return new EventCandidate
             {
@@ -155,6 +164,8 @@ namespace StardewAI.Core.OptionRegistry
                     ";machine_demand_priority=" + demand.Priority +
                     ";next_arrival_source=" + demand.NextArrivalSource +
                     ";commitment_ledger_revision=" + demand.CommitmentLedgerRevision +
+                    ";material_reservation_guard_status=" + reservationGuard.Status +
+                    ";material_reservation_ledger_revision=" + reservationGuard.LedgerRevision +
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
                     ";collection_path_required=" + demand.CollectionPathRequired.ToString().ToLowerInvariant() +
@@ -215,6 +226,10 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("commitment_ledger_id", demand.CommitmentLedgerId),
                     Parameter("commitment_ledger_revision", demand.CommitmentLedgerRevision.ToString()),
                     Parameter("commitment_ids_json", JsonSerializer.Serialize(demand.CommitmentIds)),
+                    Parameter("material_reservation_guard_status", reservationGuard.Status),
+                    Parameter("material_reservation_ledger_id", reservationGuard.LedgerId),
+                    Parameter("material_reservation_ledger_revision", reservationGuard.LedgerRevision.ToString()),
+                    Parameter("material_reservation_ids_json", JsonSerializer.Serialize(reservationGuard.ReservationIds)),
                     Parameter("collection_path_required", demand.CollectionPathRequired.ToString().ToLowerInvariant()),
                     Parameter("collection_path_source", demand.CollectionPathSource)
                 }
