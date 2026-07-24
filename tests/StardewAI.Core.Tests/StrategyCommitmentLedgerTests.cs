@@ -79,6 +79,116 @@ public sealed class StrategyCommitmentLedgerTests
         Assert.Contains("crop_not_plantable_in_committed_season", result.Errors);
     }
 
+    [Fact]
+    public void MaterialReservationUsesExactAuthorizedSlotAndPreservesCropCommitments()
+    {
+        var snapshot = Snapshot(103, 1, "winter", 20);
+        var cropService = new CropCommitmentLedgerService();
+        var materialService = new MaterialReservationLedgerService();
+        var cropLedger = cropService.Upsert(
+            null,
+            snapshot,
+            Request(snapshot, 0, 100),
+            "2026-07-19T00:00:00Z").Ledger!;
+        var created = materialService.Upsert(
+            cropLedger,
+            snapshot,
+            MaterialRequest(snapshot, cropLedger.Revision, "build-keg", 20),
+            "2026-07-19T00:01:00Z");
+
+        Assert.True(created.Accepted, string.Join(";", created.Errors));
+        Assert.Single(created.Ledger!.CropPlantingCommitments);
+        var reservation = Assert.Single(created.Ledger.MaterialReservations);
+        Assert.Equal(StrategyCommitmentStatuses.Active, reservation.Status);
+        Assert.Equal(123, reservation.OwnerPlayerId);
+        Assert.Equal("goal.machine.keg", reservation.GoalId);
+        Assert.Equal(2, created.Ledger.Revision);
+
+        var revisedCrop = cropService.Upsert(
+            created.Ledger,
+            snapshot,
+            Request(snapshot, 2, 120),
+            "2026-07-19T00:02:00Z");
+        Assert.True(revisedCrop.Accepted, string.Join(";", revisedCrop.Errors));
+        Assert.Single(revisedCrop.Ledger!.MaterialReservations);
+    }
+
+    [Fact]
+    public void MaterialReservationRejectsOverbookingAndCancellationReleasesSupply()
+    {
+        var snapshot = Snapshot(103, 1, "winter", 20);
+        var service = new MaterialReservationLedgerService();
+        var first = service.Upsert(
+            null,
+            snapshot,
+            MaterialRequest(snapshot, 0, "first", 20),
+            "2026-07-19T00:00:00Z");
+        Assert.True(first.Accepted, string.Join(";", first.Errors));
+
+        var overbooked = service.Upsert(
+            first.Ledger,
+            snapshot,
+            MaterialRequest(snapshot, 1, "second", 11),
+            "2026-07-19T00:01:00Z");
+        Assert.False(overbooked.Accepted);
+        Assert.Contains(
+            "material_reservation_insufficient_unreserved_quantity",
+            overbooked.Errors);
+
+        var cancelled = service.Cancel(
+            first.Ledger,
+            snapshot,
+            "first",
+            new StrategyCommitmentCancelRequest
+            {
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = 1,
+                Reason = "goal_replanned"
+            },
+            "2026-07-19T00:02:00Z");
+        Assert.True(cancelled.Accepted, string.Join(";", cancelled.Errors));
+
+        var replacement = service.Upsert(
+            cancelled.Ledger,
+            snapshot,
+            MaterialRequest(snapshot, 2, "second", 30),
+            "2026-07-19T00:03:00Z");
+        Assert.True(replacement.Accepted, string.Join(";", replacement.Errors));
+        Assert.Equal(
+            StrategyCommitmentStatuses.Cancelled,
+            replacement.Ledger!.MaterialReservations.Single(row => row.ReservationId == "first").Status);
+    }
+
+    [Fact]
+    public void MaterialReservationRejectsUnauthorizedNodeAndStaleLedgerRevision()
+    {
+        var snapshot = Snapshot(103, 1, "winter", 20);
+        var service = new MaterialReservationLedgerService();
+        var unauthorized = MaterialRequest(snapshot, 0, "shared", 1);
+        unauthorized.NodeId = "global:JunimoChests";
+
+        var rejected = service.Upsert(
+            null,
+            snapshot,
+            unauthorized,
+            "2026-07-19T00:00:00Z");
+        Assert.False(rejected.Accepted);
+        Assert.Contains("material_reservation_node_not_actor_authorized", rejected.Errors);
+
+        var first = service.Upsert(
+            null,
+            snapshot,
+            MaterialRequest(snapshot, 0, "first", 1),
+            "2026-07-19T00:01:00Z");
+        var stale = service.Upsert(
+            first.Ledger,
+            snapshot,
+            MaterialRequest(snapshot, 0, "second", 1),
+            "2026-07-19T00:02:00Z");
+        Assert.False(stale.Accepted);
+        Assert.Contains("ledger_revision_conflict", stale.Errors);
+    }
+
     private static CropPlantingCommitmentUpsertRequest Request(SnapshotEnvelope snapshot, int revision, int tileCount) => new()
     {
         StateHash = snapshot.StateHash,
@@ -92,6 +202,24 @@ public sealed class StrategyCommitmentLedgerTests
         PlantingDayOfMonth = 1,
         LocationContext = "outdoor_seasonal"
     };
+
+    private static MaterialReservationUpsertRequest MaterialRequest(
+        SnapshotEnvelope snapshot,
+        int revision,
+        string reservationId,
+        int quantity) => new()
+        {
+            StateHash = snapshot.StateHash,
+            ExpectedLedgerRevision = revision,
+            ReservationId = reservationId,
+            SourceDecisionId = "strategy.machine.keg.v1",
+            GoalId = "goal.machine.keg",
+            NodeId = "player:123",
+            SlotIndex = 0,
+            QualifiedItemId = "(O)388",
+            Quantity = quantity,
+            Purpose = "reserve wood for keg"
+        };
 
     private static SnapshotEnvelope Snapshot(int totalDays, int year, string season, int day)
     {
@@ -111,7 +239,24 @@ public sealed class StrategyCommitmentLedgerTests
             "crop_catalog": {"value":[{
               "seed_id":"745","seasons":["spring"],"grow_days":8,"regrow_days":4,
               "harvest_item_id":"400","harvest_item_qualified_id":"(O)400","harvest_context_tags":["category_fruits","item_strawberry"],"harvest_min_stack":1
-            }],"status":"available"}
+            }],"status":"available"},
+            "material_inventory_graph": {"value":{
+              "schema_version":"material_inventory_graph.v1",
+              "status":"available",
+              "player_id":123,
+              "inventory_nodes":[
+                {
+                  "node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available",
+                  "owner_player_id":123,"ownership_class":"actor_owned","actor_use_authorized":true,
+                  "slots":[{"slot_index":0,"item_id":"388","qualified_item_id":"(O)388","stack":30}]
+                },
+                {
+                  "node_id":"global:JunimoChests","inventory_kind":"global_chest_inventory","supply_state":"available",
+                  "owner_player_id":0,"ownership_class":"shared_team_global","actor_use_authorized":false,
+                  "slots":[{"slot_index":0,"item_id":"388","qualified_item_id":"(O)388","stack":30}]
+                }
+              ]
+            },"status":"available"}
           }
         }
         """)!;

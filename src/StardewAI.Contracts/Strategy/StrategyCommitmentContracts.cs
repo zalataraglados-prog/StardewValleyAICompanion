@@ -36,6 +36,9 @@ namespace StardewAI.Contracts.Strategy
         [JsonPropertyName("crop_planting_commitments")]
         public CropPlantingCommitment[] CropPlantingCommitments { get; set; } = Array.Empty<CropPlantingCommitment>();
 
+        [JsonPropertyName("material_reservations")]
+        public MaterialReservation[] MaterialReservations { get; set; } = Array.Empty<MaterialReservation>();
+
         [JsonPropertyName("history")]
         public StrategyCommitmentHistoryEntry[] History { get; set; } = Array.Empty<StrategyCommitmentHistoryEntry>();
     }

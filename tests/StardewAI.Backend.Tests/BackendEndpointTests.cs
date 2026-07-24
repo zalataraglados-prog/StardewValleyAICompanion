@@ -216,6 +216,76 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task MaterialReservationEndpointsPersistExactSlotAndEnforceRevision()
+        {
+            var repository = new InMemoryStrategyCommitmentRepository();
+            using var isolatedFactory = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IStrategyCommitmentRepository>();
+                services.AddSingleton<IStrategyCommitmentRepository>(repository);
+            }));
+            using var client = isolatedFactory.CreateClient();
+            var snapshotResponse = await client.PostAsync(
+                "/api/v1/snapshots",
+                SampleSnapshotContent(includeMaterialGraph: true));
+            Assert.Equal(HttpStatusCode.OK, snapshotResponse.StatusCode);
+            using var snapshotJson = JsonDocument.Parse(await snapshotResponse.Content.ReadAsStringAsync());
+            var stateHash = snapshotJson.RootElement.GetProperty("state_hash").GetString();
+
+            var create = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/materials/upsert",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 0,
+                    reservation_id = "keg-wood",
+                    source_decision_id = "strategy.keg",
+                    goal_id = "goal.keg",
+                    node_id = "player:123",
+                    slot_index = 1,
+                    qualified_item_id = "(O)388",
+                    quantity = 20,
+                    purpose = "reserve wood for keg"
+                });
+            Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+            var stale = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/materials/upsert",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 0,
+                    reservation_id = "keg-wood",
+                    source_decision_id = "strategy.keg.stale",
+                    goal_id = "goal.keg",
+                    node_id = "player:123",
+                    slot_index = 1,
+                    qualified_item_id = "(O)388",
+                    quantity = 10,
+                    purpose = "stale update"
+                });
+            Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+
+            var cancel = await client.PostAsJsonAsync(
+                "/api/v1/strategy/commitments/materials/keg-wood/cancel",
+                new
+                {
+                    state_hash = stateHash,
+                    expected_ledger_revision = 1,
+                    reason = "goal_replanned"
+                });
+            Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+            var read = await client.GetAsync(
+                "/api/v1/strategy/commitments/latest?stateHash=" + stateHash);
+            using var readJson = JsonDocument.Parse(await read.Content.ReadAsStringAsync());
+            var reservation = Assert.Single(
+                readJson.RootElement.GetProperty("material_reservations").EnumerateArray());
+            Assert.Equal("cancelled", reservation.GetProperty("status").GetString());
+            Assert.Equal("goal_replanned", reservation.GetProperty("cancel_reason").GetString());
+        }
+
+        [Fact]
         public async Task RankOptionsWithStateHashFiltersUnavailableCandidatesBeforeScoring()
         {
             using var client = factory.CreateClient();
@@ -934,7 +1004,8 @@ namespace StardewAI.Backend.Tests
             string? forcedHash = null,
             bool unavailableCarriesDefault = false,
             string? trainingRunId = null,
-            bool includeStrategyCatalog = false)
+            bool includeStrategyCatalog = false,
+            bool includeMaterialGraph = false)
         {
             var stateJson = $$"""
             {
@@ -995,7 +1066,10 @@ namespace StardewAI.Backend.Tests
                 "crops": {{FieldJson("[{\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}},
                 "crop_catalog": {{(includeStrategyCatalog
                     ? FieldJson("[{\"seed_id\":\"745\",\"seasons\":[\"spring\"],\"grow_days\":8,\"regrow_days\":4,\"harvest_item_id\":\"400\",\"harvest_item_qualified_id\":\"(O)400\",\"harvest_min_stack\":1}]", raw: true)
-                    : UnavailableFieldJson("crop_catalog_not_in_general_backend_fixture"))}}
+                    : UnavailableFieldJson("crop_catalog_not_in_general_backend_fixture"))}},
+                "material_inventory_graph": {{(includeMaterialGraph
+                    ? FieldJson("{\"schema_version\":\"material_inventory_graph.v1\",\"status\":\"available\",\"player_id\":123,\"inventory_nodes\":[{\"node_id\":\"player:123\",\"inventory_kind\":\"player_inventory\",\"supply_state\":\"available\",\"owner_player_id\":123,\"ownership_class\":\"actor_owned\",\"actor_use_authorized\":true,\"slots\":[{\"slot_index\":1,\"item_id\":\"388\",\"qualified_item_id\":\"(O)388\",\"stack\":30}]}]}", raw: true)
+                    : UnavailableFieldJson("material_graph_not_in_general_backend_fixture"))}}
               },
               "current_location": {
                 "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}}
@@ -1106,6 +1180,7 @@ namespace StardewAI.Backend.Tests
         private sealed class InMemoryStrategyCommitmentRepository : IStrategyCommitmentRepository
         {
             private readonly CropCommitmentLedgerService service = new();
+            private readonly MaterialReservationLedgerService materialService = new();
             private StrategyCommitmentLedger? ledger;
 
             public StrategyCommitmentLedger Get(SnapshotEnvelope snapshot)
@@ -1134,6 +1209,40 @@ namespace StardewAI.Backend.Tests
             public StrategyCommitmentMutationResult Cancel(SnapshotEnvelope snapshot, string commitmentId, StrategyCommitmentCancelRequest request)
             {
                 var result = service.Cancel(Get(snapshot), snapshot, commitmentId, request, "2026-07-19T00:00:00Z");
+                if (result.Accepted)
+                {
+                    ledger = result.Ledger;
+                }
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult UpsertMaterial(
+                SnapshotEnvelope snapshot,
+                MaterialReservationUpsertRequest request)
+            {
+                var result = materialService.Upsert(
+                    Get(snapshot),
+                    snapshot,
+                    request,
+                    "2026-07-19T00:00:00Z");
+                if (result.Accepted)
+                {
+                    ledger = result.Ledger;
+                }
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult CancelMaterial(
+                SnapshotEnvelope snapshot,
+                string reservationId,
+                StrategyCommitmentCancelRequest request)
+            {
+                var result = materialService.Cancel(
+                    Get(snapshot),
+                    snapshot,
+                    reservationId,
+                    request,
+                    "2026-07-19T00:00:00Z");
                 if (result.Accepted)
                 {
                     ledger = result.Ledger;

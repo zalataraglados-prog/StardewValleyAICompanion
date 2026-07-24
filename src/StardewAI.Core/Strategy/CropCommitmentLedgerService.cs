@@ -18,7 +18,11 @@ namespace StardewAI.Core.Strategy
             CropPlantingCommitmentUpsertRequest request,
             string updatedAt)
         {
-            var errors = ValidateCommon(current, snapshot, request.StateHash, request.ExpectedLedgerRevision);
+            var errors = StrategyCommitmentLedgerSupport.ValidateCommon(
+                current,
+                snapshot,
+                request.StateHash,
+                request.ExpectedLedgerRevision);
             if (string.IsNullOrWhiteSpace(request.CommitmentId))
             {
                 errors.Add("commitment_id_required");
@@ -104,7 +108,7 @@ namespace StardewAI.Core.Strategy
                 return Rejected(current, errors);
             }
 
-            var ledger = CloneOrCreate(current, snapshot, updatedAt);
+            var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(current, snapshot, updatedAt);
             var existing = ledger.CropPlantingCommitments.FirstOrDefault(row =>
                 string.Equals(row.CommitmentId, request.CommitmentId, StringComparison.Ordinal));
             var commitment = new CropPlantingCommitment
@@ -137,8 +141,15 @@ namespace StardewAI.Core.Strategy
                 .Append(commitment)
                 .OrderBy(row => row.CommitmentId, StringComparer.Ordinal)
                 .ToArray();
-            AdvanceLedger(ledger, snapshot, updatedAt);
-            AppendHistory(ledger, commitment, "upsert", updatedAt, string.Empty);
+            StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
+            StrategyCommitmentLedgerSupport.AppendHistory(
+                ledger,
+                commitment.CommitmentId,
+                commitment.Revision,
+                commitment.SourceDecisionId,
+                "upsert",
+                updatedAt,
+                string.Empty);
             return Accepted(ledger);
         }
 
@@ -149,7 +160,11 @@ namespace StardewAI.Core.Strategy
             StrategyCommitmentCancelRequest request,
             string updatedAt)
         {
-            var errors = ValidateCommon(current, snapshot, request.StateHash, request.ExpectedLedgerRevision);
+            var errors = StrategyCommitmentLedgerSupport.ValidateCommon(
+                current,
+                snapshot,
+                request.StateHash,
+                request.ExpectedLedgerRevision);
             var existing = current?.CropPlantingCommitments.FirstOrDefault(row =>
                 string.Equals(row.CommitmentId, commitmentId, StringComparison.Ordinal));
             if (existing is null)
@@ -169,15 +184,23 @@ namespace StardewAI.Core.Strategy
                 return Rejected(current, errors);
             }
 
-            var ledger = CloneOrCreate(current, snapshot, updatedAt);
+            var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(current, snapshot, updatedAt);
             ledger.CropPlantingCommitments = ledger.CropPlantingCommitments.Select(row =>
                 string.Equals(row.CommitmentId, commitmentId, StringComparison.Ordinal)
-                    ? Clone(row, StrategyCommitmentStatuses.Cancelled, row.Revision + 1, request.Reason)
+                    ? StrategyCommitmentLedgerSupport.CloneCrop(
+                        row,
+                        StrategyCommitmentStatuses.Cancelled,
+                        row.Revision + 1,
+                        request.Reason)
                     : row).ToArray();
-            AdvanceLedger(ledger, snapshot, updatedAt);
-            AppendHistory(
+            StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
+            var cancelled = ledger.CropPlantingCommitments.Single(row =>
+                string.Equals(row.CommitmentId, commitmentId, StringComparison.Ordinal));
+            StrategyCommitmentLedgerSupport.AppendHistory(
                 ledger,
-                ledger.CropPlantingCommitments.Single(row => string.Equals(row.CommitmentId, commitmentId, StringComparison.Ordinal)),
+                cancelled.CommitmentId,
+                cancelled.Revision,
+                cancelled.SourceDecisionId,
                 "cancel",
                 updatedAt,
                 request.Reason);
@@ -197,7 +220,7 @@ namespace StardewAI.Core.Strategy
                 return current;
             }
 
-            var ledger = CloneOrCreate(current, snapshot, updatedAt);
+            var ledger = StrategyCommitmentLedgerSupport.CloneOrCreate(current, snapshot, updatedAt);
             var completedIds = ledger.CropPlantingCommitments
                 .Where(row => string.Equals(row.Status, StrategyCommitmentStatuses.Active, StringComparison.Ordinal) &&
                     totalDay.Value > row.LastInSeasonHarvestTotalDay)
@@ -206,42 +229,25 @@ namespace StardewAI.Core.Strategy
             ledger.CropPlantingCommitments = ledger.CropPlantingCommitments.Select(row =>
                 string.Equals(row.Status, StrategyCommitmentStatuses.Active, StringComparison.Ordinal) &&
                 totalDay.Value > row.LastInSeasonHarvestTotalDay
-                    ? Clone(row, StrategyCommitmentStatuses.Completed, row.Revision + 1, string.Empty)
+                    ? StrategyCommitmentLedgerSupport.CloneCrop(
+                        row,
+                        StrategyCommitmentStatuses.Completed,
+                        row.Revision + 1,
+                        string.Empty)
                     : row).ToArray();
-            AdvanceLedger(ledger, snapshot, updatedAt);
+            StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
             foreach (var commitment in ledger.CropPlantingCommitments.Where(row => completedIds.Contains(row.CommitmentId)))
             {
-                AppendHistory(ledger, commitment, "complete", updatedAt, "last_committed_harvest_window_elapsed");
+                StrategyCommitmentLedgerSupport.AppendHistory(
+                    ledger,
+                    commitment.CommitmentId,
+                    commitment.Revision,
+                    commitment.SourceDecisionId,
+                    "complete",
+                    updatedAt,
+                    "last_committed_harvest_window_elapsed");
             }
             return ledger;
-        }
-
-        private static List<string> ValidateCommon(
-            StrategyCommitmentLedger? current,
-            SnapshotEnvelope snapshot,
-            string stateHash,
-            int expectedRevision)
-        {
-            var errors = new List<string>();
-            if (string.IsNullOrWhiteSpace(stateHash) || !string.Equals(stateHash, snapshot.StateHash, StringComparison.Ordinal))
-            {
-                errors.Add("state_hash_mismatch");
-            }
-            if (expectedRevision != (current?.Revision ?? 0))
-            {
-                errors.Add("ledger_revision_conflict");
-            }
-            if (string.IsNullOrWhiteSpace(SaveId(snapshot)) || string.IsNullOrWhiteSpace(PlayerId(snapshot)))
-            {
-                errors.Add("snapshot_identity_unavailable");
-            }
-            if (current is not null &&
-                (!string.Equals(current.SaveId, SaveId(snapshot), StringComparison.Ordinal) ||
-                 !string.Equals(current.PlayerId, PlayerId(snapshot), StringComparison.Ordinal)))
-            {
-                errors.Add("ledger_identity_mismatch");
-            }
-            return errors;
         }
 
         private static JsonElement? FindCrop(SnapshotEnvelope snapshot, string seedId)
@@ -271,93 +277,6 @@ namespace StardewAI.Core.Strategy
         private static int CalendarOrdinal(int year, int seasonIndex, int day) =>
             (year - 1) * 112 + seasonIndex * 28 + day - 1;
 
-        private static string SaveId(SnapshotEnvelope snapshot) =>
-            snapshot.SaveId.Value ?? ReadStateFieldString(snapshot, "identity", "save_id");
-
-        private static string PlayerId(SnapshotEnvelope snapshot) =>
-            snapshot.PlayerId.Value ?? ReadStateFieldString(snapshot, "identity", "player_id");
-
-        private static StrategyCommitmentLedger CloneOrCreate(
-            StrategyCommitmentLedger? current,
-            SnapshotEnvelope snapshot,
-            string updatedAt) => new()
-            {
-                LedgerId = current?.LedgerId ?? "strategy-ledger:" + SaveId(snapshot) + ":" + PlayerId(snapshot),
-                SaveId = SaveId(snapshot),
-                PlayerId = PlayerId(snapshot),
-                Revision = current?.Revision ?? 0,
-                UpdatedAt = updatedAt,
-                SourceStateHash = snapshot.StateHash,
-                CropPlantingCommitments = current?.CropPlantingCommitments.Select(row => Clone(row, row.Status, row.Revision, row.CancelReason)).ToArray()
-                    ?? Array.Empty<CropPlantingCommitment>(),
-                History = current?.History.Select(CloneHistory).ToArray() ?? Array.Empty<StrategyCommitmentHistoryEntry>()
-            };
-
-        private static CropPlantingCommitment Clone(CropPlantingCommitment row, string status, int revision, string cancelReason) => new()
-        {
-            CommitmentId = row.CommitmentId,
-            Revision = revision,
-            Status = status,
-            SourceDecisionId = row.SourceDecisionId,
-            SourceStateHash = row.SourceStateHash,
-            LocationContext = row.LocationContext,
-            SeedId = row.SeedId,
-            HarvestItemId = row.HarvestItemId,
-            HarvestItemQualifiedId = row.HarvestItemQualifiedId,
-            HarvestContextTags = (row.HarvestContextTags ?? Array.Empty<string>()).ToArray(),
-            TileCount = row.TileCount,
-            PlantingYear = row.PlantingYear,
-            PlantingSeason = row.PlantingSeason,
-            PlantingDayOfMonth = row.PlantingDayOfMonth,
-            PlantingTotalDay = row.PlantingTotalDay,
-            BaseGrowDays = row.BaseGrowDays,
-            FirstHarvestTotalDay = row.FirstHarvestTotalDay,
-            RegrowDays = row.RegrowDays,
-            LastInSeasonHarvestTotalDay = row.LastInSeasonHarvestTotalDay,
-            MinimumUnitsPerWave = row.MinimumUnitsPerWave,
-            ProjectionStatus = row.ProjectionStatus,
-            ProjectionCondition = row.ProjectionCondition,
-            CancelReason = cancelReason
-        };
-
-        private static void AdvanceLedger(StrategyCommitmentLedger ledger, SnapshotEnvelope snapshot, string updatedAt)
-        {
-            ledger.Revision++;
-            ledger.SourceStateHash = snapshot.StateHash;
-            ledger.UpdatedAt = updatedAt;
-        }
-
-        private static void AppendHistory(
-            StrategyCommitmentLedger ledger,
-            CropPlantingCommitment commitment,
-            string operation,
-            string recordedAt,
-            string reason)
-        {
-            ledger.History = ledger.History.Append(new StrategyCommitmentHistoryEntry
-            {
-                LedgerRevision = ledger.Revision,
-                CommitmentId = commitment.CommitmentId,
-                CommitmentRevision = commitment.Revision,
-                Operation = operation,
-                SourceDecisionId = commitment.SourceDecisionId,
-                SourceStateHash = ledger.SourceStateHash,
-                RecordedAt = recordedAt,
-                Reason = reason
-            }).ToArray();
-        }
-
-        private static StrategyCommitmentHistoryEntry CloneHistory(StrategyCommitmentHistoryEntry row) => new()
-        {
-            LedgerRevision = row.LedgerRevision,
-            CommitmentId = row.CommitmentId,
-            CommitmentRevision = row.CommitmentRevision,
-            Operation = row.Operation,
-            SourceDecisionId = row.SourceDecisionId,
-            SourceStateHash = row.SourceStateHash,
-            RecordedAt = row.RecordedAt,
-            Reason = row.Reason
-        };
 
         private static string[] ReadStringArray(JsonElement row, string property) =>
             row.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Array
