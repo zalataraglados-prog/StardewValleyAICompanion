@@ -151,6 +151,11 @@ namespace StardewAI.Core.Training
                 return PlaceMachineItemSteps(candidate);
             }
 
+            if (candidate.Kind == "place_storage_item")
+            {
+                return PlaceStorageItemSteps(candidate);
+            }
+
             if (candidate.Kind == "read_inventory_book")
             {
                 return ReadInventoryBookSteps(candidate);

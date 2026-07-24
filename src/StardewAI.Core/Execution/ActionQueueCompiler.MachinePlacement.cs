@@ -93,7 +93,7 @@ namespace StardewAI.Core.Execution
             }
             if (Math.Abs(standX.Value - targetX.Value) +
                     Math.Abs(standY.Value - targetY.Value) != 1 ||
-                MachinePlacementCollisionGridBlocks(
+                PlacementCollisionGridBlocks(
                     snapshot,
                     standX.Value,
                     standY.Value))
@@ -162,7 +162,7 @@ namespace StardewAI.Core.Execution
             }
 
             var reservationGuard =
-                new MachinePlacementMaterialReservationGuard().Evaluate(
+                new InventoryPlacementMaterialReservationGuard().Evaluate(
                     commitmentLedger,
                     slotIndex.Value,
                     qualifiedItemId);
@@ -277,7 +277,7 @@ namespace StardewAI.Core.Execution
             return false;
         }
 
-        private static bool MachinePlacementCollisionGridBlocks(
+        private static bool PlacementCollisionGridBlocks(
             SnapshotEnvelope snapshot,
             int x,
             int y)

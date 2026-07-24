@@ -31,6 +31,10 @@ public sealed class ActionQueueDispatchReadinessService
             !string.Equals(
                 item.OptionId,
                 "executor.place_machine",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                item.OptionId,
+                "executor.place_storage",
                 StringComparison.Ordinal))
         {
             result.Ready = true;
