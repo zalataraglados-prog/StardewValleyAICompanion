@@ -453,7 +453,7 @@ public sealed partial class ModEntry
             OptionId = request.OptionId,
             Status = verified ? "applied" : "blocked",
             FeedbackAvailable = true,
-            PrimitiveKind = "craft_machine_item",
+            PrimitiveKind = CraftingPrimitiveKind(request),
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
                 ? new[]
@@ -526,7 +526,7 @@ public sealed partial class ModEntry
         params string[] reasons) =>
         BlockedWithPrimitive(
             request,
-            "craft_machine_item",
+            CraftingPrimitiveKind(request),
             CraftMachineRequestedEffect(request),
             CraftMachineObservedEffect(request) +
                 ";crafting_source=native_workbench_crafting_menu",

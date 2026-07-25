@@ -34,6 +34,32 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void StorageCraftingReusesNativeMenuWithTypedRuntimeIdentity()
+    {
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+        var executor = RuntimeHarnessSources.File(
+            "ModEntry.MachineCrafting.cs");
+        var whitelist = RuntimeHarnessSources.File(
+            "ModEntry.Shipping.Utilities.cs");
+
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_storage_item\"",
+            dispatch);
+        Assert.Contains(
+            "ExecuteCraftMachineItem(pending.Request)",
+            dispatch);
+        Assert.Contains(
+            "request.OptionId == \"executor.craft_storage_item\"",
+            executor);
+        Assert.Contains(
+            "request.OptionId != \"executor.craft_storage_item\"",
+            whitelist);
+        Assert.Contains(
+            "request.OptionId != \"executor.craft_machine_item\"",
+            whitelist);
+    }
+
+    [Fact]
     public void LiveTrainingDispatchChecksLatestMaterialLedgerBeforeRuntimeInput()
     {
         var execution = RuntimeHarnessSources.RepositoryFile(

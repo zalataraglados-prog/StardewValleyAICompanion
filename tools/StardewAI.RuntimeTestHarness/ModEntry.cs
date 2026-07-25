@@ -660,6 +660,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_storage_crafting_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupStorageCraftingTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_shipping_target")
             {
                 pending.Completion.SetResult(ExecuteSetupShippingTarget(pending.Request));
@@ -867,6 +874,21 @@ public sealed partial class ModEntry : Mod
                     return;
                 }
                 pending.Completion.SetResult(ExecuteCraftMachineItem(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.craft_storage_item")
+            {
+                if (string.Equals(
+                        pending.Request.CraftingSource,
+                        "native_workbench_crafting_menu",
+                        StringComparison.Ordinal))
+                {
+                    StartWorkbenchCraft(pending);
+                    return;
+                }
+                pending.Completion.SetResult(
+                    ExecuteCraftMachineItem(pending.Request));
                 return;
             }
 

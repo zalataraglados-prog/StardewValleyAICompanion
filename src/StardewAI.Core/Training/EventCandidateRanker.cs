@@ -110,6 +110,14 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = MachineInfrastructureDemandSignal(candidate.ExpectedEffect);
                     }
+                    if (candidate.Kind == "craft_storage_item")
+                    {
+                        urgencySignal = candidate.ExpectedEffect.Contains(
+                            "storage_demand_class=bootstrap_ordinary_storage",
+                            StringComparison.Ordinal)
+                                ? 0.12
+                                : 0.08;
+                    }
                     if (candidate.Kind == "catch_fish")
                     {
                         urgencySignal = 0.03;
