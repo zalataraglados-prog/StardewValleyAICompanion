@@ -4,12 +4,19 @@ using StardewValley;
 using StardewValley.Inventories;
 using StardewValley.Locations;
 using StardewValley.Objects;
+using StardewValley.Tools;
 using StardewObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
+    private static readonly object MaterialInventoryGraphCacheLock = new();
+    private static MaterialInventoryGraph? cachedMaterialInventoryGraph;
+    private static Farm? cachedMaterialInventoryGraphFarm;
+    private static long cachedMaterialInventoryGraphTick = -1;
+    private static long cachedMaterialInventoryGraphPlayerId;
+
     internal static readonly Vector2[] WorkbenchChestOffsets =
     {
         new(-1f, 1f), new(0f, 1f), new(1f, 1f),
@@ -92,6 +99,83 @@ public sealed partial class FarmReadAdapter
         };
     }
 
+    internal static MaterialInventoryGraph ReadCachedMaterialInventoryGraph(
+        Farm farm,
+        Farmer player,
+        long tick)
+    {
+        lock (MaterialInventoryGraphCacheLock)
+        {
+            if (cachedMaterialInventoryGraph is not null &&
+                ReferenceEquals(
+                    cachedMaterialInventoryGraphFarm,
+                    farm) &&
+                cachedMaterialInventoryGraphTick == tick &&
+                cachedMaterialInventoryGraphPlayerId ==
+                player.UniqueMultiplayerID)
+            {
+                return cachedMaterialInventoryGraph;
+            }
+
+            cachedMaterialInventoryGraph =
+                ReadMaterialInventoryGraph(farm, player);
+            cachedMaterialInventoryGraphFarm = farm;
+            cachedMaterialInventoryGraphTick = tick;
+            cachedMaterialInventoryGraphPlayerId =
+                player.UniqueMultiplayerID;
+            return cachedMaterialInventoryGraph;
+        }
+    }
+
+    internal static StorageInfrastructureProjection
+        ReadStorageInfrastructure(
+            MaterialInventoryGraph graph,
+            string? scopeLocationId = null)
+    {
+        var rows = graph.AccessPoints
+            .Where(row =>
+                row.AccessKind is "placed_chest" or
+                    "built_in_fridge")
+            .Where(row =>
+                string.IsNullOrWhiteSpace(scopeLocationId) ||
+                string.Equals(
+                    row.LocationId,
+                    scopeLocationId,
+                    StringComparison.OrdinalIgnoreCase))
+            .OrderBy(row => row.LocationId, StringComparer.Ordinal)
+            .ThenBy(row => row.TileY)
+            .ThenBy(row => row.TileX)
+            .ThenBy(row => row.AccessPointId, StringComparer.Ordinal)
+            .ToArray();
+        return new StorageInfrastructureProjection
+        {
+            Status = graph.Status,
+            ScopeLocationId = scopeLocationId ?? string.Empty,
+            SourceGraphSchemaVersion = graph.SchemaVersion,
+            SourceGraphPlayerId = graph.PlayerId,
+            AccessPoints = rows,
+            AccessPointCount = rows.Length,
+            DistinctInventoryNodeCount = rows
+                .Select(row => row.NodeId)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+            ActorAuthorizedAccessPointCount = rows.Count(
+                row => row.ActorUseAuthorized),
+            LockedAccessPointCount = rows.Count(
+                row => row.LockedByOtherPlayer),
+            RemovableEmptyAccessPointCount = rows.Count(row =>
+                string.Equals(
+                    row.RelocationStatus,
+                    "native_remove_available_empty",
+                    StringComparison.Ordinal)),
+            NonemptyShoveAccessPointCount = rows.Count(row =>
+                string.Equals(
+                    row.RelocationStatus,
+                    "native_shove_available_nonempty",
+                    StringComparison.Ordinal))
+        };
+    }
+
     private static void AddChestAccess(
         IDictionary<string, MaterialInventoryNode> nodes,
         ICollection<MaterialInventoryAccessPoint> accessPoints,
@@ -120,6 +204,47 @@ public sealed partial class FarmReadAdapter
             player.UniqueMultiplayerID,
             globalInventoryId,
             actorOwnedContext: accessKind == "built_in_fridge");
+        var inventory = chest.GetItemsForPlayer(
+            player.UniqueMultiplayerID);
+        var capacity = chest.GetActualCapacity();
+        var occupiedSlotCount = inventory.Count(item => item is not null);
+        var mutex = chest.GetMutex();
+        var mutexLocked = mutex.IsLocked();
+        var mutexHeldByActor = mutex.IsLockHeld();
+        var lockedByOtherPlayer =
+            mutexLocked && !mutexHeldByActor;
+        var relocationInProgress = chest.kickProgress >= 0f;
+        var relocationHeavyToolSlotIndices =
+            player.Items
+                .Select((item, index) =>
+                    new { item, index })
+                .Where(row =>
+                    row.item is Tool tool &&
+                    tool is not MeleeWeapon &&
+                    tool.isHeavyHitter())
+                .Select(row => row.index)
+                .ToArray();
+        var relocationBlockingReasons =
+            ChestRelocationBlockingReasons(
+                chest,
+                accessKind,
+                ownership,
+                globalInventoryId,
+                lockedByOtherPlayer,
+                relocationInProgress,
+                relocationHeavyToolSlotIndices.Length == 0);
+        var relocationStatus =
+            relocationBlockingReasons.Length > 0
+                ? "blocked"
+                : occupiedSlotCount == 0
+                    ? "native_remove_available_empty"
+                    : "native_shove_available_nonempty";
+        var playerChoiceColor = chest.playerChoiceColor.Value;
+        var tint = chest.Tint;
+        var kickStartTile = chest.kickStartTile.Value;
+        var kickStartTileAvailable =
+            kickStartTile.X > -1000f &&
+            kickStartTile.Y > -1000f;
         AddInventoryNode(
             nodes,
             nodeId,
@@ -130,8 +255,8 @@ public sealed partial class FarmReadAdapter
             (int)tile.Y,
             chest.owner.Value,
             globalInventoryId,
-            chest.GetActualCapacity(),
-            chest.GetItemsForPlayer(player.UniqueMultiplayerID),
+            capacity,
+            inventory,
             ownership);
 
         var accessPointId = NodeId("access", accessKind, locationId, TileText(tile));
@@ -142,14 +267,151 @@ public sealed partial class FarmReadAdapter
             AccessKind = accessKind,
             LocationId = locationId,
             LocationKind = locationRef.Kind,
+            RootLocationId = locationRef.RootLocationId,
+            ParentBuildingRuntimeType =
+                locationRef.ParentBuildingRuntimeType,
+            LocationIsPlayerControlled =
+                locationRef.IsPlayerControlled,
+            LocationIsCurrent = string.Equals(
+                Game1.currentLocation?.NameOrUniqueName,
+                locationId,
+                StringComparison.OrdinalIgnoreCase),
             TileX = (int)tile.X,
             TileY = (int)tile.Y,
             QualifiedItemId = chest.QualifiedItemId,
+            DisplayName = chest.DisplayName,
             SpecialChestType = chest.SpecialChestType.ToString(),
-            LockedByOtherPlayer = chest.GetMutex().IsLocked() && !chest.GetMutex().IsLockHeld(),
-            ActorUseAuthorized = ownership.ActorUseAuthorized
+            OwnerPlayerId = chest.owner.Value,
+            OwnershipClass = ownership.OwnershipClass,
+            GlobalInventoryId = globalInventoryId,
+            Capacity = capacity,
+            OccupiedSlotCount = occupiedSlotCount,
+            FreeSlotCount = Math.Max(
+                0,
+                capacity - occupiedSlotCount),
+            IsPlayerChest = chest.playerChest.Value,
+            IsFridge = chest.fridge.Value,
+            IsGiftbox = chest.giftbox.Value,
+            IsStarterGift =
+                chest.giftboxIsStarterGift.Value,
+            GiftboxIndex = chest.giftboxIndex.Value,
+            BigCraftableSpriteIndex =
+                chest.bigCraftableSpriteIndex.Value,
+            IsSynchronized = chest.synchronized.Value,
+            DropContents = chest.dropContents.Value,
+            PlayerChoiceColorRgba = new[]
+            {
+                (int)playerChoiceColor.R,
+                (int)playerChoiceColor.G,
+                (int)playerChoiceColor.B,
+                (int)playerChoiceColor.A
+            },
+            TintRgba = new[]
+            {
+                (int)tint.R,
+                (int)tint.G,
+                (int)tint.B,
+                (int)tint.A
+            },
+            MailOnItemDump =
+                chest.mailToAddOnItemDump ??
+                string.Empty,
+            MutexLocked = mutexLocked,
+            MutexHeldByActor = mutexHeldByActor,
+            LockedByOtherPlayer = lockedByOtherPlayer,
+            ActorUseAuthorized = ownership.ActorUseAuthorized,
+            NativeHitBehavior =
+                relocationBlockingReasons.Length > 0
+                    ? "blocked_before_native_hit"
+                    : occupiedSlotCount == 0
+                        ? "empty_heavy_tool_remove_and_drop_chest_item"
+                        : "nonempty_heavy_tool_second_hit_or_hold_shove",
+            NativeSwapStatus =
+                chest.HasContextTag("swappable_chest")
+                    ? "available_subject_to_replacement_capacity_and_lock"
+                    : "not_supported",
+            RelocationHeavyToolSlotIndices =
+                relocationHeavyToolSlotIndices,
+            RelocationKickArmed =
+                kickStartTile == tile,
+            RelocationInProgress =
+                relocationInProgress,
+            RelocationKickStartTileX =
+                kickStartTileAvailable
+                    ? (int)kickStartTile.X
+                    : null,
+            RelocationKickStartTileY =
+                kickStartTileAvailable
+                    ? (int)kickStartTile.Y
+                    : null,
+            RelocationKickProgress =
+                chest.kickProgress,
+            RelocationStatus = relocationStatus,
+            RelocationBlockingReasons =
+                relocationBlockingReasons
         });
         chestNodeByTile[LocationTileKey(locationId, tile)] = nodeId;
+    }
+
+    private static string[] ChestRelocationBlockingReasons(
+        Chest chest,
+        string accessKind,
+        MaterialOwnership ownership,
+        string globalInventoryId,
+        bool lockedByOtherPlayer,
+        bool relocationInProgress,
+        bool relocationHeavyToolUnavailable)
+    {
+        var reasons = new List<string>();
+        if (!string.Equals(
+                accessKind,
+                "placed_chest",
+                StringComparison.Ordinal))
+        {
+            reasons.Add("storage_access_not_placed_chest");
+        }
+        if (!chest.playerChest.Value)
+        {
+            reasons.Add("storage_object_not_player_chest");
+        }
+        if (!ownership.ActorUseAuthorized)
+        {
+            reasons.Add("storage_access_not_actor_authorized");
+        }
+        if (!string.IsNullOrWhiteSpace(globalInventoryId))
+        {
+            reasons.Add("storage_global_inventory_access_not_relocatable");
+        }
+        if (chest.SpecialChestType is not (
+                Chest.SpecialChestTypes.None or
+                Chest.SpecialChestTypes.BigChest))
+        {
+            reasons.Add("storage_special_chest_relocation_not_supported");
+        }
+        if (chest.fridge.Value)
+        {
+            reasons.Add("storage_fridge_relocation_not_supported");
+        }
+        if (chest.giftbox.Value)
+        {
+            reasons.Add("storage_giftbox_relocation_not_supported");
+        }
+        if (lockedByOtherPlayer)
+        {
+            reasons.Add("storage_chest_locked_by_other_player");
+        }
+        if (relocationInProgress)
+        {
+            reasons.Add("storage_chest_relocation_in_progress");
+        }
+        if (relocationHeavyToolUnavailable)
+        {
+            reasons.Add(
+                "storage_chest_relocation_heavy_tool_unavailable");
+        }
+        return reasons
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static string ResolveGlobalInventoryId(Chest chest)
@@ -199,9 +461,34 @@ public sealed partial class FarmReadAdapter
                 AccessKind = "auto_grabber",
                 LocationId = locationId,
                 LocationKind = locationRef.Kind,
+                RootLocationId = locationRef.RootLocationId,
+                ParentBuildingRuntimeType =
+                    locationRef.ParentBuildingRuntimeType,
+                LocationIsPlayerControlled =
+                    locationRef.IsPlayerControlled,
+                LocationIsCurrent = string.Equals(
+                    Game1.currentLocation?.NameOrUniqueName,
+                    locationId,
+                    StringComparison.OrdinalIgnoreCase),
                 TileX = (int)tile.X,
                 TileY = (int)tile.Y,
                 QualifiedItemId = item.QualifiedItemId,
+                DisplayName = item.DisplayName,
+                OwnerPlayerId = item.owner.Value,
+                OwnershipClass = item.owner.Value ==
+                    player.UniqueMultiplayerID
+                        ? "actor_owned"
+                        : "other_player_owned",
+                Capacity =
+                    autoGrabberChest.GetActualCapacity(),
+                OccupiedSlotCount =
+                    autoGrabberChest.Items.Count(
+                        value => value is not null),
+                FreeSlotCount = Math.Max(
+                    0,
+                    autoGrabberChest.GetActualCapacity() -
+                    autoGrabberChest.Items.Count(
+                        value => value is not null)),
                 LockedByOtherPlayer = false,
                 ActorUseAuthorized = item.owner.Value == player.UniqueMultiplayerID
             });

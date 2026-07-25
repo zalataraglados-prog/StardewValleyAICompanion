@@ -69,6 +69,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             });
         }
 
+        var materialInventoryGraph =
+            ReadCachedMaterialInventoryGraph(
+                farm,
+                Game1.player,
+                tick);
         return Section("farm", new Dictionary<string, object>
         {
             ["farm_type"] = Field(Game1.whichFarm, "Game1.whichFarm", tick, "vanilla_1_6_farm"),
@@ -87,8 +92,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["terrain_features"] = Field(ReadTerrainFeatures(farm), "Game1.getFarm().terrainFeatures", tick, "vanilla_1_6_farm"),
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),
             ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false) plus native farm/home ownership topology; GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
-            ["chests"] = Field(ReadChests(farm), "Game1.getFarm().objects[*] as Chest", tick, "vanilla_1_6_farm"),
-            ["material_inventory_graph"] = Field(ReadMaterialInventoryGraph(farm, Game1.player), "Game1.player.Items; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Chest.GetItemsForPlayer/GetActualCapacity/GetMutex; GameLocation.GetFridge/GetFridgePosition; Workbench.checkForAction adjacency; Object heldObject machine/auto-grabber buffers", tick, "vanilla_1_6_material_inventory_graph"),
+            ["chests"] = Field(ReadStorageInfrastructure(materialInventoryGraph), "farm.material_inventory_graph access_points filtered to placed_chest/built_in_fridge; canonical contents remain inventory_nodes[node_id]", tick, "vanilla_1_6_storage_infrastructure"),
+            ["material_inventory_graph"] = Field(materialInventoryGraph, "Game1.player.Items; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Chest.GetItemsForPlayer/GetActualCapacity/GetMutex; GameLocation.GetFridge/GetFridgePosition; Workbench.checkForAction adjacency; Object heldObject machine/auto-grabber buffers", tick, "vanilla_1_6_material_inventory_graph"),
             ["animals"] = Field(ReadAnimals(farm), "Game1.locations[*].animals plus Game1.getFarm().buildings[*].GetIndoors().animals", tick, "vanilla_1_6_farm_and_animal_houses"),
             ["pets"] = Field(ReadPets(), "Utility.getAllPets(); Pet fields; Data/Pets; Pet.checkAction and Pet.dayUpdate projections", tick, "vanilla_1_6_pet"),
             ["pet_bowls"] = Field(ReadPetBowls(farm), "Game1.locations[*].buildings as PetBowl; PetBowl.performToolAction and Pet.dayUpdate projections", tick, "vanilla_1_6_pet_bowl"),

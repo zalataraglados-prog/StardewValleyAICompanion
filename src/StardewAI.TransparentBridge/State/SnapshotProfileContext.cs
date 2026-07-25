@@ -11,4 +11,7 @@ public static class SnapshotProfileContext
         get => CurrentProfile.Value ?? "light";
         set => CurrentProfile.Value = value;
     }
+
+    public static bool IncludesPersistentMaterialInventoryGraph =>
+        Current is "daily" or "training_machine" or "fishing" or "full";
 }

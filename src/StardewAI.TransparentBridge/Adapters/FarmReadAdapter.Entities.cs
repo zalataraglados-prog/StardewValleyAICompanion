@@ -16,35 +16,6 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter : ReadAdapterBase
 {
-    private static object[] ReadChests(Farm farm)
-    {
-        return farm.objects.Pairs
-            .Where(pair => pair.Value is Chest)
-            .Select(pair =>
-            {
-                var chest = (Chest)pair.Value;
-                return new
-                {
-                    tile_x = (int)pair.Key.X,
-                    tile_y = (int)pair.Key.Y,
-                    qualified_item_id = chest.QualifiedItemId,
-                    display_name = chest.DisplayName,
-                    special_chest_type = chest.SpecialChestType.ToString(),
-                    item_count = chest.Items.Count,
-                    items = chest.Items
-                        .Select((item, index) => new
-                        {
-                            slot_index = index,
-                            item = SummarizeItem(item)
-                        })
-                        .ToArray()
-                };
-            })
-            .OrderBy(chest => chest.tile_y)
-            .ThenBy(chest => chest.tile_x)
-            .ToArray();
-    }
-
     private static object[] ReadAnimals(Farm farm)
     {
         var locations = Game1.locations

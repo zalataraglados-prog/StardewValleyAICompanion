@@ -125,6 +125,18 @@ public sealed class MaterialInventoryAccessPoint
     [JsonPropertyName("location_kind")]
     public string LocationKind { get; set; } = string.Empty;
 
+    [JsonPropertyName("root_location_id")]
+    public string RootLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("parent_building_runtime_type")]
+    public string ParentBuildingRuntimeType { get; set; } = string.Empty;
+
+    [JsonPropertyName("location_is_player_controlled")]
+    public bool LocationIsPlayerControlled { get; set; }
+
+    [JsonPropertyName("location_is_current")]
+    public bool LocationIsCurrent { get; set; }
+
     [JsonPropertyName("tile_x")]
     public int? TileX { get; set; }
 
@@ -134,14 +146,162 @@ public sealed class MaterialInventoryAccessPoint
     [JsonPropertyName("qualified_item_id")]
     public string QualifiedItemId { get; set; } = string.Empty;
 
+    [JsonPropertyName("display_name")]
+    public string DisplayName { get; set; } = string.Empty;
+
     [JsonPropertyName("special_chest_type")]
     public string SpecialChestType { get; set; } = string.Empty;
+
+    [JsonPropertyName("owner_player_id")]
+    public long OwnerPlayerId { get; set; }
+
+    [JsonPropertyName("ownership_class")]
+    public string OwnershipClass { get; set; } = "unknown";
+
+    [JsonPropertyName("global_inventory_id")]
+    public string GlobalInventoryId { get; set; } = string.Empty;
+
+    [JsonPropertyName("capacity")]
+    public int Capacity { get; set; }
+
+    [JsonPropertyName("occupied_slot_count")]
+    public int OccupiedSlotCount { get; set; }
+
+    [JsonPropertyName("free_slot_count")]
+    public int FreeSlotCount { get; set; }
+
+    [JsonPropertyName("is_player_chest")]
+    public bool IsPlayerChest { get; set; }
+
+    [JsonPropertyName("is_fridge")]
+    public bool IsFridge { get; set; }
+
+    [JsonPropertyName("is_giftbox")]
+    public bool IsGiftbox { get; set; }
+
+    [JsonPropertyName("is_starter_gift")]
+    public bool IsStarterGift { get; set; }
+
+    [JsonPropertyName("giftbox_index")]
+    public int GiftboxIndex { get; set; }
+
+    [JsonPropertyName("big_craftable_sprite_index")]
+    public int BigCraftableSpriteIndex { get; set; }
+
+    [JsonPropertyName("is_synchronized")]
+    public bool IsSynchronized { get; set; }
+
+    [JsonPropertyName("drop_contents")]
+    public bool DropContents { get; set; }
+
+    [JsonPropertyName("player_choice_color_rgba")]
+    public int[] PlayerChoiceColorRgba { get; set; } =
+        Array.Empty<int>();
+
+    [JsonPropertyName("tint_rgba")]
+    public int[] TintRgba { get; set; } =
+        Array.Empty<int>();
+
+    [JsonPropertyName("mail_on_item_dump")]
+    public string MailOnItemDump { get; set; } = string.Empty;
+
+    [JsonPropertyName("mutex_locked")]
+    public bool MutexLocked { get; set; }
+
+    [JsonPropertyName("mutex_held_by_actor")]
+    public bool MutexHeldByActor { get; set; }
 
     [JsonPropertyName("locked_by_other_player")]
     public bool LockedByOtherPlayer { get; set; }
 
     [JsonPropertyName("actor_use_authorized")]
     public bool ActorUseAuthorized { get; set; }
+
+    [JsonPropertyName("native_hit_behavior")]
+    public string NativeHitBehavior { get; set; } = "not_applicable";
+
+    [JsonPropertyName("native_swap_status")]
+    public string NativeSwapStatus { get; set; } = "not_supported";
+
+    [JsonPropertyName("relocation_heavy_tool_slot_indices")]
+    public int[] RelocationHeavyToolSlotIndices { get; set; } =
+        Array.Empty<int>();
+
+    [JsonPropertyName("relocation_kick_armed")]
+    public bool RelocationKickArmed { get; set; }
+
+    [JsonPropertyName("relocation_in_progress")]
+    public bool RelocationInProgress { get; set; }
+
+    [JsonPropertyName("relocation_kick_start_tile_x")]
+    public int? RelocationKickStartTileX { get; set; }
+
+    [JsonPropertyName("relocation_kick_start_tile_y")]
+    public int? RelocationKickStartTileY { get; set; }
+
+    [JsonPropertyName("relocation_kick_progress")]
+    public float RelocationKickProgress { get; set; } = -1f;
+
+    [JsonPropertyName("relocation_status")]
+    public string RelocationStatus { get; set; } = "not_applicable";
+
+    [JsonPropertyName("relocation_blocking_reasons")]
+    public string[] RelocationBlockingReasons { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("inventory_node_reference")]
+    public string InventoryNodeReference { get; set; } =
+        "farm.material_inventory_graph.inventory_nodes[node_id]";
+}
+
+public sealed class StorageInfrastructureProjection
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } =
+        "storage_infrastructure.v1";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "available";
+
+    [JsonPropertyName("scope_location_id")]
+    public string ScopeLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_graph_schema_version")]
+    public string SourceGraphSchemaVersion { get; set; } =
+        "material_inventory_graph.v1";
+
+    [JsonPropertyName("source_graph_player_id")]
+    public long SourceGraphPlayerId { get; set; }
+
+    [JsonPropertyName("inventory_node_reference")]
+    public string InventoryNodeReference { get; set; } =
+        "farm.material_inventory_graph.inventory_nodes[node_id]";
+
+    [JsonPropertyName("access_points")]
+    public MaterialInventoryAccessPoint[] AccessPoints { get; set; } =
+        Array.Empty<MaterialInventoryAccessPoint>();
+
+    [JsonPropertyName("access_point_count")]
+    public int AccessPointCount { get; set; }
+
+    [JsonPropertyName("distinct_inventory_node_count")]
+    public int DistinctInventoryNodeCount { get; set; }
+
+    [JsonPropertyName("actor_authorized_access_point_count")]
+    public int ActorAuthorizedAccessPointCount { get; set; }
+
+    [JsonPropertyName("locked_access_point_count")]
+    public int LockedAccessPointCount { get; set; }
+
+    [JsonPropertyName("removable_empty_access_point_count")]
+    public int RemovableEmptyAccessPointCount { get; set; }
+
+    [JsonPropertyName("nonempty_shove_access_point_count")]
+    public int NonemptyShoveAccessPointCount { get; set; }
+
+    [JsonPropertyName("content_duplication_policy")]
+    public string ContentDuplicationPolicy { get; set; } =
+        "reference_canonical_material_graph_nodes";
 }
 
 public sealed class MaterialWorkbenchLink
