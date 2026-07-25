@@ -273,6 +273,21 @@ stack size, protection state, currency, custom callbacks, storage-shop mode, and
 price before input. Money and inventory deltas are verified after the native menu action;
 the executor never deletes inventory or credits money directly.
 
+The material inventory graph now exposes each observed item's native maximum stack size.
+`MaterialTransferProjector` accepts a typed source node, source slot, destination node, item
+identity, quality, quantity, and expected source stack. It currently supports only one
+player inventory and one uniquely observed, unlocked, ordinary placed chest in the same
+location. Its projection follows the decompiled 1.6.15 native insertion order: fill compatible
+stacks by slot order, then allocate empty slots by slot order. It reproduces
+`Chest.clearNulls()` compaction for chest destinations while preserving sparse player
+inventory slot indices. Source drift, lock state,
+unsupported chest families, cross-location access, and insufficient destination capacity
+fail closed.
+
+This transfer projector is an executor prerequisite, not an executable capability. No
+`executor.transfer_inventory_item` option, runtime dispatcher branch, mutex/menu state
+machine, or runtime verification claim exists yet.
+
 The zero option-catalog blocker statement therefore does not claim complete end-to-end
 playability. Candidate generation, daily-plan compilation, action compilation, runtime
 dispatch, and postcondition verification are separate gates.
