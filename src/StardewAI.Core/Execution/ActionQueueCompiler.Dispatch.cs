@@ -53,6 +53,7 @@ namespace StardewAI.Core.Execution
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),
                 ["executor.craft_machine_item"] = (action, _) => CompileCraftMachineItemStep(action),
+                ["executor.craft_storage_item"] = (action, _) => CompileCraftStorageItemStep(action),
                 ["executor.place_machine"] = (action, _) => CompilePlaceMachineStep(action),
                 ["executor.place_storage"] = (action, _) => CompilePlaceStorageStep(action),
                 ["executor.read_book"] = (action, _) => CompileReadBookStep(action),

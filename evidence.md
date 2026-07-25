@@ -32,6 +32,8 @@
 
 ## Validation Evidence
 
+- Storage acquisition validation passed Core `1191/1191` and Backend `82/82` on 2026-07-25.
+- Hidden/silent isolated native Chest crafting passed at `artifacts/runtime-storage-crafting-smoke/runtime-storage-crafting-smoke-20260725-205501/summary.json`: inventory `(BC)130` `0 -> 1`, recipe count `14 -> 15`, exact native ingredient/output multiset verified, and state hash changed.
 - Recovery-chain reconciliation passed Core `422/422` and Backend `49/49` tests on 2026-07-14.
 - The runtime harness builds without warnings or errors; this slice did not launch the game.
 - High-level `recovery.stabilize_day` now expands every potentially available candidate kind through `DailyPlanCompiler`; cross-map return-home remains fail-closed.

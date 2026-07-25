@@ -8,6 +8,165 @@ namespace StardewAI.RuntimeTestHarness;
 public sealed partial class ModEntry
 {
     private TrainingExecutionResult
+        ExecuteSetupStorageCraftingTarget(
+            TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        var recipeName = string.IsNullOrWhiteSpace(
+            request.RecipeName)
+                ? "Chest"
+                : request.RecipeName;
+        if (!Game1.player.craftingRecipes.ContainsKey(recipeName) ||
+            !CraftingRecipe.craftingRecipes.ContainsKey(recipeName))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_storage_crafting_target",
+                "player.storage_crafting.recipe_ready=true",
+                "recipe=" + recipeName,
+                "storage_crafting_fixture_requires_learned_recipe");
+        }
+
+        CraftingRecipe recipe;
+        Item output;
+        try
+        {
+            recipe = new CraftingRecipe(
+                recipeName,
+                isCookingRecipe: false);
+            output = recipe.createItem();
+        }
+        catch (Exception ex)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_storage_crafting_target",
+                "player.storage_crafting.recipe_ready=true",
+                "recipe=" + recipeName,
+                "storage_crafting_fixture_recipe_creation_failed:" +
+                ex.GetType().Name);
+        }
+
+        if (output is not StardewValley.Object storage ||
+            !TryClassifyNativePlayerStorageItem(
+                storage,
+                out var branch) ||
+            branch is
+                "native_object_placement_mini_fridge" or
+                "native_object_placement_mini_shipping_bin" ||
+            storage is Chest chest &&
+                chest.SpecialChestType is not (
+                    Chest.SpecialChestTypes.None or
+                    Chest.SpecialChestTypes.BigChest))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_storage_crafting_target",
+                "player.storage_crafting.recipe_ready=true",
+                "output=" + output.QualifiedItemId,
+                "storage_crafting_fixture_requires_ordinary_storage_output");
+        }
+
+        var ingredientSlots = new List<string>();
+        foreach (var ingredient in recipe.recipeList)
+        {
+            if (!int.TryParse(
+                    ingredient.Key,
+                    out var itemId) ||
+                itemId < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_storage_crafting_target",
+                    "player.storage_crafting.recipe_ready=true",
+                    "requirement=" + ingredient.Key,
+                    "storage_crafting_fixture_requires_exact_item_ingredients");
+            }
+
+            var qualifiedId =
+                ItemRegistry.ManuallyQualifyItemId(
+                    itemId.ToString(),
+                    "(O)");
+            var slot = EnsureInventoryItem(
+                qualifiedId,
+                ingredient.Value);
+            if (slot < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_storage_crafting_target",
+                    "player.storage_crafting.recipe_ready=true",
+                    "requirement=" + qualifiedId,
+                    "storage_crafting_fixture_inventory_full");
+            }
+            ingredientSlots.Add(
+                qualifiedId + "@" + slot + ":" +
+                ingredient.Value);
+        }
+
+        var verified =
+            recipe.doesFarmerHaveIngredientsInInventory() &&
+            Game1.player.couldInventoryAcceptThisItem(output);
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind =
+                "debug_setup_storage_crafting_target",
+            PrimitiveVerificationStatus = verified
+                ? "verified"
+                : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[]
+                {
+                    "learned_storage_recipe_preserved",
+                    "exact_recipe_ingredients_available",
+                    "native_output_inventory_acceptance=true",
+                    "recipe_name=" + recipeName,
+                    "output_qualified_item_id=" +
+                        output.QualifiedItemId,
+                    "native_storage_branch=" + branch,
+                    "ingredient_slots=" +
+                        string.Join(",", ingredientSlots)
+                }
+                : new[]
+                {
+                    "native_recipe_ingredient_or_output_gate_failed"
+                },
+            RequestedEffect =
+                "player.storage_crafting.recipe_ready=true",
+            ObservedEffect =
+                "recipe_name=" + recipeName +
+                ";output_qualified_item_id=" +
+                output.QualifiedItemId +
+                ";ingredients_ready=" +
+                recipe.doesFarmerHaveIngredientsInInventory()
+                    .ToString().ToLowerInvariant() +
+                ";output_accepted=" +
+                Game1.player.couldInventoryAcceptThisItem(output)
+                    .ToString().ToLowerInvariant(),
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[]
+                {
+                    "storage_crafting_fixture_verification_failed"
+                }
+        };
+    }
+
+    private TrainingExecutionResult
         ExecuteSetupStoragePlacementTarget(
             TrainingExecutionRequest request)
     {

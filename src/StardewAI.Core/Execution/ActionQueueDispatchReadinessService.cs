@@ -30,6 +30,10 @@ public sealed class ActionQueueDispatchReadinessService
                 StringComparison.Ordinal) &&
             !string.Equals(
                 item.OptionId,
+                "executor.craft_storage_item",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                item.OptionId,
                 "executor.place_machine",
                 StringComparison.Ordinal) &&
             !string.Equals(

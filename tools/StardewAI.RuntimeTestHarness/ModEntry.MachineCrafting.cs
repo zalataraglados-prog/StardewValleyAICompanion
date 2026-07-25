@@ -10,6 +10,7 @@ public sealed partial class ModEntry
 {
     private TrainingExecutionResult ExecuteCraftMachineItem(TrainingExecutionRequest request)
     {
+        var primitiveKind = CraftingPrimitiveKind(request);
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
         {
@@ -24,13 +25,13 @@ public sealed partial class ModEntry
             string.IsNullOrWhiteSpace(request.IngredientRowsJson) ||
             !string.Equals(request.CraftingSource, "native_personal_crafting_menu", StringComparison.Ordinal))
         {
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_request_or_menu_state_invalid");
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_request_or_menu_state_invalid");
         }
         if (!Game1.player.craftingRecipes.TryGetValue(request.RecipeName, out var liveTimesCrafted) ||
             liveTimesCrafted != request.TimesCraftedBefore.Value ||
             !CraftingRecipe.craftingRecipes.ContainsKey(request.RecipeName))
         {
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_recipe_identity_or_count_drifted");
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_recipe_identity_or_count_drifted");
         }
 
         CraftingRecipe recipe;
@@ -42,21 +43,21 @@ public sealed partial class ModEntry
         }
         catch (Exception ex)
         {
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_recipe_creation_failed:" + ex.GetType().Name);
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_recipe_creation_failed:" + ex.GetType().Name);
         }
         if (recipe.itemToProduce.Count != 1 ||
             !string.Equals(preview.QualifiedItemId, request.OutputQualifiedItemId, StringComparison.Ordinal) ||
             !string.Equals(preview.ItemId, request.OutputItemId, StringComparison.Ordinal) ||
             preview.Stack != request.OutputCount.Value)
         {
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_output_projection_drifted");
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_output_projection_drifted");
         }
 
         var projectedIngredients = ProjectNativePersonalCraftIngredients(recipe, Game1.player.Items);
         if (!projectedIngredients.Satisfied ||
             !JsonEquivalent(projectedIngredients.RowsJson, request.IngredientRowsJson))
         {
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_ingredient_projection_drifted");
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_ingredient_projection_drifted");
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
@@ -104,19 +105,19 @@ public sealed partial class ModEntry
                 {
                     page.exitThisMenuNoSound();
                 }
-                return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_native_recipe_click_failed");
+                return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_native_recipe_click_failed");
             }
 
             var targetSlot = FindCraftedOutputInventorySlot(page.heldItem);
             if (targetSlot < 0 || targetSlot >= page.inventory.inventory.Count)
             {
-                return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_output_inventory_slot_unavailable_after_consumption");
+                return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_output_inventory_slot_unavailable_after_consumption");
             }
             var target = page.inventory.inventory[targetSlot].bounds.Center;
             page.receiveLeftClick(target.X, target.Y, playSound: false);
             if (page.heldItem is not null)
             {
-                return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_native_inventory_click_failed");
+                return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_native_inventory_click_failed");
             }
             page.exitThisMenuNoSound();
         }
@@ -126,7 +127,7 @@ public sealed partial class ModEntry
             {
                 page?.exitThisMenuNoSound();
             }
-            return BlockedWithPrimitive(request, "craft_machine_item", requested, CraftMachineObservedEffect(request), "craft_machine_item_native_menu_exception:" + ex.GetType().Name);
+            return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_native_menu_exception:" + ex.GetType().Name);
         }
 
         var expectedCounts = beforeCounts.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
@@ -155,7 +156,7 @@ public sealed partial class ModEntry
             FeedbackAvailable = true,
             StartedAt = started,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "craft_machine_item",
+            PrimitiveKind = primitiveKind,
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
                 ? new[]
@@ -176,7 +177,7 @@ public sealed partial class ModEntry
             ObservedEffect = CraftMachineObservedEffect(request) +
                 ";achievements_before=" + achievementsBefore + ";achievements_after=" + achievementsAfter +
                 ";quest_signature_before=" + questsBefore + ";quest_signature_after=" + questsAfter,
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "craft_machine_item_post_state_mismatch" },
+            BlockReasons = verified ? Array.Empty<string>() : new[] { primitiveKind + "_post_state_mismatch" },
             ChangedFacts = verified
                 ? affectedIds.Select(id => new SimulatedFactChange
                 {
@@ -192,6 +193,12 @@ public sealed partial class ModEntry
                 : Array.Empty<SimulatedFactChange>()
         };
     }
+
+    private static string CraftingPrimitiveKind(
+        TrainingExecutionRequest request) =>
+        request.OptionId == "executor.craft_storage_item"
+            ? "craft_storage_item"
+            : "craft_machine_item";
 
     private static ProjectedCraftIngredients ProjectNativePersonalCraftIngredients(CraftingRecipe recipe, IList<Item?> inventory)
     {
