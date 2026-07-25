@@ -82,7 +82,11 @@ namespace StardewAI.Core.Execution
             {
                 Parameter("compiler_context.active_menu_open", ActiveMenuOpen(snapshot).ToString().ToLowerInvariant()),
                 Parameter("compiler_context.active_menu_type", ActiveMenuType(snapshot)),
-                Parameter("compiler_context.close_menu_executor", "Game1.exitActiveMenu")
+                Parameter(
+                    "compiler_context.close_menu_executor",
+                    ActiveMenuType(snapshot) == "LevelUpMenu"
+                        ? "LevelUpMenu native completion path"
+                        : "Game1.exitActiveMenu")
             };
 
             return parameters.ToArray();

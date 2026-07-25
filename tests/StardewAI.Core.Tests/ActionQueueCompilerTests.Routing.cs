@@ -443,6 +443,7 @@ public sealed partial class ActionQueueCompilerTests
           "locations": {
             "collision_grid": {"value":{"location_id":"FarmHouse","width":70,"height":46,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":27,"tile_y":31,"target_location":"Farm","target_x":64,"target_y":15,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
@@ -492,6 +493,45 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("traverse_connector", step.StepType);
         Assert.Equal("current_location(27,31)", step.Target);
         Assert.Equal("location=Farm;player.tile=64,15", step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileReplacesCrossLocationMoveWithFirstTransparentConnectorAndReplanBoundary()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":26,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":31,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "map": {"value":{"width":70,"height":46},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "warps": {"value":[{"x":27,"y":31,"target_location":"Farm","target_x":64,"target_y":15}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":70,"height":46,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":27,"tile_y":31,"target_location":"Farm","target_x":64,"target_y":15,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[{"kind":"warp","from_location":"FarmHouse","from_x":27,"from_y":31,"target_location":"Farm","target_x":64,"target_y":15,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(snapshot.StateHash, new SmallModelPlanStep
+        {
+            StepId = "ship.move",
+            Kind = "move_to_tile",
+            TargetLocation = "Farm",
+            TargetTileX = 70,
+            TargetTileY = 13
+        });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.True(item.Status == "pending", string.Join("|", item.BlockingReasons.Concat(item.MissingStateFactors)));
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "cross_location_move_target" && parameter.Value == "Farm");
     }
 
     [Fact]

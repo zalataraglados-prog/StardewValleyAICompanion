@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -87,6 +88,11 @@ namespace StardewAI.Core.OptionRegistry
 
         private static bool IsExecutorEnabled(string optionId)
         {
+            if (RuntimeExecutorCapabilityCatalog.IsSupported(optionId))
+            {
+                return true;
+            }
+
             return optionId == "recovery.stabilize_day" ||
                 optionId == "farm.maintain_crops" ||
                 optionId == "farm.process_machines" ||
@@ -107,55 +113,8 @@ namespace StardewAI.Core.OptionRegistry
                 optionId == "mining.acquire_golden_scythe" ||
                 optionId == "volcano.reach_caldera" ||
                 optionId == "economy.buy_supplies" ||
-                optionId == "exploration.visit_location" ||
-                optionId == "executor.move_to_tile" ||
-                optionId == "executor.traverse_connector" ||
-                optionId == "executor.face_direction" ||
-                optionId == "executor.wait_ticks" ||
-                optionId == "executor.mine_stone" ||
-                optionId == "executor.break_container" ||
-                optionId == "executor.combat_monster" ||
-                optionId == "executor.shoot_monster" ||
-                optionId == "executor.place_bomb" ||
-                optionId == "executor.consume_food" ||
-                optionId == "executor.descend_ladder" ||
-                optionId == "executor.descend_shaft" ||
-                optionId == "executor.exit_mine" ||
-                optionId == "executor.cool_volcano_lava" ||
-                optionId == "executor.break_volcano_stone" ||
-                optionId == "executor.break_volcano_container" ||
-                optionId == "executor.combat_volcano_monster" ||
-                optionId == "executor.select_safe_item_slot" ||
-                optionId == "executor.close_menu" ||
-                optionId == "executor.buy_shop_item" ||
-                optionId == "executor.clear_obstacle" ||
-                optionId == "executor.break_farm_resource_clump" ||
-                optionId == "executor.break_current_location_resource_clump" ||
-                optionId == "executor.till_soil" ||
-                optionId == "executor.plant_seed" ||
-                optionId == "executor.harvest_crop" ||
-                optionId == "executor.harvest_giant_crop" ||
-                optionId == "executor.catch_fish" ||
-                optionId == "executor.interact" ||
-                optionId == "executor.sleep" ||
-                optionId == "executor.pickup_debris" ||
-                optionId == "executor.collect_spawned_object" ||
-                optionId == "executor.harvest_ginger" ||
-                optionId == "executor.harvest_bush" ||
-                optionId == "executor.claim_mine_reward_chest" ||
-                optionId == "executor.collect_crab_pot" ||
-                optionId == "executor.collect_fish_pond_output" ||
-                optionId == "executor.complete_fish_pond_request" ||
-                optionId == "executor.collect_animal_product" ||
-                optionId == "executor.pet_interact" ||
-                optionId == "executor.fill_pet_bowl" ||
-                optionId == "executor.pan_ore_spot" ||
-                optionId == "executor.collect_machine_output" ||
-                optionId == "executor.load_machine_input" ||
-                optionId == "executor.craft_machine_item" ||
-                optionId == "executor.read_book" ||
-                optionId == "executor.choose_dialogue_response" ||
-                optionId == "executor.social_interact";
+                optionId == "economy.sell_items" ||
+                optionId == "exploration.visit_location";
         }
 
         private static bool IsPreviewOnly(string optionId, string trainingRole, bool executorEnabled)
@@ -165,8 +124,7 @@ namespace StardewAI.Core.OptionRegistry
                 return !executorEnabled;
             }
 
-            return optionId == "economy.sell_items" ||
-                optionId == "economy.ship_items" ||
+            return optionId == "economy.ship_items" ||
                 optionId == "social.talk_npc" ||
                 optionId == "social.gift_npc" ||
                 optionId == "quest.advance";
@@ -174,11 +132,6 @@ namespace StardewAI.Core.OptionRegistry
 
         private static string ExecutorDisabledReason(string optionId)
         {
-            if (optionId == "economy.sell_items")
-            {
-                return "sell_shipping_executor_disabled";
-            }
-
             if (optionId == "social.talk_npc" || optionId == "social.gift_npc")
             {
                 return "social_high_level_direct_executor_disabled_use_daily_plan_compiler";

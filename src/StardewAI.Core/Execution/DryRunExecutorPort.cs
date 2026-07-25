@@ -65,6 +65,12 @@ namespace StardewAI.Core.Execution
                     queue.Actor.ControlSurface == "companion_actor";
             }
 
+            if (queue.ExecutionMode == ExecutionTargetProfiles.DedicatedHostAi)
+            {
+                return queue.Actor.ActorType == "ai_host" &&
+                    queue.Actor.ControlSurface == "dedicated_host_actor";
+            }
+
             return false;
         }
     }

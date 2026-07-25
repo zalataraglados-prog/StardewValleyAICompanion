@@ -320,6 +320,12 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("social_continuation_dialogue_recovery")]
         public bool SocialContinuationDialogueRecovery { get; set; }
 
+        [JsonPropertyName("profession_choice_id")]
+        public int? ProfessionChoiceId { get; set; }
+
+        [JsonPropertyName("profession_choice_source")]
+        public string ProfessionChoiceSource { get; set; } = string.Empty;
+
         [JsonPropertyName("connector_kind")]
         public string ConnectorKind { get; set; } = string.Empty;
 
@@ -349,6 +355,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("max_unit_price")]
         public int? MaxUnitPrice { get; set; }
+
+        [JsonPropertyName("expected_unit_price")]
+        public int? ExpectedUnitPrice { get; set; }
 
         [JsonPropertyName("expected_shop_id")]
         public string ExpectedShopId { get; set; } = string.Empty;

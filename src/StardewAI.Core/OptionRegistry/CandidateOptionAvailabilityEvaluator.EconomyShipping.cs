@@ -232,21 +232,30 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var sellContext = ReadStateFieldValue(snapshot, "menus", "sell_context");
-            var shopSellAvailable = sellContext.HasValue &&
-                sellContext.Value.ValueKind == JsonValueKind.Object &&
-                ReadBool(sellContext.Value, "read_only") != true &&
-                ReadBool(sellContext.Value, "held_item_present") != true &&
-                ReadInt(sellContext.Value, "safety_timer") <= 0;
+            var sellContextBlockReasons = SellContextBlockReasons(sellContext);
+            var shopSellAvailable = sellContextBlockReasons.Length == 0;
             var categories = ReadIntArray(sellContext, "categories_to_sell");
+            var tagGroups = ReadNestedStringArrays(sellContext, "tag_groups_to_sell");
+            var sellPercentage = sellContext.HasValue
+                ? ReadDouble(sellContext.Value, "sell_percentage")
+                : 0d;
+            var shopId = sellContext.HasValue
+                ? ReadString(sellContext.Value, "shop_id")
+                : string.Empty;
 
             return inventory.Value.EnumerateArray()
                 .Where(item => ReadBool(item, "is_empty") != true)
                 .Select(item =>
                 {
-                    var blockReasons = SellItemBlockReasons(item, shopSellAvailable, categories);
+                    var acceptedByShop = ShopAcceptsItem(item, categories, tagGroups);
+                    var blockReasons = SellItemBlockReasons(
+                        item,
+                        shopSellAvailable,
+                        acceptedByShop,
+                        sellContextBlockReasons);
                     var stack = Math.Max(1, ReadInt(item, "stack"));
-                    var sellToStorePrice = ReadInt(item, "sell_to_store_price");
-                    var canShopSell = shopSellAvailable && sellToStorePrice > 0 && CategoryAccepted(item, categories);
+                    var sellToStorePrice = (int)(ReadInt(item, "sell_to_store_price") * sellPercentage);
+                    var canShopSell = shopSellAvailable && sellToStorePrice > 0 && acceptedByShop;
                     return new EconomicCandidate
                     {
                         CandidateId = "sell:" + ReadInt(item, "slot_index"),
@@ -255,6 +264,7 @@ namespace StardewAI.Core.OptionRegistry
                         ItemId = ReadString(item, "item_id"),
                         QualifiedItemId = ReadString(item, "qualified_item_id"),
                         DisplayName = ReadString(item, "display_name"),
+                        ShopId = shopId,
                         SlotIndex = ReadInt(item, "slot_index"),
                         Quantity = stack,
                         UnitPrice = sellToStorePrice,
@@ -336,7 +346,10 @@ namespace StardewAI.Core.OptionRegistry
                 }
             }
 
-            var quantity = fullShipmentContributes ? 1 : stack;
+            // The native shipping-menu primitive uses one right-click and therefore
+            // transfers exactly one item. Remaining stack items are reconsidered from
+            // the next transparent snapshot instead of widening executor semantics.
+            const int quantity = 1;
             var availableStack = stack;
 
             var standTile = ReadBinStandTile(snapshot, binBounds);
@@ -468,9 +481,13 @@ namespace StardewAI.Core.OptionRegistry
             return result;
         }
 
-        private static string[] SellItemBlockReasons(JsonElement item, bool shopSellAvailable, int[] categories)
+        private static string[] SellItemBlockReasons(
+            JsonElement item,
+            bool shopSellAvailable,
+            bool acceptedByShop,
+            string[] sellContextBlockReasons)
         {
-            var reasons = new List<string>();
+            var reasons = new List<string>(sellContextBlockReasons);
             if (ReadBool(item, "protected_from_auto_sell") == true || HasArrayItems(item, "auto_sell_protection_reasons"))
             {
                 reasons.Add("inventory_item_protected_from_auto_sell");
@@ -483,11 +500,11 @@ namespace StardewAI.Core.OptionRegistry
                 reasons.Add("non_positive_sell_price");
             }
 
-            var canShopSell = shopSellAvailable && sellPrice > 0 && CategoryAccepted(item, categories);
+            var canShopSell = shopSellAvailable && sellPrice > 0 && acceptedByShop;
             if (!canShopSell)
             {
                 if (!shopSellAvailable) reasons.Add("menus_sell_context_unavailable");
-                if (shopSellAvailable && !CategoryAccepted(item, categories)) reasons.Add("item_not_accepted_by_active_shop");
+                if (shopSellAvailable && !acceptedByShop) reasons.Add("item_not_accepted_by_active_shop");
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -595,9 +612,56 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static bool CategoryAccepted(JsonElement item, int[] categories)
+        private static string[] SellContextBlockReasons(JsonElement? sellContext)
         {
-            return categories.Length == 0 || categories.Contains(ReadInt(item, "category"));
+            if (!sellContext.HasValue || sellContext.Value.ValueKind != JsonValueKind.Object)
+            {
+                return new[] { "menus_sell_context_unavailable" };
+            }
+
+            var reasons = new List<string>();
+            var context = sellContext.Value;
+            if (ReadBool(context, "read_only") != false) reasons.Add("shop_menu_read_only_or_unknown");
+            if (ReadBool(context, "held_item_present") != false) reasons.Add("shop_menu_held_item_present_or_unknown");
+            if (ReadInt(context, "safety_timer") > 0) reasons.Add("shop_menu_safety_timer_active");
+            if (ReadInt(context, "currency") != 0) reasons.Add("non_money_shop_sale_requires_audit");
+            if (ReadBool(context, "custom_on_sell_present") != false) reasons.Add("shop_custom_on_sell_requires_audit");
+            if (ReadBool(context, "storage_shop") != false) reasons.Add("storage_shop_sale_requires_audit");
+            if (ReadDouble(context, "sell_percentage") <= 0d) reasons.Add("shop_sell_percentage_missing_or_non_positive");
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool ShopAcceptsItem(JsonElement item, int[] categories, string[][] tagGroups)
+        {
+            if (categories.Contains(ReadInt(item, "category")))
+            {
+                return true;
+            }
+
+            var contextTags = ReadStringArray(item, "context_tags").ToHashSet(StringComparer.Ordinal);
+            return tagGroups.Any(group =>
+                group.Length > 0 &&
+                group.All(tag => contextTags.Contains(tag)));
+        }
+
+        private static string[][] ReadNestedStringArrays(JsonElement? parent, string propertyName)
+        {
+            if (!parent.HasValue ||
+                parent.Value.ValueKind != JsonValueKind.Object ||
+                !parent.Value.TryGetProperty(propertyName, out var value) ||
+                value.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<string[]>();
+            }
+
+            return value.EnumerateArray()
+                .Where(group => group.ValueKind == JsonValueKind.Array)
+                .Select(group => group.EnumerateArray()
+                    .Where(tag => tag.ValueKind == JsonValueKind.String)
+                    .Select(tag => tag.GetString() ?? string.Empty)
+                    .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                    .ToArray())
+                .ToArray();
         }
 
         private static bool HasArrayItems(JsonElement value, string propertyName)

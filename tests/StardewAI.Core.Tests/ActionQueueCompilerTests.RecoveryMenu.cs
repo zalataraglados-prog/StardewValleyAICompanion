@@ -568,6 +568,50 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Contains("close_menu_type_not_whitelisted", queue.Items[0].BlockingReasons);
     }
 
+    [Fact]
+    public void CompileCloseMenuRequiresOfferedProfessionChoiceForLevelUpMenu()
+    {
+        var snapshot = Snapshot("""
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"LevelUpMenu","is_sleep_prompt":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"level_up","is_active":true,"is_profession_chooser":true,"can_receive_input":true,"reflection_fields_complete":true,"current_skill":0,"current_level":5,"profession_choices":[{"profession_id":0},{"profession_id":1}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var request = Request(snapshot.StateHash, "executor.close_menu");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "profession_choice_id", Value = "1" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, row => row.Name == "profession_choice_id" && row.Value == "1");
+        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, row => row.Name == "compiler_context.close_menu_executor" && row.Value == "LevelUpMenu native completion path");
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksLevelUpProfessionChoiceWhenChoiceMissing()
+    {
+        var snapshot = Snapshot("""
+        {
+          "menus": {
+            "active_menu": {"value":{"is_open":true,"type":"LevelUpMenu","is_sleep_prompt":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"level_up","is_active":true,"is_profession_chooser":true,"can_receive_input":true,"reflection_fields_complete":true,"current_skill":0,"current_level":5,"profession_choices":[{"profession_id":0},{"profession_id":1}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("profession_choice_id_required", queue.Items[0].BlockingReasons);
+    }
+
     private static SnapshotEnvelope SafeOrdinaryDialogueSnapshot(string inject = "")
     {
         var json = """

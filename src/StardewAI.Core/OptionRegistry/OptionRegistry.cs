@@ -204,7 +204,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
                 TrainingRoles.Mixed,
-                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills", "current_location.large_terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills_detail", "current_location.large_terrain_features", "locations.collision_grid", "menus.active_menu" },
                 new[] { "one exact berry, tea, or golden-walnut bush selected", "native checkAction and Bush.performUseAction handed to the mechanical executor" },
                 new[] { "block_unready_bush", "block_custom_bush_runtime", "block_unverified_perimeter_route", "block_projection_drift", "block_direct_bush_or_reward_mutation" }));
 
@@ -252,7 +252,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
                 TrainingRoles.Mixed,
-                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "mining.player_resources", "player.inventory", "player.skills", "menus.active_menu" },
+                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "mining.player_resources", "player.inventory", "player.skills_detail", "menus.active_menu" },
                 new[] { "one exact live reward chest selected", "one native reward-open starts the lid animation", "after dumpContents empties the chest a separate empty-chest cleanup removes it" },
                 new[] { "block_skull_key_specialized_chain", "block_unknown_chest_family", "block_non_vanilla_chest_shape", "block_inventory_full", "block_projection_drift", "block_claim_click_before_dump" }));
 
@@ -337,6 +337,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "safe shop item purchased" },
                 new[] { "block_unmodeled_purchase_side_effects", "block_unknown_ui_clicks", "block_budget_mismatch" }));
 
+            Register(Option("executor.sell_shop_item", "economy", "Sell one exact inventory stack through the active shop",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.money", "player.inventory", "menus.active_menu", "menus.sell_context" },
+                new[] { "native ShopMenu inventory click applied", "exact inventory and money deltas verified" },
+                new[] { "never_sell_protected_items", "block_custom_on_sell", "block_non_money_shop", "block_candidate_or_price_drift" }));
+
             Register(Option("executor.choose_dialogue_response", "interaction", "Choose whitelisted dialogue response",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -373,7 +381,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "player.inventory", "player.skills", "menus.active_menu" },
+                new[] { "mining.current_mine", "mining.reward_chests", "mining.tiles", "player.inventory", "player.skills_detail", "menus.active_menu" },
                 new[] { "BFS reaches one adjacent stand tile", "one native reward-open starts the lid animation", "only after native dumpContents empties the chest does an empty-chest cleanup interaction remove it" },
                 new[] { "block_target_not_exact_reward_chest", "block_inventory_full", "block_menu_or_player_busy", "block_projection_drift", "block_claim_click_before_dump", "block_direct_reward_or_experience_mutation" }));
 
@@ -603,7 +611,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills", "current_location.large_terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills_detail", "current_location.large_terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one transparent perimeter stand tile", "native checkAction shakes the exact Bush", "offset, output, XP, and golden-walnut tracker deltas are verified by branch" },
                 new[] { "block_target_not_exact_bush", "block_unready_bush", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_bush_debris_inventory_nut_or_skill_mutation" }));
 
