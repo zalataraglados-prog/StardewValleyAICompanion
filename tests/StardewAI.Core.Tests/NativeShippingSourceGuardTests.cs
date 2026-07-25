@@ -34,39 +34,34 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void ShipExecutorHasNoSetCursorPositionReflection()
+    public void ShipExecutorDoesNotMoveTheOperatingSystemCursor()
     {
         var source = RuntimeHarnessSource;
+        var shipSlice = Slice(source, "private void StartShipInventoryItemToBin", "private static string ShipRequestedEffect");
         Assert.DoesNotContain("SetCursorPosition", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.setMousePosition", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseX(", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseY(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", shipSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseX(", shipSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.getMouseY(", shipSlice, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorHasCursorPositionVerification()
+    public void ShipExecutorRequiresCardinalNativeActionStandTile()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("cursor_position_mismatch", source, StringComparison.Ordinal);
-        Assert.Contains("active.PositionTarget.X", source, StringComparison.Ordinal);
-        Assert.Contains("active.PositionTarget.Y", source, StringComparison.Ordinal);
-        Assert.Contains("Math.Abs(actualX", source, StringComparison.Ordinal);
-        Assert.Contains("Math.Abs(actualY", source, StringComparison.Ordinal);
+        Assert.Contains("TryResolveShippingActionTile", source, StringComparison.Ordinal);
+        Assert.Contains("stand_tile_not_cardinal_to_shipping_bin", source, StringComparison.Ordinal);
+        Assert.Contains("Math.Abs(candidate.X - standTile.X) + Math.Abs(candidate.Y - standTile.Y) == 1", source, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ShipExecutorHasExplicitPerClickPhases()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("ShipPhase.BinPosition", source, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.BinPositionVerify", source, StringComparison.Ordinal);
+        Assert.Contains("ShipPhase.BinFace", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinPress", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinRelease", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.WaitForShippingMenu", source, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotPosition", source, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotPositionVerify", source, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotPress", source, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotRelease", source, StringComparison.Ordinal);
+        Assert.Contains("ShipPhase.SlotDispatch", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.WaitForSlotDispatch", source, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.VerifyAndClose", source, StringComparison.Ordinal);
     }
@@ -86,9 +81,20 @@ public sealed partial class NativeShippingSourceGuardTests
     {
         var source = RuntimeHarnessSource;
         Assert.Contains("ReleaseRetries", source, StringComparison.Ordinal);
-        Assert.Contains("ReleaseShipRightButton", source, StringComparison.Ordinal);
+        Assert.Contains("ReleaseShipInputOverrides", source, StringComparison.Ordinal);
         Assert.Contains("_failed_after_retries", source, StringComparison.Ordinal);
-        Assert.Contains("for (var i = 0; i < 3; i++)", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShipExecutorTimeoutReportsExactStateMachinePhase()
+    {
+        var source = RuntimeHarnessSource;
+        var tickSlice = Slice(source, "private void TickShipInventoryToBin", "private void TickShipBinOpenPhase");
+        Assert.Contains("ship_timeout_phase=", tickSlice, StringComparison.Ordinal);
+        Assert.Contains("ship_timeout_state=", tickSlice, StringComparison.Ordinal);
+        Assert.Contains("active.Phase", tickSlice, StringComparison.Ordinal);
+        Assert.Contains("active.SawShippingMenu", tickSlice, StringComparison.Ordinal);
+        Assert.Contains("active.SlotClickDispatched", tickSlice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -100,6 +106,16 @@ public sealed partial class NativeShippingSourceGuardTests
         Assert.Contains("player_not_on_exact_stand_tile", startSlice, StringComparison.Ordinal);
         Assert.Contains("!pending.Request.StandTileX.HasValue || !pending.Request.StandTileY.HasValue", startSlice, StringComparison.Ordinal);
         Assert.Contains("distance > 2.0f", startSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShipExecutorUsesVanillaShippingBinDistanceCoordinates()
+    {
+        var source = RuntimeHarnessSource;
+        var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
+        Assert.Contains("Game1.player.Tile", startSlice, StringComparison.Ordinal);
+        Assert.Contains("new Vector2(bin.tileX.Value + 0.5f, bin.tileY.Value)", startSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.TilePoint.X + 0.5f", startSlice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -177,12 +193,29 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void ShipExecutorSourceContainsShippingBinDoActionPath()
+    public void ShipExecutorUsesNativeActionAndMenuDispatchWithoutMouseOwnership()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("Game1.setMousePosition", source, StringComparison.Ordinal);
+        var shipSlice = Slice(source, "private void StartShipInventoryItemToBin", "private static string ShipRequestedEffect");
         Assert.Contains("OverrideButton", source, StringComparison.Ordinal);
-        Assert.Contains("SButton.MouseRight", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.X", shipSlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentLocation.checkAction", shipSlice, StringComparison.Ordinal);
+        Assert.Contains("TryOpenNativeShippingMenu", shipSlice, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveRightClick", shipSlice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition", shipSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShipExecutorFallbackReconstructsExactNativeShippingMenuBranch()
+    {
+        var source = RuntimeHarnessSource;
+        var menuSlice = Slice(source, "private static bool TryOpenNativeShippingMenu", "private static Point? InventorySlotScreenPosition");
+        Assert.Contains("AccessTools.Method(typeof(ShippingBin), \"shipItem\"", menuSlice, StringComparison.Ordinal);
+        Assert.Contains("Utility.highlightShippableObjects", menuSlice, StringComparison.Ordinal);
+        Assert.Contains("reverseGrab: true", menuSlice, StringComparison.Ordinal);
+        Assert.Contains("showReceivingMenu: false", menuSlice, StringComparison.Ordinal);
+        Assert.Contains("menu.initializeShippingBin()", menuSlice, StringComparison.Ordinal);
+        Assert.Contains("Game1.activeClickableMenu = menu", menuSlice, StringComparison.Ordinal);
     }
 
     [Fact]

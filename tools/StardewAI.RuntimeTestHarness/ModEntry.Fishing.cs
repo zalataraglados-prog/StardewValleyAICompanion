@@ -125,7 +125,7 @@ public sealed partial class ModEntry : Mod
             smapiInputStateType = inputType;
             smapiOverrideButtonMethod = inputType.GetMethod(
                 "OverrideButton",
-                BindingFlags.Instance | BindingFlags.Public,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
                 binder: null,
                 types: new[] { typeof(SButton), typeof(bool) },
                 modifiers: null);
