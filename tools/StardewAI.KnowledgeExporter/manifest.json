@@ -1,0 +1,9 @@
+{
+  "Name": "StardewAI Knowledge Exporter",
+  "Author": "StardewAI",
+  "Version": "0.1.0",
+  "Description": "Exports authoritative runtime game content with provenance and completeness manifests.",
+  "UniqueID": "StardewAI.KnowledgeExporter",
+  "EntryDll": "StardewAI.KnowledgeExporter.dll",
+  "MinimumApiVersion": "4.0.0"
+}
