@@ -6,6 +6,7 @@ using StardewValley.GameData.Machines;
 using StardewValley.Locations;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
 using StardewAI.TransparentBridge.State;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -101,6 +102,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var machineHasOutput =
                     MachineDataHasEffectiveOutput(liveMachineData);
                 var machineIsIdle = row.Pair.Value.MinutesUntilReady <= 0 && !row.Pair.Value.readyForHarvest.Value;
+                var removal = ReadMachineRemovalProjection(
+                    row.Pair.Value,
+                    probeLocationIsCurrent,
+                    row.IsPlayerControlled,
+                    player);
                 var harvestExperience = ReadMachineHarvestExperience(liveMachineData, player);
                 object machineData = minimalMachineProfile
                     ? new
@@ -129,6 +135,16 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     minutes_until_ready = row.Pair.Value.MinutesUntilReady,
                     machine_has_input = machineHasInput,
                     machine_has_output = machineHasOutput,
+                    runtime_type = row.Pair.Value.GetType().FullName ?? row.Pair.Value.GetType().Name,
+                    object_type = row.Pair.Value.Type,
+                    fragility = row.Pair.Value.Fragility,
+                    removal_status = removal.Status,
+                    removal_safe_now = removal.SafeNow,
+                    removal_block_reasons = removal.BlockReasons,
+                    removal_tool_slot_index = removal.ToolSlotIndex,
+                    removal_tool_qualified_item_id = removal.ToolQualifiedItemId,
+                    removal_native_contract = removal.NativeContract,
+                    removal_projection_fingerprint = removal.Fingerprint,
                     machine_row_count_total = machineRows.Length,
                     machine_row_snapshot_status = "complete_no_row_truncation",
                     machine_input_probe_machine_limit = MaxMachineInputProbeMachinesPerRefresh,
@@ -161,6 +177,130 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             })
             .ToArray();
     }
+
+    private static MachineRemovalProjection ReadMachineRemovalProjection(
+        StardewValley.Object machine,
+        bool locationIsCurrent,
+        bool locationIsPlayerControlled,
+        Farmer player)
+    {
+        const string nativeContract =
+            "Pickaxe.DoFunction_to_Object.performToolAction_then_performRemoveAction_and_exact_machine_debris";
+        var reasons = new List<string>();
+        var pickaxe = player.Items
+            .Select((item, index) => new { Item = item, Index = index })
+            .FirstOrDefault(row => row.Item is Pickaxe);
+        var runtimeType = machine.GetType().FullName ??
+            machine.GetType().Name;
+        var toolActionDeclaringType = machine.GetType()
+            .GetMethod(
+                nameof(StardewValley.Object.performToolAction),
+                BindingFlags.Instance | BindingFlags.Public,
+                binder: null,
+                types: new[] { typeof(Tool) },
+                modifiers: null)
+            ?.DeclaringType?.FullName ?? string.Empty;
+        var supportedToolAction =
+            string.Equals(
+                toolActionDeclaringType,
+                typeof(StardewValley.Object).FullName,
+                StringComparison.Ordinal) ||
+            string.Equals(
+                toolActionDeclaringType,
+                typeof(Cask).FullName,
+                StringComparison.Ordinal);
+
+        if (!locationIsCurrent)
+        {
+            reasons.Add(
+                "machine_removal_requires_loaded_current_location");
+        }
+        if (machine.owner.Value != 0 &&
+            machine.owner.Value != player.UniqueMultiplayerID)
+        {
+            reasons.Add("machine_removal_owner_mismatch");
+        }
+        if (!machine.bigCraftable.Value ||
+            machine.GetMachineData() is null ||
+            !string.Equals(
+                machine.Type,
+                "Crafting",
+                StringComparison.Ordinal))
+        {
+            reasons.Add("machine_removal_not_native_crafting_machine");
+        }
+        if (machine.Fragility != 0)
+        {
+            reasons.Add("machine_removal_fragility_not_recoverable");
+        }
+        if (machine.MinutesUntilReady > 0)
+        {
+            reasons.Add("machine_removal_processing");
+        }
+        if (machine.readyForHarvest.Value)
+        {
+            reasons.Add("machine_removal_output_ready");
+        }
+        if (machine.heldObject.Value is not null)
+        {
+            reasons.Add("machine_removal_held_item_or_attachment_present");
+        }
+        if (machine.isTemporarilyInvisible)
+        {
+            reasons.Add("machine_removal_temporarily_invisible");
+        }
+        if (!supportedToolAction)
+        {
+            reasons.Add(
+                "machine_removal_runtime_tool_override_not_verified");
+        }
+        if (pickaxe is null)
+        {
+            reasons.Add("machine_removal_pickaxe_unavailable");
+        }
+
+        var toolSlot = pickaxe?.Index;
+        var toolQualifiedItemId =
+            pickaxe?.Item?.QualifiedItemId ?? string.Empty;
+        var fingerprintInput = string.Join(
+            "|",
+            machine.QualifiedItemId,
+            runtimeType,
+            machine.Type,
+            machine.Fragility,
+            machine.MinutesUntilReady,
+            machine.readyForHarvest.Value,
+            machine.heldObject.Value?.QualifiedItemId ?? string.Empty,
+            locationIsCurrent,
+            locationIsPlayerControlled,
+            machine.owner.Value,
+            toolActionDeclaringType,
+            toolSlot?.ToString() ?? string.Empty,
+            toolQualifiedItemId,
+            nativeContract);
+        var fingerprint = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(fingerprintInput)))
+            .ToLowerInvariant();
+        return new MachineRemovalProjection(
+            reasons.Count == 0
+                ? "safe_idle_native_pickaxe"
+                : "blocked",
+            reasons.Count == 0,
+            reasons.ToArray(),
+            toolSlot,
+            toolQualifiedItemId,
+            nativeContract,
+            fingerprint);
+    }
+
+    private sealed record MachineRemovalProjection(
+        string Status,
+        bool SafeNow,
+        string[] BlockReasons,
+        int? ToolSlotIndex,
+        string ToolQualifiedItemId,
+        string NativeContract,
+        string Fingerprint);
 
     private static string MachineLocationTileKey(string locationId, Vector2 tile)
     {
