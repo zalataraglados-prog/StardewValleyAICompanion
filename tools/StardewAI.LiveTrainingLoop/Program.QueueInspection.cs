@@ -68,7 +68,7 @@ static partial class Program
         string queueId)
     {
         var item = execution["effective_queue_item"]?.AsObject() ?? FindQueueItemForExecution(queue, execution) ?? queue["items"]?.AsArray().FirstOrDefault()?.AsObject();
-        var effectiveBeforeSnapshot = execution["effective_before_snapshot"]?.AsObject() ?? beforeSnapshot;
+        var effectiveBeforeSnapshot = ReadEffectiveBeforeSnapshot(execution, beforeSnapshot);
         var effectiveStateHash = ReadString(execution, "effective_before_state_hash");
         if (string.IsNullOrWhiteSpace(effectiveStateHash))
         {
@@ -181,8 +181,8 @@ static partial class Program
                         Category("action.behavior_category", OptionBehaviorCategories.Mechanical),
                         Category("action.training_role", TrainingRoles.ExecutorCalibration),
                         Category("action.learning_scope", "calibration_only"),
-                        Category("action.execution_mode", "training_singleplayer"),
-                        Category("action.actor_type", "training_farmer"),
+                        Category("action.execution_mode", options.TargetExecutionMode),
+                        Category("action.actor_type", options.TargetActor.ActorType),
                         Category("action.execution_profile", isMove ? "real_runtime_move_harness" : "real_runtime_harness"),
                         Category("execution.primitive_kind", ReadString(execution, "primitive_kind")),
                         Category("execution.primitive_verification_status", primitiveVerificationStatus),
@@ -224,5 +224,32 @@ static partial class Program
         };
 
         return AppendJsonl(options.DatasetPath, row);
+    }
+
+    private static JsonObject ReadEffectiveBeforeSnapshot(JsonObject execution, JsonObject fallback)
+    {
+        if (execution["effective_before_snapshot"] is JsonObject embedded)
+        {
+            return embedded;
+        }
+
+        var path = ReadString(execution, "effective_before_snapshot_path");
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return fallback;
+        }
+
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8))?.AsObject() ?? fallback;
+        }
+        catch (JsonException)
+        {
+            return fallback;
+        }
+        catch (IOException)
+        {
+            return fallback;
+        }
     }
 }

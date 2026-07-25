@@ -16,7 +16,7 @@ static partial class Program
         {
             goal = options.Goal,
             state_hash = stateHash,
-            execution_mode = "training_singleplayer"
+            execution_mode = options.TargetExecutionMode
         }, JsonOptions);
         var modelOutput = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/mock-model/small-model-action", mockRequest);
         return await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/small-model/action-queue/compile", modelOutput.ToJsonString(JsonOptions));
@@ -36,13 +36,8 @@ static partial class Program
             source_model = "local-parameterized-action.v1",
             state_hash = stateHash,
             goal_id = options.Goal,
-            execution_mode = "training_singleplayer",
-            actor = new
-            {
-                actor_id = "training_farmer.main",
-                actor_type = "training_farmer",
-                control_surface = "training_sandbox"
-            },
+            execution_mode = options.TargetExecutionMode,
+            actor = options.TargetActor,
             actions = new[]
             {
                 new
@@ -105,7 +100,7 @@ static partial class Program
         {
             state_hash = stateHash,
             goal_id = options.Goal,
-            execution_mode = "training_singleplayer",
+            execution_mode = options.TargetExecutionMode,
             max_candidates = options.DailyPlanMaxCandidates,
             compile_action_queue = true,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
@@ -138,13 +133,8 @@ static partial class Program
             source_model = "local-plan-smoke.v1",
             state_hash = stateHash,
             goal_id = "goal.autonomous.singleplayer",
-            execution_mode = "training_singleplayer",
-            actor = new
-            {
-                actor_id = "training_farmer.main",
-                actor_type = "training_farmer",
-                control_surface = "training_sandbox"
-            },
+            execution_mode = options.TargetExecutionMode,
+            actor = options.TargetActor,
             plan_type = "mechanical_plan",
             steps = new[]
             {
