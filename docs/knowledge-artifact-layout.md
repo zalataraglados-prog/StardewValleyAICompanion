@@ -14,7 +14,7 @@ profile without committing game assets, snapshots, binaries, or generated dictio
 ```text
 %STARDEWAI_KNOWLEDGE_ROOT%\
   raw\game-1.6.15-20260723T093543Z\
-  derived\game-1.6.15-20260723T093543Z-linux-v19\
+  derived\game-1.6.15-20260723T093543Z-linux-v20\
   runtime-binaries\linux-server-1.6.15-20260719\
   snapshots\live-full-snapshot-20260719.json
 ```

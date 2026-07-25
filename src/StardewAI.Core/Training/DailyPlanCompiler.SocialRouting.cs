@@ -25,7 +25,17 @@ namespace StardewAI.Core.Training
             }
 
             var routeDistance = CandidateInt(candidate, "route_distance_tiles") ?? 0;
-            var actionKind = candidate.Kind == "social_talk_current" ? "talk" : "gift";
+            var actionKind = candidate.Kind == "social_talk_current"
+                ? "talk"
+                : candidate.Kind == "social_gift_current"
+                    ? "gift"
+                    : CandidateParameter(candidate, "quest_interaction_kind");
+            if (candidate.Kind == "quest_npc_interaction" &&
+                actionKind != "report" &&
+                actionKind != "offer_item")
+            {
+                return Array.Empty<SmallModelPlanStep>();
+            }
             var parameters = new List<SmallModelActionParameter>(candidate.Parameters)
             {
                 Parameter("social_action_kind", actionKind)
@@ -51,8 +61,8 @@ namespace StardewAI.Core.Training
                 },
                 new SmallModelPlanStep
                 {
-                    StepId = StepId(candidate, "social_interact", 1),
-                    Kind = "social_interact",
+                    StepId = StepId(candidate, candidate.Kind == "quest_npc_interaction" ? "quest_npc_interact" : "social_interact", 1),
+                    Kind = candidate.Kind == "quest_npc_interaction" ? "quest_npc_interact" : "social_interact",
                     TargetLocation = candidate.LocationId,
                     TargetTileX = npcTileX,
                     TargetTileY = npcTileY,
@@ -65,8 +75,11 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[]
                     {
-                        "social_npc_from_transparent_current_state",
-                        "social_adjacent_checked_by_move_to_tile_predecessor"
+                        "npc_from_transparent_current_state",
+                        "npc_adjacent_checked_by_move_to_tile_predecessor",
+                        candidate.Kind == "quest_npc_interaction"
+                            ? "quest_identity_and_progress_rebound_by_action_queue_compiler"
+                            : "social_legality_rebound_by_action_queue_compiler"
                     },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = parameters.ToArray()
@@ -113,6 +126,7 @@ namespace StardewAI.Core.Training
                 "continuation.target_location",
                 "continuation.slot_index",
                 "continuation.qualified_item_id",
+                "continuation.quest_candidate_id",
                 "continuation.machine_location_id",
                 "continuation.machine_tile_x",
                 "continuation.machine_tile_y",

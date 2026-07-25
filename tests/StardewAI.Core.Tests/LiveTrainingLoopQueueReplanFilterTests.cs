@@ -163,6 +163,34 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(collect, continuation, "blocked"));
     }
 
+    [Fact]
+    public void QuestContinuationKeepsExactQuestAcrossNpcRouteUntilNativeTerminal()
+    {
+        var route = QueueItem("queue.quest.route", "executor.traverse_connector", "4", "8", string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.option_id", "quest.advance"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.quest_candidate_id", "quest:3:ItemDeliveryQuest"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.npc_name", "Robin"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.target_location", "ScienceHouse"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("quest", continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            QuestCandidate("quest:7:FishingQuest"),
+            QuestCandidate("quest:3:ItemDeliveryQuest")
+        };
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(candidates, continuation));
+        Assert.Equal(
+            "quest:3:ItemDeliveryQuest",
+            selected!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var terminal = QueueItem("queue.quest.terminal", "executor.quest_npc_interact", "10", "10", "(O)388");
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("quest_candidate_id", "quest:3:ItemDeliveryQuest"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "blocked"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -215,6 +243,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["parameters"] = new JsonArray
             {
                 Parameter(continuationParameters ? "continuation.npc_name" : "npc_name", npcName)
+            }
+        };
+    }
+
+    private static JsonObject QuestCandidate(string candidateId)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = candidateId,
+            ["option_id"] = "quest.advance",
+            ["parameters"] = new JsonArray
+            {
+                Parameter("quest_candidate_id", candidateId)
             }
         };
     }

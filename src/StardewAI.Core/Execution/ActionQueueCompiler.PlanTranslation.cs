@@ -133,6 +133,7 @@ namespace StardewAI.Core.Execution
                 "break_volcano_container" => "executor.break_volcano_container",
                 "combat_volcano_monster" => "executor.combat_volcano_monster",
                 "social_interact" => "executor.social_interact",
+                "quest_npc_interact" => "executor.quest_npc_interact",
                 "ship_inventory_item_to_bin" => "executor.ship_inventory_item_to_bin",
                 _ => "unknown.plan_step"
             };
