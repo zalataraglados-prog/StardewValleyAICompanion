@@ -28,8 +28,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             """), new[] { "economy.buy_supplies" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("purchase_executor_disabled", option.BlockingReasons);
         Assert.DoesNotContain("no_value_available_purchase_candidates", option.BlockingReasons);
@@ -59,8 +61,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             """), new[] { "economy.buy_supplies" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("menus.shop_stock", option.MissingStateFactors);
         Assert.DoesNotContain("no_value_available_purchase_candidates", option.BlockingReasons);
@@ -124,8 +128,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             """), new[] { "economy.sell_items" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("no_value_available_sell_candidates", option.BlockingReasons);
         var candidate = Assert.Single(option.EconomicCandidates);
@@ -274,8 +280,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "exploration.visit_location" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("route_executor_disabled", option.BlockingReasons);
         var candidate = Assert.Single(option.EventCandidates);
@@ -349,8 +357,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "exploration.visit_location" })
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.True(option.ReadEligible);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
         Assert.DoesNotContain("route_executor_disabled", option.BlockingReasons);
         var route = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "route_connector_tile");
         Assert.False(route.Available);
@@ -538,7 +548,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
         Assert.False(option.Available);
         Assert.Equal("blocked", option.Status);
-        Assert.Contains("interact_target_tile_required", option.BlockingReasons);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
+        Assert.DoesNotContain("interact_target_tile_required", option.BlockingReasons);
         Assert.DoesNotContain("interact_executor_disabled", option.BlockingReasons);
         Assert.DoesNotContain("queue_global_compiler_block", option.BlockingReasons);
     }
@@ -560,7 +572,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Options[0];
 
         Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.Equal("bound", option.BindingStatus);
+        Assert.Equal("ready", option.CompileStatus);
         Assert.False(option.PreviewOnly);
         Assert.True(option.ExecutorEnabled);
         Assert.DoesNotContain("interact_executor_disabled", option.BlockingReasons);
@@ -578,8 +591,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Options[0];
 
         Assert.False(option.Available);
-        Assert.Equal("blocked", option.Status);
-        Assert.Contains("interact_target_tile_required", option.BlockingReasons);
+        Assert.Equal("unbound", option.Status);
+        Assert.Equal("unbound", option.BindingStatus);
+        Assert.Equal("not_evaluated", option.CompileStatus);
+        Assert.DoesNotContain("interact_target_tile_required", option.BlockingReasons);
         Assert.DoesNotContain("interact_executor_disabled", option.BlockingReasons);
         var candidate = Assert.Single(option.EventCandidates);
         Assert.Equal("interact:Town:11,10:OpenShop:SeedShop", candidate.CandidateId);

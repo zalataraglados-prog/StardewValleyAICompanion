@@ -543,7 +543,9 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
 
     return Results.Ok(new AvailabilityAwarePolicyPredictionEnvelope
     {
-        Prediction = ranker.Rank(report, rankedCandidates),
+        Prediction = rankedCandidates.Length == 0
+            ? new PolicyPredictionEnvelope()
+            : ranker.Rank(report, rankedCandidates),
         Availability = availability,
         RankedEventCandidates = eventCandidateRanker.Rank(report, availability)
     });

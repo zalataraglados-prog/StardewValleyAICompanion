@@ -29,6 +29,9 @@ namespace StardewAI.Contracts.Plans
 
     public sealed class SafetyResult
     {
+        [JsonPropertyName("read_eligible")]
+        public bool ReadEligible { get; set; }
+
         [JsonPropertyName("feasibility")]
         public string Feasibility { get; set; } = "unknown";
 

@@ -42,7 +42,10 @@ namespace StardewAI.Core.Tests
             var preview = compiler.Compile(snapshot, "water crops today", "efficiency");
 
             Assert.Equal("feasible", preview.Feasibility);
-            Assert.True(preview.WouldBeExecutable);
+            Assert.True(preview.WouldBeReadEligible);
+            Assert.True(preview.WouldBind);
+            Assert.False(preview.WouldCompile);
+            Assert.False(preview.WouldBeExecutable);
             Assert.Equal("disabled", preview.ExecutionPermission);
             Assert.True(preview.PreviewOnly);
         }

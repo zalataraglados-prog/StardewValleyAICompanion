@@ -48,6 +48,9 @@ namespace StardewAI.Core.PreviewCompiler
                 Options = new[] { optionInstance }
             };
             SafetyResult safety = verifier.Verify(snapshot, spec);
+            var safetyPolicy = SafetyPolicyGate.Evaluate(spec, new OptionAvailabilityCandidate());
+            var wouldRequireConfirmation =
+                safetyPolicy.ExecutionAuthorization == "confirmation_required";
 
             return new CommandPreview
             {
@@ -59,7 +62,13 @@ namespace StardewAI.Core.PreviewCompiler
                 Feasibility = safety.Feasibility,
                 PreviewOnly = true,
                 ExecutionPermission = "disabled",
-                WouldBeExecutable = safety.Feasibility == "feasible",
+                WouldBeExecutable = false,
+                WouldBeReadEligible = safety.ReadEligible,
+                WouldBind = true,
+                WouldCompile = false,
+                WouldRequireConfirmation = wouldRequireConfirmation,
+                WouldBeExecutionAuthorized =
+                    safetyPolicy.ExecutionAuthorization == "authorized",
                 RequiredStateFactors = spec.RequiredStateFactors,
                 MissingStateFactors = safety.MissingStateFactors,
                 PreconditionResults = safety.PreconditionResults,

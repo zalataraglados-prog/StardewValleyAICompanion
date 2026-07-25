@@ -98,9 +98,11 @@ namespace StardewAI.Core.OptionRegistry
             var safety = verifier.Verify(snapshot, option);
             var reasons = new List<string>(safety.BlockingReasons);
             var notes = new List<string>();
-            var compilerReasons = IsUnboundSocialCandidate(candidate) || IsSocialContinuationCandidate(candidate)
-                ? Array.Empty<string>()
-                : CompilerProbeBlockingReasons(snapshot, candidate, commitmentLedger);
+            var compilerProbe = IsUnboundSocialCandidate(candidate) || IsSocialContinuationCandidate(candidate)
+                ? new CompilerProbeResult()
+                : ProbeCompiler(snapshot, candidate, commitmentLedger);
+            var compilerReasons = compilerProbe.BlockingReasons;
+            var safetyPolicy = SafetyPolicyGate.Evaluate(option, candidate);
             var economicCandidates = EconomicCandidates(snapshot, option.OptionId);
             var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
@@ -121,6 +123,7 @@ namespace StardewAI.Core.OptionRegistry
             reasons.AddRange(valueReasons);
             reasons.AddRange(eventCandidateReasons);
             reasons.AddRange(socialCandidateReasons);
+            reasons.AddRange(safetyPolicy.BlockingReasons);
             var executorEnabled = IsExecutorEnabled(option.OptionId);
             var previewOnly = IsPreviewOnly(option.OptionId, option.TrainingRole, executorEnabled);
 
@@ -144,18 +147,42 @@ namespace StardewAI.Core.OptionRegistry
             var hasValueBlock = valueReasons.Length > 0;
             var hasEventCandidateBlock = eventCandidateReasons.Length > 0;
             var hasSocialCandidateBlock = socialCandidateReasons.Length > 0;
-            var status = hasMissingState
-                ? "blocked"
-                : hasParameterBlock ? "blocked"
-                : hasValueBlock ? "blocked"
-                : hasEventCandidateBlock ? "blocked"
-                : hasSocialCandidateBlock ? "blocked"
-                : previewOnly ? "preview_available" : "available";
+            var hasDomainBlock = hasValueBlock || hasEventCandidateBlock || hasSocialCandidateBlock;
+            var compileReady = compilerProbe.CompileStatus == "ready";
+            var executionAuthorized = safetyPolicy.ExecutionAuthorization == "authorized";
+            var available = safety.ReadEligible &&
+                compilerProbe.BindingStatus == "bound" &&
+                compileReady &&
+                executionAuthorized &&
+                !hasDomainBlock &&
+                !previewOnly &&
+                executorEnabled;
+            var status = !safety.ReadEligible ||
+                hasParameterBlock ||
+                hasDomainBlock ||
+                safetyPolicy.ExecutionAuthorization == "denied"
+                    ? "blocked"
+                    : safetyPolicy.ExecutionAuthorization == "confirmation_required"
+                        ? "confirmation_required"
+                        : previewOnly
+                            ? "preview_available"
+                            : compilerProbe.BindingStatus == "unbound"
+                                ? "unbound"
+                                : compilerProbe.CompileStatus == "blocked"
+                                    ? "blocked"
+                                    : "available";
 
             return new OptionAvailability
             {
                 OptionId = option.OptionId,
-                Available = !hasMissingState && !hasParameterBlock && !hasValueBlock && !hasEventCandidateBlock && !hasSocialCandidateBlock && !previewOnly,
+                Available = available,
+                ReadEligible = safety.ReadEligible,
+                BindingStatus = compilerProbe.BindingStatus,
+                CompileStatus = compilerProbe.CompileStatus,
+                ExecutionAuthorization = safetyPolicy.ExecutionAuthorization,
+                RuntimeEvidenceStatus = option.RuntimeStatus,
+                TrainingEligibility = option.TrainingEligibility,
+                ProductStatus = option.ProductStatus,
                 Status = status,
                 PreviewOnly = previewOnly,
                 ExecutorEnabled = executorEnabled,
@@ -166,7 +193,10 @@ namespace StardewAI.Core.OptionRegistry
                 Parameters = candidate.Parameters,
                 MissingStateFactors = safety.MissingStateFactors,
                 BlockingReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
-                HardBlockReasons = safety.BlockingReasons,
+                HardBlockReasons = safety.BlockingReasons
+                    .Concat(safetyPolicy.BlockingReasons)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
                 PreconditionResults = safety.PreconditionResults,
                 AvailabilityNotes = notes.ToArray(),
                 EconomicCandidates = economicCandidates,

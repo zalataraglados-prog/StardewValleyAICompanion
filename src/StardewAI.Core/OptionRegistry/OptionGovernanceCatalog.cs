@@ -46,6 +46,13 @@ namespace StardewAI.Core.OptionRegistry
         private static readonly AutonomousCandidatePolicy Allowed = AutonomousCandidatePolicy.Allowed;
         private static readonly AutonomousCandidatePolicy Policy = AutonomousCandidatePolicy.PolicyAuthorizationRequired;
         private static readonly AutonomousCandidatePolicy Explicit = AutonomousCandidatePolicy.ExplicitUserConfirmationRequired;
+        private static readonly HashSet<string> NoParameterOptionIds = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "farm.maintain_crops",
+            "farm.process_machines",
+            "recovery.stabilize_day",
+            "executor.close_menu"
+        };
 
         private static readonly IReadOnlyDictionary<string, OptionGovernancePolicy> Policies =
             BuildPolicies();
@@ -61,12 +68,14 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             spec.SemanticKind = policy.SemanticKind;
-            spec.ParameterSchema = policy.SemanticKind == OptionSemanticKind.GoalTemplate
-                ? ParameterSchemaPolicy.GoalParameters
-                : policy.SemanticKind == OptionSemanticKind.CompositeOptionSpec
-                    ? ParameterSchemaPolicy.CandidateBoundParameters
-                    : ParameterSchemaPolicy.PrimitiveActionParameters;
-            spec.RequiredFactPolicy = RequiredFactPolicy.AllRequiredFailClosed;
+            spec.ParameterSchema = NoParameterOptionIds.Contains(spec.OptionId)
+                ? ParameterSchemaPolicy.NoParameters
+                : policy.SemanticKind == OptionSemanticKind.GoalTemplate
+                    ? ParameterSchemaPolicy.GoalParameters
+                    : policy.SemanticKind == OptionSemanticKind.CompositeOptionSpec
+                        ? ParameterSchemaPolicy.CandidateBoundParameters
+                        : ParameterSchemaPolicy.PrimitiveActionParameters;
+            spec.RequiredFactPolicy = CreateRequiredFactPolicy();
             spec.RiskClass = policy.RiskClass;
             spec.Irreversibility = policy.Irreversibility;
             spec.ConfirmationPolicy = policy.ConfirmationPolicy;
@@ -101,7 +110,12 @@ namespace StardewAI.Core.OptionRegistry
             if (spec.SchemaVersion != "option_spec.v2" ||
                 spec.SemanticKind == OptionSemanticKind.Unknown ||
                 spec.ParameterSchema == ParameterSchemaPolicy.Unknown ||
-                spec.RequiredFactPolicy == RequiredFactPolicy.Unknown ||
+                spec.RequiredFactPolicy.Mode == RequiredFactPolicyMode.Unknown ||
+                spec.RequiredFactPolicy.DefaultRule.AllowedStatuses.Length == 0 ||
+                spec.RequiredFactPolicy.DefaultRule.RequiredProvenanceKinds.Length == 0 ||
+                spec.RequiredFactPolicy.DefaultRule.AllowedAdapterIds.Length == 0 ||
+                spec.RequiredFactPolicy.DefaultRule.MinimumConfidence <= 0 ||
+                spec.RequiredFactPolicy.DefaultRule.MaximumAgeTicks <= 0 ||
                 spec.RiskClass == OptionRiskClass.Unknown ||
                 spec.Irreversibility == OptionIrreversibility.Unknown ||
                 spec.ConfirmationPolicy == OptionConfirmationPolicy.Unknown ||
@@ -126,6 +140,19 @@ namespace StardewAI.Core.OptionRegistry
             {
                 throw new InvalidOperationException(
                     $"Option '{spec.OptionId}' is irreversible but has no confirmation policy.");
+            }
+
+            var factOverrides = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var rule in spec.RequiredFactPolicy.FactOverrides)
+            {
+                if (!ValidFactRule(rule) ||
+                    !Array.Exists(spec.RequiredStateFactors, factor =>
+                        string.Equals(factor, rule.StateFactor, StringComparison.Ordinal)) ||
+                    !factOverrides.Add(rule.StateFactor))
+                {
+                    throw new InvalidOperationException(
+                        $"Option '{spec.OptionId}' has an invalid required-fact override for '{rule.StateFactor}'.");
+                }
             }
         }
 
@@ -236,6 +263,58 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return result;
+        }
+
+        private static RequiredFactPolicy CreateRequiredFactPolicy()
+        {
+            return new RequiredFactPolicy
+            {
+                Mode = RequiredFactPolicyMode.AllRequiredFailClosed,
+                DefaultRule = new RequiredFactRule
+                {
+                    StateFactor = "*",
+                    AllowedStatuses = new[] { "available" },
+                    MinimumConfidence = 1.0,
+                    MaximumAgeTicks = 120,
+                    RequiredProvenanceKinds = new[] { "game_object", "test" },
+                    AllowedAdapterIds = new[]
+                    {
+                        "test",
+                        "vanilla_1_6",
+                        "vanilla_1_6_farm",
+                        "vanilla_1_6_menu",
+                        "vanilla_1_6_route",
+                        "vanilla_1_6_npc",
+                        "vanilla_1_6_shops",
+                        "vanilla_1_6_pet",
+                        "vanilla_1_6_pet_bowl",
+                        "vanilla_1_6_crop_data",
+                        "vanilla_1_6_farm_and_animal_houses",
+                        "vanilla_1_6_material_inventory_graph",
+                        "mining_read_adapter",
+                        "volcano_read_adapter",
+                        "transparent_bridge_main_thread_cache",
+                        "smapi_mod_registry",
+                        "smapi_save_data",
+                        "smapi_mod_state",
+                        "smapi_constants",
+                        "process_environment",
+                        "bridge_manifest",
+                        "bridge_transport"
+                    },
+                    AllowedDerivationIds = Array.Empty<string>()
+                }
+            };
+        }
+
+        private static bool ValidFactRule(RequiredFactRule rule)
+        {
+            return !string.IsNullOrWhiteSpace(rule.StateFactor) &&
+                rule.AllowedStatuses.Length > 0 &&
+                rule.MinimumConfidence > 0 &&
+                rule.MaximumAgeTicks > 0 &&
+                rule.RequiredProvenanceKinds.Length > 0 &&
+                rule.AllowedAdapterIds.Length > 0;
         }
 
         private static KeyValuePair<string, OptionGovernancePolicy> P(

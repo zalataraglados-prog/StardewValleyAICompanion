@@ -15,17 +15,52 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
+        private sealed class CompilerProbeResult
+        {
+            public string BindingStatus { get; init; } = "unbound";
+            public string CompileStatus { get; init; } = "not_evaluated";
+            public string[] BlockingReasons { get; init; } = Array.Empty<string>();
+        }
+
         private string[] CompilerProbeBlockingReasons(
             SnapshotEnvelope snapshot,
             OptionAvailabilityCandidate candidate,
             StrategyCommitmentLedger? commitmentLedger = null)
         {
-            if (candidate.Parameters.Length == 0 && candidate.OptionId != "executor.interact")
+            return ProbeCompiler(snapshot, candidate, commitmentLedger).BlockingReasons;
+        }
+
+        private CompilerProbeResult ProbeCompiler(
+            SnapshotEnvelope snapshot,
+            OptionAvailabilityCandidate candidate,
+            StrategyCommitmentLedger? commitmentLedger = null)
+        {
+            var option = optionRegistry.GetRequired(candidate.OptionId);
+            var parameterBound = candidate.Parameters.Length > 0 ||
+                option.ParameterSchema == ParameterSchemaPolicy.NoParameters;
+            if (!parameterBound)
             {
-                return Array.Empty<string>();
+                return new CompilerProbeResult();
             }
 
-            return CompilerProbeBlockingReasons(CompilerProbeItem(snapshot, candidate, commitmentLedger));
+            var item = CompilerProbeItem(snapshot, candidate, commitmentLedger);
+            if (item is null)
+            {
+                return new CompilerProbeResult
+                {
+                    BindingStatus = "bound",
+                    CompileStatus = "blocked",
+                    BlockingReasons = new[] { "compiler_probe_did_not_return_queue_item" }
+                };
+            }
+
+            var reasons = CompilerProbeBlockingReasons(item);
+            return new CompilerProbeResult
+            {
+                BindingStatus = "bound",
+                CompileStatus = item.Status == "pending" && reasons.Length == 0 ? "ready" : "blocked",
+                BlockingReasons = reasons
+            };
         }
 
         private ActionQueueItem? CompilerProbeItem(
