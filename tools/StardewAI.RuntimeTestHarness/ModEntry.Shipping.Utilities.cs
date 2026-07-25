@@ -599,6 +599,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_machine_placement_target" &&
             request.OptionId != "debug.setup_storage_placement_target" &&
             request.OptionId != "debug.setup_storage_crafting_target" &&
+            request.OptionId != "debug.setup_machine_lifecycle_target" &&
             request.OptionId != "debug.setup_shipping_target" &&
             request.OptionId != "executor.select_safe_item_slot" &&
             request.OptionId != "executor.close_menu" &&
