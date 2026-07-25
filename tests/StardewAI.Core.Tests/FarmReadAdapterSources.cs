@@ -4,7 +4,24 @@ internal static class FarmReadAdapterSources
 {
     public static readonly string All = Load();
 
+    public static string Read(string fileName)
+    {
+        return File.ReadAllText(Path.Combine(
+            FindAdaptersDirectory(),
+            fileName));
+    }
+
     private static string Load()
+    {
+        var adaptersDirectory = FindAdaptersDirectory();
+        return string.Join(
+            "\n// --- FILE BOUNDARY ---\n",
+            Directory.GetFiles(adaptersDirectory, "FarmReadAdapter*.cs")
+                .OrderBy(Path.GetFileName, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+    }
+
+    private static string FindAdaptersDirectory()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
@@ -14,11 +31,10 @@ internal static class FarmReadAdapterSources
 
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Cannot find repository root.");
-        var adaptersDirectory = Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters");
-        return string.Join(
-            "\n// --- FILE BOUNDARY ---\n",
-            Directory.GetFiles(adaptersDirectory, "FarmReadAdapter*.cs")
-                .OrderBy(Path.GetFileName, StringComparer.Ordinal)
-                .Select(File.ReadAllText));
+        return Path.Combine(
+            root,
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters");
     }
 }

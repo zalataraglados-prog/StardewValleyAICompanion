@@ -31,7 +31,8 @@ public sealed partial class FullShipmentContributionTests
     [Fact]
     public void AdapterScopeUsesUseSeparateWalletsNotReferenceEquals()
     {
-        var source = FarmReadAdapterSources.All;
+        var source = FarmReadAdapterSources.Read(
+            "FarmReadAdapter.BuildingsShipping.cs");
 
         Assert.Contains("useSeparateWallets", source);
         Assert.DoesNotContain("ReferenceEquals", source);

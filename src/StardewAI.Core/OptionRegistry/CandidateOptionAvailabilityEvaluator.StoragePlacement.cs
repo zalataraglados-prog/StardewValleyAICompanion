@@ -36,17 +36,29 @@ namespace StardewAI.Core.OptionRegistry
             var projectionFingerprint = ReadString(
                 context.Value,
                 "static_projection_fingerprint");
+            var routeCandidates = RouteConnectorCandidates(
+                snapshot,
+                int.MaxValue);
             return rows.EnumerateArray()
                 .Where(row =>
                     row.ValueKind ==
                     JsonValueKind.Object)
-                .Select(row =>
-                    BuildStoragePlacementCandidate(
-                        snapshot,
-                        row,
-                        currentLocationId,
-                        projectionFingerprint,
-                        commitmentLedger))
+                .SelectMany(row => new[]
+                    {
+                        BuildStoragePlacementCandidate(
+                            snapshot,
+                            row,
+                            currentLocationId,
+                            projectionFingerprint,
+                            commitmentLedger)
+                    }
+                    .Concat(
+                        BuildRemoteStoragePlacementCandidates(
+                            snapshot,
+                            row,
+                            currentLocationId,
+                            routeCandidates,
+                            commitmentLedger)))
                 .OrderBy(
                     candidate => candidate.CandidateId,
                     StringComparer.Ordinal)
@@ -87,23 +99,23 @@ namespace StardewAI.Core.OptionRegistry
         private static string StorageRole(
             JsonElement row)
         {
-            if (ReadBool(row, "shipping_storage"))
+            if (ReadBool(row, "shipping_storage") == true)
             {
                 return "shipping";
             }
-            if (ReadBool(row, "fridge_storage"))
+            if (ReadBool(row, "fridge_storage") == true)
             {
                 return "fridge";
             }
             if (ReadBool(
                     row,
-                    "shared_global_storage"))
+                    "shared_global_storage") == true)
             {
                 return "shared_global";
             }
             if (ReadBool(
                     row,
-                    "ordinary_material_storage"))
+                    "ordinary_material_storage") == true)
             {
                 return "ordinary_material";
             }

@@ -72,7 +72,7 @@ namespace StardewAI.Core.Execution
             StoragePlacementIdentityMatches(
                 SmallModelAction action,
                 JsonElement row,
-                string itemId,
+                string? itemId,
                 int expectedStack)
         {
             return expectedStack >= 1 &&
