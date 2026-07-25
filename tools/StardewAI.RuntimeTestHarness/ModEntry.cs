@@ -653,6 +653,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_storage_placement_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupStoragePlacementTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_shipping_target")
             {
                 pending.Completion.SetResult(ExecuteSetupShippingTarget(pending.Request));
