@@ -36,17 +36,29 @@ namespace StardewAI.Core.OptionRegistry
             var projectionFingerprint = ReadString(
                 context.Value,
                 "static_projection_fingerprint");
+            var routeCandidates = RouteConnectorCandidates(
+                snapshot,
+                int.MaxValue);
             return rows.EnumerateArray()
                 .Where(row =>
                     row.ValueKind ==
                     JsonValueKind.Object)
-                .Select(row =>
-                    BuildStoragePlacementCandidate(
-                        snapshot,
-                        row,
-                        currentLocationId,
-                        projectionFingerprint,
-                        commitmentLedger))
+                .SelectMany(row => new[]
+                    {
+                        BuildStoragePlacementCandidate(
+                            snapshot,
+                            row,
+                            currentLocationId,
+                            projectionFingerprint,
+                            commitmentLedger)
+                    }
+                    .Concat(
+                        BuildRemoteStoragePlacementCandidates(
+                            snapshot,
+                            row,
+                            currentLocationId,
+                            routeCandidates,
+                            commitmentLedger)))
                 .OrderBy(
                     candidate => candidate.CandidateId,
                     StringComparer.Ordinal)

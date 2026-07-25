@@ -7,6 +7,164 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private TrainingExecutionResult
+        ExecuteSetupStoragePlacementTarget(
+            TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+        if (!request.TargetTileX.HasValue ||
+            !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_storage_placement_target",
+                "player.inventory.storage_available=true",
+                "target_tile=missing",
+                "target_tile_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var farm = Game1.getFarm();
+        var target = new Point(
+            request.TargetTileX.Value,
+            request.TargetTileY.Value);
+        var targetVector = new Vector2(
+            target.X,
+            target.Y);
+        var qualifiedItemId =
+            string.IsNullOrWhiteSpace(
+                request.QualifiedItemId)
+                ? "(BC)130"
+                : request.QualifiedItemId;
+        farm.objects.Remove(targetVector);
+        farm.terrainFeatures.Remove(targetVector);
+        var slotIndex = EnsureInventoryItem(
+            qualifiedItemId,
+            1);
+        var moved = MoveFixtureFarmerToFarmAdjacent(
+            target,
+            out var stand,
+            out var moveReason);
+        var storageItem =
+            slotIndex >= 0 &&
+            slotIndex < Game1.player.Items.Count
+                ? Game1.player.Items[slotIndex] as
+                    StardewValley.Object
+                : null;
+        var nativeBranch = string.Empty;
+        var classified = storageItem is not null &&
+            TryClassifyNativePlayerStorageItem(
+                storageItem,
+                out nativeBranch);
+        var nativeLegal = classified &&
+            Utility.playerCanPlaceItemHere(
+                farm,
+                storageItem!,
+                target.X * Game1.tileSize,
+                target.Y * Game1.tileSize,
+                Game1.player);
+        var verified = slotIndex >= 0 &&
+            moved &&
+            nativeLegal &&
+            Game1.currentLocation == farm &&
+            Game1.player.TilePoint == stand;
+
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt =
+                DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind =
+                "debug_setup_storage_placement_target",
+            PrimitiveVerificationStatus = verified
+                ? "verified"
+                : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[]
+                {
+                    "isolated_inventory_storage_available",
+                    "target_tile_cleared",
+                    "player_moved_adjacent",
+                    "Utility.playerCanPlaceItemHere=true",
+                    "inventory_slot_index=" + slotIndex,
+                    "native_storage_branch=" +
+                    nativeBranch,
+                    "stand_tile=" + stand.X +
+                    "," + stand.Y
+                }
+                : new[]
+                {
+                    slotIndex >= 0
+                        ? "inventory_storage_available"
+                        : "inventory_storage_unavailable",
+                    classified
+                        ? "native_storage_classified"
+                        : "inventory_item_not_supported_storage",
+                    moved
+                        ? "player_moved_adjacent"
+                        : moveReason,
+                    nativeLegal
+                        ? "native_placement_legal"
+                        : "native_placement_illegal"
+                },
+            RequestedEffect =
+                "player.inventory.storage_available=true" +
+                ";location_id=Farm;target_tile=" +
+                target.X + "," + target.Y,
+            ObservedEffect =
+                "location_id=" +
+                (Game1.currentLocation?.NameOrUniqueName ??
+                 "null") +
+                ";target_tile=" + target.X +
+                "," + target.Y +
+                ";stand_tile=" + stand.X +
+                "," + stand.Y +
+                ";inventory_slot_index=" + slotIndex +
+                ";qualified_item_id=" +
+                (storageItem?.QualifiedItemId ?? "null") +
+                ";native_storage_branch=" +
+                (classified ? nativeBranch : "unavailable") +
+                ";native_placement_legal=" +
+                nativeLegal.ToString().ToLowerInvariant(),
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[]
+                {
+                    "storage_placement_fixture_not_ready"
+                },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path =
+                            "player.inventory[" +
+                            slotIndex + "]",
+                        Before = "unknown",
+                        After = qualifiedItemId + ":1"
+                    },
+                    new SimulatedFactChange
+                    {
+                        Path = "player.tile",
+                        Before = "unknown",
+                        After = stand.X + "," + stand.Y
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
     private TrainingExecutionResult ExecutePlaceStorage(
         TrainingExecutionRequest request)
     {
