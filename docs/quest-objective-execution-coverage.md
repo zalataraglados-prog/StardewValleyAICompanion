@@ -1,7 +1,7 @@
 # Quest objective execution coverage
 
 This document records the executable quest boundary added after the authoritative
-1.6.15 dictionary v19 build. It is an implementation coverage record, not a claim
+1.6.15 dictionary build. It is an implementation coverage record, not a claim
 that every quest objective is executable.
 
 ## Authority
@@ -36,12 +36,13 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary socialize quest | next exact `who_to_greet` NPC plus native report terminal |
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
+| special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `ShipObjective` | existing one-item native shipping candidate filtered by native tag-set grammar |
 | special-order `ReachMineFloorObjective` | existing rolling perfect-mining candidate with exact ordinary/Skull level conversion |
 
 Every bound candidate carries the quest candidate ID, family, runtime type, selected
 objective index, and expected current/target counts. The action compiler rebinds those
-values to the fresh snapshot. The runtime then:
+values to the fresh snapshot. The NPC runtime then:
 
 1. resolves the same quest or special order;
 2. verifies NPC, tile, inventory slot, item identity, and progress counters;
@@ -54,19 +55,26 @@ values to the fresh snapshot. The runtime then:
 Cross-map NPC routes retain an exact quest continuation so replanning cannot silently
 switch to an ordinary social talk or another quest.
 
+Drop-box candidates use the resolved native drop-box location and do not treat
+`dropBoxTileLocation` as the interaction tile. That field only positions the quest
+indicator. The actual interaction target is indexed from the current map's exact
+`Action = "DropBox <box_id>"` property. Runtime execution calls
+`GameLocation.checkAction`, waits for the order's native mutex and
+`QuestContainerMenu`, clicks the projected inventory slot, closes through the menu's
+OK button, and verifies inventory, objective count, confirmation, and order state.
+
 ## Explicit remaining blockers
 
 The following objective bindings remain fail-closed:
 
 - ordinary craft, collect, slay, harvest, construction, lost-item pickup, accept, and
   base/no-action quest stages;
-- special-order collect, donate/drop-box, fish, gift, Junimo Kart score, and slay
+- special-order collect, fish, gift, Junimo Kart score, and slay
   objectives;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
   rows;
-- native drop-box menu insertion and confirmation;
-- runtime calibration of the new NPC quest terminal in an isolated save.
+- runtime calibration of the NPC and drop-box quest terminals in an isolated save.
 
 The fallback `quest_candidate` and `special_order_candidate` kinds now mean
 objective-specific binding is absent. They are not blocked by the obsolete blanket
@@ -74,7 +82,7 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- Core tests: 1,105 passed.
+- Core tests: 1,109 passed.
 - Backend tests: 67 passed.
 - Runtime harness: builds with zero errors and two pre-existing obsolete Cat/Dog
   warnings.

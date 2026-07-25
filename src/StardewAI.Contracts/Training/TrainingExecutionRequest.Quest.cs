@@ -30,5 +30,20 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("quest_expected_target_count")]
         public int? QuestExpectedTargetCount { get; set; }
+
+        [JsonPropertyName("quest_drop_box_id")]
+        public string QuestDropBoxId { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_drop_box_slot_index")]
+        public int? QuestDropBoxSlotIndex { get; set; }
+
+        [JsonPropertyName("quest_drop_box_qualified_item_id")]
+        public string QuestDropBoxQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_drop_box_expected_stack_before")]
+        public int? QuestDropBoxExpectedStackBefore { get; set; }
+
+        [JsonPropertyName("quest_drop_box_expected_accepted_count")]
+        public int? QuestDropBoxExpectedAcceptedCount { get; set; }
     }
 }

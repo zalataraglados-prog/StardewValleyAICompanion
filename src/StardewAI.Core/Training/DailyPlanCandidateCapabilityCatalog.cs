@@ -64,6 +64,7 @@ namespace StardewAI.Core.Training
                 Supported("recovery_sleep_before_collapse"),
                 Supported("recovery_sleep_immediately"),
                 Supported("route_connector_tile"),
+                Supported("quest_drop_box_donation"),
                 Supported("quest_npc_interaction"),
                 Supported("ship_inventory_item_to_bin"),
                 Supported("social_continuation_retry_wait"),

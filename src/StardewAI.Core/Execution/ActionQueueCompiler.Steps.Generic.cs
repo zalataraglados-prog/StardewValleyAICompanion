@@ -173,6 +173,31 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileQuestDropBoxDonateStep(SmallModelAction action)
+        {
+            var dropBoxId = ReadParameter(action, "quest_drop_box_id") ?? string.Empty;
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dropBoxId) ||
+                string.IsNullOrWhiteSpace(qualifiedItemId) ||
+                !targetX.HasValue ||
+                !targetY.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "quest_drop_box_donate",
+                    "drop_box:" + dropBoxId + ":tile(" + targetX + "," + targetY +
+                        "):item(" + qualifiedItemId + ")",
+                    "matching_special_order_donation_advanced_through_native_QuestContainerMenu",
+                    Math.Max(120, (ReadIntParameter(action, "estimated_minutes") ?? 2) * 60))
+            };
+        }
+
         private static SocialPlanEnvelope? CompileSocialPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "social.talk_npc" && action.OptionId != "social.gift_npc")

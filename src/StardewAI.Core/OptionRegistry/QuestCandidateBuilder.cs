@@ -377,7 +377,11 @@ namespace StardewAI.Core.OptionRegistry
                             {
                                 targetNpc = objFields.TargetName;
                             }
-                            if (!string.IsNullOrWhiteSpace(objFields.DropBoxGameLocation))
+                            if (!string.IsNullOrWhiteSpace(objFields.ResolvedDropBoxGameLocation))
+                            {
+                                targetLocation = objFields.ResolvedDropBoxGameLocation;
+                            }
+                            else if (!string.IsNullOrWhiteSpace(objFields.DropBoxGameLocation))
                             {
                                 targetLocation = objFields.DropBoxGameLocation;
                             }
