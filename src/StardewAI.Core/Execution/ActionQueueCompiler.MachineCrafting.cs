@@ -55,12 +55,34 @@ namespace StardewAI.Core.Execution
                 return reasons.ToArray();
             }
 
-            var expectedIngredientRows = row.Value.TryGetProperty("ingredient_rows", out var ingredientRows)
+            var craftingSource = ReadParameter(action, "crafting_source");
+            var usesWorkbench = string.Equals(
+                craftingSource,
+                "native_workbench_crafting_menu",
+                StringComparison.Ordinal);
+            var source = usesWorkbench
+                ? MachineWorkbenchCraftingSource(
+                    row.Value,
+                    ReadParameter(action, "workbench_access_point_id"))
+                : row;
+            if (!source.HasValue)
+            {
+                reasons.Add("craft_machine_item_source_not_verified_by_transparent_state");
+                return reasons.ToArray();
+            }
+
+            var expectedIngredientRows = source.Value.TryGetProperty("ingredient_rows", out var ingredientRows)
                 ? ingredientRows.GetRawText()
                 : "[]";
+            var expectedReadyStatus = usesWorkbench
+                ? "ready_for_native_workbench_crafting_menu"
+                : "ready_for_native_personal_crafting_menu";
+            var actualReadyStatus = usesWorkbench
+                ? ReadString(source.Value, "craft_candidate_status")
+                : ReadString(row.Value, "craft_candidate_status");
             var demand = MachineDemandProjectionEvaluator.Evaluate(snapshot, row.Value, commitmentLedger);
-            if (!string.Equals(ReadString(row.Value, "craft_candidate_status"), "ready_for_native_personal_crafting_menu", StringComparison.Ordinal) ||
-                ReadBool(row.Value, "output_inventory_acceptance_after_material_consumption") != true)
+            if (!string.Equals(actualReadyStatus, expectedReadyStatus, StringComparison.Ordinal) ||
+                ReadBool(source.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
                 reasons.Add("craft_machine_item_recipe_not_ready");
             }
@@ -69,9 +91,43 @@ namespace StardewAI.Core.Execution
                 ReadIntParameter(action, "output_count") != ReadInt(row.Value, "output_count_per_craft") ||
                 ReadIntParameter(action, "times_crafted_before") != ReadInt(row.Value, "times_crafted") ||
                 !string.Equals(ReadParameter(action, "ingredient_rows_json"), expectedIngredientRows, StringComparison.Ordinal) ||
-                !string.Equals(ReadParameter(action, "crafting_source"), "native_personal_crafting_menu", StringComparison.Ordinal))
+                !string.Equals(
+                    craftingSource,
+                    usesWorkbench
+                        ? "native_workbench_crafting_menu"
+                        : "native_personal_crafting_menu",
+                    StringComparison.Ordinal))
             {
                 reasons.Add("craft_machine_item_projection_drifted");
+            }
+            if (usesWorkbench)
+            {
+                var expectedNodeIds = source.Value.TryGetProperty("native_container_node_ids", out var nodeIds)
+                    ? nodeIds.GetRawText()
+                    : "[]";
+                var targetX = NullableReadInt(source.Value, "tile_x");
+                var targetY = NullableReadInt(source.Value, "tile_y");
+                var standX = ReadIntParameter(action, "stand_tile_x");
+                var standY = ReadIntParameter(action, "stand_tile_y");
+                if (!string.Equals(
+                        ReadParameter(action, "workbench_container_node_ids_json"),
+                        expectedNodeIds,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        ReadParameter(action, "location_id"),
+                        ReadString(source.Value, "location_id"),
+                        StringComparison.Ordinal) ||
+                    ReadIntParameter(action, "target_tile_x") != targetX ||
+                    ReadIntParameter(action, "target_tile_y") != targetY ||
+                    !standX.HasValue ||
+                    !standY.HasValue ||
+                    !targetX.HasValue ||
+                    !targetY.HasValue ||
+                    Math.Abs(standX.Value - targetX.Value) +
+                    Math.Abs(standY.Value - targetY.Value) != 1)
+                {
+                    reasons.Add("craft_machine_item_workbench_projection_drifted");
+                }
             }
             if (!demand.HasDemand ||
                 !string.Equals(ReadParameter(action, "machine_demand_class"), demand.DemandClass, StringComparison.Ordinal) ||
@@ -125,6 +181,30 @@ namespace StardewAI.Core.Execution
                     string.Equals(ReadString(row, "recipe_name"), recipeName, StringComparison.Ordinal))
                 {
                     return row;
+                }
+            }
+            return null;
+        }
+
+        private static JsonElement? MachineWorkbenchCraftingSource(
+            JsonElement row,
+            string? accessPointId)
+        {
+            if (string.IsNullOrWhiteSpace(accessPointId) ||
+                !row.TryGetProperty("workbench_crafting_sources", out var sources) ||
+                sources.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            foreach (var source in sources.EnumerateArray())
+            {
+                if (source.ValueKind == JsonValueKind.Object &&
+                    string.Equals(
+                        ReadString(source, "workbench_access_point_id"),
+                        accessPointId,
+                        StringComparison.Ordinal))
+                {
+                    return source;
                 }
             }
             return null;

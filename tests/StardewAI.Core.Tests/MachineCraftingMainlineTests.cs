@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Contracts.Strategy;
@@ -51,6 +52,42 @@ public sealed class MachineCraftingMainlineTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains("craft_machine_item_projection_drifted", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void WorkbenchSourceFlowsThroughCandidatePlanAndCompilerOwnedTopology()
+    {
+        var snapshot = WithWorkbenchSource(Snapshot(timesCrafted: 2, ready: true));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(availability.Options[0].EventCandidates.Where(row =>
+            row.Kind == "craft_machine_item" &&
+            Parameter(row.Parameters, "crafting_source") == "native_workbench_crafting_menu"));
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("access:workbench:FarmHouse:5,5", Parameter(candidate.Parameters, "workbench_access_point_id"));
+        Assert.Equal("[\"chest:FarmHouse:4,5\"]", Parameter(candidate.Parameters, "workbench_container_node_ids_json"));
+        Assert.Contains("native_consumption_plan", Parameter(candidate.Parameters, "ingredient_rows_json"));
+
+        var ranked = new EventCandidateRanker()
+            .Rank(new BaselineTrainingReport(), availability)
+            .Where(row => row.CandidateId == candidate.CandidateId)
+            .ToArray();
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", queue.Items.SelectMany(row => row.BlockingReasons)));
+        Assert.Empty(Assert.Single(queue.Items).BlockingReasons);
+
+        var parameter = Assert.Single(plan.Steps)
+            .Parameters.Single(row => row.Name == "workbench_container_node_ids_json");
+        parameter.Value = "[\"chest:FarmHouse:6,5\"]";
+        var drifted = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Contains(
+            "craft_machine_item_workbench_projection_drifted",
+            Assert.Single(drifted.Items).BlockingReasons);
     }
 
     [Fact]
@@ -440,6 +477,54 @@ public sealed class MachineCraftingMainlineTests
             }
         }
     };
+
+    private static SnapshotEnvelope WithWorkbenchSource(SnapshotEnvelope snapshot)
+    {
+        var root = JsonNode.Parse(JsonSerializer.Serialize(snapshot.State))!.AsObject();
+        var player = root["player"]!.AsObject();
+        player["tile_x"] = JsonNode.Parse("""{"value":5,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}""");
+        player["tile_y"] = JsonNode.Parse("""{"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}""");
+        var row = player["machine_crafting"]!["value"]!["rows"]![0]!.AsObject();
+        row["workbench_crafting_sources"] = JsonNode.Parse("""
+        [{
+          "workbench_access_point_id":"access:workbench:FarmHouse:5,5",
+          "location_id":"FarmHouse",
+          "tile_x":5,
+          "tile_y":5,
+          "projection_status":"exact_native_player_then_container_reverse_slot_consumption",
+          "blocking_reasons":[],
+          "native_container_node_ids":["chest:FarmHouse:4,5"],
+          "ingredient_rows":[{
+            "requirement_id_or_category":"388",
+            "required_count":30,
+            "available_count_before_this_ingredient":30,
+            "satisfied":true,
+            "native_consumption_plan":[{
+              "source_node_id":"chest:FarmHouse:4,5",
+              "slot_index":0,
+              "qualified_item_id":"(O)388",
+              "amount":30
+            }]
+          }],
+          "has_ingredients_for_one":true,
+          "craftable_count":1,
+          "output_inventory_acceptance_after_material_consumption":true,
+          "craft_candidate_status":"ready_for_native_workbench_crafting_menu"
+        }]
+        """);
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            root.ToJsonString(),
+            JsonOptions)!;
+        return new SnapshotEnvelope
+        {
+            SchemaVersion = snapshot.SchemaVersion,
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = snapshot.GameTick,
+            RealTimestamp = snapshot.RealTimestamp,
+            Completeness = snapshot.Completeness,
+            State = state
+        };
+    }
 
     private static string Parameter(IEnumerable<StardewAI.Contracts.Execution.SmallModelActionParameter> parameters, string name) =>
         parameters.Single(parameter => parameter.Name == name).Value;

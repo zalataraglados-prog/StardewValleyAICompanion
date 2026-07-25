@@ -18,6 +18,13 @@ namespace StardewAI.Core.Training
                 "times_crafted_before",
                 "ingredient_rows_json",
                 "crafting_source",
+                "workbench_access_point_id",
+                "workbench_container_node_ids_json",
+                "location_id",
+                "target_tile_x",
+                "target_tile_y",
+                "stand_tile_x",
+                "stand_tile_y",
                 "machine_demand_class",
                 "machine_scale",
                 "machine_horizon_status",
@@ -70,7 +77,8 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[]
                     {
-                        "native_personal_CraftingPage_click_only",
+                        "native_CraftingPage_click_only",
+                        "workbench_source_requires_native_MultipleMutexRequest",
                         "no_direct_inventory_or_progress_mutation",
                         "runtime_verify_exact_material_and_output_delta"
                     },
