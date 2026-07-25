@@ -118,6 +118,7 @@ namespace StardewAI.Core.Execution
                 "craft_machine_item" => "executor.craft_machine_item",
                 "craft_storage_item" => "executor.craft_storage_item",
                 "place_machine_item" => "executor.place_machine",
+                "remove_machine_item" => "executor.remove_machine",
                 "place_storage_item" => "executor.place_storage",
                 "read_book" => "executor.read_book",
                 "catch_fish" => "executor.catch_fish",

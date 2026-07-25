@@ -539,6 +539,16 @@ static partial class Program
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
+        var relocationIntentId = ReadQueueParameterString(
+            item,
+            "relocation_intent_id");
+        var machineRemovalProjectionFingerprint =
+            ReadQueueParameterString(
+                item,
+                "machine_removal_projection_fingerprint");
+        var toolQualifiedItemId = ReadQueueParameterString(
+            item,
+            "tool_qualified_item_id");
         var recipeName = ReadQueueParameterString(item, "recipe_name");
         var outputQualifiedItemId = ReadQueueParameterString(item, "output_qualified_item_id");
         var outputItemId = ReadQueueParameterString(item, "output_item_id");
@@ -876,6 +886,10 @@ static partial class Program
         {
             executionRequest.InputSlotIndex = inputSlotIndex.Value;
         }
+        executionRequest.RelocationIntentId = relocationIntentId;
+        executionRequest.MachineRemovalProjectionFingerprint =
+            machineRemovalProjectionFingerprint;
+        executionRequest.ToolQualifiedItemId = toolQualifiedItemId;
         executionRequest.RecipeName = recipeName;
         executionRequest.OutputQualifiedItemId = outputQualifiedItemId;
         executionRequest.OutputItemId = outputItemId;

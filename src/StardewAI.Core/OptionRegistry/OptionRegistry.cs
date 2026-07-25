@@ -780,6 +780,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates the machine at the rebound tile", "one matching inventory item is consumed through native placement callbacks" },
                 new[] { "block_inventory_machine_identity_drift", "block_location_or_tile_projection_drift", "block_unreachable_adjacent_stand", "block_material_reservation_drift", "block_native_placement_recheck" }));
 
+            Register(Option("executor.remove_machine", "farm", "Remove one explicitly selected idle machine through the native pickaxe and debris path",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "farm.machines", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native tool callbacks remove the exact source machine", "one matching recoverable machine debris item is created for the existing pickup and placement chain" },
+                new[] { "block_without_explicit_relocation_intent", "block_machine_identity_or_projection_drift", "block_processing_ready_or_attached_machine", "block_unverified_runtime_tool_override", "block_nonrecoverable_fragility", "block_native_post_state_mismatch" }));
+
             Register(Option("executor.place_storage", "farm", "Place one verified inventory storage item at one route-safe native-legal tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -851,7 +859,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 62;
+            const int expectedPrimitiveCount = 63;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

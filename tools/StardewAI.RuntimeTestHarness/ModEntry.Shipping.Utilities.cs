@@ -625,6 +625,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.craft_machine_item" &&
             request.OptionId != "executor.craft_storage_item" &&
             request.OptionId != "executor.place_machine" &&
+            request.OptionId != "executor.remove_machine" &&
             request.OptionId != "executor.place_storage" &&
             request.OptionId != "executor.catch_fish" &&
             request.OptionId != "executor.choose_dialogue_response" &&

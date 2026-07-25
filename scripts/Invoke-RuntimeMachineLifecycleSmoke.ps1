@@ -20,6 +20,7 @@ param(
     [int] $ProcessInputQuantity = 5,
     [string] $ProcessAdditionalItemsJson =
         '[{"qualified_item_id":"(O)382","quantity":1}]',
+    [switch] $VerifyRelocation,
     [switch] $KeepGameRunning
 )
 
@@ -205,6 +206,74 @@ function Find-Machine {
         }
     }
     return $null
+}
+
+function Find-Debris {
+    param(
+        $Snapshot,
+        [string] $QualifiedItemId
+    )
+    foreach ($debris in @(
+        $Snapshot.state.farm.debris.value
+    )) {
+        if ([string]$debris.qualified_item_id -eq
+                $QualifiedItemId -and
+            @($debris.chunks).Count -gt 0) {
+            return $debris
+        }
+    }
+    return $null
+}
+
+function Wait-MachineRecovery {
+    param(
+        [string] $Url,
+        [string] $LocationId,
+        [int] $X,
+        [int] $Y,
+        [string] $QualifiedItemId,
+        [int] $InventoryCountBefore,
+        [int] $TimeoutSeconds
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastStatus = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-WorldSnapshot `
+            -Url $Url -TimeoutSeconds 20
+        $machine = Find-Machine `
+            -Snapshot $snapshot `
+            -LocationId $LocationId -X $X -Y $Y
+        $debris = Find-Debris `
+            -Snapshot $snapshot `
+            -QualifiedItemId $QualifiedItemId
+        $inventoryCount = Inventory-Count `
+            -Snapshot $snapshot `
+            -QualifiedItemId $QualifiedItemId
+        $lastStatus =
+            "machine_present=$($null -ne $machine)" +
+            ";debris_present=$($null -ne $debris)" +
+            ";inventory=$inventoryCount"
+        if ($null -eq $machine -and $null -ne $debris) {
+            return [ordered]@{
+                snapshot = $snapshot
+                debris = $debris
+                mode = "debris_visible"
+            }
+        }
+        if ($null -eq $machine -and
+            $inventoryCount -gt $InventoryCountBefore) {
+            return [ordered]@{
+                snapshot = $snapshot
+                debris = $null
+                mode = "native_auto_collected"
+            }
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    throw (
+        "Native machine recovery did not settle before timeout. " +
+        "Last status: $lastStatus"
+    )
 }
 
 function Count-Machines {
@@ -730,6 +799,217 @@ try {
     else {
         ""
     }
+    $removeResult = $null
+    $afterRemove = $null
+    $pickupResult = $null
+    $afterPickup = $null
+    $relocatePlaceResult = $null
+    $afterRelocate = $null
+    $relocationTargetX = $null
+    $relocationTargetY = $null
+    $relocationPassed = -not $VerifyRelocation
+    if ($VerifyRelocation) {
+        if ($null -eq $afterMachine -or
+            -not [bool]$afterMachine.removal_safe_now -or
+            [string]$afterMachine.removal_status -ne
+                "safe_idle_native_pickaxe") {
+            throw (
+                "Collected machine was not transparently safe to remove: " +
+                (ConvertTo-Json `
+                    -InputObject $afterMachine.removal_block_reasons `
+                    -Compress)
+            )
+        }
+        $standX = [int]$after.state.player.tile_x.value
+        $standY = [int]$after.state.player.tile_y.value
+        $machineInventoryBeforeRemoval = Inventory-Count `
+            -Snapshot $after `
+            -QualifiedItemId $MachineQualifiedItemId
+        $removeRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-machine-lifecycle-smoke"
+            queue_item_id =
+                "runtime-machine-lifecycle-smoke.remove"
+            before_state_hash = $after.state_hash
+            option_id = "executor.remove_machine"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at =
+                [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = $TargetTileX
+            target_tile_y = $TargetTileY
+            stand_tile_x = $standX
+            stand_tile_y = $standY
+            tool_slot_index =
+                [int]$afterMachine.removal_tool_slot_index
+            tool_qualified_item_id =
+                [string]$afterMachine.removal_tool_qualified_item_id
+            location_id = $locationId
+            qualified_item_id = $MachineQualifiedItemId
+            native_contract =
+                [string]$afterMachine.removal_native_contract
+            machine_removal_projection_fingerprint =
+                [string]$afterMachine.removal_projection_fingerprint
+            relocation_intent_id =
+                "runtime-smoke:machine-relocation"
+        }
+        $removeResult = Invoke-JsonPost `
+            -Url $executeUrl -Body $removeRequest
+        Write-JsonFile `
+            (Join-Path $runDirectory "remove-result.json") `
+            $removeResult
+        if ($removeResult.status -ne "applied") {
+            throw "Native machine removal failed."
+        }
+
+        $recoveryState = Wait-MachineRecovery `
+            -Url $snapshotUrl `
+            -LocationId $locationId `
+            -X $TargetTileX -Y $TargetTileY `
+            -QualifiedItemId $MachineQualifiedItemId `
+            -InventoryCountBefore $machineInventoryBeforeRemoval `
+            -TimeoutSeconds 30
+        $afterRemove = $recoveryState.snapshot
+        $pickupVerified = $false
+        if ($recoveryState.mode -eq "debris_visible") {
+            $machineDebris = $recoveryState.debris
+            $debrisChunk = @($machineDebris.chunks)[0]
+            $pickupRequest = [ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "runtime-machine-lifecycle-smoke"
+                queue_item_id =
+                    "runtime-machine-lifecycle-smoke.pickup"
+                before_state_hash = $afterRemove.state_hash
+                option_id = "executor.pickup_debris"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $savesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at =
+                    [DateTimeOffset]::UtcNow.ToString("O")
+                target_tile_x = [int]$debrisChunk.tile_x
+                target_tile_y = [int]$debrisChunk.tile_y
+                debris_index = [int]$machineDebris.debris_index
+                qualified_item_id = $MachineQualifiedItemId
+                location_id = $locationId
+            }
+            $pickupResult = Invoke-JsonPost `
+                -Url $executeUrl -Body $pickupRequest `
+                -TimeoutSeconds 150
+            Write-JsonFile `
+                (Join-Path $runDirectory "pickup-result.json") `
+                $pickupResult
+            $pickupVerified =
+                $pickupResult.status -eq "applied" -and
+                $pickupResult.primitive_verification_status -eq
+                    "verified"
+            if (-not $pickupVerified) {
+                throw "Native machine debris pickup failed."
+            }
+            Start-Sleep -Milliseconds 750
+            $afterPickup = Wait-PlacementInventory `
+                -Url $snapshotUrl `
+                -MachineId $MachineQualifiedItemId `
+                -TimeoutSeconds 30
+        }
+        else {
+            $pickupVerified =
+                $recoveryState.mode -eq "native_auto_collected"
+            $afterPickup = $afterRemove
+        }
+
+        $relocationPlacement = Find-PlacementRow `
+            -Snapshot $afterPickup `
+            -QualifiedItemId $MachineQualifiedItemId
+        $playerX =
+            [int]$afterPickup.state.player.tile_x.value
+        $playerY =
+            [int]$afterPickup.state.player.tile_y.value
+        $candidateTiles = @(
+            [ordered]@{ x = $playerX + 1; y = $playerY },
+            [ordered]@{ x = $playerX - 1; y = $playerY },
+            [ordered]@{ x = $playerX; y = $playerY + 1 },
+            [ordered]@{ x = $playerX; y = $playerY - 1 }
+        )
+        foreach ($candidateTile in $candidateTiles) {
+            if ($candidateTile.x -eq $TargetTileX -and
+                $candidateTile.y -eq $TargetTileY) {
+                continue
+            }
+            if (Test-LegalRangeContains `
+                    -Row $relocationPlacement `
+                    -LocationId $locationId `
+                    -X $candidateTile.x `
+                    -Y $candidateTile.y) {
+                $relocationTargetX = [int]$candidateTile.x
+                $relocationTargetY = [int]$candidateTile.y
+                break
+            }
+        }
+        if ($null -eq $relocationTargetX) {
+            throw (
+                "No transparent native-legal relocation tile was " +
+                "adjacent after debris pickup."
+            )
+        }
+
+        $relocatePlaceRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-machine-lifecycle-smoke"
+            queue_item_id =
+                "runtime-machine-lifecycle-smoke.relocate-place"
+            before_state_hash = $afterPickup.state_hash
+            option_id = "executor.place_machine"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at =
+                [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = $relocationTargetX
+            target_tile_y = $relocationTargetY
+            inventory_slot_index =
+                [int]$relocationPlacement.inventory_slot_index
+            qualified_item_id =
+                [string]$relocationPlacement.qualified_item_id
+            item_id = [string]$relocationPlacement.item_id
+            location_id = $locationId
+        }
+        $relocatePlaceResult = Invoke-JsonPost `
+            -Url $executeUrl -Body $relocatePlaceRequest
+        Write-JsonFile `
+            (Join-Path $runDirectory `
+                "relocate-place-result.json") `
+            $relocatePlaceResult
+        Start-Sleep -Milliseconds 750
+        $afterRelocate = Wait-WorldSnapshot `
+            -Url $snapshotUrl -TimeoutSeconds 30
+        $relocatedMachine = Find-Machine `
+            -Snapshot $afterRelocate `
+            -LocationId $locationId `
+            -X $relocationTargetX -Y $relocationTargetY
+        $oldMachine = Find-Machine `
+            -Snapshot $afterRelocate `
+            -LocationId $locationId `
+            -X $TargetTileX -Y $TargetTileY
+        $relocationPassed =
+            $removeResult.status -eq "applied" -and
+            $removeResult.primitive_verification_status -eq
+                "verified" -and
+            $pickupVerified -and
+            $relocatePlaceResult.status -eq "applied" -and
+            $relocatePlaceResult.primitive_verification_status -eq
+                "verified" -and
+            $null -eq $oldMachine -and
+            $null -ne $relocatedMachine -and
+            [string]$relocatedMachine.qualified_item_id -eq
+                $MachineQualifiedItemId
+    }
     $passed =
         $setupResult.status -eq "applied" -and
         $setupResult.primitive_verification_status -eq "verified" -and
@@ -746,7 +1026,8 @@ try {
         $null -ne $afterMachine -and
         -not [bool]$afterMachine.ready_for_harvest -and
         [string]::IsNullOrWhiteSpace($afterHeldId) -and
-        $outputCountAfter -gt $outputCountBefore
+        $outputCountAfter -gt $outputCountBefore -and
+        $relocationPassed
 
     $summary = [ordered]@{
         status = if ($passed) { "passed" } else { "failed" }
@@ -804,6 +1085,43 @@ try {
             $null -ne $afterMachine -and
             -not [bool]$afterMachine.ready_for_harvest -and
             [string]::IsNullOrWhiteSpace($afterHeldId)
+        relocation_requested = [bool]$VerifyRelocation
+        relocation_status = if ($relocationPassed) {
+            "verified"
+        }
+        else {
+            "failed"
+        }
+        removal_status = $removeResult.status
+        removal_verification =
+            $removeResult.primitive_verification_status
+        pickup_status = if ($null -ne $pickupResult) {
+            $pickupResult.status
+        }
+        elseif ($VerifyRelocation) {
+            "native_auto_collected"
+        }
+        else {
+            ""
+        }
+        pickup_verification = if ($null -ne $pickupResult) {
+            $pickupResult.primitive_verification_status
+        }
+        elseif ($VerifyRelocation) {
+            "verified_inventory_delta_after_native_debris"
+        }
+        else {
+            ""
+        }
+        relocation_place_status = $relocatePlaceResult.status
+        relocation_place_verification =
+            $relocatePlaceResult.primitive_verification_status
+        relocation_target = if ($null -ne $relocationTargetX) {
+            "$relocationTargetX,$relocationTargetY"
+        }
+        else {
+            ""
+        }
         state_hash_initial = $initial.state_hash
         state_hash_after = $after.state_hash
         state_hash_changed =
@@ -833,6 +1151,20 @@ try {
     Write-JsonFile `
         (Join-Path $runDirectory "after-snapshot.json") `
         $after
+    if ($VerifyRelocation) {
+        Write-JsonFile `
+            (Join-Path $runDirectory `
+                "after-remove-snapshot.json") `
+            $afterRemove
+        Write-JsonFile `
+            (Join-Path $runDirectory `
+                "after-pickup-snapshot.json") `
+            $afterPickup
+        Write-JsonFile `
+            (Join-Path $runDirectory `
+                "after-relocate-snapshot.json") `
+            $afterRelocate
+    }
     Write-JsonFile `
         (Join-Path $runDirectory "summary.json") `
         $summary
