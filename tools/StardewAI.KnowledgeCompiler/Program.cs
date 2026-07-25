@@ -1,0 +1,650 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using StardewAI.Contracts.Options;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
+
+namespace StardewAI.KnowledgeCompiler;
+
+internal static class Program
+{
+    public static int Main(string[] args)
+    {
+        try
+        {
+            var options = Parse(args);
+            var exportRoot = Required(options, "export-root");
+            var outputRoot = Required(options, "output");
+            options.TryGetValue("content-root", out var contentRoot);
+            options.TryGetValue("snapshot-schema", out var snapshotPath);
+            options.TryGetValue("game-assembly", out var gameAssembly);
+            options.TryGetValue("game-data-assembly", out var gameDataAssembly);
+            options.TryGetValue("decompile-root", out var decompileRoot);
+
+            Directory.CreateDirectory(outputRoot);
+            var validator = new KnowledgeSourceValidator(exportRoot, contentRoot);
+            var manifest = validator.LoadManifest();
+            var issues = validator.Validate(manifest).ToList();
+            var coverage = validator.BuildCoverage(manifest);
+            var runtimeSemanticSummary = validator.LoadRuntimeSemantics(manifest);
+
+            Write(outputRoot, "asset-coverage.json", new
+            {
+                schema_version = "stardewai.knowledge_asset_coverage.v1",
+                total = coverage.Count,
+                semantic_decoded = coverage.Count(row => row.SemanticallyDecoded),
+                runtime_projection_required = coverage.Count(row => row.RequiresRuntimeProjection),
+                dependency_blocking = coverage.Count(row => row.BlocksDependencyCompleteness),
+                classifications = coverage.GroupBy(row => row.Classification).OrderByDescending(group => group.Count())
+                    .ToDictionary(group => group.Key, group => group.Count()),
+                assets = coverage
+            });
+
+            Write(outputRoot, "runtime-semantic-coverage.json", new
+            {
+                schema_version = "stardewai.runtime_semantic_coverage.v1",
+                authority = "native 1.6.15 runtime registries and parsers",
+                runtimeSemanticSummary.SourceFile,
+                runtimeSemanticSummary.Sha256,
+                runtimeSemanticSummary.HandlerCount,
+                runtimeSemanticSummary.HandlerFamilies,
+                runtimeSemanticSummary.ParsedConditionCount,
+                runtimeSemanticSummary.ConditionParseErrorCount,
+                runtimeSemanticSummary.ParsedEventCount,
+                runtimeSemanticSummary.UnresolvedEventPreconditionCount,
+                runtimeSemanticSummary.UnresolvedEventCommandCount,
+                runtimeSemanticSummary.ParsedTriggerActionCount,
+                runtimeSemanticSummary.UnresolvedTriggerActionCount
+            });
+
+            var registry = new OptionRegistry();
+            var requiredFactors = registry.All
+                .SelectMany(row => row.RequiredStateFactors)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray();
+            SnapshotCoverageResult? snapshotCoverage = null;
+            if (!string.IsNullOrWhiteSpace(snapshotPath))
+            {
+                snapshotCoverage = new SnapshotSchemaJoiner().Join(Path.GetFullPath(snapshotPath), requiredFactors);
+                if (!string.Equals(snapshotCoverage.GameVersion, manifest.GameVersion, StringComparison.Ordinal))
+                {
+                    issues.Add(new(
+                        "blocking",
+                        "snapshot_game_version_mismatch",
+                        "live_snapshot",
+                        $"snapshot={snapshotCoverage.GameVersion};export={manifest.GameVersion}"));
+                }
+
+                foreach (var field in snapshotCoverage.Fields)
+                {
+                    if (field.Coverage is "missing_from_snapshot_schema" or "not_a_field_envelope" or
+                        "readable_missing_provenance" or "adapter_error" or "invalid_status")
+                    {
+                        issues.Add(new("blocking", "required_state_factor_not_transparent", field.Path,
+                            $"status={field.Status};coverage={field.Coverage};reason={field.Reason}"));
+                    }
+                }
+            }
+            else
+            {
+                issues.Add(new("warning", "live_snapshot_schema_not_supplied", "option_field_matrix",
+                    "required state factors were registered but not joined to a full live snapshot"));
+            }
+
+            var optionRows = registry.All.OrderBy(row => row.OptionId, StringComparer.Ordinal).Select(row => new
+            {
+                row.OptionId,
+                row.Domain,
+                row.BehaviorCategory,
+                row.CompilerResponsibility,
+                row.TrainingRole,
+                row.RequiredStateFactors,
+                row.SafetyConstraints,
+                runtime_field_verification = snapshotCoverage is null
+                    ? null
+                    : row.RequiredStateFactors.Select(snapshotCoverage.GetRequired).ToArray()
+            }).ToArray();
+            Write(outputRoot, "option-field-matrix.json", new
+            {
+                schema_version = "stardewai.option_field_matrix.v1",
+                option_count = optionRows.Length,
+                distinct_required_state_factor_count = requiredFactors.Length,
+                live_snapshot = snapshotCoverage is null ? null : new
+                {
+                    snapshotCoverage.SchemaVersion,
+                    snapshotCoverage.BridgeVersion,
+                    snapshotCoverage.GameVersion,
+                    snapshotCoverage.StateHash,
+                    snapshotCoverage.Completeness,
+                    field_count = snapshotCoverage.Fields.Count,
+                    readable_count = snapshotCoverage.Fields.Count(row => row.Coverage == "readable_with_provenance"),
+                    contextually_unavailable_count = snapshotCoverage.Fields.Count(row => row.Coverage == "contextually_unavailable"),
+                    stale_count = snapshotCoverage.Fields.Count(row => row.Coverage == "stale"),
+                    blocking_count = snapshotCoverage.Fields.Count(row => row.Coverage is "missing_from_snapshot_schema" or "not_a_field_envelope" or "readable_missing_provenance" or "adapter_error" or "invalid_status")
+                },
+                required_state_factors = snapshotCoverage?.Fields,
+                options = optionRows
+            });
+
+            var downstreamRows = registry.All
+                .OrderBy(row => row.OptionId, StringComparer.Ordinal)
+                .Select(row =>
+                {
+                    var stepCompilerRegistered = ActionQueueCompiler.HasStepCompiler(row.OptionId);
+                    var parameterCompilerRegistered = ActionQueueCompiler.HasParameterCompiler(row.OptionId);
+                    var runtimeDirectRegistered = RuntimeExecutorCapabilityCatalog.IsSupported(row.OptionId);
+                    var runtimeBindingMode = runtimeDirectRegistered
+                        ? "direct_runtime_dispatch"
+                        : row.OptionId == "recovery.stabilize_day"
+                            ? "compiler_parameter_execution_option_id"
+                            : row.OptionId == "farm.process_machines"
+                                ? "daily_candidate_to_runtime_primitive"
+                                : "not_directly_executable_at_this_stage";
+                    var downstreamStatus =
+                        row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion && !stepCompilerRegistered
+                            ? "blocking_missing_step_compiler"
+                            : row.OptionId.StartsWith("executor.", StringComparison.Ordinal) && !runtimeDirectRegistered
+                                ? "blocking_missing_runtime_dispatch"
+                                : row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion
+                                    ? "complete"
+                                    : "candidate_or_strategy_stage";
+                    return new
+                    {
+                        row.OptionId,
+                        row.Domain,
+                        row.CompilerResponsibility,
+                        row.TrainingRole,
+                        step_compiler_registered = stepCompilerRegistered,
+                        parameter_compiler_registered = parameterCompilerRegistered,
+                        runtime_direct_registered = runtimeDirectRegistered,
+                        runtime_binding_mode = runtimeBindingMode,
+                        downstream_status = downstreamStatus
+                    };
+                })
+                .ToArray();
+            var downstreamBlockers = downstreamRows
+                .Where(row => row.downstream_status.StartsWith("blocking_", StringComparison.Ordinal))
+                .Select(row => new
+                {
+                    severity = "blocking",
+                    code = row.downstream_status,
+                    subject = row.OptionId,
+                    detail = $"compiler={row.step_compiler_registered};runtime={row.runtime_direct_registered};binding={row.runtime_binding_mode}"
+                })
+                .ToArray();
+            var dailyCandidateRows = DailyPlanCandidateCapabilityCatalog.All
+                .OrderBy(row => row.Kind, StringComparer.Ordinal)
+                .Select(row => new
+                {
+                    candidate_kind = row.Kind,
+                    daily_plan_compilable = row.Compilable,
+                    implementation_block_reason = row.BlockReason
+                })
+                .ToArray();
+            var dailyCandidateImplementationBlockers = dailyCandidateRows
+                .Where(row => !row.daily_plan_compilable)
+                .Select(row => new
+                {
+                    severity = "implementation_blocking",
+                    code = row.implementation_block_reason,
+                    subject = row.candidate_kind,
+                    detail = "Candidate generation is retained for planning visibility, but DailyPlanCompiler must not emit an executable plan until the native executor exists."
+                })
+                .ToArray();
+            foreach (var blocker in downstreamBlockers)
+            {
+                issues.Add(new("blocking", blocker.code, blocker.subject, blocker.detail));
+            }
+            Write(outputRoot, "downstream-capability-matrix.json", new
+            {
+                schema_version = "stardewai.downstream_capability_matrix.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority_policy = "Readable fields, candidate generation, daily-plan compilation, action compilation, and runtime dispatch are distinct stages. A missing later stage remains explicit and cannot be replaced by a success no-op.",
+                option_count = downstreamRows.Length,
+                step_compiler_count = ActionQueueCompiler.StepCompilerOptionIds.Count,
+                parameter_compiler_count = ActionQueueCompiler.ParameterCompilerOptionIds.Count,
+                runtime_dispatch_count = RuntimeExecutorCapabilityCatalog.OptionIds.Count,
+                blocker_count = downstreamBlockers.Length,
+                blockers = downstreamBlockers,
+                options = downstreamRows,
+                daily_candidate_kind_count = dailyCandidateRows.Length,
+                daily_candidate_compilable_count = dailyCandidateRows.Count(row => row.daily_plan_compilable),
+                daily_candidate_implementation_blocker_count = dailyCandidateImplementationBlockers.Length,
+                daily_candidate_implementation_blockers = dailyCandidateImplementationBlockers,
+                daily_candidate_kinds = dailyCandidateRows
+            });
+
+            using var payloads = new DisposablePayloadMap(validator.LoadPayloads(manifest));
+            var graph = new RuntimeDependencyGraphBuilder().Build(payloads.Items);
+            Write(outputRoot, "runtime-dependency-graph.json", graph);
+            var runtimeSemanticsPath = Path.Combine(exportRoot, manifest.RuntimeSemanticsFile!);
+            var progressionDependencies = new ProgressionDependencyIndexBuilder().Build(
+                payloads.Items,
+                runtimeSemanticsPath);
+            foreach (var issue in progressionDependencies.Issues.Where(row => row.Severity == "blocking"))
+                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
+            Write(outputRoot, "progression-dependency-index.json", new
+            {
+                schema_version = "stardewai.progression_dependency_index.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-loaded Data/mail and Data/TriggerActions joined to native 1.6.15 trigger, condition, and event parser output",
+                semantic_limit = "References are emitted only for argument roles verified against native handlers. Unclassified event commands remain losslessly preserved with exact handler identity and tokens.",
+                summary = progressionDependencies.Summary,
+                issues = progressionDependencies.Issues,
+                references = progressionDependencies.References,
+                mail = progressionDependencies.Mail,
+                trigger_actions = progressionDependencies.TriggerActions,
+                events = progressionDependencies.Events,
+                conditions = progressionDependencies.Conditions
+            });
+            var mapTopology = new MapTopologyIndexBuilder().Build(payloads.Items);
+            foreach (var issue in mapTopology.Issues.Where(row => row.Severity == "blocking"))
+                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
+            Write(outputRoot, "map-topology-index.json", new
+            {
+                schema_version = "stardewai.map_topology_index.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-projected xTile maps interpreted with exact Linux 1.6.15 GameLocation.updateWarps, doesTileHaveProperty, and isTilePassable rules",
+                semantic_limit = "Static base-map topology excludes dynamic buildings, furniture, placed objects, characters, events, map mutations, and location-specific collision overrides.",
+                summary = mapTopology.Summary,
+                issues = mapTopology.Issues,
+                non_map_assets = mapTopology.NonMapAssets,
+                maps = mapTopology.Maps
+            });
+            var accessConstraints = new AccessConstraintIndexBuilder().Build(
+                payloads.Items,
+                mapTopology,
+                progressionDependencies.Conditions);
+            foreach (var issue in accessConstraints.Issues.Where(row => row.Severity == "blocking"))
+                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
+            Write(outputRoot, "access-constraint-index.json", new
+            {
+                schema_version = "stardewai.access_constraint_index.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-loaded shops and NPC schedules joined to exact static map actions and native-parsed game-state conditions",
+                semantic_limit = "NPC schedule selection and owner presence remain runtime-context decisions. Door windows and static interaction tiles are exact base-map records, not proof that a dynamic map mutation leaves them unchanged.",
+                summary = accessConstraints.Summary,
+                issues = accessConstraints.Issues,
+                shops = accessConstraints.Shops,
+                door_windows = accessConstraints.DoorWindows,
+                shop_endpoints = accessConstraints.ShopEndpoints,
+                npc_schedules = accessConstraints.NpcSchedules
+            });
+
+            var assemblyEvidence = new List<AssemblyEvidenceIndex>();
+            if (!string.IsNullOrWhiteSpace(gameAssembly) || !string.IsNullOrWhiteSpace(gameDataAssembly))
+            {
+                if (string.IsNullOrWhiteSpace(decompileRoot))
+                    throw new ArgumentException("--decompile-root is required when an assembly evidence input is supplied.");
+
+                var indexer = new AssemblyEvidenceIndexer();
+                if (!string.IsNullOrWhiteSpace(gameAssembly))
+                {
+                    assemblyEvidence.Add(indexer.Build(
+                        gameAssembly,
+                        Path.Combine(Path.GetFullPath(decompileRoot), "StardewValley")));
+                }
+                if (!string.IsNullOrWhiteSpace(gameDataAssembly))
+                {
+                    assemblyEvidence.Add(indexer.Build(
+                        gameDataAssembly,
+                        Path.Combine(Path.GetFullPath(decompileRoot), "StardewValley.GameData")));
+                }
+
+                Write(outputRoot, "decompiled-assembly-evidence.json", new
+                {
+                    schema_version = "stardewai.decompiled_assembly_evidence.v1",
+                    generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                    evidence_limit = "Hashes and metadata prove exhaustive binary/source indexing. Rule semantics still require method-level review records.",
+                    assembly_count = assemblyEvidence.Count,
+                    source_file_count = assemblyEvidence.Sum(row => row.SourceFiles.Count),
+                    type_count = assemblyEvidence.Sum(row => row.Types.Count),
+                    method_count = assemblyEvidence.Sum(row => row.Types.Sum(type => type.Methods.Count)),
+                    invalid_il_body_count = assemblyEvidence.Sum(row => row.Types.Sum(type => type.Methods.Count(method => method.BodyStatus == "invalid_il_body"))),
+                    assemblies = assemblyEvidence
+                });
+            }
+            else
+            {
+                issues.Add(new("warning", "decompiled_assembly_evidence_not_supplied", "decompile", "assembly and source inventories were not indexed"));
+            }
+
+            var goalDependencies = new GoalDependencyIndexBuilder().Build(
+                payloads.Items,
+                assemblyEvidence,
+                snapshotPath);
+            foreach (var issue in goalDependencies.Issues.Where(row => row.Severity == "blocking"))
+                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
+            Write(outputRoot, "goal-dependency-index.json", new
+            {
+                schema_version = "stardewai.goal_dependency_index.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-loaded bundle, recipe, and achievement data joined to exact-platform Grandpa scoring IL/source identity and transparent live score inputs",
+                semantic_limit = "Recipe and bundle grammars are decoded according to native 1.6.15 consumers. Runtime availability and route feasibility remain contextual planning inputs.",
+                summary = goalDependencies.Summary,
+                issues = goalDependencies.Issues,
+                bundles = goalDependencies.Bundles,
+                recipes = goalDependencies.Recipes,
+                grandpa_goal = goalDependencies.GrandpaGoal
+            });
+
+            var runtimeRuleEvidence = new RuntimeRuleEvidenceBuilder().Build(payloads.Items, assemblyEvidence);
+            Write(outputRoot, "runtime-rule-evidence.json", new
+            {
+                schema_version = "stardewai.runtime_rule_evidence.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-loaded payload identity joined to exact installed assembly IL",
+                semantic_limit = "Indexed references and hashes are not interpreted rule semantics.",
+                condition_count = runtimeRuleEvidence.Conditions.Count,
+                method_reference_count = runtimeRuleEvidence.MethodReferences.Count,
+                unresolved_method_reference_count = runtimeRuleEvidence.MethodReferences.Count(row => row.ResolutionStatus == "unresolved"),
+                ambiguous_method_reference_count = runtimeRuleEvidence.MethodReferences.Count(row => row.ResolutionStatus == "ambiguous_overload_requires_signature_binding"),
+                event_script_count = runtimeRuleEvidence.EventScripts.Count,
+                conditions = runtimeRuleEvidence.Conditions,
+                method_references = runtimeRuleEvidence.MethodReferences,
+                event_scripts = runtimeRuleEvidence.EventScripts
+            });
+
+            RuntimeAssemblyIdentityValidation? runtimeAssemblyIdentity = null;
+            HandlerOperationIndex? handlerOperationIndex = null;
+            HandlerOperationCatalog? handlerOperationCatalog = null;
+            ExecutableRuleIndex? executableRuleIndex = null;
+            IReadOnlyList<HandlerSemanticSurface>? semanticSurfaces = null;
+            KnowledgeCompletenessLedger? completenessLedger = null;
+            var indexedAssemblyPaths = new[] { gameAssembly, gameDataAssembly }
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(path => Path.GetFullPath(path!))
+                .ToArray();
+            if (indexedAssemblyPaths.Length > 0)
+            {
+                runtimeAssemblyIdentity = new RuntimeAssemblyIdentityValidator().Validate(
+                    runtimeSemanticsPath,
+                    assemblyEvidence);
+                Write(outputRoot, "runtime-assembly-identity.json", new
+                {
+                    schema_version = "stardewai.runtime_assembly_identity.v1",
+                    generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                    status = runtimeAssemblyIdentity.IsCompatible ? "exact_match" : "blocked",
+                    handler_assembly_reference_count = runtimeAssemblyIdentity.HandlerAssemblyReferences.Count,
+                    declared_runtime_assembly_count = runtimeAssemblyIdentity.DeclaredRuntimeAssemblies.Count,
+                    supplied_assembly_count = runtimeAssemblyIdentity.SuppliedAssemblies.Count,
+                    mismatch_count = runtimeAssemblyIdentity.Mismatches.Count,
+                    handler_assembly_references = runtimeAssemblyIdentity.HandlerAssemblyReferences,
+                    declared_runtime_assemblies = runtimeAssemblyIdentity.DeclaredRuntimeAssemblies,
+                    supplied_assemblies = runtimeAssemblyIdentity.SuppliedAssemblies,
+                    mismatches = runtimeAssemblyIdentity.Mismatches
+                });
+
+                if (!runtimeAssemblyIdentity.IsCompatible)
+                {
+                    issues.Add(new(
+                        "blocking",
+                        "runtime_semantics_assembly_identity_mismatch",
+                        "runtime-assembly-identity",
+                        string.Join(';', runtimeAssemblyIdentity.Mismatches.Take(10)
+                            .Select(row => $"{row.AssemblyName}:{row.RuntimeModuleVersionId}:{row.Reason}"))));
+                }
+                else
+                {
+                    handlerOperationIndex = new AssemblyOperationIndexer().Build(
+                        runtimeSemanticsPath,
+                        assemblyEvidence,
+                        indexedAssemblyPaths,
+                        runtimeRuleEvidence.MethodReferences);
+                    var decodeFailureCount = handlerOperationIndex.Rules.Sum(row => row.DecodeFailures.Count);
+                    if (handlerOperationIndex.UnresolvedMethodIdentities.Count > 0)
+                    {
+                        issues.Add(new("blocking", "handler_operation_method_unresolved", "handler-operation-rules",
+                            string.Join(',', handlerOperationIndex.UnresolvedMethodIdentities.Take(20))));
+                    }
+                    if (decodeFailureCount > 0)
+                    {
+                        issues.Add(new("blocking", "handler_operation_il_decode_failure", "handler-operation-rules",
+                            $"count={decodeFailureCount}"));
+                    }
+                    handlerOperationCatalog = new HandlerOperationCatalogBuilder().Build(handlerOperationIndex);
+                    Write(outputRoot, "handler-operation-rules.json", new
+                    {
+                        schema_version = "stardewai.handler_operation_rules.v2",
+                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        authority = "exact installed assembly IL, rooted at handlers used by native-parsed runtime data",
+                        semantic_limit = "Static operation closure identifies dependencies and mutation surfaces; branch conditions and runtime virtual targets still require semantic/runtime evidence.",
+                        rule_count = handlerOperationIndex.Rules.Count,
+                        unresolved_method_count = handlerOperationIndex.UnresolvedMethodIdentities.Count,
+                        decode_failure_count = decodeFailureCount,
+                        complete_static_closure_count = handlerOperationIndex.Rules.Count(row => row.Completeness == "complete_static_operation_closure"),
+                        dynamic_dispatch_boundary_count = handlerOperationIndex.Rules.Count(row => row.Completeness == "static_operations_with_dynamic_dispatch_boundary"),
+                        reflection_boundary_count = handlerOperationIndex.Rules.Count(row => row.Completeness == "static_operations_with_reflection_boundary"),
+                        unresolved_methods = handlerOperationIndex.UnresolvedMethodIdentities,
+                        operation_catalogs = handlerOperationCatalog.OperationCatalogs,
+                        rules = handlerOperationCatalog.Rules
+                    });
+
+                    executableRuleIndex = new ExecutableRuleIndexBuilder().Build(
+                        runtimeSemanticsPath,
+                        assemblyEvidence,
+                        handlerOperationCatalog,
+                        runtimeRuleEvidence.MethodReferences);
+                    if (executableRuleIndex.UnresolvedBindings.Count > 0)
+                    {
+                        issues.Add(new(
+                            "blocking",
+                            "executable_rule_binding_unresolved",
+                            "executable-rule-index",
+                            string.Join(';', executableRuleIndex.UnresolvedBindings.Take(20))));
+                    }
+                    Write(outputRoot, "executable-rule-index.json", new
+                    {
+                        schema_version = "stardewai.executable_rule_index.v1",
+                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        authority = "runtime-native parser output bound to exact-platform transitive IL operation rules",
+                        semantic_limit = "Bindings and operation surfaces are exhaustive for exported conditions, events, and data method references; runtime values and virtual targets remain context-bound.",
+                        condition_count = executableRuleIndex.Conditions.Count,
+                        condition_clause_count = executableRuleIndex.Conditions.Sum(row => row.Clauses.Count),
+                        event_count = executableRuleIndex.Events.Count,
+                        event_precondition_count = executableRuleIndex.Events.Sum(row => row.Preconditions.Count),
+                        event_command_count = executableRuleIndex.Events.Sum(row => row.Commands.Count),
+                        trigger_action_entry_count = executableRuleIndex.TriggerActions.Count,
+                        trigger_action_count = executableRuleIndex.TriggerActions.Sum(row => row.Actions.Count),
+                        data_method_reference_count = executableRuleIndex.DataMethods.Count,
+                        unresolved_binding_count = executableRuleIndex.UnresolvedBindings.Count,
+                        unresolved_bindings = executableRuleIndex.UnresolvedBindings,
+                        conditions = executableRuleIndex.Conditions,
+                        events = executableRuleIndex.Events,
+                        trigger_actions = executableRuleIndex.TriggerActions,
+                        data_methods = executableRuleIndex.DataMethods
+                    });
+
+                    semanticSurfaces = new SemanticSurfaceBuilder().Build(handlerOperationCatalog);
+                    Write(outputRoot, "handler-semantic-surfaces.json", new
+                    {
+                        schema_version = "stardewai.handler_semantic_surfaces.v1",
+                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        authority = "normalized may-read, may-write, external side-effect, and runtime-boundary projection of exact-platform transitive IL operations",
+                        interpretation = "IDs resolve through handler-operation-rules.json operation_catalogs. May-read/write sets are sound static surfaces, not proof that every branch executes.",
+                        surface_count = semanticSurfaces.Count,
+                        predicate_surface_count = semanticSurfaces.Count(row => row.Roles.Contains("predicate")),
+                        command_surface_count = semanticSurfaces.Count(row => row.Roles.Contains("command")),
+                        data_method_surface_count = semanticSurfaces.Count(row => row.Roles.Contains("data_method")),
+                        runtime_boundary_surface_count = semanticSurfaces.Count(row => row.RuntimeBoundaries.Count > 0),
+                        random_surface_count = semanticSurfaces.Count(row => row.RandomSourceIds.Count > 0),
+                        surfaces = semanticSurfaces
+                    });
+
+                    var authoritativeGraph = new AuthoritativeDependencyGraphBuilder().Build(
+                        graph,
+                        handlerOperationCatalog,
+                        semanticSurfaces,
+                        executableRuleIndex,
+                        mapTopology,
+                        accessConstraints,
+                        goalDependencies);
+                    Write(outputRoot, "authoritative-dependency-graph.json", new
+                    {
+                        schema_version = "stardewai.authoritative_dependency_graph.v1",
+                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        authority = "runtime-loaded content plus native parser bindings plus exact-platform IL operation identities",
+                        semantic_limit = "Native-delegated rules preserve exact executable authority. Runtime-context classifications are not statically guessed.",
+                        node_count = authoritativeGraph.Nodes.Count,
+                        edge_count = authoritativeGraph.Edges.Count,
+                        node_kinds = authoritativeGraph.NodeKinds,
+                        edge_kinds = authoritativeGraph.EdgeKinds,
+                        operation_catalog_source = "handler-operation-rules.json",
+                        nodes = authoritativeGraph.Nodes,
+                        edges = authoritativeGraph.Edges
+                    });
+
+                    completenessLedger = new KnowledgeCompletenessLedgerBuilder().Build(
+                        coverage,
+                        snapshotCoverage,
+                        handlerOperationIndex,
+                        handlerOperationCatalog,
+                        semanticSurfaces,
+                        executableRuleIndex,
+                        authoritativeGraph,
+                        mapTopology,
+                        accessConstraints,
+                        goalDependencies);
+                    Write(outputRoot, "knowledge-completeness-ledger.json", new
+                    {
+                        schema_version = "stardewai.knowledge_completeness_ledger.v1",
+                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        authority_policy = "Identity completeness, runtime executability, and predictive semantic closure are tracked separately. Native delegation is never reported as static prediction.",
+                        identity_graph_status = completenessLedger.Blockers.Count == 0
+                            ? "complete"
+                            : "blocked",
+                        predictive_semantic_status = completenessLedger.ContextPending.Count == 0
+                            ? "closed"
+                            : "context_evidence_pending",
+                        blocker_count = completenessLedger.Blockers.Count,
+                        context_pending_count = completenessLedger.ContextPending.Count,
+                        counts = completenessLedger.Counts,
+                        blockers = completenessLedger.Blockers,
+                        context_pending = completenessLedger.ContextPending,
+                        assets = completenessLedger.Assets,
+                        required_fields = completenessLedger.RequiredFields,
+                        native_rules = completenessLedger.NativeRules
+                    });
+                }
+            }
+
+            Write(outputRoot, "wiki-verification-registry.json", new
+            {
+                schema_version = "stardewai.wiki_verification_registry.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority_policy = "secondary corroboration only; never creates or overrides runtime fields, values, or executable rules",
+                source_count = WikiVerificationCatalog.Sources.Count,
+                sources = WikiVerificationCatalog.Sources
+            });
+
+            Write(outputRoot, "source-validation.json", new
+            {
+                schema_version = "stardewai.knowledge_source_validation.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                manifest = new
+                {
+                    manifest.GameVersion,
+                    manifest.SmapiVersion,
+                    manifest.Locale,
+                    manifest.Status,
+                    content_file_count = manifest.ContentFiles.Count,
+                    manifest.ExpectedExports,
+                    manifest.SuccessfulExports,
+                    manifest.FailedExports
+                },
+                content_root_rehashed = !string.IsNullOrWhiteSpace(contentRoot),
+                live_snapshot_schema_joined = snapshotCoverage is not null,
+                runtime_assembly_identity_checked = runtimeAssemblyIdentity is not null,
+                runtime_assembly_identity_exact = runtimeAssemblyIdentity?.IsCompatible,
+                blocking_issue_count = issues.Count(row => row.Severity == "blocking"),
+                warning_count = issues.Count(row => row.Severity == "warning"),
+                issues
+            });
+
+            var sourceHash = HashFile(Path.Combine(exportRoot, "manifest.json"));
+            Write(outputRoot, "build-manifest.json", new
+            {
+                schema_version = "stardewai.knowledge_build_manifest.v1",
+                status = issues.Any(row => row.Severity == "blocking")
+                    ? "blocked"
+                    : completenessLedger is not null && completenessLedger.Blockers.Count == 0
+                        ? "complete_authoritative_identity_graph_stage"
+                        : assemblyEvidence.Count > 0 && snapshotCoverage is not null
+                            ? "complete_evidence_index_stage"
+                        : "complete_source_stage",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                game_version = manifest.GameVersion,
+                source_manifest_sha256 = sourceHash,
+                runtime_assembly_identity_status = runtimeAssemblyIdentity is null
+                    ? "not_checked"
+                    : runtimeAssemblyIdentity.IsCompatible ? "exact_match" : "blocked",
+                outputs = Directory.EnumerateFiles(outputRoot, "*.json").Select(path => new
+                {
+                    file = Path.GetFileName(path),
+                    bytes = new FileInfo(path).Length,
+                    sha256 = HashFile(path)
+                }).OrderBy(row => row.file, StringComparer.Ordinal).ToArray(),
+                next_required_stages = new[]
+                {
+                    "semantically classify branch predicates, context-dependent virtual targets, and formula outputs from the bound operation surfaces",
+                    "attach wiki verification records without promoting wiki above runtime or decompiled evidence"
+                }
+            });
+
+            Console.WriteLine($"Knowledge source stage: game={manifest.GameVersion}; exports={manifest.SuccessfulExports}/{manifest.ExpectedExports}; blocking={issues.Count(row => row.Severity == "blocking")}; output={outputRoot}");
+            return issues.Any(row => row.Severity == "blocking") ? 2 : 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            return 1;
+        }
+    }
+
+    private static Dictionary<string, string> Parse(string[] args)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        for (var index = 0; index < args.Length; index++)
+        {
+            if (!args[index].StartsWith("--", StringComparison.Ordinal) || index + 1 >= args.Length)
+                throw new ArgumentException($"Expected --name value, got '{args[index]}'.");
+            result[args[index][2..]] = args[++index];
+        }
+        return result;
+    }
+
+    private static string Required(IReadOnlyDictionary<string, string> options, string name)
+    {
+        if (!options.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"Missing --{name}.");
+        return Path.GetFullPath(value);
+    }
+
+    private static void Write(string root, string file, object value)
+    {
+        var path = Path.Combine(root, file);
+        var temp = path + ".tmp";
+        File.WriteAllBytes(temp, JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions.Write));
+        File.Move(temp, path, overwrite: true);
+    }
+
+    private static string HashFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha = SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
+    }
+
+    private sealed class DisposablePayloadMap : IDisposable
+    {
+        public DisposablePayloadMap(Dictionary<string, PayloadAsset> items) => Items = items;
+        public Dictionary<string, PayloadAsset> Items { get; }
+        public void Dispose()
+        {
+            foreach (var item in Items.Values) item.Dispose();
+        }
+    }
+}
