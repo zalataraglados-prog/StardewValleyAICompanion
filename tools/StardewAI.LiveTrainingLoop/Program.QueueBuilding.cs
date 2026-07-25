@@ -80,7 +80,10 @@ static partial class Program
                             new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },
                             new { name = "continuation.machine_location_id", value = ReadString(objectiveContinuation, "machine_location_id") },
                             new { name = "continuation.machine_tile_x", value = ReadString(objectiveContinuation, "machine_tile_x") },
-                            new { name = "continuation.machine_tile_y", value = ReadString(objectiveContinuation, "machine_tile_y") }
+                            new { name = "continuation.machine_tile_y", value = ReadString(objectiveContinuation, "machine_tile_y") },
+                            new { name = "continuation.machine_inventory_slot_index", value = ReadString(objectiveContinuation, "machine_inventory_slot_index") },
+                            new { name = "continuation.machine_qualified_item_id", value = ReadString(objectiveContinuation, "machine_qualified_item_id") },
+                            new { name = "continuation.machine_item_id", value = ReadString(objectiveContinuation, "machine_item_id") }
                         }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
                     }
                 },

@@ -596,6 +596,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_animal_product_target" &&
             request.OptionId != "debug.setup_pan_ore_spot" &&
             request.OptionId != "debug.setup_machine_input_target" &&
+            request.OptionId != "debug.setup_machine_placement_target" &&
             request.OptionId != "debug.setup_shipping_target" &&
             request.OptionId != "executor.select_safe_item_slot" &&
             request.OptionId != "executor.close_menu" &&
@@ -618,6 +619,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.complete_fish_pond_request" &&
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
+            request.OptionId != "executor.place_machine" &&
             request.OptionId != "executor.catch_fish" &&
             request.OptionId != "executor.choose_dialogue_response" &&
             request.OptionId != "executor.social_interact" &&
