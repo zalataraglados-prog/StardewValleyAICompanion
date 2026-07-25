@@ -136,6 +136,7 @@ namespace StardewAI.Core.Execution
                 "quest_npc_interact" => "executor.quest_npc_interact",
                 "quest_drop_box_donate" => "executor.quest_drop_box_donate",
                 "ship_inventory_item_to_bin" => "executor.ship_inventory_item_to_bin",
+                "transfer_material" => "executor.transfer_material",
                 _ => "unknown.plan_step"
             };
         }

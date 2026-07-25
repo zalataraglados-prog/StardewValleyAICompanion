@@ -152,14 +152,16 @@ namespace StardewAI.Contracts.Capabilities
             "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft",
             "executor.exit_mine", "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.select_safe_item_slot",
-            "executor.close_menu", "executor.ship_inventory_item_to_bin");
+            "executor.close_menu", "executor.ship_inventory_item_to_bin",
+            "executor.transfer_material");
 
         private static readonly HashSet<string> ParameterCompilerIds = Set(
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "executor.buy_shop_item",
-            "social.talk_npc", "social.gift_npc", "farm.maintain_crops");
+            "social.talk_npc", "social.gift_npc", "farm.maintain_crops",
+            "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
             "farm.maintain_crops", "executor.move_to_tile", "executor.traverse_connector",
@@ -184,7 +186,8 @@ namespace StardewAI.Contracts.Capabilities
             "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft",
             "executor.exit_mine", "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.select_safe_item_slot",
-            "executor.close_menu", "executor.ship_inventory_item_to_bin");
+            "executor.close_menu", "executor.ship_inventory_item_to_bin",
+            "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines",
@@ -216,7 +219,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.pan_ore_spot", "executor.collect_machine_output",
-            "executor.select_safe_item_slot");
+            "executor.select_safe_item_slot", "executor.transfer_material");
 
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
@@ -254,6 +257,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.exit_mine", "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.catch_fish", "executor.ship_inventory_item_to_bin",
+            "executor.transfer_material",
             "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.clear_obstacle",
             "executor.break_farm_resource_clump", "executor.break_current_location_resource_clump",

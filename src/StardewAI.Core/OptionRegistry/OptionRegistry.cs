@@ -524,6 +524,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "inventory item deposited into shipping bin" },
                 new[] { "never_ship_protected_items", "block_no_completed_shipping_bin", "block_unverified_movement", "block_unavailable_required_state" }));
 
+            Register(Option("executor.transfer_material", "inventory", "Transfer an exact item quantity between player inventory and one ordinary placed chest",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "farm.material_inventory_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native chest lock and ItemGrabMenu lifecycle transfers the projected quantity", "source and destination stacks match the transparent projection" },
+                new[] { "block_unavailable_material_graph", "block_locked_or_drifted_chest", "block_unverified_inventory_projection", "block_non_native_inventory_mutation" }));
+
             Register(Option("executor.social_interact", "social", "Execute one transparent social interaction with a current-state NPC",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -819,7 +827,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 58;
+            const int expectedPrimitiveCount = 59;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

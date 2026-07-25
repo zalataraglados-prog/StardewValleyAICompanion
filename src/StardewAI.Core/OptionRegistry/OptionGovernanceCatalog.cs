@@ -249,6 +249,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.combat_volcano_monster", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.catch_fish", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.ship_inventory_item_to_bin", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
+                P("executor.transfer_material", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.social_interact", Primitive, R5, Relationship, PolicyConfirm, Actor, Mixed, Policy),
                 P("executor.quest_npc_interact", Primitive, R2, Consume, PolicyConfirm, Actor, Mixed, Policy),
                 P("executor.quest_drop_box_donate", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
