@@ -50,6 +50,13 @@ public sealed class MaterialSupplyProjection
         var reservedBySlot = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var reservation in reservations ?? Array.Empty<MaterialReservation>())
         {
+            if (!string.Equals(
+                    reservation.Status,
+                    StrategyCommitmentStatuses.Active,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
             var key = SlotKey(reservation.NodeId, reservation.SlotIndex);
             if (reservation.Quantity <= 0)
             {

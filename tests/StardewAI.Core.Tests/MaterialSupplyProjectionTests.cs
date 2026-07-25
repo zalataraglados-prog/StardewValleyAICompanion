@@ -102,6 +102,28 @@ public sealed class MaterialSupplyProjectionTests
     }
 
     [Fact]
+    public void ProjectIgnoresCancelledReservation()
+    {
+        var result = new MaterialSupplyProjection().Project(
+            Graph(Node("player:1", "available", Slot(0, "(O)388", 20))),
+            new[]
+            {
+                new MaterialReservation
+                {
+                    ReservationId = "cancelled",
+                    Status = StrategyCommitmentStatuses.Cancelled,
+                    NodeId = "player:1",
+                    SlotIndex = 0,
+                    QualifiedItemId = "(O)388",
+                    Quantity = 20
+                }
+            });
+
+        Assert.Equal("available", result.Status);
+        Assert.Equal(20, Assert.Single(result.Slots).AvailableQuantity);
+    }
+
+    [Fact]
     public void ProjectRejectsDuplicatePhysicalNodeIds()
     {
         var graph = Graph(

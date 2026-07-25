@@ -103,6 +103,88 @@ public sealed class MachineCraftingMainlineTests
         Assert.Contains("machine_recipe_output_cannot_fit_after_material_consumption", candidate.BlockReasons);
     }
 
+    [Fact]
+    public void ActiveMaterialReservationBlocksCraftThatWouldConsumeCommittedSlot()
+    {
+        var snapshot = Snapshot(timesCrafted: 2, ready: true);
+        var ledger = MaterialLedger(
+            revision: 1,
+            StrategyCommitmentStatuses.Active,
+            nodeId: "player:123",
+            slotIndex: 0,
+            qualifiedItemId: "(O)388",
+            quantity: 1);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true,
+                ledger)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "machine_recipe_material_reserved_for_other_goal:player:123#0",
+            candidate.BlockReasons);
+        Assert.Equal("blocked", Parameter(candidate.Parameters, "material_reservation_guard_status"));
+        Assert.Contains("keg-wood", Parameter(candidate.Parameters, "material_reservation_ids_json"));
+    }
+
+    [Fact]
+    public void CancelledMaterialReservationDoesNotBlockCraft()
+    {
+        var snapshot = Snapshot(timesCrafted: 2, ready: true);
+        var ledger = MaterialLedger(
+            revision: 2,
+            StrategyCommitmentStatuses.Cancelled,
+            nodeId: "player:123",
+            slotIndex: 0,
+            qualifiedItemId: "(O)388",
+            quantity: 30);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, true, ledger)
+            .Options[0].EventCandidates.Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal(
+            "ready_no_active_material_reservations",
+            Parameter(candidate.Parameters, "material_reservation_guard_status"));
+    }
+
+    [Fact]
+    public void CompilerRejectsChangedMaterialReservationLedger()
+    {
+        var snapshot = Snapshot(timesCrafted: 2, ready: true);
+        var initialLedger = MaterialLedger(
+            revision: 1,
+            StrategyCommitmentStatuses.Active,
+            nodeId: "player:123",
+            slotIndex: 1,
+            qualifiedItemId: "(O)390",
+            quantity: 1);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, true, initialLedger);
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
+            snapshot.StateHash);
+        var initialQueue = new ActionQueueCompiler().Compile(plan, snapshot, initialLedger);
+        Assert.Equal("pending", initialQueue.Status);
+
+        var revisedLedger = MaterialLedger(
+            revision: 2,
+            StrategyCommitmentStatuses.Cancelled,
+            nodeId: "player:123",
+            slotIndex: 1,
+            qualifiedItemId: "(O)390",
+            quantity: 1);
+        var staleQueue = new ActionQueueCompiler().Compile(plan, snapshot, revisedLedger);
+
+        Assert.Equal("blocked", staleQueue.Status);
+        Assert.Contains(
+            "craft_machine_item_material_reservation_projection_drifted",
+            Assert.Single(staleQueue.Items).BlockingReasons);
+    }
+
     [Theory]
     [InlineData(0, 1, true, "priority_task_requirement", "300")]
     [InlineData(2, 1, false, "production_capacity_requirement", "200")]
@@ -401,7 +483,8 @@ public sealed class MachineCraftingMainlineTests
           },
           "farm": {
             "crops":{"value":CROP_ROWS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "machines":{"value":MACHINE_ROWS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines":{"value":MACHINE_ROWS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "material_inventory_graph":{"value":{"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available","owner_player_id":123,"ownership_class":"actor_owned","actor_use_authorized":true,"slots":[{"slot_index":0,"item_id":"388","qualified_item_id":"(O)388","stack":30},{"slot_index":1,"item_id":"390","qualified_item_id":"(O)390","stack":1}]}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {
             "active_quests":{"value":ACTIVE_QUESTS,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -477,6 +560,35 @@ public sealed class MachineCraftingMainlineTests
             }
         }
     };
+
+    private static StrategyCommitmentLedger MaterialLedger(
+        int revision,
+        string status,
+        string nodeId,
+        int slotIndex,
+        string qualifiedItemId,
+        int quantity) => new()
+        {
+            LedgerId = "strategy-ledger:test",
+            Revision = revision,
+            MaterialReservations = new[]
+            {
+                new MaterialReservation
+                {
+                    ReservationId = "keg-wood",
+                    Revision = revision,
+                    Status = status,
+                    SourceDecisionId = "strategy.keg",
+                    GoalId = "goal.keg",
+                    OwnerPlayerId = 123,
+                    NodeId = nodeId,
+                    SlotIndex = slotIndex,
+                    QualifiedItemId = qualifiedItemId,
+                    Quantity = quantity,
+                    Purpose = "test reservation"
+                }
+            }
+        };
 
     private static SnapshotEnvelope WithWorkbenchSource(SnapshotEnvelope snapshot)
     {
