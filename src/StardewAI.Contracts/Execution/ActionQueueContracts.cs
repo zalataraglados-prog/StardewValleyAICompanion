@@ -303,6 +303,45 @@ namespace StardewAI.Contracts.Execution
         public NormalizedCommand NormalizedCommand { get; set; } = new();
     }
 
+    public sealed class ActionQueueDispatchReadiness
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "action_queue_dispatch_readiness.v1";
+
+        [JsonPropertyName("ready")]
+        public bool Ready { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("queue_id")]
+        public string QueueId { get; set; } = string.Empty;
+
+        [JsonPropertyName("queue_item_id")]
+        public string QueueItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("option_id")]
+        public string OptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("state_hash")]
+        public string StateHash { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_ledger_id")]
+        public string RequiredLedgerId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_ledger_revision")]
+        public int? RequiredLedgerRevision { get; set; }
+
+        [JsonPropertyName("current_ledger_id")]
+        public string CurrentLedgerId { get; set; } = string.Empty;
+
+        [JsonPropertyName("current_ledger_revision")]
+        public int CurrentLedgerRevision { get; set; }
+
+        [JsonPropertyName("blocking_reasons")]
+        public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+    }
+
     public sealed class ActionQueuePrecondition
     {
         [JsonPropertyName("state_factor")]

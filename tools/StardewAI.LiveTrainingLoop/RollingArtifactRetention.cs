@@ -5,7 +5,7 @@ namespace StardewAI.LiveTrainingLoop;
 public static class RollingArtifactRetention
 {
     private static readonly Regex ArtifactIterationPattern = new(
-        @"^(?:before-snapshot|model-plan|daily-plan-response|ranking-response|model-action|compiled-queue|plan-execution-episode|execution|after-snapshot|replan-model-plan|replan-daily-plan-response|replan-compiled-queue|replan-ranking-response)-(?<iteration>[0-9]+)(?:-item-[0-9]+)?\.json$",
+        @"^(?:before-snapshot|model-plan|daily-plan-response|ranking-response|model-action|compiled-queue|plan-execution-episode|execution|after-snapshot|dispatch-readiness|replan-model-plan|replan-daily-plan-response|replan-compiled-queue|replan-ranking-response)-(?<iteration>[0-9]+)(?:-(?:item|dispatch)-[0-9]+)?\.json$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public static int Apply(

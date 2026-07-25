@@ -34,6 +34,26 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void LiveTrainingDispatchChecksLatestMaterialLedgerBeforeRuntimeInput()
+    {
+        var execution = RuntimeHarnessSources.RepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs");
+        var readiness = RuntimeHarnessSources.RepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.DispatchReadiness.cs");
+
+        Assert.Contains("ReadDispatchReadinessAsync(", execution);
+        Assert.Contains("dispatchReadiness[\"ready\"]", execution);
+        Assert.Contains("BuildQueueFromDailyPlanAsync(", execution);
+        Assert.Contains("/dispatch-readiness?stateHash=", readiness);
+        Assert.Contains("controller_dispatch_guard", readiness);
+        Assert.Contains("dispatch_rejected", readiness);
+    }
+
+    [Fact]
     public void WorkbenchRuntimeUsesNativeLocksMenuAndClicks()
     {
         var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
