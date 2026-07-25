@@ -8,6 +8,287 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private TrainingExecutionResult ExecuteSetupMachineLifecycleTarget(
+        TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
+            string.IsNullOrWhiteSpace(request.RecipeName) ||
+            string.IsNullOrWhiteSpace(request.OutputQualifiedItemId) ||
+            string.IsNullOrWhiteSpace(request.ProcessInputQualifiedItemId) ||
+            request.ProcessInputQuantity is not > 0)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_lifecycle_target",
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                "request=missing_required_machine_lifecycle_fields",
+                "machine_lifecycle_fixture_request_invalid");
+        }
+        if (!Game1.player.craftingRecipes.ContainsKey(request.RecipeName) ||
+            !CraftingRecipe.craftingRecipes.ContainsKey(request.RecipeName))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_lifecycle_target",
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                "recipe=" + request.RecipeName,
+                "machine_lifecycle_fixture_requires_learned_recipe");
+        }
+
+        CraftingRecipe recipe;
+        StardewValley.Object machinePreview;
+        try
+        {
+            recipe = new CraftingRecipe(request.RecipeName, isCookingRecipe: false);
+            machinePreview = recipe.createItem() as StardewValley.Object
+                ?? throw new InvalidOperationException("recipe_output_not_object");
+        }
+        catch (Exception ex)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_lifecycle_target",
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                "recipe=" + request.RecipeName,
+                "machine_lifecycle_fixture_recipe_creation_failed:" +
+                ex.GetType().Name);
+        }
+        if (!machinePreview.bigCraftable.Value ||
+            machinePreview.GetMachineData() is null ||
+            !string.Equals(
+                machinePreview.QualifiedItemId,
+                request.OutputQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_lifecycle_target",
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                "output=" + machinePreview.QualifiedItemId,
+                "machine_lifecycle_fixture_requires_native_machine_output");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var placedBefore = CountPlacedMachineInstances(
+            request.OutputQualifiedItemId);
+        var inventoryBefore = InventoryQualifiedCount(
+            request.OutputQualifiedItemId);
+        Utility.ForEachLocation(
+            location =>
+            {
+                var tiles = location.objects.Pairs
+                    .Where(pair => string.Equals(
+                        pair.Value.QualifiedItemId,
+                        request.OutputQualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase))
+                    .Select(pair => pair.Key)
+                    .ToArray();
+                foreach (var tile in tiles)
+                {
+                    location.objects.Remove(tile);
+                }
+                return true;
+            },
+            includeInteriors: true,
+            includeGenerated: false);
+        for (var slot = 0; slot < Game1.player.Items.Count; slot++)
+        {
+            if (string.Equals(
+                    Game1.player.Items[slot]?.QualifiedItemId,
+                    request.OutputQualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                Game1.player.Items[slot] = null;
+            }
+        }
+
+        var farm = Game1.getFarm();
+        var target = new Point(
+            request.TargetTileX.Value,
+            request.TargetTileY.Value);
+        var targetVector = new Vector2(target.X, target.Y);
+        farm.objects.Remove(targetVector);
+        farm.terrainFeatures.Remove(targetVector);
+
+        var additionalRows = ParseMachineLifecycleAdditionalItems(
+            request.ProcessAdditionalItemsJson,
+            out var additionalParseReason);
+        if (additionalRows is null)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_lifecycle_target",
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                "additional_items=" + additionalParseReason,
+                "machine_lifecycle_fixture_additional_items_invalid");
+        }
+
+        var ingredientSlots = new List<string>();
+        foreach (var ingredient in recipe.recipeList)
+        {
+            if (!int.TryParse(ingredient.Key, out var itemId) || itemId < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_lifecycle_target",
+                    "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                    "requirement=" + ingredient.Key,
+                    "machine_lifecycle_fixture_requires_exact_recipe_ingredients");
+            }
+            var qualifiedId = ItemRegistry.ManuallyQualifyItemId(
+                itemId.ToString(),
+                "(O)");
+            var processReserve = string.Equals(
+                qualifiedId,
+                request.ProcessInputQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase)
+                    ? request.ProcessInputQuantity.Value
+                    : 0;
+            var additionalReserve = additionalRows
+                .Where(row => string.Equals(
+                    row.QualifiedItemId,
+                    qualifiedId,
+                    StringComparison.OrdinalIgnoreCase))
+                .Sum(row => row.Quantity);
+            var totalRequired = checked(
+                ingredient.Value +
+                processReserve +
+                additionalReserve);
+            var slot = EnsureInventoryItem(
+                qualifiedId,
+                totalRequired);
+            if (slot < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_lifecycle_target",
+                    "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                    "requirement=" + qualifiedId,
+                    "machine_lifecycle_fixture_inventory_full");
+            }
+            ingredientSlots.Add(
+                qualifiedId + "@" + slot + ":" + totalRequired);
+        }
+
+        var processAdditionalReserve = additionalRows
+            .Where(row => string.Equals(
+                row.QualifiedItemId,
+                request.ProcessInputQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase))
+            .Sum(row => row.Quantity);
+        var processInputSlot = EnsureInventoryItem(
+            request.ProcessInputQualifiedItemId,
+            checked(
+                request.ProcessInputQuantity.Value +
+                processAdditionalReserve));
+        var additionalSlots = new List<string>();
+        foreach (var row in additionalRows)
+        {
+            var slot = EnsureInventoryItem(
+                row.QualifiedItemId,
+                row.Quantity);
+            if (slot < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_lifecycle_target",
+                    "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                    "additional_item=" + row.QualifiedItemId,
+                    "machine_lifecycle_fixture_inventory_full");
+            }
+            additionalSlots.Add(
+                row.QualifiedItemId + "@" + slot + ":" + row.Quantity);
+        }
+
+        var moved = MoveFixtureFarmerToFarmAdjacent(
+            target,
+            out var stand,
+            out var moveReason);
+        var placedAfter = CountPlacedMachineInstances(
+            request.OutputQualifiedItemId);
+        var inventoryAfter = InventoryQualifiedCount(
+            request.OutputQualifiedItemId);
+        var verified =
+            placedAfter == 0 &&
+            inventoryAfter == 0 &&
+            processInputSlot >= 0 &&
+            recipe.doesFarmerHaveIngredientsInInventory() &&
+            Game1.player.couldInventoryAcceptThisItem(machinePreview) &&
+            moved &&
+            ReferenceEquals(Game1.currentLocation, farm) &&
+            Game1.player.TilePoint == stand;
+
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_machine_lifecycle_target",
+            PrimitiveVerificationStatus = verified
+                ? "verified"
+                : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[]
+                {
+                    "all_loaded_target_machine_instances_removed",
+                    "target_machine_inventory_count_zero",
+                    "learned_native_recipe_preserved",
+                    "exact_recipe_ingredients_available",
+                    "process_input_and_additional_items_available",
+                    "target_tile_cleared",
+                    "player_moved_adjacent",
+                    "placed_machine_count_before=" + placedBefore,
+                    "inventory_machine_count_before=" + inventoryBefore,
+                    "process_input_slot_index=" + processInputSlot,
+                    "stand_tile=" + stand.X + "," + stand.Y,
+                    "ingredient_slots=" + string.Join(",", ingredientSlots),
+                    "additional_slots=" + string.Join(",", additionalSlots)
+                }
+                : new[]
+                {
+                    "placed_machine_count_after=" + placedAfter,
+                    "inventory_machine_count_after=" + inventoryAfter,
+                    processInputSlot >= 0
+                        ? "process_input_available"
+                        : "process_input_unavailable",
+                    recipe.doesFarmerHaveIngredientsInInventory()
+                        ? "recipe_ingredients_available"
+                        : "recipe_ingredients_unavailable",
+                    moved ? "player_moved_adjacent" : moveReason
+                },
+            RequestedEffect =
+                "target_machine_fleet=empty;recipe_and_process_materials=ready",
+            ObservedEffect =
+                "recipe_name=" + request.RecipeName +
+                ";machine_qualified_item_id=" +
+                request.OutputQualifiedItemId +
+                ";placed_machine_count_before=" + placedBefore +
+                ";placed_machine_count_after=" + placedAfter +
+                ";inventory_machine_count_before=" + inventoryBefore +
+                ";inventory_machine_count_after=" + inventoryAfter +
+                ";process_input_slot_index=" + processInputSlot +
+                ";target_tile=" + target.X + "," + target.Y +
+                ";stand_tile=" + stand.X + "," + stand.Y,
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[]
+                {
+                    "machine_lifecycle_fixture_verification_failed"
+                }
+        };
+    }
+
     private TrainingExecutionResult ExecuteCraftMachineItem(TrainingExecutionRequest request)
     {
         var primitiveKind = CraftingPrimitiveKind(request);
@@ -274,6 +555,79 @@ public sealed partial class ModEntry
     private static int InventoryQualifiedCount(string qualifiedId) =>
         Game1.player.Items.Where(item => item is not null && string.Equals(item.QualifiedItemId, qualifiedId, StringComparison.Ordinal)).Sum(item => item!.Stack);
 
+    private static int CountPlacedMachineInstances(string qualifiedId)
+    {
+        var count = 0;
+        Utility.ForEachLocation(
+            location =>
+            {
+                count += location.objects.Pairs.Count(pair =>
+                    string.Equals(
+                        pair.Value.QualifiedItemId,
+                        qualifiedId,
+                        StringComparison.OrdinalIgnoreCase));
+                return true;
+            },
+            includeInteriors: true,
+            includeGenerated: false);
+        return count;
+    }
+
+    private static MachineLifecycleAdditionalItem[]?
+        ParseMachineLifecycleAdditionalItems(
+            string json,
+            out string reason)
+    {
+        reason = "available";
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return Array.Empty<MachineLifecycleAdditionalItem>();
+        }
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                reason = "root_not_array";
+                return null;
+            }
+            var rows = new List<MachineLifecycleAdditionalItem>();
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                if (element.ValueKind != JsonValueKind.Object ||
+                    !element.TryGetProperty(
+                        "qualified_item_id",
+                        out var qualifiedIdElement) ||
+                    qualifiedIdElement.ValueKind != JsonValueKind.String ||
+                    !element.TryGetProperty(
+                        "quantity",
+                        out var quantityElement) ||
+                    !quantityElement.TryGetInt32(out var quantity) ||
+                    quantity <= 0)
+                {
+                    reason = "invalid_item_row";
+                    return null;
+                }
+                var qualifiedId =
+                    qualifiedIdElement.GetString() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(qualifiedId))
+                {
+                    reason = "missing_qualified_item_id";
+                    return null;
+                }
+                rows.Add(new MachineLifecycleAdditionalItem(
+                    qualifiedId,
+                    quantity));
+            }
+            return rows.ToArray();
+        }
+        catch (JsonException)
+        {
+            reason = "invalid_json";
+            return null;
+        }
+    }
+
     private static string CraftQuestSignature() =>
         string.Join(",", Game1.player.questLog.OrderBy(quest => quest.id.Value).Select(quest => quest.id.Value + ":" + quest.questType.Value + ":" + quest.completed.Value));
 
@@ -284,4 +638,8 @@ public sealed partial class ModEntry
         "recipe=" + request.RecipeName + ";times_crafted=" + (Game1.player?.craftingRecipes.TryGetValue(request.RecipeName, out var count) == true ? count : -1) + ";output_count=" + InventoryQualifiedCount(request.OutputQualifiedItemId) + ";active_menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
 
     private sealed record ProjectedCraftIngredients(string RowsJson, Dictionary<string, int> ConsumedByQualifiedId, bool Satisfied);
+
+    private sealed record MachineLifecycleAdditionalItem(
+        string QualifiedItemId,
+        int Quantity);
 }

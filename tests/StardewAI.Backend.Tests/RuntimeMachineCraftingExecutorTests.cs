@@ -60,6 +60,27 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void MachineInputCapabilityUsesNativeEffectiveRuleInference()
+    {
+        var bridge = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.Machines.cs");
+
+        Assert.Contains("MachineDataHasEffectiveInput", bridge);
+        Assert.Contains(
+            "MachineOutputTrigger.ItemPlacedInMachine",
+            bridge);
+        Assert.Contains("MachineDataHasEffectiveOutput", bridge);
+        Assert.Contains(
+            "effective_capability_native_contract",
+            bridge);
+        Assert.Contains("has_input_forced", bridge);
+        Assert.Contains("has_output_forced", bridge);
+    }
+
+    [Fact]
     public void LiveTrainingDispatchChecksLatestMaterialLedgerBeforeRuntimeInput()
     {
         var execution = RuntimeHarnessSources.RepositoryFile(

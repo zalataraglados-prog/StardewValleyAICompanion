@@ -667,6 +667,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_machine_lifecycle_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupMachineLifecycleTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_shipping_target")
             {
                 pending.Completion.SetResult(ExecuteSetupShippingTarget(pending.Request));
