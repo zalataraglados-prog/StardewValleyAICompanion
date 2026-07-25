@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.RuntimePrimitives
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.KnowledgeExporter", "tools\StardewAI.KnowledgeExporter\StardewAI.KnowledgeExporter.csproj", "{B00024A9-3477-480F-A262-A0A0D84AFC72}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewAI.KnowledgeCompiler", "tools\StardewAI.KnowledgeCompiler\StardewAI.KnowledgeCompiler.csproj", "{A3D21A26-0B19-4E6D-808F-C2E1735FA18E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +86,10 @@ Global
 		{B00024A9-3477-480F-A262-A0A0D84AFC72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B00024A9-3477-480F-A262-A0A0D84AFC72}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B00024A9-3477-480F-A262-A0A0D84AFC72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3D21A26-0B19-4E6D-808F-C2E1735FA18E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3D21A26-0B19-4E6D-808F-C2E1735FA18E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3D21A26-0B19-4E6D-808F-C2E1735FA18E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3D21A26-0B19-4E6D-808F-C2E1735FA18E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{01483AE2-3B7C-4CE6-826E-C67198ECC138} = {C7D7B2C0-EF32-46FD-829F-09E9AEA95D0E}
@@ -97,5 +103,6 @@ Global
 		{B5CEBCB5-F86E-4B7F-9325-C1A58B1003CB} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
 		{F0504BBC-6A18-4F49-B1E9-867F80FDCFA1} = {C7D7B2C0-EF32-46FD-829F-09E9AEA95D0E}
 		{B00024A9-3477-480F-A262-A0A0D84AFC72} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
+		{A3D21A26-0B19-4E6D-808F-C2E1735FA18E} = {D65C00B9-97DB-4902-9F5D-F831BAF2171B}
 	EndGlobalSection
 EndGlobal
