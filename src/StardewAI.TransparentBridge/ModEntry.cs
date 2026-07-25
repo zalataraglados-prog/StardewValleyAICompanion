@@ -168,7 +168,10 @@ public sealed class ModEntry : Mod
 
         serverCancellation = new CancellationTokenSource();
         listener = new HttpListener();
-        listener.Prefixes.Add($"http://{config.Host}:{config.Port}/");
+        var httpPrefixHost = string.Equals(config.Host, "0.0.0.0", StringComparison.Ordinal)
+            ? "*"
+            : config.Host;
+        listener.Prefixes.Add($"http://{httpPrefixHost}:{config.Port}/");
         listener.Start();
 
         Monitor.Log($"TransparentBridge read-only API listening on http://{config.Host}:{config.Port}/", LogLevel.Info);
@@ -581,7 +584,7 @@ public sealed class ModEntry : Mod
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static ISet<string>? AllowedDomainsForProfile(string profile)
@@ -600,7 +603,7 @@ public sealed class ModEntry : Mod
             "unavailable_fields"
         };
 
-        if (profile is "route" or "shop" or "machine")
+        if (profile is "daily" or "route" or "shop" or "machine")
         {
             domains.Add("current_location");
             domains.Add("locations");
@@ -616,7 +619,7 @@ public sealed class ModEntry : Mod
             domains.Add("farm");
         }
 
-        if (profile is "training_machine")
+        if (profile is "daily" or "training_machine")
         {
             domains.Add("farm");
             domains.Add("current_location");

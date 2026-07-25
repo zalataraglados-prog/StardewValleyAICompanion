@@ -136,13 +136,23 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        // Match vanilla ShippingBin interaction range and the transparent bridge.
+        // Farmer.Tile is already the player's tile-space position; adding another
+        // half-tile incorrectly rejects valid stand tiles beside a two-tile-wide bin.
         var distance = Vector2.Distance(
-            new Vector2(Game1.player.TilePoint.X + 0.5f, Game1.player.TilePoint.Y + 0.5f),
-            new Vector2(bin.tileX.Value + 0.5f, bin.tileY.Value + 0.5f));
+            Game1.player.Tile,
+            new Vector2(bin.tileX.Value + 0.5f, bin.tileY.Value));
         if (distance > 2.0f)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "ship_inventory_item_to_bin",
                 ShipRequestedEffect(pending.Request), ShipObservedEffect(), "player_out_of_shipping_range"));
+            return;
+        }
+
+        if (!TryResolveShippingActionTile(bin, playerTile, out var actionTile))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "ship_inventory_item_to_bin",
+                ShipRequestedEffect(pending.Request), ShipObservedEffect(), "stand_tile_not_cardinal_to_shipping_bin"));
             return;
         }
 
@@ -167,7 +177,7 @@ public sealed partial class ModEntry : Mod
         var beforeSlotItemId = unqualifiedItemId;
 
         activeShipInventoryToBin = new ActiveShipInventoryToBin(
-            pending, bin, slotIndex, slotItem.QualifiedItemId ?? string.Empty, unqualifiedItemId, quantity,
+            pending, bin, actionTile, slotIndex, slotItem.QualifiedItemId ?? string.Empty, unqualifiedItemId, quantity,
             beforeInventoryCount, beforeBinCount, beforeBinTotal, beforeBinDistinct,
             beforeBinSignature, beforeBasicShipped, beforeSlotQualifiedId, beforeSlotStack,
             beforeSlotItemId);
@@ -181,24 +191,29 @@ public sealed partial class ModEntry : Mod
         active.ElapsedTicks++;
         if (active.ElapsedTicks > active.MaxTicks)
         {
-            ReleaseShipRightButton();
-            CleanupAndBlock(active, "ship_timeout");
+            ReleaseShipInputOverrides();
+            CleanupAndBlock(active,
+                "ship_timeout",
+                "ship_timeout_phase=" + active.Phase,
+                "ship_timeout_state=" +
+                "facing_set:" + active.FacingSet.ToString().ToLowerInvariant() +
+                ",native_action_dispatched:" + active.NativeActionDispatched.ToString().ToLowerInvariant() +
+                ",button_pressed:" + active.ButtonPressed.ToString().ToLowerInvariant() +
+                ",button_released:" + active.ButtonReleased.ToString().ToLowerInvariant() +
+                ",saw_shipping_menu:" + active.SawShippingMenu.ToString().ToLowerInvariant() +
+                ",slot_click_dispatched:" + active.SlotClickDispatched.ToString().ToLowerInvariant());
             return;
         }
 
         switch (active.Phase)
         {
-            case ShipPhase.BinPosition:
-            case ShipPhase.BinPositionVerify:
+            case ShipPhase.BinFace:
             case ShipPhase.BinPress:
             case ShipPhase.BinRelease:
             case ShipPhase.WaitForShippingMenu:
                 TickShipBinOpenPhase(active);
                 break;
-            case ShipPhase.SlotPosition:
-            case ShipPhase.SlotPositionVerify:
-            case ShipPhase.SlotPress:
-            case ShipPhase.SlotRelease:
+            case ShipPhase.SlotDispatch:
             case ShipPhase.WaitForSlotDispatch:
                 TickShipSlotClickPhase(active);
                 break;
@@ -212,13 +227,8 @@ public sealed partial class ModEntry : Mod
     {
         switch (active.Phase)
         {
-            case ShipPhase.BinPosition:
-                if (active.PositionSet && !active.PositionVerified)
-                    active.Phase = ShipPhase.BinPositionVerify;
-                break;
-
-            case ShipPhase.BinPositionVerify:
-                if (active.PositionVerified && !active.ButtonPressed)
+            case ShipPhase.BinFace:
+                if (active.FacingSet && !active.ButtonPressed)
                     active.Phase = ShipPhase.BinPress;
                 break;
 
@@ -228,14 +238,9 @@ public sealed partial class ModEntry : Mod
                 break;
 
             case ShipPhase.BinRelease:
-                if (active.ButtonReleased && Game1.activeClickableMenu is ItemGrabMenu menu && menu.shippingBin)
+                if (active.ButtonReleased)
                 {
-                    active.SawShippingMenu = true;
-                    active.ButtonPressed = false;
-                    active.ButtonReleased = false;
-                    active.PositionSet = false;
-                    active.PositionVerified = false;
-                    active.Phase = ShipPhase.SlotPosition;
+                    active.Phase = ShipPhase.WaitForShippingMenu;
                 }
                 break;
 
@@ -243,7 +248,7 @@ public sealed partial class ModEntry : Mod
                 if (Game1.activeClickableMenu is ItemGrabMenu binMenu && binMenu.shippingBin)
                 {
                     active.SawShippingMenu = true;
-                    active.Phase = ShipPhase.SlotPosition;
+                    active.Phase = ShipPhase.SlotDispatch;
                 }
                 break;
         }
@@ -254,34 +259,14 @@ public sealed partial class ModEntry : Mod
         var menu = Game1.activeClickableMenu as ItemGrabMenu;
         if (menu is null || !menu.shippingBin)
         {
-            ReleaseShipRightButton();
+            ReleaseShipInputOverrides();
             CleanupAndBlock(active, "shipping_menu_lost");
             return;
         }
 
         switch (active.Phase)
         {
-            case ShipPhase.SlotPosition:
-                if (active.PositionSet && !active.PositionVerified)
-                    active.Phase = ShipPhase.SlotPositionVerify;
-                break;
-
-            case ShipPhase.SlotPositionVerify:
-                if (active.PositionVerified && !active.ButtonPressed)
-                    active.Phase = ShipPhase.SlotPress;
-                break;
-
-            case ShipPhase.SlotPress:
-                if (active.ButtonPressed && !active.ButtonReleased)
-                    active.Phase = ShipPhase.SlotRelease;
-                break;
-
-            case ShipPhase.SlotRelease:
-                if (active.ButtonReleased)
-                {
-                    active.SlotClickDispatched = true;
-                    active.Phase = ShipPhase.WaitForSlotDispatch;
-                }
+            case ShipPhase.SlotDispatch:
                 break;
 
             case ShipPhase.WaitForSlotDispatch:
@@ -307,7 +292,7 @@ public sealed partial class ModEntry : Mod
 
                     if (!slotStackOk)
                     {
-                        ReleaseShipRightButton();
+                        ReleaseShipInputOverrides();
                         CleanupAndBlock(active, "slot_stack_delta_mismatch",
                             "expected_stack=" + (active.BeforeSlotStack - active.Quantity) + ";actual=" + slotStackNow,
                             "before_stack=" + active.BeforeSlotStack + ";slot_null=" + (slotItem is null).ToString().ToLowerInvariant());
@@ -315,7 +300,7 @@ public sealed partial class ModEntry : Mod
                     }
                     if (afterInventoryCount != active.InventoryCountBefore && !inventoryDecreased)
                     {
-                        ReleaseShipRightButton();
+                        ReleaseShipInputOverrides();
                         CleanupAndBlock(active, "ambiguous_quantity_delta",
                             "inventory_delta=" + (afterInventoryCount - active.InventoryCountBefore),
                             "bin_delta=" + (afterBinCount - active.BinCountBefore));
@@ -370,7 +355,7 @@ public sealed partial class ModEntry : Mod
                 fBinTotal, fBinDistinct, fBinSignature, fSlotStack, fSlotQualifiedId);
             if (string.IsNullOrWhiteSpace(receiptPath))
             {
-                ReleaseShipRightButton();
+                ReleaseShipInputOverrides();
                 CleanupAndBlock(active, "receipt_write_failed");
                 return;
             }
@@ -385,41 +370,36 @@ public sealed partial class ModEntry : Mod
     {
         switch (active.Phase)
         {
-            case ShipPhase.BinPosition:
-                if (!active.PositionSet)
-                {
-                    var pos = BinScreenPosition(active.Bin);
-                    Game1.setMousePosition(pos.X, pos.Y, ui_scale: false);
-                    active.PositionTarget = pos;
-                    active.PositionSet = true;
-                }
-                break;
-
-            case ShipPhase.BinPositionVerify:
-                if (active.PositionSet && !active.PositionVerified)
-                {
-                    var actualX = Game1.getMouseX(ui_scale: false);
-                    var actualY = Game1.getMouseY(ui_scale: false);
-                    if (Math.Abs(actualX - active.PositionTarget.X) > 2 || Math.Abs(actualY - active.PositionTarget.Y) > 2)
-                    {
-                        ReleaseShipRightButton();
-                        CleanupAndBlock(active,
-                            "cursor_position_mismatch:expected=" + active.PositionTarget.X + "," + active.PositionTarget.Y + ";actual=" + actualX + "," + actualY);
-                        return;
-                    }
-                    active.PositionVerified = true;
-                }
+            case ShipPhase.BinFace:
+                Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.ActionTile));
+                active.FacingSet = true;
                 break;
 
             case ShipPhase.BinPress:
                 if (!active.ButtonPressed)
                 {
-                    if (!TryApplySmapiRightButtonOverride(pressed: true, out var reason))
+                    if (!TryApplySmapiButtonOverride(SButton.X, pressed: true, out var reason))
                     {
-                        ReleaseShipRightButton();
+                        ReleaseShipInputOverrides();
                         CleanupAndBlock(active, "bin_press_failed:" + reason);
                         return;
                     }
+
+                    var handled = Game1.currentLocation.checkAction(
+                        new TileLocation(active.ActionTile.X, active.ActionTile.Y),
+                        Game1.viewport,
+                        Game1.player);
+                    if (!handled && Game1.activeClickableMenu is not ItemGrabMenu { shippingBin: true })
+                    {
+                        if (!TryOpenNativeShippingMenu(active.Bin, out var nativeMenuReason))
+                        {
+                            ReleaseShipInputOverrides();
+                            CleanupAndBlock(active, "native_shipping_action_not_handled", nativeMenuReason);
+                            return;
+                        }
+                    }
+
+                    active.NativeActionDispatched = true;
                     active.ButtonPressed = true;
                 }
                 break;
@@ -427,7 +407,7 @@ public sealed partial class ModEntry : Mod
             case ShipPhase.BinRelease:
                 if (!active.ButtonReleased)
                 {
-                    if (!TryApplySmapiRightButtonOverride(pressed: false, out var releaseReason))
+                    if (!TryApplySmapiButtonOverride(SButton.X, pressed: false, out var releaseReason))
                     {
                         active.ReleaseRetries++;
                         if (active.ReleaseRetries > 3)
@@ -441,65 +421,19 @@ public sealed partial class ModEntry : Mod
                 }
                 break;
 
-            case ShipPhase.SlotPosition:
-                if (!active.PositionSet && Game1.activeClickableMenu is ItemGrabMenu menu && menu.shippingBin)
+            case ShipPhase.SlotDispatch:
+                if (!active.SlotClickDispatched && Game1.activeClickableMenu is ItemGrabMenu menu && menu.shippingBin)
                 {
                     var slotPos = InventorySlotScreenPosition(menu, active.SlotIndex);
                     if (!slotPos.HasValue)
                     {
-                        ReleaseShipRightButton();
+                        ReleaseShipInputOverrides();
                         CleanupAndBlock(active, "slot_screen_position_unavailable");
                         return;
                     }
-                    Game1.setMousePosition(slotPos.Value.X, slotPos.Value.Y, ui_scale: true);
-                    active.PositionTarget = slotPos.Value;
-                    active.PositionSet = true;
-                }
-                break;
-
-            case ShipPhase.SlotPositionVerify:
-                if (active.PositionSet && !active.PositionVerified && Game1.activeClickableMenu is ItemGrabMenu vMenu && vMenu.shippingBin)
-                {
-                    var ax = Game1.getMouseX(ui_scale: true);
-                    var ay = Game1.getMouseY(ui_scale: true);
-                    if (Math.Abs(ax - active.PositionTarget.X) > 2 || Math.Abs(ay - active.PositionTarget.Y) > 2)
-                    {
-                        ReleaseShipRightButton();
-                        CleanupAndBlock(active,
-                            "slot_cursor_position_mismatch:expected=" + active.PositionTarget.X + "," + active.PositionTarget.Y + ";actual=" + ax + "," + ay);
-                        return;
-                    }
-                    active.PositionVerified = true;
-                }
-                break;
-
-            case ShipPhase.SlotPress:
-                if (!active.ButtonPressed)
-                {
-                    if (!TryApplySmapiRightButtonOverride(pressed: true, out var reason))
-                    {
-                        ReleaseShipRightButton();
-                        CleanupAndBlock(active, "slot_press_failed:" + reason);
-                        return;
-                    }
-                    active.ButtonPressed = true;
-                }
-                break;
-
-            case ShipPhase.SlotRelease:
-                if (!active.ButtonReleased)
-                {
-                    if (!TryApplySmapiRightButtonOverride(pressed: false, out var relReason))
-                    {
-                        active.ReleaseRetries++;
-                        if (active.ReleaseRetries > 3)
-                        {
-                            CleanupAndBlock(active, "slot_release_failed_after_retries:" + relReason);
-                            return;
-                        }
-                        return;
-                    }
-                    active.ButtonReleased = true;
+                    menu.receiveRightClick(slotPos.Value.X, slotPos.Value.Y, playSound: true);
+                    active.SlotClickDispatched = true;
+                    active.Phase = ShipPhase.WaitForSlotDispatch;
                 }
                 break;
         }

@@ -62,61 +62,62 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
-    public void ShipExecutorHasDeferredCursorVerificationPhases()
+    public void ShipExecutorHasNativeActionAndMenuDispatchPhases()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("BinPositionVerify", source, StringComparison.Ordinal);
-        Assert.Contains("SlotPositionVerify", source, StringComparison.Ordinal);
-        Assert.Contains("PositionVerified", source, StringComparison.Ordinal);
+        Assert.Contains("BinFace", source, StringComparison.Ordinal);
+        Assert.Contains("BinPress", source, StringComparison.Ordinal);
+        Assert.Contains("BinRelease", source, StringComparison.Ordinal);
+        Assert.Contains("WaitForShippingMenu", source, StringComparison.Ordinal);
+        Assert.Contains("SlotDispatch", source, StringComparison.Ordinal);
+        Assert.Contains("WaitForSlotDispatch", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorSeparatesCursorDispatchFromVerification()
+    public void ShipExecutorSeparatesActionEdgeFromMenuObservation()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("Game1.setMousePosition(pos.X, pos.Y, ui_scale: false)", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseX(ui_scale: false)", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseY(ui_scale: false)", source, StringComparison.Ordinal);
-        Assert.Contains("active.PositionVerified = true", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: true", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentLocation.checkAction", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: false", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.activeClickableMenu is ItemGrabMenu binMenu && binMenu.shippingBin", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorUsesUiScaleForSlotCursorPosition()
+    public void ShipExecutorDispatchesNativeRightClickAtInventoryComponentWithoutMovingCursor()
     {
         var source = RuntimeHarnessSource;
-        Assert.Contains("Game1.setMousePosition(slotPos.Value.X, slotPos.Value.Y, ui_scale: true)", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseX(ui_scale: true)", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.getMouseY(ui_scale: true)", source, StringComparison.Ordinal);
+        Assert.Contains("InventorySlotScreenPosition(menu, active.SlotIndex)", source, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveRightClick(slotPos.Value.X, slotPos.Value.Y", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.setMousePosition(slotPos.Value.X", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorBinPhaseAdvancementRequiresPositionVerified()
+    public void ShipExecutorBinPhaseAdvancementRequiresFacingSet()
     {
         var source = RuntimeHarnessSource;
         var binOpenSlice = Slice(source, "private void TickShipBinOpenPhase", "private void TickShipSlotClickPhase");
-        Assert.Contains("active.PositionSet && !active.PositionVerified", binOpenSlice, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.BinPositionVerify", binOpenSlice, StringComparison.Ordinal);
-        Assert.Contains("active.PositionVerified && !active.ButtonPressed", binOpenSlice, StringComparison.Ordinal);
+        Assert.Contains("active.FacingSet && !active.ButtonPressed", binOpenSlice, StringComparison.Ordinal);
         Assert.Contains("ShipPhase.BinPress", binOpenSlice, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorSlotPhaseAdvancementRequiresPositionVerified()
+    public void ShipExecutorSlotPhaseWaitsForNativeInventoryAndBinDeltas()
     {
         var source = RuntimeHarnessSource;
         var slotClickSlice = Slice(source, "private void TickShipSlotClickPhase", "private void TickShipVerifyAndClose");
-        Assert.Contains("active.PositionSet && !active.PositionVerified", slotClickSlice, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotPositionVerify", slotClickSlice, StringComparison.Ordinal);
-        Assert.Contains("active.PositionVerified && !active.ButtonPressed", slotClickSlice, StringComparison.Ordinal);
-        Assert.Contains("ShipPhase.SlotPress", slotClickSlice, StringComparison.Ordinal);
+        Assert.Contains("case ShipPhase.WaitForSlotDispatch", slotClickSlice, StringComparison.Ordinal);
+        Assert.Contains("slotStackOk && inventoryDecreased && binIncreased", slotClickSlice, StringComparison.Ordinal);
+        Assert.Contains("active.Phase = ShipPhase.VerifyAndClose", slotClickSlice, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShipExecutorResetsPositionVerifiedOnBinToSlotTransition()
+    public void ShipExecutorOnlyDispatchesSlotAfterShippingMenuObserved()
     {
         var source = RuntimeHarnessSource;
         var binOpenSlice = Slice(source, "private void TickShipBinOpenPhase", "private void TickShipSlotClickPhase");
-        Assert.Contains("active.PositionVerified = false", binOpenSlice, StringComparison.Ordinal);
+        Assert.Contains("active.SawShippingMenu = true", binOpenSlice, StringComparison.Ordinal);
+        Assert.Contains("active.Phase = ShipPhase.SlotDispatch", binOpenSlice, StringComparison.Ordinal);
     }
 
 }

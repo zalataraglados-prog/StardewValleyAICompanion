@@ -759,6 +759,11 @@ public sealed partial class ModEntry : Mod
             return CompletedCloseMenu(request, beforeOpen, beforeType, "no_op", "verified_no_active_menu", new[] { "active_menu_already_closed" });
         }
 
+        if (menu is LevelUpMenu levelUpMenu)
+        {
+            return ExecuteLevelUpMenu(request, levelUpMenu, beforeOpen, beforeType);
+        }
+
         if (beforeType == "DialogueBox" && menu is DialogueBox unsafeBox &&
             !CanAdvanceOrdinaryDialogue(unsafeBox, request.SocialContinuationDialogueRecovery))
         {
@@ -828,6 +833,75 @@ public sealed partial class ModEntry : Mod
             verified ? "applied" : "blocked",
             verified ? "verified" : "observed_mismatch",
             verified ? new[] { "active_menu_closed" } : new[] { "active_menu_still_open" });
+    }
+
+    private TrainingExecutionResult ExecuteLevelUpMenu(
+        TrainingExecutionRequest request,
+        LevelUpMenu menu,
+        bool beforeOpen,
+        string beforeType)
+    {
+        if (!menu.isActive)
+        {
+            return BlockedWithPrimitive(request, "complete_level_up_menu", "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(), "level_up_menu_not_active");
+        }
+        if (!menu.CanReceiveInput())
+        {
+            return BlockedWithPrimitive(request, "complete_level_up_menu", "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(), "level_up_menu_input_not_ready");
+        }
+
+        var professionsBefore = Game1.player.professions.ToHashSet();
+        if (menu.isProfessionChooser)
+        {
+            var choices = ReadLevelUpProfessionChoices(menu);
+            if (!request.ProfessionChoiceId.HasValue)
+            {
+                return BlockedWithPrimitive(request, "complete_level_up_menu", "menus.active_menu.is_open=false",
+                    CloseMenuObservedEffect(), "profession_choice_id_required");
+            }
+            if (!choices.Contains(request.ProfessionChoiceId.Value))
+            {
+                return BlockedWithPrimitive(request, "complete_level_up_menu", "menus.active_menu.is_open=false",
+                    CloseMenuObservedEffect(), "profession_choice_id_not_offered");
+            }
+
+            Game1.player.professions.Add(request.ProfessionChoiceId.Value);
+            menu.getImmediateProfessionPerk(request.ProfessionChoiceId.Value);
+            menu.isActive = false;
+            menu.informationUp = false;
+            menu.isProfessionChooser = false;
+            menu.RemoveLevelFromLevelList();
+        }
+        else
+        {
+            menu.okButtonClicked();
+        }
+
+        Game1.exitActiveMenu();
+        var choiceApplied = !request.ProfessionChoiceId.HasValue ||
+            (!professionsBefore.Contains(request.ProfessionChoiceId.Value) &&
+             Game1.player.professions.Contains(request.ProfessionChoiceId.Value));
+        var verified = Game1.activeClickableMenu is null && choiceApplied;
+        return CompletedCloseMenu(
+            request,
+            beforeOpen,
+            beforeType,
+            verified ? "applied" : "blocked",
+            verified ? "verified" : "observed_mismatch",
+            verified
+                ? new[] { "level_up_menu_completed_with_native_perks" }
+                : new[] { "level_up_menu_completion_not_observed" });
+    }
+
+    private static int[] ReadLevelUpProfessionChoices(LevelUpMenu menu)
+    {
+        return typeof(LevelUpMenu)
+            .GetField("professionsToChoose", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.GetValue(menu) is IEnumerable<int> choices
+                ? choices.ToArray()
+                : Array.Empty<int>();
     }
 
     private static bool CanAdvanceOrdinaryDialogue(DialogueBox dialogueBox, bool allowSpeakerlessSocialContinuation = false)
