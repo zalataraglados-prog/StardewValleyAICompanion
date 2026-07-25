@@ -1,3 +1,5 @@
+using StardewAI.LiveTrainingLoop;
+
 partial class Program
 {
     private static int NextArtifactIteration(string snapshotDirectory)
@@ -18,7 +20,8 @@ partial class Program
         LiveTrainingOptions options,
         int persistedIterationCount)
     {
-        if (persistedIterationCount >= options.MaxPersistedIterations)
+        if (options.ArtifactRetentionMode == "stop" &&
+            persistedIterationCount >= options.MaxPersistedIterations)
         {
             return "max_persisted_iterations_reached count=" + persistedIterationCount +
                    " limit=" + options.MaxPersistedIterations;
@@ -37,5 +40,24 @@ partial class Program
         }
 
         return string.Empty;
+    }
+
+    private static int ApplyRollingArtifactRetention(
+        LiveTrainingOptions options,
+        int nextIteration)
+    {
+        if (options.ArtifactRetentionMode != "rolling")
+        {
+            return Directory.EnumerateFiles(
+                options.SnapshotDir,
+                "before-snapshot-*.json",
+                SearchOption.TopDirectoryOnly).Count();
+        }
+
+        return RollingArtifactRetention.Apply(
+            options.RunDir,
+            options.SnapshotDir,
+            options.MaxPersistedIterations,
+            nextIteration);
     }
 }
