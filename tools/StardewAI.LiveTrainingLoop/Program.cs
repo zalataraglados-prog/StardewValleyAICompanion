@@ -17,14 +17,14 @@ Directory.CreateDirectory(Path.GetDirectoryName(options.ProgressLogPath)!);
 
 using var http = new HttpClient
 {
-    Timeout = TimeSpan.FromSeconds(30)
+    Timeout = TimeSpan.FromSeconds(180)
 };
 using var executorHttp = new HttpClient
 {
     Timeout = TimeSpan.FromSeconds(180)
 };
 
-AppendProgress(options, "start", 0, string.Empty, string.Empty, "concurrency=1 execution=" + options.ExecutionMode);
+AppendProgress(options, "start", 0, string.Empty, string.Empty, "concurrency=1 target=" + options.TargetExecutionMode + " feedback=" + options.FeedbackMode);
 
 var rowsAppended = 0;
 var verifiedActions = 0;
@@ -35,13 +35,31 @@ JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
 JsonObject? activeObjectiveContinuation = null;
 var socialObjectiveCompleted = false;
+var persistedIterationCount = Directory.EnumerateFiles(
+    options.SnapshotDir,
+    "before-snapshot-*.json",
+    SearchOption.TopDirectoryOnly).Count();
+var nextArtifactIteration = NextArtifactIteration(options.SnapshotDir);
+var consecutiveErrors = 0;
+var lastErrorIteration = 0;
+var stopReason = string.Empty;
 
-for (var iteration = 1;
-    iteration <= options.MaxAttempts &&
+for (var attemptOrdinal = 1;
+    attemptOrdinal <= options.MaxAttempts &&
     (options.RequiredVerifiedActions <= 0 || verifiedActions < options.RequiredVerifiedActions) &&
     (!options.StopAfterSocialObjectiveComplete || !socialObjectiveCompleted);
-    iteration++)
+    attemptOrdinal++)
 {
+    var iteration = nextArtifactIteration + attemptOrdinal - 1;
+    try
+    {
+    var artifactBudgetBlock = GetArtifactBudgetBlock(options, persistedIterationCount);
+    if (!string.IsNullOrWhiteSpace(artifactBudgetBlock))
+    {
+        stopReason = artifactBudgetBlock;
+        AppendProgress(options, "stopped", iteration, lastStateHash, lastQueueId, stopReason);
+        break;
+    }
     attemptsStarted++;
     var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
         ? await File.ReadAllTextAsync(options.SnapshotFile, Encoding.UTF8)
@@ -50,6 +68,7 @@ for (var iteration = 1;
     var snapshotJson = beforeSnapshot.ToJsonString(JsonlOptions);
     var snapshotPath = Path.Combine(options.SnapshotDir, "before-snapshot-" + iteration.ToString("D4") + ".json");
     await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
+    persistedIterationCount++;
 
     var ingest = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/snapshots", snapshotJson);
     lastStateHash = ReadString(ingest, "state_hash");
@@ -58,6 +77,7 @@ for (var iteration = 1;
     if (ready is null || ready["ready"]?.GetValue<bool>() != true)
     {
         AppendProgress(options, "blocked", iteration, lastStateHash, string.Empty, "ready_probe_failed");
+        await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
         continue;
     }
 
@@ -100,8 +120,21 @@ for (var iteration = 1;
     {
         if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
         {
-            AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "queue_not_pending executor_feedback_required");
-            continue;
+            var executableSubsetCount = ExecutableQueueItems(queue).Length;
+            if (!options.ContinueAfterBlockedQueueItems || executableSubsetCount == 0)
+            {
+                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "queue_not_pending executor_feedback_required");
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
+            }
+
+            AppendProgress(
+                options,
+                "partial_queue",
+                iteration,
+                lastStateHash,
+                lastQueueId,
+                "executing_pending_subset count=" + executableSubsetCount + " queue_status=" + queueStatus);
         }
 
         var execution = options.UseRealRuntimeExecutor
@@ -111,6 +144,7 @@ for (var iteration = 1;
         if (!feedbackAvailable && !options.UseRealRuntimeExecutor)
         {
             AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "executor_feedback_unavailable status=" + ReadString(execution, "status"));
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
             continue;
         }
 
@@ -121,6 +155,7 @@ for (var iteration = 1;
             if (!primitiveVerified)
             {
                 AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "real_runtime_unverified status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status"));
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
 
@@ -139,6 +174,7 @@ for (var iteration = 1;
                 lastTrainingReport = train.TrainingReport;
                 lastPrediction = train.Prediction;
             }
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
             continue;
         }
     }
@@ -163,13 +199,27 @@ for (var iteration = 1;
         AppendProgress(options, "train", iteration, lastStateHash, lastQueueId, "best_option=" + bestOption);
     }
 
-    if (options.SleepMs > 0 && iteration < options.MaxAttempts)
+    await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+    }
+    catch (Exception ex)
     {
-        await Task.Delay(options.SleepMs);
+        consecutiveErrors = lastErrorIteration == iteration - 1 ? consecutiveErrors + 1 : 1;
+        lastErrorIteration = iteration;
+        var detail = "error_type=" + ex.GetType().Name + " message=" + SanitizeProgressValue(ex.Message);
+        AppendProgress(options, "error", iteration, lastStateHash, lastQueueId, detail);
+        Console.Error.WriteLine("Live training iteration " + iteration + " failed: " + ex);
+        if (consecutiveErrors >= options.MaxConsecutiveErrors)
+        {
+            stopReason = "max_consecutive_errors_reached count=" + consecutiveErrors;
+            AppendProgress(options, "stopped", iteration, lastStateHash, lastQueueId, stopReason);
+            break;
+        }
+        await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
     }
 }
 
-var verifiedTargetMet = (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
+var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
+    (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
     (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
@@ -193,6 +243,7 @@ var report = new LiveTrainingLoopReport
     RowsAppended = rowsAppended,
     VerifiedActions = verifiedActions,
     RequiredVerifiedActions = options.RequiredVerifiedActions,
+    StopReason = stopReason,
     SocialObjectiveCompleted = socialObjectiveCompleted,
     ActiveSocialContinuation = string.Equals(ReadString(activeObjectiveContinuation, "kind"), "social", StringComparison.Ordinal)
         ? activeObjectiveContinuation
@@ -200,7 +251,7 @@ var report = new LiveTrainingLoopReport
     LastStateHash = lastStateHash,
     LastQueueId = lastQueueId,
     Concurrency = 1,
-    Execution = options.ExecutionMode,
+    Execution = options.TargetExecutionMode + ":" + options.FeedbackMode,
     ExecutorFeedbackRequired = options.RequireExecutorFeedback,
     TrainingReport = lastTrainingReport,
     Prediction = lastPrediction
@@ -220,11 +271,13 @@ Console.WriteLine(JsonSerializer.Serialize(new
     rows_appended = rowsAppended,
     verified_actions = verifiedActions,
     required_verified_actions = options.RequiredVerifiedActions,
+    stop_reason = stopReason,
     dataset_path = options.DatasetPath,
     report_path = reportPath,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
-    execution = options.ExecutionMode,
+    execution = options.TargetExecutionMode,
+    feedback = options.FeedbackMode,
     executor_feedback_required = options.RequireExecutorFeedback,
     social_objective_completed = socialObjectiveCompleted
 }, JsonOptions));
@@ -237,4 +290,17 @@ static partial class Program
     };
 
     private static readonly JsonSerializerOptions JsonlOptions = new(JsonSerializerDefaults.Web);
+
+    private static async Task DelayBeforeNextAttemptAsync(LiveTrainingOptions options, int attemptOrdinal)
+    {
+        if (options.SleepMs > 0 && attemptOrdinal < options.MaxAttempts)
+        {
+            await Task.Delay(options.SleepMs);
+        }
+    }
+
+    private static string SanitizeProgressValue(string value)
+    {
+        return value.Replace('\r', ' ').Replace('\n', ' ');
+    }
 }

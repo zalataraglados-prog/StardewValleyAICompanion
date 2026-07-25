@@ -5,6 +5,18 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Fact]
+    public void MainLoopExecutesPendingSubsetOnlyWhenContinueFlagIsEnabled()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+
+        Assert.Contains("options.ContinueAfterBlockedQueueItems", source, StringComparison.Ordinal);
+        Assert.Contains("ExecutableQueueItems(queue).Length", source, StringComparison.Ordinal);
+        Assert.Contains("executing_pending_subset", source, StringComparison.Ordinal);
+        Assert.Contains("executableSubsetCount == 0", source, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("blocked", true, true, false, true, true, true, false, "blocked_continue_after_fresh_after_snapshot")]
     [InlineData("blocked", true, true, false, false, true, false, true, "stale_after_snapshot")]
@@ -58,6 +70,23 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Equal("queue_item.regenerated.remaining", remaining["queue_item_id"]!.GetValue<string>());
         Assert.DoesNotContain(filtered, item => item["queue_item_id"]!.GetValue<string>() == "queue_item.regenerated.blocked");
         Assert.DoesNotContain(filtered, item => item["queue_item_id"]!.GetValue<string>() == "queue_item.regenerated.completed");
+    }
+
+    [Fact]
+    public void FilterUnattemptedIgnoresRecomputedBudgetMetadata()
+    {
+        var original = QueueItem("queue.original", "executor.clear_obstacle", "62", "21", string.Empty);
+        original["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("budget.remaining_minutes_before", "859"));
+        var regenerated = QueueItem("queue.regenerated", "executor.clear_obstacle", "62", "21", string.Empty);
+        regenerated["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("budget.remaining_minutes_before", "857"));
+        var attempted = new HashSet<string>(StringComparer.Ordinal)
+        {
+            QueueReplanFilter.SemanticQueueItemKey(original)
+        };
+
+        var filtered = QueueReplanFilter.FilterUnattempted(new[] { regenerated }, attempted);
+
+        Assert.Empty(filtered);
     }
 
     [Fact]
@@ -197,5 +226,22 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["name"] = name,
             ["value"] = value
         };
+    }
+
+    private static string FindRepositoryFile(params string[] segments)
+    {
+        var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        while (directory is not null &&
+               !File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        if (directory is null)
+        {
+            throw new InvalidOperationException("Cannot find repository root.");
+        }
+
+        return Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
     }
 }

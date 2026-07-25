@@ -176,6 +176,7 @@ public static class QueueReplanFilter
             .Where(parameter => !string.IsNullOrWhiteSpace(parameter.Name))
             .Where(parameter => !NonSemanticParameterNames.Contains(parameter.Name))
             .Where(parameter => !parameter.Name.StartsWith("compiler_context.", StringComparison.Ordinal))
+            .Where(parameter => !parameter.Name.StartsWith("budget.", StringComparison.Ordinal))
             .OrderBy(parameter => parameter.Name, StringComparer.Ordinal)
             .ThenBy(parameter => parameter.Value, StringComparer.Ordinal)
             .Select(parameter => parameter.Name + "=" + parameter.Value)

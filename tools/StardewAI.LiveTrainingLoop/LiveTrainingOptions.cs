@@ -44,9 +44,14 @@ public sealed class LiveTrainingOptions
     public bool ContinueAfterBlockedQueueItems { get; set; }
     public int MaxQueueItemAttempts { get; set; } = 24;
     public int DailyPlanMaxCandidates { get; set; } = 4;
+    public int MaxPersistedIterations { get; set; } = 64;
+    public int MinFreeSpaceMb { get; set; } = 8192;
+    public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
     public bool StopAfterSocialObjectiveComplete { get; set; }
-    public string ExecutionMode => RequireExecutorFeedback
+    public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
+    public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
+    public string FeedbackMode => RequireExecutorFeedback
         ? UseRealRuntimeExecutor ? "real_runtime_executor" : "training_sandbox_feedback_gate"
         : "disabled";
 
@@ -93,6 +98,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--save-isolation-path" && i + 1 < args.Length)
             {
                 options.SaveIsolationPath = args[++i];
+            }
+            else if (current == "--target-execution-mode" && i + 1 < args.Length)
+            {
+                options.TargetExecutionMode = args[++i];
             }
             else if (current == "--manifest-path" && i + 1 < args.Length)
             {
@@ -224,6 +233,18 @@ public sealed class LiveTrainingOptions
             {
                 options.DailyPlanMaxCandidates = Math.Max(1, dailyPlanMaxCandidates);
             }
+            else if (current == "--max-persisted-iterations" && i + 1 < args.Length && int.TryParse(args[++i], out var maxPersistedIterations))
+            {
+                options.MaxPersistedIterations = Math.Max(1, maxPersistedIterations);
+            }
+            else if (current == "--min-free-space-mb" && i + 1 < args.Length && int.TryParse(args[++i], out var minFreeSpaceMb))
+            {
+                options.MinFreeSpaceMb = Math.Max(1, minFreeSpaceMb);
+            }
+            else if (current == "--max-consecutive-errors" && i + 1 < args.Length && int.TryParse(args[++i], out var maxConsecutiveErrors))
+            {
+                options.MaxConsecutiveErrors = Math.Max(1, maxConsecutiveErrors);
+            }
             else if (current == "--daily-plan-candidate-options" && i + 1 < args.Length)
             {
                 options.DailyPlanCandidateOptionIds = args[++i]
@@ -241,6 +262,11 @@ public sealed class LiveTrainingOptions
         if (string.IsNullOrWhiteSpace(options.RunId))
         {
             options.RunId = "live." + DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
+        }
+
+        if (!ExecutionTargetProfiles.IsSupported(options.TargetExecutionMode))
+        {
+            throw new ArgumentException("Unsupported --target-execution-mode: " + options.TargetExecutionMode);
         }
 
         return options;

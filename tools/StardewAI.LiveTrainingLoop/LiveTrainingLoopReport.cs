@@ -55,6 +55,9 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("required_verified_actions")]
     public int RequiredVerifiedActions { get; set; }
 
+    [JsonPropertyName("stop_reason")]
+    public string StopReason { get; set; } = string.Empty;
+
     [JsonPropertyName("social_objective_completed")]
     public bool SocialObjectiveCompleted { get; set; }
 
