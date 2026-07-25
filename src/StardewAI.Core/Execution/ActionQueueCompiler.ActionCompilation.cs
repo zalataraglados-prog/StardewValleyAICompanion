@@ -23,8 +23,7 @@ namespace StardewAI.Core.Execution
         private static string[] ValidateExecutionTarget(string executionMode, ActionActorRef actor)
         {
             var errors = new List<string>();
-            if (!string.Equals(executionMode, "training_singleplayer", StringComparison.Ordinal) &&
-                !string.Equals(executionMode, "coop_companion", StringComparison.Ordinal))
+            if (!ExecutionTargetProfiles.IsSupported(executionMode))
             {
                 errors.Add("unsupported_execution_mode:" + executionMode);
             }
@@ -67,6 +66,19 @@ namespace StardewAI.Core.Execution
                 if (!string.Equals(actor.ControlSurface, "companion_actor", StringComparison.Ordinal))
                 {
                     errors.Add("coop_companion_requires_companion_actor");
+                }
+            }
+
+            if (string.Equals(executionMode, ExecutionTargetProfiles.DedicatedHostAi, StringComparison.Ordinal))
+            {
+                if (!string.Equals(actor.ActorType, "ai_host", StringComparison.Ordinal))
+                {
+                    errors.Add("dedicated_host_ai_requires_ai_host");
+                }
+
+                if (!string.Equals(actor.ControlSurface, "dedicated_host_actor", StringComparison.Ordinal))
+                {
+                    errors.Add("dedicated_host_ai_requires_dedicated_host_actor");
                 }
             }
 
@@ -157,12 +169,22 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateVolcanoReachCalderaPlan(action, snapshot));
             blocking.AddRange(ValidateCoolVolcanoLavaPlan(action, snapshot));
             blocking.AddRange(ValidateVolcanoNativePrimitivePlan(action, snapshot));
+            blocking.AddRange(ValidateNativeMiningPrimitivePlan(action, snapshot));
+            blocking.AddRange(ValidateShippingBinPrimitivePlan(action));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
+            blocking.AddRange(ValidateSellShopItemPlan(action, snapshot));
             blocking.AddRange(ValidateChooseDialogueResponsePlan(action, snapshot));
             blocking.AddRange(ValidateQuestAdvancePlan(action, snapshot));
             blocking.AddRange(ValidateActiveMenuBracket(action, snapshot, option));
+
+            var compiledSteps = CompileSteps(action, snapshot, option);
+            if (option?.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion &&
+                compiledSteps.Length == 0)
+            {
+                blocking.Add("full_action_step_compilation_empty");
+            }
 
             var status = blocking.Count == 0 && safety.Feasibility == "feasible"
                 ? "pending"
@@ -207,7 +229,7 @@ namespace StardewAI.Core.Execution
                     ExecutionMode = executionMode,
                     Actor = actor,
                     Parameters = BuildNormalizedParameters(action, snapshot),
-                    Steps = CompileSteps(action, snapshot, option),
+                    Steps = compiledSteps,
                     StrategyPlan = strategyPlan,
                     SocialPlan = CompileSocialPlan(action, snapshot),
                     QuestPlan = CompileQuestPlan(action, snapshot)

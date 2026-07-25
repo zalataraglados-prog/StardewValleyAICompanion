@@ -434,8 +434,7 @@ public sealed class SocialNativeSourceGuardTests
         Assert.DoesNotContain("social_native_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
         Assert.DoesNotContain("social_runtime_executor_not_implemented", optionRegistrySource, StringComparison.Ordinal);
 
-        var evaluatorSource = CandidateOptionAvailabilityEvaluatorSources.All;
-        Assert.Contains("executor.social_interact", evaluatorSource, StringComparison.Ordinal);
+        Assert.True(RuntimeExecutorCapabilityCatalog.IsSupported("executor.social_interact"));
     }
 
     [Fact]

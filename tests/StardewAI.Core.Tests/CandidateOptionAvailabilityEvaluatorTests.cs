@@ -18,6 +18,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     [InlineData("executor.collect_machine_output")]
     [InlineData("executor.load_machine_input")]
     [InlineData("mining.reach_depth")]
+    [InlineData("economy.sell_items")]
     public void ExecutorEnabledTrueForReconciledIds(string optionId)
     {
         var option = new CandidateOptionAvailabilityEvaluator()
@@ -28,7 +29,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Theory]
-    [InlineData("economy.sell_items")]
     [InlineData("social.talk_npc")]
     [InlineData("social.gift_npc")]
     [InlineData("quest.advance")]

@@ -30,19 +30,10 @@ namespace StardewAI.Core.MockModel
             var parameters = classification.OptionId == "strategy.grandpa_progress"
                 ? BuildGrandpaStrategyParameters(snapshot, goal, executionMode)
                 : classification.Parameters;
-            var actor = string.Equals(executionMode, "coop_companion", StringComparison.Ordinal)
-                ? new ActionActorRef
-                {
-                    ActorId = "ai_companion.main",
-                    ActorType = "ai_companion",
-                    ControlSurface = "companion_actor"
-                }
-                : new ActionActorRef
-                {
-                    ActorId = "training_farmer.main",
-                    ActorType = "training_farmer",
-                    ControlSurface = "training_sandbox"
-                };
+            var normalizedExecutionMode = string.IsNullOrWhiteSpace(executionMode)
+                ? ExecutionTargetProfiles.TrainingSingleplayer
+                : executionMode;
+            var actor = ExecutionTargetProfiles.CreateActor(normalizedExecutionMode);
 
             return new SmallModelActionEnvelope
             {
@@ -50,7 +41,7 @@ namespace StardewAI.Core.MockModel
                 SourceModel = "mock-small-model.rule.v1",
                 StateHash = snapshot.StateHash,
                 GoalId = "goal.mock." + Guid.NewGuid().ToString("N"),
-                ExecutionMode = string.IsNullOrWhiteSpace(executionMode) ? "training_singleplayer" : executionMode,
+                ExecutionMode = normalizedExecutionMode,
                 Actor = actor,
                 Actions = new[]
                 {

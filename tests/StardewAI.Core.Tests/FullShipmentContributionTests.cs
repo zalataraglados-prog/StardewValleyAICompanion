@@ -137,7 +137,7 @@ public sealed partial class FullShipmentContributionTests
     public void ShippingCapableAlreadyShippedItemDoesNotContribute()
     {
         var inventory = Inventory(
-            InventoryItem("0", "60", "(O)60", "Emerald", 1, 250, 250, true, -12));
+            InventoryItem("0", "60", "(O)60", "Emerald", 5, 250, 250, true, -12));
         var fsProgress = FullShipmentProgressField("available", 1,
             FsItem("60", "(O)60", "Emerald", -12, "Minerals", 5, true));
         var snapshot = BuildSnapshot(inventory, fsProgress);
@@ -152,6 +152,9 @@ public sealed partial class FullShipmentContributionTests
         Assert.Contains("full_shipment_current_shipped_count=5", candidate.ExpectedEffect);
         Assert.Contains("full_shipment_already_shipped=true", candidate.ExpectedEffect);
         Assert.Contains("full_shipment_contributes=false", candidate.ExpectedEffect);
+        Assert.Equal(1, candidate.Quantity);
+        Assert.Contains("quantity=1", candidate.ExpectedEffect);
+        Assert.Contains("available_stack=5", candidate.ExpectedEffect);
     }
 
     [Fact]

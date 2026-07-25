@@ -23,6 +23,7 @@ namespace StardewAI.Core.Execution
         {
             if (action.OptionId == "executor.close_menu" ||
                 action.OptionId == "executor.buy_shop_item" ||
+                action.OptionId == "executor.sell_shop_item" ||
                 action.OptionId == "executor.choose_dialogue_response" ||
                 option is null)
             {

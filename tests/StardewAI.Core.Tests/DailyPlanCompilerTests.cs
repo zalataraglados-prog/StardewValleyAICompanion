@@ -68,6 +68,38 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileTurnsSellCandidateIntoExactNativeSaleStep()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "sell:0",
+            Kind = "sell_shop_item",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            ShopId = "SeedShop",
+            ItemId = "24",
+            QualifiedItemId = "(O)24",
+            SlotIndex = 0,
+            Quantity = 3,
+            UnitPrice = 35,
+            TotalValue = 105,
+            CanShopSell = true
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        Assert.Equal(2, plan.Steps.Length);
+        var sale = plan.Steps[0];
+        Assert.Equal("sell_shop_item", sale.Kind);
+        Assert.Contains(sale.Parameters, parameter => parameter.Name == "slot_index" && parameter.Value == "0");
+        Assert.Contains(sale.Parameters, parameter => parameter.Name == "quantity" && parameter.Value == "3");
+        Assert.Contains(sale.Parameters, parameter => parameter.Name == "expected_unit_price" && parameter.Value == "35");
+        Assert.Contains(sale.Parameters, parameter => parameter.Name == "expected_total_value" && parameter.Value == "105");
+        Assert.Contains(sale.SafetyConstraints, value => value == "native_shop_menu_click_only");
+        Assert.Equal("close_menu", plan.Steps[1].Kind);
+    }
+
+    [Fact]
     public void CompileOrdersShopOpenBeforeMatchingPurchaseCandidate()
     {
         var buy = new PolicyEventCandidatePrediction
@@ -155,6 +187,27 @@ public sealed class DailyPlanCompilerTests
         Assert.Equal("skipped", plan.CandidateAudit[0].Decision);
         Assert.Contains("unsupported_candidate_kind_or_missing_required_candidate_fields", plan.CandidateAudit[0].Reasons);
         Assert.Equal("accepted", plan.CandidateAudit[1].Decision);
+    }
+
+    [Theory]
+    [InlineData("quest_candidate", "quest_native_executor_not_implemented")]
+    [InlineData("special_order_candidate", "quest_native_executor_not_implemented")]
+    public void CompileReportsKnownImplementationBlockers(string kind, string blockReason)
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "blocked:" + kind,
+            Kind = kind,
+            Rank = 1,
+            TimelineStatus = "ready_now"
+        };
+
+        var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
+
+        Assert.Empty(plan.Steps);
+        var audit = Assert.Single(plan.CandidateAudit);
+        Assert.Contains("candidate_kind_known_but_not_executable", audit.Reasons);
+        Assert.Contains(blockReason, audit.Reasons);
     }
 
     [Fact]

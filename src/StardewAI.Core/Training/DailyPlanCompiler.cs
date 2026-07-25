@@ -68,15 +68,21 @@ namespace StardewAI.Core.Training
                 var candidateSteps = rollingDeferred
                     ? Array.Empty<SmallModelPlanStep>()
                     : CandidateSteps(candidate).ToArray();
+                var effectiveEnergyCost = Math.Max(0, candidate.EnergyCost);
                 var candidateMinutes = waitSteps
                     .Concat(candidateSteps)
                     .Sum(step => step.EstimatedMinutes ?? TicksToMinutes(step.WaitTicks ?? candidate.EstimatedTicks));
                 if (candidateSteps.Length == 0 && waitSteps.Length == 0)
                 {
+                    var unsupportedReasons =
+                        DailyPlanCandidateCapabilityCatalog.TryGet(candidate.Kind, out var capability) &&
+                        !capability.Compilable
+                            ? new[] { "candidate_kind_known_but_not_executable", capability.BlockReason }
+                            : new[] { "unsupported_candidate_kind_or_missing_required_candidate_fields" };
                     audit.Add(CandidateAudit(
                         candidate,
                         "skipped",
-                        new[] { "unsupported_candidate_kind_or_missing_required_candidate_fields" },
+                        unsupportedReasons,
                         candidateMinutes,
                         remainingMinutes,
                         remainingMinutes,
@@ -135,7 +141,7 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (remainingEnergy.HasValue && candidate.EnergyCost > remainingEnergy.Value)
+                if (remainingEnergy.HasValue && effectiveEnergyCost > remainingEnergy.Value)
                 {
                     audit.Add(CandidateAudit(
                         candidate,
@@ -150,7 +156,7 @@ namespace StardewAI.Core.Training
                 }
 
                 var nextRemainingMinutes = remainingMinutes.HasValue ? Math.Max(0, remainingMinutes.Value - candidateMinutes) : (int?)null;
-                var nextRemainingEnergy = remainingEnergy.HasValue ? Math.Max(0, remainingEnergy.Value - candidate.EnergyCost) : (int?)null;
+                var nextRemainingEnergy = remainingEnergy.HasValue ? Math.Max(0, remainingEnergy.Value - effectiveEnergyCost) : (int?)null;
                 var acceptedSteps = waitSteps
                     .Concat(candidateSteps)
                     .Select(step => AnnotateBudget(
@@ -199,19 +205,7 @@ namespace StardewAI.Core.Training
                 StateHash = stateHash,
                 GoalId = goalId,
                 ExecutionMode = executionMode,
-                Actor = executionMode == "training_singleplayer"
-                    ? new ActionActorRef
-                    {
-                        ActorId = "training_farmer.main",
-                        ActorType = "training_farmer",
-                        ControlSurface = "training_sandbox"
-                    }
-                    : new ActionActorRef
-                    {
-                        ActorId = "companion.main",
-                        ActorType = "ai_companion",
-                        ControlSurface = "companion_actor"
-                    },
+                Actor = ExecutionTargetProfiles.CreateActor(executionMode),
                 PlanType = "daily_candidate_plan",
                 Steps = steps.ToArray(),
                 CandidateAudit = audit.ToArray()
@@ -633,7 +627,9 @@ namespace StardewAI.Core.Training
                 "continuation.qualified_item_id",
                 "social_route.position_source",
                 "social_route.future_schedule_projection",
-                "social_continuation_dialogue_recovery"
+                "social_continuation_dialogue_recovery",
+                "profession_choice_id",
+                "profession_choice_source"
             }, StringComparer.Ordinal);
             return candidate.Parameters
                 .Where(parameter => names.Contains(parameter.Name))

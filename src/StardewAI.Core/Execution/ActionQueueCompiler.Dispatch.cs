@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 
@@ -21,6 +22,7 @@ namespace StardewAI.Core.Execution
                 ["executor.face_direction"] = (action, _) => CompileFaceDirectionStep(action),
                 ["executor.interact"] = (action, _) => CompileInteractStep(action),
                 ["executor.buy_shop_item"] = CompileBuyShopItemStep,
+                ["executor.sell_shop_item"] = (action, _) => CompileSellShopItemStep(action),
                 ["executor.choose_dialogue_response"] = (action, _) => CompileChooseDialogueResponseStep(action),
                 ["executor.sleep"] = (action, snapshot) => CompileSleepSteps(snapshot, action),
                 ["executor.wait_ticks"] = (action, _) => CompileWaitTicksStep(action),
@@ -57,9 +59,20 @@ namespace StardewAI.Core.Execution
                 ["executor.break_volcano_stone"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),
                 ["executor.break_volcano_container"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),
                 ["executor.combat_volcano_monster"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),
+                ["executor.mine_stone"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.break_container"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.break_resource_clump"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.combat_monster"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.shoot_monster"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.place_bomb"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.consume_food"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.descend_ladder"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.descend_shaft"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.exit_mine"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.social_interact"] = (action, _) => CompileSocialInteractStep(action),
                 ["executor.select_safe_item_slot"] = CompileSelectSafeItemSlotStep,
-                ["executor.close_menu"] = (_, snapshot) => CompileCloseMenuStep(snapshot)
+                ["executor.close_menu"] = (_, snapshot) => CompileCloseMenuStep(snapshot),
+                ["executor.ship_inventory_item_to_bin"] = (action, _) => CompileShippingBinStep(action)
             };
 
         private static readonly IReadOnlyDictionary<string, ActionParameterCompiler> ActionParameterCompilers =
@@ -79,5 +92,21 @@ namespace StardewAI.Core.Execution
                 ["social.gift_npc"] = BuildSocialParameters,
                 ["farm.maintain_crops"] = BuildCropMaintenanceParameters
             };
+
+        public static IReadOnlyCollection<string> StepCompilerOptionIds =>
+            ActionStepCompilers.Keys.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+
+        public static IReadOnlyCollection<string> ParameterCompilerOptionIds =>
+            ActionParameterCompilers.Keys.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+
+        public static bool HasStepCompiler(string optionId)
+        {
+            return ActionStepCompilers.ContainsKey(optionId);
+        }
+
+        public static bool HasParameterCompiler(string optionId)
+        {
+            return ActionParameterCompilers.ContainsKey(optionId);
+        }
     }
 }

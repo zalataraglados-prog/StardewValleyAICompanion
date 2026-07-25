@@ -144,7 +144,8 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.025 + ShippingValueSignal(candidate);
                     }
-                    var costSignal = candidate.EnergyCost * -0.001 + candidate.EstimatedTicks * -0.0001;
+                    var costSignal = Math.Max(0, candidate.EnergyCost) * -0.001 +
+                        Math.Max(0, candidate.EstimatedTicks) * -0.0001;
                     ranked.Add(new PolicyEventCandidatePrediction
                     {
                         CandidateId = candidate.CandidateId,

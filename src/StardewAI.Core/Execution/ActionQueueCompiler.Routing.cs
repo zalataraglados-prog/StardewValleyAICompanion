@@ -19,6 +19,112 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
+        private static SmallModelPlanStep[] ExpandCrossLocationMovePrefix(
+            SmallModelPlanStep[] steps,
+            SnapshotEnvelope snapshot)
+        {
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            if (string.IsNullOrWhiteSpace(currentLocation))
+            {
+                return steps;
+            }
+
+            var expanded = new List<SmallModelPlanStep>();
+            foreach (var step in steps)
+            {
+                if (!string.Equals(step.Kind, "move_to_tile", StringComparison.Ordinal) ||
+                    string.IsNullOrWhiteSpace(step.TargetLocation) ||
+                    string.Equals(step.TargetLocation, currentLocation, StringComparison.OrdinalIgnoreCase))
+                {
+                    expanded.Add(step);
+                    continue;
+                }
+
+                var connector = BuildCrossLocationConnectorStep(snapshot, currentLocation, step.TargetLocation, step.StepId);
+                if (connector is not null)
+                {
+                    expanded.Add(connector);
+                    return expanded.ToArray();
+                }
+
+                expanded.Add(step);
+                return expanded.ToArray();
+            }
+
+            return expanded.ToArray();
+        }
+
+        private static SmallModelPlanStep? BuildCrossLocationConnectorStep(
+            SnapshotEnvelope snapshot,
+            string currentLocation,
+            string targetLocation,
+            string sourceStepId)
+        {
+            var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
+            if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var path = FindResolvedRouteGraphPath(graph.Value, currentLocation, targetLocation);
+            if (path.Length == 0 || !path[0].FromX.HasValue || !path[0].FromY.HasValue)
+            {
+                return null;
+            }
+
+            var edge = path[0];
+            var liveConnector = FindMatchingCurrentRouteConnector(snapshot, edge);
+            if (!liveConnector.HasValue ||
+                !string.IsNullOrWhiteSpace(RecoveryConnectorGateBlock(snapshot, edge)))
+            {
+                return null;
+            }
+
+            var pathTiles = RecoveryConnectorPathTiles(snapshot, edge, liveConnector.Value);
+            if (!pathTiles.HasValue)
+            {
+                return null;
+            }
+
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("connector_kind", edge.Kind),
+                Parameter("expected_target_location", edge.TargetLocation),
+                Parameter("max_movement_tiles", Math.Max(1, pathTiles.Value).ToString(CultureInfo.InvariantCulture)),
+                Parameter("cross_location_move_target", targetLocation),
+                Parameter("fresh_snapshot_replan_required", "true")
+            };
+            if (edge.TargetX.HasValue && edge.TargetY.HasValue)
+            {
+                parameters.Add(Parameter("expected_arrival_tile_x", edge.TargetX.Value.ToString(CultureInfo.InvariantCulture)));
+                parameters.Add(Parameter("expected_arrival_tile_y", edge.TargetY.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            return new SmallModelPlanStep
+            {
+                StepId = (string.IsNullOrWhiteSpace(sourceStepId) ? "cross_location_move" : sourceStepId) + ".connector",
+                Kind = "traverse_connector",
+                TargetLocation = currentLocation,
+                TargetTileX = edge.FromX,
+                TargetTileY = edge.FromY,
+                EstimatedMinutes = Math.Max(1, (int)Math.Ceiling((pathTiles.Value + 1) / 5d)),
+                Preconditions = new[] { "transparent_route_connector_still_matches_snapshot=true" },
+                ExpectedEffects = new[]
+                {
+                    "player.location_id=" + edge.TargetLocation,
+                    "fresh_snapshot_replan_required=true"
+                },
+                SafetyConstraints = new[]
+                {
+                    "connector_target_from_transparent_current_map_index",
+                    "no_direct_coordinate_teleport",
+                    "one_connector_per_replan"
+                },
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                Parameters = parameters.ToArray()
+            };
+        }
+
         private static string[] ValidateConnectorPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "executor.traverse_connector")
