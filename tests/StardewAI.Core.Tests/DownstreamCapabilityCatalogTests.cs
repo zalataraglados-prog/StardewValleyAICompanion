@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
-using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -27,7 +27,7 @@ public sealed class DownstreamCapabilityCatalogTests
     {
         var missing = ActionQueueCompiler.StepCompilerOptionIds
             .Where(optionId => optionId.StartsWith("executor.", StringComparison.Ordinal))
-            .Where(optionId => !RuntimeExecutorCapabilityCatalog.IsSupported(optionId))
+            .Where(optionId => !RuntimeTestHarnessDispatchCatalog.IsSupported(optionId))
             .OrderBy(value => value, StringComparer.Ordinal)
             .ToArray();
 
@@ -52,7 +52,7 @@ public sealed class DownstreamCapabilityCatalogTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(
-            RuntimeExecutorCapabilityCatalog.OptionIds.OrderBy(value => value, StringComparer.Ordinal),
+            RuntimeTestHarnessDispatchCatalog.OptionIds.OrderBy(value => value, StringComparer.Ordinal),
             dispatched.OrderBy(value => value, StringComparer.Ordinal));
     }
 

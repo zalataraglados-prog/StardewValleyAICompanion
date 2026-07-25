@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -132,7 +133,7 @@ public sealed class QuestTypedExecutionTests
         var spec = new StardewAI.Core.OptionRegistry.OptionRegistry()
             .GetRequired("executor.quest_npc_interact");
         Assert.Equal("quest", spec.Domain);
-        Assert.True(RuntimeExecutorCapabilityCatalog.IsSupported("executor.quest_npc_interact"));
+        Assert.True(RuntimeTestHarnessDispatchCatalog.IsSupported("executor.quest_npc_interact"));
 
         var request = new TrainingExecutionRequest
         {
@@ -210,7 +211,7 @@ public sealed class QuestTypedExecutionTests
         var spec = new StardewAI.Core.OptionRegistry.OptionRegistry()
             .GetRequired("executor.quest_drop_box_donate");
         Assert.Equal("quest", spec.Domain);
-        Assert.True(RuntimeExecutorCapabilityCatalog.IsSupported("executor.quest_drop_box_donate"));
+        Assert.True(RuntimeTestHarnessDispatchCatalog.IsSupported("executor.quest_drop_box_donate"));
 
         var request = new TrainingExecutionRequest
         {

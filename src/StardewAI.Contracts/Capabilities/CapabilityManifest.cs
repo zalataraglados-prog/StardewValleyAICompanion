@@ -48,5 +48,12 @@ namespace StardewAI.Contracts.Capabilities
 
         [JsonPropertyName("capabilities")]
         public Capability[] Capabilities { get; set; } = new Capability[0];
+
+        [JsonPropertyName("option_capability_schema_version")]
+        public string OptionCapabilitySchemaVersion { get; set; } = OptionCapabilityRegistrySource.SchemaVersion;
+
+        [JsonPropertyName("option_capabilities")]
+        public OptionCapabilityDeclaration[] OptionCapabilities { get; set; } =
+            new OptionCapabilityDeclaration[0];
     }
 }

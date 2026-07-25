@@ -183,7 +183,7 @@ static partial class Program
                         Category("action.learning_scope", "calibration_only"),
                         Category("action.execution_mode", options.TargetExecutionMode),
                         Category("action.actor_type", options.TargetActor.ActorType),
-                        Category("action.execution_profile", isMove ? "real_runtime_move_harness" : "real_runtime_harness"),
+                        Category("action.execution_profile", isMove ? "runtime_test_move_harness" : "runtime_test_harness"),
                         Category("execution.primitive_kind", ReadString(execution, "primitive_kind")),
                         Category("execution.primitive_verification_status", primitiveVerificationStatus),
                         Category("execution.failure_category", failureCategory),
@@ -218,7 +218,7 @@ static partial class Program
             },
             Audit = new TrainingFeatureRowAudit
             {
-                Exporter = "StardewAI.LiveTrainingLoop.RealRuntimeExecutor",
+                Exporter = "StardewAI.LiveTrainingLoop.RuntimeTestHarnessExecutor",
                 Policy = "Feature row labels are derived from RuntimeTestHarness execution result and before/after transparent snapshots; no simulator endpoint used."
             }
         };

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
-using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -123,33 +123,7 @@ namespace StardewAI.Core.OptionRegistry
 
         private static bool IsExecutorEnabled(string optionId)
         {
-            if (RuntimeExecutorCapabilityCatalog.IsSupported(optionId))
-            {
-                return true;
-            }
-
-            return optionId == "recovery.stabilize_day" ||
-                optionId == "farm.maintain_crops" ||
-                optionId == "farm.process_machines" ||
-                optionId == "farm.collect_animal_products" ||
-                optionId == "farm.care_for_pets" ||
-                optionId == "skills.read_books" ||
-                optionId == "fishing.catch_fish" ||
-                optionId == "fishing.collect_crab_pots" ||
-                optionId == "fishing.service_fish_ponds" ||
-                optionId == "foraging.collect_spawned_objects" ||
-                optionId == "foraging.harvest_ginger" ||
-                optionId == "foraging.harvest_bushes" ||
-                optionId == "foraging.clear_green_rain_bushes" ||
-                optionId == "foraging.pan_ore_spot" ||
-                optionId == "mining.reach_depth" ||
-                optionId == "mining.obtain_skull_key" ||
-                optionId == "mining.claim_reward_chests" ||
-                optionId == "mining.acquire_golden_scythe" ||
-                optionId == "volcano.reach_caldera" ||
-                optionId == "economy.buy_supplies" ||
-                optionId == "economy.sell_items" ||
-                optionId == "exploration.visit_location";
+            return OptionCapabilityRegistrySource.GetRequired(optionId).InternalExecutionPipelineSupported;
         }
 
         private static bool IsPreviewOnly(string optionId, string trainingRole, bool executorEnabled)
@@ -182,7 +156,7 @@ namespace StardewAI.Core.OptionRegistry
                 return "harvest_executor_disabled";
             }
 
-            return "executor_disabled";
+            return "product_executor_not_integrated";
         }
 
         private sealed class FullShipmentItemIndexEntry

@@ -88,6 +88,17 @@ IDs, missing bindings, and irreversible actions without confirmation fail regist
 initialization. Compiler or Harness registration does not promote an option to runtime
 verified or training eligible; those statuses require separately indexed E3 or E4 evidence.
 
+`capability_registry.v1` is the versioned machine-readable source for operational capability
+stages. `OptionRegistry`, compiler-binding checks, RuntimeTestHarness dispatch projection,
+product-executor projection, daily-candidate classification, bridge capability output,
+knowledge matrices, and the training allowlist consume or validate that source. The current
+baseline declares 61 step-compiler bindings, 13 parameter-compiler bindings, and 59
+RuntimeTestHarness dispatch branches. It deliberately declares zero product executors, zero
+runtime-verified options, and an empty training allowlist. The legacy `executor_enabled`
+availability field means only that the internal compiler/Harness or candidate chain is
+enabled; `product_executor_supported` is the separate product claim. Harness dispatch,
+product integration, runtime evidence, and training eligibility cannot promote one another.
+
 Candidate evaluation now exposes separate `read_eligible`, `binding_status`,
 `compile_status`, `execution_authorization`, `runtime_evidence_status`,
 `training_eligibility`, and `product_status` fields. Production snapshots apply the
@@ -110,7 +121,7 @@ name and MVID; runtime-semantics v3 additionally verifies byte length and SHA-25
 blocks the build before IL closure generation.
 
 The current authoritative derived profile is
-`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v23`, with
+`%STARDEWAI_KNOWLEDGE_ROOT%/derived/game-1.6.15-20260723T093543Z-linux-v24`, with
 `I:\StardewAI-KnowledgeArtifacts\game-1.6.15` as the default Windows artifact root. The
 checked-in `knowledge-artifacts.lock.json` pins its manifests and binary hashes. It binds the
 Linux host runtime export to binaries copied from that same host and to their separate

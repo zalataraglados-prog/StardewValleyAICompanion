@@ -465,6 +465,8 @@ public sealed class ModEntry : Mod
         CompatibilityStatus = "unverified",
         CanExecuteCommands = false,
         CanWriteGameState = false,
+        OptionCapabilitySchemaVersion = OptionCapabilityRegistrySource.SchemaVersion,
+        OptionCapabilities = OptionCapabilityRegistrySource.All.ToArray(),
         Capabilities = new[]
         {
             Capability("read.environment", "read", "available", "Game1.version; Constants.ApiVersion; IModRegistry.GetAll()", "observer only"),

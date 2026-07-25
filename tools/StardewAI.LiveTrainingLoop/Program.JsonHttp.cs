@@ -29,7 +29,7 @@ static partial class Program
         var report = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/training/baseline/train", trainRequest);
         var prediction = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", trainRequest);
         var bestOption = prediction["ranked_options"]?[0]?["option_id"]?.GetValue<string>() ?? string.Empty;
-        AppendProgress(options, "train", iteration, string.Empty, string.Empty, "best_option=" + bestOption + " source=real_runtime_executor");
+        AppendProgress(options, "train", iteration, string.Empty, string.Empty, "best_option=" + bestOption + " source=runtime_test_harness_executor");
         return (report, prediction);
     }
 
