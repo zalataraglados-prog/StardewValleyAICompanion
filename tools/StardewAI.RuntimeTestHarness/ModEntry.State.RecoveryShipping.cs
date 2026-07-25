@@ -212,6 +212,30 @@ public sealed partial class ModEntry : Mod
         public bool BeforeEventUp { get; }
     }
 
+    private sealed class ActiveShippingSummaryClose
+    {
+        public ActiveShippingSummaryClose(PendingExecution pending, ShippingMenu initialMenu)
+        {
+            Pending = pending;
+            InitialMenu = initialMenu;
+        }
+
+        public PendingExecution Pending { get; }
+        public ShippingMenu InitialMenu { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int ElapsedTicks { get; set; }
+        public int MaxTicks { get; } = 1200;
+        public ShipSummaryClosePhase Phase { get; set; } = ShipSummaryClosePhase.WaitReady;
+        public int PhaseStartTick { get; set; }
+        public bool PositionSet { get; set; }
+        public bool PositionVerified { get; set; }
+        public Point PositionTarget { get; set; }
+        public bool ButtonPressed { get; set; }
+        public bool ButtonReleased { get; set; }
+        public int ReleaseRetries { get; set; }
+        public int CloseRetries { get; set; }
+    }
+
     private sealed class ActiveShipInventoryToBin
     {
         public ActiveShipInventoryToBin(PendingExecution pending, ShippingBin bin, Point actionTile, int slotIndex,

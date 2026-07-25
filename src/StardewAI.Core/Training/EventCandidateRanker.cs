@@ -24,10 +24,16 @@ namespace StardewAI.Core.Training
         {
             var optionScores = report.OptionScores.ToDictionary(score => score.OptionId, StringComparer.Ordinal);
             var ranked = new List<PolicyEventCandidatePrediction>();
+            var mandatoryMenuRecovery = availability.Options
+                .SelectMany(option => option.EventCandidates)
+                .Any(candidate => candidate.Available && candidate.Kind == "recovery_close_menu");
             foreach (var option in availability.Options)
             {
                 var seenCandidateIds = new HashSet<string>(StringComparer.Ordinal);
-                var legalEventCandidates = option.EventCandidates.Where(CanEnterTimeline).ToArray();
+                var legalEventCandidates = option.EventCandidates
+                    .Where(CanEnterTimeline)
+                    .Where(candidate => !mandatoryMenuRecovery || candidate.Kind == "recovery_close_menu")
+                    .ToArray();
                 foreach (var ec in legalEventCandidates)
                 {
                     if (!string.IsNullOrEmpty(ec.CandidateId))
@@ -183,7 +189,7 @@ namespace StardewAI.Core.Training
                     });
                 }
 
-                foreach (var candidate in option.EconomicCandidates.Where(candidate => candidate.Available))
+                foreach (var candidate in option.EconomicCandidates.Where(candidate => candidate.Available && !mandatoryMenuRecovery))
                 {
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward

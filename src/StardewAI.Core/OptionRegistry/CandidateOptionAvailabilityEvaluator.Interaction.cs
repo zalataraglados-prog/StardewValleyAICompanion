@@ -474,7 +474,36 @@ namespace StardewAI.Core.OptionRegistry
                 return SafeOrdinaryDialogueBlockReasons(snapshot);
             }
 
+            if (type == "ShippingMenu")
+            {
+                return ShippingMenuBlockReasons(snapshot);
+            }
+
             return new[] { "close_menu_type_not_whitelisted" };
+        }
+
+        private static string[] ShippingMenuBlockReasons(SnapshotEnvelope snapshot)
+        {
+            var state = ReadStateFieldValue(snapshot, "menus", "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(state.Value, "kind"), "shipping_summary", StringComparison.Ordinal))
+            {
+                return new[] { "shipping_summary_transparent_state_missing" };
+            }
+
+            var reasons = new List<string>();
+            if (ReadNullableBool(state.Value, "can_receive_input") is null)
+                reasons.Add("shipping_summary_can_receive_input_missing");
+            if (!state.Value.TryGetProperty("current_page", out var currentPage) ||
+                currentPage.ValueKind != JsonValueKind.Number ||
+                !currentPage.TryGetInt32(out _))
+            {
+                reasons.Add("shipping_summary_current_page_missing");
+            }
+            if (ReadNullableBool(state.Value, "ok_button_present") != true)
+                reasons.Add("shipping_summary_ok_button_missing");
+            return reasons.ToArray();
         }
 
         private static string[] LevelUpMenuBlockReasons(SnapshotEnvelope snapshot)

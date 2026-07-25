@@ -151,6 +151,8 @@ Hard boundaries:
 - The perfect baseline and every adaptation profile must be independently selectable and disableable.
 - Multiplayer companion execution must not steal keyboard focus, physical input, resources, or player-reserved goals.
 
+Current base invariant: the material graph exposes shared and other-player resources for planning awareness but marks them non-spendable by default. Native transfer and Workbench execution reject those nodes again at runtime. Stage 7 may add explicit, versioned sharing grants, but it cannot weaken this default when a grant is absent or stale.
+
 Exit conditions:
 
 - The frozen perfect baseline is reproducible and still passes its benchmark.

@@ -44,7 +44,7 @@ public sealed partial class FarmReadAdapter
             {
                 if (pair.Value is Chest chest)
                 {
-                    if (IsPlayerStorageChest(locationRef, chest, player))
+                    if (chest.playerChest.Value)
                     {
                         AddChestAccess(nodes, accessPoints, chestNodeByTile, locationRef, pair.Key, chest, player, "placed_chest");
                     }
@@ -74,7 +74,7 @@ public sealed partial class FarmReadAdapter
             }
         }
 
-        var workbenchLinks = ReadWorkbenchLinks(locations, chestNodeByTile);
+        var workbenchLinks = ReadWorkbenchLinks(locations, chestNodeByTile, nodes);
         var nodeRows = nodes.Values.OrderBy(node => node.NodeId, StringComparer.Ordinal).ToArray();
         var accessRows = accessPoints.OrderBy(row => row.AccessPointId, StringComparer.Ordinal).ToArray();
         var distinctAccessNodes = accessRows.Select(row => row.NodeId).Distinct(StringComparer.Ordinal).Count();
@@ -87,19 +87,9 @@ public sealed partial class FarmReadAdapter
             QuantityRows = BuildQuantityRows(nodeRows),
             PhysicalInventoryCount = nodeRows.Length,
             AccessPointCount = accessRows.Length,
-            DeduplicatedAccessPointCount = Math.Max(0, accessRows.Length - distinctAccessNodes)
+            DeduplicatedAccessPointCount = Math.Max(0, accessRows.Length - distinctAccessNodes),
+            DefaultSharedResourcePolicy = "deny_without_explicit_authorization"
         };
-    }
-
-    private static bool IsPlayerStorageChest(MachineLocationRef locationRef, Chest chest, Farmer player)
-    {
-        if (!chest.playerChest.Value)
-        {
-            return false;
-        }
-
-        var ownerId = chest.owner.Value;
-        return ownerId == 0 || ownerId == player.UniqueMultiplayerID || locationRef.IsPlayerControlled;
     }
 
     private static void AddChestAccess(
@@ -125,6 +115,11 @@ public sealed partial class FarmReadAdapter
             : globalInventoryId.Length > 0
                 ? "global_chest_inventory"
                 : "chest";
+        var ownership = ClassifyMaterialOwnership(
+            chest.owner.Value,
+            player.UniqueMultiplayerID,
+            globalInventoryId,
+            actorOwnedContext: accessKind == "built_in_fridge");
         AddInventoryNode(
             nodes,
             nodeId,
@@ -136,7 +131,8 @@ public sealed partial class FarmReadAdapter
             chest.owner.Value,
             globalInventoryId,
             chest.GetActualCapacity(),
-            chest.GetItemsForPlayer(player.UniqueMultiplayerID));
+            chest.GetItemsForPlayer(player.UniqueMultiplayerID),
+            ownership);
 
         var accessPointId = NodeId("access", accessKind, locationId, TileText(tile));
         accessPoints.Add(new MaterialInventoryAccessPoint
@@ -150,7 +146,8 @@ public sealed partial class FarmReadAdapter
             TileY = (int)tile.Y,
             QualifiedItemId = chest.QualifiedItemId,
             SpecialChestType = chest.SpecialChestType.ToString(),
-            LockedByOtherPlayer = chest.GetMutex().IsLocked() && !chest.GetMutex().IsLockHeld()
+            LockedByOtherPlayer = chest.GetMutex().IsLocked() && !chest.GetMutex().IsLockHeld(),
+            ActorUseAuthorized = ownership.ActorUseAuthorized
         });
         chestNodeByTile[LocationTileKey(locationId, tile)] = nodeId;
     }
@@ -190,7 +187,11 @@ public sealed partial class FarmReadAdapter
                 item.owner.Value,
                 string.Empty,
                 autoGrabberChest.GetActualCapacity(),
-                autoGrabberChest.Items);
+                autoGrabberChest.Items,
+                ClassifyMaterialOwnership(
+                    item.owner.Value,
+                    player.UniqueMultiplayerID,
+                    string.Empty));
             accessPoints.Add(new MaterialInventoryAccessPoint
             {
                 AccessPointId = NodeId("access", "auto_grabber", locationId, TileText(tile)),
@@ -201,7 +202,8 @@ public sealed partial class FarmReadAdapter
                 TileX = (int)tile.X,
                 TileY = (int)tile.Y,
                 QualifiedItemId = item.QualifiedItemId,
-                LockedByOtherPlayer = false
+                LockedByOtherPlayer = false,
+                ActorUseAuthorized = item.owner.Value == player.UniqueMultiplayerID
             });
             return;
         }
@@ -226,6 +228,10 @@ public sealed partial class FarmReadAdapter
             TileX = (int)tile.X,
             TileY = (int)tile.Y,
             OwnerPlayerId = item.owner.Value == 0 ? player.UniqueMultiplayerID : item.owner.Value,
+            OwnershipClass = item.owner.Value == 0 || item.owner.Value == player.UniqueMultiplayerID
+                ? "actor_owned"
+                : "other_player_owned",
+            ActorUseAuthorized = item.owner.Value == 0 || item.owner.Value == player.UniqueMultiplayerID,
             Capacity = slots.Length,
             Slots = slots
         };
@@ -233,7 +239,8 @@ public sealed partial class FarmReadAdapter
 
     private static MaterialWorkbenchLink[] ReadWorkbenchLinks(
         IEnumerable<MachineLocationRef> locations,
-        IReadOnlyDictionary<string, string> chestNodeByTile)
+        IReadOnlyDictionary<string, string> chestNodeByTile,
+        IReadOnlyDictionary<string, MaterialInventoryNode> nodes)
     {
         return locations
             .SelectMany(locationRef => locationRef.Location.objects.Pairs
@@ -260,6 +267,12 @@ public sealed partial class FarmReadAdapter
                     if (nativeChests.Any(row => row.NodeId.Length == 0))
                     {
                         blockingReasons.Add("workbench_native_container_not_owned_or_unmapped");
+                    }
+                    if (nativeChests.Any(row =>
+                        row.NodeId.Length > 0 &&
+                        (!nodes.TryGetValue(row.NodeId, out var node) || !node.ActorUseAuthorized)))
+                    {
+                        blockingReasons.Add("workbench_native_container_not_actor_authorized");
                     }
                     if (nativeChests.Any(row => row.Chest.GetMutex().IsLocked() && !row.Chest.GetMutex().IsLockHeld()))
                     {
@@ -308,13 +321,18 @@ public sealed partial class FarmReadAdapter
         long ownerPlayerId,
         string globalInventoryId,
         int capacity,
-        IList<Item?> inventory)
+        IList<Item?> inventory,
+        MaterialOwnership? ownership = null)
     {
         if (nodes.ContainsKey(nodeId))
         {
             return;
         }
 
+        var effectiveOwnership = ownership ??
+            new MaterialOwnership(
+                ownerPlayerId == Game1.player.UniqueMultiplayerID ? "actor_owned" : "other_player_owned",
+                ownerPlayerId == Game1.player.UniqueMultiplayerID);
         nodes[nodeId] = new MaterialInventoryNode
         {
             NodeId = nodeId,
@@ -324,10 +342,33 @@ public sealed partial class FarmReadAdapter
             TileX = tileX,
             TileY = tileY,
             OwnerPlayerId = ownerPlayerId,
+            OwnershipClass = effectiveOwnership.OwnershipClass,
+            ActorUseAuthorized = effectiveOwnership.ActorUseAuthorized,
             GlobalInventoryId = globalInventoryId,
             Capacity = capacity,
             Slots = ReadSlots(inventory)
         };
+    }
+
+    private static MaterialOwnership ClassifyMaterialOwnership(
+        long ownerPlayerId,
+        long actorPlayerId,
+        string globalInventoryId,
+        bool actorOwnedContext = false)
+    {
+        if (!string.IsNullOrWhiteSpace(globalInventoryId))
+        {
+            return new MaterialOwnership("shared_team_global", false);
+        }
+
+        if (actorOwnedContext || ownerPlayerId == actorPlayerId)
+        {
+            return new MaterialOwnership("actor_owned", true);
+        }
+
+        return ownerPlayerId == 0
+            ? new MaterialOwnership("shared_unowned", false)
+            : new MaterialOwnership("other_player_owned", false);
     }
 
     private static MaterialInventorySlot[] ReadSlots(IList<Item?> inventory) => inventory
@@ -357,9 +398,17 @@ public sealed partial class FarmReadAdapter
         {
             QualifiedItemId = group.Key.QualifiedItemId,
             Quality = group.Key.Quality,
-            AvailableQuantity = group.Where(row => row.Node.SupplyState == "available").Sum(row => row.Slot.Stack),
-            ReadyOutputQuantity = group.Where(row => row.Node.SupplyState == "ready_output").Sum(row => row.Slot.Stack),
-            InProcessQuantity = group.Where(row => row.Node.SupplyState == "in_process").Sum(row => row.Slot.Stack),
+            AvailableQuantity = group.Where(row =>
+                row.Node.SupplyState == "available" &&
+                row.Node.ActorUseAuthorized).Sum(row => row.Slot.Stack),
+            ReadyOutputQuantity = group.Where(row =>
+                row.Node.SupplyState == "ready_output" &&
+                row.Node.ActorUseAuthorized).Sum(row => row.Slot.Stack),
+            InProcessQuantity = group.Where(row =>
+                row.Node.SupplyState == "in_process" &&
+                row.Node.ActorUseAuthorized).Sum(row => row.Slot.Stack),
+            RestrictedQuantity = group.Where(row =>
+                !row.Node.ActorUseAuthorized).Sum(row => row.Slot.Stack),
             SourceSlotCount = group.Count()
         })
         .OrderBy(row => row.QualifiedItemId, StringComparer.Ordinal)
@@ -373,4 +422,6 @@ public sealed partial class FarmReadAdapter
     private static string TileText(Vector2 tile) => (int)tile.X + "," + (int)tile.Y;
 
     private static string LocationTileKey(string locationId, Vector2 tile) => locationId + "\n" + TileText(tile);
+
+    private sealed record MaterialOwnership(string OwnershipClass, bool ActorUseAuthorized);
 }

@@ -40,6 +40,9 @@ public sealed class MaterialSupplyProjectionResult
 
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("excluded_node_ids")]
+    public string[] ExcludedNodeIds { get; set; } = Array.Empty<string>();
 }
 
 public sealed class MaterialSupplySlot

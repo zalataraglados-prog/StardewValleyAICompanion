@@ -78,15 +78,18 @@ namespace StardewAI.Core.Execution
 
         private static SmallModelActionParameter[] BuildCloseMenuParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
+            var activeMenuType = ActiveMenuType(snapshot);
+            var closeMenuExecutor = activeMenuType switch
+            {
+                "LevelUpMenu" => "LevelUpMenu native completion path",
+                "ShippingMenu" => "ShippingMenu native OK-button completion path",
+                _ => "Game1.exitActiveMenu"
+            };
             var parameters = new List<SmallModelActionParameter>(action.Parameters)
             {
                 Parameter("compiler_context.active_menu_open", ActiveMenuOpen(snapshot).ToString().ToLowerInvariant()),
-                Parameter("compiler_context.active_menu_type", ActiveMenuType(snapshot)),
-                Parameter(
-                    "compiler_context.close_menu_executor",
-                    ActiveMenuType(snapshot) == "LevelUpMenu"
-                        ? "LevelUpMenu native completion path"
-                        : "Game1.exitActiveMenu")
+                Parameter("compiler_context.active_menu_type", activeMenuType),
+                Parameter("compiler_context.close_menu_executor", closeMenuExecutor)
             };
 
             return parameters.ToArray();

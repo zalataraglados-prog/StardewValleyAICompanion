@@ -19,7 +19,16 @@ public sealed class MaterialSupplyProjection
         }
 
         var availableNodes = graph.InventoryNodes
-            .Where(node => string.Equals(node.SupplyState, "available", StringComparison.Ordinal))
+            .Where(node =>
+                string.Equals(node.SupplyState, "available", StringComparison.Ordinal) &&
+                node.ActorUseAuthorized)
+            .ToArray();
+        var excludedNodeIds = graph.InventoryNodes
+            .Where(node =>
+                string.Equals(node.SupplyState, "available", StringComparison.Ordinal) &&
+                !node.ActorUseAuthorized)
+            .Select(node => node.NodeId)
+            .OrderBy(nodeId => nodeId, StringComparer.Ordinal)
             .ToArray();
         var duplicateNodeIds = graph.InventoryNodes
             .GroupBy(node => node.NodeId, StringComparer.Ordinal)
@@ -109,7 +118,8 @@ public sealed class MaterialSupplyProjection
             Status = distinctReasons.Length == 0 ? "available" : "blocked",
             Slots = projectedSlots,
             Quantities = quantities,
-            BlockingReasons = distinctReasons
+            BlockingReasons = distinctReasons,
+            ExcludedNodeIds = excludedNodeIds
         };
     }
 

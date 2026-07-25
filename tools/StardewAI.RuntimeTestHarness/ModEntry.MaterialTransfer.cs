@@ -114,6 +114,15 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (!MaterialChestActorUseAuthorized(chest))
+        {
+            pending.Completion.SetResult(MaterialTransferBlocked(
+                pending,
+                null,
+                "material_transfer_chest_not_actor_authorized"));
+            return;
+        }
+
         if (chest.GetMutex().IsLocked() && !chest.GetMutex().IsLockHeld())
         {
             pending.Completion.SetResult(MaterialTransferBlocked(
@@ -348,7 +357,8 @@ public sealed partial class ModEntry
         }
         if (Game1.activeClickableMenu is not ItemGrabMenu menu ||
             !ReferenceEquals(menu.sourceItem, active.Chest) ||
-            !active.Chest.GetMutex().IsLockHeld())
+            !active.Chest.GetMutex().IsLockHeld() ||
+            !MaterialChestActorUseAuthorized(active.Chest))
         {
             CompleteMaterialTransferBlocked(active, "material_transfer_menu_or_lock_lost");
             return;
@@ -393,6 +403,13 @@ public sealed partial class ModEntry
         {
             CompleteMaterialTransferBlocked(active, "material_transfer_native_click_postcondition_failed");
         }
+    }
+
+    private static bool MaterialChestActorUseAuthorized(Chest chest)
+    {
+        return string.IsNullOrWhiteSpace(chest.GlobalInventoryId) &&
+            chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest &&
+            chest.owner.Value == Game1.player.UniqueMultiplayerID;
     }
 
     private void CompleteMaterialTransfer(ActiveMaterialTransfer active)
