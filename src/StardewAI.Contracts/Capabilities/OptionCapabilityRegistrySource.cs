@@ -144,7 +144,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
-            "executor.craft_machine_item", "executor.place_machine",
+            "executor.craft_machine_item", "executor.place_machine", "executor.place_storage",
             "executor.read_book", "executor.catch_fish",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -179,7 +179,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
-            "executor.craft_machine_item", "executor.place_machine",
+            "executor.craft_machine_item", "executor.place_machine", "executor.place_storage",
             "executor.read_book", "executor.catch_fish",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -273,7 +273,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade",
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.craft_machine_item",
-            "executor.place_machine",
+            "executor.place_machine", "executor.place_storage",
             "executor.read_book", "executor.select_safe_item_slot"
         };
 
@@ -296,6 +296,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("complete_fish_pond_request"),
                 SupportedCandidate("craft_machine_item"),
                 SupportedCandidate("place_machine_item"),
+                SupportedCandidate("place_storage_item"),
                 SupportedCandidate("donate_community_center_item"),
                 SupportedCandidate("donate_museum_item"), SupportedCandidate("fill_pet_bowl"),
                 SupportedCandidate("harvest_bush"), SupportedCandidate("harvest_crop_tile"),

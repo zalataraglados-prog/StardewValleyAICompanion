@@ -96,7 +96,7 @@ public sealed partial class PlayerReadAdapter
             route_safety_owner =
                 "core_collision_grid_articulation_and_adjacent_access_projection",
             actionability =
-                "read_only_until_route_safe_candidate_compiler_and_native_executor_are_connected",
+                "current_map_candidate_compiler_and_native_executor_connected_runtime_validation_and_cross_map_continuation_pending",
             native_runtime_contract =
                 "Utility.playerCanPlaceItemHere->Utility.tryToPlaceItem->Chest.placementAction",
             rows

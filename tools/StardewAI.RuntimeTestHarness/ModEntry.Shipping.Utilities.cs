@@ -620,6 +620,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
             request.OptionId != "executor.place_machine" &&
+            request.OptionId != "executor.place_storage" &&
             request.OptionId != "executor.catch_fish" &&
             request.OptionId != "executor.choose_dialogue_response" &&
             request.OptionId != "executor.social_interact" &&

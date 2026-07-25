@@ -772,6 +772,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates the machine at the rebound tile", "one matching inventory item is consumed through native placement callbacks" },
                 new[] { "block_inventory_machine_identity_drift", "block_location_or_tile_projection_drift", "block_unreachable_adjacent_stand", "block_material_reservation_drift", "block_native_placement_recheck" }));
 
+            Register(Option("executor.place_storage", "farm", "Place one verified inventory storage item at one route-safe native-legal tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.storage_placement", "current_location.chests", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates one player chest at the rebound tile", "one matching inventory item is consumed through native placement callbacks", "existing route and storage access remain connected in the pre-dispatch projection" },
+                new[] { "block_inventory_storage_identity_drift", "block_location_layout_or_projection_drift", "block_unreachable_or_route_disconnect_placement", "block_material_reservation_drift", "block_native_placement_recheck" }));
+
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -835,7 +843,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 60;
+            const int expectedPrimitiveCount = 61;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

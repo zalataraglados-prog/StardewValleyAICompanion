@@ -4,16 +4,16 @@ using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.Core.Infrastructure;
 
-internal sealed class MachinePlacementMaterialReservationGuard
+internal sealed class InventoryPlacementMaterialReservationGuard
 {
-    internal MachinePlacementMaterialReservationGuardResult Evaluate(
+    internal InventoryPlacementMaterialReservationGuardResult Evaluate(
         StrategyCommitmentLedger? ledger,
         int slotIndex,
         string qualifiedItemId)
     {
         if (ledger is null || string.IsNullOrWhiteSpace(ledger.LedgerId))
         {
-            return new MachinePlacementMaterialReservationGuardResult(
+            return new InventoryPlacementMaterialReservationGuardResult(
                 false,
                 "unavailable_strategy_ledger",
                 string.Empty,
@@ -40,7 +40,7 @@ internal sealed class MachinePlacementMaterialReservationGuard
             .Distinct(StringComparer.Ordinal)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        return new MachinePlacementMaterialReservationGuardResult(
+        return new InventoryPlacementMaterialReservationGuardResult(
             reservationIds.Length == 0,
             reservationIds.Length == 0
                 ? "ready_no_active_material_reservations"
@@ -51,7 +51,7 @@ internal sealed class MachinePlacementMaterialReservationGuard
     }
 }
 
-internal sealed record MachinePlacementMaterialReservationGuardResult(
+internal sealed record InventoryPlacementMaterialReservationGuardResult(
     bool Ready,
     string Status,
     string LedgerId,
