@@ -35,10 +35,136 @@ namespace StardewAI.Contracts.Options
         public const string Unknown = "unknown";
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionSemanticKind
+    {
+        Unknown,
+        GoalTemplate,
+        CompositeOptionSpec,
+        PrimitiveOptionSpec,
+        ExecutionStepSpec,
+        PlannerInternalSpec,
+        AdapterCapabilitySpec
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ParameterSchemaPolicy
+    {
+        Unknown,
+        GoalParameters,
+        CandidateBoundParameters,
+        PrimitiveActionParameters,
+        NoParameters
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum RequiredFactPolicy
+    {
+        Unknown,
+        AllRequiredFailClosed
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionRiskClass
+    {
+        Unknown,
+        R0PureRecovery,
+        R1ReversibleInteraction,
+        R2Consumptive,
+        R3CrossDayCommitment,
+        R4IrreversibleAssetChange,
+        R5RelationshipOrRouteChoice
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionIrreversibility
+    {
+        Unknown,
+        None,
+        Consumptive,
+        CrossDayCommitment,
+        IrreversibleAssetChange,
+        RelationshipOrRouteChoice
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionConfirmationPolicy
+    {
+        Unknown,
+        NotRequired,
+        PolicyAuthorizationRequired,
+        ExplicitUserConfirmationRequired
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionHostPolicy
+    {
+        Unknown,
+        ControllingActorAllowed,
+        HostOnly
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionOwnershipPolicy
+    {
+        Unknown,
+        ActorState,
+        ActorInventory,
+        SharedFarmState,
+        SharedWorldState,
+        Mixed
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionModAdapterPolicy
+    {
+        Unknown,
+        VanillaNativeOnly,
+        ExplicitVerifiedAdapterOnly
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionRuntimeStatus
+    {
+        Unknown,
+        RegisteredOnly,
+        OfflineVerified,
+        RuntimeVerified,
+        LongDurationVerified
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionTrainingEligibility
+    {
+        Unknown,
+        BlockedPendingRuntimeEvidence,
+        EvaluationOnly,
+        Eligible
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum AutonomousCandidatePolicy
+    {
+        Unknown,
+        Allowed,
+        PolicyAuthorizationRequired,
+        ExplicitUserConfirmationRequired,
+        Forbidden
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionProductStatus
+    {
+        Unknown,
+        Registered,
+        InternalPreview,
+        ProductReady
+    }
+
     public sealed class OptionSpec
     {
         [JsonPropertyName("schema_version")]
-        public string SchemaVersion { get; set; } = "option_spec.v1";
+        public string SchemaVersion { get; set; } = "option_spec.v2";
 
         [JsonPropertyName("option_id")]
         public string OptionId { get; set; } = string.Empty;
@@ -58,6 +184,15 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("training_role")]
         public string TrainingRole { get; set; } = TrainingRoles.Unknown;
 
+        [JsonPropertyName("semantic_kind")]
+        public OptionSemanticKind SemanticKind { get; set; } = OptionSemanticKind.Unknown;
+
+        [JsonPropertyName("parameter_schema")]
+        public ParameterSchemaPolicy ParameterSchema { get; set; } = ParameterSchemaPolicy.Unknown;
+
+        [JsonPropertyName("required_fact_policy")]
+        public RequiredFactPolicy RequiredFactPolicy { get; set; } = RequiredFactPolicy.Unknown;
+
         [JsonPropertyName("required_state_factors")]
         public string[] RequiredStateFactors { get; set; } = new string[0];
 
@@ -71,10 +206,52 @@ namespace StardewAI.Contracts.Options
         public string[] SafetyConstraints { get; set; } = new string[0];
 
         [JsonPropertyName("recoverability")]
-        public string Recoverability { get; set; } = "recoverable";
+        public string Recoverability { get; set; } = "unknown";
 
         [JsonPropertyName("risk_level")]
-        public string RiskLevel { get; set; } = "low";
+        public string RiskLevel { get; set; } = "unknown";
+
+        [JsonPropertyName("risk_class")]
+        public OptionRiskClass RiskClass { get; set; } = OptionRiskClass.Unknown;
+
+        [JsonPropertyName("irreversibility")]
+        public OptionIrreversibility Irreversibility { get; set; } = OptionIrreversibility.Unknown;
+
+        [JsonPropertyName("confirmation_policy")]
+        public OptionConfirmationPolicy ConfirmationPolicy { get; set; } = OptionConfirmationPolicy.Unknown;
+
+        [JsonPropertyName("host_policy")]
+        public OptionHostPolicy HostPolicy { get; set; } = OptionHostPolicy.Unknown;
+
+        [JsonPropertyName("ownership_policy")]
+        public OptionOwnershipPolicy OwnershipPolicy { get; set; } = OptionOwnershipPolicy.Unknown;
+
+        [JsonPropertyName("mod_adapter_policy")]
+        public OptionModAdapterPolicy ModAdapterPolicy { get; set; } = OptionModAdapterPolicy.Unknown;
+
+        [JsonPropertyName("compiler_binding")]
+        public string CompilerBinding { get; set; } = string.Empty;
+
+        [JsonPropertyName("before_verifier_binding")]
+        public string BeforeVerifierBinding { get; set; } = string.Empty;
+
+        [JsonPropertyName("after_verifier_binding")]
+        public string AfterVerifierBinding { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_evidence_id")]
+        public string RuntimeEvidenceId { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_status")]
+        public OptionRuntimeStatus RuntimeStatus { get; set; } = OptionRuntimeStatus.Unknown;
+
+        [JsonPropertyName("training_eligibility")]
+        public OptionTrainingEligibility TrainingEligibility { get; set; } = OptionTrainingEligibility.Unknown;
+
+        [JsonPropertyName("autonomous_candidate_policy")]
+        public AutonomousCandidatePolicy AutonomousCandidatePolicy { get; set; } = AutonomousCandidatePolicy.Unknown;
+
+        [JsonPropertyName("product_status")]
+        public OptionProductStatus ProductStatus { get; set; } = OptionProductStatus.Unknown;
     }
 
     public sealed class OptionInstance

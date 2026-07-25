@@ -9,9 +9,9 @@
     "manifest_sha256": "01d34627beebe89911edc5b94cf5c4f609875b840d3e6310e4ea2120b2d0618b"
   },
   "derived_profile": {
-    "relative_path": "derived\\game-1.6.15-20260723T093543Z-linux-v21",
-    "build_manifest_bytes": 3906,
-    "build_manifest_sha256": "22fe421fcf5863282f7027a857dba4a6ee6e4b33af82924925c05a28efc03324",
+    "relative_path": "derived\\game-1.6.15-20260723T093543Z-linux-v22",
+    "build_manifest_bytes": 4076,
+    "build_manifest_sha256": "687d098d51cf4a8f1d9a2c5d1f315becafd71efaaedec70f3d75739acf4ffa74",
     "status": "complete_authoritative_identity_graph_stage"
   },
   "runtime_binaries": {
@@ -39,9 +39,9 @@
     "default_windows_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15"
   },
   "migration_verification": {
-    "verified_at_utc": "2026-07-23T12:02:16.0502656Z",
+    "verified_at_utc": "2026-07-23T15:16:19.2963706Z",
     "raw_files": 588,
-    "derived_files": 20,
+    "derived_files": 21,
     "runtime_binary_files": 2,
     "snapshot_files": 1,
     "mismatch_count": 0,
