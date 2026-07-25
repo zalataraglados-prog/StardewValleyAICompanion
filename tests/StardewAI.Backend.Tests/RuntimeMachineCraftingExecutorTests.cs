@@ -81,6 +81,39 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void MachineRemovalUsesNativeRecoverableDebrisChain()
+    {
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+        var runtime = RuntimeHarnessSources.File(
+            "ModEntry.MachinePlacement.cs");
+        var bridge = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.Machines.cs");
+
+        Assert.Contains(
+            "ExecuteRemoveMachine(pending.Request)",
+            dispatch);
+        Assert.Contains("pickaxe.DoFunction(", runtime);
+        Assert.Contains(
+            "MachineRemovalRuntimeBlockReasons(",
+            runtime);
+        Assert.Contains(
+            "exact_machine_debris_created",
+            runtime);
+        Assert.DoesNotContain(
+            "location.objects.Remove(targetVector",
+            runtime);
+        Assert.Contains(
+            "removal_projection_fingerprint",
+            bridge);
+        Assert.Contains(
+            "machine_removal_runtime_tool_override_not_verified",
+            bridge);
+    }
+
+    [Fact]
     public void LiveTrainingDispatchChecksLatestMaterialLedgerBeforeRuntimeInput()
     {
         var execution = RuntimeHarnessSources.RepositoryFile(

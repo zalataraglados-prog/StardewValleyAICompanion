@@ -906,6 +906,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.remove_machine")
+            {
+                pending.Completion.SetResult(
+                    ExecuteRemoveMachine(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.place_storage")
             {
                 pending.Completion.SetResult(
