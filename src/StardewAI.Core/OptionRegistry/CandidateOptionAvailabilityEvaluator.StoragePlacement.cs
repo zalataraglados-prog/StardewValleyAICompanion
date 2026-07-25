@@ -87,23 +87,23 @@ namespace StardewAI.Core.OptionRegistry
         private static string StorageRole(
             JsonElement row)
         {
-            if (ReadBool(row, "shipping_storage"))
+            if (ReadBool(row, "shipping_storage") == true)
             {
                 return "shipping";
             }
-            if (ReadBool(row, "fridge_storage"))
+            if (ReadBool(row, "fridge_storage") == true)
             {
                 return "fridge";
             }
             if (ReadBool(
                     row,
-                    "shared_global_storage"))
+                    "shared_global_storage") == true)
             {
                 return "shared_global";
             }
             if (ReadBool(
                     row,
-                    "ordinary_material_storage"))
+                    "ordinary_material_storage") == true)
             {
                 return "ordinary_material";
             }

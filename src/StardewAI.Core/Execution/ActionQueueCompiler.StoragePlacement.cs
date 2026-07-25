@@ -1,5 +1,6 @@
 using System;
 using StardewAI.Contracts.Execution;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
 {
