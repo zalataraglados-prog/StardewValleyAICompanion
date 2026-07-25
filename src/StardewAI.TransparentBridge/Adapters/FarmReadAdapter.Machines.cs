@@ -78,7 +78,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .Where(row => string.Equals(row.Location.NameOrUniqueName, currentLocationId, StringComparison.OrdinalIgnoreCase) &&
                 row.Pair.Value.MinutesUntilReady <= 0 &&
                 !row.Pair.Value.readyForHarvest.Value &&
-                ReadBoolNullable(row.Pair.Value.GetMachineData()!, "HasInput") == true)
+                MachineDataHasEffectiveInput(row.Pair.Value.GetMachineData()))
             .ToArray();
         var probeRotationIndex = probeEligibleRows.Length == 0 || machineProbeCacheTick < 0
             ? 0
@@ -96,7 +96,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var probeLocationIsCurrent = string.Equals(locationId, currentLocationId, StringComparison.OrdinalIgnoreCase);
                 var probeWithinBudget = probeMachineKeys.Contains(MachineLocationTileKey(locationId, row.Pair.Key));
                 var liveMachineData = row.Pair.Value.GetMachineData();
-                var machineHasInput = ReadBoolNullable(liveMachineData!, "HasInput");
+                var machineHasInput =
+                    MachineDataHasEffectiveInput(liveMachineData);
+                var machineHasOutput =
+                    MachineDataHasEffectiveOutput(liveMachineData);
                 var machineIsIdle = row.Pair.Value.MinutesUntilReady <= 0 && !row.Pair.Value.readyForHarvest.Value;
                 var harvestExperience = ReadMachineHarvestExperience(liveMachineData, player);
                 object machineData = minimalMachineProfile
@@ -125,7 +128,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     ready_for_harvest = row.Pair.Value.readyForHarvest.Value,
                     minutes_until_ready = row.Pair.Value.MinutesUntilReady,
                     machine_has_input = machineHasInput,
-                    machine_has_output = ReadBoolNullable(liveMachineData!, "HasOutput"),
+                    machine_has_output = machineHasOutput,
                     machine_row_count_total = machineRows.Length,
                     machine_row_snapshot_status = "complete_no_row_truncation",
                     machine_input_probe_machine_limit = MaxMachineInputProbeMachinesPerRefresh,
@@ -183,8 +186,14 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         {
             source = "Object.GetMachineData()",
             status = "available",
-            has_input = ReadBoolNullable(machineData, "HasInput"),
-            has_output = ReadBoolNullable(machineData, "HasOutput"),
+            has_input = machineData is MachineData typedMachineData &&
+                MachineDataHasEffectiveInput(typedMachineData),
+            has_output = machineData is MachineData typedOutputData &&
+                MachineDataHasEffectiveOutput(typedOutputData),
+            has_input_forced = ReadBoolNullable(machineData, "HasInput"),
+            has_output_forced = ReadBoolNullable(machineData, "HasOutput"),
+            effective_capability_native_contract =
+                "ItemContextTagManager:forced_flag_or_output_rule_trigger",
             additional_consumed_item_count = ReadCount(machineData, "AdditionalConsumedItems"),
             additional_consumed_items = ReadMachineAdditionalConsumedItems(ReadMemberValue(machineData, "AdditionalConsumedItems"), completeCatalog),
             prevent_time_pass_count = ReadCount(machineData, "PreventTimePass"),
@@ -236,6 +245,27 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             })
             .ToArray();
     }
+
+    private static bool MachineDataHasEffectiveInput(
+        MachineData? machineData)
+    {
+        if (machineData is null)
+        {
+            return false;
+        }
+        return machineData.HasInput ||
+            machineData.OutputRules?.Any(rule =>
+                rule.Triggers?.Any(trigger =>
+                    trigger.Trigger.HasFlag(
+                        MachineOutputTrigger.ItemPlacedInMachine)) ==
+                true) == true;
+    }
+
+    private static bool MachineDataHasEffectiveOutput(
+        MachineData? machineData) =>
+        machineData is not null &&
+        (machineData.HasOutput ||
+         machineData.OutputRules?.Count > 0);
 
     private static string ReadUniqueMachineRuleRequiredItemId(object? triggers)
     {

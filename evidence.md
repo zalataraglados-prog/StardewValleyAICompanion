@@ -32,6 +32,8 @@
 
 ## Validation Evidence
 
+- Machine lifecycle validation passed Core `1191/1191` and Backend `83/83` on 2026-07-25.
+- Hidden/silent isolated Furnace lifecycle passed at `artifacts/runtime-machine-lifecycle-smoke/runtime-machine-lifecycle-smoke-20260725-214254/summary.json`: target fleet `0`, native craft/place/load/collect all verified, Copper Ore `5 -> 0`, Coal `1 -> 0`, predicted and observed output were `(O)334`, processing completed after 30 game minutes, output inventory `0 -> 1`, and the same machine returned idle.
 - Storage acquisition validation passed Core `1191/1191` and Backend `82/82` on 2026-07-25.
 - Hidden/silent isolated native Chest crafting passed at `artifacts/runtime-storage-crafting-smoke/runtime-storage-crafting-smoke-20260725-205501/summary.json`: inventory `(BC)130` `0 -> 1`, recipe count `14 -> 15`, exact native ingredient/output multiset verified, and state hash changed.
 - Recovery-chain reconciliation passed Core `422/422` and Backend `49/49` tests on 2026-07-14.
