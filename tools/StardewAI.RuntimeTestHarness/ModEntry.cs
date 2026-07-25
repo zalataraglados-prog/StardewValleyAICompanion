@@ -128,8 +128,13 @@ public sealed partial class ModEntry : Mod
             harmony.Patch(
                 original: AccessTools.Method(typeof(Game1), "Draw", new[] { typeof(GameTime) }),
                 prefix: new HarmonyMethod(typeof(HostLocalDrawPatch), nameof(HostLocalDrawPatch.Prefix)));
+            harmony.Patch(
+                original: AccessTools.Method(typeof(SaveGameMenu), nameof(SaveGameMenu.update)),
+                prefix: new HarmonyMethod(
+                    typeof(HeadlessSaveGameMenuLifecyclePatch),
+                    nameof(HeadlessSaveGameMenuLifecyclePatch.Prefix)));
             Monitor.Log(
-                "Suppressing host-local rendering; game updates, original multiplayer sync, and remote farmer rendering remain active.",
+                "Suppressing host-local rendering; game updates, native save lifecycle, original multiplayer sync, and remote farmer rendering remain active.",
                 LogLevel.Info);
         }
 
@@ -1090,6 +1095,15 @@ internal static class HostLocalDrawPatch
     public static bool Prefix()
     {
         return false;
+    }
+}
+
+internal static class HeadlessSaveGameMenuLifecyclePatch
+{
+    public static void Prefix(SaveGameMenu __instance)
+    {
+        // Native SaveGameMenu gates SaveGame.Save() on a flag set only by draw().
+        __instance.hasDrawn = true;
     }
 }
 

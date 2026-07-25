@@ -135,7 +135,7 @@ public sealed partial class PlayerReadAdapter
             {
                 for (var y = 0; y < height; y++)
                 {
-                    AppendLegalRanges(
+                    AppendPlacementLegalRanges(
                         staticRanges,
                         y,
                         width,
@@ -184,7 +184,7 @@ public sealed partial class PlayerReadAdapter
         return new MachinePlacementLocationProjection(row, staticCount);
     }
 
-    private static void AppendLegalRanges(
+    private static void AppendPlacementLegalRanges(
         ICollection<object> ranges,
         int y,
         int width,
@@ -218,13 +218,24 @@ public sealed partial class PlayerReadAdapter
         IReadOnlyList<InventoryMachineRef> inventoryMachines,
         IReadOnlyList<MachineLocationRef> locations)
     {
+        var inventoryRows = inventoryMachines.Select(machine =>
+            "machine|" + machine.SlotIndex + "|" +
+            machine.Machine.QualifiedItemId + "|" +
+            machine.Machine.Stack + "|" +
+            machine.Machine.GetType().FullName);
+        return PersistentPlacementTopologyFingerprint(
+            inventoryRows,
+            locations);
+    }
+
+    private static string PersistentPlacementTopologyFingerprint(
+        IEnumerable<string> inventoryRows,
+        IReadOnlyList<MachineLocationRef> locations)
+    {
         var source = new StringBuilder();
-        foreach (var machine in inventoryMachines)
+        foreach (var row in inventoryRows)
         {
-            source.Append("machine|").Append(machine.SlotIndex).Append('|')
-                .Append(machine.Machine.QualifiedItemId).Append('|')
-                .Append(machine.Machine.Stack).Append('|')
-                .Append(machine.Machine.GetType().FullName).AppendLine();
+            source.AppendLine(row);
         }
         foreach (var locationRef in locations)
         {
