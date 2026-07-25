@@ -51,8 +51,7 @@ public sealed class ModEntry : Mod
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += (_, _) =>
         {
-            ApplyAiControlSettingsIfConfigured("SaveLoaded");
-            PublishEvent("SaveLoaded", new[] { "identity.save_id", "identity.player_id", "options.ai_control_settings" });
+            PublishEvent("SaveLoaded", new[] { "identity.save_id", "identity.player_id" });
         };
         helper.Events.GameLoop.DayStarted += (_, _) => PublishEvent("DayStarted", new[] { "time.season", "time.day", "time.weather" });
         helper.Events.GameLoop.TimeChanged += (_, e) => PublishEvent("TimeChanged", new[] { "time.time" }, new { e.OldTime }, new { e.NewTime });
@@ -93,11 +92,6 @@ public sealed class ModEntry : Mod
         Interlocked.Exchange(ref latestGameTick, unchecked((long)Game1.ticks));
         ProcessPendingSnapshotRequests();
 
-        if (e.IsMultipleOf(60))
-        {
-            ApplyAiControlSettingsIfConfigured("UpdateTicked");
-        }
-
         if (e.IsMultipleOf(10))
         {
             FarmReadAdapter.RefreshMachineProbeCache();
@@ -111,50 +105,11 @@ public sealed class ModEntry : Mod
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
-        ApplyAiControlSettingsIfConfigured("GameLaunched");
         AddAudit("GameLaunched", new
         {
             Mode = config.PermissionMode,
             config.Host,
-            config.Port,
-            config.ApplyAiControlSettings
-        });
-    }
-
-    private void ApplyAiControlSettingsIfConfigured(string reason)
-    {
-        if (!config.ApplyAiControlSettings || Game1.options is null)
-        {
-            return;
-        }
-
-        var changed = Game1.options.autoRun != true ||
-            Game1.options.stowingMode != Options.ItemStowingModes.Off ||
-            Game1.options.gamepadMode != Options.GamepadModes.ForceOff ||
-            Game1.options.snappyMenus != false ||
-            Game1.options.invertScrollDirection != false ||
-            Game1.options.pauseWhenOutOfFocus != false;
-
-        Game1.options.autoRun = true;
-        Game1.options.stowingMode = Options.ItemStowingModes.Off;
-        Game1.options.gamepadMode = Options.GamepadModes.ForceOff;
-        Game1.options.snappyMenus = false;
-        Game1.options.invertScrollDirection = false;
-        Game1.options.pauseWhenOutOfFocus = false;
-        if (!changed)
-        {
-            return;
-        }
-
-        AddAudit("AiControlSettingsApplied", new
-        {
-            reason,
-            auto_run = Game1.options.autoRun,
-            stowing_mode = Game1.options.stowingMode.ToString(),
-            gamepad_mode = Game1.options.gamepadMode.ToString(),
-            snappy_menus = Game1.options.snappyMenus,
-            invert_toolbar_scroll_direction = Game1.options.invertScrollDirection,
-            pause_when_out_of_focus = Game1.options.pauseWhenOutOfFocus
+            config.Port
         });
     }
 
@@ -236,7 +191,7 @@ public sealed class ModEntry : Mod
                 {
                     error = "use_websocket_endpoint",
                     endpoint = $"ws://{config.Host}:{config.WebSocketPort}/api/v1/events/ws",
-                    schema_version = "event_stream.v1"
+                    schema_version = "event_stream.v2"
                 },
                 "/api/v1/audit" => ReadAuditTail(),
                 "/" => new { service = "StardewAI.TransparentBridge", version = "0.1.0" },
@@ -457,36 +412,80 @@ public sealed class ModEntry : Mod
         }
     }
 
-    private CapabilityManifest BuildCapabilities() => new()
+    private CapabilityManifest BuildCapabilities()
     {
-        SchemaVersion = "capabilities.v1",
-        BridgeVersion = ModManifest.Version.ToString(),
-        PermissionMode = "observer",
-        CompatibilityStatus = "unverified",
-        CanExecuteCommands = false,
-        CanWriteGameState = false,
-        OptionCapabilitySchemaVersion = OptionCapabilityRegistrySource.SchemaVersion,
-        OptionCapabilities = OptionCapabilityRegistrySource.All.ToArray(),
-        Capabilities = new[]
-        {
-            Capability("read.environment", "read", "available", "Game1.version; Constants.ApiVersion; IModRegistry.GetAll()", "observer only"),
-            Capability("read.identity", "read", "available", "Game1.player.farmName; Game1.player.UniqueMultiplayerID", "world must be loaded"),
-            Capability("read.time", "read", "available", "Game1.currentSeason/dayOfMonth/timeOfDay/weather flags", "vanilla fields only"),
-            Capability("read.player", "read", "available", "Game1.player location/tile/facing/money/health/stamina/tool/menu", "local player only"),
-            Capability("read.inventory", "read", "available", "Game1.player.Items", "slot summaries only"),
-            Capability("read.farm", "read", "available", "Game1.getFarm() public read-only fields; live building-door/indoor traversal reads via Building.humanDoor, Building.GetIndoors(), and Building.GetIndoors().warps[0]", "farm domain summaries including transparent building-door connectors and indoor warp arrival tiles"),
-            Capability("read.current_location", "read", "available", "Game1.currentLocation public read-only fields", "metadata summaries only; no pathing graph"),
-            Capability("read.npcs", "read", "available", "Game1.currentLocation.characters; Game1.player.friendshipData; NPC.Schedule", "current-location NPC positions, friendships, and already-loaded schedules only"),
-            Capability("read.quests", "read", "available", "Game1.player.questLog/mail/team special orders; Game1.stats.QuestsCompleted", "completed quest total count is available; historical completed quest ID collection is not present in vanilla state"),
-            Capability("read.world_progress", "read", "available", "Game1.netWorldState/MasterPlayer collections; Utility.percentGameComplete()", "verified vanilla progress summary fields only"),
-            Capability("read.menus", "read", "partial", "Game1.activeClickableMenu public fields and verified concrete menu fields", "unsupported concrete menu types remain unavailable until individually verified"),
-            Capability("read.modded_state", "read", "available", "IModRegistry.GetAll(); Game1.CustomData; IHaveModData.modData", "reads SMAPI raw save data and public modData dictionaries; arbitrary CLR private fields are not a stable game data surface"),
-            Capability("stream.events.websocket", "read", "available", "/api/v1/events/ws", "read-only event_stream.v1 push; no inbound commands"),
-            Capability("execute.command", "execute", "disabled", "observer permission mode", "execution forbidden in Phase 1A-2")
-        }
-    };
+        var gameIdentity = ObserveBinaryIdentity(typeof(Game1).Assembly);
+        var smapiIdentity = ObserveBinaryIdentity(typeof(IModHelper).Assembly);
+        var adapterCapabilities = (stateCollector?.Adapters ?? Array.Empty<IStateAdapter>())
+            .Select(adapter => Capability(
+                adapter.Domain == "unavailable_fields"
+                    ? "read.transport_metadata"
+                    : "read." + adapter.Domain,
+                "read",
+                adapter.Domain == "unavailable_fields" ? "available" : "partial",
+                new
+                {
+                    source_adapter = adapter.GetType().FullName,
+                    adapter.Domain,
+                    adapter.Priority
+                },
+                "FieldEnvelope status and provenance remain authoritative for each field."))
+            .ToList();
+        adapterCapabilities.Add(Capability(
+            "read.environment",
+            "read",
+            "partial",
+            "TransparentStateCollector environment projection",
+            "Values are observed; binary compatibility is not inferred."));
+        adapterCapabilities.Add(Capability(
+            "read.identity",
+            "read",
+            Context.IsWorldReady ? "available" : "contextually_unavailable",
+            "TransparentStateCollector identity projection",
+            "Requires a loaded world."));
+        adapterCapabilities.Add(Capability(
+            "stream.events.websocket",
+            "read",
+            "available",
+            "/api/v1/events/ws",
+            "Read-only event_stream.v2 push; no inbound commands."));
+        adapterCapabilities.Add(Capability(
+            "execute.command",
+            "execute",
+            "blocked",
+            "observer permission mode",
+            "TransparentBridge has no command or game-state write path."));
 
-    private static Capability Capability(string id, string accessMode, string status, string source, string limitations) => new()
+        return new CapabilityManifest
+        {
+            SchemaVersion = "capabilities.v1",
+            BridgeVersion = ModManifest.Version.ToString(),
+            PermissionMode = "observer",
+            CompatibilityStatus =
+                gameIdentity.IdentityStatus == "hash_observed" &&
+                smapiIdentity.IdentityStatus == "hash_observed"
+                    ? "identity_observed_unverified"
+                    : "identity_incomplete",
+            ObservedGameVersion = Game1.version,
+            ObservedSmapiVersion = Constants.ApiVersion.ToString(),
+            GameBinaryIdentity = gameIdentity,
+            SmapiBinaryIdentity = smapiIdentity,
+            CanExecuteCommands = false,
+            CanWriteGameState = false,
+            OptionCapabilitySchemaVersion = OptionCapabilityRegistrySource.SchemaVersion,
+            OptionCapabilities = OptionCapabilityRegistrySource.All.ToArray(),
+            Capabilities = adapterCapabilities
+                .OrderBy(capability => capability.CapabilityId, StringComparer.Ordinal)
+                .ToArray()
+        };
+    }
+
+    private static Capability Capability(
+        string id,
+        string accessMode,
+        string status,
+        object source,
+        object limitations) => new()
     {
         CapabilityId = id,
         AccessMode = accessMode,
@@ -495,6 +494,29 @@ public sealed class ModEntry : Mod
         Limitations = limitations,
         RequiredPermission = "observer"
     };
+
+    private static BinaryIdentity ObserveBinaryIdentity(System.Reflection.Assembly assembly)
+    {
+        var location = assembly.Location;
+        var identity = new BinaryIdentity
+        {
+            AssemblyName = assembly.GetName().Name ?? string.Empty,
+            AssemblyVersion = assembly.GetName().Version?.ToString() ?? string.Empty,
+            Mvid = assembly.ManifestModule.ModuleVersionId.ToString("D")
+        };
+        if (string.IsNullOrWhiteSpace(location) || !File.Exists(location))
+        {
+            identity.IdentityStatus = "metadata_only";
+            return identity;
+        }
+
+        identity.ByteLength = new FileInfo(location).Length;
+        using var stream = File.OpenRead(location);
+        using var sha256 = SHA256.Create();
+        identity.Sha256 = Convert.ToHexString(sha256.ComputeHash(stream)).ToLowerInvariant();
+        identity.IdentityStatus = "hash_observed";
+        return identity;
+    }
 
     private void AddAudit(string eventType, object? details = null)
     {
@@ -521,18 +543,17 @@ public sealed class ModEntry : Mod
 
     private void PublishEvent(string eventType, string[] changedFields, object? before = null, object? after = null)
     {
-        var beforeHash = currentStateHash;
         AppendEvent(new GameEvent
         {
             EventId = Guid.NewGuid().ToString("N"),
             EventType = eventType,
-            SchemaVersion = "event.v1",
+            SchemaVersion = "event.v2",
             GameTick = unchecked((long)Game1.ticks),
             InGameTime = Context.IsWorldReady ? Game1.timeOfDay : null,
             RealTimestamp = DateTimeOffset.UtcNow.ToString("O"),
             Source = "SMAPI event subscription",
-            StateHashBefore = beforeHash,
-            StateHashAfter = currentStateHash,
+            ObservedSnapshotHash = currentStateHash,
+            SnapshotRelation = "observed_after_snapshot",
             ChangedFields = changedFields,
             Before = before is null ? null : JsonSerializer.SerializeToElement(before, jsonOptions),
             After = after is null ? null : JsonSerializer.SerializeToElement(after, jsonOptions)
@@ -664,7 +685,9 @@ public sealed class ModEntry : Mod
     {
         lock (eventLock)
         {
-            if (events.Count > 0 && events[^1].EventType == "SnapshotPublished" && events[^1].StateHashAfter == snapshot.StateHash)
+            if (events.Count > 0 &&
+                events[^1].EventType == "SnapshotPublished" &&
+                events[^1].PublishedSnapshotHash == snapshot.StateHash)
             {
                 return;
             }
@@ -674,13 +697,14 @@ public sealed class ModEntry : Mod
         {
             EventId = Guid.NewGuid().ToString("N"),
             EventType = "SnapshotPublished",
-            SchemaVersion = "event.v1",
+            SchemaVersion = "event.v2",
             GameTick = snapshot.GameTick,
             InGameTime = Context.IsWorldReady ? Game1.timeOfDay : null,
             RealTimestamp = DateTimeOffset.UtcNow.ToString("O"),
             Source = "TransparentStateCollector.BuildSnapshot",
-            StateHashBefore = currentStateHash,
-            StateHashAfter = snapshot.StateHash,
+            ObservedSnapshotHash = currentStateHash,
+            PublishedSnapshotHash = snapshot.StateHash,
+            SnapshotRelation = "snapshot_published",
             ChangedFields = Array.Empty<string>()
         });
     }
@@ -753,8 +777,9 @@ public sealed class ModEntry : Mod
             ["real_timestamp"] = gameEvent.RealTimestamp,
             ["source"] = gameEvent.Source,
             ["in_game_time"] = gameEvent.InGameTime,
-            ["state_hash_before"] = gameEvent.StateHashBefore,
-            ["state_hash_after"] = gameEvent.StateHashAfter,
+            ["observed_snapshot_hash"] = gameEvent.ObservedSnapshotHash,
+            ["published_snapshot_hash"] = gameEvent.PublishedSnapshotHash,
+            ["snapshot_relation"] = gameEvent.SnapshotRelation,
             ["previous_event_hash"] = gameEvent.PreviousEventHash,
             ["changed_fields"] = gameEvent.ChangedFields,
             ["before"] = gameEvent.Before,
@@ -852,7 +877,7 @@ public sealed class ModEntry : Mod
         {
             new WorldReadAdapter(),
             new PlayerReadAdapter(),
-            new OptionsReadAdapter(config.ApplyAiControlSettings),
+            new OptionsReadAdapter(),
             new FarmReadAdapter(),
             new CurrentLocationReadAdapter(),
             new MiningReadAdapter(),

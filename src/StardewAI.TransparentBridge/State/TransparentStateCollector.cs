@@ -19,6 +19,8 @@ public sealed class TransparentStateCollector
         this.adapters = adapters.OrderBy(adapter => adapter.Priority).ToArray();
     }
 
+    public IReadOnlyList<IStateAdapter> Adapters => adapters;
+
     public SnapshotEnvelope BuildSnapshot(ISet<string>? allowedDomains = null)
     {
         var tick = unchecked((long)Game1.ticks);

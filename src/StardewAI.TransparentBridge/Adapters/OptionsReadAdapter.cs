@@ -4,13 +4,6 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed class OptionsReadAdapter : ReadAdapterBase
 {
-    private readonly bool applyAiControlSettings;
-
-    public OptionsReadAdapter(bool applyAiControlSettings)
-    {
-        this.applyAiControlSettings = applyAiControlSettings;
-    }
-
     public override string Domain => "options";
     public override int Priority => 25;
 
@@ -30,7 +23,8 @@ public sealed class OptionsReadAdapter : ReadAdapterBase
             ["pause_when_out_of_focus"] = Field(options?.pauseWhenOutOfFocus, "Game1.options.pauseWhenOutOfFocus", tick),
             ["ai_control_settings"] = Field(new
             {
-                requested = applyAiControlSettings,
+                bridge_applies_settings = false,
+                owner = "runtime_controller",
                 recommended = new
                 {
                     auto_run = true,
@@ -40,7 +34,8 @@ public sealed class OptionsReadAdapter : ReadAdapterBase
                     invert_toolbar_scroll_direction = false,
                     pause_when_out_of_focus = false
                 },
-                rationale = "deterministic_keyboard_mouse_executor_contract"
+                rationale = "deterministic_keyboard_mouse_executor_contract",
+                limitation = "TransparentBridge observes options and never writes them"
             }, "StardewAI recommended AI control settings", tick)
         });
     }

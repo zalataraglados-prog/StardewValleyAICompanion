@@ -144,7 +144,10 @@ app.MapPost("/api/v1/events", async (HttpRequest request, StateStore store) =>
     var acceptedEvent = gameEvent!;
     store.Events.Add(acceptedEvent);
     store.RawPayloads[acceptedEvent.EventId] = new RawIngestRecord("event", acceptedEvent.EventId, DateTimeOffset.UtcNow.ToString("O"), rawPayload);
-    store.AppendAudit("EventIngested", acceptedEvent.GameTick, acceptedEvent.StateHashAfter);
+    store.AppendAudit(
+        "EventIngested",
+        acceptedEvent.GameTick,
+        acceptedEvent.PublishedSnapshotHash ?? acceptedEvent.ObservedSnapshotHash);
     return Results.Ok(new { accepted = true, count = store.Events.Count });
 });
 
@@ -946,9 +949,9 @@ public static class EventValidator
 
         using (document)
         {
-            if (!document.RootElement.TryGetProperty("schema_version", out var schema) || schema.GetString() != "event.v1")
+            if (!document.RootElement.TryGetProperty("schema_version", out var schema) || schema.GetString() != "event.v2")
             {
-                errors.Add("schema_version must be event.v1");
+                errors.Add("schema_version must be event.v2");
                 return errors;
             }
         }
@@ -970,9 +973,40 @@ public static class EventValidator
             errors.Add("changed_fields is required for change events");
         }
 
-        if (!string.IsNullOrWhiteSpace(gameEvent.StateHashAfter) && !store.Snapshots.ContainsKey(gameEvent.StateHashAfter))
+        if (string.IsNullOrWhiteSpace(gameEvent.ObservedSnapshotHash))
         {
-            errors.Add("state_hash_after does not match an ingested snapshot");
+            errors.Add("observed_snapshot_hash is required");
+        }
+        else if (gameEvent.ObservedSnapshotHash != "unavailable" &&
+            !store.Snapshots.ContainsKey(gameEvent.ObservedSnapshotHash))
+        {
+            errors.Add("observed_snapshot_hash does not match an ingested snapshot");
+        }
+
+        if (gameEvent.EventType == "SnapshotPublished")
+        {
+            if (gameEvent.SnapshotRelation != "snapshot_published")
+            {
+                errors.Add("SnapshotPublished requires snapshot_relation=snapshot_published");
+            }
+
+            if (string.IsNullOrWhiteSpace(gameEvent.PublishedSnapshotHash) ||
+                !store.Snapshots.ContainsKey(gameEvent.PublishedSnapshotHash))
+            {
+                errors.Add("published_snapshot_hash does not match an ingested snapshot");
+            }
+        }
+        else
+        {
+            if (gameEvent.SnapshotRelation != "observed_after_snapshot")
+            {
+                errors.Add("change events require snapshot_relation=observed_after_snapshot");
+            }
+
+            if (!string.IsNullOrWhiteSpace(gameEvent.PublishedSnapshotHash))
+            {
+                errors.Add("change events cannot claim a published_snapshot_hash");
+            }
         }
 
         return errors;
@@ -1001,6 +1035,15 @@ public static class CapabilityValidator
             errors.Add("Phase 1A-2 capabilities must not declare write or execute permission");
         }
 
+        if (manifest.CompatibilityStatus is not ("identity_observed_unverified" or "identity_incomplete"))
+        {
+            errors.Add("compatibility_status must not claim verification without indexed evidence");
+        }
+
+        ValidateBinaryIdentity("game_binary_identity", manifest.GameBinaryIdentity, errors);
+        ValidateBinaryIdentity("smapi_binary_identity", manifest.SmapiBinaryIdentity, errors);
+
+        var capabilityIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var capability in manifest.Capabilities)
         {
             if (string.IsNullOrWhiteSpace(capability.CapabilityId))
@@ -1008,13 +1051,37 @@ public static class CapabilityValidator
                 errors.Add("capability_id is required");
             }
 
-            if (capability.AccessMode == "execute" && capability.Status != "disabled")
+            else if (!capabilityIds.Add(capability.CapabilityId))
             {
-                errors.Add(capability.CapabilityId + " execute capability must be disabled");
+                errors.Add("duplicate capability_id: " + capability.CapabilityId);
+            }
+
+            if (capability.AccessMode == "execute" &&
+                capability.Status is not ("disabled" or "blocked"))
+            {
+                errors.Add(capability.CapabilityId + " execute capability must be blocked");
             }
         }
 
         return errors;
+    }
+
+    private static void ValidateBinaryIdentity(
+        string field,
+        BinaryIdentity identity,
+        ICollection<string> errors)
+    {
+        if (identity.IdentityStatus == "hash_observed" &&
+            (string.IsNullOrWhiteSpace(identity.AssemblyName) ||
+             string.IsNullOrWhiteSpace(identity.AssemblyVersion) ||
+             !Guid.TryParse(identity.Mvid, out var mvid) ||
+             mvid == Guid.Empty ||
+             identity.ByteLength is null or <= 0 ||
+             identity.Sha256.Length != 64 ||
+             identity.Sha256.Any(value => !Uri.IsHexDigit(value))))
+        {
+            errors.Add(field + " hash_observed identity is incomplete");
+        }
     }
 }
 
