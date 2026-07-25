@@ -158,6 +158,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateCollectMachineOutputPlan(action, snapshot));
             blocking.AddRange(ValidateLoadMachineInputPlan(action, snapshot));
             blocking.AddRange(ValidateCraftMachineItemPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateCraftStorageItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidatePlaceMachinePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidatePlaceStoragePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateReadBookPlan(action, snapshot));

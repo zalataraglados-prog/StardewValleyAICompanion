@@ -764,6 +764,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native CraftingPage consumes the rebound ingredient multiset", "Workbench sources acquire and release native workbench and container mutexes", "exact machine output enters player inventory", "native recipe count, quest callbacks, and achievement checks run" },
                 new[] { "block_unknown_or_unlearned_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_unowned_or_locked_workbench_container", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
+            Register(Option("executor.craft_storage_item", "farm", "Craft one verified ordinary storage item for a transparent bootstrap or exhausted-capacity demand",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.storage_crafting", "player.storage_placement", "farm.chests", "farm.material_inventory_graph", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact ordinary storage output enters player inventory", "native recipe count, quest callbacks, and achievement checks run", "the existing storage placement chain becomes eligible" },
+                new[] { "block_unknown_or_unlearned_storage_recipe", "block_existing_inventory_storage_or_available_capacity", "block_recipe_inventory_or_workbench_topology_drift", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
+
             Register(Option("executor.place_machine", "farm", "Place one verified inventory machine at one exact native-legal tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -843,7 +851,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 61;
+            const int expectedPrimitiveCount = 62;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

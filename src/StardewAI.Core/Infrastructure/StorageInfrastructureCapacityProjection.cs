@@ -220,10 +220,22 @@ public sealed class StorageInfrastructureCapacityProjection
             {
                 AccessPointId = access.AccessPointId,
                 NodeId = access.NodeId,
+                AccessKind = access.AccessKind,
                 LocationId = access.LocationId,
                 LocationKind = access.LocationKind,
                 TileX = access.TileX,
                 TileY = access.TileY,
+                QualifiedItemId = access.QualifiedItemId,
+                SpecialChestType = access.SpecialChestType,
+                IsFridge = access.IsFridge,
+                OrdinaryMaterialStorage =
+                    string.Equals(
+                        access.AccessKind,
+                        "placed_chest",
+                        StringComparison.Ordinal) &&
+                    !access.IsFridge &&
+                    access.SpecialChestType is
+                        "" or "None" or "BigChest",
                 Capacity = node.Capacity,
                 OccupiedSlotCount = occupiedSlotCount,
                 FreeStackSlotCount = Math.Max(
@@ -245,6 +257,13 @@ public sealed class StorageInfrastructureCapacityProjection
             ImmediatelyUsableFreeStackSlotCount = rows
                 .Where(row => row.ImmediatelyUsable)
                 .Sum(row => row.FreeStackSlotCount),
+            ImmediatelyUsableOrdinaryAccessPointCount = rows.Count(
+                row => row.ImmediatelyUsable &&
+                    row.OrdinaryMaterialStorage),
+            ImmediatelyUsableOrdinaryFreeStackSlotCount = rows
+                .Where(row => row.ImmediatelyUsable &&
+                    row.OrdinaryMaterialStorage)
+                .Sum(row => row.FreeStackSlotCount),
             BlockingReasons = blockingReasons
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(reason => reason, StringComparer.Ordinal)
@@ -260,6 +279,8 @@ public sealed class StorageInfrastructureCapacityResult
         Array.Empty<StorageCapacityRow>();
     public int ImmediatelyUsableAccessPointCount { get; set; }
     public int ImmediatelyUsableFreeStackSlotCount { get; set; }
+    public int ImmediatelyUsableOrdinaryAccessPointCount { get; set; }
+    public int ImmediatelyUsableOrdinaryFreeStackSlotCount { get; set; }
     public string[] BlockingReasons { get; set; } =
         Array.Empty<string>();
 }
@@ -268,10 +289,15 @@ public sealed class StorageCapacityRow
 {
     public string AccessPointId { get; set; } = string.Empty;
     public string NodeId { get; set; } = string.Empty;
+    public string AccessKind { get; set; } = string.Empty;
     public string LocationId { get; set; } = string.Empty;
     public string LocationKind { get; set; } = string.Empty;
     public int? TileX { get; set; }
     public int? TileY { get; set; }
+    public string QualifiedItemId { get; set; } = string.Empty;
+    public string SpecialChestType { get; set; } = string.Empty;
+    public bool IsFridge { get; set; }
+    public bool OrdinaryMaterialStorage { get; set; }
     public int Capacity { get; set; }
     public int OccupiedSlotCount { get; set; }
     public int FreeStackSlotCount { get; set; }
