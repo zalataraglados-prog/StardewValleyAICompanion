@@ -65,9 +65,11 @@ namespace StardewAI.Core.OptionRegistry
                 snapshot,
                 "player",
                 "location_id");
-            var machines = machinesValue.Value.EnumerateArray()
+            var allMachines = machinesValue.Value.EnumerateArray()
+                .Where(row => row.ValueKind == JsonValueKind.Object)
+                .ToArray();
+            var machines = allMachines
                 .Where(row =>
-                    row.ValueKind == JsonValueKind.Object &&
                     string.Equals(
                         MachineLocationId(row),
                         currentLocationId,
@@ -81,6 +83,9 @@ namespace StardewAI.Core.OptionRegistry
             var rows = relocationRows.EnumerateArray()
                 .Where(row => row.ValueKind == JsonValueKind.Object)
                 .ToArray();
+            var routeCandidates = RouteConnectorCandidates(
+                snapshot,
+                int.MaxValue);
             var proposals = machines
                 .Where(machine =>
                     ReadBool(machine, "removal_safe_now") == true &&
@@ -88,23 +93,51 @@ namespace StardewAI.Core.OptionRegistry
                         ReadString(machine, "removal_status"),
                         "safe_idle_native_pickaxe",
                         StringComparison.Ordinal))
-                .Select(machine => BuildMachineRelocationCandidate(
-                    snapshot,
-                    machine,
-                    machines,
-                    rows,
-                    currentLocationId,
-                    ReadString(
-                        placementValue.Value,
-                        "static_projection_fingerprint")))
+                .SelectMany(machine => new[]
+                    {
+                        BuildMachineRelocationCandidate(
+                            snapshot,
+                            machine,
+                            machines,
+                            rows,
+                            currentLocationId,
+                            ReadString(
+                                placementValue.Value,
+                                "static_projection_fingerprint"))
+                    }
+                    .Concat(
+                        BuildCrossLocationMachineRelocationCandidates(
+                            snapshot,
+                            machine,
+                            machines,
+                            allMachines,
+                            rows,
+                            currentLocationId,
+                            ReadString(
+                                placementValue.Value,
+                                "static_projection_fingerprint"),
+                            routeCandidates)))
                 .Where(candidate => candidate is not null)
                 .Select(candidate => candidate!)
+                .GroupBy(
+                    candidate => ReadParameter(
+                        candidate.Parameters,
+                        "relocation_target_location_id"),
+                    StringComparer.OrdinalIgnoreCase)
+                .Select(group => group
+                    .OrderByDescending(candidate =>
+                        ReadCandidateInt(
+                            candidate,
+                            "layout_net_benefit_ticks"))
+                    .ThenBy(
+                        candidate => candidate.CandidateId,
+                        StringComparer.Ordinal)
+                    .First())
                 .OrderByDescending(candidate =>
                     ReadCandidateInt(
                         candidate,
                         "layout_net_benefit_ticks"))
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-                .Take(1)
                 .ToArray();
             return proposals;
         }
@@ -327,7 +360,10 @@ namespace StardewAI.Core.OptionRegistry
                         netBenefitTicks.ToString()),
                     Parameter(
                         "layout_benefit_policy",
-                        "nearest_machine_service_route_over_eight_cycles")
+                        "nearest_machine_service_route_over_eight_cycles"),
+                    Parameter(
+                        "relocation_route_connector_count",
+                        "0")
                 }
             };
         }

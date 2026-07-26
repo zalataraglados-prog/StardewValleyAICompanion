@@ -66,7 +66,17 @@ public sealed class MachineRelocationIntentLedgerService
             TargetTileY = request.TargetTileY,
             MachinePlacementProjectionFingerprint =
                 request.MachinePlacementProjectionFingerprint,
-            LayoutNetBenefitTicks = request.LayoutNetBenefitTicks
+            LayoutNetBenefitTicks = request.LayoutNetBenefitTicks,
+            RouteConnectorCount = request.RouteConnectorCount,
+            RouteConnectorKind = request.RouteConnectorKind,
+            RouteEstimatedTicks = request.RouteEstimatedTicks,
+            TargetArrivalTileX = request.TargetArrivalTileX,
+            TargetArrivalTileY = request.TargetArrivalTileY,
+            LayoutRelocationCostTicks =
+                request.LayoutRelocationCostTicks,
+            LayoutBenefitPolicy = request.LayoutBenefitPolicy,
+            TargetSelectionPolicy = request.TargetSelectionPolicy,
+            TimeEstimatePolicy = request.TimeEstimatePolicy
         };
         ledger.MachineRelocationIntents =
             ledger.MachineRelocationIntents
@@ -172,19 +182,79 @@ public sealed class MachineRelocationIntentLedgerService
             errors.Add("machine_relocation_qualified_item_id_required");
         }
         if (string.IsNullOrWhiteSpace(request.SourceLocationId) ||
-            string.IsNullOrWhiteSpace(request.TargetLocationId) ||
-            !string.Equals(
-                request.SourceLocationId,
-                request.TargetLocationId,
-                StringComparison.OrdinalIgnoreCase))
+            string.IsNullOrWhiteSpace(request.TargetLocationId))
         {
             errors.Add(
-                "machine_relocation_same_map_location_required");
+                "machine_relocation_source_and_target_location_required");
+        }
+        var crossLocation = !string.Equals(
+            request.SourceLocationId,
+            request.TargetLocationId,
+            StringComparison.OrdinalIgnoreCase);
+        if ((!crossLocation && request.RouteConnectorCount != 0) ||
+            (crossLocation && request.RouteConnectorCount != 1))
+        {
+            errors.Add(
+                "machine_relocation_route_connector_count_invalid");
         }
         if (request.LayoutNetBenefitTicks <= 0)
         {
             errors.Add(
                 "machine_relocation_positive_layout_benefit_required");
+        }
+        if (crossLocation &&
+            request.LayoutRelocationCostTicks <= 0)
+        {
+            errors.Add(
+                "machine_relocation_positive_cost_required");
+        }
+        if (crossLocation &&
+            (string.IsNullOrWhiteSpace(request.RouteConnectorKind) ||
+             request.RouteEstimatedTicks < 0))
+        {
+            errors.Add(
+                "machine_relocation_route_evidence_invalid");
+        }
+        if (crossLocation &&
+            !string.Equals(
+                request.LayoutBenefitPolicy,
+                "existing_machine_cluster_one_connector_over_eight_cycles",
+                StringComparison.Ordinal))
+        {
+            errors.Add(
+                "machine_relocation_layout_benefit_policy_invalid");
+        }
+        if (crossLocation &&
+            !string.Equals(
+                request.TargetSelectionPolicy,
+                "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+                StringComparison.Ordinal))
+        {
+            errors.Add(
+                "machine_relocation_target_selection_policy_invalid");
+        }
+        if (crossLocation &&
+            !TargetIsAdjacentToResolvedConnectorArrival(
+                snapshot,
+                request.SourceLocationId,
+                request.TargetLocationId,
+                request.RouteConnectorKind,
+                request.TargetArrivalTileX,
+                request.TargetArrivalTileY,
+                request.TargetTileX,
+                request.TargetTileY))
+        {
+            errors.Add(
+                "machine_relocation_target_not_adjacent_to_resolved_connector_arrival");
+        }
+        if (crossLocation &&
+            !string.Equals(
+                request.TimeEstimatePolicy,
+                "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked",
+                StringComparison.Ordinal))
+        {
+            errors.Add(
+                "machine_relocation_time_estimate_policy_invalid");
         }
 
         var placement = ReadStateFieldValue(
@@ -302,6 +372,49 @@ public sealed class MachineRelocationIntentLedgerService
                 ReadString(machine.Value, "qualified_item_id"),
                 qualifiedItemId,
                 StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TargetIsAdjacentToResolvedConnectorArrival(
+        SnapshotEnvelope snapshot,
+        string sourceLocationId,
+        string targetLocationId,
+        string connectorKind,
+        int arrivalX,
+        int arrivalY,
+        int targetX,
+        int targetY)
+    {
+        var graph = ReadStateFieldValue(
+            snapshot,
+            "locations",
+            "route_graph");
+        if (!graph.HasValue ||
+            graph.Value.ValueKind != JsonValueKind.Object ||
+            !graph.Value.TryGetProperty("edges", out var edges) ||
+            edges.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        return edges.EnumerateArray().Any(edge =>
+            edge.ValueKind == JsonValueKind.Object &&
+            ReadBool(edge, "resolved") == true &&
+            string.Equals(
+                ReadString(edge, "from_location"),
+                sourceLocationId,
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                ReadString(edge, "target_location"),
+                targetLocationId,
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                ReadString(edge, "kind"),
+                connectorKind,
+                StringComparison.OrdinalIgnoreCase) &&
+            ReadInt(edge, "target_x") == arrivalX &&
+            ReadInt(edge, "target_y") == arrivalY &&
+            Math.Abs(targetX - arrivalX) +
+            Math.Abs(targetY - arrivalY) == 1);
     }
 
     private static JsonElement? FindMachine(

@@ -3088,3 +3088,20 @@ Result: PASS; Core 1206/1206, Backend 85/85, solution build 0 errors.
 Scope boundary:
 - This closes generic one-connector inventory-machine placement, not strategic cross-location relocation.
 - Multi-connector runtime coverage, Workbench lifecycle, special/conditional/random/custom machines, and multiplayer authorization remain pending.
+
+2026-07-26 strategic one-connector cross-location machine relocation
+
+Runtime: `artifacts\runtime-strategic-cross-location-machine-relocation-smoke\runtime-strategic-cross-location-machine-relocation-smoke-20260726-145125\summary.json`
+Result: PASS; the isolated hidden runtime retained the positive strategic Keg candidate for `FarmHouse` even though a higher-benefit same-map candidate also existed. It persisted a typed one-connector intent whose native-legal target was adjacent to the resolved connector arrival, removed `Farm 56,15` through the native Pickaxe chain, observed native auto-collection, suppressed source-map replacement, traversed the native Farm building door, refreshed the full transparent snapshot, placed the matching Keg natively at `FarmHouse 27,29`, and completed the intent with `exact_target_machine_observed`. Net benefit was 2280 ticks; source/recovered/final state hashes were all distinct.
+
+Commands:
+- `dotnet build StardewValleyAICompanion.sln --no-restore --nologo --verbosity minimal`
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-build --no-restore --nologo --verbosity minimal`
+- `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-build --no-restore --nologo --verbosity minimal`
+Result: PASS; Core 1211/1211, Backend 86/86, solution build 0 errors. The build retained five pre-existing deprecation/analyzer warnings.
+
+Scope boundary:
+- Ordinary positive-benefit relocation on one map, plus arrival-adjacent relocation across one resolved connector, is closed for the base native idle-machine path.
+- Deeper target-map relocation requires transparent remote path projection before commitment.
+- Multi-connector relocation remains fail closed.
+- Special/conditional/random/custom machines, Workbench lifecycle, target-map topology drift after commitment, and multiplayer ownership/sharing remain pending.

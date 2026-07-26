@@ -135,6 +135,16 @@ internal static class StrategyCommitmentLedgerSupport
             MachinePlacementProjectionFingerprint =
                 row.MachinePlacementProjectionFingerprint,
             LayoutNetBenefitTicks = row.LayoutNetBenefitTicks,
+            RouteConnectorCount = row.RouteConnectorCount,
+            RouteConnectorKind = row.RouteConnectorKind,
+            RouteEstimatedTicks = row.RouteEstimatedTicks,
+            TargetArrivalTileX = row.TargetArrivalTileX,
+            TargetArrivalTileY = row.TargetArrivalTileY,
+            LayoutRelocationCostTicks =
+                row.LayoutRelocationCostTicks,
+            LayoutBenefitPolicy = row.LayoutBenefitPolicy,
+            TargetSelectionPolicy = row.TargetSelectionPolicy,
+            TimeEstimatePolicy = row.TimeEstimatePolicy,
             CompletionReason = row.CompletionReason
         };
 

@@ -665,28 +665,47 @@ public sealed partial class ModEntry : Mod
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var farm = Game1.getFarm();
-        Game1.currentLocation = farm;
-        Game1.player.currentLocation = farm;
+        var locationId = string.IsNullOrWhiteSpace(request.LocationId)
+            ? "Farm"
+            : request.LocationId;
+        var location = Game1.getLocationFromName(locationId);
+        if (location is null)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_input_target",
+                "location.machines[target].loadable_inputs.length>0",
+                "location_id=" + locationId,
+                "fixture_location_not_found");
+        }
+        Game1.currentLocation = location;
+        Game1.player.currentLocation = location;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var tile = new Vector2(target.X, target.Y);
         var inputItemId = string.IsNullOrWhiteSpace(request.QualifiedItemId)
             ? QualifyObjectId(string.IsNullOrWhiteSpace(request.ShopItemId) ? "262" : request.ShopItemId)
             : request.QualifiedItemId;
-        var beforeMachine = MachineObservedEffect(farm, target);
-        farm.objects.Remove(tile);
+        var beforeMachine = MachineObservedEffect(location, target);
+        location.objects.Remove(tile);
 
         var machine = new StardewValley.Object(tile, string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "12" : request.ExpectedShopId);
         machine.MinutesUntilReady = -1;
         machine.readyForHarvest.Value = false;
         machine.heldObject.Value = null;
-        farm.objects[tile] = machine;
+        location.objects[tile] = machine;
         var inputSlot = EnsureInventoryItem(inputItemId, Math.Max(1, request.Quantity ?? 1));
-        MoveFixtureFarmerToFarmAdjacent(target);
+        MoveFixtureFarmerToLocationAdjacent(
+            location,
+            target,
+            out var stand,
+            out var moveReason);
 
         var input = inputSlot >= 0 ? Game1.player.Items[inputSlot] : null;
         var accepts = input is not null && machine.performObjectDropInAction(input, probe: true, Game1.player);
-        var verified = MachineAt(farm, target) is not null && inputSlot >= 0 && accepts;
+        var verified = MachineAt(location, target) is not null &&
+            inputSlot >= 0 &&
+            accepts &&
+            Game1.player.TilePoint == stand;
         RefreshTransparentMachineProbeCache();
         return new TrainingExecutionResult
         {
@@ -702,19 +721,19 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "debug_setup_machine_input_target",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot }
-                : new[] { "fixture_machine_input_probe_rejected", "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot },
-            RequestedEffect = "farm.machines[" + target.X + "," + target.Y + "].loadable_inputs.length>0;qualified_item_id=" + inputItemId,
-            ObservedEffect = MachineObservedEffect(farm, target) + ";input_slot_index=" + inputSlot + ";input_probe_accepts=" + accepts.ToString().ToLowerInvariant(),
+                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot }
+                : new[] { "fixture_machine_input_probe_rejected", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, moveReason },
+            RequestedEffect = "location.machines[" + locationId + ":" + target.X + "," + target.Y + "].loadable_inputs.length>0;qualified_item_id=" + inputItemId,
+            ObservedEffect = MachineObservedEffect(location, target) + ";location_id=" + locationId + ";stand_tile=" + stand.X + "," + stand.Y + ";input_slot_index=" + inputSlot + ";input_probe_accepts=" + accepts.ToString().ToLowerInvariant(),
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_input_probe_rejected" },
             ChangedFacts = verified
                 ? new[]
                 {
                     new SimulatedFactChange
                     {
-                        Path = "farm.machines[" + target.X + "," + target.Y + "]",
+                        Path = "locations[" + locationId + "].machines[" + target.X + "," + target.Y + "]",
                         Before = beforeMachine,
-                        After = MachineObservedEffect(farm, target)
+                        After = MachineObservedEffect(location, target)
                     },
                     new SimulatedFactChange
                     {

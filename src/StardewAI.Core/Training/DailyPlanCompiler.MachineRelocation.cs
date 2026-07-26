@@ -55,6 +55,12 @@ namespace StardewAI.Core.Training
                 "relocation_target_tile_y",
                 "relocation_target_stand_tile_x",
                 "relocation_target_stand_tile_y",
+                "relocation_route_connector_count",
+                "relocation_route_connector_kind",
+                "relocation_route_expected_target_location",
+                "relocation_route_estimated_ticks",
+                "relocation_target_arrival_tile_x",
+                "relocation_target_arrival_tile_y",
                 "layout_current_cluster_distance",
                 "layout_target_cluster_distance",
                 "layout_service_interactions_per_cycle",
@@ -63,7 +69,9 @@ namespace StardewAI.Core.Training
                 "layout_evaluation_cycles",
                 "layout_break_even_cycles",
                 "layout_net_benefit_ticks",
-                "layout_benefit_policy"
+                "layout_benefit_policy",
+                "relocation_target_selection_policy",
+                "layout_time_estimate_policy"
             })
             {
                 var value = CandidateParameter(candidate, name);

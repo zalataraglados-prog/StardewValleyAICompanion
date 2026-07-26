@@ -60,7 +60,35 @@ public static class MachineRelocationIntentPlanBinder
                 "machine_placement_projection_fingerprint"),
             LayoutNetBenefitTicks = IntParameter(
                 step,
-                "layout_net_benefit_ticks")
+                "layout_net_benefit_ticks"),
+            RouteConnectorCount = IntParameter(
+                step,
+                "relocation_route_connector_count",
+                0),
+            RouteConnectorKind = Parameter(
+                step,
+                "relocation_route_connector_kind"),
+            RouteEstimatedTicks = IntParameter(
+                step,
+                "relocation_route_estimated_ticks"),
+            TargetArrivalTileX = IntParameter(
+                step,
+                "relocation_target_arrival_tile_x"),
+            TargetArrivalTileY = IntParameter(
+                step,
+                "relocation_target_arrival_tile_y"),
+            LayoutRelocationCostTicks = IntParameter(
+                step,
+                "layout_relocation_cost_ticks"),
+            LayoutBenefitPolicy = Parameter(
+                step,
+                "layout_benefit_policy"),
+            TargetSelectionPolicy = Parameter(
+                step,
+                "relocation_target_selection_policy"),
+            TimeEstimatePolicy = Parameter(
+                step,
+                "layout_time_estimate_policy")
         };
         return repository.UpsertMachineRelocation(snapshot, request);
     }
@@ -77,11 +105,12 @@ public static class MachineRelocationIntentPlanBinder
 
     private static int IntParameter(
         SmallModelPlanStep step,
-        string name)
+        string name,
+        int fallback = int.MinValue)
     {
         return int.TryParse(Parameter(step, name), out var value)
             ? value
-            : int.MinValue;
+            : fallback;
     }
 
     private static string Parameter(

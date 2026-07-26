@@ -133,6 +133,7 @@ namespace StardewAI.Core.Training
                 "continuation.machine_inventory_slot_index",
                 "continuation.machine_qualified_item_id",
                 "continuation.machine_item_id",
+                "continuation.relocation_intent_id",
                 "continuation.storage_location_id",
                 "continuation.storage_inventory_slot_index",
                 "continuation.storage_qualified_item_id",

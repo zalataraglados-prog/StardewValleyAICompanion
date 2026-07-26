@@ -88,7 +88,10 @@ public static class QueueReplanFilter
                     machinePlacementQualifiedItemId,
                 ["machine_item_id"] = ReadParameter(
                     queueItem,
-                    "continuation.machine_item_id")
+                    "continuation.machine_item_id"),
+                ["relocation_intent_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.relocation_intent_id")
             };
         }
 
@@ -442,6 +445,9 @@ public static class QueueReplanFilter
         var qualifiedItemId = ReadString(
             candidate,
             "qualified_item_id");
+        var relocationIntentId = ReadCandidateParameter(
+            candidate,
+            "relocation_intent_id");
         if (string.Equals(
                 kind,
                 "route_connector_tile",
@@ -456,6 +462,9 @@ public static class QueueReplanFilter
             qualifiedItemId = ReadCandidateParameter(
                 candidate,
                 "continuation.machine_qualified_item_id");
+            relocationIntentId = ReadCandidateParameter(
+                candidate,
+                "continuation.relocation_intent_id");
         }
         else if (!string.Equals(
                      kind,
@@ -482,6 +491,22 @@ public static class QueueReplanFilter
                 ReadString(
                     continuation,
                     "machine_qualified_item_id"),
+                StringComparison.Ordinal) &&
+            OptionalValueMatches(
+                relocationIntentId,
+                ReadString(
+                    continuation,
+                    "relocation_intent_id"));
+    }
+
+    private static bool OptionalValueMatches(
+        string actual,
+        string expected)
+    {
+        return string.IsNullOrWhiteSpace(expected) ||
+            string.Equals(
+                actual,
+                expected,
                 StringComparison.Ordinal);
     }
 

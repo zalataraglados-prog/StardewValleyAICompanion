@@ -50,6 +50,33 @@ public sealed class MachineRelocationIntent
     [JsonPropertyName("layout_net_benefit_ticks")]
     public int LayoutNetBenefitTicks { get; set; }
 
+    [JsonPropertyName("route_connector_count")]
+    public int RouteConnectorCount { get; set; }
+
+    [JsonPropertyName("route_connector_kind")]
+    public string RouteConnectorKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("route_estimated_ticks")]
+    public int RouteEstimatedTicks { get; set; }
+
+    [JsonPropertyName("target_arrival_tile_x")]
+    public int TargetArrivalTileX { get; set; }
+
+    [JsonPropertyName("target_arrival_tile_y")]
+    public int TargetArrivalTileY { get; set; }
+
+    [JsonPropertyName("layout_relocation_cost_ticks")]
+    public int LayoutRelocationCostTicks { get; set; }
+
+    [JsonPropertyName("layout_benefit_policy")]
+    public string LayoutBenefitPolicy { get; set; } = string.Empty;
+
+    [JsonPropertyName("target_selection_policy")]
+    public string TargetSelectionPolicy { get; set; } = string.Empty;
+
+    [JsonPropertyName("time_estimate_policy")]
+    public string TimeEstimatePolicy { get; set; } = string.Empty;
+
     [JsonPropertyName("completion_reason")]
     public string CompletionReason { get; set; } = string.Empty;
 }
@@ -98,4 +125,31 @@ public sealed class MachineRelocationIntentUpsertRequest
 
     [JsonPropertyName("layout_net_benefit_ticks")]
     public int LayoutNetBenefitTicks { get; set; }
+
+    [JsonPropertyName("route_connector_count")]
+    public int RouteConnectorCount { get; set; }
+
+    [JsonPropertyName("route_connector_kind")]
+    public string RouteConnectorKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("route_estimated_ticks")]
+    public int RouteEstimatedTicks { get; set; }
+
+    [JsonPropertyName("target_arrival_tile_x")]
+    public int TargetArrivalTileX { get; set; }
+
+    [JsonPropertyName("target_arrival_tile_y")]
+    public int TargetArrivalTileY { get; set; }
+
+    [JsonPropertyName("layout_relocation_cost_ticks")]
+    public int LayoutRelocationCostTicks { get; set; }
+
+    [JsonPropertyName("layout_benefit_policy")]
+    public string LayoutBenefitPolicy { get; set; } = string.Empty;
+
+    [JsonPropertyName("target_selection_policy")]
+    public string TargetSelectionPolicy { get; set; } = string.Empty;
+
+    [JsonPropertyName("time_estimate_policy")]
+    public string TimeEstimatePolicy { get; set; } = string.Empty;
 }

@@ -48,13 +48,13 @@ public sealed partial class PlayerReadAdapter
         var locations = MachineLocationTopology.ReadPersistentLocations(farm, player);
         var currentLocationId =
             Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
-        var relocationLocations = locations
+        var relocationSourceLocations = locations
             .Where(location => string.Equals(
                 location.Location.NameOrUniqueName,
                 currentLocationId,
                 StringComparison.OrdinalIgnoreCase))
             .ToArray();
-        var relocationMachines = relocationLocations
+        var relocationMachines = relocationSourceLocations
             .SelectMany(location => location.Location.objects.Pairs
                 .Where(pair => pair.Value.bigCraftable.Value &&
                     pair.Value.GetMachineData() is not null &&
@@ -68,6 +68,17 @@ public sealed partial class PlayerReadAdapter
                     (machine.GetType().FullName ?? machine.GetType().Name),
                 StringComparer.Ordinal)
             .Select(group => group.First())
+            .ToArray();
+        var relocationLocations = locations
+            .Where(location =>
+                string.Equals(
+                    location.Location.NameOrUniqueName,
+                    currentLocationId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                (location.IsPlayerControlled &&
+                 location.Location.objects.Pairs.Any(pair =>
+                     pair.Value.bigCraftable.Value &&
+                     pair.Value.GetMachineData() is not null)))
             .ToArray();
         var fingerprint = MachinePlacementFingerprint(
             inventoryMachines,
@@ -103,7 +114,7 @@ public sealed partial class PlayerReadAdapter
             inventory_machine_count = inventoryMachines.Length,
             relocation_machine_type_count = relocationRows.Length,
             relocation_location_id = currentLocationId,
-            relocation_scope = "current_loaded_location_only_cross_location_relocation_pending",
+            relocation_scope = "current_source_plus_player_controlled_existing_machine_clusters",
             location_count = locations.Length,
             static_projection_fingerprint = fingerprint,
             static_projection_tick = unchecked((long)Game1.ticks),
