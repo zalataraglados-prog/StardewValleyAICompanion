@@ -61,6 +61,15 @@ public sealed class MachineRelocationIntentPlanBinderTests
                             "relocation_target_arrival_tile_y",
                             "30"),
                         Parameter(
+                            "relocation_target_stand_tile_x",
+                            "31"),
+                        Parameter(
+                            "relocation_target_stand_tile_y",
+                            "30"),
+                        Parameter(
+                            "relocation_target_route_distance_tiles",
+                            "4"),
+                        Parameter(
                             "layout_relocation_cost_ticks",
                             "1620"),
                         Parameter(
@@ -68,10 +77,10 @@ public sealed class MachineRelocationIntentPlanBinderTests
                             "existing_machine_cluster_one_connector_over_eight_cycles"),
                         Parameter(
                             "relocation_target_selection_policy",
-                            "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked"),
+                            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
                         Parameter(
                             "layout_time_estimate_policy",
-                            "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked")
+                            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked")
                     }
                 }
             }
@@ -95,15 +104,18 @@ public sealed class MachineRelocationIntentPlanBinderTests
         Assert.Equal(1200, request.RouteEstimatedTicks);
         Assert.Equal(27, request.TargetArrivalTileX);
         Assert.Equal(30, request.TargetArrivalTileY);
+        Assert.Equal(31, request.TargetStandTileX);
+        Assert.Equal(30, request.TargetStandTileY);
+        Assert.Equal(4, request.TargetRouteDistanceTiles);
         Assert.Equal(1620, request.LayoutRelocationCostTicks);
         Assert.Equal(
             "existing_machine_cluster_one_connector_over_eight_cycles",
             request.LayoutBenefitPolicy);
         Assert.Equal(
-            "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             request.TargetSelectionPolicy);
         Assert.Equal(
-            "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked",
+            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked",
             request.TimeEstimatePolicy);
     }
 

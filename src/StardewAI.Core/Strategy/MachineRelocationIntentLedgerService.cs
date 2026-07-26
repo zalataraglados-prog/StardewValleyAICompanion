@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
@@ -72,6 +73,10 @@ public sealed class MachineRelocationIntentLedgerService
             RouteEstimatedTicks = request.RouteEstimatedTicks,
             TargetArrivalTileX = request.TargetArrivalTileX,
             TargetArrivalTileY = request.TargetArrivalTileY,
+            TargetStandTileX = request.TargetStandTileX,
+            TargetStandTileY = request.TargetStandTileY,
+            TargetRouteDistanceTiles =
+                request.TargetRouteDistanceTiles,
             LayoutRelocationCostTicks =
                 request.LayoutRelocationCostTicks,
             LayoutBenefitPolicy = request.LayoutBenefitPolicy,
@@ -227,30 +232,34 @@ public sealed class MachineRelocationIntentLedgerService
         if (crossLocation &&
             !string.Equals(
                 request.TargetSelectionPolicy,
-                "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
                 StringComparison.Ordinal))
         {
             errors.Add(
                 "machine_relocation_target_selection_policy_invalid");
         }
         if (crossLocation &&
-            !TargetIsAdjacentToResolvedConnectorArrival(
+            !ResolvedConnectorMatches(
                 snapshot,
                 request.SourceLocationId,
                 request.TargetLocationId,
                 request.RouteConnectorKind,
                 request.TargetArrivalTileX,
-                request.TargetArrivalTileY,
-                request.TargetTileX,
-                request.TargetTileY))
+                request.TargetArrivalTileY))
         {
             errors.Add(
-                "machine_relocation_target_not_adjacent_to_resolved_connector_arrival");
+                "machine_relocation_resolved_connector_drifted");
+        }
+        if (crossLocation &&
+            !TargetHasProvenReachableStand(snapshot, request))
+        {
+            errors.Add(
+                "machine_relocation_target_route_projection_invalid");
         }
         if (crossLocation &&
             !string.Equals(
                 request.TimeEstimatePolicy,
-                "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked",
+                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked",
                 StringComparison.Ordinal))
         {
             errors.Add(
@@ -374,15 +383,13 @@ public sealed class MachineRelocationIntentLedgerService
                 StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool TargetIsAdjacentToResolvedConnectorArrival(
+    private static bool ResolvedConnectorMatches(
         SnapshotEnvelope snapshot,
         string sourceLocationId,
         string targetLocationId,
         string connectorKind,
         int arrivalX,
-        int arrivalY,
-        int targetX,
-        int targetY)
+        int arrivalY)
     {
         var graph = ReadStateFieldValue(
             snapshot,
@@ -412,9 +419,38 @@ public sealed class MachineRelocationIntentLedgerService
                 connectorKind,
                 StringComparison.OrdinalIgnoreCase) &&
             ReadInt(edge, "target_x") == arrivalX &&
-            ReadInt(edge, "target_y") == arrivalY &&
-            Math.Abs(targetX - arrivalX) +
-            Math.Abs(targetY - arrivalY) == 1);
+            ReadInt(edge, "target_y") == arrivalY);
+    }
+
+    private static bool TargetHasProvenReachableStand(
+        SnapshotEnvelope snapshot,
+        MachineRelocationIntentUpsertRequest request)
+    {
+        if (request.TargetRouteDistanceTiles < 0 ||
+            Math.Abs(
+                request.TargetTileX -
+                request.TargetStandTileX) +
+            Math.Abs(
+                request.TargetTileY -
+                request.TargetStandTileY) != 1)
+        {
+            return false;
+        }
+
+        var reachability =
+            MachineRelocationReachabilityProjectionReader.Read(
+                snapshot,
+                request.TargetLocationId,
+                request.TargetArrivalTileX,
+                request.TargetArrivalTileY);
+        return reachability is not null &&
+            reachability.TryGetProvenDistanceAvoiding(
+                request.TargetStandTileX,
+                request.TargetStandTileY,
+                request.TargetTileX,
+                request.TargetTileY,
+                out var distance) &&
+            distance == request.TargetRouteDistanceTiles;
     }
 
     private static JsonElement? FindMachine(

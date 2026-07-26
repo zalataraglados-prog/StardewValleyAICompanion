@@ -77,6 +77,15 @@ public static class MachineRelocationIntentPlanBinder
             TargetArrivalTileY = IntParameter(
                 step,
                 "relocation_target_arrival_tile_y"),
+            TargetStandTileX = IntParameter(
+                step,
+                "relocation_target_stand_tile_x"),
+            TargetStandTileY = IntParameter(
+                step,
+                "relocation_target_stand_tile_y"),
+            TargetRouteDistanceTiles = IntParameter(
+                step,
+                "relocation_target_route_distance_tiles"),
             LayoutRelocationCostTicks = IntParameter(
                 step,
                 "layout_relocation_cost_ticks"),

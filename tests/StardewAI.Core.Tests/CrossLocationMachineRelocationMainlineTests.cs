@@ -43,16 +43,25 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                 candidate.Parameters,
                 "layout_benefit_policy"));
         Assert.Equal(
-            "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             Parameter(
                 candidate.Parameters,
                 "relocation_target_selection_policy"));
-        Assert.Equal(27, int.Parse(Parameter(
+        Assert.Equal(31, int.Parse(Parameter(
             candidate.Parameters,
             "relocation_target_tile_x")));
         Assert.Equal(29, int.Parse(Parameter(
             candidate.Parameters,
             "relocation_target_tile_y")));
+        Assert.Equal(31, int.Parse(Parameter(
+            candidate.Parameters,
+            "relocation_target_stand_tile_x")));
+        Assert.Equal(30, int.Parse(Parameter(
+            candidate.Parameters,
+            "relocation_target_stand_tile_y")));
+        Assert.Equal(4, int.Parse(Parameter(
+            candidate.Parameters,
+            "relocation_target_route_distance_tiles")));
         Assert.True(
             int.Parse(Parameter(
                 candidate.Parameters,
@@ -78,6 +87,11 @@ public sealed class CrossLocationMachineRelocationMainlineTests
             Parameter(
                 removalStep.Parameters,
                 "relocation_target_location_id"));
+        Assert.Equal(
+            "4",
+            Parameter(
+                removalStep.Parameters,
+                "relocation_target_route_distance_tiles"));
     }
 
     [Fact]
@@ -176,6 +190,46 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                 .ToArray());
     }
 
+    [Fact]
+    public void ExcludesCrossLocationCandidateWhenDeepTargetIsUnreachable()
+    {
+        var snapshot = Snapshot(
+            "Farm",
+            sourcePresent: true,
+            inventoryMachine: false,
+            targetReachable: false);
+
+        Assert.DoesNotContain(
+            Evaluate(snapshot, Ledger())
+                .Options[0]
+                .EventCandidates,
+            row => row.Kind == "relocate_machine_item" &&
+                Parameter(
+                    row.Parameters,
+                    "relocation_target_location_id") ==
+                    "FarmHouse");
+    }
+
+    [Fact]
+    public void ExcludesCrossLocationCandidateWhenReachabilityCountDrifts()
+    {
+        var snapshot = Snapshot(
+            "Farm",
+            sourcePresent: true,
+            inventoryMachine: false,
+            malformedReachabilityCount: true);
+
+        Assert.DoesNotContain(
+            Evaluate(snapshot, Ledger())
+                .Options[0]
+                .EventCandidates,
+            row => row.Kind == "relocate_machine_item" &&
+                Parameter(
+                    row.Parameters,
+                    "relocation_target_location_id") ==
+                    "FarmHouse");
+    }
+
     private static OptionAvailabilityEnvelope Evaluate(
         SnapshotEnvelope snapshot,
         StrategyCommitmentLedger ledger) =>
@@ -242,12 +296,21 @@ public sealed class CrossLocationMachineRelocationMainlineTests
             TargetArrivalTileY = int.Parse(Parameter(
                 candidate.Parameters,
                 "relocation_target_arrival_tile_y")),
+            TargetStandTileX = int.Parse(Parameter(
+                candidate.Parameters,
+                "relocation_target_stand_tile_x")),
+            TargetStandTileY = int.Parse(Parameter(
+                candidate.Parameters,
+                "relocation_target_stand_tile_y")),
+            TargetRouteDistanceTiles = int.Parse(Parameter(
+                candidate.Parameters,
+                "relocation_target_route_distance_tiles")),
             LayoutBenefitPolicy =
                 "existing_machine_cluster_one_connector_over_eight_cycles",
             TargetSelectionPolicy =
-                "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             TimeEstimatePolicy =
-                "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked"
+                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked"
         };
 
     private static StrategyCommitmentLedger Ledger(
@@ -262,7 +325,9 @@ public sealed class CrossLocationMachineRelocationMainlineTests
         string currentLocation,
         bool sourcePresent,
         bool inventoryMachine,
-        bool sameLocationBenefit = false)
+        bool sameLocationBenefit = false,
+        bool targetReachable = true,
+        bool malformedReachabilityCount = false)
     {
         var farmStaticRanges = sameLocationBenefit
             ? """[{"y":5,"start_x":6,"end_x":7}]"""
@@ -302,8 +367,8 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                     "placement_probe_status":"native_legal_tiles_available",
                     "map_width":80,
                     "map_height":40,
-                    "static_legal_tile_count":2,
-                    "static_legal_tile_ranges":[{"y":29,"start_x":27,"end_x":28}]
+                    "static_legal_tile_count":1,
+                    "static_legal_tile_ranges":[{"y":29,"start_x":31,"end_x":31}]
                   }
                 ]
               }]
@@ -366,11 +431,23 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                     "placement_probe_status":"native_legal_tiles_available",
                     "map_width":80,
                     "map_height":40,
-                    "static_legal_tile_count":2,
-                    "static_legal_tile_ranges":[{"y":29,"start_x":27,"end_x":28}]
+                    "static_legal_tile_count":1,
+                    "static_legal_tile_ranges":[{"y":29,"start_x":31,"end_x":31}]
                   }
                 ]
-              }]
+              }],
+              "relocation_route_reachability":{
+                "schema_version":"machine_relocation_route_reachability.v1",
+                "projection_status":"complete_static_native_walkability_for_relocation_scope",
+                "locations":[{
+                  "location_id":"FarmHouse",
+                  "projection_status":"native_static_walkable_tiles_available",
+                  "map_width":80,
+                  "map_height":40,
+                  "static_walkable_tile_count":TARGET_REACHABILITY_COUNT,
+                  "static_walkable_tile_ranges":TARGET_REACHABILITY_RANGES
+                }]
+              }
             },"status":"available"}
           },
           "farm":{
@@ -438,6 +515,29 @@ public sealed class CrossLocationMachineRelocationMainlineTests
         .Replace("PLACEMENT_ROWS", placementRows)
         .Replace("FARM_STATIC_RANGES", farmStaticRanges)
         .Replace("SOURCE_MACHINE", sourceMachine)
+        .Replace(
+            "TARGET_REACHABILITY_RANGES",
+            targetReachable
+                ? """
+                  [
+                    {"y":29,"start_x":27,"end_x":28},
+                    {"y":29,"start_x":31,"end_x":31},
+                    {"y":30,"start_x":27,"end_x":31}
+                  ]
+                  """
+                : """
+                  [
+                    {"y":29,"start_x":31,"end_x":31},
+                    {"y":30,"start_x":27,"end_x":27}
+                  ]
+                  """)
+        .Replace(
+            "TARGET_REACHABILITY_COUNT",
+            malformedReachabilityCount
+                ? "7"
+                : targetReachable
+                    ? "8"
+                    : "2")
         .Replace(
             "CONNECTORS",
             currentLocation == "Farm"

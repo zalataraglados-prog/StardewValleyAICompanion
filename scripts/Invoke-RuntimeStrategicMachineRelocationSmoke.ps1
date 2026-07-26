@@ -691,21 +691,34 @@ try {
     $targetArrivalY = [int](Candidate-Parameter `
         -Candidate $relocationCandidate `
         -Name "relocation_target_arrival_tile_y")
+    $targetStandX = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_target_stand_tile_x")
+    $targetStandY = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_target_stand_tile_y")
+    $targetRouteDistanceTiles = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_target_route_distance_tiles")
     if ([string]::IsNullOrWhiteSpace($intentId) -or
         $netBenefit -le 0) {
         throw "Strategic candidate lacked a positive typed intent."
     }
     if ($targetSelectionPolicy -ne
-            "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked" -or
+            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked" -or
         [string]::IsNullOrWhiteSpace($routeConnectorKind) -or
         $routeEstimatedTicks -lt 0 -or
         $timeEstimatePolicy -ne
-            "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked" -or
-        ([Math]::Abs($targetX - $targetArrivalX) +
-            [Math]::Abs($targetY - $targetArrivalY)) -ne 1) {
+            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked" -or
+        $targetRouteDistanceTiles -lt 0 -or
+        ([Math]::Abs($targetX - $targetStandX) +
+            [Math]::Abs($targetY - $targetStandY)) -ne 1 -or
+        $targetRouteDistanceTiles -lt
+            ([Math]::Abs($targetStandX - $targetArrivalX) +
+             [Math]::Abs($targetStandY - $targetArrivalY))) {
         throw (
-            "Strategic candidate lacked a proven arrival-adjacent " +
-            "target selection."
+            "Strategic candidate lacked a proven static-BFS target " +
+            "route and adjacent stand."
         )
     }
 
@@ -1030,6 +1043,8 @@ try {
         layout_net_benefit_ticks = $netBenefit
         target_selection_policy = $targetSelectionPolicy
         target_arrival_tile = "$targetArrivalX,$targetArrivalY"
+        target_stand_tile = "$targetStandX,$targetStandY"
+        target_route_distance_tiles = $targetRouteDistanceTiles
         route_connector_kind = $routeConnectorKind
         route_estimated_ticks = $routeEstimatedTicks
         time_estimate_policy = $timeEstimatePolicy
