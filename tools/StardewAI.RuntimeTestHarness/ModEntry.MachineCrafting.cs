@@ -115,6 +115,31 @@ public sealed partial class ModEntry
         farm.objects.Remove(targetVector);
         farm.terrainFeatures.Remove(targetVector);
 
+        var usesWorkbench = string.Equals(
+            request.CraftingSource,
+            "native_workbench_crafting_menu",
+            StringComparison.Ordinal);
+        WorkbenchMachineLifecycleFixture? workbenchFixture = null;
+        if (usesWorkbench)
+        {
+            workbenchFixture =
+                SetupWorkbenchMachineLifecycleFixture(
+                    request,
+                    farm,
+                    target,
+                    recipe,
+                    out var workbenchReason);
+            if (workbenchFixture is null)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_lifecycle_target",
+                    "target_machine_fleet=empty;workbench_recipe_materials=ready",
+                    "workbench=" + workbenchReason,
+                    "machine_lifecycle_workbench_fixture_invalid");
+            }
+        }
+
         var additionalRows = ParseMachineLifecycleAdditionalItems(
             request.ProcessAdditionalItemsJson,
             out var additionalParseReason);
@@ -156,23 +181,49 @@ public sealed partial class ModEntry
                     StringComparison.OrdinalIgnoreCase))
                 .Sum(row => row.Quantity);
             var totalRequired = checked(
-                ingredient.Value +
                 processReserve +
                 additionalReserve);
-            var slot = EnsureInventoryItem(
-                qualifiedId,
-                totalRequired);
-            if (slot < 0)
+            if (usesWorkbench)
             {
-                return BlockedWithPrimitive(
-                    request,
-                    "debug_setup_machine_lifecycle_target",
-                    "target_machine_fleet=empty;recipe_and_process_materials=ready",
-                    "requirement=" + qualifiedId,
-                    "machine_lifecycle_fixture_inventory_full");
+                workbenchFixture!.Chest.Items.Add(
+                    ItemRegistry.Create(
+                        qualifiedId,
+                        ingredient.Value));
+                ingredientSlots.Add(
+                    workbenchFixture.ChestNodeId +
+                    ":" + qualifiedId + ":" + ingredient.Value);
+                if (totalRequired > 0 &&
+                    EnsureInventoryItem(
+                        qualifiedId,
+                        totalRequired) < 0)
+                {
+                    return BlockedWithPrimitive(
+                        request,
+                        "debug_setup_machine_lifecycle_target",
+                        "target_machine_fleet=empty;workbench_recipe_materials=ready",
+                        "process_requirement=" + qualifiedId,
+                        "machine_lifecycle_fixture_inventory_full");
+                }
             }
-            ingredientSlots.Add(
-                qualifiedId + "@" + slot + ":" + totalRequired);
+            else
+            {
+                totalRequired = checked(
+                    ingredient.Value + totalRequired);
+                var slot = EnsureInventoryItem(
+                    qualifiedId,
+                    totalRequired);
+                if (slot < 0)
+                {
+                    return BlockedWithPrimitive(
+                        request,
+                        "debug_setup_machine_lifecycle_target",
+                        "target_machine_fleet=empty;recipe_and_process_materials=ready",
+                        "requirement=" + qualifiedId,
+                        "machine_lifecycle_fixture_inventory_full");
+                }
+                ingredientSlots.Add(
+                    qualifiedId + "@" + slot + ":" + totalRequired);
+            }
         }
 
         var processAdditionalReserve = additionalRows
@@ -217,7 +268,12 @@ public sealed partial class ModEntry
             placedAfter == 0 &&
             inventoryAfter == 0 &&
             processInputSlot >= 0 &&
-            recipe.doesFarmerHaveIngredientsInInventory() &&
+            (usesWorkbench
+                ? workbenchFixture is not null &&
+                  WorkbenchFixtureHasRecipeIngredients(
+                      recipe,
+                      workbenchFixture.Chest)
+                : recipe.doesFarmerHaveIngredientsInInventory()) &&
             Game1.player.couldInventoryAcceptThisItem(machinePreview) &&
             moved &&
             ReferenceEquals(Game1.currentLocation, farm) &&
@@ -244,7 +300,9 @@ public sealed partial class ModEntry
                     "all_loaded_target_machine_instances_removed",
                     "target_machine_inventory_count_zero",
                     "learned_native_recipe_preserved",
-                    "exact_recipe_ingredients_available",
+                    usesWorkbench
+                        ? "exact_recipe_ingredients_available_in_native_workbench_chest"
+                        : "exact_recipe_ingredients_available_in_player_inventory",
                     "process_input_and_additional_items_available",
                     "target_tile_cleared",
                     "player_moved_adjacent",
@@ -253,7 +311,11 @@ public sealed partial class ModEntry
                     "process_input_slot_index=" + processInputSlot,
                     "stand_tile=" + stand.X + "," + stand.Y,
                     "ingredient_slots=" + string.Join(",", ingredientSlots),
-                    "additional_slots=" + string.Join(",", additionalSlots)
+                    "additional_slots=" + string.Join(",", additionalSlots),
+                    usesWorkbench && workbenchFixture is not null
+                        ? "workbench_access_point_id=" +
+                          workbenchFixture.AccessPointId
+                        : "crafting_source=native_personal_crafting_menu"
                 }
                 : new[]
                 {
@@ -262,7 +324,12 @@ public sealed partial class ModEntry
                     processInputSlot >= 0
                         ? "process_input_available"
                         : "process_input_unavailable",
-                    recipe.doesFarmerHaveIngredientsInInventory()
+                    (usesWorkbench
+                        ? workbenchFixture is not null &&
+                          WorkbenchFixtureHasRecipeIngredients(
+                              recipe,
+                              workbenchFixture.Chest)
+                        : recipe.doesFarmerHaveIngredientsInInventory())
                         ? "recipe_ingredients_available"
                         : "recipe_ingredients_unavailable",
                     moved ? "player_moved_adjacent" : moveReason
@@ -278,6 +345,16 @@ public sealed partial class ModEntry
                 ";inventory_machine_count_before=" + inventoryBefore +
                 ";inventory_machine_count_after=" + inventoryAfter +
                 ";process_input_slot_index=" + processInputSlot +
+                ";crafting_source=" + (
+                    usesWorkbench
+                        ? "native_workbench_crafting_menu"
+                        : "native_personal_crafting_menu") +
+                (workbenchFixture is null
+                    ? string.Empty
+                    : ";workbench_access_point_id=" +
+                      workbenchFixture.AccessPointId +
+                      ";workbench_container_node_id=" +
+                      workbenchFixture.ChestNodeId) +
                 ";target_tile=" + target.X + "," + target.Y +
                 ";stand_tile=" + stand.X + "," + stand.Y,
             BlockReasons = verified

@@ -20,11 +20,19 @@ param(
     [int] $ProcessInputQuantity = 5,
     [string] $ProcessAdditionalItemsJson =
         '[{"qualified_item_id":"(O)382","quantity":1}]',
+    [switch] $UseWorkbench,
+    [int] $WorkbenchTileX = 55,
+    [int] $WorkbenchTileY = 15,
+    [string] $WorkbenchProcessInputQualifiedItemId = "(O)380",
     [switch] $VerifyRelocation,
     [switch] $KeepGameRunning
 )
 
 $ErrorActionPreference = "Stop"
+if ($UseWorkbench) {
+    $ProcessInputQualifiedItemId =
+        $WorkbenchProcessInputQualifiedItemId
+}
 
 function Write-JsonFile {
     param([string] $Path, $Value)
@@ -144,6 +152,25 @@ function Find-RecipeRow {
     )) {
         if ([string]$row.recipe_name -eq $Name) {
             return $row
+        }
+    }
+    return $null
+}
+
+function Find-WorkbenchCraftingSource {
+    param(
+        $RecipeRow,
+        [string] $LocationId,
+        [int] $X,
+        [int] $Y
+    )
+    foreach ($source in @(
+        $RecipeRow.workbench_crafting_sources
+    )) {
+        if ([string]$source.location_id -eq $LocationId -and
+            [int]$source.tile_x -eq $X -and
+            [int]$source.tile_y -eq $Y) {
+            return $source
         }
     }
     return $null
@@ -312,6 +339,9 @@ function Wait-RecipeReadyWithoutMachine {
         [string] $Url,
         [string] $Name,
         [string] $MachineId,
+        [switch] $Workbench,
+        [int] $WorkbenchX,
+        [int] $WorkbenchY,
         [int] $TimeoutSeconds
     )
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -327,13 +357,34 @@ function Wait-RecipeReadyWithoutMachine {
         $inventoryCount = Inventory-Count `
             -Snapshot $snapshot `
             -QualifiedItemId $MachineId
+        $locationId =
+            [string]$snapshot.state.player.location_id.value
+        $workbenchSource = if ($Workbench -and
+            $null -ne $row) {
+            Find-WorkbenchCraftingSource `
+                -RecipeRow $row `
+                -LocationId $locationId `
+                -X $WorkbenchX -Y $WorkbenchY
+        }
+        else {
+            $null
+        }
+        $sourceReady = if ($Workbench) {
+            $null -ne $workbenchSource -and
+            [string]$workbenchSource.craft_candidate_status -eq
+                "ready_for_native_workbench_crafting_menu"
+        }
+        else {
+            $null -ne $row -and
+            [string]$row.craft_candidate_status -eq
+                "ready_for_native_personal_crafting_menu"
+        }
         $lastStatus =
             "recipe_status=$([string]$row.craft_candidate_status)" +
+            ";workbench_status=$([string]$workbenchSource.craft_candidate_status)" +
             ";machine_count=$machineCount" +
             ";inventory_count=$inventoryCount"
-        if ($null -ne $row -and
-            [string]$row.craft_candidate_status -eq
-                "ready_for_native_personal_crafting_menu" -and
+        if ($sourceReady -and
             $machineCount -eq 0 -and
             $inventoryCount -eq 0) {
             return $snapshot
@@ -545,6 +596,24 @@ try {
         process_input_quantity = $ProcessInputQuantity
         process_additional_items_json =
             $ProcessAdditionalItemsJson
+        crafting_source = if ($UseWorkbench) {
+            "native_workbench_crafting_menu"
+        }
+        else {
+            "native_personal_crafting_menu"
+        }
+        interaction_tile_x = if ($UseWorkbench) {
+            $WorkbenchTileX
+        }
+        else {
+            $null
+        }
+        interaction_tile_y = if ($UseWorkbench) {
+            $WorkbenchTileY
+        }
+        else {
+            $null
+        }
     }
     $setupResult = Invoke-JsonPost `
         -Url $executeUrl -Body $setupRequest
@@ -560,9 +629,32 @@ try {
         -Url $snapshotUrl `
         -Name $RecipeName `
         -MachineId $MachineQualifiedItemId `
+        -Workbench:$UseWorkbench `
+        -WorkbenchX $WorkbenchTileX `
+        -WorkbenchY $WorkbenchTileY `
         -TimeoutSeconds 45
     $recipe = Find-RecipeRow `
         -Snapshot $beforeCraft -Name $RecipeName
+    $craftingLocationId =
+        [string]$beforeCraft.state.player.location_id.value
+    $workbenchSource = if ($UseWorkbench) {
+        Find-WorkbenchCraftingSource `
+            -RecipeRow $recipe `
+            -LocationId $craftingLocationId `
+            -X $WorkbenchTileX -Y $WorkbenchTileY
+    }
+    else {
+        $null
+    }
+    if ($UseWorkbench -and $null -eq $workbenchSource) {
+        throw "Transparent Workbench crafting source was unavailable."
+    }
+    $craftMaterialSource = if ($UseWorkbench) {
+        $workbenchSource
+    }
+    else {
+        $recipe
+    }
     $craftRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId
@@ -582,9 +674,28 @@ try {
         output_count = [int]$recipe.output_count_per_craft
         times_crafted_before = [int]$recipe.times_crafted
         ingredient_rows_json = ConvertTo-Json `
-            -InputObject @($recipe.ingredient_rows) `
+            -InputObject @($craftMaterialSource.ingredient_rows) `
             -Depth 32 -Compress
-        crafting_source = "native_personal_crafting_menu"
+        crafting_source = if ($UseWorkbench) {
+            "native_workbench_crafting_menu"
+        }
+        else {
+            "native_personal_crafting_menu"
+        }
+    }
+    if ($UseWorkbench) {
+        $craftRequest["workbench_access_point_id"] =
+            [string]$workbenchSource.workbench_access_point_id
+        $craftRequest["workbench_container_node_ids_json"] =
+            ConvertTo-Json `
+                -InputObject @(
+                    $workbenchSource.native_container_node_ids
+                ) -Compress
+        $craftRequest["location_id"] = $craftingLocationId
+        $craftRequest["target_tile_x"] = $WorkbenchTileX
+        $craftRequest["target_tile_y"] = $WorkbenchTileY
+        $craftRequest["stand_tile_x"] = $WorkbenchTileX + 1
+        $craftRequest["stand_tile_y"] = $WorkbenchTileY
     }
     $craftResult = Invoke-JsonPost `
         -Url $executeUrl -Body $craftRequest
@@ -610,6 +721,44 @@ try {
         -X $TargetTileX -Y $TargetTileY
     if (-not $targetLegal) {
         throw "Target tile was not in the transparent legal range."
+    }
+    $moveToPlacementResult = $null
+    if ($UseWorkbench) {
+        $moveToPlacementRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-machine-lifecycle-smoke"
+            queue_item_id =
+                "runtime-machine-lifecycle-smoke.move-to-placement"
+            before_state_hash = $beforePlace.state_hash
+            option_id = "executor.move_to_tile"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            max_crops = 512
+            target_tile_x = $TargetTileX + 1
+            target_tile_y = $TargetTileY
+        }
+        $moveToPlacementResult = Invoke-JsonPost `
+            -Url $executeUrl `
+            -Body $moveToPlacementRequest `
+            -TimeoutSeconds 180
+        Write-JsonFile `
+            (Join-Path $runDirectory `
+                "move-to-placement-result.json") `
+            $moveToPlacementResult
+        if ($moveToPlacementResult.status -ne "applied") {
+            throw "Native movement back to placement stand failed."
+        }
+        $beforePlace = Wait-PlacementInventory `
+            -Url $snapshotUrl `
+            -MachineId $MachineQualifiedItemId `
+            -TimeoutSeconds 30
+        $placement = Find-PlacementRow `
+            -Snapshot $beforePlace `
+            -QualifiedItemId $MachineQualifiedItemId
     }
     $placeRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -1015,6 +1164,11 @@ try {
         $setupResult.primitive_verification_status -eq "verified" -and
         $craftResult.status -eq "applied" -and
         $craftResult.primitive_verification_status -eq "verified" -and
+        ($null -eq $moveToPlacementResult -or (
+            $moveToPlacementResult.status -eq "applied" -and
+            $moveToPlacementResult.primitive_verification_status -eq
+                "verified"
+        )) -and
         $placeResult.status -eq "applied" -and
         $placeResult.primitive_verification_status -eq "verified" -and
         $loadResult.status -eq "applied" -and
@@ -1038,6 +1192,32 @@ try {
         machine_qualified_item_id = $MachineQualifiedItemId
         process_input_qualified_item_id =
             $ProcessInputQualifiedItemId
+        crafting_source = if ($UseWorkbench) {
+            "native_workbench_crafting_menu"
+        }
+        else {
+            "native_personal_crafting_menu"
+        }
+        workbench_access_point_id = if ($UseWorkbench) {
+            [string]$workbenchSource.workbench_access_point_id
+        }
+        else {
+            ""
+        }
+        workbench_container_node_ids = if ($UseWorkbench) {
+            [object[]]@(
+                $workbenchSource.native_container_node_ids
+            )
+        }
+        else {
+            @()
+        }
+        workbench_source_status = if ($UseWorkbench) {
+            [string]$workbenchSource.craft_candidate_status
+        }
+        else {
+            "not_requested"
+        }
         predicted_output_qualified_item_id =
             $predictedOutputId
         observed_output_qualified_item_id = $outputId
@@ -1054,6 +1234,20 @@ try {
         craft_status = $craftResult.status
         craft_verification =
             $craftResult.primitive_verification_status
+        move_to_placement_status =
+            if ($null -eq $moveToPlacementResult) {
+                "not_required"
+            }
+            else {
+                $moveToPlacementResult.status
+            }
+        move_to_placement_verification =
+            if ($null -eq $moveToPlacementResult) {
+                "not_required"
+            }
+            else {
+                $moveToPlacementResult.primitive_verification_status
+            }
         place_status = $placeResult.status
         place_verification =
             $placeResult.primitive_verification_status
