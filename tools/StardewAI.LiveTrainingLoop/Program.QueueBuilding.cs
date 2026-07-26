@@ -95,10 +95,22 @@ static partial class Program
             QueueReplanFilter.FilterRankedCandidates(
                 rankedCandidates,
                 objectiveContinuation);
+        var effectiveCandidateKind =
+            QueueReplanFilter.EffectiveCandidateKindFilter(
+                options.DailyPlanCandidateKind,
+                objectiveContinuation);
         var selectedCandidates =
             QueueReplanFilter.FilterCandidateKind(
                 continuationCandidates,
-                options.DailyPlanCandidateKind);
+                effectiveCandidateKind);
+        var effectiveCandidateId =
+            QueueReplanFilter.EffectiveCandidateIdFilter(
+                options.DailyPlanCandidateId,
+                objectiveContinuation);
+        selectedCandidates =
+            QueueReplanFilter.FilterCandidateId(
+                selectedCandidates,
+                effectiveCandidateId);
         ranking["social_continuation_filter"] = new JsonObject
         {
             ["active"] = objectiveContinuation is not null,
@@ -110,12 +122,27 @@ static partial class Program
         ranking["candidate_kind_filter"] = new JsonObject
         {
             ["active"] = !string.IsNullOrWhiteSpace(
-                options.DailyPlanCandidateKind),
-            ["required_kind"] = options.DailyPlanCandidateKind,
+                effectiveCandidateKind),
+            ["requested_kind"] = options.DailyPlanCandidateKind,
+            ["required_kind"] = effectiveCandidateKind,
             ["input_candidate_count"] = continuationCandidates.Count,
             ["selected_candidate_count"] = selectedCandidates.Count,
             ["policy"] =
-                "explicit_runtime_calibration_slice_only;exact_kind"
+                "explicit_runtime_calibration_initial_slice_only;" +
+                "typed_objective_continuation_overrides_kind_filter"
+        };
+        ranking["candidate_id_filter"] = new JsonObject
+        {
+            ["active"] = !string.IsNullOrWhiteSpace(
+                effectiveCandidateId),
+            ["requested_candidate_id"] =
+                options.DailyPlanCandidateId,
+            ["required_candidate_id"] = effectiveCandidateId,
+            ["selected_candidate_count"] = selectedCandidates.Count,
+            ["policy"] =
+                "explicit_runtime_calibration_initial_slice_only;" +
+                "exact_candidate_id;" +
+                "typed_objective_continuation_overrides_id_filter"
         };
         var compileRequest = JsonSerializer.Serialize(new
         {

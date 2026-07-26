@@ -107,6 +107,51 @@ public sealed class MachinePlacementMainlineTests
             "exact_tile_selected_after_target_map_load=true",
             candidate.ExpectedEffect,
             StringComparison.Ordinal);
+
+        var ranked = new EventCandidateRanker()
+            .Rank(new BaselineTrainingReport(), availability)
+            .Where(row => row.CandidateId == candidate.CandidateId)
+            .ToArray();
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            snapshot.StateHash);
+        var routeStep = Assert.Single(plan.Steps);
+
+        Assert.Equal("traverse_connector", routeStep.Kind);
+        Assert.Equal(
+            "4",
+            Parameter(
+                routeStep.Parameters,
+                "continuation.machine_inventory_slot_index"));
+        Assert.Equal(
+            "(BC)12",
+            Parameter(
+                routeStep.Parameters,
+                "continuation.machine_qualified_item_id"));
+        Assert.Equal(
+            "12",
+            Parameter(
+                routeStep.Parameters,
+                "continuation.machine_item_id"));
+
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            Ledger(revision: 3));
+        var queueItem = Assert.Single(queue.Items);
+
+        Assert.Equal("executor.traverse_connector", queueItem.OptionId);
+        Assert.Equal("pending", queueItem.Status);
+        Assert.Equal(
+            "4",
+            Parameter(
+                queueItem.NormalizedCommand.Parameters,
+                "continuation.machine_inventory_slot_index"));
+        Assert.Equal(
+            "(BC)12",
+            Parameter(
+                queueItem.NormalizedCommand.Parameters,
+                "continuation.machine_qualified_item_id"));
     }
 
     [Fact]

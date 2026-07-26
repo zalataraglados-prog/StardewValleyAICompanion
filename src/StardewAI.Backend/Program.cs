@@ -19,7 +19,14 @@ using StardewAI.Core.PreviewCompiler;
 using StardewAI.Core.Training;
 using StardewAI.Core.WorldModel;
 
+const long MaxTransparentSnapshotRequestBodyBytes =
+    128L * 1024 * 1024;
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize =
+        MaxTransparentSnapshotRequestBodyBytes;
+});
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;

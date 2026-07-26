@@ -252,6 +252,44 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                 place,
                 continuation,
                 "applied"));
+        Assert.Equal(
+            string.Empty,
+            QueueReplanFilter.EffectiveCandidateKindFilter(
+                "route_connector_tile",
+                continuation));
+        Assert.Equal(
+            "route_connector_tile",
+            QueueReplanFilter.EffectiveCandidateKindFilter(
+                "route_connector_tile",
+                null));
+        var exactCandidates = QueueReplanFilter.FilterCandidateId(
+            new JsonArray
+            {
+                MachinePlacementCandidate(
+                    "FarmHouse",
+                    4,
+                    "(BC)12"),
+                MachinePlacementCandidate(
+                    "Cellar",
+                    4,
+                    "(BC)12")
+            },
+            "machine-place-FarmHouse");
+        Assert.Equal(
+            "machine-place-FarmHouse",
+            Assert.Single(exactCandidates)!
+                ["candidate_id"]!
+                .GetValue<string>());
+        Assert.Equal(
+            string.Empty,
+            QueueReplanFilter.EffectiveCandidateIdFilter(
+                "machine-place-FarmHouse",
+                continuation));
+        Assert.Equal(
+            "machine-place-FarmHouse",
+            QueueReplanFilter.EffectiveCandidateIdFilter(
+                "machine-place-FarmHouse",
+                null));
     }
 
     [Fact]
@@ -345,6 +383,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     {
         return new JsonObject
         {
+            ["candidate_id"] = "machine-place-" + locationId,
             ["option_id"] = "farm.process_machines",
             ["kind"] = "place_machine_item",
             ["location_id"] = locationId,
