@@ -150,6 +150,48 @@ public static class QueueReplanFilter
         return new JsonArray(filtered);
     }
 
+    public static string EffectiveCandidateKindFilter(
+        string requestedKind,
+        JsonObject? objectiveContinuation)
+    {
+        return objectiveContinuation is null
+            ? requestedKind
+            : string.Empty;
+    }
+
+    public static JsonArray FilterCandidateId(
+        JsonArray rankedCandidates,
+        string requiredCandidateId)
+    {
+        if (string.IsNullOrWhiteSpace(requiredCandidateId))
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                string.Equals(
+                    ReadString(candidate, "candidate_id"),
+                    requiredCandidateId,
+                    StringComparison.Ordinal))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
+    public static string EffectiveCandidateIdFilter(
+        string requestedCandidateId,
+        JsonObject? objectiveContinuation)
+    {
+        return objectiveContinuation is null
+            ? requestedCandidateId
+            : string.Empty;
+    }
+
     public static bool CompletesSocialContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
     {
         return string.Equals(ReadString(continuation, "kind"), "social", StringComparison.Ordinal) &&

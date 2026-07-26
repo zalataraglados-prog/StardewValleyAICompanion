@@ -50,6 +50,7 @@ public sealed class LiveTrainingOptions
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
+    public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
@@ -269,6 +270,11 @@ public sealed class LiveTrainingOptions
                 i + 1 < args.Length)
             {
                 options.DailyPlanCandidateKind = args[++i].Trim();
+            }
+            else if (current == "--daily-plan-candidate-id" &&
+                i + 1 < args.Length)
+            {
+                options.DailyPlanCandidateId = args[++i].Trim();
             }
             else if (current == "--stop-after-social-objective-complete")
             {
