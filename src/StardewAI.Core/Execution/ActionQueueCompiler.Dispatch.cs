@@ -52,6 +52,7 @@ namespace StardewAI.Core.Execution
                 ["executor.pan_ore_spot"] = (action, _) => CompilePanOreSpotStep(action),
                 ["executor.collect_machine_output"] = (action, _) => CompileCollectMachineOutputStep(action),
                 ["executor.load_machine_input"] = (action, _) => CompileLoadMachineInputStep(action),
+                ["executor.name_hatched_animal"] = (action, _) => CompileNameHatchedAnimalStep(action),
                 ["executor.craft_machine_item"] = (action, _) => CompileCraftMachineItemStep(action),
                 ["executor.craft_storage_item"] = (action, _) => CompileCraftStorageItemStep(action),
                 ["executor.place_machine"] = (action, _) => CompilePlaceMachineStep(action),

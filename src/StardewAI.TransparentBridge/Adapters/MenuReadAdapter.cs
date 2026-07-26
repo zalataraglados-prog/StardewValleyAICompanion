@@ -260,7 +260,47 @@ public sealed class MenuReadAdapter : ReadAdapterBase
             LevelUpMenu levelUpMenu =>
                 (Field(ReadLevelUpMenuState(levelUpMenu), "LevelUpMenu public state and exact private currentSkill/currentLevel/professionsToChoose fields", tick, AdapterId),
                     Array.Empty<string>()),
+            NamingMenu namingMenu =>
+                (Field(
+                    ReadNamingMenuState(namingMenu),
+                    "NamingMenu public textBox/button/callback fields",
+                    tick,
+                    AdapterId),
+                    Array.Empty<string>()),
             _ => (null, Array.Empty<string>())
+        };
+    }
+
+    private static object ReadNamingMenuState(
+        NamingMenu menu)
+    {
+        return new
+        {
+            kind = "naming",
+            title = menu.title,
+            text = menu.textBox?.Text ?? string.Empty,
+            text_box_selected =
+                menu.textBox?.Selected ?? false,
+            min_length = menu.minLength,
+            filter_input = menu.FilterInput,
+            done_callback_present =
+                menu.doneNaming is not null,
+            done_button_present =
+                menu.doneNamingButton is not null,
+            done_button_bounds =
+                menu.doneNamingButton is null
+                    ? null
+                    : new
+                    {
+                        x = menu.doneNamingButton.bounds.X,
+                        y = menu.doneNamingButton.bounds.Y,
+                        width =
+                            menu.doneNamingButton.bounds.Width,
+                        height =
+                            menu.doneNamingButton.bounds.Height
+                    },
+            native_submit_contract =
+                "NamingMenu.receiveLeftClick_doneNamingButton_then_textBoxEnter_then_doneNaming"
         };
     }
 

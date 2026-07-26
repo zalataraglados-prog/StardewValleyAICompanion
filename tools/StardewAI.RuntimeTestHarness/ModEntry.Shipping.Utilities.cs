@@ -596,6 +596,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_animal_product_target" &&
             request.OptionId != "debug.setup_pan_ore_spot" &&
             request.OptionId != "debug.setup_machine_input_target" &&
+            request.OptionId != "debug.setup_incubator_hatch_naming" &&
             request.OptionId != "debug.setup_idle_machine_target" &&
             request.OptionId != "debug.setup_machine_placement_target" &&
             request.OptionId != "debug.setup_storage_placement_target" &&
@@ -623,6 +624,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.complete_fish_pond_request" &&
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
+            request.OptionId != "executor.name_hatched_animal" &&
             request.OptionId != "executor.craft_machine_item" &&
             request.OptionId != "executor.craft_storage_item" &&
             request.OptionId != "executor.place_machine" &&

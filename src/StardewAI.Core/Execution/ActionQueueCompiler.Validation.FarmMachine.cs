@@ -754,12 +754,6 @@ namespace StardewAI.Core.Execution
 
             if (machine.HasValue)
             {
-                if (MachineUsesIncubatorCompletion(
-                        machine.Value))
-                {
-                    reasons.Add(
-                        "load_machine_input_requires_incubator_hatch_flow");
-                }
                 if (!machine.Value.TryGetProperty("machine_execution_semantics", out var executionSemantics) ||
                     executionSemantics.ValueKind != JsonValueKind.Object ||
                     ReadString(executionSemantics, "execution_status") is not ("available_data_driven" or "available_native_runtime_override"))
@@ -784,6 +778,15 @@ namespace StardewAI.Core.Execution
 
                 if (input.HasValue)
                 {
+                    if (MachineUsesIncubatorCompletion(
+                            machine.Value) &&
+                        !IncubatorLoadPredictionMatches(
+                            action,
+                            input.Value))
+                    {
+                        reasons.Add(
+                            "load_machine_input_requires_incubator_hatch_flow");
+                    }
                     if (!string.Equals(
                             ReadString(input.Value, "load_executor_status"),
                             "covered_for_runtime_load",
@@ -827,6 +830,75 @@ namespace StardewAI.Core.Execution
                     out var machineData) &&
                 machineData.ValueKind == JsonValueKind.Object &&
                 ReadBool(machineData, "is_incubator") == true;
+        }
+
+        private static bool IncubatorLoadPredictionMatches(
+            SmallModelAction action,
+            JsonElement input)
+        {
+            if (!input.TryGetProperty(
+                    "predicted_output",
+                    out var prediction) ||
+                prediction.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var unreservedSlots = ReadInt(
+                prediction,
+                "unreserved_hatch_slot_count");
+            return
+                string.Equals(
+                    ReadString(
+                        prediction,
+                        "training_eligibility_status"),
+                    "exact_current_snapshot_probe_supported",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadString(
+                        prediction,
+                        "special_prediction_model_id"),
+                    "incubator_animal_hatch.v1",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "machine_special_prediction_model_id"),
+                    "incubator_animal_hatch.v1",
+                    StringComparison.Ordinal) &&
+                unreservedSlots > 0 &&
+                ReadIntParameter(
+                    action,
+                    "incubator_unreserved_hatch_slot_count") ==
+                    unreservedSlots &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "incubator_hatch_animal_type_id"),
+                    ReadString(
+                        prediction,
+                        "hatch_animal_type_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "incubator_suggested_hatch_name"),
+                    ReadString(
+                        prediction,
+                        "suggested_hatch_name"),
+                    StringComparison.Ordinal) &&
+                ReadIntParameter(
+                    action,
+                    "incubator_animal_house_occupant_count") ==
+                    ReadInt(
+                        prediction,
+                        "animal_house_occupant_count") &&
+                ReadIntParameter(
+                    action,
+                    "incubator_animal_house_occupant_limit") ==
+                    ReadInt(
+                        prediction,
+                        "animal_house_occupant_limit");
         }
 
         private static JsonElement? MachineLoadableInputAt(JsonElement machine, int slotIndex)
