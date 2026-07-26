@@ -110,6 +110,11 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = MachineInfrastructureDemandSignal(candidate.ExpectedEffect);
                     }
+                    if (candidate.Kind == "relocate_machine_item")
+                    {
+                        urgencySignal = MachineLayoutBenefitSignal(
+                            candidate.ExpectedEffect);
+                    }
                     if (candidate.Kind == "craft_storage_item")
                     {
                         urgencySignal = candidate.ExpectedEffect.Contains(
@@ -340,6 +345,22 @@ namespace StardewAI.Core.Training
                 100 => 0.05,
                 _ => -0.20
             };
+        }
+
+        private static double MachineLayoutBenefitSignal(
+            string expectedEffect)
+        {
+            var netBenefitTicks = ParseDouble(
+                expectedEffect,
+                "layout_net_benefit_ticks=");
+            return netBenefitTicks.HasValue
+                ? Math.Round(
+                    Math.Clamp(
+                        netBenefitTicks.Value * 0.00001,
+                        0.01,
+                        0.08),
+                    4)
+                : 0;
         }
 
         private static double ShippingValueSignal(EventCandidate candidate)

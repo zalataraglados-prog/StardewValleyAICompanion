@@ -46,7 +46,34 @@ public sealed partial class PlayerReadAdapter
         }
 
         var locations = MachineLocationTopology.ReadPersistentLocations(farm, player);
-        var fingerprint = MachinePlacementFingerprint(inventoryMachines, locations);
+        var currentLocationId =
+            Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var relocationLocations = locations
+            .Where(location => string.Equals(
+                location.Location.NameOrUniqueName,
+                currentLocationId,
+                StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var relocationMachines = relocationLocations
+            .SelectMany(location => location.Location.objects.Pairs
+                .Where(pair => pair.Value.bigCraftable.Value &&
+                    pair.Value.GetMachineData() is not null &&
+                    string.Equals(pair.Value.Type, "Crafting", StringComparison.Ordinal) &&
+                    pair.Value.Fragility == 0 &&
+                    (location.IsPlayerControlled ||
+                     pair.Value.owner.Value == player.UniqueMultiplayerID))
+                .Select(pair => pair.Value))
+            .GroupBy(
+                machine => machine.QualifiedItemId + "\n" +
+                    (machine.GetType().FullName ?? machine.GetType().Name),
+                StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        var fingerprint = MachinePlacementFingerprint(
+            inventoryMachines,
+            relocationMachines,
+            currentLocationId,
+            locations);
         lock (MachinePlacementCacheLock)
         {
             if (cachedMachinePlacementContext is not null &&
@@ -57,19 +84,34 @@ public sealed partial class PlayerReadAdapter
         }
 
         var rows = inventoryMachines
-            .Select(machine => ReadMachinePlacementRow(machine, locations))
+            .Select(machine => ReadMachinePlacementRow(
+                machine.Machine,
+                machine.SlotIndex,
+                "inventory_machine",
+                locations))
+            .ToArray();
+        var relocationRows = relocationMachines
+            .Select(machine => ReadMachinePlacementRow(
+                machine,
+                -1,
+                "placed_machine_relocation_probe",
+                relocationLocations))
             .ToArray();
         var context = new
         {
-            projection_status = "complete_all_inventory_machines_across_loaded_persistent_locations",
+            projection_status = "complete_inventory_and_relocation_machine_types_across_loaded_persistent_locations",
             inventory_machine_count = inventoryMachines.Length,
+            relocation_machine_type_count = relocationRows.Length,
+            relocation_location_id = currentLocationId,
+            relocation_scope = "current_loaded_location_only_cross_location_relocation_pending",
             location_count = locations.Length,
             static_projection_fingerprint = fingerprint,
             static_projection_tick = unchecked((long)Game1.ticks),
             location_scope = "Utility.ForEachLocation(includeInteriors:true,includeGenerated:false)_no_map_name_allowlist",
             planning_ownership_policy = "ownership_is_evidence_not_a_native_placement_gate",
             runtime_contract = "small_model_selects_location_and_tile_then_executor_routes_and_rechecks_Utility.playerCanPlaceItemHere_before_Object.placementAction",
-            rows
+            rows,
+            relocation_rows = relocationRows
         };
         lock (MachinePlacementCacheLock)
         {
@@ -80,17 +122,19 @@ public sealed partial class PlayerReadAdapter
     }
 
     private static object ReadMachinePlacementRow(
-        InventoryMachineRef inventoryMachine,
+        StardewValley.Object machine,
+        int inventorySlotIndex,
+        string projectionRole,
         IReadOnlyList<MachineLocationRef> locations)
     {
-        var machine = inventoryMachine.Machine;
         var locationProjections = locations
             .Select(location => ReadMachinePlacementLocation(machine, location))
             .ToArray();
         var locationRows = locationProjections.Select(projection => projection.Row).ToArray();
         return new
         {
-            inventory_slot_index = inventoryMachine.SlotIndex,
+            projection_role = projectionRole,
+            inventory_slot_index = inventorySlotIndex,
             item_id = machine.ItemId,
             qualified_item_id = machine.QualifiedItemId,
             display_name = machine.DisplayName,
@@ -216,6 +260,8 @@ public sealed partial class PlayerReadAdapter
 
     private static string MachinePlacementFingerprint(
         IReadOnlyList<InventoryMachineRef> inventoryMachines,
+        IReadOnlyList<StardewValley.Object> relocationMachines,
+        string relocationLocationId,
         IReadOnlyList<MachineLocationRef> locations)
     {
         var inventoryRows = inventoryMachines.Select(machine =>
@@ -223,8 +269,13 @@ public sealed partial class PlayerReadAdapter
             machine.Machine.QualifiedItemId + "|" +
             machine.Machine.Stack + "|" +
             machine.Machine.GetType().FullName);
+        var relocationRows = relocationMachines.Select(machine =>
+            "relocation_machine_type|" + machine.QualifiedItemId + "|" +
+            machine.GetType().FullName);
         return PersistentPlacementTopologyFingerprint(
-            inventoryRows,
+            inventoryRows
+                .Append("relocation_location|" + relocationLocationId)
+                .Concat(relocationRows),
             locations);
     }
 

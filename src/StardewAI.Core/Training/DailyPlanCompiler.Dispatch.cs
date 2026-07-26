@@ -156,6 +156,11 @@ namespace StardewAI.Core.Training
                 return PlaceMachineItemSteps(candidate);
             }
 
+            if (candidate.Kind == "relocate_machine_item")
+            {
+                return RelocateMachineItemSteps(candidate);
+            }
+
             if (candidate.Kind == "place_storage_item")
             {
                 return PlaceStorageItemSteps(candidate);
