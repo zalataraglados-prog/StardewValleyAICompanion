@@ -115,6 +115,7 @@ namespace StardewAI.Core.Execution
                 "pan_ore_spot" => "executor.pan_ore_spot",
                 "collect_machine_output" => "executor.collect_machine_output",
                 "load_machine_input" => "executor.load_machine_input",
+                "name_hatched_animal" => "executor.name_hatched_animal",
                 "craft_machine_item" => "executor.craft_machine_item",
                 "craft_storage_item" => "executor.craft_storage_item",
                 "place_machine_item" => "executor.place_machine",

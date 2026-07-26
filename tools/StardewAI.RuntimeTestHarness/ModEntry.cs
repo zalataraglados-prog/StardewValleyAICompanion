@@ -646,6 +646,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_incubator_hatch_naming")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupIncubatorHatchNaming(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_idle_machine_target")
             {
                 pending.Completion.SetResult(
@@ -874,6 +881,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.load_machine_input")
             {
                 pending.Completion.SetResult(ExecuteLoadMachineInput(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.name_hatched_animal")
+            {
+                pending.Completion.SetResult(
+                    ExecuteNameHatchedAnimal(pending.Request));
                 return;
             }
 

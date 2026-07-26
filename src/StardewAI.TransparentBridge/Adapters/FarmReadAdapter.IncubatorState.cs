@@ -4,6 +4,20 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
+    private static readonly string[] IncubatorNameCatalog =
+    {
+        "Pip",
+        "Miso",
+        "Nova",
+        "Clover",
+        "Sunny",
+        "Maple",
+        "Juniper",
+        "Lumi",
+        "Olive",
+        "Sage"
+    };
+
     private static object? ReadIncubatorSpecialState(
         StardewValley.Object machine,
         GameLocation location)
@@ -29,9 +43,33 @@ public sealed partial class FarmReadAdapter
             occupantCount.HasValue &&
             occupantLimit.HasValue &&
             occupantCount.Value < occupantLimit.Value;
+        var activeIncubatorCount = location.objects.Values.Count(
+            candidate =>
+                candidate.GetMachineData()?.IsIncubator == true &&
+                candidate.heldObject.Value is not null);
+        var unreservedHatchSlotCount =
+            occupantCount.HasValue &&
+            occupantLimit.HasValue
+                ? Math.Max(
+                    0,
+                    occupantLimit.Value -
+                    occupantCount.Value -
+                    activeIncubatorCount)
+                : (int?)null;
         var ready =
             heldEgg is not null &&
             machine.MinutesUntilReady <= 0;
+        var readyIncubatorsInNativeOrder = location.objects.Values
+            .Where(candidate =>
+                candidate.bigCraftable.Value &&
+                candidate.GetMachineData()?.IsIncubator == true &&
+                candidate.heldObject.Value is not null &&
+                candidate.MinutesUntilReady <= 0)
+            .ToArray();
+        var nativeReadySelectionOrdinal =
+            Array.FindIndex(
+                readyIncubatorsInNativeOrder,
+                candidate => ReferenceEquals(candidate, machine));
 
         return new
         {
@@ -56,12 +94,27 @@ public sealed partial class FarmReadAdapter
                 animalHouse is null
                     ? (bool?)null
                     : hasCapacity,
+            active_incubator_count =
+                activeIncubatorCount,
+            unreserved_hatch_slot_count =
+                unreservedHatchSlotCount,
+            native_ready_selection_ordinal =
+                nativeReadySelectionOrdinal,
+            native_ready_selected =
+                ready &&
+                nativeReadySelectionOrdinal == 0,
+            native_ready_selection_contract =
+                "AnimalHouse.objects.Values_first_ready_incubator_then_break",
             held_egg_qualified_item_id =
                 heldEgg?.QualifiedItemId ?? string.Empty,
             hatch_animal_type_id =
                 animalTypeId,
             hatch_animal_data_available =
                 animalDataAvailable,
+            suggested_hatch_name =
+                ReadSuggestedIncubatorName(animalHouse),
+            suggested_hatch_name_source =
+                "controller_deterministic_first_unused_catalog_name",
             minutes_until_hatch =
                 heldEgg is null
                     ? (int?)null
@@ -71,7 +124,25 @@ public sealed partial class FarmReadAdapter
             ordinary_output_collection_supported =
                 false,
             hatch_executor_status =
-                "blocked_native_naming_executor_not_implemented"
+                "covered_native_naming_menu_confirm"
         };
+    }
+
+    private static string ReadSuggestedIncubatorName(
+        AnimalHouse? animalHouse)
+    {
+        if (animalHouse is null)
+        {
+            return string.Empty;
+        }
+
+        var used = animalHouse.animals.Values
+            .Select(animal => animal.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return IncubatorNameCatalog.FirstOrDefault(
+                name => !used.Contains(name)) ??
+            "Companion" +
+            (animalHouse.animalsThatLiveHere.Count + 1);
     }
 }

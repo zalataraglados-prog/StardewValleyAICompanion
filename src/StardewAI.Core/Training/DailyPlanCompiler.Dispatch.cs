@@ -141,6 +141,11 @@ namespace StardewAI.Core.Training
                 return LoadMachineInputSteps(candidate);
             }
 
+            if (candidate.Kind == "name_hatched_animal")
+            {
+                return NameHatchedAnimalSteps(candidate);
+            }
+
             if (candidate.Kind == "craft_machine_item")
             {
                 return CraftMachineItemSteps(candidate);

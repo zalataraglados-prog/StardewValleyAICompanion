@@ -19,6 +19,7 @@ namespace StardewAI.Core.OptionRegistry
             StrategyCommitmentLedger? commitmentLedger)
         {
             return MachineServiceCandidates(snapshot)
+                .Concat(IncubatorNamingCandidates(snapshot))
                 .Concat(MachineCraftingCandidates(snapshot, commitmentLedger))
                 .Concat(StorageCraftingCandidates(snapshot, commitmentLedger))
                 .Concat(MachineRelocationCandidates(
@@ -272,6 +273,12 @@ namespace StardewAI.Core.OptionRegistry
 
         private sealed record StructuredSkillExperienceDelta(string SkillId, int SkillIndex, int Delta);
 
+        private sealed record IncubatorInputPrediction(
+            string ModelId,
+            string AnimalTypeId,
+            string SuggestedName,
+            int UnreservedSlotCount);
+
         private EventCandidate[] MachineLoadInputCandidates(
             SnapshotEnvelope snapshot,
             JsonElement machine,
@@ -320,12 +327,15 @@ namespace StardewAI.Core.OptionRegistry
                         PredictMachineOutputFromSummary(machineData, qualifiedItemId, itemId, inputSalePrice, inventoryStacks);
                     var loadExecutorStatus = ReadString(input, "load_executor_status");
                     var predictionTrainingStatus = ReadMachinePredictionTrainingStatus(input);
+                    var incubatorPrediction =
+                        ReadIncubatorPrediction(input);
                     var blockReasons = new List<string>();
                     if (machineBusy)
                     {
                         blockReasons.Add("machine_input_target_busy");
                     }
-                    if (machineUsesIncubatorCompletion)
+                    if (machineUsesIncubatorCompletion &&
+                        incubatorPrediction is null)
                     {
                         blockReasons.Add(
                             "machine_input_requires_incubator_hatch_value_model");
@@ -393,9 +403,241 @@ namespace StardewAI.Core.OptionRegistry
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_machine_input_runtime_load",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
-                        Parameters = new[] { Parameter("machine_location_id", machineLocation) }
+                        Parameters = new[]
+                        {
+                            Parameter("machine_location_id", machineLocation),
+                            Parameter(
+                                "machine_special_prediction_model_id",
+                                incubatorPrediction?.ModelId ??
+                                string.Empty),
+                            Parameter(
+                                "incubator_hatch_animal_type_id",
+                                incubatorPrediction?.AnimalTypeId ??
+                                string.Empty),
+                            Parameter(
+                                "incubator_suggested_hatch_name",
+                                incubatorPrediction?.SuggestedName ??
+                                string.Empty),
+                            Parameter(
+                                "incubator_unreserved_hatch_slot_count",
+                                incubatorPrediction?.UnreservedSlotCount
+                                    .ToString() ??
+                                string.Empty)
+                        }
                     };
                 })
+                .ToArray();
+        }
+
+        private static IncubatorInputPrediction?
+            ReadIncubatorPrediction(JsonElement input)
+        {
+            if (!input.TryGetProperty(
+                    "predicted_output",
+                    out var prediction) ||
+                prediction.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(
+                        prediction,
+                        "training_eligibility_status"),
+                    "exact_current_snapshot_probe_supported",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadString(
+                        prediction,
+                        "special_prediction_model_id"),
+                    "incubator_animal_hatch.v1",
+                    StringComparison.Ordinal) ||
+                ReadInt(
+                    prediction,
+                    "unreserved_hatch_slot_count") <= 0)
+            {
+                return null;
+            }
+
+            var animalTypeId = ReadString(
+                prediction,
+                "hatch_animal_type_id");
+            var suggestedName = ReadString(
+                prediction,
+                "suggested_hatch_name");
+            if (string.IsNullOrWhiteSpace(animalTypeId) ||
+                string.IsNullOrWhiteSpace(suggestedName))
+            {
+                return null;
+            }
+
+            return new IncubatorInputPrediction(
+                "incubator_animal_hatch.v1",
+                animalTypeId,
+                suggestedName,
+                ReadInt(
+                    prediction,
+                    "unreserved_hatch_slot_count"));
+        }
+
+        private EventCandidate[] IncubatorNamingCandidates(
+            SnapshotEnvelope snapshot)
+        {
+            if (!string.Equals(
+                    ActiveMenuTypeForCandidate(snapshot),
+                    "NamingMenu",
+                    StringComparison.Ordinal))
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            var menuState = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            var machines = ReadStateFieldValue(
+                snapshot,
+                "farm",
+                "machines");
+            var playerLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            if (!menuState.HasValue ||
+                menuState.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(menuState.Value, "kind"),
+                    "naming",
+                    StringComparison.Ordinal) ||
+                ReadBool(menuState.Value, "done_callback_present") !=
+                    true ||
+                ReadBool(menuState.Value, "done_button_present") !=
+                    true ||
+                !machines.HasValue ||
+                machines.Value.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            return machines.Value.EnumerateArray()
+                .Where(machine =>
+                    machine.ValueKind == JsonValueKind.Object &&
+                    string.Equals(
+                        ReadString(machine, "location_id"),
+                        playerLocation,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    MachineUsesIncubatorCompletion(machine) &&
+                    machine.TryGetProperty(
+                        "machine_special_state",
+                        out var special) &&
+                    special.ValueKind == JsonValueKind.Object &&
+                    string.Equals(
+                        ReadString(special, "status"),
+                        "ready_requires_native_naming_event",
+                        StringComparison.Ordinal) &&
+                    ReadBool(special, "native_ready_selected") == true &&
+                    ReadBool(
+                        special,
+                        "animal_house_has_capacity") == true &&
+                    !string.IsNullOrWhiteSpace(
+                        ReadString(
+                            special,
+                            "hatch_animal_type_id")) &&
+                    !string.IsNullOrWhiteSpace(
+                        ReadString(
+                            special,
+                            "suggested_hatch_name")))
+                .Select(machine =>
+                {
+                    var special =
+                        machine.GetProperty(
+                            "machine_special_state");
+                    var x = ReadInt(machine, "tile_x");
+                    var y = ReadInt(machine, "tile_y");
+                    var eggId = ReadString(
+                        special,
+                        "held_egg_qualified_item_id");
+                    var animalType = ReadString(
+                        special,
+                        "hatch_animal_type_id");
+                    var targetName = ReadString(
+                        special,
+                        "suggested_hatch_name");
+                    var occupantCount = ReadInt(
+                        special,
+                        "animal_house_occupant_count");
+                    var occupantLimit = ReadInt(
+                        special,
+                        "animal_house_occupant_limit");
+                    return new EventCandidate
+                    {
+                        CandidateId =
+                            "incubator-hatch-name:" +
+                            playerLocation +
+                            ":" +
+                            x +
+                            "," +
+                            y +
+                            ":" +
+                            eggId,
+                        Kind = "name_hatched_animal",
+                        Available = true,
+                        LocationId = playerLocation,
+                        TileX = x,
+                        TileY = y,
+                        EstimatedTicks = 30,
+                        EnergyCost = 0,
+                        AvailabilityClass =
+                            "transparent_native_incubator_naming",
+                        ExpectedEffect =
+                            MachineStatePath(
+                                playerLocation,
+                                x,
+                                y) +
+                            ".held_item=null" +
+                            ";animal_house_occupant_count_before=" +
+                            occupantCount +
+                            ";animal_house_occupant_limit=" +
+                            occupantLimit +
+                            ";held_egg_qualified_item_id=" +
+                            eggId +
+                            ";target_runtime_type=" +
+                            animalType +
+                            ";target_name=" +
+                            targetName +
+                            ";machine_special_prediction_model_id=incubator_animal_hatch.v1" +
+                            ";native_ready_selection_ordinal=0" +
+                            ";native_contract=NamingMenu.receiveLeftClick_doneNamingButton_then_textBoxEnter_then_doneNaming_AnimalHouse.addNewHatchedAnimal",
+                        BlockReasons = Array.Empty<string>(),
+                        Parameters = new[]
+                        {
+                            Parameter(
+                                "machine_location_id",
+                                playerLocation),
+                            Parameter(
+                                "held_egg_qualified_item_id",
+                                eggId),
+                            Parameter(
+                                "target_runtime_type",
+                                animalType),
+                            Parameter(
+                                "target_name",
+                                targetName),
+                            Parameter(
+                                "animal_house_occupant_count_before",
+                                occupantCount.ToString()),
+                            Parameter(
+                                "animal_house_occupant_limit",
+                                occupantLimit.ToString()),
+                            Parameter(
+                                "machine_special_prediction_model_id",
+                                "incubator_animal_hatch.v1"),
+                            Parameter(
+                                "native_ready_selection_ordinal",
+                                "0"),
+                            Parameter(
+                                "native_contract",
+                                "NamingMenu.receiveLeftClick_doneNamingButton_then_textBoxEnter_then_doneNaming_AnimalHouse.addNewHatchedAnimal")
+                        }
+                    };
+                })
+                .Take(1)
                 .ToArray();
         }
 
@@ -559,6 +801,37 @@ namespace StardewAI.Core.OptionRegistry
             {
                 suffix += ";machine_special_prediction_model_id=" +
                     specialModelId;
+            }
+            if (string.Equals(
+                    specialModelId,
+                    "incubator_animal_hatch.v1",
+                    StringComparison.Ordinal))
+            {
+                suffix +=
+                    ";incubator_hatch_animal_type_id=" +
+                    ReadString(
+                        predictedOutput,
+                        "hatch_animal_type_id") +
+                    ";incubator_suggested_hatch_name=" +
+                    ReadString(
+                        predictedOutput,
+                        "suggested_hatch_name") +
+                    ";incubator_unreserved_hatch_slot_count=" +
+                    ReadInt(
+                        predictedOutput,
+                        "unreserved_hatch_slot_count") +
+                    ";incubator_animal_house_occupant_count=" +
+                    ReadInt(
+                        predictedOutput,
+                        "animal_house_occupant_count") +
+                    ";incubator_animal_house_occupant_limit=" +
+                    ReadInt(
+                        predictedOutput,
+                        "animal_house_occupant_limit") +
+                    ";incubator_animal_purchase_equivalent_value=" +
+                    ReadInt(
+                        predictedOutput,
+                        "animal_purchase_equivalent_value");
             }
             var initialQuality = ReadInt(
                 predictedOutput,

@@ -207,7 +207,7 @@ try {
             $null -eq $machineSpecialState -or
             [string]$machineSpecialState.status -ne "idle" -or
             -not [bool]$machineSpecialState.location_is_animal_house -or
-            [string]$machineSpecialState.hatch_executor_status -ne "blocked_native_naming_executor_not_implemented")) {
+            [string]$machineSpecialState.hatch_executor_status -ne "covered_native_naming_menu_confirm")) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Incubator lifecycle guard was not exposed exactly before native loading."
     }

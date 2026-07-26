@@ -756,6 +756,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "machine input consumed and processing started" },
                 new[] { "block_unverified_machine_input", "block_machine_busy", "block_menu_unsafe_interact" }));
 
+            Register(Option("executor.name_hatched_animal", "farm", "Confirm one native incubator hatch naming menu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "farm.machines", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "one exact animal added", "selected incubator egg cleared", "native naming menu closed" },
+                new[] { "block_non_naming_menu", "block_animal_house_full", "block_native_incubator_selection_drift", "block_direct_animal_or_machine_mutation" }));
+
             Register(Option("executor.craft_machine_item", "farm", "Craft one verified learned machine through the native personal or Workbench CraftingPage",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -859,7 +867,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 63;
+            const int expectedPrimitiveCount = 64;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

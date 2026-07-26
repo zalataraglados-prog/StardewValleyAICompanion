@@ -10,7 +10,8 @@ public sealed partial class FarmReadAdapter
         string outputMethod)
     {
         return IsVettedCaskOutputMethod(machine, outputMethod) ||
-            IsVettedDeconstructorOutputMethod(machine, outputMethod);
+            IsVettedDeconstructorOutputMethod(machine, outputMethod) ||
+            IsVettedIncubatorOutputMethod(machine, outputMethod);
     }
 
     private static string ReadVettedSpecialOutputModelId(
@@ -24,6 +25,10 @@ public sealed partial class FarmReadAdapter
         if (IsVettedDeconstructorOutputMethod(machine, outputMethod))
         {
             return DeconstructorPredictionModelId;
+        }
+        if (IsVettedIncubatorOutputMethod(machine, outputMethod))
+        {
+            return IncubatorPredictionModelId;
         }
         return string.Empty;
     }
@@ -47,7 +52,18 @@ public sealed partial class FarmReadAdapter
             return true;
         }
 
-        return TryReadDeconstructorPrediction(
+        if (TryReadDeconstructorPrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out prediction))
+        {
+            return true;
+        }
+
+        return TryReadIncubatorPrediction(
             machine,
             inputItem,
             outputRule,

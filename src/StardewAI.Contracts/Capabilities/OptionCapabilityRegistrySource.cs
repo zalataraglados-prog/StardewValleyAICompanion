@@ -144,6 +144,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
+            "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
             "executor.read_book", "executor.catch_fish",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
@@ -179,6 +180,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
+            "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
             "executor.read_book", "executor.catch_fish",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
@@ -221,7 +223,8 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.pan_ore_spot", "executor.collect_machine_output",
-            "executor.select_safe_item_slot", "executor.transfer_material");
+            "executor.name_hatched_animal", "executor.select_safe_item_slot",
+            "executor.transfer_material");
 
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
@@ -272,7 +275,8 @@ namespace StardewAI.Contracts.Capabilities
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade",
             "executor.pan_ore_spot", "executor.collect_machine_output",
-            "executor.load_machine_input", "executor.craft_machine_item", "executor.craft_storage_item",
+            "executor.load_machine_input", "executor.name_hatched_animal",
+            "executor.craft_machine_item", "executor.craft_storage_item",
             "executor.place_machine", "executor.remove_machine", "executor.place_storage",
             "executor.read_book", "executor.select_safe_item_slot"
         };
@@ -304,6 +308,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("harvest_bush"), SupportedCandidate("harvest_crop_tile"),
                 SupportedCandidate("harvest_giant_crop_tile"), SupportedCandidate("harvest_ginger"),
                 SupportedCandidate("interact_endpoint"), SupportedCandidate("load_machine_input_tile"),
+                SupportedCandidate("name_hatched_animal"),
                 SupportedCandidate("mining_acquire_golden_scythe_plan_envelope"),
                 SupportedCandidate("mining_obtain_skull_key_plan_envelope"),
                 SupportedCandidate("mining_reach_depth_plan_envelope"), SupportedCandidate("pan_ore_spot"),

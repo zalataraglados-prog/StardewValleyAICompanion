@@ -25,6 +25,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.buy_shop_item" ||
                 action.OptionId == "executor.sell_shop_item" ||
                 action.OptionId == "executor.choose_dialogue_response" ||
+                action.OptionId == "executor.name_hatched_animal" ||
                 option is null)
             {
                 return Array.Empty<string>();
