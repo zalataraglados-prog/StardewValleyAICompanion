@@ -657,7 +657,27 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         return Results.NotFound(new { detail = "no matching snapshot available" });
     }
 
-    var actionQueue = actionQueueCompiler.Compile(plan, snapshot, commitmentRepository.Get(snapshot));
+    var relocationBinding =
+        MachineRelocationIntentPlanBinder.Bind(
+            plan,
+            snapshot,
+            commitmentRepository);
+    if (relocationBinding is not null &&
+        (!relocationBinding.Accepted ||
+         relocationBinding.Ledger is null))
+    {
+        return Results.UnprocessableEntity(new
+        {
+            detail = "machine relocation intent binding rejected",
+            errors = relocationBinding.Errors
+        });
+    }
+    var commitmentLedger = relocationBinding?.Ledger ??
+        commitmentRepository.Get(snapshot);
+    var actionQueue = actionQueueCompiler.Compile(
+        plan,
+        snapshot,
+        commitmentLedger);
     store.ActionQueues[actionQueue.QueueId] = actionQueue;
     store.AppendAudit("DailyPlanActionQueueCompiled", snapshot.GameTick, snapshot.StateHash);
     return Results.Ok(new

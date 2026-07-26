@@ -57,6 +57,9 @@ internal static class StrategyCommitmentLedgerSupport
             MaterialReservations = current?.MaterialReservations
                 .Select(CloneMaterial)
                 .ToArray() ?? Array.Empty<MaterialReservation>(),
+            MachineRelocationIntents = current?.MachineRelocationIntents
+                .Select(CloneMachineRelocation)
+                .ToArray() ?? Array.Empty<MachineRelocationIntent>(),
             History = current?.History
                 .Select(CloneHistory)
                 .ToArray() ?? Array.Empty<StrategyCommitmentHistoryEntry>()
@@ -112,6 +115,28 @@ internal static class StrategyCommitmentLedgerSupport
         Purpose = row.Purpose,
         CancelReason = row.CancelReason
     };
+
+    internal static MachineRelocationIntent CloneMachineRelocation(
+        MachineRelocationIntent row) => new()
+        {
+            IntentId = row.IntentId,
+            Revision = row.Revision,
+            Status = row.Status,
+            SourceDecisionId = row.SourceDecisionId,
+            SourceStateHash = row.SourceStateHash,
+            QualifiedItemId = row.QualifiedItemId,
+            ItemId = row.ItemId,
+            SourceLocationId = row.SourceLocationId,
+            SourceTileX = row.SourceTileX,
+            SourceTileY = row.SourceTileY,
+            TargetLocationId = row.TargetLocationId,
+            TargetTileX = row.TargetTileX,
+            TargetTileY = row.TargetTileY,
+            MachinePlacementProjectionFingerprint =
+                row.MachinePlacementProjectionFingerprint,
+            LayoutNetBenefitTicks = row.LayoutNetBenefitTicks,
+            CompletionReason = row.CompletionReason
+        };
 
     internal static void Advance(
         StrategyCommitmentLedger ledger,

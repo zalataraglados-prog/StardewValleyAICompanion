@@ -39,7 +39,8 @@ public sealed class ActionQueueDispatchReadinessService
             !string.Equals(
                 item.OptionId,
                 "executor.place_storage",
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) &&
+            !IsStrategicMachineRemoval(item))
         {
             result.Ready = true;
             result.Status = "not_applicable";
@@ -50,6 +51,31 @@ public sealed class ActionQueueDispatchReadinessService
         if (!string.Equals(item.Status, "pending", StringComparison.Ordinal))
         {
             reasons.Add("dispatch_queue_item_not_pending");
+        }
+
+        if (IsStrategicMachineRemoval(item))
+        {
+            var intentId = Parameter(item, "relocation_intent_id");
+            var intent = currentLedger.MachineRelocationIntents
+                .FirstOrDefault(row =>
+                    string.Equals(
+                        row.Status,
+                        StrategyCommitmentStatuses.Active,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        row.IntentId,
+                        intentId,
+                        StringComparison.Ordinal));
+            if (intent is null)
+            {
+                reasons.Add(
+                    "dispatch_machine_relocation_intent_not_active");
+            }
+            result.BlockingReasons =
+                reasons.Distinct(StringComparer.Ordinal).ToArray();
+            result.Ready = result.BlockingReasons.Length == 0;
+            result.Status = result.Ready ? "ready" : "blocked";
+            return result;
         }
 
         var guardStatus = Parameter(item, "material_reservation_guard_status");
@@ -132,6 +158,15 @@ public sealed class ActionQueueDispatchReadinessService
 
     private static int? IntParameter(ActionQueueItem item, string name) =>
         int.TryParse(Parameter(item, name), out var value) ? value : null;
+
+    private static bool IsStrategicMachineRemoval(
+        ActionQueueItem item) =>
+        string.Equals(
+            item.OptionId,
+            "executor.remove_machine",
+            StringComparison.Ordinal) &&
+        !string.IsNullOrWhiteSpace(
+            Parameter(item, "relocation_target_location_id"));
 
     private static string[]? StringArrayParameter(
         ActionQueueItem item,
