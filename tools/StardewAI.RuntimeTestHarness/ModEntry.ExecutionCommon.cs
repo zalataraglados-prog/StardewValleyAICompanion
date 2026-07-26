@@ -218,10 +218,25 @@ public sealed partial class ModEntry : Mod
     private static bool MoveFixtureFarmerToFarmAdjacent(Point target, out Point standTile, out string blockReason)
     {
         var farm = Game1.getFarm();
-        Game1.currentLocation = farm;
-        Game1.player.currentLocation = farm;
+        return MoveFixtureFarmerToLocationAdjacent(
+            farm,
+            target,
+            out standTile,
+            out blockReason);
+    }
+
+    private static bool MoveFixtureFarmerToLocationAdjacent(
+        GameLocation location,
+        Point target,
+        out Point standTile,
+        out string blockReason)
+    {
+        Game1.currentLocation = location;
+        Game1.player.currentLocation = location;
         foreach (var candidate in Neighbors(target)
-            .Where(tile => IsTileOnMap(farm, tile) && IsTileWalkable(farm, tile))
+            .Where(tile =>
+                IsTileOnMap(location, tile) &&
+                IsTileWalkable(location, tile))
             .OrderBy(tile => ManhattanDistance(Game1.player.TilePoint, tile)))
         {
             standTile = candidate;
