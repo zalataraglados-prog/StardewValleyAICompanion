@@ -242,7 +242,7 @@ public sealed class StrategyCommitmentLedgerTests
     }
 
     [Fact]
-    public void CrossLocationRelocationRequiresOneConnectorAndTypedBenefit()
+    public void CrossLocationRelocationRequiresTypedResolvedRouteAndBenefit()
     {
         var snapshot = CrossLocationMachineRelocationSnapshot();
         var service = new MachineRelocationIntentLedgerService();
@@ -266,6 +266,22 @@ public sealed class StrategyCommitmentLedgerTests
             RouteConnectorCount = 1,
             RouteConnectorKind = "building_door",
             RouteEstimatedTicks = 1200,
+            RouteSegments =
+            [
+                new MachineRelocationRouteSegment
+                {
+                    Index = 0,
+                    Kind = "building_door",
+                    FromLocationId = "Farm",
+                    FromTileX = 20,
+                    FromTileY = 5,
+                    TargetLocationId = "FarmHouse",
+                    ArrivalTileX = 34,
+                    ArrivalTileY = 24,
+                    ApproachDistanceTiles = 19,
+                    EstimatedTicks = 1200
+                }
+            ],
             TargetArrivalTileX = 34,
             TargetArrivalTileY = 24,
             TargetStandTileX = 36,
@@ -273,11 +289,11 @@ public sealed class StrategyCommitmentLedgerTests
             TargetRouteDistanceTiles = 2,
             LayoutRelocationCostTicks = 1800,
             LayoutBenefitPolicy =
-                "existing_machine_cluster_one_connector_over_eight_cycles",
+                "existing_machine_cluster_resolved_route_over_eight_cycles",
             TargetSelectionPolicy =
-                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
+                "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             TimeEstimatePolicy =
-                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked"
+                "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked"
         };
 
         var accepted = service.Upsert(

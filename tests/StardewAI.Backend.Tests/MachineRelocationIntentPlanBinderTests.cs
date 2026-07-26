@@ -55,6 +55,9 @@ public sealed class MachineRelocationIntentPlanBinderTests
                             "relocation_route_estimated_ticks",
                             "1200"),
                         Parameter(
+                            "relocation_route_segments_json",
+                            """[{"index":0,"kind":"building_door","from_location_id":"Farm","from_tile_x":20,"from_tile_y":5,"target_location_id":"FarmHouse","arrival_tile_x":27,"arrival_tile_y":30,"approach_distance_tiles":19,"estimated_ticks":1200}]"""),
+                        Parameter(
                             "relocation_target_arrival_tile_x",
                             "27"),
                         Parameter(
@@ -74,13 +77,13 @@ public sealed class MachineRelocationIntentPlanBinderTests
                             "1620"),
                         Parameter(
                             "layout_benefit_policy",
-                            "existing_machine_cluster_one_connector_over_eight_cycles"),
+                            "existing_machine_cluster_resolved_route_over_eight_cycles"),
                         Parameter(
                             "relocation_target_selection_policy",
-                            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
+                            "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
                         Parameter(
                             "layout_time_estimate_policy",
-                            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked")
+                            "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked")
                     }
                 }
             }
@@ -102,6 +105,10 @@ public sealed class MachineRelocationIntentPlanBinderTests
         Assert.Equal(1, request.RouteConnectorCount);
         Assert.Equal("building_door", request.RouteConnectorKind);
         Assert.Equal(1200, request.RouteEstimatedTicks);
+        var segment = Assert.Single(request.RouteSegments);
+        Assert.Equal("Farm", segment.FromLocationId);
+        Assert.Equal("FarmHouse", segment.TargetLocationId);
+        Assert.Equal(19, segment.ApproachDistanceTiles);
         Assert.Equal(27, request.TargetArrivalTileX);
         Assert.Equal(30, request.TargetArrivalTileY);
         Assert.Equal(31, request.TargetStandTileX);
@@ -109,13 +116,13 @@ public sealed class MachineRelocationIntentPlanBinderTests
         Assert.Equal(4, request.TargetRouteDistanceTiles);
         Assert.Equal(1620, request.LayoutRelocationCostTicks);
         Assert.Equal(
-            "existing_machine_cluster_one_connector_over_eight_cycles",
+            "existing_machine_cluster_resolved_route_over_eight_cycles",
             request.LayoutBenefitPolicy);
         Assert.Equal(
-            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
+            "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             request.TargetSelectionPolicy);
         Assert.Equal(
-            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked",
+            "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked",
             request.TimeEstimatePolicy);
     }
 

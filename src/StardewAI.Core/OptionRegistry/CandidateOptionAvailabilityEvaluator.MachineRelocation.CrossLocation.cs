@@ -161,12 +161,17 @@ namespace StardewAI.Core.OptionRegistry
                 routeCandidates);
             var route = routePlan?.FirstConnectorCandidate;
             if (routePlan is null ||
-                routePlan.Path.Length != 1 ||
                 route is null ||
                 !route.Available ||
-                route.EstimatedTicks < 0 ||
-                routePlan.Path[0].TargetX is not int arrivalX ||
-                routePlan.Path[0].TargetY is not int arrivalY)
+                route.EstimatedTicks < 0)
+            {
+                return null;
+            }
+            var routeEvidence = BuildRelocationRouteEvidence(
+                snapshot,
+                routePlan,
+                route);
+            if (routeEvidence is null)
             {
                 return null;
             }
@@ -175,8 +180,8 @@ namespace StardewAI.Core.OptionRegistry
                 snapshot,
                 targetLocation,
                 targetPeers,
-                arrivalX,
-                arrivalY);
+                routeEvidence.FinalArrivalX,
+                routeEvidence.FinalArrivalY);
             if (target is null ||
                 target.ClusterDistance >= currentClusterDistance)
             {
@@ -194,7 +199,7 @@ namespace StardewAI.Core.OptionRegistry
                 target.RouteDistanceTiles * 60;
             var relocationCostTicks =
                 sourceApproachTicks +
-                route.EstimatedTicks +
+                routeEvidence.EstimatedTicks +
                 targetApproachTicks +
                 MachineLayoutActionOverheadTicks;
             var netBenefitTicks =
@@ -239,7 +244,8 @@ namespace StardewAI.Core.OptionRegistry
                     "]=debris_or_native_auto_collected_inventory" +
                     ";relocation_target=" + targetLocationId + ":" +
                     target.Target.X + "," + target.Target.Y +
-                    ";relocation_route_connector_count=1" +
+                    ";relocation_route_connector_count=" +
+                    routeEvidence.Segments.Length +
                     ";layout_saved_ticks_per_service_cycle=" +
                     savedTicksPerCycle +
                     ";layout_break_even_cycles=" + breakEvenCycles +
@@ -295,7 +301,7 @@ namespace StardewAI.Core.OptionRegistry
                         target.RouteDistanceTiles.ToString()),
                     Parameter(
                         "relocation_route_connector_count",
-                        "1"),
+                        routeEvidence.Segments.Length.ToString()),
                     Parameter(
                         "relocation_route_connector_kind",
                         ReadParameter(
@@ -306,13 +312,17 @@ namespace StardewAI.Core.OptionRegistry
                         targetLocationId),
                     Parameter(
                         "relocation_route_estimated_ticks",
-                        route.EstimatedTicks.ToString()),
+                        routeEvidence.EstimatedTicks.ToString()),
+                    Parameter(
+                        "relocation_route_segments_json",
+                        JsonSerializer.Serialize(
+                            routeEvidence.Segments)),
                     Parameter(
                         "relocation_target_arrival_tile_x",
-                        arrivalX.ToString()),
+                        routeEvidence.FinalArrivalX.ToString()),
                     Parameter(
                         "relocation_target_arrival_tile_y",
-                        arrivalY.ToString()),
+                        routeEvidence.FinalArrivalY.ToString()),
                     Parameter(
                         "layout_current_cluster_distance",
                         currentClusterDistance.ToString()),
@@ -339,13 +349,13 @@ namespace StardewAI.Core.OptionRegistry
                         netBenefitTicks.ToString()),
                     Parameter(
                         "layout_benefit_policy",
-                        "existing_machine_cluster_one_connector_over_eight_cycles"),
+                        "existing_machine_cluster_resolved_route_over_eight_cycles"),
                     Parameter(
                         "relocation_target_selection_policy",
-                        "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
+                        "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
                     Parameter(
                         "layout_time_estimate_policy",
-                        "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked")
+                        "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked")
                 }
             };
         }

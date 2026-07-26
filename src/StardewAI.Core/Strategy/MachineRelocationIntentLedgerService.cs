@@ -71,6 +71,22 @@ public sealed class MachineRelocationIntentLedgerService
             RouteConnectorCount = request.RouteConnectorCount,
             RouteConnectorKind = request.RouteConnectorKind,
             RouteEstimatedTicks = request.RouteEstimatedTicks,
+            RouteSegments = (request.RouteSegments ?? [])
+                .Select(segment => new MachineRelocationRouteSegment
+                {
+                    Index = segment.Index,
+                    Kind = segment.Kind,
+                    FromLocationId = segment.FromLocationId,
+                    FromTileX = segment.FromTileX,
+                    FromTileY = segment.FromTileY,
+                    TargetLocationId = segment.TargetLocationId,
+                    ArrivalTileX = segment.ArrivalTileX,
+                    ArrivalTileY = segment.ArrivalTileY,
+                    ApproachDistanceTiles =
+                        segment.ApproachDistanceTiles,
+                    EstimatedTicks = segment.EstimatedTicks
+                })
+                .ToArray(),
             TargetArrivalTileX = request.TargetArrivalTileX,
             TargetArrivalTileY = request.TargetArrivalTileY,
             TargetStandTileX = request.TargetStandTileX,
@@ -196,8 +212,14 @@ public sealed class MachineRelocationIntentLedgerService
             request.SourceLocationId,
             request.TargetLocationId,
             StringComparison.OrdinalIgnoreCase);
-        if ((!crossLocation && request.RouteConnectorCount != 0) ||
-            (crossLocation && request.RouteConnectorCount != 1))
+        var routeSegments = request.RouteSegments ?? [];
+        if ((!crossLocation &&
+             (request.RouteConnectorCount != 0 ||
+              routeSegments.Length != 0)) ||
+            (crossLocation &&
+             (request.RouteConnectorCount < 1 ||
+              routeSegments.Length !=
+                  request.RouteConnectorCount)))
         {
             errors.Add(
                 "machine_relocation_route_connector_count_invalid");
@@ -223,7 +245,7 @@ public sealed class MachineRelocationIntentLedgerService
         if (crossLocation &&
             !string.Equals(
                 request.LayoutBenefitPolicy,
-                "existing_machine_cluster_one_connector_over_eight_cycles",
+                "existing_machine_cluster_resolved_route_over_eight_cycles",
                 StringComparison.Ordinal))
         {
             errors.Add(
@@ -232,20 +254,14 @@ public sealed class MachineRelocationIntentLedgerService
         if (crossLocation &&
             !string.Equals(
                 request.TargetSelectionPolicy,
-                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
+                "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
                 StringComparison.Ordinal))
         {
             errors.Add(
                 "machine_relocation_target_selection_policy_invalid");
         }
         if (crossLocation &&
-            !ResolvedConnectorMatches(
-                snapshot,
-                request.SourceLocationId,
-                request.TargetLocationId,
-                request.RouteConnectorKind,
-                request.TargetArrivalTileX,
-                request.TargetArrivalTileY))
+            !ResolvedRouteMatches(snapshot, request))
         {
             errors.Add(
                 "machine_relocation_resolved_connector_drifted");
@@ -259,7 +275,7 @@ public sealed class MachineRelocationIntentLedgerService
         if (crossLocation &&
             !string.Equals(
                 request.TimeEstimatePolicy,
-                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked",
+                "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked",
                 StringComparison.Ordinal))
         {
             errors.Add(
@@ -383,13 +399,9 @@ public sealed class MachineRelocationIntentLedgerService
                 StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool ResolvedConnectorMatches(
+    private static bool ResolvedRouteMatches(
         SnapshotEnvelope snapshot,
-        string sourceLocationId,
-        string targetLocationId,
-        string connectorKind,
-        int arrivalX,
-        int arrivalY)
+        MachineRelocationIntentUpsertRequest request)
     {
         var graph = ReadStateFieldValue(
             snapshot,
@@ -403,23 +415,104 @@ public sealed class MachineRelocationIntentLedgerService
             return false;
         }
 
-        return edges.EnumerateArray().Any(edge =>
-            edge.ValueKind == JsonValueKind.Object &&
-            ReadBool(edge, "resolved") == true &&
-            string.Equals(
-                ReadString(edge, "from_location"),
-                sourceLocationId,
-                StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(
-                ReadString(edge, "target_location"),
-                targetLocationId,
-                StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(
-                ReadString(edge, "kind"),
-                connectorKind,
-                StringComparison.OrdinalIgnoreCase) &&
-            ReadInt(edge, "target_x") == arrivalX &&
-            ReadInt(edge, "target_y") == arrivalY);
+        var segments = request.RouteSegments ?? [];
+        if (segments.Length == 0 ||
+            !string.Equals(
+                segments[0].FromLocationId,
+                request.SourceLocationId,
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                segments[^1].TargetLocationId,
+                request.TargetLocationId,
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                segments[0].Kind,
+                request.RouteConnectorKind,
+                StringComparison.OrdinalIgnoreCase) ||
+            segments[^1].ArrivalTileX !=
+                request.TargetArrivalTileX ||
+            segments[^1].ArrivalTileY !=
+                request.TargetArrivalTileY)
+        {
+            return false;
+        }
+
+        long estimatedTicks = 0;
+        for (var index = 0; index < segments.Length; index++)
+        {
+            var segment = segments[index];
+            if (segment.Index != index ||
+                string.IsNullOrWhiteSpace(segment.Kind) ||
+                string.IsNullOrWhiteSpace(
+                    segment.FromLocationId) ||
+                string.IsNullOrWhiteSpace(
+                    segment.TargetLocationId) ||
+                segment.ApproachDistanceTiles < 0 ||
+                segment.ApproachDistanceTiles >
+                    int.MaxValue / 60 - 1 ||
+                segment.EstimatedTicks !=
+                    (segment.ApproachDistanceTiles + 1) * 60 ||
+                (index > 0 &&
+                 !string.Equals(
+                     segments[index - 1].TargetLocationId,
+                     segment.FromLocationId,
+                     StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+            if (index > 0)
+            {
+                var previous = segments[index - 1];
+                var reachability =
+                    MachineRelocationReachabilityProjectionReader.Read(
+                        snapshot,
+                        segment.FromLocationId,
+                        previous.ArrivalTileX,
+                        previous.ArrivalTileY);
+                if (reachability is null ||
+                    !reachability.TryGetConnectorApproachDistance(
+                        segment.FromTileX,
+                        segment.FromTileY,
+                        MachineRelocationReachabilityProjectionReader
+                            .ReadResolvedConnectorTiles(
+                                snapshot,
+                                segment.FromLocationId),
+                        out var approachDistance) ||
+                    approachDistance !=
+                        segment.ApproachDistanceTiles)
+                {
+                    return false;
+                }
+            }
+
+            if (!edges.EnumerateArray().Any(edge =>
+                edge.ValueKind == JsonValueKind.Object &&
+                ReadBool(edge, "resolved") == true &&
+                string.Equals(
+                    ReadString(edge, "from_location"),
+                    segment.FromLocationId,
+                    StringComparison.OrdinalIgnoreCase) &&
+                ReadInt(edge, "from_x") == segment.FromTileX &&
+                ReadInt(edge, "from_y") == segment.FromTileY &&
+                string.Equals(
+                    ReadString(edge, "target_location"),
+                    segment.TargetLocationId,
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    ReadString(edge, "kind"),
+                    segment.Kind,
+                    StringComparison.OrdinalIgnoreCase) &&
+                ReadInt(edge, "target_x") ==
+                    segment.ArrivalTileX &&
+                ReadInt(edge, "target_y") ==
+                    segment.ArrivalTileY))
+            {
+                return false;
+            }
+            estimatedTicks += segment.EstimatedTicks;
+        }
+
+        return estimatedTicks == request.RouteEstimatedTicks;
     }
 
     private static bool TargetHasProvenReachableStand(

@@ -3123,3 +3123,19 @@ Scope boundary:
 - Ordinary positive-benefit relocation to a statically reachable native-legal target through one resolved connector is closed.
 - Multi-connector relocation remains fail closed.
 - Special/conditional/random/custom machines, Workbench lifecycle, target-map topology drift after commitment, and multiplayer ownership/sharing remain pending.
+
+2026-07-26 strategic multi-connector machine relocation
+
+Runtime: `artifacts\runtime-strategic-multi-connector-machine-relocation-smoke\runtime-strategic-multi-connector-cellar-final-20260726-180008\summary.json`
+Result: PASS; the hidden E-drive isolated run moved Keg `(BC)12` from `Farm 56,15` to `Cellar 6,7` through two committed native connectors: Farm building door `64,14 -> FarmHouse 27,30`, then FarmHouse TouchAction warp `19,35 -> Cellar 3,2`. The candidate and persisted intent carried both typed segments and the full `2700`-tick route cost. Each connector was selected only after a fresh snapshot matched the exact committed suffix. Final target BFS distance was `7`, net benefit was `2640`, native removal and auto-collection passed, exact native placement passed, all three state hashes were distinct, and the intent completed with `exact_target_machine_observed`.
+
+The runtime exposed two executor defects before the passing run. A paired TouchAction connector tile could be selected as the stand for its neighbor, producing the wrong arrival; connector, TouchAction, and warp tiles are now excluded from stand candidates. Reaching a TouchAction tile may precede the map transition by one update; the movement executor now waits for the next-frame location change before deciding that traversal is blocked.
+
+Command:
+- `dotnet test StardewValleyAICompanion.sln --no-restore --nologo`
+Result: PASS; Core 1218/1218, Backend 86/86, solution build 0 errors. The build retained existing deprecation/analyzer warnings.
+
+Scope boundary:
+- Ordinary positive-benefit relocation over an arbitrary resolved transparent connector chain is closed for the base native idle-machine path.
+- Every intermediate route segment and the final placement are revalidated against fresh state and fail closed on drift.
+- Special/conditional/random/custom machines, Workbench lifecycle, topology drift beyond fail-closed replanning, and multiplayer ownership/sharing remain pending.

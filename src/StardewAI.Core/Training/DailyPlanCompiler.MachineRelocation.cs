@@ -60,6 +60,7 @@ namespace StardewAI.Core.Training
                 "relocation_route_connector_kind",
                 "relocation_route_expected_target_location",
                 "relocation_route_estimated_ticks",
+                "relocation_route_segments_json",
                 "relocation_target_arrival_tile_x",
                 "relocation_target_arrival_tile_y",
                 "layout_current_cluster_distance",

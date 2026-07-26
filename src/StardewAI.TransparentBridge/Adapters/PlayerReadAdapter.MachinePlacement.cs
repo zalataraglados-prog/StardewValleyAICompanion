@@ -80,6 +80,14 @@ public sealed partial class PlayerReadAdapter
                      pair.Value.bigCraftable.Value &&
                      pair.Value.GetMachineData() is not null)))
             .ToArray();
+        var relocationRouteLocations = locations
+            .Where(location =>
+                location.IsPlayerControlled ||
+                string.Equals(
+                    location.Location.NameOrUniqueName,
+                    currentLocationId,
+                    StringComparison.OrdinalIgnoreCase))
+            .ToArray();
         var fingerprint = MachinePlacementFingerprint(
             inventoryMachines,
             relocationMachines,
@@ -110,7 +118,7 @@ public sealed partial class PlayerReadAdapter
             .ToArray();
         var relocationRouteReachability =
             ReadMachineRelocationRouteReachability(
-                relocationLocations);
+                relocationRouteLocations);
         var context = new
         {
             projection_status = "complete_inventory_and_relocation_machine_types_across_loaded_persistent_locations",
@@ -118,6 +126,8 @@ public sealed partial class PlayerReadAdapter
             relocation_machine_type_count = relocationRows.Length,
             relocation_location_id = currentLocationId,
             relocation_scope = "current_source_plus_player_controlled_existing_machine_clusters",
+            relocation_route_scope =
+                "current_source_plus_all_player_controlled_persistent_locations",
             location_count = locations.Length,
             static_projection_fingerprint = fingerprint,
             static_projection_tick = unchecked((long)Game1.ticks),

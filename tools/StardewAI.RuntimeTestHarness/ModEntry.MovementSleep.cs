@@ -311,6 +311,25 @@ public sealed partial class ModEntry : Mod
         {
             if (move.AllowsLocationChange)
             {
+                if (move.ConnectorActionTile.HasValue &&
+                    IsStepOntoConnectorKind(
+                        move.Pending.Request.ConnectorKind) &&
+                    Game1.player.TilePoint ==
+                        move.ConnectorActionTile.Value)
+                {
+                    StopAllMovement();
+                    move.CurrentDirection = null;
+                    move.Tick++;
+                    if (!config.DisableMovementTimeouts &&
+                        move.Tick > move.MaxTicks)
+                    {
+                        CompleteBlockedMove(
+                            move,
+                            "connector_warp_step_timeout");
+                    }
+                    return;
+                }
+
                 CompleteBlockedMove(move, "connector_path_exhausted_before_location_change");
                 return;
             }

@@ -42,14 +42,25 @@ internal static class MachineLocationTopology
         var root = location.GetRootLocation();
         var isFarmRoot = SameLocation(location, farm) || SameLocation(root, farm) || location.IsFarm || root.IsFarm;
         var isHomeRoot = home is not null && (SameLocation(location, home) || SameLocation(root, home));
-        var isPlayerControlled = isFarmRoot || isHomeRoot || location.IsGreenhouse || root.IsGreenhouse;
+        var isCellar = home is not null &&
+            location is Cellar &&
+            string.Equals(
+                location.NameOrUniqueName,
+                home.GetCellarName(),
+                StringComparison.OrdinalIgnoreCase);
+        var isPlayerControlled =
+            isFarmRoot ||
+            isHomeRoot ||
+            isCellar ||
+            location.IsGreenhouse ||
+            root.IsGreenhouse;
         var kind = SameLocation(location, farm)
             ? "farm_outdoor"
             : location.IsGreenhouse
                 ? "greenhouse"
                 : home is not null && SameLocation(location, home)
                     ? "farmhouse"
-                    : location is Cellar
+                    : isCellar
                         ? "cellar"
                         : location.ParentBuilding is not null && isFarmRoot
                             ? "farm_building_interior"

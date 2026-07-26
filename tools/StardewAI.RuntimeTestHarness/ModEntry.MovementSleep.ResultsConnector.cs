@@ -217,6 +217,15 @@ public sealed partial class ModEntry : Mod
     {
         return Neighbors(actionTile)
             .Where(tile => IsTileTraversableForPlan(location, tile, avoidSoftObstacles: true))
+            .Where(tile => string.IsNullOrWhiteSpace(
+                location.doesTileHaveProperty(
+                    tile.X,
+                    tile.Y,
+                    "TouchAction",
+                    "Back")))
+            .Where(tile => !location.warps.Any(warp =>
+                warp.X == tile.X &&
+                warp.Y == tile.Y))
             .OrderBy(tile => Math.Abs(startTile.X - tile.X) + Math.Abs(startTile.Y - tile.Y))
             .Cast<Point?>()
             .FirstOrDefault();

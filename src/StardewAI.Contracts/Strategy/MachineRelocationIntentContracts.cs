@@ -59,6 +59,10 @@ public sealed class MachineRelocationIntent
     [JsonPropertyName("route_estimated_ticks")]
     public int RouteEstimatedTicks { get; set; }
 
+    [JsonPropertyName("route_segments")]
+    public MachineRelocationRouteSegment[] RouteSegments { get; set; } =
+        [];
+
     [JsonPropertyName("target_arrival_tile_x")]
     public int TargetArrivalTileX { get; set; }
 
@@ -144,6 +148,10 @@ public sealed class MachineRelocationIntentUpsertRequest
     [JsonPropertyName("route_estimated_ticks")]
     public int RouteEstimatedTicks { get; set; }
 
+    [JsonPropertyName("route_segments")]
+    public MachineRelocationRouteSegment[] RouteSegments { get; set; } =
+        [];
+
     [JsonPropertyName("target_arrival_tile_x")]
     public int TargetArrivalTileX { get; set; }
 
@@ -170,4 +178,37 @@ public sealed class MachineRelocationIntentUpsertRequest
 
     [JsonPropertyName("time_estimate_policy")]
     public string TimeEstimatePolicy { get; set; } = string.Empty;
+}
+
+public sealed class MachineRelocationRouteSegment
+{
+    [JsonPropertyName("index")]
+    public int Index { get; set; }
+
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = string.Empty;
+
+    [JsonPropertyName("from_location_id")]
+    public string FromLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("from_tile_x")]
+    public int FromTileX { get; set; }
+
+    [JsonPropertyName("from_tile_y")]
+    public int FromTileY { get; set; }
+
+    [JsonPropertyName("target_location_id")]
+    public string TargetLocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("arrival_tile_x")]
+    public int ArrivalTileX { get; set; }
+
+    [JsonPropertyName("arrival_tile_y")]
+    public int ArrivalTileY { get; set; }
+
+    [JsonPropertyName("approach_distance_tiles")]
+    public int ApproachDistanceTiles { get; set; }
+
+    [JsonPropertyName("estimated_ticks")]
+    public int EstimatedTicks { get; set; }
 }

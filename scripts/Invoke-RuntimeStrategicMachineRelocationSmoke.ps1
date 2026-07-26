@@ -244,6 +244,38 @@ function Invoke-SetupMachine {
         -Body $request
 }
 
+function Invoke-SetupIdleMachine {
+    param(
+        [string] $ExecutorUrl,
+        [string] $SavesPath,
+        [string] $ExecutionRunId,
+        [string] $Step,
+        [int] $X,
+        [int] $Y,
+        [string] $LocationId
+    )
+    return Invoke-JsonPost `
+        -Url "$ExecutorUrl/api/v1/training/execute" `
+        -Body ([ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $ExecutionRunId
+            queue_id = "strategic-machine-relocation-fixture"
+            queue_item_id =
+                "strategic-machine-relocation-fixture.$Step"
+            before_state_hash = "fixture"
+            option_id = "debug.setup_idle_machine_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $SavesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = $X
+            target_tile_y = $Y
+            location_id = $LocationId
+            expected_shop_id = $MachineItemId
+        })
+}
+
 function Invoke-LoadMachine {
     param(
         [string] $ExecutorUrl,
@@ -333,13 +365,15 @@ function Wait-FixtureReady {
         $targetPeerTwoBusy =
             $null -ne $targetPeerTwo -and
             [int]$targetPeerTwo.minutes_until_ready -gt 0
+        $targetPeerOnePresent = $null -ne $targetPeerOne
+        $targetPeerTwoPresent = $null -ne $targetPeerTwo
         $peerCondition = if ($TargetLocationId -eq "Farm") {
             $peerOneBusy -and $peerTwoBusy
         }
         else {
             $peerOneBusy -and
-                $targetPeerOneBusy -and
-                $targetPeerTwoBusy
+                $targetPeerOnePresent -and
+                $targetPeerTwoPresent
         }
         $lastStatus =
             "source_ready=$sourceReady" +
@@ -347,6 +381,8 @@ function Wait-FixtureReady {
             ";peer_two_busy=$peerTwoBusy" +
             ";target_peer_one_busy=$targetPeerOneBusy" +
             ";target_peer_two_busy=$targetPeerTwoBusy" +
+            ";target_peer_one_present=$targetPeerOnePresent" +
+            ";target_peer_two_present=$targetPeerTwoPresent" +
             ";input_count=$inputCount"
         if ($sourceReady -and
             $peerCondition -and
@@ -520,41 +556,23 @@ try {
 
     $fixtureResults = @()
     if ($TargetLocationId -ne "Farm") {
-        $setupTargetPeerOne = Invoke-SetupMachine `
+        $setupTargetPeerOne = Invoke-SetupIdleMachine `
             -ExecutorUrl $executorUrl `
             -SavesPath $savesPath `
             -ExecutionRunId $RunId `
             -Step "setup-target-peer-one" `
             -X $TargetPeerOneTileX -Y $TargetPeerOneTileY `
             -LocationId $TargetLocationId
-        $loadTargetPeerOne = Invoke-LoadMachine `
-            -ExecutorUrl $executorUrl `
-            -SnapshotUrl $snapshotUrl `
-            -SavesPath $savesPath `
-            -ExecutionRunId $RunId `
-            -Step "load-target-peer-one" `
-            -X $TargetPeerOneTileX -Y $TargetPeerOneTileY `
-            -LocationId $TargetLocationId
-        $setupTargetPeerTwo = Invoke-SetupMachine `
+        $setupTargetPeerTwo = Invoke-SetupIdleMachine `
             -ExecutorUrl $executorUrl `
             -SavesPath $savesPath `
             -ExecutionRunId $RunId `
             -Step "setup-target-peer-two" `
             -X $TargetPeerTwoTileX -Y $TargetPeerTwoTileY `
             -LocationId $TargetLocationId
-        $loadTargetPeerTwo = Invoke-LoadMachine `
-            -ExecutorUrl $executorUrl `
-            -SnapshotUrl $snapshotUrl `
-            -SavesPath $savesPath `
-            -ExecutionRunId $RunId `
-            -Step "load-target-peer-two" `
-            -X $TargetPeerTwoTileX -Y $TargetPeerTwoTileY `
-            -LocationId $TargetLocationId
         $fixtureResults += @(
             $setupTargetPeerOne,
-            $loadTargetPeerOne,
-            $setupTargetPeerTwo,
-            $loadTargetPeerTwo
+            $setupTargetPeerTwo
         )
     }
     $setupSource = Invoke-SetupMachine `
@@ -679,6 +697,19 @@ try {
     $routeConnectorKind = Candidate-Parameter `
         -Candidate $relocationCandidate `
         -Name "relocation_route_connector_kind"
+    $routeConnectorCount = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_route_connector_count")
+    $routeSegmentsJson = Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_route_segments_json"
+    $routeSegments =
+        if ([string]::IsNullOrWhiteSpace($routeSegmentsJson)) {
+            @()
+        }
+        else {
+            $routeSegmentsJson | ConvertFrom-Json
+        }
     $routeEstimatedTicks = [int](Candidate-Parameter `
         -Candidate $relocationCandidate `
         -Name "relocation_route_estimated_ticks")
@@ -705,11 +736,13 @@ try {
         throw "Strategic candidate lacked a positive typed intent."
     }
     if ($targetSelectionPolicy -ne
-            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked" -or
+            "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked" -or
+        $routeConnectorCount -lt 1 -or
+        $routeSegments.Count -ne $routeConnectorCount -or
         [string]::IsNullOrWhiteSpace($routeConnectorKind) -or
         $routeEstimatedTicks -lt 0 -or
         $timeEstimatePolicy -ne
-            "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked" -or
+            "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked" -or
         $targetRouteDistanceTiles -lt 0 -or
         ([Math]::Abs($targetX - $targetStandX) +
             [Math]::Abs($targetY - $targetStandY)) -ne 1 -or
@@ -852,92 +885,151 @@ try {
     Write-JsonFile $recoveredSnapshotPath $recoveredSnapshot
 
     $placementSnapshotPath = $recoveredSnapshotPath
-    $routeExecution = $null
-    $routeCandidate = $null
+    $routeExecutions = @()
+    $routeCandidatesUsed = @()
     if ($TargetLocationId -ne "Farm") {
-        $null = Invoke-JsonPost `
-            -Url "$backendUrl/api/v1/snapshots" `
-            -Body $recoveredSnapshot
-        $routeAvailability = Invoke-JsonPost `
-            -Url "$backendUrl/api/v1/planner/options/availability" `
-            -Body ([ordered]@{
-                state_hash = $recoveredSnapshot.state_hash
-                candidate_option_ids = @("farm.process_machines")
-                candidates = @()
-                include_executor_calibration_options = $true
-            })
-        Write-JsonFile `
-            (Join-Path $runDirectory `
-                "recovered-availability.json") `
-            $routeAvailability
-        $routeCandidate = @(
-            $routeAvailability.options |
-                Where-Object {
-                    $_.option_id -eq "farm.process_machines"
-                } |
-                ForEach-Object { $_.event_candidates } |
-                Where-Object {
-                    $_.kind -eq "route_connector_tile" -and
-                    [bool]$_.available -and
-                    $_.candidate_id -like
-                        "machine-place-route:*" -and
-                    (Candidate-Parameter `
-                        -Candidate $_ `
-                        -Name "continuation.machine_location_id") -eq
-                        $TargetLocationId -and
-                    (Candidate-Parameter `
-                        -Candidate $_ `
-                        -Name "continuation.relocation_intent_id") -eq
-                        $intentId
-                }
-        ) | Select-Object -First 1
-        if ($null -eq $routeCandidate) {
-            throw (
-                "Recovered machine had no exact intent route to " +
-                "$TargetLocationId."
-            )
-        }
+        $routeSnapshot = $recoveredSnapshot
+        $routeSnapshotPath = $recoveredSnapshotPath
+        $visitedLocations = @{}
+        for ($routeIndex = 0;
+             $routeIndex -lt $routeConnectorCount;
+             $routeIndex++) {
+            $currentRouteLocation =
+                [string]$routeSnapshot.state.player.location_id.value
+            if ($currentRouteLocation -eq $TargetLocationId) {
+                break
+            }
+            if ($visitedLocations.ContainsKey($currentRouteLocation)) {
+                throw (
+                    "Strategic relocation route revisited " +
+                    "$currentRouteLocation."
+                )
+            }
+            $visitedLocations[$currentRouteLocation] = $true
 
-        $routeRoot = Join-Path $runDirectory "stage-route"
-        Invoke-LiveStage `
-            -StageRoot $routeRoot `
-            -StageRunId $RunId `
-            -SnapshotPath $recoveredSnapshotPath `
-            -BackendUrl $backendUrl `
-            -SnapshotUrl $snapshotUrl `
-            -ExecutorUrl $executorUrl `
-            -SavesPath $savesPath `
-            -CandidateKind "route_connector_tile" `
-            -CandidateId ([string]$routeCandidate.candidate_id) `
-            -LogPath (Join-Path $runDirectory "stage-route.log")
-        $routeArtifactRoot = Join-Path $routeRoot (
-            "runs\$RunId\live-snapshots"
-        )
-        $routeStageExecution = Get-Content -LiteralPath (
-            Join-Path $routeArtifactRoot "execution-0001.json"
-        ) -Raw | ConvertFrom-Json
-        $routeExecution = @($routeStageExecution.step_results) |
-            Where-Object {
+            $null = Invoke-JsonPost `
+                -Url "$backendUrl/api/v1/snapshots" `
+                -Body $routeSnapshot
+            $routeAvailability = Invoke-JsonPost `
+                -Url "$backendUrl/api/v1/planner/options/availability" `
+                -Body ([ordered]@{
+                    state_hash = $routeSnapshot.state_hash
+                    candidate_option_ids =
+                        @("farm.process_machines")
+                    candidates = @()
+                    include_executor_calibration_options = $true
+                })
+            Write-JsonFile `
+                (Join-Path $runDirectory (
+                    "route-availability-{0:D2}.json" -f
+                    $routeIndex
+                )) `
+                $routeAvailability
+            $routeCandidate = @(
+                $routeAvailability.options |
+                    Where-Object {
+                        $_.option_id -eq "farm.process_machines"
+                    } |
+                    ForEach-Object { $_.event_candidates } |
+                    Where-Object {
+                        $_.kind -eq "route_connector_tile" -and
+                        [bool]$_.available -and
+                        $_.candidate_id -like
+                            "machine-place-route:*" -and
+                        (Candidate-Parameter `
+                            -Candidate $_ `
+                            -Name `
+                                "continuation.machine_location_id") -eq
+                            $TargetLocationId -and
+                        (Candidate-Parameter `
+                            -Candidate $_ `
+                            -Name `
+                                "continuation.relocation_intent_id") -eq
+                            $intentId -and
+                        [int](Candidate-Parameter `
+                            -Candidate $_ `
+                            -Name `
+                                "machine_route.committed_segment_index") -eq
+                            $routeIndex
+                    }
+            ) | Select-Object -First 1
+            if ($null -eq $routeCandidate) {
+                throw (
+                    "Recovered machine had no committed route segment " +
+                    "$routeIndex from $currentRouteLocation to " +
+                    "$TargetLocationId."
+                )
+            }
+
+            $expectedNextLocation = Candidate-Parameter `
+                -Candidate $routeCandidate `
+                -Name "expected_target_location"
+            $routeStageRunId = $RunId
+            $routeRoot = Join-Path $runDirectory (
+                "stage-route-{0:D2}" -f $routeIndex
+            )
+            Invoke-LiveStage `
+                -StageRoot $routeRoot `
+                -StageRunId $routeStageRunId `
+                -SnapshotPath $routeSnapshotPath `
+                -BackendUrl $backendUrl `
+                -SnapshotUrl $snapshotUrl `
+                -ExecutorUrl $executorUrl `
+                -SavesPath $savesPath `
+                -CandidateKind "route_connector_tile" `
+                -CandidateId ([string]$routeCandidate.candidate_id) `
+                -LogPath (Join-Path $runDirectory (
+                    "stage-route-{0:D2}.log" -f $routeIndex
+                ))
+            $routeArtifactRoot = Join-Path $routeRoot (
+                "runs\$routeStageRunId\live-snapshots"
+            )
+            $routeStageExecution = Get-Content -LiteralPath (
+                Join-Path $routeArtifactRoot "execution-0001.json"
+            ) -Raw | ConvertFrom-Json
+            $routeExecution = @(
+                $routeStageExecution.step_results
+            ) | Where-Object {
                 $_.option_id -eq "executor.traverse_connector"
-            } |
-            Select-Object -First 1
-        if ($null -eq $routeExecution -or
-            $routeExecution.status -ne "applied" -or
-            $routeExecution.primitive_verification_status -ne
-                "verified") {
-            throw "Strategic relocation connector did not verify."
+            } | Select-Object -First 1
+            if ($null -eq $routeExecution -or
+                $routeExecution.status -ne "applied" -or
+                $routeExecution.primitive_verification_status -ne
+                    "verified") {
+                throw (
+                    "Strategic relocation connector segment " +
+                    "$routeIndex did not verify."
+                )
+            }
+
+            $routeSnapshot = Wait-WorldSnapshot `
+                -Url $snapshotUrl -TimeoutSeconds 45
+            $actualNextLocation =
+                [string]$routeSnapshot.state.player.location_id.value
+            if ($actualNextLocation -ne $expectedNextLocation) {
+                throw (
+                    "Strategic route segment $routeIndex reached " +
+                    "$actualNextLocation instead of " +
+                    "$expectedNextLocation."
+                )
+            }
+            $routeSnapshotPath = Join-Path $runDirectory (
+                "route-snapshot-{0:D2}.json" -f ($routeIndex + 1)
+            )
+            Write-JsonFile $routeSnapshotPath $routeSnapshot
+            $routeCandidatesUsed += $routeCandidate
+            $routeExecutions += $routeExecution
         }
 
-        $targetSnapshot = Wait-WorldSnapshot `
-            -Url $snapshotUrl -TimeoutSeconds 45
-        if ([string]$targetSnapshot.state.player.location_id.value -ne
-            $TargetLocationId) {
+        if ([string]$routeSnapshot.state.player.location_id.value -ne
+            $TargetLocationId -or
+            $routeExecutions.Count -ne $routeConnectorCount) {
             throw (
-                "Strategic route reached unexpected location: " +
-                "$($targetSnapshot.state.player.location_id.value)"
+                "Strategic route did not consume the committed " +
+                "$routeConnectorCount connector segments."
             )
         }
-        Write-JsonFile $targetSnapshotPath $targetSnapshot
+        Write-JsonFile $targetSnapshotPath $routeSnapshot
         $placementSnapshotPath = $targetSnapshotPath
     }
 
@@ -1045,8 +1137,10 @@ try {
         target_arrival_tile = "$targetArrivalX,$targetArrivalY"
         target_stand_tile = "$targetStandX,$targetStandY"
         target_route_distance_tiles = $targetRouteDistanceTiles
+        route_connector_count = $routeConnectorCount
         route_connector_kind = $routeConnectorKind
         route_estimated_ticks = $routeEstimatedTicks
+        route_segments = [object[]] $routeSegments
         time_estimate_policy = $timeEstimatePolicy
         source_candidate_selected = $true
         native_remove_verified = $true
@@ -1058,16 +1152,22 @@ try {
         fresh_snapshot_exact_place_verified = $true
         cross_location_route_verified =
             $TargetLocationId -eq "Farm" -or
-            ($routeExecution.status -eq "applied" -and
-             $routeExecution.primitive_verification_status -eq
-                "verified")
+            ($routeExecutions.Count -eq $routeConnectorCount -and
+             @($routeExecutions | Where-Object {
+                $_.status -ne "applied" -or
+                $_.primitive_verification_status -ne "verified"
+             }).Count -eq 0)
         route_candidate_id =
-            if ($null -eq $routeCandidate) {
+            if ($routeCandidatesUsed.Count -eq 0) {
                 ""
             }
             else {
-                [string]$routeCandidate.candidate_id
+                [string]$routeCandidatesUsed[0].candidate_id
             }
+        route_candidate_ids = @(
+            $routeCandidatesUsed |
+                ForEach-Object { [string]$_.candidate_id }
+        )
         source_absent_after = $null -eq $sourceMachine
         target_machine_present_after = $null -ne $targetMachine
         intent_status_after = $finalIntent.status

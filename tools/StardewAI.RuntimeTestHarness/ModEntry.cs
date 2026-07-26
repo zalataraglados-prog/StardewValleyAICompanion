@@ -646,6 +646,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_idle_machine_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupIdleMachineTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_placement_target")
             {
                 pending.Completion.SetResult(

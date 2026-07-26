@@ -712,6 +712,8 @@ namespace StardewAI.Core.Execution
 
             var blocked = ReadBlockedCollisionTiles(grid.Value);
             var unsupported = ReadUnsupportedRouteActionTiles(snapshot);
+            var connectorTiles =
+                ReadCurrentRouteConnectorTileKeys(snapshot);
             var standTiles = new List<SleepStandTile>();
             var standX = ReadNullableInt(connector, "stand_tile_x");
             var standY = ReadNullableInt(connector, "stand_tile_y");
@@ -748,13 +750,50 @@ namespace StardewAI.Core.Execution
 
             return standTiles
                 .Where(tile =>
-                    TileInBounds(tile.X, tile.Y, width, height) &&
-                    !blocked.Contains(TileKey(tile.X, tile.Y)) &&
-                    !unsupported.Contains(TileKey(tile.X, tile.Y)))
+                     TileInBounds(tile.X, tile.Y, width, height) &&
+                     !blocked.Contains(TileKey(tile.X, tile.Y)) &&
+                     !unsupported.Contains(TileKey(tile.X, tile.Y)) &&
+                     !connectorTiles.Contains(
+                         TileKey(tile.X, tile.Y)))
                 .Select(tile => ShortestPathLength(startX.Value, startY.Value, tile.X, tile.Y, width, height, blocked, unsupported))
                 .Where(length => length.HasValue)
                 .OrderBy(length => length)
                 .FirstOrDefault();
+        }
+
+        private static HashSet<string>
+            ReadCurrentRouteConnectorTileKeys(
+                SnapshotEnvelope snapshot)
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            var routeConnectors = ReadStateFieldValue(
+                snapshot,
+                "locations",
+                "route_connectors");
+            if (!routeConnectors.HasValue ||
+                routeConnectors.Value.ValueKind !=
+                    JsonValueKind.Object ||
+                !routeConnectors.Value.TryGetProperty(
+                    "connectors",
+                    out var connectors) ||
+                connectors.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+
+            foreach (var connector in connectors.EnumerateArray()
+                .Where(connector =>
+                    connector.ValueKind == JsonValueKind.Object &&
+                    ReadBool(connector, "resolved") == true))
+            {
+                var x = ReadNullableInt(connector, "tile_x");
+                var y = ReadNullableInt(connector, "tile_y");
+                if (x.HasValue && y.HasValue)
+                {
+                    result.Add(TileKey(x.Value, y.Value));
+                }
+            }
+            return result;
         }
 
         private static RouteGraphEdge[] FindResolvedRouteGraphPath(JsonElement graph, string startLocation, string targetLocation)
