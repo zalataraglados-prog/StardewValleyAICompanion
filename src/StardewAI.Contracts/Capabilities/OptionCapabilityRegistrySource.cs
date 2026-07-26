@@ -297,6 +297,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("craft_machine_item"),
                 SupportedCandidate("craft_storage_item"),
                 SupportedCandidate("place_machine_item"),
+                SupportedCandidate("relocate_machine_item"),
                 SupportedCandidate("place_storage_item"),
                 SupportedCandidate("donate_community_center_item"),
                 SupportedCandidate("donate_museum_item"), SupportedCandidate("fill_pet_bowl"),
