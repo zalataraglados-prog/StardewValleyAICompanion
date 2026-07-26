@@ -9,29 +9,7 @@ public sealed partial class FarmReadAdapter
 {
     private const string CaskPredictionModelId = "cask_quality_aging.v1";
 
-    private static bool IsVettedSpecialOutputMethod(
-        StardewValley.Object machine,
-        string outputMethod)
-    {
-        return machine is Cask &&
-            outputMethod.StartsWith(
-                "StardewValley.Objects.Cask,",
-                StringComparison.Ordinal) &&
-            outputMethod.EndsWith(
-                ": OutputCask",
-                StringComparison.Ordinal);
-    }
-
-    private static string ReadVettedSpecialOutputModelId(
-        StardewValley.Object machine,
-        string outputMethod)
-    {
-        return IsVettedSpecialOutputMethod(machine, outputMethod)
-            ? CaskPredictionModelId
-            : string.Empty;
-    }
-
-    private static bool TryReadVettedSpecialMachinePrediction(
+    private static bool TryReadCaskPrediction(
         StardewValley.Object machine,
         Item inputItem,
         MachineOutputRule outputRule,
@@ -41,7 +19,7 @@ public sealed partial class FarmReadAdapter
     {
         prediction = new { status = "unavailable" };
         if (machine is not Cask cask ||
-            !IsVettedSpecialOutputMethod(
+            !IsVettedCaskOutputMethod(
                 machine,
                 outputData.OutputMethod ?? string.Empty))
         {
@@ -157,6 +135,19 @@ public sealed partial class FarmReadAdapter
                 "vetted_static_callback_model_no_rng_sampling"
         };
         return true;
+    }
+
+    private static bool IsVettedCaskOutputMethod(
+        StardewValley.Object machine,
+        string outputMethod)
+    {
+        return machine is Cask &&
+            outputMethod.StartsWith(
+                "StardewValley.Objects.Cask,",
+                StringComparison.Ordinal) &&
+            outputMethod.EndsWith(
+                ": OutputCask",
+                StringComparison.Ordinal);
     }
 
     private static object BlockedCaskPrediction(string reason)
