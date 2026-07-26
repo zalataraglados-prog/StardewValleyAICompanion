@@ -908,7 +908,9 @@ public sealed partial class ActionQueueCompilerTests
             : """[{"slot_index":0,"item_id":"390","qualified_item_id":"(O)390","stack":999,"quality":0,"maximum_stack_size":999,"is_empty":false},{"slot_index":1,"item_id":"382","qualified_item_id":"(O)382","stack":999,"quality":0,"maximum_stack_size":999,"is_empty":false}]"""));
     }
 
-    private static SnapshotEnvelope MachineInputSnapshot(bool includeInputProbe)
+    private static SnapshotEnvelope MachineInputSnapshot(
+        bool includeInputProbe,
+        string predictionTrainingStatus = "exact_current_snapshot_probe_supported")
     {
         return Snapshot("""
         {
@@ -920,11 +922,12 @@ public sealed partial class ActionQueueCompilerTests
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"location_id":"Farm","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"held_item":null,"loadable_inputs":LOADABLE_INPUTS}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"machine_execution_semantics":{"status":"available","execution_status":"available_data_driven","input_dispatch_kind":"base_object_data_driven","prediction_training_status":"exact_current_snapshot_probe_supported"},"held_item":null,"loadable_inputs":LOADABLE_INPUTS}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """.Replace("LOADABLE_INPUTS", includeInputProbe
-            ? """[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"probe_source":"Object.performObjectDropInAction(probe:true)"}]"""
+            ? """[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load","predicted_output":{"status":"available","training_eligibility_status":"PREDICTION_TRAINING_STATUS","item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200},"sale_price":200,"stack":1}}]"""
+                .Replace("PREDICTION_TRAINING_STATUS", predictionTrainingStatus)
             : "[]"));
     }
 

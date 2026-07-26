@@ -288,6 +288,17 @@ namespace StardewAI.Core.OptionRegistry
                 : default;
             var outputRuleCount = machineData.ValueKind == JsonValueKind.Object ? Math.Max(0, ReadInt(machineData, "output_rule_count")) : 0;
             var hasMachineDataOutput = machineData.ValueKind == JsonValueKind.Object && ReadBool(machineData, "has_output") == true;
+            var machineExecutionSemantics =
+                machine.TryGetProperty("machine_execution_semantics", out var semantics) &&
+                semantics.ValueKind == JsonValueKind.Object
+                    ? semantics
+                    : default;
+            var machineExecutionStatus = machineExecutionSemantics.ValueKind == JsonValueKind.Object
+                ? ReadString(machineExecutionSemantics, "execution_status")
+                : string.Empty;
+            var inputDispatchKind = machineExecutionSemantics.ValueKind == JsonValueKind.Object
+                ? ReadString(machineExecutionSemantics, "input_dispatch_kind")
+                : string.Empty;
             var inventoryStacks = InventoryStacksByQualifiedId(snapshot);
             return inputs.EnumerateArray()
                 .Where(input => input.ValueKind == JsonValueKind.Object)
@@ -300,6 +311,8 @@ namespace StardewAI.Core.OptionRegistry
                     var inputSalePrice = Math.Max(0, ReadInt(input, "sale_price"));
                     var prediction = PredictMachineOutputFromProbe(input, machineData, qualifiedItemId, itemId, inputSalePrice, inventoryStacks) ??
                         PredictMachineOutputFromSummary(machineData, qualifiedItemId, itemId, inputSalePrice, inventoryStacks);
+                    var loadExecutorStatus = ReadString(input, "load_executor_status");
+                    var predictionTrainingStatus = ReadMachinePredictionTrainingStatus(input);
                     var blockReasons = new List<string>();
                     if (machineBusy)
                     {
@@ -319,6 +332,18 @@ namespace StardewAI.Core.OptionRegistry
                     if (string.IsNullOrWhiteSpace(qualifiedItemId) && string.IsNullOrWhiteSpace(itemId))
                     {
                         blockReasons.Add("machine_input_item_id_unavailable");
+                    }
+                    if (machineExecutionStatus is not ("available_data_driven" or "available_native_runtime_override"))
+                    {
+                        blockReasons.Add("machine_execution_semantics_not_supported");
+                    }
+                    if (!string.Equals(loadExecutorStatus, "covered_for_runtime_load", StringComparison.Ordinal))
+                    {
+                        blockReasons.Add("machine_input_runtime_load_not_verified");
+                    }
+                    if (!string.Equals(predictionTrainingStatus, "exact_current_snapshot_probe_supported", StringComparison.Ordinal))
+                    {
+                        blockReasons.Add("machine_output_not_exact_for_training");
                     }
 
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
@@ -344,7 +369,10 @@ namespace StardewAI.Core.OptionRegistry
                             ";machine_output_prediction_status=" + prediction.Status +
                             prediction.ExpectedEffectSuffix +
                             ";machine_input_probe_source=Object.performObjectDropInAction(probe:true)" +
-                            ";machine_input_executor_status=runtime_load",
+                            ";machine_input_executor_status=" + loadExecutorStatus +
+                            ";machine_execution_status=" + machineExecutionStatus +
+                            ";machine_input_dispatch_kind=" + inputDispatchKind +
+                            ";machine_prediction_training_status=" + predictionTrainingStatus,
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -357,6 +385,17 @@ namespace StardewAI.Core.OptionRegistry
                     };
                 })
                 .ToArray();
+        }
+
+        private static string ReadMachinePredictionTrainingStatus(JsonElement input)
+        {
+            if (!input.TryGetProperty("predicted_output", out var predictedOutput) ||
+                predictedOutput.ValueKind != JsonValueKind.Object)
+            {
+                return string.Empty;
+            }
+
+            return ReadString(predictedOutput, "training_eligibility_status");
         }
 
         private static string MachineStatePath(string locationId, int x, int y)

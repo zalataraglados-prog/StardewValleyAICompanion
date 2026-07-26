@@ -748,6 +748,13 @@ namespace StardewAI.Core.Execution
 
             if (machine.HasValue)
             {
+                if (!machine.Value.TryGetProperty("machine_execution_semantics", out var executionSemantics) ||
+                    executionSemantics.ValueKind != JsonValueKind.Object ||
+                    ReadString(executionSemantics, "execution_status") is not ("available_data_driven" or "available_native_runtime_override"))
+                {
+                    reasons.Add("load_machine_input_execution_semantics_not_supported");
+                }
+
                 if (ReadInt(machine.Value, "minutes_until_ready") > 0 || ReadBool(machine.Value, "ready_for_harvest") == true)
                 {
                     reasons.Add("load_machine_input_target_busy");
@@ -765,6 +772,23 @@ namespace StardewAI.Core.Execution
 
                 if (input.HasValue)
                 {
+                    if (!string.Equals(
+                            ReadString(input.Value, "load_executor_status"),
+                            "covered_for_runtime_load",
+                            StringComparison.Ordinal))
+                    {
+                        reasons.Add("load_machine_input_runtime_load_not_verified");
+                    }
+                    if (!input.Value.TryGetProperty("predicted_output", out var predictedOutput) ||
+                        predictedOutput.ValueKind != JsonValueKind.Object ||
+                        !string.Equals(
+                            ReadString(predictedOutput, "training_eligibility_status"),
+                            "exact_current_snapshot_probe_supported",
+                            StringComparison.Ordinal))
+                    {
+                        reasons.Add("load_machine_input_prediction_not_exact_for_training");
+                    }
+
                     var requestedQualifiedId = ReadParameter(action, "qualified_item_id");
                     if (!string.IsNullOrWhiteSpace(requestedQualifiedId) &&
                         !string.Equals(ReadString(input.Value, "qualified_item_id"), requestedQualifiedId, StringComparison.OrdinalIgnoreCase))

@@ -688,7 +688,22 @@ public sealed partial class ModEntry : Mod
         var beforeMachine = MachineObservedEffect(location, target);
         location.objects.Remove(tile);
 
-        var machine = new StardewValley.Object(tile, string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "12" : request.ExpectedShopId);
+        var machineItemId = string.IsNullOrWhiteSpace(request.ExpectedShopId)
+            ? "(BC)12"
+            : request.ExpectedShopId.StartsWith("(", StringComparison.Ordinal)
+                ? request.ExpectedShopId
+                : "(BC)" + request.ExpectedShopId;
+        var machineTemplate = ItemRegistry.Create<StardewValley.Object>(machineItemId);
+        var placementAccepted = machineTemplate.placementAction(
+            location,
+            target.X * Game1.tileSize,
+            target.Y * Game1.tileSize,
+            Game1.player);
+        var machine = MachineAt(location, target) ?? machineTemplate;
+        if (!location.objects.ContainsKey(tile))
+        {
+            location.objects[tile] = machine;
+        }
         machine.MinutesUntilReady = -1;
         machine.readyForHarvest.Value = false;
         machine.heldObject.Value = null;
@@ -703,6 +718,7 @@ public sealed partial class ModEntry : Mod
         var input = inputSlot >= 0 ? Game1.player.Items[inputSlot] : null;
         var accepts = input is not null && machine.performObjectDropInAction(input, probe: true, Game1.player);
         var verified = MachineAt(location, target) is not null &&
+            placementAccepted &&
             inputSlot >= 0 &&
             accepts &&
             Game1.player.TilePoint == stand;

@@ -290,7 +290,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "inventory": {"value":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "farm": {
-            "machines": {"value":[{"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"machine_data":{"status":"available","has_output":true,"output_rule_count":3,"output_rules":[{"id":"keg_wheat","required_item_id":"(O)262","minutes_until_ready":1750,"output_item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200}}]},"held_item":null,"loadable_inputs":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":15,"probe_source":"Object.performObjectDropInAction(probe:true)"}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "machines": {"value":[{"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":64,"tile_y":15,"qualified_item_id":"(BC)12","display_name":"Keg","ready_for_harvest":false,"minutes_until_ready":-1,"machine_execution_semantics":{"status":"available","execution_status":"available_data_driven","input_dispatch_kind":"base_object_data_driven","prediction_training_status":"exact_current_snapshot_probe_supported"},"machine_data":{"status":"available","has_output":true,"output_rule_count":3,"output_rules":[{"id":"keg_wheat","required_item_id":"(O)262","minutes_until_ready":1750,"output_item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200}}]},"held_item":null,"loadable_inputs":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":15,"predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","matched_rule_id":"keg_wheat","required_item_id":"(O)262","effective_minutes_until_ready":1750,"item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"sale_price":200},"sale_price":200,"stack":1},"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -319,16 +319,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("input_stack_available=2", candidate.ExpectedEffect);
         Assert.Contains("input_sale_price=15", candidate.ExpectedEffect);
         Assert.Contains("machine_input_opportunity_cost=15", candidate.ExpectedEffect);
-        Assert.Contains("machine_input_value_basis=predicted_output_total_value_minus_transparent_input_sale_price", candidate.ExpectedEffect);
+        Assert.Contains("machine_input_value_basis=machine_native_probe_total_value_minus_transparent_input_sale_price", candidate.ExpectedEffect);
         Assert.Contains("machine_output_rule_count=3", candidate.ExpectedEffect);
         Assert.Contains("machine_has_output_rule=true", candidate.ExpectedEffect);
-        Assert.Contains("machine_output_prediction_status=machine_data_exact_required_item_match", candidate.ExpectedEffect);
+        Assert.Contains("machine_output_prediction_status=machine_native_probe_available", candidate.ExpectedEffect);
         Assert.Contains("predicted_output_qualified_item_id=(O)346", candidate.ExpectedEffect);
         Assert.Contains("predicted_output_total_value=200", candidate.ExpectedEffect);
         Assert.Contains("predicted_output_rule_required_item_id=(O)262", candidate.ExpectedEffect);
         Assert.Contains("predicted_minutes_until_ready=1750", candidate.ExpectedEffect);
         Assert.Contains("machine_input_probe_source=Object.performObjectDropInAction(probe:true)", candidate.ExpectedEffect);
-        Assert.Contains("machine_input_executor_status=runtime_load", candidate.ExpectedEffect);
+        Assert.Contains("machine_input_executor_status=covered_for_runtime_load", candidate.ExpectedEffect);
+        Assert.Contains("machine_execution_status=available_data_driven", candidate.ExpectedEffect);
+        Assert.Contains("machine_prediction_training_status=exact_current_snapshot_probe_supported", candidate.ExpectedEffect);
         Assert.Empty(candidate.BlockReasons);
     }
 
