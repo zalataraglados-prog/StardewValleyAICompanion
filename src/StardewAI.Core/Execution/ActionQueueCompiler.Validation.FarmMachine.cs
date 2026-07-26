@@ -576,6 +576,12 @@ namespace StardewAI.Core.Execution
 
             if (machine.HasValue)
             {
+                if (MachineUsesIncubatorCompletion(
+                        machine.Value))
+                {
+                    reasons.Add(
+                        "collect_machine_output_requires_incubator_hatch_flow");
+                }
                 if (ReadBool(machine.Value, "ready_for_harvest") != true)
                 {
                     reasons.Add("collect_machine_output_not_ready");
@@ -748,6 +754,12 @@ namespace StardewAI.Core.Execution
 
             if (machine.HasValue)
             {
+                if (MachineUsesIncubatorCompletion(
+                        machine.Value))
+                {
+                    reasons.Add(
+                        "load_machine_input_requires_incubator_hatch_flow");
+                }
                 if (!machine.Value.TryGetProperty("machine_execution_semantics", out var executionSemantics) ||
                     executionSemantics.ValueKind != JsonValueKind.Object ||
                     ReadString(executionSemantics, "execution_status") is not ("available_data_driven" or "available_native_runtime_override"))
@@ -799,6 +811,22 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool MachineUsesIncubatorCompletion(
+            JsonElement machine)
+        {
+            if (ReadBool(machine, "machine_is_incubator") ==
+                true)
+            {
+                return true;
+            }
+
+            return machine.TryGetProperty(
+                    "machine_data",
+                    out var machineData) &&
+                machineData.ValueKind == JsonValueKind.Object &&
+                ReadBool(machineData, "is_incubator") == true;
         }
 
         private static JsonElement? MachineLoadableInputAt(JsonElement machine, int slotIndex)

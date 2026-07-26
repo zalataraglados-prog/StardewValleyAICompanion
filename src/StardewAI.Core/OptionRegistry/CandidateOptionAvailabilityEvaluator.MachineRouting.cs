@@ -24,6 +24,11 @@ namespace StardewAI.Core.OptionRegistry
             string playerLocation)
         {
             var candidates = new List<EventCandidate>();
+            if (MachineUsesIncubatorCompletion(machine))
+            {
+                return candidates.ToArray();
+            }
+
             if (ReadBool(machine, "ready_for_harvest") == true &&
                 (!string.IsNullOrWhiteSpace(outputQualifiedId) || !string.IsNullOrWhiteSpace(outputItemId)))
             {

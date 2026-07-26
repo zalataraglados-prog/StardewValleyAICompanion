@@ -101,6 +101,11 @@ namespace StardewAI.Core.OptionRegistry
 
                     var standTile = FindBestMachineStandTile(snapshot, machineLocation, x, y);
                     var blockReasons = new List<string>();
+                    if (MachineUsesIncubatorCompletion(machine))
+                    {
+                        blockReasons.Add(
+                            "machine_output_requires_incubator_hatch_flow");
+                    }
                     if (ReadBool(machine, "ready_for_harvest") != true)
                     {
                         blockReasons.Add("machine_output_not_ready");
@@ -288,6 +293,8 @@ namespace StardewAI.Core.OptionRegistry
                 : default;
             var outputRuleCount = machineData.ValueKind == JsonValueKind.Object ? Math.Max(0, ReadInt(machineData, "output_rule_count")) : 0;
             var hasMachineDataOutput = machineData.ValueKind == JsonValueKind.Object && ReadBool(machineData, "has_output") == true;
+            var machineUsesIncubatorCompletion =
+                MachineUsesIncubatorCompletion(machine);
             var machineExecutionSemantics =
                 machine.TryGetProperty("machine_execution_semantics", out var semantics) &&
                 semantics.ValueKind == JsonValueKind.Object
@@ -317,6 +324,11 @@ namespace StardewAI.Core.OptionRegistry
                     if (machineBusy)
                     {
                         blockReasons.Add("machine_input_target_busy");
+                    }
+                    if (machineUsesIncubatorCompletion)
+                    {
+                        blockReasons.Add(
+                            "machine_input_requires_incubator_hatch_value_model");
                     }
 
                     if (standTile.Tile is null)
@@ -385,6 +397,22 @@ namespace StardewAI.Core.OptionRegistry
                     };
                 })
                 .ToArray();
+        }
+
+        private static bool MachineUsesIncubatorCompletion(
+            JsonElement machine)
+        {
+            if (ReadBool(machine, "machine_is_incubator") ==
+                true)
+            {
+                return true;
+            }
+
+            return machine.TryGetProperty(
+                    "machine_data",
+                    out var machineData) &&
+                machineData.ValueKind == JsonValueKind.Object &&
+                ReadBool(machineData, "is_incubator") == true;
         }
 
         private static string ReadMachinePredictionTrainingStatus(JsonElement input)
