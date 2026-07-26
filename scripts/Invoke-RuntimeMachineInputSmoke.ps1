@@ -7,9 +7,11 @@ param(
     [int] $StartupTimeoutSeconds = 120,
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
+    [string] $MachineItemId = "12",
     [string] $QualifiedItemId = "(O)262",
     [switch] $RequireTransparentLoadableInput,
     [switch] $RequireNativePredictedOutput,
+    [switch] $RequireSpecialMachineBlockedPrediction,
     [switch] $KeepGameRunning
 )
 
@@ -121,6 +123,7 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
     STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
+    STARDEWAI_TEST_AUTO_LOAD = $env:STARDEWAI_TEST_AUTO_LOAD
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
@@ -132,6 +135,7 @@ $process = $null
 try {
     $env:STARDEWAI_TEST_SAVES = $savesPath
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
+    $env:STARDEWAI_TEST_AUTO_LOAD = "true"
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
@@ -153,11 +157,13 @@ try {
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
+        location_id = "Farm"
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
         qualified_item_id = $QualifiedItemId
+        expected_shop_id = $MachineItemId
         quantity = 2
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
@@ -166,6 +172,11 @@ try {
     $beforeLoadSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $targetMachine = Find-MachineAtTile -Snapshot $beforeLoadSnapshot -X $TargetTileX -Y $TargetTileY
     $input = Find-LoadableInput -Machine $targetMachine -ItemId $QualifiedItemId
+    $machineExecutionSemantics = $targetMachine.machine_execution_semantics
+    $machineExecutionStatus = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.execution_status } else { "" }
+    $machineInputDispatchKind = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.input_dispatch_kind } else { "" }
+    $machinePredictionTrainingStatus = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.prediction_training_status } else { "" }
+    $machineInputProbeStatus = if ($null -ne $targetMachine) { [string]$targetMachine.loadable_input_probe_status } else { "" }
     $inputSlotIndex = Read-InputSlotIndexFromSetup -SetupResult $setupResult
     if ($null -eq $targetMachine -or $inputSlotIndex -lt 0) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
@@ -174,6 +185,15 @@ try {
     if ($RequireTransparentLoadableInput -and $null -eq $input) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Transparent machine loadable_inputs did not include $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if ($RequireSpecialMachineBlockedPrediction -and
+        ($machineExecutionStatus -ne "available_native_runtime_override" -or
+            $machineInputDispatchKind -ne "native_runtime_override" -or
+            $machinePredictionTrainingStatus -ne "blocked_requires_special_machine_model" -or
+            $machineInputProbeStatus -ne "blocked_random_trigger_condition_read_would_advance_game_rng" -or
+            $null -ne $input)) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Special machine execution semantics or RNG-safe training block did not match the live runtime."
     }
     $predictedOutput = $input.predicted_output
     $predictedOutputStatus = if ($null -ne $predictedOutput) { [string]$predictedOutput.status } else { "" }
@@ -201,6 +221,7 @@ try {
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
+        location_id = "Farm"
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
@@ -223,12 +244,18 @@ try {
         saves_path = $savesPath
         target_tile = "$TargetTileX,$TargetTileY"
         qualified_item_id = $QualifiedItemId
+        machine_item_id = $MachineItemId
         input_slot_index = $inputSlotIndex
         setup_status = $setupResult.status
         setup_verification = $setupResult.primitive_verification_status
         machine_present_before = $null -ne $targetMachine
         loadable_input_before = $null -ne $input
         transparent_loadable_input_required = [bool]$RequireTransparentLoadableInput
+        special_machine_blocked_prediction_required = [bool]$RequireSpecialMachineBlockedPrediction
+        machine_execution_status = $machineExecutionStatus
+        machine_input_dispatch_kind = $machineInputDispatchKind
+        machine_prediction_training_status = $machinePredictionTrainingStatus
+        machine_input_probe_status = $machineInputProbeStatus
         native_predicted_output_status = $predictedOutputStatus
         native_predicted_output_source = $predictedOutputSource
         native_predicted_output_item_id = $predictedOutputItemId

@@ -114,6 +114,33 @@ public sealed class MachineFamilyMainlineTests
         Assert.Contains("machine_adjacent_stand_tile_occupied_by_machine", unreachableLoad.BlockReasons);
     }
 
+    [Fact]
+    public void MachineInputWithoutExecutionSemanticsIsBlockedUpstream()
+    {
+        var family = (MachineFamily)Families.First()[0];
+        var row = MachineRow(64, 15, family, ready: false, minutes: -1, held: false, loadable: true)
+            .Replace(
+                "\"machine_execution_semantics\":{\"status\":\"available\",\"execution_status\":\"available_data_driven\",\"input_dispatch_kind\":\"base_object_data_driven\",\"prediction_training_status\":\"exact_current_snapshot_probe_supported\"},",
+                string.Empty);
+        var snapshot = Snapshot(BaseSnapshot(
+            "63",
+            "15",
+            """[{"slot_index":0,"item_id":"24","qualified_item_id":"(O)24","stack":2,"quality":0,"maximum_stack_size":999,"is_empty":false}]""",
+            "1",
+            "1",
+            "true",
+            row));
+
+        var candidate = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.process_machines" }, includeExecutorCalibrationOptions: true)
+            .Options[0]
+            .EventCandidates
+            .Single(candidate => candidate.Kind == "load_machine_input_tile");
+
+        Assert.False(candidate.Available);
+        Assert.Contains("machine_execution_semantics_not_supported", candidate.BlockReasons);
+    }
+
     private static string FamilySnapshot(MachineFamily family)
     {
         return BaseSnapshot(
@@ -183,7 +210,7 @@ public sealed class MachineFamilyMainlineTests
     private static string MachineRow(int x, int y, MachineFamily family, bool ready, int minutes, bool held, bool loadable)
     {
         return """
-        {"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","machine_data":{"status":"available","has_output":true,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
+        {"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"machine_execution_semantics":{"status":"available","execution_status":"available_data_driven","input_dispatch_kind":"base_object_data_driven","prediction_training_status":"exact_current_snapshot_probe_supported"},"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","machine_data":{"status":"available","has_output":true,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
         """
         .Replace("TILE_X", x.ToString())
         .Replace("TILE_Y", y.ToString())
@@ -213,7 +240,7 @@ public sealed class MachineFamilyMainlineTests
     private static string LoadableInput(MachineFamily family)
     {
         return """
-        [{"slot_index":0,"item_id":"INPUT_ID","qualified_item_id":"INPUT_QID","stack":2,"quality":0,"sale_price":INPUT_PRICE,"predicted_output":{"status":"available","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"family_rule","required_item_id":"INPUT_QID","effective_minutes_until_ready":DURATION,"item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"quality":0,"sale_price":OUTPUT_PRICE},"sale_price":OUTPUT_PRICE,"stack":1,"quality":0},"probe_source":"Object.performObjectDropInAction(probe:true)"}]
+        [{"slot_index":0,"item_id":"INPUT_ID","qualified_item_id":"INPUT_QID","stack":2,"quality":0,"sale_price":INPUT_PRICE,"predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"family_rule","required_item_id":"INPUT_QID","effective_minutes_until_ready":DURATION,"item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"quality":0,"sale_price":OUTPUT_PRICE},"sale_price":OUTPUT_PRICE,"stack":1,"quality":0},"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"}]
         """
         .Replace("INPUT_ID", family.InputItemId)
         .Replace("INPUT_QID", family.InputQualifiedId)

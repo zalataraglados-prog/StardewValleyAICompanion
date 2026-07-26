@@ -470,6 +470,31 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileBlocksLoadMachineInputWhenPredictionIsNotExactForTraining()
+    {
+        var snapshot = MachineInputSnapshot(
+            includeInputProbe: true,
+            predictionTrainingStatus: "blocked_requires_special_machine_model");
+        var request = Request(snapshot.StateHash, "executor.load_machine_input");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "64" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+            new SmallModelActionParameter { Name = "machine_location_id", Value = "Farm" },
+            new SmallModelActionParameter { Name = "input_slot_index", Value = "0" },
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)262" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "load_machine_input_prediction_not_exact_for_training",
+            queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void CompilePlanCropMaintenanceStepOnlyTargetsRequestedCropTile()
     {
         var snapshot = Snapshot("""

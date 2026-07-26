@@ -101,6 +101,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     MachineDataHasEffectiveInput(liveMachineData);
                 var machineHasOutput =
                     MachineDataHasEffectiveOutput(liveMachineData);
+                var machineInputProbeIsRngSafe =
+                    MachineInputProbeIsRngSafe(liveMachineData);
+                var executionSemantics = ReadMachineExecutionSemantics(
+                    row.Pair.Value,
+                    liveMachineData);
                 var machineIsIdle = row.Pair.Value.MinutesUntilReady <= 0 && !row.Pair.Value.readyForHarvest.Value;
                 var removal = ReadMachineRemovalProjection(
                     row.Pair.Value,
@@ -158,12 +163,15 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                                 ? "not_applicable_machine_has_no_manual_input"
                                 : !machineIsIdle
                                     ? "not_applicable_machine_not_idle"
+                                    : !machineInputProbeIsRngSafe
+                                        ? "blocked_random_trigger_condition_read_would_advance_game_rng"
                                     : probeWithinBudget
                                         ? "available_main_thread_cache"
                                         : "blocked_main_thread_probe_budget_rotates_on_refresh"
                         : "blocked_requires_main_thread_cache",
                     machine_probe_cache_tick = machineProbeCacheTick,
                     machine_data = machineData,
+                    machine_execution_semantics = executionSemantics,
                     harvest_experience_raw = harvestExperience.Raw,
                     harvest_experience_entries = harvestExperience.Entries,
                     harvest_experience_deltas = harvestExperience.Deltas,
@@ -538,10 +546,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
     private static object[] ReadMachineLoadableInputs(StardewValley.Object machine)
     {
+        var machineData = machine.GetMachineData();
         if (Game1.player is null ||
-            machine.GetMachineData() is null ||
+            machineData is null ||
             machine.readyForHarvest.Value ||
-            machine.MinutesUntilReady > 0)
+            machine.MinutesUntilReady > 0 ||
+            !MachineInputProbeIsRngSafe(machineData))
         {
             return Array.Empty<object>();
         }
@@ -576,7 +586,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     {
                         status = "blocked",
                         reason = "machine_input_probe_exception",
-                        exception_type = ex.GetType().Name
+                        exception_type = ex.GetType().Name,
+                        training_eligibility_status = "blocked_probe_exception"
                     },
                     probe_source = "Object.performObjectDropInAction(probe:true)",
                     load_executor_status = "blocked_probe_exception"
@@ -645,6 +656,16 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             };
         }
 
+        if (!MachineInputProbeIsRngSafe(machineData))
+        {
+            return new
+            {
+                status = "blocked",
+                reason = "machine_random_trigger_condition_read_would_advance_game_rng",
+                training_eligibility_status = "blocked_requires_special_machine_model"
+            };
+        }
+
         if (!MachineDataUtility.TryGetMachineOutputRule(
             machine,
             machineData,
@@ -674,31 +695,55 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             };
         }
 
-        if (!outputRule.UseFirstValidOutput && outputEntries.Count > 1)
+        if (outputEntries.Any(output =>
+                ConditionUsesRandomQuery(output.Condition) ||
+                ConditionUsesRandomQuery(ReadString(output, "PerItemCondition"))))
         {
             return new
             {
                 status = "blocked",
-                reason = "machine_output_random_choice_not_probed"
+                reason = "machine_output_random_condition_not_probed",
+                training_eligibility_status = "blocked_requires_special_machine_model"
             };
         }
 
-        var outputData = MachineDataUtility.GetOutputData(machine, machineData, outputRule, inputItem, Game1.player, machine.Location);
+        var validOutputs = outputEntries
+            .Where(output => GameStateQuery.CheckConditions(
+                output.Condition,
+                machine.Location,
+                Game1.player,
+                null,
+                inputItem))
+            .ToArray();
+        var outputData = outputRule.UseFirstValidOutput
+            ? validOutputs.FirstOrDefault()
+            : validOutputs.Length == 1
+                ? validOutputs[0]
+                : null;
         if (outputData is null)
         {
             return new
             {
                 status = "blocked",
-                reason = "machine_output_data_unavailable"
+                reason = !outputRule.UseFirstValidOutput && validOutputs.Length > 1
+                    ? "machine_output_random_choice_not_probed"
+                    : "machine_output_data_unavailable",
+                training_eligibility_status = "blocked_requires_special_machine_model"
             };
         }
 
-        if (!string.IsNullOrWhiteSpace(outputData.OutputMethod))
+        var predictionBlockReasons = ReadPredictionBlockReasons(
+            outputRule,
+            triggerRule,
+            outputData);
+        if (predictionBlockReasons.Length > 0)
         {
             return new
             {
                 status = "blocked",
-                reason = "machine_output_custom_method_not_probed"
+                reason = predictionBlockReasons[0],
+                block_reasons = predictionBlockReasons,
+                training_eligibility_status = "blocked_requires_special_machine_model"
             };
         }
 
@@ -708,7 +753,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             return new
             {
                 status = "blocked",
-                reason = "machine_output_probe_returned_null"
+                reason = "machine_output_probe_returned_null",
+                training_eligibility_status = "blocked_probe_returned_null"
             };
         }
 
@@ -731,6 +777,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         return new
         {
             status = "available",
+            training_eligibility_status = ExactMachinePredictionStatus,
+            rng_safety_status = "read_probe_did_not_select_random_rule_or_random_item_fields",
             source = "MachineDataUtility.GetOutputItem(probe:true)",
             matched_rule_id = outputRule.Id ?? string.Empty,
             required_item_id = triggerRule?.RequiredItemId ?? string.Empty,
