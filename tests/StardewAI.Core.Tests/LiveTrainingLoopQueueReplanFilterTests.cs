@@ -118,6 +118,34 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void ExplicitCalibrationKindFilterKeepsOnlyRequestedSlice()
+    {
+        var candidates = new JsonArray
+        {
+            MachineCandidate(
+                "collect_machine_output_tile",
+                "Farm",
+                5,
+                5),
+            MachineCandidate(
+                "relocate_machine_item",
+                "Farm",
+                15,
+                5)
+        };
+
+        var filtered = QueueReplanFilter.FilterCandidateKind(
+            candidates,
+            "relocate_machine_item");
+
+        var selected = Assert.Single(filtered);
+        Assert.Equal(
+            "relocate_machine_item",
+            selected!["kind"]!.GetValue<string>());
+        Assert.Equal(2, candidates.Count);
+    }
+
+    [Fact]
     public void AppliedWaitCarriesContinuationAndAppliedMatchingInteractionCompletesIt()
     {
         var wait = QueueItem("queue.wait", "executor.wait_ticks", "0", "0", string.Empty);

@@ -129,8 +129,14 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.Contains("dispatchReadiness[\"ready\"]", execution);
         Assert.Contains("BuildQueueFromDailyPlanAsync(", execution);
         Assert.Contains("/dispatch-readiness?stateHash=", readiness);
+        Assert.Contains("\"executor.remove_machine\"", readiness);
         Assert.Contains("controller_dispatch_guard", readiness);
         Assert.Contains("dispatch_rejected", readiness);
+
+        var movement = RuntimeHarnessSources.File(
+            "ModEntry.MovementSleep.cs");
+        Assert.Contains("IsFarmerCenteredOnTile", movement);
+        Assert.Contains("\"target_tile_centered\"", movement);
     }
 
     [Fact]

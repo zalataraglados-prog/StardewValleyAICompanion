@@ -26,6 +26,10 @@ static partial class Program
             !string.Equals(
                 optionId,
                 "executor.place_storage",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
+                "executor.remove_machine",
                 StringComparison.Ordinal))
         {
             return null;

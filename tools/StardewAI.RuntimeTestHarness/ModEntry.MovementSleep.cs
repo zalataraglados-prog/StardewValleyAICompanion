@@ -297,7 +297,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
-            CompleteMove(move, "verified", new[] { "target_tile_reached" });
+            if (!IsFarmerCenteredOnTile(move.TargetTile))
+            {
+                SettleFarmerOnTargetTile(move);
+                return;
+            }
+
+            CompleteMove(move, "verified", new[] { "target_tile_reached", "target_tile_centered" });
             return;
         }
 
@@ -401,6 +407,52 @@ public sealed partial class ModEntry : Mod
         if (!config.DisableMovementTimeouts && move.Tick > move.MaxTicks)
         {
             CompleteBlockedMove(move, "movement_timeout");
+        }
+    }
+
+    private static bool IsFarmerCenteredOnTile(Point tile)
+    {
+        var center = Game1.player.StandingPixel;
+        var targetX = tile.X * Game1.tileSize + Game1.tileSize / 2;
+        var targetY = tile.Y * Game1.tileSize + Game1.tileSize / 2;
+        var tolerance = Math.Max(
+            2,
+            (int)Math.Ceiling(Game1.player.getMovementSpeed() / 2f));
+        return Math.Abs(center.X - targetX) <= tolerance &&
+            Math.Abs(center.Y - targetY) <= tolerance;
+    }
+
+    private void SettleFarmerOnTargetTile(ActiveTileMove move)
+    {
+        var currentPosition = Game1.player.Position;
+        var movedSinceLastTick =
+            Vector2.DistanceSquared(move.LastPosition, currentPosition) >= 0.01f;
+        var center = Game1.player.StandingPixel;
+        var targetCenter = new Point(
+            move.TargetTile.X * Game1.tileSize + Game1.tileSize / 2,
+            move.TargetTile.Y * Game1.tileSize + Game1.tileSize / 2);
+        var direction = DirectionToPixel(
+            center,
+            targetCenter,
+            Game1.player.FacingDirection);
+
+        move.LastPosition = currentPosition;
+        StartMovingIfNeeded(move, direction);
+        MovePlayerForTick();
+
+        move.StuckTicks = movedSinceLastTick ? 0 : move.StuckTicks + 1;
+        if (move.StuckTicks > 45)
+        {
+            CompleteBlockedMove(
+                move,
+                "movement_target_tile_centering_stuck_or_collision_blocked");
+            return;
+        }
+
+        move.Tick++;
+        if (!config.DisableMovementTimeouts && move.Tick > move.MaxTicks)
+        {
+            CompleteBlockedMove(move, "movement_target_tile_centering_timeout");
         }
     }
 

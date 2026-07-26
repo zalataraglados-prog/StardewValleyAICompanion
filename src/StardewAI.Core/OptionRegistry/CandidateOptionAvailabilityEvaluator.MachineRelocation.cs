@@ -19,6 +19,11 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)
         {
+            if (!RoutePathPreviewAvailable(snapshot))
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
             var activeIntent =
                 commitmentLedger?.MachineRelocationIntents
                     .FirstOrDefault(row => string.Equals(

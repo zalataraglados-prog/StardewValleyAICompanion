@@ -49,6 +49,7 @@ public sealed class LiveTrainingOptions
     public int MinFreeSpaceMb { get; set; } = 8192;
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
+    public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
@@ -263,6 +264,11 @@ public sealed class LiveTrainingOptions
                     .Select(value => value.Trim())
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .ToArray();
+            }
+            else if (current == "--daily-plan-candidate-kind" &&
+                i + 1 < args.Length)
+            {
+                options.DailyPlanCandidateKind = args[++i].Trim();
             }
             else if (current == "--stop-after-social-objective-complete")
             {

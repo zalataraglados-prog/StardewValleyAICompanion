@@ -126,6 +126,30 @@ public static class QueueReplanFilter
         return new JsonArray(filtered);
     }
 
+    public static JsonArray FilterCandidateKind(
+        JsonArray rankedCandidates,
+        string requiredKind)
+    {
+        if (string.IsNullOrWhiteSpace(requiredKind))
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                string.Equals(
+                    ReadString(candidate, "kind"),
+                    requiredKind,
+                    StringComparison.Ordinal))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
     public static bool CompletesSocialContinuation(JsonObject? queueItem, JsonObject? continuation, string executionStatus)
     {
         return string.Equals(ReadString(continuation, "kind"), "social", StringComparison.Ordinal) &&

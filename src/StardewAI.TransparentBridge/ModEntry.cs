@@ -646,6 +646,7 @@ public sealed class ModEntry : Mod
         {
             domains.Add("farm");
             domains.Add("current_location");
+            domains.Add("locations");
             domains.Add("npcs");
             domains.Add("quests_progress");
             domains.Add("world_progress");
