@@ -14,6 +14,10 @@ param(
     [switch] $RequireNativePredictedOutput,
     [switch] $RequireSpecialMachineBlockedPrediction,
     [switch] $RequireVettedSpecialPredictedOutput,
+    [string] $ExpectedSpecialModelId = "cask_quality_aging.v1",
+    [string] $ExpectedSpecialSource = "decompiled_Cask.OutputCask_static_model",
+    [string] $ExpectedPredictedOutputId = "",
+    [int] $ExpectedPredictedMinutes = 0,
     [int] $ExpectedPredictedDays = 0,
     [switch] $KeepGameRunning
 )
@@ -221,11 +225,21 @@ try {
     if ($RequireVettedSpecialPredictedOutput -and
         ($predictedOutputStatus -ne "available" -or
             $predictedOutputTrainingStatus -ne "exact_current_snapshot_probe_supported" -or
-            $predictedOutputSpecialModelId -ne "cask_quality_aging.v1" -or
-            $predictedOutputSource -ne "decompiled_Cask.OutputCask_static_model" -or
-            $predictedOutputEffectiveDays -le 0)) {
+            $predictedOutputSpecialModelId -ne $ExpectedSpecialModelId -or
+            $predictedOutputSource -ne $ExpectedSpecialSource -or
+            [string]::IsNullOrWhiteSpace($predictedOutputItemId))) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Vetted special-machine predicted_output was not transparently available for $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedPredictedOutputId) -and
+        $predictedOutputItemId -ne $ExpectedPredictedOutputId) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Predicted machine output was $predictedOutputItemId; expected $ExpectedPredictedOutputId."
+    }
+    if ($ExpectedPredictedMinutes -gt 0 -and
+        $predictedOutputEffectiveMinutes -ne $ExpectedPredictedMinutes) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Predicted machine duration was $predictedOutputEffectiveMinutes minutes; expected $ExpectedPredictedMinutes."
     }
     if ($ExpectedPredictedDays -gt 0 -and
         $predictedOutputEffectiveDays -ne $ExpectedPredictedDays) {
@@ -290,6 +304,10 @@ try {
         native_predicted_output_special_model_id = $predictedOutputSpecialModelId
         native_predicted_output_required = [bool]$RequireNativePredictedOutput
         vetted_special_predicted_output_required = [bool]$RequireVettedSpecialPredictedOutput
+        expected_special_model_id = $ExpectedSpecialModelId
+        expected_special_source = $ExpectedSpecialSource
+        expected_predicted_output_id = $ExpectedPredictedOutputId
+        expected_predicted_minutes = $ExpectedPredictedMinutes
         expected_predicted_days = $ExpectedPredictedDays
         load_status = $loadResult.status
         load_verification = $loadResult.primitive_verification_status
