@@ -250,7 +250,7 @@ public sealed class StrategyCommitmentLedgerTests
         {
             StateHash = snapshot.StateHash,
             IntentId =
-                "layout:Farm:15,5->FarmHouse:34,23:(BC)13",
+                "layout:Farm:15,5->FarmHouse:36,23:(BC)13",
             SourceDecisionId = "machine-relocate:cross",
             QualifiedItemId = "(BC)13",
             ItemId = "13",
@@ -258,7 +258,7 @@ public sealed class StrategyCommitmentLedgerTests
             SourceTileX = 15,
             SourceTileY = 5,
             TargetLocationId = "FarmHouse",
-            TargetTileX = 34,
+            TargetTileX = 36,
             TargetTileY = 23,
             MachinePlacementProjectionFingerprint =
                 "machine-layout:cross",
@@ -268,13 +268,16 @@ public sealed class StrategyCommitmentLedgerTests
             RouteEstimatedTicks = 1200,
             TargetArrivalTileX = 34,
             TargetArrivalTileY = 24,
+            TargetStandTileX = 36,
+            TargetStandTileY = 24,
+            TargetRouteDistanceTiles = 2,
             LayoutRelocationCostTicks = 1800,
             LayoutBenefitPolicy =
                 "existing_machine_cluster_one_connector_over_eight_cycles",
             TargetSelectionPolicy =
-                "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             TimeEstimatePolicy =
-                "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked"
+                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked"
         };
 
         var accepted = service.Upsert(
@@ -294,6 +297,9 @@ public sealed class StrategyCommitmentLedgerTests
         Assert.Equal(1200, intent.RouteEstimatedTicks);
         Assert.Equal(34, intent.TargetArrivalTileX);
         Assert.Equal(24, intent.TargetArrivalTileY);
+        Assert.Equal(36, intent.TargetStandTileX);
+        Assert.Equal(24, intent.TargetStandTileY);
+        Assert.Equal(2, intent.TargetRouteDistanceTiles);
 
         request.RouteConnectorCount = 2;
         var rejected = service.Upsert(
@@ -306,6 +312,19 @@ public sealed class StrategyCommitmentLedgerTests
         Assert.Contains(
             "machine_relocation_route_connector_count_invalid",
             rejected.Errors);
+
+        request.RouteConnectorCount = 1;
+        request.TargetRouteDistanceTiles = 1;
+        var driftedDistance = service.Upsert(
+            null,
+            snapshot,
+            request,
+            "2026-07-26T06:02:00Z");
+
+        Assert.False(driftedDistance.Accepted);
+        Assert.Contains(
+            "machine_relocation_target_route_projection_invalid",
+            driftedDistance.Errors);
     }
 
     private static CropPlantingCommitmentUpsertRequest Request(SnapshotEnvelope snapshot, int revision, int tileCount) => new()
@@ -469,10 +488,25 @@ public sealed class StrategyCommitmentLedgerTests
                         "locations":[{
                           "location_id":"FarmHouse",
                           "static_legal_tile_ranges":[
-                            {"y":23,"start_x":34,"end_x":34}
+                            {"y":23,"start_x":36,"end_x":36}
                           ]
                         }]
-                      }]
+                      }],
+                      "relocation_route_reachability":{
+                        "schema_version":"machine_relocation_route_reachability.v1",
+                        "projection_status":"complete_static_native_walkability_for_relocation_scope",
+                        "locations":[{
+                          "location_id":"FarmHouse",
+                          "projection_status":"native_static_walkable_tiles_available",
+                          "map_width":80,
+                          "map_height":40,
+                          "static_walkable_tile_count":4,
+                          "static_walkable_tile_ranges":[
+                            {"y":23,"start_x":36,"end_x":36},
+                            {"y":24,"start_x":34,"end_x":36}
+                          ]
+                        }]
+                      }
                     },"status":"available"}
                   },
                   "farm": {

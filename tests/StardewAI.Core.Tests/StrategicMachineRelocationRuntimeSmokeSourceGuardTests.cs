@@ -100,6 +100,41 @@ public sealed class StrategicMachineRelocationRuntimeSmokeSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RelocationProjectionUsesCompressedNativeStaticWalkability()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "PlayerReadAdapter.MachinePlacement.Reachability.cs"));
+
+        Assert.Contains(
+            "location.IsTileBlockedBy",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "~(CollisionMask.Characters |",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CollisionMask.Farmers)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CollisionMask.All)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "static_walkable_tile_ranges",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fresh_current_map_collision_recheck_after_route",
+            source,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryFile(params string[] parts)
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
