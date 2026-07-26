@@ -3139,3 +3139,18 @@ Scope boundary:
 - Ordinary positive-benefit relocation over an arbitrary resolved transparent connector chain is closed for the base native idle-machine path.
 - Every intermediate route segment and the final placement are revalidated against fresh state and fail closed on drift.
 - Special/conditional/random/custom machines, Workbench lifecycle, topology drift beyond fail-closed replanning, and multiplayer ownership/sharing remain pending.
+
+2026-07-26 native Workbench machine lifecycle
+
+Runtime: `artifacts\runtime-workbench-machine-lifecycle-smoke\runtime-workbench-machine-lifecycle-final-20260726-1905\summary.json`
+Result: PASS; an empty Furnace fleet used transparent Workbench source `access:workbench:Farm:55,15` and exact native container node `chest:Farm:54,15`. Native Workbench/CraftingPage consumed chest Copper Ore `20` and Stone `25`, moved the Furnace output into player inventory and released the Workbench plus chest mutexes. Normal movement returned to the placement stand, native placement created Furnace `(BC)13` at `60,15`, native input consumed player Iron Ore `5 -> 0` and Coal `1 -> 0`, natural game time processed for `120` minutes, predicted and observed output were both Iron Bar `(O)335`, native collection changed output inventory `0 -> 1`, and the same machine returned idle. Initial/final hashes differed.
+
+The first complete craft attempt exposed that direct `Game1.exitActiveMenu()` bypassed the `exitFunction` registered by `Workbench.checkForAction`, so native locks remained held. The executor now calls `CraftingPage.exitThisMenuNoSound()`, which invokes and clears the native release callback. No executor-side `ReleaseLock` call was added. A second attempt verified craft and lock release but correctly blocked placement because the Workbench executor had moved away from the machine stand; the smoke now uses the normal movement primitive before placement.
+
+Command:
+- `dotnet test StardewValleyAICompanion.sln --no-restore --nologo`
+Result: PASS; Core 1218/1218, Backend 87/87, solution build 0 errors. Existing deprecation/analyzer warnings remain.
+
+Scope boundary:
+- Ordinary deterministic learned machine recipes can use exact same-map Workbench-connected materials and continue through the ordinary machine lifecycle.
+- Storage Workbench runtime, remote Workbench routing, special/conditional/random/custom machines, multiplayer lock contention and ownership/sharing remain pending.

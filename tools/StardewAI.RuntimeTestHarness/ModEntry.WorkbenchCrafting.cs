@@ -399,7 +399,7 @@ public sealed partial class ModEntry
             return;
         }
         active.NativeRecipeClicked = true;
-        Game1.exitActiveMenu();
+        page.exitThisMenuNoSound();
         active.Stage = WorkbenchCraftStage.WaitForUnlock;
         active.StageStartedAt = active.ElapsedTicks;
     }
@@ -512,7 +512,7 @@ public sealed partial class ModEntry
             if (ReferenceEquals(Game1.activeClickableMenu, page) &&
                 page.readyToClose())
             {
-                Game1.exitActiveMenu();
+                page.exitThisMenuNoSound();
             }
         }
         activeWorkbenchCraft = null;

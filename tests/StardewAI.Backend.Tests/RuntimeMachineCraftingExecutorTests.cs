@@ -153,12 +153,42 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.Contains("active.Workbench.mutex.IsLockHeld()", executor);
         Assert.Contains("row.Chest.GetMutex().IsLockHeld()", executor);
         Assert.Contains("page.receiveLeftClick(", executor);
-        Assert.Contains("Game1.exitActiveMenu()", executor);
+        Assert.Contains("page.exitThisMenuNoSound()", executor);
         Assert.Contains("ProjectNativeWorkbenchIngredients", executor);
+        Assert.DoesNotContain(".ReleaseLock(", executor);
         Assert.DoesNotContain(".consumeIngredients(", executor);
         Assert.DoesNotContain(".Items.Add(", executor);
         Assert.DoesNotContain(".Items.Remove(", executor);
         Assert.Contains("NativeContainerNodeIds = nativeContainerNodeIds", bridge);
         Assert.Contains("workbench_native_container_not_owned_or_unmapped", bridge);
+    }
+
+    [Fact]
+    public void WorkbenchLifecycleSmokeBindsTransparentContainerSource()
+    {
+        var script = RuntimeHarnessSources.RepositoryFile(
+            "scripts",
+            "Invoke-RuntimeMachineLifecycleSmoke.ps1");
+        var fixture = RuntimeHarnessSources.File(
+            "ModEntry.WorkbenchMachineLifecycleFixture.cs");
+
+        Assert.Contains("[switch] $UseWorkbench", script);
+        Assert.Contains(
+            "ready_for_native_workbench_crafting_menu",
+            script);
+        Assert.Contains(
+            "workbench_container_node_ids_json",
+            script);
+        Assert.Contains(
+            "native_workbench_crafting_menu",
+            script);
+        Assert.Contains(
+            "runtime-machine-lifecycle-smoke.move-to-placement",
+            script);
+        Assert.Contains("new Workbench(workbenchTile)", fixture);
+        Assert.Contains(
+            "exact_recipe_ingredients_available_in_native_workbench_chest",
+            RuntimeHarnessSources.File(
+                "ModEntry.MachineCrafting.cs"));
     }
 }
