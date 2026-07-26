@@ -7,11 +7,14 @@ param(
     [int] $StartupTimeoutSeconds = 120,
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
+    [string] $LocationId = "Farm",
     [string] $MachineItemId = "12",
     [string] $QualifiedItemId = "(O)262",
     [switch] $RequireTransparentLoadableInput,
     [switch] $RequireNativePredictedOutput,
     [switch] $RequireSpecialMachineBlockedPrediction,
+    [switch] $RequireVettedSpecialPredictedOutput,
+    [int] $ExpectedPredictedDays = 0,
     [switch] $KeepGameRunning
 )
 
@@ -73,10 +76,12 @@ function Wait-WorldSnapshot {
 }
 
 function Find-MachineAtTile {
-    param($Snapshot, [int] $X, [int] $Y)
+    param($Snapshot, [string] $LocationId, [int] $X, [int] $Y)
     if ($null -eq $Snapshot.state.farm.machines.value) { return $null }
     foreach ($machine in @($Snapshot.state.farm.machines.value)) {
-        if ([int]$machine.tile_x -eq $X -and [int]$machine.tile_y -eq $Y) { return $machine }
+        if ([string]$machine.location_id -eq $LocationId -and
+            [int]$machine.tile_x -eq $X -and
+            [int]$machine.tile_y -eq $Y) { return $machine }
     }
     return $null
 }
@@ -157,7 +162,7 @@ try {
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
-        location_id = "Farm"
+        location_id = $LocationId
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
@@ -170,7 +175,7 @@ try {
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
     Start-Sleep -Milliseconds 500
     $beforeLoadSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $targetMachine = Find-MachineAtTile -Snapshot $beforeLoadSnapshot -X $TargetTileX -Y $TargetTileY
+    $targetMachine = Find-MachineAtTile -Snapshot $beforeLoadSnapshot -LocationId $LocationId -X $TargetTileX -Y $TargetTileY
     $input = Find-LoadableInput -Machine $targetMachine -ItemId $QualifiedItemId
     $machineExecutionSemantics = $targetMachine.machine_execution_semantics
     $machineExecutionStatus = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.execution_status } else { "" }
@@ -202,6 +207,9 @@ try {
     $predictedOutputItemId = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.item) { [string]$predictedOutput.item.qualified_item_id } else { "" }
     $predictedOutputRuleId = if ($null -ne $predictedOutput) { [string]$predictedOutput.matched_rule_id } else { "" }
     $predictedOutputEffectiveMinutes = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.effective_minutes_until_ready) { [int]$predictedOutput.effective_minutes_until_ready } else { 0 }
+    $predictedOutputEffectiveDays = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.effective_days_until_ready) { [int]$predictedOutput.effective_days_until_ready } else { 0 }
+    $predictedOutputTrainingStatus = if ($null -ne $predictedOutput) { [string]$predictedOutput.training_eligibility_status } else { "" }
+    $predictedOutputSpecialModelId = if ($null -ne $predictedOutput) { [string]$predictedOutput.special_prediction_model_id } else { "" }
     if ($RequireNativePredictedOutput -and
         ($predictedOutputStatus -ne "available" -or
             $predictedOutputSource -ne "MachineDataUtility.GetOutputItem(probe:true)" -or
@@ -209,6 +217,20 @@ try {
             $predictedOutputSalePrice -le 0)) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Native machine predicted_output was not transparently available for $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if ($RequireVettedSpecialPredictedOutput -and
+        ($predictedOutputStatus -ne "available" -or
+            $predictedOutputTrainingStatus -ne "exact_current_snapshot_probe_supported" -or
+            $predictedOutputSpecialModelId -ne "cask_quality_aging.v1" -or
+            $predictedOutputSource -ne "decompiled_Cask.OutputCask_static_model" -or
+            $predictedOutputEffectiveDays -le 0)) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Vetted special-machine predicted_output was not transparently available for $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if ($ExpectedPredictedDays -gt 0 -and
+        $predictedOutputEffectiveDays -ne $ExpectedPredictedDays) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Predicted machine duration was $predictedOutputEffectiveDays days; expected $ExpectedPredictedDays."
     }
 
     $loadRequest = [ordered]@{
@@ -221,7 +243,7 @@ try {
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
-        location_id = "Farm"
+        location_id = $LocationId
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
@@ -232,7 +254,7 @@ try {
     $loadResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $loadRequest -TimeoutSeconds 120
     Start-Sleep -Milliseconds 500
     $afterSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $afterMachine = Find-MachineAtTile -Snapshot $afterSnapshot -X $TargetTileX -Y $TargetTileY
+    $afterMachine = Find-MachineAtTile -Snapshot $afterSnapshot -LocationId $LocationId -X $TargetTileX -Y $TargetTileY
     $afterMinutes = if ($null -ne $afterMachine) { [int]$afterMachine.minutes_until_ready } else { -999 }
     $afterReady = if ($null -ne $afterMachine) { [bool]$afterMachine.ready_for_harvest } else { $false }
     $afterHeld = if ($null -ne $afterMachine -and $null -ne $afterMachine.held_item) { [string]$afterMachine.held_item.qualified_item_id } else { "" }
@@ -243,6 +265,7 @@ try {
         save_slot = $SaveSlot
         saves_path = $savesPath
         target_tile = "$TargetTileX,$TargetTileY"
+        location_id = $LocationId
         qualified_item_id = $QualifiedItemId
         machine_item_id = $MachineItemId
         input_slot_index = $inputSlotIndex
@@ -262,7 +285,12 @@ try {
         native_predicted_output_sale_price = $predictedOutputSalePrice
         native_predicted_output_rule_id = $predictedOutputRuleId
         native_predicted_output_effective_minutes = $predictedOutputEffectiveMinutes
+        native_predicted_output_effective_days = $predictedOutputEffectiveDays
+        native_predicted_output_training_status = $predictedOutputTrainingStatus
+        native_predicted_output_special_model_id = $predictedOutputSpecialModelId
         native_predicted_output_required = [bool]$RequireNativePredictedOutput
+        vetted_special_predicted_output_required = [bool]$RequireVettedSpecialPredictedOutput
+        expected_predicted_days = $ExpectedPredictedDays
         load_status = $loadResult.status
         load_verification = $loadResult.primitive_verification_status
         load_reasons = @($loadResult.primitive_verification_reasons)
