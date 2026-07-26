@@ -18,7 +18,8 @@ namespace StardewAI.Core.OptionRegistry
             JsonElement row,
             string currentLocationId,
             EventCandidate[] routeCandidates,
-            StrategyCommitmentLedger? commitmentLedger)
+            StrategyCommitmentLedger? commitmentLedger,
+            MachineRelocationIntent? relocationIntent)
         {
             if (!row.TryGetProperty("locations", out var locations) ||
                 locations.ValueKind != JsonValueKind.Array)
@@ -41,7 +42,12 @@ namespace StardewAI.Core.OptionRegistry
                     !string.Equals(
                         ReadString(location, "location_id"),
                         currentLocationId,
-                        StringComparison.OrdinalIgnoreCase))
+                        StringComparison.OrdinalIgnoreCase) &&
+                    (relocationIntent is null ||
+                     string.Equals(
+                         ReadString(location, "location_id"),
+                         relocationIntent.TargetLocationId,
+                         StringComparison.OrdinalIgnoreCase)))
                 .Select(location =>
                     BuildRemoteMachinePlacementCandidate(
                         snapshot,
@@ -52,7 +58,8 @@ namespace StardewAI.Core.OptionRegistry
                         itemId,
                         qualifiedItemId,
                         stack,
-                        reservationGuard))
+                        reservationGuard,
+                        relocationIntent))
                 .ToArray();
         }
 
@@ -65,7 +72,8 @@ namespace StardewAI.Core.OptionRegistry
             string itemId,
             string qualifiedItemId,
             int stack,
-            InventoryPlacementMaterialReservationGuardResult reservationGuard)
+            InventoryPlacementMaterialReservationGuardResult reservationGuard,
+            MachineRelocationIntent? relocationIntent)
         {
             var targetLocationId = ReadString(location, "location_id");
             var routePlan = FindResolvedRoutePlan(
@@ -103,6 +111,19 @@ namespace StardewAI.Core.OptionRegistry
                 blockReasons.Add(
                     "machine_placement_operational_context_invalid");
             }
+            if (relocationIntent is not null &&
+                (!string.Equals(
+                    relocationIntent.TargetLocationId,
+                    targetLocationId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                 !MachinePlacementRangeContains(
+                     location,
+                     relocationIntent.TargetTileX,
+                     relocationIntent.TargetTileY)))
+            {
+                blockReasons.Add(
+                    "machine_relocation_remote_exact_target_unavailable");
+            }
             if (!reservationGuard.Ready &&
                 reservationGuard.ReservationIds.Length > 0)
             {
@@ -137,6 +158,9 @@ namespace StardewAI.Core.OptionRegistry
                     "continuation.machine_item_id",
                     itemId),
                 Parameter(
+                    "continuation.relocation_intent_id",
+                    relocationIntent?.IntentId ?? string.Empty),
+                Parameter(
                     "machine_route.remaining_connector_count",
                     (routePlan?.Path.Length ?? 0).ToString()),
                 Parameter(
@@ -148,6 +172,9 @@ namespace StardewAI.Core.OptionRegistry
                 CandidateId =
                     "machine-place-route:" + targetLocationId +
                     ":slot" + slotIndex + ":" + qualifiedItemId +
+                    (relocationIntent is null
+                        ? string.Empty
+                        : ":intent=" + relocationIntent.IntentId) +
                     ":via:" + (route?.TileX?.ToString() ?? "none") +
                     "," + (route?.TileY?.ToString() ?? "none"),
                 Kind = "route_connector_tile",

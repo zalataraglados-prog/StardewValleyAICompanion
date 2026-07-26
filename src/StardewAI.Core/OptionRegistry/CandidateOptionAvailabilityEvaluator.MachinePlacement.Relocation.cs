@@ -59,8 +59,7 @@ namespace StardewAI.Core.OptionRegistry
             ActiveMachineRelocationIntent(
                 SnapshotEnvelope snapshot,
                 StrategyCommitmentLedger? commitmentLedger,
-                string qualifiedItemId,
-                string currentLocationId)
+                string qualifiedItemId)
         {
             if (commitmentLedger is null)
             {
@@ -75,10 +74,6 @@ namespace StardewAI.Core.OptionRegistry
                     string.Equals(
                         intent.QualifiedItemId,
                         qualifiedItemId,
-                        StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(
-                        intent.TargetLocationId,
-                        currentLocationId,
                         StringComparison.OrdinalIgnoreCase) &&
                     !MachineExistsAt(
                         snapshot,

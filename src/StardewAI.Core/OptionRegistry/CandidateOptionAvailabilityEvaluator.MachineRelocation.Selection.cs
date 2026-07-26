@@ -48,6 +48,58 @@ namespace StardewAI.Core.OptionRegistry
                 .FirstOrDefault(row => row is not null);
         }
 
+        private static MachineRelocationTarget?
+            SelectCrossLocationRelocationTarget(
+                JsonElement location,
+                IReadOnlyCollection<JsonElement> peers,
+                int arrivalX,
+                int arrivalY)
+        {
+            var width = ReadInt(location, "map_width");
+            var height = ReadInt(location, "map_height");
+            if (width <= 0 || height <= 0)
+            {
+                return null;
+            }
+
+            var occupied = peers
+                .Select(machine => TileKey(
+                    ReadInt(machine, "tile_x"),
+                    ReadInt(machine, "tile_y")))
+                .ToHashSet(StringComparer.Ordinal);
+            if (!TileInBounds(
+                    arrivalX,
+                    arrivalY,
+                    width,
+                    height) ||
+                occupied.Contains(TileKey(arrivalX, arrivalY)))
+            {
+                return null;
+            }
+
+            return EnumerateMachinePlacementTiles(location)
+                .Where(tile =>
+                    !occupied.Contains(TileKey(tile.X, tile.Y)) &&
+                    Math.Abs(arrivalX - tile.X) +
+                    Math.Abs(arrivalY - tile.Y) == 1)
+                .Select(tile => new
+                {
+                    Tile = tile,
+                    ClusterDistance = NearestMachineDistance(
+                        tile.X,
+                        tile.Y,
+                        peers)
+                })
+                .OrderBy(row => row.ClusterDistance)
+                .ThenBy(row => row.Tile.Y)
+                .ThenBy(row => row.Tile.X)
+                .Select(row => new MachineRelocationTarget(
+                    row.Tile,
+                    new CandidateTile(arrivalX, arrivalY),
+                    row.ClusterDistance))
+                .FirstOrDefault();
+        }
+
         private static IEnumerable<CandidateTile>
             EnumerateMachinePlacementTiles(JsonElement location)
         {

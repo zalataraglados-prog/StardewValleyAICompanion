@@ -33,21 +33,41 @@ namespace StardewAI.Core.OptionRegistry
                 int.MaxValue);
             return rows.EnumerateArray()
                 .Where(row => row.ValueKind == JsonValueKind.Object)
-                .SelectMany(row => new[]
-                    {
-                        BuildMachinePlacementCandidate(
+                .SelectMany(row =>
+                {
+                    var relocationIntent =
+                        ActiveMachineRelocationIntent(
                             snapshot,
-                            row,
+                            commitmentLedger,
+                            ReadString(
+                                row,
+                                "qualified_item_id"));
+                    var currentCandidates =
+                        relocationIntent is not null &&
+                        !string.Equals(
+                            relocationIntent.TargetLocationId,
                             currentLocationId,
-                            projectionFingerprint,
-                            commitmentLedger)
-                    }
-                    .Concat(BuildRemoteMachinePlacementCandidates(
+                            StringComparison.OrdinalIgnoreCase)
+                            ? Array.Empty<EventCandidate>()
+                            : new[]
+                            {
+                                BuildMachinePlacementCandidate(
+                                    snapshot,
+                                    row,
+                                    currentLocationId,
+                                    projectionFingerprint,
+                                    commitmentLedger,
+                                    relocationIntent)
+                            };
+                    return currentCandidates.Concat(
+                        BuildRemoteMachinePlacementCandidates(
                         snapshot,
                         row,
                         currentLocationId,
                         routeCandidates,
-                        commitmentLedger)))
+                        commitmentLedger,
+                        relocationIntent));
+                })
                 .OrderBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .ToArray();
         }
@@ -57,18 +77,14 @@ namespace StardewAI.Core.OptionRegistry
             JsonElement row,
             string currentLocationId,
             string projectionFingerprint,
-            StrategyCommitmentLedger? commitmentLedger)
+            StrategyCommitmentLedger? commitmentLedger,
+            MachineRelocationIntent? relocationIntent)
         {
             var slotIndex = ReadInt(row, "inventory_slot_index", -1);
             var itemId = ReadString(row, "item_id");
             var qualifiedItemId = ReadString(row, "qualified_item_id");
             var stack = Math.Max(0, ReadInt(row, "stack"));
             var location = CurrentMachinePlacementLocation(row, currentLocationId);
-            var relocationIntent = ActiveMachineRelocationIntent(
-                snapshot,
-                commitmentLedger,
-                qualifiedItemId,
-                currentLocationId);
             var selection = location.HasValue
                 ? relocationIntent is null
                     ? SelectMachinePlacementTile(
