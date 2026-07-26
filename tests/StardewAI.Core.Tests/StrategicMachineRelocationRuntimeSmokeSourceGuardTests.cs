@@ -52,6 +52,14 @@ public sealed class StrategicMachineRelocationRuntimeSmokeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "machine_route.committed_segment_index",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$routeIndex -lt $routeConnectorCount",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "TargetLocationId",
             source,
             StringComparison.Ordinal);
@@ -96,6 +104,10 @@ public sealed class StrategicMachineRelocationRuntimeSmokeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "current_source_plus_player_controlled_existing_machine_clusters",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_source_plus_all_player_controlled_persistent_locations",
             source,
             StringComparison.Ordinal);
     }

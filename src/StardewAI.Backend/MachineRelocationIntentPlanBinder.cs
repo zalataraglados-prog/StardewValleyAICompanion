@@ -2,6 +2,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using System.Text.Json;
 
 public static class MachineRelocationIntentPlanBinder
 {
@@ -71,6 +72,7 @@ public static class MachineRelocationIntentPlanBinder
             RouteEstimatedTicks = IntParameter(
                 step,
                 "relocation_route_estimated_ticks"),
+            RouteSegments = RouteSegmentsParameter(step),
             TargetArrivalTileX = IntParameter(
                 step,
                 "relocation_target_arrival_tile_x"),
@@ -131,5 +133,25 @@ public static class MachineRelocationIntentPlanBinder
                 parameter.Name,
                 name,
                 StringComparison.Ordinal))?.Value ?? string.Empty;
+    }
+
+    private static MachineRelocationRouteSegment[]
+        RouteSegmentsParameter(SmallModelPlanStep step)
+    {
+        var json = Parameter(step, "relocation_route_segments_json");
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<
+                MachineRelocationRouteSegment[]>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 }

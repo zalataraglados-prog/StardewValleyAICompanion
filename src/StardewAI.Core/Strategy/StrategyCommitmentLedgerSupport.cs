@@ -138,6 +138,22 @@ internal static class StrategyCommitmentLedgerSupport
             RouteConnectorCount = row.RouteConnectorCount,
             RouteConnectorKind = row.RouteConnectorKind,
             RouteEstimatedTicks = row.RouteEstimatedTicks,
+            RouteSegments = (row.RouteSegments ?? [])
+                .Select(segment => new MachineRelocationRouteSegment
+                {
+                    Index = segment.Index,
+                    Kind = segment.Kind,
+                    FromLocationId = segment.FromLocationId,
+                    FromTileX = segment.FromTileX,
+                    FromTileY = segment.FromTileY,
+                    TargetLocationId = segment.TargetLocationId,
+                    ArrivalTileX = segment.ArrivalTileX,
+                    ArrivalTileY = segment.ArrivalTileY,
+                    ApproachDistanceTiles =
+                        segment.ApproachDistanceTiles,
+                    EstimatedTicks = segment.EstimatedTicks
+                })
+                .ToArray(),
             TargetArrivalTileX = row.TargetArrivalTileX,
             TargetArrivalTileY = row.TargetArrivalTileY,
             TargetStandTileX = row.TargetStandTileX,

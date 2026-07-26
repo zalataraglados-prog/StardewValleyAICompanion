@@ -144,6 +144,7 @@ namespace StardewAI.Core.Training
                 "social_route.position_source",
                 "social_route.future_schedule_projection",
                 "machine_route.remaining_connector_count",
+                "machine_route.committed_segment_index",
                 "machine_route.snapshot_policy",
                 "storage_route.remaining_connector_count",
                 "storage_route.snapshot_policy"

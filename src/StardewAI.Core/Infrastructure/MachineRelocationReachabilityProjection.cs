@@ -15,17 +15,88 @@ internal sealed class MachineRelocationReachabilityProjection
         (int X, int Y)?> parents;
 
     public MachineRelocationReachabilityProjection(
+        int width,
+        int height,
         IReadOnlyDictionary<(int X, int Y), int> distances,
         IReadOnlyDictionary<
             (int X, int Y),
             (int X, int Y)?> parents)
     {
+        Width = width;
+        Height = height;
         this.distances = distances;
         this.parents = parents;
     }
 
+    public int Width { get; }
+    public int Height { get; }
+
     public bool Contains(int x, int y) =>
         distances.ContainsKey((x, y));
+
+    public bool TryGetDistance(int x, int y, out int distance) =>
+        distances.TryGetValue((x, y), out distance);
+
+    public bool TryGetConnectorApproachDistance(
+        int connectorX,
+        int connectorY,
+        IReadOnlyCollection<(int X, int Y)> excludedStandTiles,
+        out int distance)
+    {
+        var stands = new List<(int X, int Y)>();
+        if (connectorX < 0)
+        {
+            stands.Add((
+                0,
+                Math.Clamp(connectorY, 0, Height - 1)));
+        }
+        else if (connectorX >= Width)
+        {
+            stands.Add((
+                Width - 1,
+                Math.Clamp(connectorY, 0, Height - 1)));
+        }
+        else if (connectorY < 0)
+        {
+            stands.Add((
+                Math.Clamp(connectorX, 0, Width - 1),
+                0));
+        }
+        else if (connectorY >= Height)
+        {
+            stands.Add((
+                Math.Clamp(connectorX, 0, Width - 1),
+                Height - 1));
+        }
+        else
+        {
+            stands.AddRange(new[]
+            {
+                (connectorX + 1, connectorY),
+                (connectorX - 1, connectorY),
+                (connectorX, connectorY + 1),
+                (connectorX, connectorY - 1)
+            });
+        }
+
+        var proven = stands
+            .Where(stand => !excludedStandTiles.Contains(stand))
+            .Select(stand =>
+                distances.TryGetValue(stand, out var candidate)
+                    ? candidate
+                    : (int?)null)
+            .Where(candidate => candidate.HasValue)
+            .Select(candidate => candidate!.Value)
+            .ToArray();
+        if (proven.Length == 0)
+        {
+            distance = -1;
+            return false;
+        }
+
+        distance = proven.Min();
+        return true;
+    }
 
     public bool TryGetProvenDistanceAvoiding(
         int standX,
@@ -62,6 +133,40 @@ internal sealed class MachineRelocationReachabilityProjection
 
 internal static class MachineRelocationReachabilityProjectionReader
 {
+    public static IReadOnlyCollection<(int X, int Y)>
+        ReadResolvedConnectorTiles(
+            SnapshotEnvelope snapshot,
+            string locationId)
+    {
+        var graph = ReadStateFieldValue(
+            snapshot,
+            "locations",
+            "route_graph");
+        if (!graph.HasValue ||
+            graph.Value.ValueKind != JsonValueKind.Object ||
+            !graph.Value.TryGetProperty("edges", out var edges) ||
+            edges.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<(int X, int Y)>();
+        }
+
+        return edges.EnumerateArray()
+            .Where(edge =>
+                edge.ValueKind == JsonValueKind.Object &&
+                ReadBool(edge, "resolved") == true &&
+                string.Equals(
+                    ReadString(edge, "from_location"),
+                    locationId,
+                    StringComparison.OrdinalIgnoreCase))
+            .Select(edge => (
+                X: ReadNullableInt(edge, "from_x"),
+                Y: ReadNullableInt(edge, "from_y")))
+            .Where(tile => tile.X.HasValue && tile.Y.HasValue)
+            .Select(tile => (tile.X!.Value, tile.Y!.Value))
+            .Distinct()
+            .ToArray();
+    }
+
     public static MachineRelocationReachabilityProjection? Read(
         SnapshotEnvelope snapshot,
         string locationId,
@@ -182,6 +287,8 @@ internal static class MachineRelocationReachabilityProjectionReader
         }
 
         return new MachineRelocationReachabilityProjection(
+            width,
+            height,
             distances,
             parents);
     }

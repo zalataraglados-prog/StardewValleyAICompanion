@@ -76,11 +76,18 @@ namespace StardewAI.Core.OptionRegistry
             MachineRelocationIntent? relocationIntent)
         {
             var targetLocationId = ReadString(location, "location_id");
-            var routePlan = FindResolvedRoutePlan(
-                snapshot,
-                currentLocationId,
-                targetLocationId,
-                routeCandidates);
+            var routePlan = relocationIntent is null
+                ? FindResolvedRoutePlan(
+                    snapshot,
+                    currentLocationId,
+                    targetLocationId,
+                    routeCandidates)
+                : FindCommittedRelocationRoutePlan(
+                    snapshot,
+                    currentLocationId,
+                    targetLocationId,
+                    routeCandidates,
+                    relocationIntent);
             var route = routePlan?.FirstConnectorCandidate;
             var blockReasons = new List<string>();
             if (string.IsNullOrWhiteSpace(reservationGuard.LedgerId))
@@ -133,7 +140,9 @@ namespace StardewAI.Core.OptionRegistry
             if (route is null)
             {
                 blockReasons.Add(
-                    "machine_placement_cross_map_route_unavailable");
+                    relocationIntent is null
+                        ? "machine_placement_cross_map_route_unavailable"
+                        : "machine_relocation_committed_route_drifted");
             }
             else
             {
@@ -163,6 +172,12 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter(
                     "machine_route.remaining_connector_count",
                     (routePlan?.Path.Length ?? 0).ToString()),
+                Parameter(
+                    "machine_route.committed_segment_index",
+                    relocationIntent is null || routePlan is null
+                        ? string.Empty
+                        : (relocationIntent.RouteConnectorCount -
+                           routePlan.Path.Length).ToString()),
                 Parameter(
                     "machine_route.snapshot_policy",
                     "fresh_snapshot_after_each_connector")

@@ -436,6 +436,8 @@ public sealed class MachineCraftingMainlineTests
         Assert.Contains("includeGenerated: false", topology, StringComparison.Ordinal);
         Assert.Contains("location.ParentBuilding", topology, StringComparison.Ordinal);
         Assert.Contains("location.IsGreenhouse", topology, StringComparison.Ordinal);
+        Assert.Contains("home.GetCellarName()", topology, StringComparison.Ordinal);
+        Assert.Contains("isCellar", topology, StringComparison.Ordinal);
         Assert.Contains("no_map_name_allowlist", placement, StringComparison.Ordinal);
         Assert.Contains("probe.canBePlacedHere", placement, StringComparison.Ordinal);
         Assert.Contains("Utility.playerCanPlaceItemHere", placement, StringComparison.Ordinal);

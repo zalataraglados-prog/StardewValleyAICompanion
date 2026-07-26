@@ -38,12 +38,12 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                 candidate.Parameters,
                 "relocation_route_connector_count"));
         Assert.Equal(
-            "existing_machine_cluster_one_connector_over_eight_cycles",
+            "existing_machine_cluster_resolved_route_over_eight_cycles",
             Parameter(
                 candidate.Parameters,
                 "layout_benefit_policy"));
         Assert.Equal(
-            "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
+            "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             Parameter(
                 candidate.Parameters,
                 "relocation_target_selection_policy"));
@@ -280,7 +280,9 @@ public sealed class CrossLocationMachineRelocationMainlineTests
             LayoutNetBenefitTicks = int.Parse(Parameter(
                 candidate.Parameters,
                 "layout_net_benefit_ticks")),
-            RouteConnectorCount = 1,
+            RouteConnectorCount = int.Parse(Parameter(
+                candidate.Parameters,
+                "relocation_route_connector_count")),
             LayoutRelocationCostTicks = int.Parse(Parameter(
                 candidate.Parameters,
                 "layout_relocation_cost_ticks")),
@@ -290,6 +292,11 @@ public sealed class CrossLocationMachineRelocationMainlineTests
             RouteEstimatedTicks = int.Parse(Parameter(
                 candidate.Parameters,
                 "relocation_route_estimated_ticks")),
+            RouteSegments = JsonSerializer.Deserialize<
+                MachineRelocationRouteSegment[]>(Parameter(
+                    candidate.Parameters,
+                    "relocation_route_segments_json"),
+                JsonOptions)!,
             TargetArrivalTileX = int.Parse(Parameter(
                 candidate.Parameters,
                 "relocation_target_arrival_tile_x")),
@@ -306,11 +313,11 @@ public sealed class CrossLocationMachineRelocationMainlineTests
                 candidate.Parameters,
                 "relocation_target_route_distance_tiles")),
             LayoutBenefitPolicy =
-                "existing_machine_cluster_one_connector_over_eight_cycles",
+                "existing_machine_cluster_resolved_route_over_eight_cycles",
             TargetSelectionPolicy =
-                "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
+                "resolved_route_final_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked",
             TimeEstimatePolicy =
-                "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked"
+                "source_approach_plus_resolved_route_static_bfs_plus_target_static_bfs_runtime_rechecked"
         };
 
     private static StrategyCommitmentLedger Ledger(
