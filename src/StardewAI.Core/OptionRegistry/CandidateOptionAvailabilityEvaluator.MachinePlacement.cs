@@ -64,8 +64,23 @@ namespace StardewAI.Core.OptionRegistry
             var qualifiedItemId = ReadString(row, "qualified_item_id");
             var stack = Math.Max(0, ReadInt(row, "stack"));
             var location = CurrentMachinePlacementLocation(row, currentLocationId);
+            var relocationIntent = ActiveMachineRelocationIntent(
+                snapshot,
+                commitmentLedger,
+                qualifiedItemId,
+                currentLocationId);
             var selection = location.HasValue
-                ? SelectMachinePlacementTile(snapshot, location.Value, currentLocationId)
+                ? relocationIntent is null
+                    ? SelectMachinePlacementTile(
+                        snapshot,
+                        location.Value,
+                        currentLocationId)
+                    : SelectExactMachinePlacementTile(
+                        snapshot,
+                        location.Value,
+                        currentLocationId,
+                        relocationIntent.TargetTileX,
+                        relocationIntent.TargetTileY)
                 : null;
             var reservationGuard =
                 new InventoryPlacementMaterialReservationGuard().Evaluate(
@@ -104,7 +119,10 @@ namespace StardewAI.Core.OptionRegistry
             }
             if (selection is null)
             {
-                blockReasons.Add("machine_placement_reachable_exact_tile_unavailable");
+                blockReasons.Add(
+                    relocationIntent is null
+                        ? "machine_placement_reachable_exact_tile_unavailable"
+                        : "machine_relocation_exact_target_unavailable");
             }
             if (!reservationGuard.Ready &&
                 reservationGuard.ReservationIds.Length > 0)
@@ -120,6 +138,9 @@ namespace StardewAI.Core.OptionRegistry
             {
                 CandidateId = "machine-place:" + currentLocationId + ":slot" + slotIndex +
                     ":" + qualifiedItemId +
+                    (relocationIntent is null
+                        ? string.Empty
+                        : ":intent=" + relocationIntent.IntentId) +
                     (targetX.HasValue && targetY.HasValue
                         ? ":" + targetX.Value + "," + targetY.Value
                         : string.Empty),
@@ -143,7 +164,9 @@ namespace StardewAI.Core.OptionRegistry
                             ReadStateFieldInt(snapshot, "player", "tile_y") -
                             selection.Stand.Y)) * 60 + 30),
                 EnergyCost = 0,
-                AvailabilityClass = "transparent_machine_native_exact_placement",
+                AvailabilityClass = relocationIntent is null
+                    ? "transparent_machine_native_exact_placement"
+                    : "transparent_machine_relocation_exact_target_placement",
                 ExpectedEffect = "player.inventory[" + slotIndex + "].stack_decreases=1" +
                     ";farm.machines[" + currentLocationId + ":" +
                     (targetX?.ToString() ?? "?") + "," +
@@ -190,7 +213,18 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter(
                         "material_reservation_ids_json",
                         JsonSerializer.Serialize(
-                            reservationGuard.ReservationIds))
+                            reservationGuard.ReservationIds)),
+                    Parameter(
+                        "relocation_intent_id",
+                        relocationIntent?.IntentId ?? string.Empty),
+                    Parameter(
+                        "relocation_source_state_hash",
+                        relocationIntent?.SourceStateHash ?? string.Empty),
+                    Parameter(
+                        "relocation_original_placement_projection_fingerprint",
+                        relocationIntent
+                            ?.MachinePlacementProjectionFingerprint ??
+                        string.Empty)
                 }
             };
         }
