@@ -162,7 +162,7 @@ public sealed partial class FarmReadAdapter
         };
     }
 
-    private static object? ReadMachineSpecialState(
+    private static object? ReadCaskSpecialState(
         StardewValley.Object machine)
     {
         if (machine is not Cask cask)

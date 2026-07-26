@@ -14,6 +14,7 @@ param(
     [switch] $RequireNativePredictedOutput,
     [switch] $RequireSpecialMachineBlockedPrediction,
     [switch] $RequireVettedSpecialPredictedOutput,
+    [switch] $RequireIncubatorLifecycleGuard,
     [string] $ExpectedSpecialModelId = "cask_quality_aging.v1",
     [string] $ExpectedSpecialSource = "decompiled_Cask.OutputCask_static_model",
     [string] $ExpectedPredictedOutputId = "",
@@ -186,6 +187,10 @@ try {
     $machineInputDispatchKind = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.input_dispatch_kind } else { "" }
     $machinePredictionTrainingStatus = if ($null -ne $machineExecutionSemantics) { [string]$machineExecutionSemantics.prediction_training_status } else { "" }
     $machineInputProbeStatus = if ($null -ne $targetMachine) { [string]$targetMachine.loadable_input_probe_status } else { "" }
+    $machineIsIncubator = if ($null -ne $targetMachine) { [bool]$targetMachine.machine_is_incubator } else { $false }
+    $machineCompletionKind = if ($null -ne $targetMachine) { [string]$targetMachine.machine_completion_interaction_kind } else { "" }
+    $ordinaryOutputCollectionSupported = if ($null -ne $targetMachine) { [bool]$targetMachine.ordinary_output_collection_supported } else { $true }
+    $machineSpecialState = if ($null -ne $targetMachine) { $targetMachine.machine_special_state } else { $null }
     $inputSlotIndex = Read-InputSlotIndexFromSetup -SetupResult $setupResult
     if ($null -eq $targetMachine -or $inputSlotIndex -lt 0) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
@@ -194,6 +199,17 @@ try {
     if ($RequireTransparentLoadableInput -and $null -eq $input) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Transparent machine loadable_inputs did not include $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if ($RequireIncubatorLifecycleGuard -and
+        (-not $machineIsIncubator -or
+            $machineCompletionKind -ne "animal_house_hatch_naming_event" -or
+            $ordinaryOutputCollectionSupported -or
+            $null -eq $machineSpecialState -or
+            [string]$machineSpecialState.status -ne "idle" -or
+            -not [bool]$machineSpecialState.location_is_animal_house -or
+            [string]$machineSpecialState.hatch_executor_status -ne "blocked_native_naming_executor_not_implemented")) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Incubator lifecycle guard was not exposed exactly before native loading."
     }
     if ($RequireSpecialMachineBlockedPrediction -and
         ($machineExecutionStatus -ne "available_native_runtime_override" -or
@@ -272,6 +288,16 @@ try {
     $afterMinutes = if ($null -ne $afterMachine) { [int]$afterMachine.minutes_until_ready } else { -999 }
     $afterReady = if ($null -ne $afterMachine) { [bool]$afterMachine.ready_for_harvest } else { $false }
     $afterHeld = if ($null -ne $afterMachine -and $null -ne $afterMachine.held_item) { [string]$afterMachine.held_item.qualified_item_id } else { "" }
+    $afterSpecialState = if ($null -ne $afterMachine) { $afterMachine.machine_special_state } else { $null }
+    if ($RequireIncubatorLifecycleGuard -and
+        ($null -eq $afterSpecialState -or
+            [string]$afterSpecialState.status -ne "incubating" -or
+            [string]$afterSpecialState.held_egg_qualified_item_id -ne $QualifiedItemId -or
+            [string]$afterSpecialState.completion_interaction_kind -ne "AnimalHouse.resetSharedState_animalNaming_addNewHatchedAnimal" -or
+            [bool]$afterSpecialState.ordinary_output_collection_supported)) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+        throw "Incubator lifecycle guard drifted after native loading."
+    }
 
     $summary = [ordered]@{
         status = if ($setupResult.status -eq "applied" -and $setupResult.primitive_verification_status -eq "verified" -and $loadResult.status -eq "applied" -and $loadResult.primitive_verification_status -eq "verified" -and ($afterMinutes -gt 0 -or $afterReady -or -not [string]::IsNullOrWhiteSpace($afterHeld))) { "passed" } else { "failed" }
@@ -289,6 +315,12 @@ try {
         loadable_input_before = $null -ne $input
         transparent_loadable_input_required = [bool]$RequireTransparentLoadableInput
         special_machine_blocked_prediction_required = [bool]$RequireSpecialMachineBlockedPrediction
+        incubator_lifecycle_guard_required = [bool]$RequireIncubatorLifecycleGuard
+        machine_is_incubator = $machineIsIncubator
+        machine_completion_interaction_kind = $machineCompletionKind
+        ordinary_output_collection_supported = $ordinaryOutputCollectionSupported
+        machine_special_state_before = $machineSpecialState
+        machine_special_state_after = $afterSpecialState
         machine_execution_status = $machineExecutionStatus
         machine_input_dispatch_kind = $machineInputDispatchKind
         machine_prediction_training_status = $machinePredictionTrainingStatus

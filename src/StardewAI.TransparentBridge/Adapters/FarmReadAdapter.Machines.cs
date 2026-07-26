@@ -101,6 +101,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     MachineDataHasEffectiveInput(liveMachineData);
                 var machineHasOutput =
                     MachineDataHasEffectiveOutput(liveMachineData);
+                var machineIsIncubator =
+                    liveMachineData?.IsIncubator == true;
                 var machineInputProbeIsRngSafe =
                     MachineInputProbeIsRngSafe(liveMachineData);
                 var executionSemantics = ReadMachineExecutionSemantics(
@@ -140,6 +142,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     minutes_until_ready = row.Pair.Value.MinutesUntilReady,
                     machine_has_input = machineHasInput,
                     machine_has_output = machineHasOutput,
+                    machine_is_incubator = machineIsIncubator,
+                    machine_completion_interaction_kind =
+                        machineIsIncubator
+                            ? "animal_house_hatch_naming_event"
+                            : "ordinary_output_collection",
+                    ordinary_output_collection_supported =
+                        !machineIsIncubator,
                     runtime_type = row.Pair.Value.GetType().FullName ?? row.Pair.Value.GetType().Name,
                     object_type = row.Pair.Value.Type,
                     fragility = row.Pair.Value.Fragility,
@@ -173,7 +182,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     machine_data = machineData,
                     machine_execution_semantics = executionSemantics,
                     machine_special_state =
-                        ReadMachineSpecialState(row.Pair.Value),
+                        ReadMachineSpecialState(
+                            row.Pair.Value,
+                            row.Location),
                     harvest_experience_raw = harvestExperience.Raw,
                     harvest_experience_entries = harvestExperience.Entries,
                     harvest_experience_deltas = harvestExperience.Deltas,
@@ -342,6 +353,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 MachineDataHasEffectiveOutput(typedOutputData),
             has_input_forced = ReadBoolNullable(machineData, "HasInput"),
             has_output_forced = ReadBoolNullable(machineData, "HasOutput"),
+            is_incubator = ReadBoolNullable(
+                machineData,
+                "IsIncubator"),
             effective_capability_native_contract =
                 "ItemContextTagManager:forced_flag_or_output_rule_trigger",
             additional_consumed_item_count = ReadCount(machineData, "AdditionalConsumedItems"),

@@ -55,4 +55,12 @@ public sealed partial class FarmReadAdapter
             outputData,
             out prediction);
     }
+
+    private static object? ReadMachineSpecialState(
+        StardewValley.Object machine,
+        GameLocation location)
+    {
+        return ReadCaskSpecialState(machine) ??
+            ReadIncubatorSpecialState(machine, location);
+    }
 }
