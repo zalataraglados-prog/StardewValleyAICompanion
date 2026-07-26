@@ -1,0 +1,854 @@
+param(
+    [string] $ProjectRoot =
+        (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
+    [string] $RuntimeRoot =
+        "E:\StardewValleyAICompanion-runtime",
+    [string] $SaveSlot = "",
+    [string] $RunId = (
+        "runtime-strategic-machine-relocation-smoke-" +
+        (Get-Date -Format "yyyyMMdd-HHmmss")
+    ),
+    [string] $OutputDirectory =
+        "artifacts\runtime-strategic-machine-relocation-smoke",
+    [int] $BackendPort = 5130,
+    [int] $StartupTimeoutSeconds = 180,
+    [int] $SourceTileX = 56,
+    [int] $SourceTileY = 15,
+    [int] $PeerOneTileX = 50,
+    [int] $PeerOneTileY = 15,
+    [int] $PeerTwoTileX = 52,
+    [int] $PeerTwoTileY = 15,
+    [string] $MachineQualifiedItemId = "(BC)12",
+    [string] $MachineItemId = "12",
+    [string] $InputQualifiedItemId = "(O)262",
+    [switch] $KeepGameRunning
+)
+
+$ErrorActionPreference = "Stop"
+
+function Write-JsonFile {
+    param([string] $Path, $Value)
+    $Value | ConvertTo-Json -Depth 96 |
+        Set-Content -LiteralPath $Path -Encoding utf8
+}
+
+function Invoke-JsonPost {
+    param(
+        [string] $Url,
+        $Body,
+        [int] $TimeoutSeconds = 180
+    )
+    $json = $Body | ConvertTo-Json -Depth 96
+    Invoke-RestMethod -Method Post -Uri $Url `
+        -ContentType "application/json; charset=utf-8" `
+        -Body $json -TimeoutSec $TimeoutSeconds
+}
+
+function Invoke-JsonGet {
+    param(
+        [string] $Url,
+        [int] $TimeoutSeconds = 30
+    )
+    Invoke-RestMethod -Method Get -Uri $Url `
+        -Headers @{ "Accept" = "application/json" } `
+        -TimeoutSec $TimeoutSeconds
+}
+
+function Wait-Health {
+    param(
+        [string] $Url,
+        [int] $TimeoutSeconds
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastError = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $health = Invoke-JsonGet -Url $Url -TimeoutSeconds 3
+            if ($health.status -eq "ok") {
+                return $health
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+        Start-Sleep -Seconds 2
+    }
+    throw "Timed out waiting for $Url. Last error: $lastError"
+}
+
+function Wait-WorldSnapshot {
+    param(
+        [string] $Url,
+        [int] $TimeoutSeconds
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastStatus = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 30
+            $saveReadable = $snapshot.save_id.status -in @(
+                "available",
+                "derived"
+            )
+            $machinesReadable =
+                $snapshot.state.farm.machines.status -eq "available"
+            $placementReadable =
+                $snapshot.state.player.machine_placement.status -eq
+                    "available"
+            $lastStatus =
+                "save=$($snapshot.save_id.status)" +
+                ";machines=$($snapshot.state.farm.machines.status)" +
+                ";placement=" +
+                "$($snapshot.state.player.machine_placement.status)"
+            if ($saveReadable -and
+                $machinesReadable -and
+                $placementReadable) {
+                return $snapshot
+            }
+        }
+        catch {
+            $lastStatus = $_.Exception.Message
+        }
+        Start-Sleep -Seconds 2
+    }
+    throw (
+        "Timed out waiting for strategic machine snapshot. " +
+        "Last status: $lastStatus"
+    )
+}
+
+function Find-Machine {
+    param(
+        $Snapshot,
+        [int] $X,
+        [int] $Y
+    )
+    foreach ($machine in @($Snapshot.state.farm.machines.value)) {
+        if ([string]$machine.location_id -eq "Farm" -and
+            [int]$machine.tile_x -eq $X -and
+            [int]$machine.tile_y -eq $Y) {
+            return $machine
+        }
+    }
+    return $null
+}
+
+function Find-LoadableInput {
+    param(
+        $Machine,
+        [string] $QualifiedItemId
+    )
+    foreach ($input in @($Machine.loadable_inputs)) {
+        if ([string]$input.qualified_item_id -eq $QualifiedItemId) {
+            return $input
+        }
+    }
+    return $null
+}
+
+function Inventory-Count {
+    param(
+        $Snapshot,
+        [string] $QualifiedItemId
+    )
+    $count = 0
+    foreach ($item in @($Snapshot.state.player.inventory.value)) {
+        if ([string]$item.qualified_item_id -eq $QualifiedItemId) {
+            $count += [int]$item.stack
+        }
+    }
+    return $count
+}
+
+function Find-Debris {
+    param(
+        $Snapshot,
+        [string] $QualifiedItemId
+    )
+    foreach ($debris in @($Snapshot.state.farm.debris.value)) {
+        if ([string]$debris.qualified_item_id -eq
+                $QualifiedItemId -and
+            @($debris.chunks).Count -gt 0) {
+            return $debris
+        }
+    }
+    return $null
+}
+
+function Candidate-Parameter {
+    param(
+        $Candidate,
+        [string] $Name
+    )
+    foreach ($parameter in @($Candidate.parameters)) {
+        if ([string]$parameter.name -eq $Name) {
+            return [string]$parameter.value
+        }
+    }
+    return ""
+}
+
+function Queue-Parameter {
+    param(
+        $QueueItem,
+        [string] $Name
+    )
+    foreach ($parameter in @(
+        $QueueItem.normalized_command.parameters
+    )) {
+        if ([string]$parameter.name -eq $Name) {
+            return [string]$parameter.value
+        }
+    }
+    return ""
+}
+
+function Invoke-SetupMachine {
+    param(
+        [string] $ExecutorUrl,
+        [string] $SavesPath,
+        [string] $ExecutionRunId,
+        [string] $Step,
+        [int] $X,
+        [int] $Y
+    )
+    $request = [ordered]@{
+        schema_version = "training_execution_request.v1"
+        run_id = $ExecutionRunId
+        queue_id = "strategic-machine-relocation-fixture"
+        queue_item_id =
+            "strategic-machine-relocation-fixture.$Step"
+        before_state_hash = "fixture"
+        option_id = "debug.setup_machine_input_target"
+        execution_mode = "training_singleplayer"
+        actor = "training_farmer.main"
+        save_isolation_path = $SavesPath
+        request_nonce = [guid]::NewGuid().ToString("N")
+        created_at = [DateTimeOffset]::UtcNow.ToString("O")
+        target_tile_x = $X
+        target_tile_y = $Y
+        expected_shop_id = $MachineItemId
+        qualified_item_id = $InputQualifiedItemId
+        quantity = 1
+    }
+    return Invoke-JsonPost `
+        -Url "$ExecutorUrl/api/v1/training/execute" `
+        -Body $request
+}
+
+function Invoke-LoadMachine {
+    param(
+        [string] $ExecutorUrl,
+        [string] $SnapshotUrl,
+        [string] $SavesPath,
+        [string] $ExecutionRunId,
+        [string] $Step,
+        [int] $X,
+        [int] $Y
+    )
+    $snapshot = Wait-WorldSnapshot `
+        -Url $SnapshotUrl -TimeoutSeconds 60
+    $machine = Find-Machine -Snapshot $snapshot -X $X -Y $Y
+    $input = Find-LoadableInput `
+        -Machine $machine `
+        -QualifiedItemId $InputQualifiedItemId
+    if ($null -eq $machine -or $null -eq $input) {
+        throw "Fixture machine at $X,$Y had no transparent input."
+    }
+    $request = [ordered]@{
+        schema_version = "training_execution_request.v1"
+        run_id = $ExecutionRunId
+        queue_id = "strategic-machine-relocation-fixture"
+        queue_item_id =
+            "strategic-machine-relocation-fixture.$Step"
+        before_state_hash = $snapshot.state_hash
+        option_id = "executor.load_machine_input"
+        execution_mode = "training_singleplayer"
+        actor = "training_farmer.main"
+        save_isolation_path = $SavesPath
+        request_nonce = [guid]::NewGuid().ToString("N")
+        created_at = [DateTimeOffset]::UtcNow.ToString("O")
+        target_tile_x = $X
+        target_tile_y = $Y
+        input_slot_index = [int]$input.slot_index
+        location_id = "Farm"
+        qualified_item_id = $InputQualifiedItemId
+    }
+    return Invoke-JsonPost `
+        -Url "$ExecutorUrl/api/v1/training/execute" `
+        -Body $request
+}
+
+function Wait-FixtureReady {
+    param(
+        [string] $SnapshotUrl,
+        [int] $TimeoutSeconds
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastStatus = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-WorldSnapshot `
+            -Url $SnapshotUrl -TimeoutSeconds 30
+        $source = Find-Machine `
+            -Snapshot $snapshot -X $SourceTileX -Y $SourceTileY
+        $peerOne = Find-Machine `
+            -Snapshot $snapshot -X $PeerOneTileX -Y $PeerOneTileY
+        $peerTwo = Find-Machine `
+            -Snapshot $snapshot -X $PeerTwoTileX -Y $PeerTwoTileY
+        $inputCount = Inventory-Count `
+            -Snapshot $snapshot `
+            -QualifiedItemId $InputQualifiedItemId
+        $sourceReady =
+            $null -ne $source -and
+            [bool]$source.removal_safe_now -and
+            [string]$source.removal_status -eq
+                "safe_idle_native_pickaxe"
+        $peerOneBusy =
+            $null -ne $peerOne -and
+            [int]$peerOne.minutes_until_ready -gt 0
+        $peerTwoBusy =
+            $null -ne $peerTwo -and
+            [int]$peerTwo.minutes_until_ready -gt 0
+        $lastStatus =
+            "source_ready=$sourceReady" +
+            ";peer_one_busy=$peerOneBusy" +
+            ";peer_two_busy=$peerTwoBusy" +
+            ";input_count=$inputCount"
+        if ($sourceReady -and
+            $peerOneBusy -and
+            $peerTwoBusy -and
+            $inputCount -eq 0) {
+            return $snapshot
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    throw "Strategic fixture not ready. Last status: $lastStatus"
+}
+
+function Invoke-LiveStage {
+    param(
+        [string] $StageRoot,
+        [string] $StageRunId,
+        [string] $SnapshotPath,
+        [string] $BackendUrl,
+        [string] $SnapshotUrl,
+        [string] $ExecutorUrl,
+        [string] $SavesPath,
+        [string] $CandidateKind,
+        [string] $LogPath
+    )
+    $loopProject = Join-Path $ProjectRoot (
+        "tools\StardewAI.LiveTrainingLoop\" +
+        "StardewAI.LiveTrainingLoop.csproj"
+    )
+    & dotnet run --no-restore --project $loopProject -- `
+        --root $StageRoot `
+        --backend-url $BackendUrl `
+        --bridge-snapshot-url $SnapshotUrl `
+        --executor-url $ExecutorUrl `
+        --snapshot-file $SnapshotPath `
+        --no-manifest `
+        --run-id $StageRunId `
+        --save-isolation-path $SavesPath `
+        --iterations 1 `
+        --required-verified-actions 1 `
+        --skip-training `
+        --sleep-ms 0 `
+        --use-daily-plan `
+        --daily-plan-max-candidates 1 `
+        --daily-plan-candidate-options "farm.process_machines" `
+        --daily-plan-candidate-kind $CandidateKind `
+        --after-snapshot-wait-ms 750 `
+        --continue-after-blocked-queue-items *>&1 |
+        Set-Content -LiteralPath $LogPath -Encoding utf8
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "LiveTrainingLoop stage $StageRunId failed with exit " +
+            "$LASTEXITCODE. See $LogPath"
+        )
+    }
+}
+
+$runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
+$smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
+$savesPath = Join-Path $RuntimeRoot "saves"
+$snapshotUrl =
+    "http://127.0.0.1:8765/api/v1/snapshot?profile=training_machine"
+$executorUrl = "http://127.0.0.1:8767"
+$backendUrl = "http://127.0.0.1:$BackendPort"
+if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) {
+    throw "SMAPI executable not found: $smapiExe"
+}
+if (-not (Test-Path -LiteralPath $savesPath -PathType Container)) {
+    throw "Isolated saves path not found: $savesPath"
+}
+if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
+    $slot = Get-ChildItem -LiteralPath $savesPath -Directory |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if ($null -eq $slot) {
+        throw "No isolated save slots found under $savesPath"
+    }
+    $SaveSlot = $slot.Name
+}
+
+$runDirectory = Join-Path $ProjectRoot (
+    Join-Path $OutputDirectory $RunId
+)
+$ledgerDirectory = Join-Path $runDirectory "strategy-ledger"
+$backendStdout = Join-Path $runDirectory "backend.stdout.log"
+$backendStderr = Join-Path $runDirectory "backend.stderr.log"
+$sourceSnapshotPath = Join-Path $runDirectory "source-snapshot.json"
+$recoveredSnapshotPath =
+    Join-Path $runDirectory "recovered-snapshot.json"
+New-Item -ItemType Directory -Force -Path $runDirectory |
+    Out-Null
+New-Item -ItemType Directory -Force -Path $ledgerDirectory |
+    Out-Null
+
+& (Join-Path $ProjectRoot `
+    "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot |
+    Out-Null
+& (Join-Path $ProjectRoot `
+    "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot |
+    Out-Null
+
+$previousEnv = @{
+    STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
+    STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
+    STARDEWAI_TEST_AUTO_LOAD = $env:STARDEWAI_TEST_AUTO_LOAD
+    STARDEWAI_SAVE_ISOLATION_PATH =
+        $env:STARDEWAI_SAVE_ISOLATION_PATH
+    STARDEWAI_TRAINING_RUN_ID =
+        $env:STARDEWAI_TRAINING_RUN_ID
+    STARDEWAI_TRAINING_MODE =
+        $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_STRATEGY_LEDGER_DIR =
+        $env:STARDEWAI_STRATEGY_LEDGER_DIR
+    ASPNETCORE_URLS = $env:ASPNETCORE_URLS
+    SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
+    ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+}
+
+$gameProcess = $null
+$backendProcess = $null
+try {
+    $env:STARDEWAI_TEST_SAVES = $savesPath
+    $env:STARDEWAI_TEST_SLOT = $SaveSlot
+    $env:STARDEWAI_TEST_AUTO_LOAD = "true"
+    $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
+    $env:STARDEWAI_TRAINING_RUN_ID = $RunId
+    $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_STRATEGY_LEDGER_DIR = $ledgerDirectory
+    $env:ASPNETCORE_URLS = $backendUrl
+    $env:SDL_AUDIODRIVER = "dummy"
+    $env:ALSOFT_DRIVERS = "null"
+
+    $backendProcess = Start-Process -FilePath "dotnet" `
+        -ArgumentList @(
+            "run",
+            "--no-restore",
+            "--project",
+            (Join-Path $ProjectRoot `
+                "src\StardewAI.Backend\StardewAI.Backend.csproj"),
+            "--no-launch-profile"
+        ) `
+        -WorkingDirectory $ProjectRoot `
+        -WindowStyle Hidden `
+        -RedirectStandardOutput $backendStdout `
+        -RedirectStandardError $backendStderr `
+        -PassThru
+    Wait-Health -Url "$backendUrl/health" -TimeoutSeconds 60 |
+        Out-Null
+
+    $gameProcess = Start-Process -FilePath $smapiExe `
+        -WorkingDirectory $runtimeGameDir `
+        -WindowStyle Hidden -PassThru
+    $executorHealth = Wait-Health `
+        -Url "$executorUrl/health" -TimeoutSeconds 30
+    Start-Sleep -Seconds 20
+    Wait-WorldSnapshot `
+        -Url $snapshotUrl `
+        -TimeoutSeconds $StartupTimeoutSeconds |
+        Out-Null
+
+    $setupPeerOne = Invoke-SetupMachine `
+        -ExecutorUrl $executorUrl `
+        -SavesPath $savesPath `
+        -ExecutionRunId $RunId `
+        -Step "setup-peer-one" `
+        -X $PeerOneTileX -Y $PeerOneTileY
+    $loadPeerOne = Invoke-LoadMachine `
+        -ExecutorUrl $executorUrl `
+        -SnapshotUrl $snapshotUrl `
+        -SavesPath $savesPath `
+        -ExecutionRunId $RunId `
+        -Step "load-peer-one" `
+        -X $PeerOneTileX -Y $PeerOneTileY
+    $setupSource = Invoke-SetupMachine `
+        -ExecutorUrl $executorUrl `
+        -SavesPath $savesPath `
+        -ExecutionRunId $RunId `
+        -Step "setup-source" `
+        -X $SourceTileX -Y $SourceTileY
+    $setupPeerTwo = Invoke-SetupMachine `
+        -ExecutorUrl $executorUrl `
+        -SavesPath $savesPath `
+        -ExecutionRunId $RunId `
+        -Step "setup-peer-two" `
+        -X $PeerTwoTileX -Y $PeerTwoTileY
+    $loadPeerTwo = Invoke-LoadMachine `
+        -ExecutorUrl $executorUrl `
+        -SnapshotUrl $snapshotUrl `
+        -SavesPath $savesPath `
+        -ExecutionRunId $RunId `
+        -Step "load-peer-two" `
+        -X $PeerTwoTileX -Y $PeerTwoTileY
+    foreach ($fixtureResult in @(
+        $setupPeerOne,
+        $loadPeerOne,
+        $setupSource,
+        $setupPeerTwo,
+        $loadPeerTwo
+    )) {
+        if ($fixtureResult.status -ne "applied" -or
+            $fixtureResult.primitive_verification_status -ne
+                "verified") {
+            throw (
+                "Strategic relocation fixture action failed: " +
+                "$($fixtureResult.option_id);" +
+                "$(@($fixtureResult.block_reasons) -join ',')"
+            )
+        }
+    }
+
+    $sourceSnapshot = Wait-FixtureReady `
+        -SnapshotUrl $snapshotUrl -TimeoutSeconds 90
+    Write-JsonFile $sourceSnapshotPath $sourceSnapshot
+    $ingest = Invoke-JsonPost `
+        -Url "$backendUrl/api/v1/snapshots" `
+        -Body $sourceSnapshot
+    $availability = Invoke-JsonPost `
+        -Url "$backendUrl/api/v1/planner/options/availability" `
+        -Body ([ordered]@{
+            state_hash = $sourceSnapshot.state_hash
+            candidate_option_ids = @("farm.process_machines")
+            candidates = @()
+            include_executor_calibration_options = $true
+        })
+    Write-JsonFile `
+        (Join-Path $runDirectory "source-availability.json") `
+        $availability
+    $relocationCandidate = @(
+        $availability.options |
+            Where-Object {
+                $_.option_id -eq "farm.process_machines"
+            } |
+            ForEach-Object { $_.event_candidates } |
+            Where-Object {
+                $_.kind -eq "relocate_machine_item" -and
+                [bool]$_.available
+            }
+    ) | Select-Object -First 1
+    if ($null -eq $relocationCandidate) {
+        throw "No positive strategic machine relocation candidate."
+    }
+    if ([int]$relocationCandidate.tile_x -ne $SourceTileX -or
+        [int]$relocationCandidate.tile_y -ne $SourceTileY) {
+        throw (
+            "Planner selected unexpected relocation source: " +
+            "$($relocationCandidate.tile_x)," +
+            "$($relocationCandidate.tile_y)"
+        )
+    }
+    $intentId = Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_intent_id"
+    $targetX = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_target_tile_x")
+    $targetY = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "relocation_target_tile_y")
+    $netBenefit = [int](Candidate-Parameter `
+        -Candidate $relocationCandidate `
+        -Name "layout_net_benefit_ticks")
+    if ([string]::IsNullOrWhiteSpace($intentId) -or
+        $netBenefit -le 0) {
+        throw "Strategic candidate lacked a positive typed intent."
+    }
+
+    $machineInventoryBefore = Inventory-Count `
+        -Snapshot $sourceSnapshot `
+        -QualifiedItemId $MachineQualifiedItemId
+    $stageOneRoot = Join-Path $runDirectory "stage-remove"
+    $stageOneRunId = $RunId
+    Invoke-LiveStage `
+        -StageRoot $stageOneRoot `
+        -StageRunId $stageOneRunId `
+        -SnapshotPath $sourceSnapshotPath `
+        -BackendUrl $backendUrl `
+        -SnapshotUrl $snapshotUrl `
+        -ExecutorUrl $executorUrl `
+        -SavesPath $savesPath `
+        -CandidateKind "relocate_machine_item" `
+        -LogPath (Join-Path $runDirectory "stage-remove.log")
+    $stageOneArtifactRoot = Join-Path $stageOneRoot (
+        "runs\$stageOneRunId\live-snapshots"
+    )
+    $stageOneQueue = Get-Content -LiteralPath (
+        Join-Path $stageOneArtifactRoot "compiled-queue-0001.json"
+    ) -Raw | ConvertFrom-Json
+    $stageOneExecution = Get-Content -LiteralPath (
+        Join-Path $stageOneArtifactRoot "execution-0001.json"
+    ) -Raw | ConvertFrom-Json
+    $removeItem = @($stageOneQueue.items) |
+        Where-Object {
+            $_.option_id -eq "executor.remove_machine"
+        } |
+        Select-Object -First 1
+    $removeExecution = @($stageOneExecution.step_results) |
+        Where-Object {
+            $_.option_id -eq "executor.remove_machine"
+        } |
+        Select-Object -First 1
+    if ($null -eq $removeItem -or
+        $null -eq $removeExecution -or
+        $removeExecution.status -ne "applied" -or
+        $removeExecution.primitive_verification_status -ne "verified" -or
+        (Queue-Parameter `
+            -QueueItem $removeItem `
+            -Name "relocation_intent_id") -ne $intentId) {
+        throw "Strategic daily plan did not verify native removal."
+    }
+
+    $recoveryDeadline = (Get-Date).AddSeconds(45)
+    $recoveryMode = ""
+    $recoveredSnapshot = $null
+    $recoveredDebris = $null
+    while ((Get-Date) -lt $recoveryDeadline) {
+        $candidateSnapshot = Wait-WorldSnapshot `
+            -Url $snapshotUrl -TimeoutSeconds 30
+        $sourceMachine = Find-Machine `
+            -Snapshot $candidateSnapshot `
+            -X $SourceTileX -Y $SourceTileY
+        $candidateDebris = Find-Debris `
+            -Snapshot $candidateSnapshot `
+            -QualifiedItemId $MachineQualifiedItemId
+        $inventoryCount = Inventory-Count `
+            -Snapshot $candidateSnapshot `
+            -QualifiedItemId $MachineQualifiedItemId
+        if ($null -eq $sourceMachine -and
+            $inventoryCount -gt $machineInventoryBefore) {
+            $recoveryMode = "native_auto_collected"
+            $recoveredSnapshot = $candidateSnapshot
+            break
+        }
+        if ($null -eq $sourceMachine -and
+            $null -ne $candidateDebris) {
+            $recoveryMode = "debris_visible"
+            $recoveredSnapshot = $candidateSnapshot
+            $recoveredDebris = $candidateDebris
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if ($null -eq $recoveredSnapshot) {
+        throw "Native removal produced neither inventory nor debris."
+    }
+
+    $pickupResult = $null
+    if ($recoveryMode -eq "debris_visible") {
+        $chunk = @($recoveredDebris.chunks)[0]
+        $pickupResult = Invoke-JsonPost `
+            -Url "$executorUrl/api/v1/training/execute" `
+            -Body ([ordered]@{
+                schema_version = "training_execution_request.v1"
+                run_id = $RunId
+                queue_id = "strategic-machine-relocation-recovery"
+                queue_item_id =
+                    "strategic-machine-relocation-recovery.pickup"
+                before_state_hash = $recoveredSnapshot.state_hash
+                option_id = "executor.pickup_debris"
+                execution_mode = "training_singleplayer"
+                actor = "training_farmer.main"
+                save_isolation_path = $savesPath
+                request_nonce = [guid]::NewGuid().ToString("N")
+                created_at = [DateTimeOffset]::UtcNow.ToString("O")
+                target_tile_x = [int]$chunk.tile_x
+                target_tile_y = [int]$chunk.tile_y
+                debris_index = [int]$recoveredDebris.debris_index
+                qualified_item_id = $MachineQualifiedItemId
+                location_id = "Farm"
+            })
+        if ($pickupResult.status -ne "applied" -or
+            $pickupResult.primitive_verification_status -ne "verified") {
+            throw "Native machine debris pickup failed."
+        }
+        $pickupDeadline = (Get-Date).AddSeconds(45)
+        while ((Get-Date) -lt $pickupDeadline) {
+            $recoveredSnapshot = Wait-WorldSnapshot `
+                -Url $snapshotUrl -TimeoutSeconds 30
+            if ((Inventory-Count `
+                    -Snapshot $recoveredSnapshot `
+                    -QualifiedItemId $MachineQualifiedItemId) -gt
+                $machineInventoryBefore) {
+                break
+            }
+            Start-Sleep -Milliseconds 250
+        }
+    }
+    if ((Inventory-Count `
+            -Snapshot $recoveredSnapshot `
+            -QualifiedItemId $MachineQualifiedItemId) -le
+        $machineInventoryBefore) {
+        throw "Recovered machine did not enter player inventory."
+    }
+    Write-JsonFile $recoveredSnapshotPath $recoveredSnapshot
+
+    $stageTwoRoot = Join-Path $runDirectory "stage-place"
+    $stageTwoRunId = $RunId
+    Invoke-LiveStage `
+        -StageRoot $stageTwoRoot `
+        -StageRunId $stageTwoRunId `
+        -SnapshotPath $recoveredSnapshotPath `
+        -BackendUrl $backendUrl `
+        -SnapshotUrl $snapshotUrl `
+        -ExecutorUrl $executorUrl `
+        -SavesPath $savesPath `
+        -CandidateKind "place_machine_item" `
+        -LogPath (Join-Path $runDirectory "stage-place.log")
+    $stageTwoArtifactRoot = Join-Path $stageTwoRoot (
+        "runs\$stageTwoRunId\live-snapshots"
+    )
+    $stageTwoQueue = Get-Content -LiteralPath (
+        Join-Path $stageTwoArtifactRoot "compiled-queue-0001.json"
+    ) -Raw | ConvertFrom-Json
+    $stageTwoExecution = Get-Content -LiteralPath (
+        Join-Path $stageTwoArtifactRoot "execution-0001.json"
+    ) -Raw | ConvertFrom-Json
+    $placeItem = @($stageTwoQueue.items) |
+        Where-Object {
+            $_.option_id -eq "executor.place_machine"
+        } |
+        Select-Object -First 1
+    $placeExecution = @($stageTwoExecution.step_results) |
+        Where-Object {
+            $_.option_id -eq "executor.place_machine"
+        } |
+        Select-Object -First 1
+    if ($null -eq $placeItem -or
+        $null -eq $placeExecution -or
+        $placeExecution.status -ne "applied" -or
+        $placeExecution.primitive_verification_status -ne "verified" -or
+        [int](Queue-Parameter `
+            -QueueItem $placeItem -Name "target_tile_x") -ne
+            $targetX -or
+        [int](Queue-Parameter `
+            -QueueItem $placeItem -Name "target_tile_y") -ne
+            $targetY -or
+        (Queue-Parameter `
+            -QueueItem $placeItem `
+            -Name "relocation_intent_id") -ne $intentId) {
+        throw "Fresh-snapshot plan did not verify exact intent placement."
+    }
+
+    $finalSnapshot = Wait-WorldSnapshot `
+        -Url $snapshotUrl -TimeoutSeconds 45
+    Write-JsonFile `
+        (Join-Path $runDirectory "final-snapshot.json") `
+        $finalSnapshot
+    $finalIngest = Invoke-JsonPost `
+        -Url "$backendUrl/api/v1/snapshots" `
+        -Body $finalSnapshot
+    $finalLedger = Invoke-JsonGet `
+        -Url (
+            "$backendUrl/api/v1/strategy/commitments/latest" +
+            "?stateHash=$($finalSnapshot.state_hash)"
+        )
+    Write-JsonFile `
+        (Join-Path $runDirectory "final-ledger.json") `
+        $finalLedger
+    $finalIntent = @($finalLedger.machine_relocation_intents) |
+        Where-Object { $_.intent_id -eq $intentId } |
+        Select-Object -First 1
+    $targetMachine = Find-Machine `
+        -Snapshot $finalSnapshot -X $targetX -Y $targetY
+    $sourceMachine = Find-Machine `
+        -Snapshot $finalSnapshot -X $SourceTileX -Y $SourceTileY
+    $passed =
+        $null -ne $targetMachine -and
+        [string]$targetMachine.qualified_item_id -eq
+            $MachineQualifiedItemId -and
+        $null -eq $sourceMachine -and
+        $null -ne $finalIntent -and
+        [string]$finalIntent.status -eq "completed" -and
+        [string]$finalIntent.completion_reason -eq
+            "exact_target_machine_observed"
+    if (-not $passed) {
+        throw "Strategic machine relocation final state did not close."
+    }
+
+    $summary = [ordered]@{
+        status = "passed"
+        run_id = $RunId
+        save_slot = $SaveSlot
+        source_tile = "$SourceTileX,$SourceTileY"
+        peer_tiles = @(
+            "$PeerOneTileX,$PeerOneTileY",
+            "$PeerTwoTileX,$PeerTwoTileY"
+        )
+        selected_target_tile = "$targetX,$targetY"
+        machine_qualified_item_id = $MachineQualifiedItemId
+        relocation_intent_id = $intentId
+        layout_net_benefit_ticks = $netBenefit
+        source_candidate_selected = $true
+        native_remove_verified = $true
+        recovery_mode = $recoveryMode
+        native_pickup_verified =
+            $recoveryMode -eq "native_auto_collected" -or
+            ($pickupResult.status -eq "applied" -and
+             $pickupResult.primitive_verification_status -eq "verified")
+        fresh_snapshot_exact_place_verified = $true
+        source_absent_after = $null -eq $sourceMachine
+        target_machine_present_after = $null -ne $targetMachine
+        intent_status_after = $finalIntent.status
+        intent_completion_reason = $finalIntent.completion_reason
+        source_state_hash = $sourceSnapshot.state_hash
+        recovered_state_hash = $recoveredSnapshot.state_hash
+        final_state_hash = $finalSnapshot.state_hash
+        all_snapshots_distinct =
+            $sourceSnapshot.state_hash -ne
+                $recoveredSnapshot.state_hash -and
+            $recoveredSnapshot.state_hash -ne
+                $finalSnapshot.state_hash
+        stage_remove_queue_id = $stageOneQueue.queue_id
+        stage_place_queue_id = $stageTwoQueue.queue_id
+        executor_health = $executorHealth
+        backend_ingest_state_hash = $ingest.state_hash
+        final_ingest_state_hash = $finalIngest.state_hash
+        game_process_id = $gameProcess.Id
+        backend_process_id = $backendProcess.Id
+    }
+    Write-JsonFile `
+        (Join-Path $runDirectory "summary.json") `
+        $summary
+    $summary | ConvertTo-Json -Depth 16
+}
+finally {
+    foreach ($key in $previousEnv.Keys) {
+        Set-Item -Path "env:$key" -Value $previousEnv[$key]
+    }
+    if ($backendProcess -and -not $backendProcess.HasExited) {
+        Stop-Process -Id $backendProcess.Id `
+            -Force -ErrorAction SilentlyContinue
+    }
+    if (-not $KeepGameRunning -and
+        $gameProcess -and
+        -not $gameProcess.HasExited) {
+        Stop-Process -Id $gameProcess.Id `
+            -Force -ErrorAction SilentlyContinue
+    }
+}
