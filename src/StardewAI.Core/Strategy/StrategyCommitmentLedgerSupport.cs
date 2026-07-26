@@ -140,6 +140,10 @@ internal static class StrategyCommitmentLedgerSupport
             RouteEstimatedTicks = row.RouteEstimatedTicks,
             TargetArrivalTileX = row.TargetArrivalTileX,
             TargetArrivalTileY = row.TargetArrivalTileY,
+            TargetStandTileX = row.TargetStandTileX,
+            TargetStandTileY = row.TargetStandTileY,
+            TargetRouteDistanceTiles =
+                row.TargetRouteDistanceTiles,
             LayoutRelocationCostTicks =
                 row.LayoutRelocationCostTicks,
             LayoutBenefitPolicy = row.LayoutBenefitPolicy,

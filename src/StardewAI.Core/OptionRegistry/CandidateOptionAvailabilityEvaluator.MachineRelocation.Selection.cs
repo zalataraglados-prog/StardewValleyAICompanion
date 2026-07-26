@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -50,6 +51,7 @@ namespace StardewAI.Core.OptionRegistry
 
         private static MachineRelocationTarget?
             SelectCrossLocationRelocationTarget(
+                SnapshotEnvelope snapshot,
                 JsonElement location,
                 IReadOnlyCollection<JsonElement> peers,
                 int arrivalX,
@@ -58,6 +60,17 @@ namespace StardewAI.Core.OptionRegistry
             var width = ReadInt(location, "map_width");
             var height = ReadInt(location, "map_height");
             if (width <= 0 || height <= 0)
+            {
+                return null;
+            }
+
+            var reachability =
+                MachineRelocationReachabilityProjectionReader.Read(
+                    snapshot,
+                    ReadString(location, "location_id"),
+                    arrivalX,
+                    arrivalY);
+            if (reachability is null)
             {
                 return null;
             }
@@ -72,7 +85,8 @@ namespace StardewAI.Core.OptionRegistry
                     arrivalY,
                     width,
                     height) ||
-                occupied.Contains(TileKey(arrivalX, arrivalY)))
+                occupied.Contains(TileKey(arrivalX, arrivalY)) ||
+                !reachability.Contains(arrivalX, arrivalY))
             {
                 return null;
             }
@@ -80,24 +94,62 @@ namespace StardewAI.Core.OptionRegistry
             return EnumerateMachinePlacementTiles(location)
                 .Where(tile =>
                     !occupied.Contains(TileKey(tile.X, tile.Y)) &&
-                    Math.Abs(arrivalX - tile.X) +
-                    Math.Abs(arrivalY - tile.Y) == 1)
+                    (tile.X != arrivalX || tile.Y != arrivalY))
                 .Select(tile => new
                 {
                     Tile = tile,
                     ClusterDistance = NearestMachineDistance(
                         tile.X,
                         tile.Y,
-                        peers)
+                        peers),
+                    Stand = SelectReachableMachineStand(
+                        reachability,
+                        tile)
                 })
+                .Where(row => row.Stand is not null)
                 .OrderBy(row => row.ClusterDistance)
+                .ThenBy(row => row.Stand!.RouteDistanceTiles)
                 .ThenBy(row => row.Tile.Y)
                 .ThenBy(row => row.Tile.X)
                 .Select(row => new MachineRelocationTarget(
                     row.Tile,
-                    new CandidateTile(arrivalX, arrivalY),
-                    row.ClusterDistance))
+                    row.Stand!.Tile,
+                    row.ClusterDistance,
+                    row.Stand.RouteDistanceTiles))
                 .FirstOrDefault();
+        }
+
+        private static MachineReachableStand?
+            SelectReachableMachineStand(
+                MachineRelocationReachabilityProjection reachability,
+                CandidateTile target)
+        {
+            return CardinalNeighbors(target)
+                .Select(tile =>
+                {
+                    return reachability.TryGetProvenDistanceAvoiding(
+                            tile.X,
+                            tile.Y,
+                            target.X,
+                            target.Y,
+                            out var distance)
+                        ? new MachineReachableStand(tile, distance)
+                        : null;
+                })
+                .Where(row => row is not null)
+                .OrderBy(row => row!.RouteDistanceTiles)
+                .ThenBy(row => row!.Tile.Y)
+                .ThenBy(row => row!.Tile.X)
+                .FirstOrDefault();
+        }
+
+        private static IEnumerable<CandidateTile> CardinalNeighbors(
+            CandidateTile tile)
+        {
+            yield return new CandidateTile(tile.X, tile.Y - 1);
+            yield return new CandidateTile(tile.X - 1, tile.Y);
+            yield return new CandidateTile(tile.X + 1, tile.Y);
+            yield return new CandidateTile(tile.X, tile.Y + 1);
         }
 
         private static IEnumerable<CandidateTile>
@@ -157,6 +209,11 @@ namespace StardewAI.Core.OptionRegistry
         private sealed record MachineRelocationTarget(
             CandidateTile Target,
             CandidateTile Stand,
-            int ClusterDistance);
+            int ClusterDistance,
+            int RouteDistanceTiles = 0);
+
+        private sealed record MachineReachableStand(
+            CandidateTile Tile,
+            int RouteDistanceTiles);
     }
 }

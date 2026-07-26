@@ -172,6 +172,7 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var target = SelectCrossLocationRelocationTarget(
+                snapshot,
                 targetLocation,
                 targetPeers,
                 arrivalX,
@@ -190,8 +191,7 @@ namespace StardewAI.Core.OptionRegistry
                 (Math.Abs(playerX - sourceStand.X) +
                  Math.Abs(playerY - sourceStand.Y)) * 60;
             var targetApproachTicks =
-                (Math.Abs(arrivalX - target.Stand.X) +
-                 Math.Abs(arrivalY - target.Stand.Y)) * 60;
+                target.RouteDistanceTiles * 60;
             var relocationCostTicks =
                 sourceApproachTicks +
                 route.EstimatedTicks +
@@ -291,6 +291,9 @@ namespace StardewAI.Core.OptionRegistry
                         "relocation_target_stand_tile_y",
                         target.Stand.Y.ToString()),
                     Parameter(
+                        "relocation_target_route_distance_tiles",
+                        target.RouteDistanceTiles.ToString()),
+                    Parameter(
                         "relocation_route_connector_count",
                         "1"),
                     Parameter(
@@ -339,10 +342,10 @@ namespace StardewAI.Core.OptionRegistry
                         "existing_machine_cluster_one_connector_over_eight_cycles"),
                     Parameter(
                         "relocation_target_selection_policy",
-                        "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked"),
+                        "connector_arrival_static_bfs_reachable_native_legal_then_runtime_rechecked"),
                     Parameter(
                         "layout_time_estimate_policy",
-                        "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked")
+                        "source_approach_plus_live_connector_plus_target_static_bfs_runtime_rechecked")
                 }
             };
         }

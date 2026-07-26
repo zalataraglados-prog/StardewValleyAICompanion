@@ -65,6 +65,15 @@ public sealed class MachineRelocationIntent
     [JsonPropertyName("target_arrival_tile_y")]
     public int TargetArrivalTileY { get; set; }
 
+    [JsonPropertyName("target_stand_tile_x")]
+    public int TargetStandTileX { get; set; }
+
+    [JsonPropertyName("target_stand_tile_y")]
+    public int TargetStandTileY { get; set; }
+
+    [JsonPropertyName("target_route_distance_tiles")]
+    public int TargetRouteDistanceTiles { get; set; }
+
     [JsonPropertyName("layout_relocation_cost_ticks")]
     public int LayoutRelocationCostTicks { get; set; }
 
@@ -140,6 +149,15 @@ public sealed class MachineRelocationIntentUpsertRequest
 
     [JsonPropertyName("target_arrival_tile_y")]
     public int TargetArrivalTileY { get; set; }
+
+    [JsonPropertyName("target_stand_tile_x")]
+    public int TargetStandTileX { get; set; }
+
+    [JsonPropertyName("target_stand_tile_y")]
+    public int TargetStandTileY { get; set; }
+
+    [JsonPropertyName("target_route_distance_tiles")]
+    public int TargetRouteDistanceTiles { get; set; }
 
     [JsonPropertyName("layout_relocation_cost_ticks")]
     public int LayoutRelocationCostTicks { get; set; }

@@ -108,6 +108,9 @@ public sealed partial class PlayerReadAdapter
                 "placed_machine_relocation_probe",
                 relocationLocations))
             .ToArray();
+        var relocationRouteReachability =
+            ReadMachineRelocationRouteReachability(
+                relocationLocations);
         var context = new
         {
             projection_status = "complete_inventory_and_relocation_machine_types_across_loaded_persistent_locations",
@@ -122,7 +125,9 @@ public sealed partial class PlayerReadAdapter
             planning_ownership_policy = "ownership_is_evidence_not_a_native_placement_gate",
             runtime_contract = "small_model_selects_location_and_tile_then_executor_routes_and_rechecks_Utility.playerCanPlaceItemHere_before_Object.placementAction",
             rows,
-            relocation_rows = relocationRows
+            relocation_rows = relocationRows,
+            relocation_route_reachability =
+                relocationRouteReachability
         };
         lock (MachinePlacementCacheLock)
         {

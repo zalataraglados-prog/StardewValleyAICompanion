@@ -55,6 +55,7 @@ namespace StardewAI.Core.Training
                 "relocation_target_tile_y",
                 "relocation_target_stand_tile_x",
                 "relocation_target_stand_tile_y",
+                "relocation_target_route_distance_tiles",
                 "relocation_route_connector_count",
                 "relocation_route_connector_kind",
                 "relocation_route_expected_target_location",
