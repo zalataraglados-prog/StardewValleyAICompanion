@@ -431,6 +431,12 @@ namespace StardewAI.Core.Execution
             expectedEffect += OptionalEffect(action, "predicted_output_total_value");
             expectedEffect += OptionalEffect(action, "predicted_output_net_value");
             expectedEffect += OptionalEffect(action, "predicted_minutes_until_ready");
+            expectedEffect += OptionalEffect(action, "predicted_days_until_ready");
+            expectedEffect += OptionalEffect(action, "predicted_days_to_next_quality");
+            expectedEffect += OptionalEffect(action, "machine_special_prediction_model_id");
+            expectedEffect += OptionalEffect(action, "predicted_initial_quality");
+            expectedEffect += OptionalEffect(action, "predicted_final_quality");
+            expectedEffect += OptionalEffect(action, "predicted_aging_rate_per_day");
             return new[]
             {
                 Step(

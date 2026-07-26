@@ -508,6 +508,52 @@ namespace StardewAI.Core.OptionRegistry
             {
                 suffix += ";predicted_minutes_until_ready=" + minutesUntilReady;
             }
+            var daysUntilReady = ReadInt(
+                predictedOutput,
+                "effective_days_until_ready");
+            if (daysUntilReady > 0)
+            {
+                suffix += ";predicted_days_until_ready=" +
+                    daysUntilReady;
+            }
+            var daysToNextQuality = ReadInt(
+                predictedOutput,
+                "effective_days_to_next_quality");
+            if (daysToNextQuality > 0)
+            {
+                suffix += ";predicted_days_to_next_quality=" +
+                    daysToNextQuality;
+            }
+            var specialModelId = ReadString(
+                predictedOutput,
+                "special_prediction_model_id");
+            if (!string.IsNullOrWhiteSpace(specialModelId))
+            {
+                suffix += ";machine_special_prediction_model_id=" +
+                    specialModelId;
+            }
+            var initialQuality = ReadInt(
+                predictedOutput,
+                "initial_quality");
+            var projectedFinalQuality = ReadInt(
+                predictedOutput,
+                "projected_final_quality");
+            if (projectedFinalQuality > 0)
+            {
+                suffix += ";predicted_initial_quality=" +
+                    initialQuality +
+                    ";predicted_final_quality=" +
+                    projectedFinalQuality;
+            }
+            var agingRate = ReadDouble(
+                predictedOutput,
+                "aging_rate_per_day");
+            if (agingRate > 0)
+            {
+                suffix += ";predicted_aging_rate_per_day=" +
+                    agingRate.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture);
+            }
 
             return new MachineOutputPrediction(
                 "machine_native_probe_available",

@@ -172,6 +172,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     machine_probe_cache_tick = machineProbeCacheTick,
                     machine_data = machineData,
                     machine_execution_semantics = executionSemantics,
+                    machine_special_state =
+                        ReadMachineSpecialState(row.Pair.Value),
                     harvest_experience_raw = harvestExperience.Raw,
                     harvest_experience_entries = harvestExperience.Entries,
                     harvest_experience_deltas = harvestExperience.Deltas,
@@ -730,6 +732,17 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     : "machine_output_data_unavailable",
                 training_eligibility_status = "blocked_requires_special_machine_model"
             };
+        }
+
+        if (TryReadVettedSpecialMachinePrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out var specialPrediction))
+        {
+            return specialPrediction;
         }
 
         var predictionBlockReasons = ReadPredictionBlockReasons(

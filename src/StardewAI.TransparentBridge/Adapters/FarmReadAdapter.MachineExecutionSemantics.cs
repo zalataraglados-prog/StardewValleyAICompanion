@@ -103,6 +103,21 @@ public sealed partial class FarmReadAdapter
             .Where(method => !string.IsNullOrWhiteSpace(method))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+        var vettedSpecialOutputMethods = customOutputMethods
+            .Where(method =>
+                IsVettedSpecialOutputMethod(machine, method))
+            .ToArray();
+        var unvettedCustomOutputMethods = customOutputMethods
+            .Except(
+                vettedSpecialOutputMethods,
+                StringComparer.Ordinal)
+            .ToArray();
+        var vettedSpecialModelIds = vettedSpecialOutputMethods
+            .Select(method =>
+                ReadVettedSpecialOutputModelId(machine, method))
+            .Where(modelId => modelId.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         var randomItemQueryCount = outputs.Count(OutputUsesRandomItemQuery);
         var randomStackCount = outputs.Count(OutputUsesRandomStack);
         var randomModifierCount = outputs.Count(OutputUsesRandomModifier);
@@ -136,7 +151,7 @@ public sealed partial class FarmReadAdapter
         {
             predictionBlockReasons.Add("random_quantity_modifier");
         }
-        if (customOutputMethods.Length > 0)
+        if (unvettedCustomOutputMethods.Length > 0)
         {
             predictionBlockReasons.Add("custom_output_method_requires_vetted_semantics");
         }
@@ -195,6 +210,16 @@ public sealed partial class FarmReadAdapter
             random_modifier_count = randomModifierCount,
             custom_output_method_count = customOutputMethods.Length,
             custom_output_methods = customOutputMethods,
+            vetted_special_output_method_count =
+                vettedSpecialOutputMethods.Length,
+            vetted_special_output_methods =
+                vettedSpecialOutputMethods,
+            unvetted_custom_output_method_count =
+                unvettedCustomOutputMethods.Length,
+            unvetted_custom_output_methods =
+                unvettedCustomOutputMethods,
+            vetted_special_prediction_model_ids =
+                vettedSpecialModelIds,
             recalculate_on_collect_count = recalculateOnCollectCount,
             input_probe_rng_safety_status = randomTriggerConditionCount == 0
                 ? "safe_no_random_item_trigger_condition"

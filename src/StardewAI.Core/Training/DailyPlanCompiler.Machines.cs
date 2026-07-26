@@ -165,6 +165,12 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_preserve_type");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_preserved_item_id");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_minutes_until_ready");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_days_until_ready");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_days_to_next_quality");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_special_prediction_model_id");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_initial_quality");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_final_quality");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_aging_rate_per_day");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_input_probe_source");
 
             steps.Add(new SmallModelPlanStep
