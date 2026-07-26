@@ -10,6 +10,27 @@ namespace StardewAI.Core.Tests;
 public sealed class MachineRelocationMainlineTests
 {
     [Fact]
+    public void MissingCollisionGridSuppressesStrategicRelocationUpstream()
+    {
+        var snapshot = Snapshot(
+            relocationRangeStartX: 7,
+            relocationRangeEndX: 8,
+            sourceRemovalSafe: true);
+        snapshot.State.Remove("locations");
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true);
+
+        Assert.DoesNotContain(
+            availability.Options[0].EventCandidates,
+            row => row.Kind == "relocate_machine_item");
+    }
+
+    [Fact]
     public void PositiveLayoutBenefitFlowsThroughNativeRemovalHead()
     {
         var snapshot = Snapshot(

@@ -91,14 +91,31 @@ static partial class Program
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
-        var selectedCandidates = QueueReplanFilter.FilterRankedCandidates(rankedCandidates, objectiveContinuation);
+        var continuationCandidates =
+            QueueReplanFilter.FilterRankedCandidates(
+                rankedCandidates,
+                objectiveContinuation);
+        var selectedCandidates =
+            QueueReplanFilter.FilterCandidateKind(
+                continuationCandidates,
+                options.DailyPlanCandidateKind);
         ranking["social_continuation_filter"] = new JsonObject
         {
             ["active"] = objectiveContinuation is not null,
             ["objective"] = objectiveContinuation is null ? null : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions)),
             ["input_candidate_count"] = rankedCandidates.Count,
-            ["selected_candidate_count"] = selectedCandidates.Count,
+            ["selected_candidate_count"] = continuationCandidates.Count,
             ["policy"] = "social_same_npc_and_optional_gift_or_machine_same_executor_location_tile;fail_closed_no_objective_switch"
+        };
+        ranking["candidate_kind_filter"] = new JsonObject
+        {
+            ["active"] = !string.IsNullOrWhiteSpace(
+                options.DailyPlanCandidateKind),
+            ["required_kind"] = options.DailyPlanCandidateKind,
+            ["input_candidate_count"] = continuationCandidates.Count,
+            ["selected_candidate_count"] = selectedCandidates.Count,
+            ["policy"] =
+                "explicit_runtime_calibration_slice_only;exact_kind"
         };
         var compileRequest = JsonSerializer.Serialize(new
         {
