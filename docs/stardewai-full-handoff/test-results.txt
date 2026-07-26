@@ -3073,3 +3073,18 @@ Remote placement contract:
 - A remote legal location emits one transparent connector and retains inventory slot, machine identity, and target location.
 - Every connector requires a fresh snapshot; exact tile and adjacent stand are selected only after the target map is loaded.
 - Focused placement and continuation regression: 21/21 PASS.
+
+2026-07-26 generic cross-location machine placement
+
+Runtime: `artifacts\runtime-cross-location-machine-placement-smoke\runtime-cross-location-machine-placement-smoke-20260726-130956\summary.json`
+Result: PASS; the isolated hidden runtime selected the exact FarmHouse candidate for Keg `(BC)12` in inventory slot 12, traversed the native Farm building door, refreshed the full transparent snapshot, selected FarmHouse tile `27,29`, placed the matching Keg natively, and observed inventory `1 -> 0`. Both outer iterations verified, continuation identity survived, the objective completed, and source/final state hashes differed.
+
+Commands:
+- `dotnet build StardewValleyAICompanion.sln --no-restore --nologo`
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-build --no-restore --nologo`
+- `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-build --no-restore --nologo`
+Result: PASS; Core 1206/1206, Backend 85/85, solution build 0 errors.
+
+Scope boundary:
+- This closes generic one-connector inventory-machine placement, not strategic cross-location relocation.
+- Multi-connector runtime coverage, Workbench lifecycle, special/conditional/random/custom machines, and multiplayer authorization remain pending.
