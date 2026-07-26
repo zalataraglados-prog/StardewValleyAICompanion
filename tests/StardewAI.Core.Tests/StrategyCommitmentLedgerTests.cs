@@ -241,6 +241,73 @@ public sealed class StrategyCommitmentLedgerTests
             intent.CompletionReason);
     }
 
+    [Fact]
+    public void CrossLocationRelocationRequiresOneConnectorAndTypedBenefit()
+    {
+        var snapshot = CrossLocationMachineRelocationSnapshot();
+        var service = new MachineRelocationIntentLedgerService();
+        var request = new MachineRelocationIntentUpsertRequest
+        {
+            StateHash = snapshot.StateHash,
+            IntentId =
+                "layout:Farm:15,5->FarmHouse:34,23:(BC)13",
+            SourceDecisionId = "machine-relocate:cross",
+            QualifiedItemId = "(BC)13",
+            ItemId = "13",
+            SourceLocationId = "Farm",
+            SourceTileX = 15,
+            SourceTileY = 5,
+            TargetLocationId = "FarmHouse",
+            TargetTileX = 34,
+            TargetTileY = 23,
+            MachinePlacementProjectionFingerprint =
+                "machine-layout:cross",
+            LayoutNetBenefitTicks = 6000,
+            RouteConnectorCount = 1,
+            RouteConnectorKind = "building_door",
+            RouteEstimatedTicks = 1200,
+            TargetArrivalTileX = 34,
+            TargetArrivalTileY = 24,
+            LayoutRelocationCostTicks = 1800,
+            LayoutBenefitPolicy =
+                "existing_machine_cluster_one_connector_over_eight_cycles",
+            TargetSelectionPolicy =
+                "connector_arrival_adjacent_native_static_legal_then_runtime_rechecked",
+            TimeEstimatePolicy =
+                "source_approach_plus_live_connector_plus_target_arrival_manhattan_runtime_rechecked"
+        };
+
+        var accepted = service.Upsert(
+            null,
+            snapshot,
+            request,
+            "2026-07-26T06:00:00Z");
+
+        Assert.True(
+            accepted.Accepted,
+            string.Join(";", accepted.Errors));
+        var intent = Assert.Single(
+            accepted.Ledger!.MachineRelocationIntents);
+        Assert.Equal("FarmHouse", intent.TargetLocationId);
+        Assert.Equal(1, intent.RouteConnectorCount);
+        Assert.Equal("building_door", intent.RouteConnectorKind);
+        Assert.Equal(1200, intent.RouteEstimatedTicks);
+        Assert.Equal(34, intent.TargetArrivalTileX);
+        Assert.Equal(24, intent.TargetArrivalTileY);
+
+        request.RouteConnectorCount = 2;
+        var rejected = service.Upsert(
+            null,
+            snapshot,
+            request,
+            "2026-07-26T06:01:00Z");
+
+        Assert.False(rejected.Accepted);
+        Assert.Contains(
+            "machine_relocation_route_connector_count_invalid",
+            rejected.Errors);
+    }
+
     private static CropPlantingCommitmentUpsertRequest Request(SnapshotEnvelope snapshot, int revision, int tileCount) => new()
     {
         StateHash = snapshot.StateHash,
@@ -365,6 +432,72 @@ public sealed class StrategyCommitmentLedgerTests
                 }
                 """
                 .Replace("TARGET", target))!;
+        return new SnapshotEnvelope
+        {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "TestFarm",
+                Status = FieldStatus.Available
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "123",
+                Status = FieldStatus.Available
+            },
+            GameTick = 1,
+            State = state,
+            StateHash = SnapshotHash.ComputeStateHash(state)
+        };
+    }
+
+    private static SnapshotEnvelope
+        CrossLocationMachineRelocationSnapshot()
+    {
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+                """
+                {
+                  "identity": {
+                    "save_id":{"value":"TestFarm","status":"available"},
+                    "player_id":{"value":"123","status":"available"}
+                  },
+                  "player": {
+                    "machine_placement":{"value":{
+                      "static_projection_fingerprint":"machine-layout:cross",
+                      "relocation_rows":[{
+                        "qualified_item_id":"(BC)13",
+                        "locations":[{
+                          "location_id":"FarmHouse",
+                          "static_legal_tile_ranges":[
+                            {"y":23,"start_x":34,"end_x":34}
+                          ]
+                        }]
+                      }]
+                    },"status":"available"}
+                  },
+                  "farm": {
+                    "machines":{"value":[{
+                      "location_id":"Farm",
+                      "tile_x":15,
+                      "tile_y":5,
+                      "qualified_item_id":"(BC)13",
+                      "removal_safe_now":true
+                    }],"status":"available"}
+                  },
+                  "locations": {
+                    "route_graph":{"value":{"edges":[{
+                      "kind":"building_door",
+                      "from_location":"Farm",
+                      "from_x":20,
+                      "from_y":5,
+                      "target_location":"FarmHouse",
+                      "target_x":34,
+                      "target_y":24,
+                      "resolved":true
+                    }]},"status":"available"}
+                  }
+                }
+                """)!;
         return new SnapshotEnvelope
         {
             SaveId = new FieldEnvelope<string?>

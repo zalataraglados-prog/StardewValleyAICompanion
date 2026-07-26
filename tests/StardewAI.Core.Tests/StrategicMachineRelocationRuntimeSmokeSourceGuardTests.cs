@@ -44,6 +44,22 @@ public sealed class StrategicMachineRelocationRuntimeSmokeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "\"route_connector_tile\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation.relocation_intent_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TargetLocationId",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "return if (",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "/api/v1/strategy/commitments/latest",
             source,
             StringComparison.Ordinal);
@@ -57,6 +73,29 @@ public sealed class StrategicMachineRelocationRuntimeSmokeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "STARDEWAI_STRATEGY_LEDGER_DIR",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RelocationProjectionLimitsRemoteTargetsToOwnedMachineClusters()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "PlayerReadAdapter.MachinePlacement.cs"));
+
+        Assert.Contains(
+            "location.IsPlayerControlled",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "location.Location.objects.Pairs.Any",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "current_source_plus_player_controlled_existing_machine_clusters",
             source,
             StringComparison.Ordinal);
     }
