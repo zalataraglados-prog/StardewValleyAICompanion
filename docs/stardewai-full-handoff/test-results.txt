@@ -3105,3 +3105,21 @@ Scope boundary:
 - Deeper target-map relocation requires transparent remote path projection before commitment.
 - Multi-connector relocation remains fail closed.
 - Special/conditional/random/custom machines, Workbench lifecycle, target-map topology drift after commitment, and multiplayer ownership/sharing remain pending.
+
+2026-07-26 strategic remote machine reachability
+
+Runtime: `artifacts\runtime-strategic-deep-target-machine-relocation-smoke\runtime-strategic-deep-target-machine-relocation-final-20260726-170240\summary.json`
+Result: PASS; the hidden E-drive run selected Keg target `FarmHouse 28,29`, which is not adjacent to connector arrival `27,30`. The typed plan carried adjacent stand `27,29` and exact static BFS distance `1`, persisted the new selection/time policies, removed `Farm 56,15` natively, observed native auto-collection, traversed the building door, refreshed the target-map snapshot, placed exactly, and completed the intent with three distinct state hashes. Net benefit was 3180 ticks.
+
+The first runtime attempt failed closed with HTTP 422 before execution because the daily-plan whitelist omitted `relocation_target_route_distance_tiles`. The whitelist and a candidate-to-plan regression assertion were added before the passing rerun.
+
+Commands:
+- `dotnet build StardewValleyAICompanion.sln --no-restore`
+- `dotnet test tests\StardewAI.Core.Tests\StardewAI.Core.Tests.csproj --no-build`
+- `dotnet test tests\StardewAI.Backend.Tests\StardewAI.Backend.Tests.csproj --no-build`
+Result: PASS; Core 1214/1214, Backend 86/86, solution build 0 errors. The build retained seven pre-existing warnings.
+
+Scope boundary:
+- Ordinary positive-benefit relocation to a statically reachable native-legal target through one resolved connector is closed.
+- Multi-connector relocation remains fail closed.
+- Special/conditional/random/custom machines, Workbench lifecycle, target-map topology drift after commitment, and multiplayer ownership/sharing remain pending.
