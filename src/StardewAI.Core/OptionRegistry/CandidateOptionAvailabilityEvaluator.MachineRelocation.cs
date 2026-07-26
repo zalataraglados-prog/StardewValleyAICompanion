@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -15,8 +16,26 @@ namespace StardewAI.Core.OptionRegistry
         private const int MachineLayoutActionOverheadTicks = 120;
 
         private EventCandidate[] MachineRelocationCandidates(
-            SnapshotEnvelope snapshot)
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
+            var activeIntent =
+                commitmentLedger?.MachineRelocationIntents
+                    .FirstOrDefault(row => string.Equals(
+                        row.Status,
+                        StrategyCommitmentStatuses.Active,
+                        StringComparison.Ordinal));
+            if (activeIntent is not null &&
+                !MachineExistsAt(
+                    snapshot,
+                    activeIntent.SourceLocationId,
+                    activeIntent.SourceTileX,
+                    activeIntent.SourceTileY,
+                    activeIntent.QualifiedItemId))
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
             var machinesValue = ReadStateFieldValue(
                 snapshot,
                 "farm",

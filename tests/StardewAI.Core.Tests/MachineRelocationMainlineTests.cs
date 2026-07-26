@@ -145,6 +145,48 @@ public sealed class MachineRelocationMainlineTests
             row => row.Kind == "relocate_machine_item");
     }
 
+    [Fact]
+    public void ActiveIntentKeepsRemovalRetryWhileSourceStillExists()
+    {
+        var snapshot = Snapshot(
+            relocationRangeStartX: 7,
+            relocationRangeEndX: 8,
+            sourceRemovalSafe: true);
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "strategy-ledger:test",
+            MachineRelocationIntents = new[]
+            {
+                new MachineRelocationIntent
+                {
+                    IntentId = "layout:Farm:15,5->7,5:(BC)13",
+                    Status = StrategyCommitmentStatuses.Active,
+                    QualifiedItemId = "(BC)13",
+                    SourceLocationId = "Farm",
+                    SourceTileX = 15,
+                    SourceTileY = 5,
+                    TargetLocationId = "Farm",
+                    TargetTileX = 7,
+                    TargetTileY = 5
+                }
+            }
+        };
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.process_machines" },
+                includeExecutorCalibrationOptions: true,
+                ledger);
+
+        Assert.Contains(
+            availability.Options[0].EventCandidates,
+            row => row.Kind == "relocate_machine_item" &&
+                row.CandidateId.Contains(
+                    "15,5->7,5",
+                    StringComparison.Ordinal));
+    }
+
     private static SnapshotEnvelope Snapshot(
         int relocationRangeStartX,
         int relocationRangeEndX,

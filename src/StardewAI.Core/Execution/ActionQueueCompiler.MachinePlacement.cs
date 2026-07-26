@@ -201,6 +201,52 @@ namespace StardewAI.Core.Execution
                 reasons.Add("place_machine_material_reservation_projection_drifted");
             }
 
+            var relocationIntentId = ReadParameter(
+                action,
+                "relocation_intent_id");
+            if (!string.IsNullOrWhiteSpace(relocationIntentId))
+            {
+                var relocationIntent =
+                    commitmentLedger?.MachineRelocationIntents
+                        .FirstOrDefault(intent =>
+                            string.Equals(
+                                intent.IntentId,
+                                relocationIntentId,
+                                StringComparison.Ordinal) &&
+                            string.Equals(
+                                intent.Status,
+                                StrategyCommitmentStatuses.Active,
+                                StringComparison.Ordinal));
+                if (relocationIntent is null ||
+                    !string.Equals(
+                        relocationIntent.QualifiedItemId,
+                        qualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(
+                        relocationIntent.TargetLocationId,
+                        locationId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    relocationIntent.TargetTileX != targetX.Value ||
+                    relocationIntent.TargetTileY != targetY.Value ||
+                    !string.Equals(
+                        relocationIntent.SourceStateHash,
+                        ReadParameter(
+                            action,
+                            "relocation_source_state_hash"),
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        relocationIntent
+                            .MachinePlacementProjectionFingerprint,
+                        ReadParameter(
+                            action,
+                            "relocation_original_placement_projection_fingerprint"),
+                        StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        "place_machine_relocation_intent_drifted");
+                }
+            }
+
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 

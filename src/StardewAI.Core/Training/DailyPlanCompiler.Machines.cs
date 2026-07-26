@@ -225,7 +225,10 @@ namespace StardewAI.Core.Training
                 "material_reservation_guard_status",
                 "material_reservation_ledger_id",
                 "material_reservation_ledger_revision",
-                "material_reservation_ids_json"
+                "material_reservation_ids_json",
+                "relocation_intent_id",
+                "relocation_source_state_hash",
+                "relocation_original_placement_projection_fingerprint"
             })
             {
                 var value = CandidateParameter(candidate, name);
