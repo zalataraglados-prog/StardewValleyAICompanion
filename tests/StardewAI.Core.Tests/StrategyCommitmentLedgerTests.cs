@@ -189,6 +189,58 @@ public sealed class StrategyCommitmentLedgerTests
         Assert.Contains("ledger_revision_conflict", stale.Errors);
     }
 
+    [Fact]
+    public void MachineRelocationIntentPersistsAndCompletesAtExactTarget()
+    {
+        var initial = MachineRelocationSnapshot(targetPresent: false);
+        var service = new MachineRelocationIntentLedgerService();
+        var request = new MachineRelocationIntentUpsertRequest
+        {
+            StateHash = initial.StateHash,
+            IntentId = "layout:Farm:15,5->7,5:(BC)13",
+            SourceDecisionId = "machine-relocate:test",
+            QualifiedItemId = "(BC)13",
+            ItemId = "13",
+            SourceLocationId = "Farm",
+            SourceTileX = 15,
+            SourceTileY = 5,
+            TargetLocationId = "Farm",
+            TargetTileX = 7,
+            TargetTileY = 5,
+            MachinePlacementProjectionFingerprint =
+                "machine-layout:before",
+            LayoutNetBenefitTicks = 7200
+        };
+
+        var upsert = service.Upsert(
+            null,
+            initial,
+            request,
+            "2026-07-26T01:00:00Z");
+
+        Assert.True(
+            upsert.Accepted,
+            string.Join(";", upsert.Errors));
+        Assert.Equal(
+            StrategyCommitmentStatuses.Active,
+            Assert.Single(
+                upsert.Ledger!.MachineRelocationIntents).Status);
+
+        var completed = service.ReconcileCompleted(
+            upsert.Ledger,
+            MachineRelocationSnapshot(targetPresent: true),
+            "2026-07-26T01:01:00Z");
+        var intent = Assert.Single(
+            completed.MachineRelocationIntents);
+
+        Assert.Equal(
+            StrategyCommitmentStatuses.Completed,
+            intent.Status);
+        Assert.Equal(
+            "exact_target_machine_observed",
+            intent.CompletionReason);
+    }
+
     private static CropPlantingCommitmentUpsertRequest Request(SnapshotEnvelope snapshot, int revision, int tileCount) => new()
     {
         StateHash = snapshot.StateHash,
@@ -265,6 +317,67 @@ public sealed class StrategyCommitmentLedgerTests
             SaveId = new FieldEnvelope<string?> { Value = "TestFarm", Status = FieldStatus.Available },
             PlayerId = new FieldEnvelope<string?> { Value = "123", Status = FieldStatus.Available },
             GameTick = totalDays,
+            State = state,
+            StateHash = SnapshotHash.ComputeStateHash(state)
+        };
+    }
+
+    private static SnapshotEnvelope MachineRelocationSnapshot(
+        bool targetPresent)
+    {
+        var target = targetPresent
+            ? """,{"location_id":"Farm","tile_x":7,"tile_y":5,"qualified_item_id":"(BC)13"}"""
+            : string.Empty;
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+                """
+                {
+                  "identity": {
+                    "save_id":{"value":"TestFarm","status":"available"},
+                    "player_id":{"value":"123","status":"available"}
+                  },
+                  "player": {
+                    "machine_placement":{"value":{
+                      "static_projection_fingerprint":"machine-layout:before",
+                      "relocation_rows":[{
+                        "qualified_item_id":"(BC)13",
+                        "locations":[{
+                          "location_id":"Farm",
+                          "static_legal_tile_ranges":[
+                            {"y":5,"start_x":7,"end_x":8}
+                          ]
+                        }]
+                      }]
+                    },"status":"available"}
+                  },
+                  "farm": {
+                    "machines":{"value":[
+                      {
+                        "location_id":"Farm",
+                        "tile_x":15,
+                        "tile_y":5,
+                        "qualified_item_id":"(BC)13",
+                        "removal_safe_now":true
+                      }
+                      TARGET
+                    ],"status":"available"}
+                  }
+                }
+                """
+                .Replace("TARGET", target))!;
+        return new SnapshotEnvelope
+        {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "TestFarm",
+                Status = FieldStatus.Available
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "123",
+                Status = FieldStatus.Available
+            },
+            GameTick = 1,
             State = state,
             StateHash = SnapshotHash.ComputeStateHash(state)
         };

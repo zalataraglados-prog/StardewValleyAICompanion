@@ -22,6 +22,10 @@ public interface IStrategyCommitmentRepository
         SnapshotEnvelope snapshot,
         string reservationId,
         StrategyCommitmentCancelRequest request);
+
+    StrategyCommitmentMutationResult UpsertMachineRelocation(
+        SnapshotEnvelope snapshot,
+        MachineRelocationIntentUpsertRequest request);
 }
 
 public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentRepository
@@ -37,6 +41,8 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
     private readonly string root;
     private readonly CropCommitmentLedgerService service = new();
     private readonly MaterialReservationLedgerService materialService = new();
+    private readonly MachineRelocationIntentLedgerService
+        machineRelocationService = new();
     private readonly Dictionary<string, StrategyCommitmentLedger> cache = new(StringComparer.Ordinal);
 
     public FileStrategyCommitmentRepository()
@@ -55,7 +61,15 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         {
             var key = IdentityKey(snapshot);
             var current = Load(key, snapshot);
-            var reconciled = service.ReconcileCompleted(current, snapshot, DateTimeOffset.UtcNow.ToString("O"));
+            var updatedAt = DateTimeOffset.UtcNow.ToString("O");
+            var reconciled = service.ReconcileCompleted(
+                current,
+                snapshot,
+                updatedAt);
+            reconciled = machineRelocationService.ReconcileCompleted(
+                reconciled,
+                snapshot,
+                updatedAt);
             if (reconciled.Revision != current.Revision)
             {
                 Save(key, reconciled);
@@ -138,6 +152,27 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         }
     }
 
+    public StrategyCommitmentMutationResult UpsertMachineRelocation(
+        SnapshotEnvelope snapshot,
+        MachineRelocationIntentUpsertRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = machineRelocationService.Upsert(
+                current,
+                snapshot,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+            {
+                Save(key, result.Ledger);
+            }
+            return result;
+        }
+    }
+
     private StrategyCommitmentLedger Load(string key, SnapshotEnvelope snapshot)
     {
         if (cache.TryGetValue(key, out var cached))
@@ -166,6 +201,8 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 commitment.HarvestContextTags ??= Array.Empty<string>();
             }
             ledger.MaterialReservations ??= Array.Empty<MaterialReservation>();
+            ledger.MachineRelocationIntents ??=
+                Array.Empty<MachineRelocationIntent>();
             ledger.History ??= Array.Empty<StrategyCommitmentHistoryEntry>();
         }
         else

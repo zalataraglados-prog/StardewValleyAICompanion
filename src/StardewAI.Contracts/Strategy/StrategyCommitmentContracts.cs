@@ -39,6 +39,9 @@ namespace StardewAI.Contracts.Strategy
         [JsonPropertyName("material_reservations")]
         public MaterialReservation[] MaterialReservations { get; set; } = Array.Empty<MaterialReservation>();
 
+        [JsonPropertyName("machine_relocation_intents")]
+        public MachineRelocationIntent[] MachineRelocationIntents { get; set; } = Array.Empty<MachineRelocationIntent>();
+
         [JsonPropertyName("history")]
         public StrategyCommitmentHistoryEntry[] History { get; set; } = Array.Empty<StrategyCommitmentHistoryEntry>();
     }

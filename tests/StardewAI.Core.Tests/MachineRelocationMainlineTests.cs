@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -75,7 +76,29 @@ public sealed class MachineRelocationMainlineTests
 
         var queue = new ActionQueueCompiler().Compile(
             plan,
-            snapshot);
+            snapshot,
+            new StrategyCommitmentLedger
+            {
+                LedgerId = "strategy-ledger:test",
+                MachineRelocationIntents = new[]
+                {
+                    new MachineRelocationIntent
+                    {
+                        IntentId = Parameter(
+                            candidate.Parameters,
+                            "relocation_intent_id"),
+                        Status =
+                            StrategyCommitmentStatuses.Active,
+                        QualifiedItemId = "(BC)13",
+                        SourceLocationId = "Farm",
+                        SourceTileX = 15,
+                        SourceTileY = 5,
+                        TargetLocationId = "Farm",
+                        TargetTileX = 7,
+                        TargetTileY = 5
+                    }
+                }
+            });
         var removal = Assert.Single(queue.Items.Where(row =>
             row.OptionId == "executor.remove_machine"));
 

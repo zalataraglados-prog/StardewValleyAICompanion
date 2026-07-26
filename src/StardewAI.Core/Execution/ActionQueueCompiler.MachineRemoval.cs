@@ -47,7 +47,9 @@ namespace StardewAI.Core.Execution
 
         private static string[] ValidateRemoveMachinePlan(
             SmallModelAction action,
-            SnapshotEnvelope snapshot)
+            SnapshotEnvelope snapshot,
+            StardewAI.Contracts.Strategy.StrategyCommitmentLedger?
+                commitmentLedger)
         {
             if (action.OptionId != "executor.remove_machine")
             {
@@ -173,6 +175,55 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add(
                     "remove_machine_native_projection_drifted");
+            }
+
+            var relocationTargetLocation = ReadParameter(
+                action,
+                "relocation_target_location_id");
+            var relocationTargetX = ReadIntParameter(
+                action,
+                "relocation_target_tile_x");
+            var relocationTargetY = ReadIntParameter(
+                action,
+                "relocation_target_tile_y");
+            if (!string.IsNullOrWhiteSpace(
+                    relocationTargetLocation) ||
+                relocationTargetX.HasValue ||
+                relocationTargetY.HasValue)
+            {
+                var intent =
+                    commitmentLedger?.MachineRelocationIntents
+                        .FirstOrDefault(row =>
+                            string.Equals(
+                                row.Status,
+                                StardewAI.Contracts.Strategy
+                                    .StrategyCommitmentStatuses.Active,
+                                StringComparison.Ordinal) &&
+                            string.Equals(
+                                row.IntentId,
+                                relocationIntentId,
+                                StringComparison.Ordinal));
+                if (intent is null ||
+                    !string.Equals(
+                        intent.SourceLocationId,
+                        locationId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    intent.SourceTileX != targetX.Value ||
+                    intent.SourceTileY != targetY.Value ||
+                    !string.Equals(
+                        intent.QualifiedItemId,
+                        qualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(
+                        intent.TargetLocationId,
+                        relocationTargetLocation,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    intent.TargetTileX != relocationTargetX ||
+                    intent.TargetTileY != relocationTargetY)
+                {
+                    reasons.Add(
+                        "remove_machine_relocation_intent_drifted");
+                }
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
