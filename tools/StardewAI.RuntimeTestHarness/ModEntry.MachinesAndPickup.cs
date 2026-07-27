@@ -721,7 +721,46 @@ public sealed partial class ModEntry : Mod
         machine.readyForHarvest.Value = false;
         machine.heldObject.Value = null;
         location.objects[tile] = machine;
-        var inputSlot = EnsureInventoryItem(inputItemId, Math.Max(1, request.Quantity ?? 1));
+        var additionalRows = ParseMachineLifecycleAdditionalItems(
+            request.ProcessAdditionalItemsJson,
+            out var additionalParseReason);
+        if (additionalRows is null)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_machine_input_target",
+                "location.machines[target].loadable_inputs.length>0",
+                "additional_items=" + additionalParseReason,
+                "fixture_machine_input_additional_items_invalid");
+        }
+        var inputQuantity = Math.Max(1, request.Quantity ?? 1);
+        var inputReserve = additionalRows
+            .Where(row => string.Equals(
+                row.QualifiedItemId,
+                inputItemId,
+                StringComparison.OrdinalIgnoreCase))
+            .Sum(row => row.Quantity);
+        var inputSlot = EnsureInventoryItem(
+            inputItemId,
+            checked(inputQuantity + inputReserve));
+        var additionalSlots = new List<string>();
+        foreach (var row in additionalRows)
+        {
+            var slot = EnsureInventoryItem(
+                row.QualifiedItemId,
+                row.Quantity);
+            if (slot < 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_input_target",
+                    "location.machines[target].loadable_inputs.length>0",
+                    "additional_item=" + row.QualifiedItemId,
+                    "fixture_machine_input_inventory_full");
+            }
+            additionalSlots.Add(
+                row.QualifiedItemId + "@" + slot + ":" + row.Quantity);
+        }
         MoveFixtureFarmerToLocationAdjacent(
             location,
             target,
@@ -750,7 +789,7 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "debug_setup_machine_input_target",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, "removed_fixture_animal_id=" + (removedFixtureAnimalId?.ToString() ?? "none") }
+                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, "additional_items=" + string.Join(",", additionalSlots), "removed_fixture_animal_id=" + (removedFixtureAnimalId?.ToString() ?? "none") }
                 : new[] { "fixture_machine_input_probe_rejected", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, moveReason },
             RequestedEffect = "location.machines[" + locationId + ":" + target.X + "," + target.Y + "].loadable_inputs.length>0;qualified_item_id=" + inputItemId,
             ObservedEffect = MachineObservedEffect(location, target) + ";location_id=" + locationId + ";stand_tile=" + stand.X + "," + stand.Y + ";input_slot_index=" + inputSlot + ";input_probe_accepts=" + accepts.ToString().ToLowerInvariant(),

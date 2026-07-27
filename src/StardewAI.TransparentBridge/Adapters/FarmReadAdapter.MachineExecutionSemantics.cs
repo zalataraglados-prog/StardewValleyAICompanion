@@ -219,7 +219,11 @@ public sealed partial class FarmReadAdapter
         var trainingStatus = itemPlacedRules.Length == 0
             ? "not_applicable_no_item_placed_rule"
             : predictionBlockReasons.Count == 0
-                ? ExactMachinePredictionStatus
+                ? vettedSpecialModelIds.Contains(
+                        AnvilPredictionModelId,
+                        StringComparer.Ordinal)
+                    ? AnvilDistributionTrainingStatus
+                    : ExactMachinePredictionStatus
                 : "blocked_requires_special_machine_model";
 
         return new

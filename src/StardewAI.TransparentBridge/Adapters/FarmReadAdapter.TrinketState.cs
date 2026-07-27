@@ -5,7 +5,7 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
-    private static object? ReadItemSpecialState(
+    internal static object? ReadItemSpecialState(
         Item item)
     {
         return item is Trinket trinket

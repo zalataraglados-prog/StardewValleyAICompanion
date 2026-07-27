@@ -97,6 +97,11 @@ public sealed class
             "StardewAI.TransparentBridge",
             "Adapters",
             "FarmReadAdapter.ItemReflection.cs");
+        var executionSemantics = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.MachineExecutionSemantics.cs");
         var combined = prediction +
             distribution +
             currentState +
@@ -157,6 +162,9 @@ public sealed class
         Assert.DoesNotContain("OutputAnvil(", combined);
         Assert.DoesNotContain("RerollStats(", combined);
         Assert.DoesNotContain("Game1.random.", combined);
+        Assert.Contains(
+            "AnvilDistributionTrainingStatus",
+            executionSemantics);
     }
 
     [Fact]
@@ -183,6 +191,51 @@ public sealed class
                     "ReadMagicQuiverOutcomeRules"),
                 "branches"),
             12);
+    }
+
+    [Fact]
+    public void RuntimeFeedbackRecordsExactGeodeAndAnvilPostState()
+    {
+        var player = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "PlayerReadAdapter.cs");
+        var harness = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MachinesAndPickup.cs");
+        var smoke = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeMachineInputSmoke.ps1");
+
+        Assert.Contains(
+            "[\"geodes_cracked\"]",
+            player);
+        Assert.Contains(
+            "FarmReadAdapter.ReadItemSpecialState(item)",
+            player);
+        Assert.Contains(
+            "request.ProcessAdditionalItemsJson",
+            harness);
+        Assert.Contains(
+            "fixture_machine_input_additional_items_invalid",
+            harness);
+        Assert.Contains(
+            "RequireGeodeCrusherRuntimeEquality",
+            smoke);
+        Assert.Contains(
+            "RequireAnvilRuntimeOutcome",
+            smoke);
+        Assert.Contains(
+            "stats_after_successful_load.geodes_cracked",
+            smoke);
+        Assert.Contains(
+            "trinket_item_state.v1",
+            smoke);
+        Assert.Contains(
+            "additionalCountsBefore",
+            smoke);
     }
 
     private static object InvokePrivate(

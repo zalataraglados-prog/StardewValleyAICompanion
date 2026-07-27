@@ -10,6 +10,8 @@ param(
     [string] $LocationId = "Farm",
     [string] $MachineItemId = "12",
     [string] $QualifiedItemId = "(O)262",
+    [int] $InputQuantity = 2,
+    [string] $AdditionalItemsJson = "[]",
     [switch] $RequireTransparentLoadableInput,
     [switch] $RequireNativePredictedOutput,
     [switch] $RequireSpecialMachineBlockedPrediction,
@@ -17,9 +19,13 @@ param(
     [switch] $RequireIncubatorLifecycleGuard,
     [string] $ExpectedSpecialModelId = "cask_quality_aging.v1",
     [string] $ExpectedSpecialSource = "decompiled_Cask.OutputCask_static_model",
+    [string] $ExpectedPredictionTrainingStatus = "exact_current_snapshot_probe_supported",
+    [string] $ExpectedMachinePredictionTrainingStatus = "",
     [string] $ExpectedPredictedOutputId = "",
     [int] $ExpectedPredictedMinutes = 0,
     [int] $ExpectedPredictedDays = 0,
+    [switch] $RequireGeodeCrusherRuntimeEquality,
+    [switch] $RequireAnvilRuntimeOutcome,
     [switch] $KeepGameRunning
 )
 
@@ -113,6 +119,23 @@ function Read-InputSlotIndexFromSetup {
     return -1
 }
 
+function Get-InventoryQualifiedCount {
+    param($Snapshot, [string] $QualifiedItemId)
+    $count = 0
+    foreach ($item in @($Snapshot.state.player.inventory.value)) {
+        if ([string]$item.qualified_item_id -eq $QualifiedItemId) {
+            $count += [int]$item.stack
+        }
+    }
+    return $count
+}
+
+function Read-AdditionalItems {
+    param([string] $Json)
+    if ([string]::IsNullOrWhiteSpace($Json)) { return @() }
+    return @($Json | ConvertFrom-Json)
+}
+
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
@@ -174,7 +197,8 @@ try {
         target_tile_y = $TargetTileY
         qualified_item_id = $QualifiedItemId
         expected_shop_id = $MachineItemId
-        quantity = 2
+        quantity = $InputQuantity
+        process_additional_items_json = $AdditionalItemsJson
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
@@ -192,6 +216,14 @@ try {
     $ordinaryOutputCollectionSupported = if ($null -ne $targetMachine) { [bool]$targetMachine.ordinary_output_collection_supported } else { $true }
     $machineSpecialState = if ($null -ne $targetMachine) { $targetMachine.machine_special_state } else { $null }
     $inputSlotIndex = Read-InputSlotIndexFromSetup -SetupResult $setupResult
+    $inputCountBefore = Get-InventoryQualifiedCount -Snapshot $beforeLoadSnapshot -QualifiedItemId $QualifiedItemId
+    $additionalItems = Read-AdditionalItems -Json $AdditionalItemsJson
+    $additionalCountsBefore = [ordered]@{}
+    foreach ($additionalItem in $additionalItems) {
+        $additionalId = [string]$additionalItem.qualified_item_id
+        $additionalCountsBefore[$additionalId] =
+            Get-InventoryQualifiedCount -Snapshot $beforeLoadSnapshot -QualifiedItemId $additionalId
+    }
     if ($null -eq $targetMachine -or $inputSlotIndex -lt 0) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Fixture did not produce machine target or setup input slot for $QualifiedItemId at $TargetTileX,$TargetTileY."
@@ -224,7 +256,11 @@ try {
     $predictedOutputStatus = if ($null -ne $predictedOutput) { [string]$predictedOutput.status } else { "" }
     $predictedOutputSource = if ($null -ne $predictedOutput) { [string]$predictedOutput.source } else { "" }
     $predictedOutputSalePrice = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.sale_price) { [int]$predictedOutput.sale_price } else { 0 }
-    $predictedOutputItemId = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.item) { [string]$predictedOutput.item.qualified_item_id } else { "" }
+    $predictedOutputItemId = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.item) {
+        [string]$predictedOutput.item.qualified_item_id
+    } elseif ($null -ne $predictedOutput -and $null -ne $predictedOutput.output_identity) {
+        [string]$predictedOutput.output_identity.qualified_item_id
+    } else { "" }
     $predictedOutputRuleId = if ($null -ne $predictedOutput) { [string]$predictedOutput.matched_rule_id } else { "" }
     $predictedOutputEffectiveMinutes = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.effective_minutes_until_ready) { [int]$predictedOutput.effective_minutes_until_ready } else { 0 }
     $predictedOutputEffectiveDays = if ($null -ne $predictedOutput -and $null -ne $predictedOutput.effective_days_until_ready) { [int]$predictedOutput.effective_days_until_ready } else { 0 }
@@ -240,12 +276,17 @@ try {
     }
     if ($RequireVettedSpecialPredictedOutput -and
         ($predictedOutputStatus -ne "available" -or
-            $predictedOutputTrainingStatus -ne "exact_current_snapshot_probe_supported" -or
+            $predictedOutputTrainingStatus -ne $ExpectedPredictionTrainingStatus -or
             $predictedOutputSpecialModelId -ne $ExpectedSpecialModelId -or
             $predictedOutputSource -ne $ExpectedSpecialSource -or
             [string]::IsNullOrWhiteSpace($predictedOutputItemId))) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
         throw "Vetted special-machine predicted_output was not transparently available for $QualifiedItemId at $TargetTileX,$TargetTileY."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedMachinePredictionTrainingStatus) -and
+        $machinePredictionTrainingStatus -ne $ExpectedMachinePredictionTrainingStatus) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-load-rejected.json") $beforeLoadSnapshot
+        throw "Machine prediction status was $machinePredictionTrainingStatus; expected $ExpectedMachinePredictionTrainingStatus."
     }
     if (-not [string]::IsNullOrWhiteSpace($ExpectedPredictedOutputId) -and
         $predictedOutputItemId -ne $ExpectedPredictedOutputId) {
@@ -288,11 +329,65 @@ try {
     $afterMinutes = if ($null -ne $afterMachine) { [int]$afterMachine.minutes_until_ready } else { -999 }
     $afterReady = if ($null -ne $afterMachine) { [bool]$afterMachine.ready_for_harvest } else { $false }
     $afterHeld = if ($null -ne $afterMachine -and $null -ne $afterMachine.held_item) { [string]$afterMachine.held_item.qualified_item_id } else { "" }
+    $afterHeldItem = if ($null -ne $afterMachine) { $afterMachine.held_item } else { $null }
     $afterSpecialState = if ($null -ne $afterMachine) { $afterMachine.machine_special_state } else { $null }
+    $inputCountAfter = Get-InventoryQualifiedCount -Snapshot $afterSnapshot -QualifiedItemId $QualifiedItemId
+    $additionalCountsAfter = [ordered]@{}
+    foreach ($additionalItem in $additionalItems) {
+        $additionalId = [string]$additionalItem.qualified_item_id
+        $additionalCountsAfter[$additionalId] =
+            Get-InventoryQualifiedCount -Snapshot $afterSnapshot -QualifiedItemId $additionalId
+        $requiredCount = [int]$additionalItem.quantity
+        if ([int]$additionalCountsBefore[$additionalId] - [int]$additionalCountsAfter[$additionalId] -ne $requiredCount) {
+            Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+            throw "Additional machine input $additionalId changed by $([int]$additionalCountsBefore[$additionalId] - [int]$additionalCountsAfter[$additionalId]); expected $requiredCount."
+        }
+    }
     if ($RequireVettedSpecialPredictedOutput -and
         $afterHeld -ne $predictedOutputItemId) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
         throw "Vetted special-machine prediction was $predictedOutputItemId, but native loading held $afterHeld."
+    }
+    if ($inputCountBefore - $inputCountAfter -ne 1) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+        throw "Primary machine input changed by $($inputCountBefore - $inputCountAfter); expected 1."
+    }
+    if ($RequireGeodeCrusherRuntimeEquality) {
+        $geodesBefore = [uint64]$beforeLoadSnapshot.state.player.geodes_cracked.value
+        $geodesAfter = [uint64]$afterSnapshot.state.player.geodes_cracked.value
+        $predictedGeodesAfter = [uint64]$predictedOutput.stats_after_successful_load.geodes_cracked
+        if ($null -eq $afterHeldItem -or
+            $afterHeld -ne [string]$predictedOutput.item.qualified_item_id -or
+            [int]$afterHeldItem.stack -ne [int]$predictedOutput.item.stack -or
+            [int]$afterHeldItem.quality -ne [int]$predictedOutput.item.quality -or
+            $geodesAfter -ne $geodesBefore + 1 -or
+            $geodesAfter -ne $predictedGeodesAfter) {
+            Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+            throw "Geode Crusher native held output or GeodesCracked delta did not equal the transparent prediction."
+        }
+    }
+    if ($RequireAnvilRuntimeOutcome) {
+        $heldState = $afterHeldItem.special_state
+        $outcome = $heldState.current_outcome
+        $rules = $predictedOutput.outcome_rules
+        $outcomeInRange = $true
+        if ([string]$rules.distribution -eq "discrete_uniform") {
+            $outcomeInRange =
+                [string]$outcome.stat -eq [string]$rules.stat -and
+                [int]$outcome.value -ge [int]$rules.minimum_inclusive -and
+                [int]$outcome.value -le [int]$rules.maximum_inclusive
+        }
+        if ($null -eq $heldState -or
+            [string]$heldState.schema_version -ne "trinket_item_state.v1" -or
+            -not [bool]$heldState.can_be_reforged -or
+            [string]$heldState.vanilla_outcome_kind -ne [string]$predictedOutput.outcome_kind -or
+            [string]$heldState.current_outcome_status -ne "exact_from_generation_seed_or_live_displayed_level" -or
+            [int]$heldState.generation_seed -lt 0 -or
+            [int]$heldState.generation_seed -ge 9999999 -or
+            -not $outcomeInRange) {
+            Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+            throw "Anvil held Trinket state was not a valid native realization of the transparent distribution."
+        }
     }
     if ($RequireIncubatorLifecycleGuard -and
         ($null -eq $afterSpecialState -or
@@ -313,7 +408,13 @@ try {
         location_id = $LocationId
         qualified_item_id = $QualifiedItemId
         machine_item_id = $MachineItemId
+        input_quantity = $InputQuantity
+        additional_items = $additionalItems
         input_slot_index = $inputSlotIndex
+        input_count_before = $inputCountBefore
+        input_count_after = $inputCountAfter
+        additional_counts_before = $additionalCountsBefore
+        additional_counts_after = $additionalCountsAfter
         setup_status = $setupResult.status
         setup_verification = $setupResult.primitive_verification_status
         machine_present_before = $null -ne $targetMachine
@@ -343,6 +444,8 @@ try {
         vetted_special_predicted_output_required = [bool]$RequireVettedSpecialPredictedOutput
         expected_special_model_id = $ExpectedSpecialModelId
         expected_special_source = $ExpectedSpecialSource
+        expected_prediction_training_status = $ExpectedPredictionTrainingStatus
+        expected_machine_prediction_training_status = $ExpectedMachinePredictionTrainingStatus
         expected_predicted_output_id = $ExpectedPredictedOutputId
         expected_predicted_minutes = $ExpectedPredictedMinutes
         expected_predicted_days = $ExpectedPredictedDays
@@ -353,6 +456,9 @@ try {
         machine_minutes_after = $afterMinutes
         machine_ready_after = $afterReady
         machine_held_after = $afterHeld
+        machine_held_item_after = $afterHeldItem
+        geode_crusher_runtime_equality_required = [bool]$RequireGeodeCrusherRuntimeEquality
+        anvil_runtime_outcome_required = [bool]$RequireAnvilRuntimeOutcome
         bridge_state_hash_before = $beforeLoadSnapshot.state_hash
         bridge_state_hash_after = $afterSnapshot.state_hash
         state_hash_changed = $beforeLoadSnapshot.state_hash -ne $afterSnapshot.state_hash

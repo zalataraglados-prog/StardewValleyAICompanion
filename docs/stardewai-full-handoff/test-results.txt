@@ -3235,3 +3235,16 @@ Scope boundary:
 - Core: PASS 1238/1238.
 - Backend: PASS 94/94.
 - No game process was started and no runtime deployment was changed.
+
+2026-07-27 Geode Crusher and Anvil native runtime feedback
+
+- Extended the reusable machine-input fixture to prepare declared additional consumed items and verify exact before/after inventory counts.
+- Player snapshots now expose `Game1.stats.GeodesCracked`; inventory and machine-held Trinkets expose `trinket_item_state.v1`.
+- Hidden/silent E-drive Geode Crusher PASS: `artifacts/runtime-machine-input-smoke/runtime-machine-input-smoke-20260727-133727/summary.json`.
+- Geode `(O)535` input changed `2 -> 1`; transparent prediction and native held item both resolved to Copper Ore `(O)378`, stack 1, quality 0, at 60 minutes; Geodes Cracked increased exactly once.
+- Hidden/silent E-drive Anvil PASS: `artifacts/runtime-machine-input-smoke/runtime-machine-input-smoke-20260727-134308/summary.json`.
+- Iridium Spur changed `1 -> 0`, Iridium Bars changed `3 -> 0`, held output remained `(TR)IridiumSpur`, timer was 10 minutes, generation seed was `8881142`, and exact replayed `GeneralStat=8` was inside the declared `[5,10]` distribution.
+- Corrected Anvil machine-level training status to `distribution_complete_shared_rng_realized_stats_blocked`; deterministic candidate and compiler gates continue to reject the randomized realized value.
+- Focused source/runtime-contract guards: PASS 4/4.
+- Full regression: Core PASS 1239/1239; Backend PASS 94/94; solution build 0 errors.
+- All hidden game processes exited after the smokes.

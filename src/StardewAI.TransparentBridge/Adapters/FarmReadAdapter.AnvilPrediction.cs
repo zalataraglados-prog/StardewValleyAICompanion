@@ -10,6 +10,8 @@ public sealed partial class FarmReadAdapter
         "(BC)Anvil";
     private const string AnvilPredictionModelId =
         "anvil_trinket_reforge_distribution.v1";
+    private const string AnvilDistributionTrainingStatus =
+        "distribution_complete_shared_rng_realized_stats_blocked";
 
     private static bool IsVettedAnvilOutputMethod(
         StardewValley.Object machine,
@@ -107,7 +109,7 @@ public sealed partial class FarmReadAdapter
         {
             status = "available",
             training_eligibility_status =
-                "distribution_complete_shared_rng_realized_stats_blocked",
+                AnvilDistributionTrainingStatus,
             source =
                 "decompiled_Object.OutputAnvil_and_vanilla_TrinketEffect_GenerateRandomStats",
             special_prediction_model_id =

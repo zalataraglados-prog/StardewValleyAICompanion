@@ -29,6 +29,9 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
                 sell_to_store_price = item?.sellToStorePrice(-1L),
                 sale_price = item?.salePrice(),
                 runtime_type = item?.GetType().FullName,
+                special_state = item is null
+                    ? null
+                    : FarmReadAdapter.ReadItemSpecialState(item),
                 special_item = item?.specialItem,
                 context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
                 base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
@@ -58,6 +61,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["current_tool_index"] = Field(Context.IsWorldReady ? (int?)player?.CurrentToolIndex : null, "Game1.player.CurrentToolIndex", tick),
             ["money"] = Field(player?.Money, "Game1.player.Money", tick),
             ["total_money_earned"] = Field(Context.IsWorldReady ? (uint?)player?.totalMoneyEarned : null, "Game1.player.totalMoneyEarned", tick),
+            ["geodes_cracked"] = Field(Context.IsWorldReady ? (uint?)Game1.stats.GeodesCracked : null, "Game1.stats.GeodesCracked", tick),
             ["health"] = Field(player?.health, "Game1.player.health", tick),
             ["max_health"] = Field(player?.maxHealth, "Game1.player.maxHealth", tick),
             ["energy"] = Field(player?.Stamina, "Game1.player.Stamina", tick),
