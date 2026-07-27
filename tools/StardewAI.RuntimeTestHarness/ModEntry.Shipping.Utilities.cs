@@ -597,6 +597,8 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_pan_ore_spot" &&
             request.OptionId != "debug.setup_machine_input_target" &&
             request.OptionId != "debug.setup_incubator_hatch_naming" &&
+            request.OptionId != "debug.prepare_incubator_sleep" &&
+            request.OptionId != "debug.enter_ready_incubator_house" &&
             request.OptionId != "debug.setup_idle_machine_target" &&
             request.OptionId != "debug.setup_machine_placement_target" &&
             request.OptionId != "debug.setup_storage_placement_target" &&

@@ -129,6 +129,19 @@ namespace StardewAI.Core.Execution
             if (type == "DialogueBox")
             {
                 var dialogueReasons = SafeOrdinaryDialogueBlockReasons(snapshot);
+                if (Infrastructure.IncubatorSnapshotProjection
+                    .IsBirthMessage(snapshot))
+                {
+                    dialogueReasons = dialogueReasons
+                        .Where(reason =>
+                            reason !=
+                                "dialogue_close_event_up_true" &&
+                            reason !=
+                                "dialogue_close_character_present_false" &&
+                            reason !=
+                                "dialogue_close_speaker_name_empty")
+                        .ToArray();
+                }
                 if (string.Equals(ReadParameter(action, "social_continuation_dialogue_recovery"), "true", StringComparison.OrdinalIgnoreCase))
                 {
                     dialogueReasons = dialogueReasons

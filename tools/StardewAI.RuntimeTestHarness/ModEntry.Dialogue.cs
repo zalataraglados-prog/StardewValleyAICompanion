@@ -35,6 +35,12 @@ public sealed partial class ModEntry : Mod
         }
 
         var menu = Game1.activeClickableMenu;
+        var allowIncubatorBirthMessage =
+            string.Equals(
+                pending.Request.InteractionKind,
+                "incubator_birth_message",
+                StringComparison.Ordinal) &&
+            IsNativeIncubatorBirthMessageOpen();
         if (menu is ShippingMenu shippingMenu)
         {
             StartShippingSummaryClose(pending, shippingMenu);
@@ -42,7 +48,11 @@ public sealed partial class ModEntry : Mod
         }
 
         if (menu is not DialogueBox dialogueBox ||
-            !CanAdvanceOrdinaryDialogue(dialogueBox, pending.Request.SocialContinuationDialogueRecovery))
+            !CanAdvanceOrdinaryDialogue(
+                dialogueBox,
+                pending.Request.SocialContinuationDialogueRecovery ||
+                    allowIncubatorBirthMessage,
+                allowIncubatorBirthMessage))
         {
             pending.Completion.SetResult(ExecuteCloseMenu(pending.Request));
             return;
@@ -127,7 +137,17 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (!CanAdvanceOrdinaryDialogue(currentBox, advance.Pending.Request.SocialContinuationDialogueRecovery))
+        var allowIncubatorBirthMessage =
+            string.Equals(
+                advance.Pending.Request.InteractionKind,
+                "incubator_birth_message",
+                StringComparison.Ordinal) &&
+            IsNativeIncubatorBirthMessageOpen();
+        if (!CanAdvanceOrdinaryDialogue(
+                currentBox,
+                advance.Pending.Request.SocialContinuationDialogueRecovery ||
+                    allowIncubatorBirthMessage,
+                allowIncubatorBirthMessage))
         {
             ReleaseSmapiLeftButtonOverride();
             activeDialogueAdvance = null;
