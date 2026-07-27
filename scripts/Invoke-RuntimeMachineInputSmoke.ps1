@@ -289,6 +289,11 @@ try {
     $afterReady = if ($null -ne $afterMachine) { [bool]$afterMachine.ready_for_harvest } else { $false }
     $afterHeld = if ($null -ne $afterMachine -and $null -ne $afterMachine.held_item) { [string]$afterMachine.held_item.qualified_item_id } else { "" }
     $afterSpecialState = if ($null -ne $afterMachine) { $afterMachine.machine_special_state } else { $null }
+    if ($RequireVettedSpecialPredictedOutput -and
+        $afterHeld -ne $predictedOutputItemId) {
+        Write-JsonFile (Join-Path $runDirectory "snapshot-after-load-rejected.json") $afterSnapshot
+        throw "Vetted special-machine prediction was $predictedOutputItemId, but native loading held $afterHeld."
+    }
     if ($RequireIncubatorLifecycleGuard -and
         ($null -eq $afterSpecialState -or
             [string]$afterSpecialState.status -ne "incubating" -or

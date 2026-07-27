@@ -161,6 +161,8 @@ public sealed class RuntimeIncubatorExecutorTests
     public void NaturalCycleFixturesWarpWithoutAdvancingIncubatorState()
     {
         var source = RuntimeHarnessSources.File(
+            "ModEntry.IncubatorNaturalCycleFixtures.cs");
+        var productionSource = RuntimeHarnessSources.File(
             "ModEntry.Incubators.cs");
         var start = source.IndexOf(
             "ExecutePrepareIncubatorSleep(",
@@ -191,6 +193,14 @@ public sealed class RuntimeIncubatorExecutorTests
         Assert.DoesNotContain(
             "passTimeForObjects",
             method,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ExecutePrepareIncubatorSleep(",
+            productionSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ExecuteEnterReadyIncubatorHouse(",
+            productionSource,
             StringComparison.Ordinal);
     }
 

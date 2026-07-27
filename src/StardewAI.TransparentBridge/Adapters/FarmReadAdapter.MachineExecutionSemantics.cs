@@ -80,13 +80,62 @@ public sealed partial class FarmReadAdapter
             };
         }
 
-        var itemPlacedRules = machineData.OutputRules?
+        var allOutputRules = machineData.OutputRules?
+            .ToArray() ??
+            Array.Empty<MachineOutputRule>();
+        var itemPlacedRules = allOutputRules
             .Where(rule => rule.Triggers?.Any(trigger =>
                 trigger.Trigger.HasFlag(MachineOutputTrigger.ItemPlacedInMachine)) == true)
-            .ToArray() ?? Array.Empty<MachineOutputRule>();
+            .ToArray();
         var outputs = itemPlacedRules
             .SelectMany(rule => rule.OutputItem ?? new List<MachineItemOutput>())
             .ToArray();
+        var allOutputs = allOutputRules
+            .SelectMany(
+                rule =>
+                    rule.OutputItem ??
+                    new List<MachineItemOutput>())
+            .ToArray();
+        var dayUpdateCustomOutputMethods =
+            ReadCustomOutputMethods(
+                allOutputRules,
+                MachineOutputTrigger.DayUpdate);
+        var outputCollectedCustomOutputMethods =
+            ReadCustomOutputMethods(
+                allOutputRules,
+                MachineOutputTrigger.OutputCollected);
+        var machinePutDownCustomOutputMethods =
+            ReadCustomOutputMethods(
+                allOutputRules,
+                MachineOutputTrigger.MachinePutDown);
+        var allCustomOutputMethods = allOutputs
+            .Select(output =>
+                output.OutputMethod ?? string.Empty)
+            .Where(method =>
+                !string.IsNullOrWhiteSpace(method))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var nonInputCustomOutputMethods =
+            dayUpdateCustomOutputMethods
+                .Concat(
+                    outputCollectedCustomOutputMethods)
+                .Concat(
+                    machinePutDownCustomOutputMethods)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        var vettedSpecialStateOutputMethods =
+            nonInputCustomOutputMethods
+                .Where(method =>
+                    IsVettedSpecialStateOutputMethod(
+                        machine,
+                        method))
+                .ToArray();
+        var unvettedNonInputCustomOutputMethods =
+            nonInputCustomOutputMethods
+                .Except(
+                    vettedSpecialStateOutputMethods,
+                    StringComparer.Ordinal)
+                .ToArray();
         var randomTriggerConditionCount = itemPlacedRules
             .SelectMany(rule => rule.Triggers ?? new List<MachineOutputTriggerRule>())
             .Count(trigger =>
@@ -210,6 +259,28 @@ public sealed partial class FarmReadAdapter
             random_modifier_count = randomModifierCount,
             custom_output_method_count = customOutputMethods.Length,
             custom_output_methods = customOutputMethods,
+            all_custom_output_method_count =
+                allCustomOutputMethods.Length,
+            all_custom_output_methods =
+                allCustomOutputMethods,
+            day_update_custom_output_methods =
+                dayUpdateCustomOutputMethods,
+            output_collected_custom_output_methods =
+                outputCollectedCustomOutputMethods,
+            machine_put_down_custom_output_methods =
+                machinePutDownCustomOutputMethods,
+            non_input_custom_output_method_count =
+                nonInputCustomOutputMethods.Length,
+            non_input_custom_output_methods =
+                nonInputCustomOutputMethods,
+            vetted_special_state_output_methods =
+                vettedSpecialStateOutputMethods,
+            unvetted_non_input_custom_output_methods =
+                unvettedNonInputCustomOutputMethods,
+            non_input_callback_coverage_status =
+                unvettedNonInputCustomOutputMethods.Length == 0
+                    ? "available_all_custom_callbacks_vetted"
+                    : "blocked_unvetted_custom_callbacks",
             vetted_special_output_method_count =
                 vettedSpecialOutputMethods.Length,
             vetted_special_output_methods =
@@ -229,6 +300,27 @@ public sealed partial class FarmReadAdapter
             native_contract =
                 "Object.performObjectDropInAction_probe_then_Object.PlaceInMachine_then_Object.OutputMachine"
         };
+    }
+
+    private static string[] ReadCustomOutputMethods(
+        IEnumerable<MachineOutputRule> rules,
+        MachineOutputTrigger trigger)
+    {
+        return rules
+            .Where(rule =>
+                rule.Triggers?.Any(candidate =>
+                    candidate.Trigger.HasFlag(trigger)) ==
+                true)
+            .SelectMany(
+                rule =>
+                    rule.OutputItem ??
+                    new List<MachineItemOutput>())
+            .Select(output =>
+                output.OutputMethod ?? string.Empty)
+            .Where(method =>
+                !string.IsNullOrWhiteSpace(method))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static string ReadMachineDispatchKind(MethodInfo? method)

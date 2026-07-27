@@ -11,7 +11,8 @@ public sealed partial class FarmReadAdapter
     {
         return IsVettedCaskOutputMethod(machine, outputMethod) ||
             IsVettedDeconstructorOutputMethod(machine, outputMethod) ||
-            IsVettedIncubatorOutputMethod(machine, outputMethod);
+            IsVettedIncubatorOutputMethod(machine, outputMethod) ||
+            IsVettedSeedMakerOutputMethod(machine, outputMethod);
     }
 
     private static string ReadVettedSpecialOutputModelId(
@@ -29,6 +30,10 @@ public sealed partial class FarmReadAdapter
         if (IsVettedIncubatorOutputMethod(machine, outputMethod))
         {
             return IncubatorPredictionModelId;
+        }
+        if (IsVettedSeedMakerOutputMethod(machine, outputMethod))
+        {
+            return SeedMakerPredictionModelId;
         }
         return string.Empty;
     }
@@ -63,13 +68,24 @@ public sealed partial class FarmReadAdapter
             return true;
         }
 
-        return TryReadIncubatorPrediction(
-            machine,
-            inputItem,
-            outputRule,
-            triggerRule,
-            outputData,
-            out prediction);
+        if (TryReadIncubatorPrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out prediction))
+        {
+            return true;
+        }
+
+        return TryReadSeedMakerPrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out prediction);
     }
 
     private static object? ReadMachineSpecialState(
@@ -77,6 +93,16 @@ public sealed partial class FarmReadAdapter
         GameLocation location)
     {
         return ReadCaskSpecialState(machine) ??
-            ReadIncubatorSpecialState(machine, location);
+            ReadIncubatorSpecialState(machine, location) ??
+            ReadSolarPanelSpecialState(machine, location);
+    }
+
+    private static bool IsVettedSpecialStateOutputMethod(
+        StardewValley.Object machine,
+        string outputMethod)
+    {
+        return IsVettedSolarPanelOutputMethod(
+            machine,
+            outputMethod);
     }
 }

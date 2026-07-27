@@ -20,8 +20,44 @@ public sealed class WorldReadAdapter : ReadAdapterBase
             ["total_days"] = Field(Context.IsWorldReady ? (int?)Game1.Date.TotalDays : null, "Game1.Date.TotalDays", tick),
             ["time"] = Field(Context.IsWorldReady ? (int?)Game1.timeOfDay : null, "Game1.timeOfDay", tick),
             ["is_green_rain"] = Field(Context.IsWorldReady ? (bool?)Game1.isGreenRain : null, "Game1.isGreenRain", tick),
-            ["weather"] = Field(Context.IsWorldReady ? CurrentWeather() : null, "Game1.isRaining/isSnowing/isLightning/isDebrisWeather", tick)
+            ["weather"] = Field(Context.IsWorldReady ? CurrentWeather() : null, "Game1.isRaining/isSnowing/isLightning/isDebrisWeather", tick),
+            ["weather_for_tomorrow"] = Field(
+                Context.IsWorldReady ? Game1.weatherForTomorrow : null,
+                "Game1.weatherForTomorrow",
+                tick),
+            ["location_context_weather"] = Field(
+                Context.IsWorldReady
+                    ? ReadExistingLocationContextWeather()
+                    : null,
+                "Game1.netWorldState.Value.LocationWeather",
+                tick)
         });
+    }
+
+    private static object[] ReadExistingLocationContextWeather()
+    {
+        var weatherByContext =
+            Game1.netWorldState.Value.LocationWeather;
+        return weatherByContext.Keys
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .Select(key =>
+            {
+                var weather = weatherByContext[key];
+                return new
+                {
+                    location_context_id = key,
+                    weather = weather.Weather,
+                    weather_for_tomorrow =
+                        weather.WeatherForTomorrow,
+                    is_raining = weather.IsRaining,
+                    is_snowing = weather.IsSnowing,
+                    is_lightning = weather.IsLightning,
+                    is_debris_weather =
+                        weather.IsDebrisWeather,
+                    is_green_rain = weather.IsGreenRain
+                };
+            })
+            .ToArray<object>();
     }
 
     private static string CurrentWeather()

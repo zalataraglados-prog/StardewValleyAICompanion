@@ -3164,3 +3164,38 @@ Scope boundary:
 - Ordinary Incubator natural run: PASS, `runtime-incubator-natural-cycle-20260727-080024`, 9000 minutes, 6 native sleeps, `White Chicken:NaturalPip`, occupancy 7 -> 8, egg cleared, dynamic catalog 8 compatible of 9 native egg IDs.
 - Ostrich Incubator natural run: PASS, `runtime-incubator-natural-cycle-20260727-080236`, 9000 minutes, 6 native sleeps, `Ostrich:NaturalOllie`, occupancy 7 -> 8, egg cleared, dynamic catalog 1 compatible of 9 native egg IDs.
 - Both runs used per-run copied saves and hidden/silent game processes. No shared source save was the runtime target.
+
+2026-07-27 Seed Maker deterministic special model
+
+- TransparentBridge Release build: PASS, 0 errors.
+- Focused Core special-machine regression: PASS 6/6.
+- Focused Backend incubator architecture regression: PASS 7/7.
+- Hidden/silent E-drive isolated runtime: PASS, `artifacts/runtime-machine-input-smoke/runtime-machine-input-smoke-20260727-085156/summary.json`.
+- Vanilla Seed Maker `(BC)25` accepted Parsnip `(O)24`; transparent prediction and native held output both resolved to Parsnip Seeds `(O)472`, with an exact 20-minute duration and applied/verified executor receipt.
+- The generalized smoke now fails when a vetted special-machine predicted output identity differs from the item held after native loading.
+- Full regression after the runtime assertion: Core PASS 1230/1230; Backend PASS 94/94; RuntimeTestHarness Release build PASS with 0 errors.
+
+2026-07-27 remote vanilla-host read-only audit
+
+- `stardew-vanilla-ai-server` remained running but unhealthy; identity snapshots timed out after 8 seconds while the executor health endpoint still returned HTTP 200 in 0.38 seconds. Server CPU was about 29%.
+- The final game lifecycle log remained `Context: before save` after native ShippingMenu recovery. No newer game action was recorded.
+- `stardew-vanilla-ai-host-ai` had exited after ten container restarts; each run stopped after five consecutive 180-second snapshot timeouts. The rolling report remained incomplete.
+- The deployed RuntimeTestHarness DLL timestamp was 2026-07-24 04:04 +08:00. The headless `SaveGameMenu.hasDrawn` lifecycle fix entered the repository later that day at 18:12, so this remote instance is conclusively pre-fix.
+- Audit was read-only. No remote container, save, compose file or deployment artifact was changed.
+
+2026-07-27 remote latest deployment and overnight save closure
+
+- Deployed the current working tree based on `4ef2d6491cc73531e380dabec2ba98efb7f0e2f8` to the retained `stardew-vanilla-ai` compose project after verifying the 344-file deployment manifest and package SHA-256.
+- Preserved an exact pre-deploy save backup at `/root/stardew-junimo/backups/StardewAIDebug_16564609768130219756-pre-latest-20260727-1120.tar.gz`, SHA-256 `6bdba66b4009480ca400ea9b4cb0baf6ea738f6365a8c849532acef2a001db66`.
+- Server and planner became healthy; Host AI loaded spring 4 Y1, restored the joinable cabin, warped from FarmHouse to Farm and repeatedly executed collision-checked tile paths.
+- Native overnight lifecycle PASS: `NewDay` completed, ShippingMenu recovery used its native OK path, `SaveGame.Save()` completed without exceptions, `Context: after save` reported spring 5 Y1, and both the main save and `SaveGameInfo` received 2026-07-27 11:41 +08:00 mtimes.
+- Removed the obsolete `stardew-junimo`, `puppy-stardew`, and one-off knowledge-export container instances. Only the `stardew-vanilla-ai` test project remains; its optional stopped `steam-auth` service is retained as part of that project. No save/data directory, image or volume was deleted.
+
+2026-07-27 Solar Panel and complete custom-callback inventory
+
+- Added transparent default and per-initialized-location-context tomorrow weather without invoking the RNG-mutating missing-context initializer.
+- Added `solar_panel_special_state.v1` for vanilla `(BC)231`, including exact current state, Battery Pack output identity, timer, location/weather gates, seven-day initialization, sunny-outdoor adjustment and `Inside`/`Rain` blockers. Multi-day completion remains explicitly unprojected.
+- `machine_execution_semantics.v1` now inventories custom callbacks across item placement, day update, output collection and machine placement. Unvetted non-input callbacks report `blocked_unvetted_custom_callbacks`.
+- TransparentBridge Release build: PASS, 0 errors.
+- Core: PASS 1231/1231.
+- Backend: PASS 94/94.
