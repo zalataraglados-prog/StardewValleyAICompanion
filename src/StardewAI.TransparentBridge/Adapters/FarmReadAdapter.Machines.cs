@@ -615,6 +615,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             {
                 continue;
             }
+            if (!VettedSpecialMachineInputPassesCallbackPreconditions(
+                    machine,
+                    item))
+            {
+                continue;
+            }
 
             inputs.Add(new
             {

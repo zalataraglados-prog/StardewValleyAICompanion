@@ -11,6 +11,8 @@ public sealed partial class FarmReadAdapter
     {
         return IsVettedCaskOutputMethod(machine, outputMethod) ||
             IsVettedDeconstructorOutputMethod(machine, outputMethod) ||
+            IsVettedGeodeCrusherOutputMethod(machine, outputMethod) ||
+            IsVettedAnvilOutputMethod(machine, outputMethod) ||
             IsVettedIncubatorOutputMethod(machine, outputMethod) ||
             IsVettedSeedMakerOutputMethod(machine, outputMethod);
     }
@@ -26,6 +28,16 @@ public sealed partial class FarmReadAdapter
         if (IsVettedDeconstructorOutputMethod(machine, outputMethod))
         {
             return DeconstructorPredictionModelId;
+        }
+        if (IsVettedGeodeCrusherOutputMethod(
+                machine,
+                outputMethod))
+        {
+            return GeodeCrusherPredictionModelId;
+        }
+        if (IsVettedAnvilOutputMethod(machine, outputMethod))
+        {
+            return AnvilPredictionModelId;
         }
         if (IsVettedIncubatorOutputMethod(machine, outputMethod))
         {
@@ -68,6 +80,28 @@ public sealed partial class FarmReadAdapter
             return true;
         }
 
+        if (TryReadGeodeCrusherPrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out prediction))
+        {
+            return true;
+        }
+
+        if (TryReadAnvilPrediction(
+                machine,
+                inputItem,
+                outputRule,
+                triggerRule,
+                outputData,
+                out prediction))
+        {
+            return true;
+        }
+
         if (TryReadIncubatorPrediction(
                 machine,
                 inputItem,
@@ -85,7 +119,23 @@ public sealed partial class FarmReadAdapter
                 outputRule,
                 triggerRule,
                 outputData,
-                out prediction);
+            out prediction);
+    }
+
+    private static bool
+        VettedSpecialMachineInputPassesCallbackPreconditions(
+            StardewValley.Object machine,
+            Item inputItem)
+    {
+        return machine.QualifiedItemId switch
+        {
+            AnvilQualifiedItemId =>
+                IsVettedAnvilInputSupported(inputItem),
+            GeodeCrusherQualifiedItemId =>
+                IsVettedGeodeCrusherInputSupported(
+                    inputItem),
+            _ => true
+        };
     }
 
     private static object? ReadMachineSpecialState(

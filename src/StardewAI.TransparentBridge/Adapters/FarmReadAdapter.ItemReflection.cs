@@ -25,7 +25,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 display_name = item.DisplayName,
                 stack = item.Stack,
                 quality = item.Quality,
-                sale_price = item.salePrice()
+                sale_price = item.salePrice(),
+                special_state =
+                    ReadItemSpecialState(item)
             };
     }
 

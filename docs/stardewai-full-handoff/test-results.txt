@@ -3222,3 +3222,16 @@ Scope boundary:
 - Core: PASS 1235/1235.
 - Backend: PASS 94/94.
 - No game process was started and no runtime deployment was changed.
+
+2026-07-27 Geode Crusher exact prediction and Anvil distribution
+
+- Corrected the prior broad RNG classification: the four ordinary Geode Crusher inputs use a fresh deterministic RNG seeded from current Geodes Cracked, save ID, and player ID; they do not consume shared `Game1.random`.
+- Geode prediction is exact for `(O)535`, `(O)536`, `(O)537`, and `(O)749`. Mystery Boxes and custom geodes remain excluded from this side-effect proof.
+- Anvil exposes the same-Trinket identity, three Iridium Bar cost, ten-minute duration, and complete vanilla generative rules. The new seed and realized pre-load properties remain blocked on shared RNG.
+- Generic machine probe false positives are filtered through the two vetted callback preconditions.
+- `trinket_item_state.v1` records generation seed, effect class, templates, metadata, and exact current properties for held machine output.
+- Focused source/probability guards: PASS 3/3.
+- TransparentBridge Release build: PASS, 0 errors.
+- Core: PASS 1238/1238.
+- Backend: PASS 94/94.
+- No game process was started and no runtime deployment was changed.
