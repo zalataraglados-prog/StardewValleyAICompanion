@@ -60,9 +60,39 @@ internal static class StrategyCommitmentLedgerSupport
             MachineRelocationIntents = current?.MachineRelocationIntents
                 .Select(CloneMachineRelocation)
                 .ToArray() ?? Array.Empty<MachineRelocationIntent>(),
+            MachineSupportIntents = current?.MachineSupportIntents
+                .Select(CloneMachineSupport)
+                .ToArray() ?? Array.Empty<MachineSupportIntent>(),
             History = current?.History
                 .Select(CloneHistory)
                 .ToArray() ?? Array.Empty<StrategyCommitmentHistoryEntry>()
+        };
+
+    internal static MachineSupportIntent CloneMachineSupport(
+        MachineSupportIntent row) => new()
+        {
+            IntentId = row.IntentId,
+            Revision = row.Revision,
+            Status = row.Status,
+            Stage = row.Stage,
+            SourceDecisionId = row.SourceDecisionId,
+            SourceStateHash = row.SourceStateHash,
+            GoalId = row.GoalId,
+            QualifiedItemId = row.QualifiedItemId,
+            ItemId = row.ItemId,
+            DemandClass = row.DemandClass,
+            SupportKind = row.SupportKind,
+            EvidenceStatus = row.EvidenceStatus,
+            GrossBenefit = row.GrossBenefit,
+            OpportunityCost = row.OpportunityCost,
+            NetBenefit = row.NetBenefit,
+            SupportScore = row.SupportScore,
+            RequiredAdditionalMachineCount =
+                row.RequiredAdditionalMachineCount,
+            TargetLocationId = row.TargetLocationId,
+            TargetTileX = row.TargetTileX,
+            TargetTileY = row.TargetTileY,
+            CompletionReason = row.CompletionReason
         };
 
     internal static CropPlantingCommitment CloneCrop(CropPlantingCommitment row) =>

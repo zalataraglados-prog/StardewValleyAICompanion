@@ -704,7 +704,11 @@ namespace StardewAI.Core.Execution
             return false;
         }
 
-        private static string[] ValidateLoadMachineInputPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        private static string[] ValidateLoadMachineInputPlan(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            StardewAI.Contracts.Strategy.StrategyCommitmentLedger?
+                commitmentLedger)
         {
             if (action.OptionId != "executor.load_machine_input")
             {
@@ -744,6 +748,7 @@ namespace StardewAI.Core.Execution
             }
 
             JsonElement? machine = null;
+            JsonElement? selectedInput = null;
             if (targetX.HasValue && targetY.HasValue)
             {
                 machine = MachineAt(snapshot, targetLocation, targetX.Value, targetY.Value);
@@ -771,6 +776,7 @@ namespace StardewAI.Core.Execution
                 if (inputSlot.HasValue)
                 {
                     input = MachineLoadableInputAt(machine.Value, inputSlot.Value);
+                    selectedInput = input;
                     if (!input.HasValue)
                     {
                         reasons.Add("load_machine_input_not_verified_by_transparent_probe");
@@ -863,6 +869,38 @@ namespace StardewAI.Core.Execution
                     {
                         reasons.Add("load_machine_input_item_mismatch");
                     }
+                }
+            }
+
+            if (machine.HasValue && selectedInput.HasValue &&
+                targetX.HasValue && targetY.HasValue)
+            {
+                var supportIntent =
+                    MachineSupportIntentProjection.SelectForLoad(
+                        commitmentLedger,
+                        ReadString(
+                            machine.Value,
+                            "qualified_item_id"),
+                        targetLocation ?? string.Empty,
+                        targetX.Value,
+                        targetY.Value);
+                var supportContinuation =
+                    MachineSupportIntentProjection.Load(
+                        supportIntent,
+                        MachineSupportIntentProjection
+                            .CurrentInputNetValue(
+                                machine.Value,
+                                selectedInput.Value));
+                if ((supportIntent is not null ||
+                     !string.IsNullOrWhiteSpace(ReadParameter(
+                         action,
+                         "machine_support_continuation_status"))) &&
+                    !MachineSupportContinuationMatches(
+                        action,
+                        supportContinuation))
+                {
+                    reasons.Add(
+                        "load_machine_input_support_intent_drifted");
                 }
             }
 

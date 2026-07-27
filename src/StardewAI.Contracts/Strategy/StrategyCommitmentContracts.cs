@@ -42,6 +42,10 @@ namespace StardewAI.Contracts.Strategy
         [JsonPropertyName("machine_relocation_intents")]
         public MachineRelocationIntent[] MachineRelocationIntents { get; set; } = Array.Empty<MachineRelocationIntent>();
 
+        [JsonPropertyName("machine_support_intents")]
+        public MachineSupportIntent[] MachineSupportIntents { get; set; } =
+            Array.Empty<MachineSupportIntent>();
+
         [JsonPropertyName("history")]
         public StrategyCommitmentHistoryEntry[] History { get; set; } = Array.Empty<StrategyCommitmentHistoryEntry>();
     }

@@ -709,6 +709,23 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
     }
     var commitmentLedger = relocationBinding?.Ledger ??
         commitmentRepository.Get(snapshot);
+    var supportBinding =
+        MachineSupportIntentPlanBinder.Bind(
+            plan,
+            snapshot,
+            commitmentRepository);
+    if (supportBinding is not null &&
+        (!supportBinding.Accepted ||
+         supportBinding.Ledger is null))
+    {
+        return Results.UnprocessableEntity(new
+        {
+            detail = "machine support intent binding rejected",
+            errors = supportBinding.Errors
+        });
+    }
+    commitmentLedger = supportBinding?.Ledger ??
+        commitmentLedger;
     var actionQueue = actionQueueCompiler.Compile(
         plan,
         snapshot,

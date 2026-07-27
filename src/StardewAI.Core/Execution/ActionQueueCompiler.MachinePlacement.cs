@@ -247,6 +247,39 @@ namespace StardewAI.Core.Execution
                 }
             }
 
+            var supportIntent = string.IsNullOrWhiteSpace(
+                    relocationIntentId)
+                ? MachineSupportIntentProjection.SelectForPlacement(
+                    commitmentLedger,
+                    qualifiedItemId,
+                    locationId)
+                : null;
+            var supportContinuation =
+                MachineSupportIntentProjection.Placement(
+                    supportIntent);
+            if ((supportIntent is not null ||
+                 !string.IsNullOrWhiteSpace(ReadParameter(
+                     action,
+                     "machine_support_continuation_status"))) &&
+                (!MachineSupportContinuationMatches(
+                    action,
+                    supportContinuation) ||
+                (supportIntent is not null &&
+                 (!string.Equals(
+                      supportIntent.Stage,
+                      MachineSupportIntentStages.PlacementBound,
+                      StringComparison.Ordinal) ||
+                  !string.Equals(
+                      supportIntent.TargetLocationId,
+                      locationId,
+                      StringComparison.OrdinalIgnoreCase) ||
+                  supportIntent.TargetTileX != targetX.Value ||
+                  supportIntent.TargetTileY != targetY.Value))))
+            {
+                reasons.Add(
+                    "place_machine_support_intent_drifted");
+            }
+
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 

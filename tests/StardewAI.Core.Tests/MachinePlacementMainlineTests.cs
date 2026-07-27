@@ -69,6 +69,120 @@ public sealed class MachinePlacementMainlineTests
     }
 
     [Fact]
+    public void SupportedMachinePlacementBindsExactIntentTarget()
+    {
+        var snapshot = Snapshot();
+        var ledger = Ledger(revision: 3);
+        ledger.MachineSupportIntents =
+        [
+            new MachineSupportIntent
+            {
+                IntentId = "machine-support:money:keg",
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                Stage = MachineSupportIntentStages.CraftSelected,
+                SourceDecisionId = "machine-craft:keg",
+                SourceStateHash = "state:craft",
+                GoalId = "goal.economy.earn_money",
+                QualifiedItemId = "(BC)12",
+                ItemId = "12",
+                DemandClass =
+                    "production_capacity_requirement",
+                SupportKind =
+                    "machine_capacity_current_backlog",
+                EvidenceStatus = "complete",
+                GrossBenefit = 400,
+                OpportunityCost = 60,
+                NetBenefit = 340,
+                SupportScore = 0.034,
+                RequiredAdditionalMachineCount = 1
+            }
+        ];
+        var availability =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions: true,
+                    ledger);
+        var candidate = Assert.Single(
+            availability.Options[0].EventCandidates.Where(row =>
+                row.Kind == "place_machine_item"));
+
+        Assert.Equal(
+            "active",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_continuation_status"));
+        Assert.Equal(
+            "machine-support:money:keg",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_intent_id"));
+
+        var ranked = Assert.Single(
+            new EventCandidateRanker()
+                .Rank(
+                    new BaselineTrainingReport(),
+                    availability,
+                    "goal.economy.earn_money")
+                .Where(row =>
+                    row.CandidateId == candidate.CandidateId));
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+        var place = plan.Steps.Single(step =>
+            step.Kind == "place_machine_item");
+        ledger.Revision = 4;
+        var intent = Assert.Single(
+            ledger.MachineSupportIntents);
+        intent.Revision = 2;
+        intent.Stage =
+            MachineSupportIntentStages.PlacementBound;
+        intent.SourceStateHash = snapshot.StateHash;
+        intent.TargetLocationId = place.TargetLocation;
+        intent.TargetTileX = place.TargetTileX;
+        intent.TargetTileY = place.TargetTileY;
+        foreach (var name in new[]
+                 {
+                     "commitment_ledger_revision",
+                     "material_reservation_ledger_revision"
+                 })
+        {
+            place.Parameters.Single(parameter =>
+                parameter.Name == name).Value = "4";
+        }
+        place.Parameters.Single(parameter =>
+            parameter.Name ==
+                "machine_support_intent_revision").Value = "2";
+        place.Parameters.Single(parameter =>
+            parameter.Name ==
+                "machine_support_intent_stage").Value =
+            MachineSupportIntentStages.PlacementBound;
+        place.Parameters.Single(parameter =>
+            parameter.Name ==
+                "machine_support_intent_source_state_hash").Value =
+            snapshot.StateHash;
+
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            ledger);
+        var item = queue.Items.Single(row =>
+            row.OptionId == "executor.place_machine");
+
+        Assert.True(
+            item.Status == "pending",
+            string.Join(";", item.BlockingReasons));
+        Assert.Equal(
+            "machine-support:money:keg",
+            Parameter(
+                item.NormalizedCommand.Parameters,
+                "machine_support_intent_id"));
+    }
+
+    [Fact]
     public void RemotePlacementEmitsOneConnectorWithPlacementContinuation()
     {
         var snapshot = Snapshot(includeRemoteLocation: true);

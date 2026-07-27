@@ -40,6 +40,14 @@ public sealed class ActionQueueDispatchReadinessService
                 item.OptionId,
                 "executor.place_storage",
                 StringComparison.Ordinal) &&
+            !(string.Equals(
+                  item.OptionId,
+                  "executor.load_machine_input",
+                  StringComparison.Ordinal) &&
+              !string.IsNullOrWhiteSpace(
+                  Parameter(
+                      item,
+                      "machine_support_intent_id"))) &&
             !IsStrategicMachineRemoval(item))
         {
             result.Ready = true;
@@ -71,6 +79,56 @@ public sealed class ActionQueueDispatchReadinessService
                 reasons.Add(
                     "dispatch_machine_relocation_intent_not_active");
             }
+            result.BlockingReasons =
+                reasons.Distinct(StringComparer.Ordinal).ToArray();
+            result.Ready = result.BlockingReasons.Length == 0;
+            result.Status = result.Ready ? "ready" : "blocked";
+            return result;
+        }
+
+        var supportIntentId = Parameter(
+            item,
+            "machine_support_intent_id");
+        if (!string.IsNullOrWhiteSpace(supportIntentId))
+        {
+            var supportIntent =
+                currentLedger.MachineSupportIntents.FirstOrDefault(row =>
+                    string.Equals(
+                        row.IntentId,
+                        supportIntentId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        row.Status,
+                        StrategyCommitmentStatuses.Active,
+                        StringComparison.Ordinal));
+            if (supportIntent is null ||
+                IntParameter(
+                    item,
+                    "machine_support_intent_revision") !=
+                    supportIntent.Revision ||
+                !string.Equals(
+                    Parameter(
+                        item,
+                        "machine_support_intent_stage"),
+                    supportIntent.Stage,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    Parameter(
+                        item,
+                        "machine_support_intent_source_state_hash"),
+                    supportIntent.SourceStateHash,
+                    StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    "dispatch_machine_support_intent_drifted");
+            }
+        }
+
+        if (string.Equals(
+                item.OptionId,
+                "executor.load_machine_input",
+                StringComparison.Ordinal))
+        {
             result.BlockingReasons =
                 reasons.Distinct(StringComparer.Ordinal).ToArray();
             result.Ready = result.BlockingReasons.Length == 0;

@@ -219,6 +219,24 @@ static partial class Program
                         Number("goal.support.opportunity_cost", ReadQueueParameterDouble(item, "goal_support_opportunity_cost") ?? 0),
                         Number("goal.support.net_benefit", ReadQueueParameterDouble(item, "goal_support_net_benefit") ?? 0),
                         Number("goal.support.score", ReadQueueParameterDouble(item, "goal_support_score") ?? 0),
+                        Number(
+                            "machine.support.original_net_benefit",
+                            ReadQueueParameterDouble(
+                                item,
+                                "machine_support_original_net_benefit") ??
+                            0),
+                        Number(
+                            "machine.support.current_input_net_benefit",
+                            ReadQueueParameterDouble(
+                                item,
+                                "machine_support_current_input_net_benefit") ??
+                            0),
+                        Number(
+                            "machine.support.continuation_score",
+                            ReadQueueParameterDouble(
+                                item,
+                                "machine_support_continuation_score") ??
+                            0),
                         Number("combat.attack_count", ReadInt(execution, "combat_attack_count")),
                         Number("combat.hit_count", ReadInt(execution, "combat_hit_count")),
                         Number("combat.damage_taken", ReadInt(execution, "combat_damage_taken")),
@@ -261,6 +279,31 @@ static partial class Program
                         Category("goal.support.parent_goal_id", ReadQueueParameterString(item, "goal_support_parent_goal_id")),
                         Category("goal.support.evidence_status", ReadQueueParameterString(item, "goal_support_evidence_status")),
                         Category("goal.support.reason", ReadQueueParameterString(item, "goal_support_reason")),
+                        Category(
+                            "machine.support.continuation_status",
+                            ReadQueueParameterString(
+                                item,
+                                "machine_support_continuation_status")),
+                        Category(
+                            "machine.support.continuation_kind",
+                            ReadQueueParameterString(
+                                item,
+                                "machine_support_continuation_kind")),
+                        Category(
+                            "machine.support.intent_stage",
+                            ReadQueueParameterString(
+                                item,
+                                "machine_support_intent_stage")),
+                        Category(
+                            "machine.support.goal_id",
+                            ReadQueueParameterString(
+                                item,
+                                "machine_support_goal_id")),
+                        Category(
+                            "machine.support.continuation_reason",
+                            ReadQueueParameterString(
+                                item,
+                                "machine_support_continuation_reason")),
                         Category("fishing.observed_qualified_item_id", ReadChangedFactString(execution, "fishing.caught_qualified_item_id")),
                         Category("fishing.terminal_result", ReadChangedFactString(execution, "fishing.terminal_result"))
                     },
@@ -274,6 +317,14 @@ static partial class Program
                                     item,
                                     "goal_support_status"),
                                 "supported_bounded_positive_net_benefit",
+                                StringComparison.Ordinal)),
+                        Flag(
+                            "machine.support.continuation_active",
+                            string.Equals(
+                                ReadQueueParameterString(
+                                    item,
+                                    "machine_support_continuation_status"),
+                                "active",
                                 StringComparison.Ordinal)),
                         Flag("action.exclude_from_policy_training", excludeFromPolicyTraining),
                         Flag("execution.primitive_verified", primitiveVerified),

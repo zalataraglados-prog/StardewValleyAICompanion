@@ -32,8 +32,17 @@ internal static class MachineDemandEconomicValueProjection
 {
     public static MachineDemandEconomicValue Evaluate(
         IReadOnlyCollection<PotentialMachineDemandInput> inputs,
-        int capacityDeficitUnits)
+        int capacityDeficitUnits,
+        bool noAdditionalConsumedItems)
     {
+        if (!noAdditionalConsumedItems)
+        {
+            return new(
+                "incomplete_additional_consumed_material_value",
+                0,
+                0);
+        }
+
         if (inputs.Count == 0)
         {
             return new(

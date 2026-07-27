@@ -1288,6 +1288,8 @@ namespace StardewAI.Backend.Tests
             private readonly MaterialReservationLedgerService materialService = new();
             private readonly MachineRelocationIntentLedgerService
                 machineRelocationService = new();
+            private readonly MachineSupportIntentLedgerService
+                machineSupportService = new();
             private StrategyCommitmentLedger? ledger;
 
             public StrategyCommitmentLedger Get(SnapshotEnvelope snapshot)
@@ -1301,6 +1303,10 @@ namespace StardewAI.Backend.Tests
                 };
                 ledger = service.ReconcileCompleted(ledger, snapshot, "2026-07-19T00:00:00Z");
                 ledger = machineRelocationService.ReconcileCompleted(
+                    ledger,
+                    snapshot,
+                    "2026-07-19T00:00:00Z");
+                ledger = machineSupportService.ReconcileCompleted(
                     ledger,
                     snapshot,
                     "2026-07-19T00:00:00Z");
@@ -1367,6 +1373,23 @@ namespace StardewAI.Backend.Tests
                     MachineRelocationIntentUpsertRequest request)
             {
                 var result = machineRelocationService.Upsert(
+                    Get(snapshot),
+                    snapshot,
+                    request,
+                    "2026-07-19T00:00:00Z");
+                if (result.Accepted)
+                {
+                    ledger = result.Ledger;
+                }
+                return result;
+            }
+
+            public StrategyCommitmentMutationResult
+                UpsertMachineSupport(
+                    SnapshotEnvelope snapshot,
+                    MachineSupportIntentUpsertRequest request)
+            {
+                var result = machineSupportService.Upsert(
                     Get(snapshot),
                     snapshot,
                     request,

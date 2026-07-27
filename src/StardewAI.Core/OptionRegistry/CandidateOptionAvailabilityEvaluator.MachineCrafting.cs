@@ -169,6 +169,10 @@ namespace StardewAI.Core.OptionRegistry
                     ";next_arrival_source=" + demand.NextArrivalSource +
                     ";required_additional_machine_count=" +
                     demand.RequiredAdditionalMachineCount +
+                    ";placed_same_machine_count=" +
+                    demand.PlacedSameMachineCount +
+                    ";inventory_same_machine_count=" +
+                    demand.InventorySameMachineCount +
                     ";machine_build_window_open=" +
                     demand.BuildWindowOpen.ToString().ToLowerInvariant() +
                     ";commitment_ledger_revision=" + demand.CommitmentLedgerRevision +
@@ -242,6 +246,9 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("potential_input_count", demand.PotentialInputCount.ToString()),
                     Parameter("backlog_input_units", demand.BacklogInputUnits.ToString()),
                     Parameter("placed_same_machine_count", demand.PlacedSameMachineCount.ToString()),
+                    Parameter(
+                        "inventory_same_machine_count",
+                        demand.InventorySameMachineCount.ToString()),
                     Parameter("idle_same_machine_count", demand.IdleSameMachineCount.ToString()),
                     Parameter("process_cycle_minutes", demand.ProcessCycleMinutes.ToString()),
                     Parameter("next_arrival_days", demand.NextArrivalDays.ToString()),

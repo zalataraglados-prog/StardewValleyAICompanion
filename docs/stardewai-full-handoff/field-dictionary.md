@@ -227,6 +227,10 @@ Status values:
 | `options.pause_when_out_of_focus` | Hidden runtime should not pause | `Game1.options.pauseWhenOutOfFocus`; pause check in `Game1` | Options Wiki | covered_for_read / opt_in_apply | AI settings recommend `false` for hidden/silent sandbox runs. |
 | `tent_kit` / `sleptInTemporaryBed` | Future special-case temporary-bed sleep path | `(O)TentKit` placement, `Tent`, `SleepTent_Yes`, `Farmer.sleptInTemporaryBed` | Tent Kit Wiki | evidenced / blocked_for_execution | Separate from normal farmhouse `executor.sleep`; needs dedicated fields for Tent Kit inventory, 3x2 placement area, outdoors/festival constraints, tent interaction, and same-location wake-up recording. |
 
+## Machine Support Intent Addendum
+
+EVD-169 supersedes the earlier `goal_support_*` row's final pending sentence. `strategy_commitment_ledger.v1.machine_support_intents[]` now preserves an explicitly valued machine-capacity decision across craft selection, exact same-map placement, fresh positive deterministic input loading, and later processing observation. Inventory copies of the same machine reduce unmet capacity. Additional consumed materials, nonpositive or incomplete value, remote continuation, and stochastic outputs fail closed. Compiler and dispatch reject ledger drift. A hidden/silent isolated full-lifecycle runtime smoke remains pending.
+
 ## Remaining Dictionary Gaps
 
 | Gap | Why it matters | Current blocker |

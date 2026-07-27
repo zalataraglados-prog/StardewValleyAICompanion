@@ -242,6 +242,101 @@ public sealed class StrategyCommitmentLedgerTests
     }
 
     [Fact]
+    public void MachineSupportIntentBindsPlacementAndCompletesOnProcessing()
+    {
+        var initial = MachineSupportSnapshot(processing: false);
+        var service = new MachineSupportIntentLedgerService();
+        var selected = service.Upsert(
+            null,
+            initial,
+            new MachineSupportIntentUpsertRequest
+            {
+                StateHash = initial.StateHash,
+                IntentId = "machine-support:money:keg",
+                Stage = MachineSupportIntentStages.CraftSelected,
+                SourceDecisionId = "machine-craft:keg",
+                GoalId = "goal.economy.earn_money",
+                QualifiedItemId = "(BC)12",
+                ItemId = "12",
+                DemandClass =
+                    "production_capacity_requirement",
+                SupportKind =
+                    "machine_capacity_current_backlog",
+                EvidenceStatus =
+                    "bounded_current_backlog_positive|complete_exact_native_consumption_sale_value",
+                GrossBenefit = 400,
+                OpportunityCost = 60,
+                NetBenefit = 340,
+                SupportScore = 0.034,
+                RequiredAdditionalMachineCount = 1
+            },
+            "2026-07-27T01:00:00Z");
+
+        Assert.True(
+            selected.Accepted,
+            string.Join(";", selected.Errors));
+        var selectedIntent = Assert.Single(
+            selected.Ledger!.MachineSupportIntents);
+        Assert.Equal(
+            MachineSupportIntentStages.CraftSelected,
+            selectedIntent.Stage);
+        Assert.Null(selectedIntent.TargetTileX);
+
+        var bound = service.Upsert(
+            selected.Ledger,
+            initial,
+            new MachineSupportIntentUpsertRequest
+            {
+                StateHash = initial.StateHash,
+                ExpectedLedgerRevision =
+                    selected.Ledger.Revision,
+                IntentId = selectedIntent.IntentId,
+                Stage =
+                    MachineSupportIntentStages.PlacementBound,
+                SourceDecisionId = "machine-place:keg",
+                GoalId = selectedIntent.GoalId,
+                QualifiedItemId =
+                    selectedIntent.QualifiedItemId,
+                ItemId = selectedIntent.ItemId,
+                TargetLocationId = "Farm",
+                TargetTileX = 7,
+                TargetTileY = 5
+            },
+            "2026-07-27T01:01:00Z");
+
+        Assert.True(
+            bound.Accepted,
+            string.Join(";", bound.Errors));
+        var boundIntent = Assert.Single(
+            bound.Ledger!.MachineSupportIntents);
+        Assert.Equal(
+            MachineSupportIntentStages.PlacementBound,
+            boundIntent.Stage);
+        Assert.Equal(7, boundIntent.TargetTileX);
+
+        var completed = service.ReconcileCompleted(
+            bound.Ledger,
+            MachineSupportSnapshot(processing: true),
+            "2026-07-27T01:02:00Z");
+        var completedIntent = Assert.Single(
+            completed.MachineSupportIntents);
+        Assert.Equal(
+            StrategyCommitmentStatuses.Completed,
+            completedIntent.Status);
+        Assert.Equal(
+            "exact_target_machine_processing_observed",
+            completedIntent.CompletionReason);
+        Assert.Equal(
+            new[]
+            {
+                "machine_support_select",
+                "machine_support_bind_placement",
+                "machine_support_complete"
+            },
+            completed.History.Select(row => row.Operation));
+    }
+
+    [Fact]
     public void CrossLocationRelocationRequiresTypedResolvedRouteAndBenefit()
     {
         var snapshot = CrossLocationMachineRelocationSnapshot();
@@ -480,6 +575,61 @@ public sealed class StrategyCommitmentLedgerTests
                 Status = FieldStatus.Available
             },
             GameTick = 1,
+            State = state,
+            StateHash = SnapshotHash.ComputeStateHash(state)
+        };
+    }
+
+    private static SnapshotEnvelope MachineSupportSnapshot(
+        bool processing)
+    {
+        var machine = processing
+            ? """
+              {
+                "location_id":"Farm",
+                "tile_x":7,
+                "tile_y":5,
+                "qualified_item_id":"(BC)12",
+                "minutes_until_ready":100,
+                "ready_for_harvest":false
+              }
+              """
+            : string.Empty;
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+                $$"""
+                {
+                  "identity": {
+                    "save_id":{"value":"TestFarm","status":"available"},
+                    "player_id":{"value":"123","status":"available"}
+                  },
+                  "player": {
+                    "location_id":{
+                      "value":"Farm",
+                      "status":"available"
+                    }
+                  },
+                  "farm": {
+                    "machines":{
+                      "value":[{{machine}}],
+                      "status":"available"
+                    }
+                  }
+                }
+                """)!;
+        return new SnapshotEnvelope
+        {
+            SaveId = new FieldEnvelope<string?>
+            {
+                Value = "TestFarm",
+                Status = FieldStatus.Available
+            },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "123",
+                Status = FieldStatus.Available
+            },
+            GameTick = processing ? 2 : 1,
             State = state,
             StateHash = SnapshotHash.ComputeStateHash(state)
         };

@@ -73,6 +73,21 @@ namespace StardewAI.Core.Training
                                 candidate.ExpectedEffect,
                                 goalId)
                             : null;
+                    var machineSupportIntentId =
+                        goalSupport?.Status ==
+                        "supported_bounded_positive_net_benefit"
+                            ? "machine-support:" +
+                              goalId + ":" +
+                              candidate.CandidateId +
+                              ":fleet=" +
+                              ParseValue(
+                                  candidate.ExpectedEffect,
+                                  "placed_same_machine_count=") +
+                              ":required=" +
+                              ParseValue(
+                                  candidate.ExpectedEffect,
+                                  "required_additional_machine_count=")
+                            : string.Empty;
                     var expectedEffect =
                         candidate.ExpectedEffect +
                         AnvilReforgeStrategicDemandProjection
@@ -94,6 +109,23 @@ namespace StardewAI.Core.Training
                                         .SmallModelActionParameter>()
                                 : ExplicitGoalSupportProjection
                                     .Parameters(goalSupport))
+                        .Concat(
+                            string.IsNullOrWhiteSpace(
+                                machineSupportIntentId)
+                                ? Array.Empty<
+                                    StardewAI.Contracts.Execution
+                                        .SmallModelActionParameter>()
+                                :
+                                [
+                                    new StardewAI.Contracts.Execution
+                                        .SmallModelActionParameter
+                                    {
+                                        Name =
+                                            "machine_support_intent_id",
+                                        Value =
+                                            machineSupportIntentId
+                                    }
+                                ])
                         .ToArray();
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward
@@ -152,6 +184,8 @@ namespace StardewAI.Core.Training
                         urgencySignal = 0.035 +
                             MachineInputOpportunityCostSignal(
                                 candidate.ExpectedEffect) +
+                            MachineSupportContinuationSignal(
+                                candidate.ExpectedEffect) +
                             anvilDemand.EffectiveDemandScore *
                             0.05;
                     }
@@ -166,6 +200,12 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = MachineLayoutBenefitSignal(
                             candidate.ExpectedEffect);
+                    }
+                    if (candidate.Kind == "place_machine_item")
+                    {
+                        urgencySignal =
+                            MachineSupportContinuationSignal(
+                                candidate.ExpectedEffect);
                     }
                     if (candidate.Kind == "craft_storage_item")
                     {
@@ -434,6 +474,27 @@ namespace StardewAI.Core.Training
                 100 => 0.05,
                 _ => -0.20
             };
+        }
+
+        private static double MachineSupportContinuationSignal(
+            string expectedEffect)
+        {
+            if (!string.Equals(
+                    ParseValue(
+                        expectedEffect,
+                        "machine_support_continuation_status="),
+                    "active",
+                    StringComparison.Ordinal))
+            {
+                return 0;
+            }
+
+            return Math.Clamp(
+                ParseDouble(
+                    expectedEffect,
+                    "machine_support_continuation_score=") ?? 0,
+                0,
+                0.12);
         }
 
         private static double MachineLayoutBenefitSignal(

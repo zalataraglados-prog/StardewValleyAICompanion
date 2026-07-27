@@ -173,6 +173,7 @@ namespace StardewAI.Core.Execution
                 ReadIntParameter(action, "potential_input_count") != demand.PotentialInputCount ||
                 ReadIntParameter(action, "backlog_input_units") != demand.BacklogInputUnits ||
                 ReadIntParameter(action, "placed_same_machine_count") != demand.PlacedSameMachineCount ||
+                ReadIntParameter(action, "inventory_same_machine_count") != demand.InventorySameMachineCount ||
                 ReadIntParameter(action, "idle_same_machine_count") != demand.IdleSameMachineCount ||
                 ReadIntParameter(action, "process_cycle_minutes") != demand.ProcessCycleMinutes ||
                 ReadIntParameter(action, "next_arrival_days") != demand.NextArrivalDays ||
@@ -237,6 +238,21 @@ namespace StardewAI.Core.Execution
                 reasons.Add(
                     "craft_machine_item_goal_support_projection_drifted");
             }
+            if (!MachineSupportIntentMatches(
+                    action,
+                    commitmentLedger,
+                    expectedGoalSupport,
+                    demand,
+                    ReadString(
+                        row.Value,
+                        "output_qualified_item_id"),
+                    ReadString(
+                        row.Value,
+                        "output_item_id")))
+            {
+                reasons.Add(
+                    "craft_machine_item_support_intent_drifted");
+            }
 
             return reasons.ToArray();
         }
@@ -253,6 +269,91 @@ namespace StardewAI.Core.Execution
                     ReadParameter(action, parameter.Name),
                     parameter.Value,
                     StringComparison.Ordinal));
+        }
+
+        private static bool MachineSupportIntentMatches(
+            SmallModelAction action,
+            StrategyCommitmentLedger? ledger,
+            ExplicitGoalSupportDemand expectedSupport,
+            MachineDemandProjection demand,
+            string outputQualifiedItemId,
+            string outputItemId)
+        {
+            var intentId = ReadParameter(
+                action,
+                "machine_support_intent_id");
+            if (expectedSupport.Status !=
+                "supported_bounded_positive_net_benefit")
+            {
+                return string.IsNullOrWhiteSpace(intentId);
+            }
+
+            var intent = ledger?.MachineSupportIntents
+                .FirstOrDefault(row =>
+                    string.Equals(
+                        row.IntentId,
+                        intentId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        row.Status,
+                        StrategyCommitmentStatuses.Active,
+                        StringComparison.Ordinal));
+            return intent is not null &&
+                ReadIntParameter(
+                    action,
+                    "machine_support_intent_revision") ==
+                    intent.Revision &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "machine_support_intent_stage"),
+                    intent.Stage,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "machine_support_intent_source_state_hash"),
+                    intent.SourceStateHash,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.Stage,
+                    MachineSupportIntentStages.CraftSelected,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.GoalId,
+                    expectedSupport.ParentGoalId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.QualifiedItemId,
+                    outputQualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    intent.ItemId,
+                    outputItemId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.DemandClass,
+                    demand.DemandClass,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.SupportKind,
+                    expectedSupport.SupportKind,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.EvidenceStatus,
+                    expectedSupport.EvidenceStatus,
+                    StringComparison.Ordinal) &&
+                intent.GrossBenefit ==
+                    expectedSupport.GrossBenefit &&
+                intent.OpportunityCost ==
+                    expectedSupport.OpportunityCost &&
+                intent.NetBenefit ==
+                    expectedSupport.NetBenefit &&
+                Math.Abs(
+                    intent.SupportScore -
+                    expectedSupport.Score) < 0.0000001 &&
+                intent.RequiredAdditionalMachineCount ==
+                    demand.RequiredAdditionalMachineCount;
         }
 
         private static JsonElement? MachineCraftingRow(SnapshotEnvelope snapshot, string? recipeName)

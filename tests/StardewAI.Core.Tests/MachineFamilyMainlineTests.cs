@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
@@ -77,6 +78,140 @@ public sealed class MachineFamilyMainlineTests
         Assert.Equal("Farm(66,15):slot0:" + family.InputQualifiedId, loadStep.Target);
         Assert.Contains("predicted_output_qualified_item_id=" + family.OutputQualifiedId, loadStep.ExpectedEffect);
         Assert.Contains("predicted_minutes_until_ready=" + family.MinutesUntilReady, loadStep.ExpectedEffect);
+    }
+
+    [Fact]
+    public void SupportedMachineLoadInheritsExactPositiveIntent()
+    {
+        var family = (MachineFamily)Families
+            .Single(row =>
+                ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var snapshot = Snapshot(FamilySnapshot(family));
+        var ledger = MachineSupportLedger(family);
+        var availability =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions: true,
+                    ledger);
+        var candidate = Assert.Single(
+            availability.Options[0].EventCandidates.Where(row =>
+                row.Kind == "load_machine_input_tile" &&
+                row.TileX == 66 &&
+                row.TileY == 15));
+
+        Assert.Equal(
+            "active",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_continuation_status"));
+        Assert.Equal(
+            "machine-support:money:keg",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_intent_id"));
+        Assert.Equal(
+            (family.OutputSalePrice - family.InputSalePrice)
+                .ToString(),
+            Parameter(
+                candidate.Parameters,
+                "machine_support_current_input_net_benefit"));
+
+        var ranked = Assert.Single(
+            new EventCandidateRanker()
+                .Rank(
+                    new BaselineTrainingReport(),
+                    availability,
+                    "goal.economy.earn_money")
+                .Where(row =>
+                    row.CandidateId == candidate.CandidateId));
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            ledger);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(
+                ";",
+                queue.Items.SelectMany(item =>
+                    item.BlockingReasons)));
+        var load = queue.Items.Single(item =>
+            item.OptionId == "executor.load_machine_input");
+        Assert.Contains(
+            load.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name ==
+                    "machine_support_intent_id" &&
+                parameter.Value ==
+                    "machine-support:money:keg");
+        var dispatch =
+            new ActionQueueDispatchReadinessService()
+                .Evaluate(
+                    queue,
+                    load,
+                    ledger,
+                    snapshot.StateHash);
+        Assert.True(
+            dispatch.Ready,
+            string.Join(";", dispatch.BlockingReasons));
+
+        plan.Steps.Single(step =>
+            step.Kind == "load_machine_input").Parameters
+            .Single(parameter =>
+                parameter.Name ==
+                    "machine_support_current_input_net_benefit")
+            .Value = "999999";
+        var tampered = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            ledger);
+        Assert.Contains(
+            "load_machine_input_support_intent_drifted",
+            tampered.Items.Single(item =>
+                item.OptionId ==
+                    "executor.load_machine_input")
+                .BlockingReasons);
+    }
+
+    [Fact]
+    public void SupportedMachineLoadRejectsNonPositiveCurrentInput()
+    {
+        var family = (MachineFamily)Families
+            .Single(row =>
+                ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var nonPositiveFamily = family with
+        {
+            OutputSalePrice = family.InputSalePrice
+        };
+        var snapshot = Snapshot(
+            FamilySnapshot(nonPositiveFamily));
+        var candidate = Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions: true,
+                    MachineSupportLedger(family))
+                .Options[0].EventCandidates.Where(row =>
+                    row.Kind == "load_machine_input_tile" &&
+                    row.TileX == 66 &&
+                    row.TileY == 15));
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "machine_support_current_input_not_positive",
+            candidate.BlockReasons);
+        Assert.Equal(
+            "blocked_current_input_not_positive",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_continuation_status"));
     }
 
     [Theory]
@@ -210,7 +345,7 @@ public sealed class MachineFamilyMainlineTests
     private static string MachineRow(int x, int y, MachineFamily family, bool ready, int minutes, bool held, bool loadable)
     {
         return """
-        {"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"machine_execution_semantics":{"status":"available","execution_status":"available_data_driven","input_dispatch_kind":"base_object_data_driven","prediction_training_status":"exact_current_snapshot_probe_supported"},"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","machine_data":{"status":"available","has_output":true,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
+        {"location_id":"Farm","location_kind":"farm_outdoor","machine_has_input":true,"tile_x":TILE_X,"tile_y":TILE_Y,"qualified_item_id":"MACHINE_QID","display_name":"MACHINE_NAME","ready_for_harvest":READY,"minutes_until_ready":MINUTES,"machine_execution_semantics":{"status":"available","execution_status":"available_data_driven","input_dispatch_kind":"base_object_data_driven","prediction_training_status":"exact_current_snapshot_probe_supported"},"harvest_experience_raw":"","harvest_experience_entries":[],"harvest_experience_deltas":[],"harvest_experience_deltas_json":"[]","harvest_mastery_experience_delta":0,"harvest_experience_projection_status":"exact_no_configured_experience","machine_data":{"status":"available","has_output":true,"additional_consumed_item_count":0,"output_rule_count":1,"output_rules":[{"id":"family_rule","required_item_id":"INPUT_QID","minutes_until_ready":DURATION,"output_item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"sale_price":OUTPUT_PRICE}}]},"held_item":HELD,"loadable_inputs":LOADABLE}
         """
         .Replace("TILE_X", x.ToString())
         .Replace("TILE_Y", y.ToString())
@@ -273,6 +408,50 @@ public sealed class MachineFamilyMainlineTests
             State = state
         };
     }
+
+    private static StrategyCommitmentLedger MachineSupportLedger(
+        MachineFamily family) => new()
+        {
+            LedgerId = "ledger:machine-support",
+            Revision = 2,
+            SourceStateHash = "state:placement",
+            MachineSupportIntents =
+            [
+                new MachineSupportIntent
+                {
+                    IntentId = "machine-support:money:keg",
+                    Revision = 2,
+                    Status = StrategyCommitmentStatuses.Active,
+                    Stage =
+                        MachineSupportIntentStages.PlacementBound,
+                    SourceDecisionId = "machine-place:keg",
+                    SourceStateHash = "state:placement",
+                    GoalId = "goal.economy.earn_money",
+                    QualifiedItemId = family.MachineQualifiedId,
+                    ItemId = family.MachineQualifiedId[
+                        "(BC)".Length..],
+                    DemandClass =
+                        "production_capacity_requirement",
+                    SupportKind =
+                        "machine_capacity_current_backlog",
+                    EvidenceStatus = "complete",
+                    GrossBenefit = 400,
+                    OpportunityCost = 60,
+                    NetBenefit = 340,
+                    SupportScore = 0.034,
+                    RequiredAdditionalMachineCount = 1,
+                    TargetLocationId = "Farm",
+                    TargetTileX = 66,
+                    TargetTileY = 15
+                }
+            ]
+        };
+
+    private static string Parameter(
+        IEnumerable<SmallModelActionParameter> parameters,
+        string name) =>
+        parameters.Single(parameter =>
+            parameter.Name == name).Value;
 
     public sealed record MachineFamily(
         string DisplayName,

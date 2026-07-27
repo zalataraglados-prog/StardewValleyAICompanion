@@ -23,6 +23,7 @@ internal sealed record MachineDemandProjection(
     int BacklogProcessingNetValue,
     int CapacityDeficitProcessingNetValue,
     int PlacedSameMachineCount,
+    int InventorySameMachineCount,
     int IdleSameMachineCount,
     int ProcessCycleMinutes,
     int NextArrivalDays,
@@ -115,7 +116,16 @@ internal static class MachineDemandProjectionEvaluator
             : capacityPerNewMachineBetweenWaves > 0
                 ? DivideRoundUp(arrivalWaveDeficit, capacityPerNewMachineBetweenWaves)
                 : arrivalWaveDeficit;
-        var requiredAdditional = Math.Max(backlogAdditional, arrivalAdditional);
+        var inventorySameMachineCount =
+            ReadInventorySameMachineCount(
+                snapshot,
+                qualifiedId);
+        var requiredAdditional = Math.Max(
+            0,
+            Math.Max(
+                backlogAdditional,
+                arrivalAdditional) -
+            inventorySameMachineCount);
         var latestBuildLead = backlogAdditional > 0 && cycleMinutes > 0
             ? DivideRoundUp(deficit, backlogAdditional) * cycleMinutes
             : 0;
@@ -125,10 +135,21 @@ internal static class MachineDemandProjectionEvaluator
             ((inputs.Length > 0 && backlogUnits > 0) || (cropWave.Days >= 0 && cropWave.ServiceIntervalDays > 0));
         var productionRequired = horizonComplete && requiredAdditional > 0 && buildWindowOpen;
         var collectionRequired = ReadInt(recipe, "times_crafted") == 0;
+        var machineData =
+            recipe.TryGetProperty(
+                "output_machine_data",
+                out var outputMachineData) &&
+            outputMachineData.ValueKind == JsonValueKind.Object
+                ? outputMachineData
+                : default;
         var economicValue =
             MachineDemandEconomicValueProjection.Evaluate(
                 inputs,
-                deficit);
+                deficit,
+                ReadInt(
+                    machineData,
+                    "additional_consumed_item_count",
+                    -1) == 0);
 
         var machineScale = taskSources.Length > 0
             ? "collection_scale_one_off"
@@ -191,6 +212,7 @@ internal static class MachineDemandProjectionEvaluator
             economicValue.BacklogNetValue,
             economicValue.CapacityDeficitNetValue,
             fleet.Rows.Length,
+            inventorySameMachineCount,
             fleet.Rows.Count(row => row.BusyMinutes == 0),
             cycleMinutes,
             cropWave.Days,
@@ -205,8 +227,8 @@ internal static class MachineDemandProjectionEvaluator
             windowMinutes,
             buildWindowOpen,
             cropWave.Source,
-            cropWave.CommitmentIds.Length > 0 ? commitmentLedger?.LedgerId ?? string.Empty : string.Empty,
-            cropWave.CommitmentIds.Length > 0 ? commitmentLedger?.Revision ?? 0 : 0,
+            commitmentLedger?.LedgerId ?? string.Empty,
+            commitmentLedger?.Revision ?? 0,
             cropWave.CommitmentIds,
             collectionRequired,
             collectionRequired ? "craft_master_uncompleted_learned_recipe" : "already_crafted_at_least_once");
@@ -232,6 +254,41 @@ internal static class MachineDemandProjectionEvaluator
                 inputSalePrice,
                 ReadPredictedOutputs(row)))
             .ToArray();
+    }
+
+    private static int ReadInventorySameMachineCount(
+        SnapshotEnvelope snapshot,
+        string qualifiedItemId)
+    {
+        var placement = ReadStateFieldValue(
+            snapshot,
+            "player",
+            "machine_placement");
+        if (!placement.HasValue ||
+            placement.Value.ValueKind != JsonValueKind.Object ||
+            !placement.Value.TryGetProperty("rows", out var rows) ||
+            rows.ValueKind != JsonValueKind.Array)
+        {
+            return 0;
+        }
+
+        long total = 0;
+        foreach (var row in rows.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(row, "qualified_item_id"),
+                    qualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                total += Math.Max(0, ReadInt(row, "stack"));
+                if (total >= int.MaxValue)
+                {
+                    return int.MaxValue;
+                }
+            }
+        }
+        return (int)total;
     }
 
     private static PredictedMachineDemandOutput[] ReadPredictedOutputs(JsonElement input)

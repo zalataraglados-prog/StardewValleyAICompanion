@@ -159,6 +159,11 @@ public sealed class MachineRelocationIntentPlanBinderTests
             };
         }
 
+        public StrategyCommitmentMutationResult UpsertMachineSupport(
+            SnapshotEnvelope snapshot,
+            MachineSupportIntentUpsertRequest request) =>
+            throw new NotSupportedException();
+
         public StrategyCommitmentMutationResult Upsert(
             SnapshotEnvelope snapshot,
             CropPlantingCommitmentUpsertRequest request) =>

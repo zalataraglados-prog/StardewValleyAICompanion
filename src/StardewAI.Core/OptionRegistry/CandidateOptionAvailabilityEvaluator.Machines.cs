@@ -19,7 +19,7 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)
         {
-            return MachineServiceCandidates(snapshot)
+            return MachineServiceCandidates(snapshot, commitmentLedger)
                 .Concat(IncubatorNamingCandidates(snapshot))
                 .Concat(MachineCraftingCandidates(snapshot, commitmentLedger))
                 .Concat(StorageCraftingCandidates(snapshot, commitmentLedger))
@@ -33,7 +33,9 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate[] MachineServiceCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] MachineServiceCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             var machines = ReadStateFieldValue(snapshot, "farm", "machines");
             if (!machines.HasValue || machines.Value.ValueKind != JsonValueKind.Array)
@@ -184,7 +186,16 @@ namespace StardewAI.Core.OptionRegistry
                         Parameters = parameters.ToArray()
                     };
                     var candidates = new List<EventCandidate> { outputCandidate };
-                    candidates.AddRange(MachineLoadInputCandidates(snapshot, machine, machineLocation, x, y, playerX, playerY, standTile));
+                    candidates.AddRange(MachineLoadInputCandidates(
+                        snapshot,
+                        machine,
+                        machineLocation,
+                        x,
+                        y,
+                        playerX,
+                        playerY,
+                        standTile,
+                        commitmentLedger));
                     return candidates.ToArray();
                 })
                 .OrderBy(candidate => candidate.TileY ?? int.MaxValue)
@@ -288,7 +299,8 @@ namespace StardewAI.Core.OptionRegistry
             int y,
             int playerX,
             int playerY,
-            MachineStandTileSelection standTile)
+            MachineStandTileSelection standTile,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (!machine.TryGetProperty("loadable_inputs", out var inputs) || inputs.ValueKind != JsonValueKind.Array)
             {
@@ -315,6 +327,16 @@ namespace StardewAI.Core.OptionRegistry
                 ? ReadString(machineExecutionSemantics, "input_dispatch_kind")
                 : string.Empty;
             var inventoryStacks = InventoryStacksByQualifiedId(snapshot);
+            var machineQualifiedItemId = ReadString(
+                machine,
+                "qualified_item_id");
+            var supportIntent =
+                MachineSupportIntentProjection.SelectForLoad(
+                    commitmentLedger,
+                    machineQualifiedItemId,
+                    machineLocation,
+                    x,
+                    y);
             return inputs.EnumerateArray()
                 .Where(input => input.ValueKind == JsonValueKind.Object)
                 .Select(input =>
@@ -396,6 +418,22 @@ namespace StardewAI.Core.OptionRegistry
                             ? AnvilLoadoutExpectedEffect(
                                 anvilLoadout)
                             : string.Empty;
+                    var supportContinuation =
+                        MachineSupportIntentProjection.Load(
+                            supportIntent,
+                            MachineSupportIntentProjection
+                                .CurrentInputNetValue(
+                                    machine,
+                                    input));
+                    if (supportIntent is not null &&
+                        !string.Equals(
+                            supportContinuation.Status,
+                            "active",
+                            StringComparison.Ordinal))
+                    {
+                        blockReasons.Add(
+                            "machine_support_current_input_not_positive");
+                    }
                     return new EventCandidate
                     {
                         CandidateId = "machine-input:" + machineLocation + ":" + x + "," + y + ":slot" + slotIndex + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
@@ -434,7 +472,12 @@ namespace StardewAI.Core.OptionRegistry
                                 ? ";machine_output_distribution_outcome_kind=" +
                                   predictionTrainingContract.OutcomeKind
                                 : string.Empty) +
-                            anvilLoadoutEffect,
+                            anvilLoadoutEffect +
+                            (supportIntent is null
+                                ? string.Empty
+                                : MachineSupportIntentProjection
+                                    .ExpectedEffectSuffix(
+                                        supportContinuation)),
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -476,6 +519,13 @@ namespace StardewAI.Core.OptionRegistry
                         .Concat(
                             AnvilLoadoutParameters(
                                 anvilLoadout))
+                        .Concat(
+                            supportIntent is null
+                                ? Array.Empty<
+                                    SmallModelActionParameter>()
+                                : MachineSupportIntentProjection
+                                    .Parameters(
+                                        supportContinuation))
                         .ToArray()
                     };
                 })

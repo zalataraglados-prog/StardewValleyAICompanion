@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -19,12 +21,17 @@ public sealed partial class MachineCraftingMainlineTests
             ready: true,
             potentialInputs: 2,
             processMinutes: 4000);
+        var initialLedger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger:machine-support"
+        };
         var availability =
             new CandidateOptionAvailabilityEvaluator()
                 .Evaluate(
                     snapshot,
                     new[] { "farm.process_machines" },
-                    includeExecutorCalibrationOptions: true);
+                    includeExecutorCalibrationOptions: true,
+                    initialLedger);
         var broad = Assert.Single(
             new EventCandidateRanker()
                 .Rank(
@@ -78,11 +85,20 @@ public sealed partial class MachineCraftingMainlineTests
             new[] { supported },
             snapshot.StateHash,
             "goal.economy.earn_money");
+        var ledger = BindCraftSupportIntent(
+            plan,
+            snapshot.StateHash);
         var queue = new ActionQueueCompiler().Compile(
             plan,
-            snapshot);
+            snapshot,
+            ledger);
 
-        Assert.Equal("pending", queue.Status);
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(
+                ";",
+                queue.Items.SelectMany(item =>
+                    item.BlockingReasons)));
         var item = Assert.Single(queue.Items);
         Assert.Contains(
             item.NormalizedCommand.Parameters,
@@ -264,5 +280,249 @@ public sealed partial class MachineCraftingMainlineTests
             Parameter(
                 economy.Parameters,
                 "goal_support_status"));
+    }
+
+    [Fact]
+    public void AdditionalMachineConsumptionFailsClosedForSupportValue()
+    {
+        var original = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 2,
+            processMinutes: 4000);
+        var root = JsonNode.Parse(
+            JsonSerializer.Serialize(original.State))!.AsObject();
+        root["player"]!["machine_crafting"]!["value"]![
+            "rows"]![0]!["output_machine_data"]![
+            "additional_consumed_item_count"] = 1;
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+            root.ToJsonString(),
+            JsonOptions)!;
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = original.SchemaVersion,
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = original.GameTick,
+            RealTimestamp = original.RealTimestamp,
+            Completeness = original.Completeness,
+            State = state
+        };
+        var availability =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions: true);
+        var economy = Assert.Single(
+            new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                availability,
+                "goal.economy.earn_money")
+            .Where(row => row.Kind == "craft_machine_item"));
+
+        Assert.Equal(
+            "incomplete_additional_consumed_material_value",
+            Parameter(
+                economy.Parameters,
+                "machine_economic_value_status"));
+        Assert.Equal(
+            "blocked_incomplete_economic_evidence",
+            Parameter(
+                economy.Parameters,
+                "goal_support_status"));
+        Assert.DoesNotContain(
+            economy.Parameters,
+            parameter =>
+                parameter.Name == "machine_support_intent_id");
+    }
+
+    [Fact]
+    public void CraftedInventoryMachinesSatisfyRemainingCapacityDeficit()
+    {
+        var original = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 2,
+            processMinutes: 4000);
+        var root = JsonNode.Parse(
+            JsonSerializer.Serialize(original.State))!.AsObject();
+        var machineQualifiedId = root["player"]![
+                "machine_crafting"]!["value"]!["rows"]![0]![
+                "output_qualified_item_id"]!
+            .GetValue<string>();
+        root["player"]!["machine_placement"] =
+            JsonNode.Parse(
+                """
+                {
+                  "value":{
+                    "rows":[
+                      {
+                        "qualified_item_id":"MACHINE_QUALIFIED_ID",
+                        "stack":1
+                      },
+                      {
+                        "qualified_item_id":"MACHINE_QUALIFIED_ID",
+                        "stack":1
+                      }
+                    ]
+                  },
+                  "status":"available"
+                }
+                """.Replace(
+                    "MACHINE_QUALIFIED_ID",
+                    machineQualifiedId));
+        var state = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(
+            root.ToJsonString(),
+            JsonOptions)!;
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = original.SchemaVersion,
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = original.GameTick,
+            RealTimestamp = original.RealTimestamp,
+            Completeness = original.Completeness,
+            State = state
+        };
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger:machine-support",
+            Revision = 1
+        };
+        var candidate = Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions: true,
+                    ledger)
+                .Options[0].EventCandidates.Where(row =>
+                    row.Kind == "craft_machine_item"));
+
+        Assert.False(candidate.Available);
+        Assert.Equal(
+            "2",
+            Parameter(
+                candidate.Parameters,
+                "inventory_same_machine_count"));
+        Assert.Equal(
+            "0",
+            Parameter(
+                candidate.Parameters,
+                "required_additional_machine_count"));
+        Assert.Contains(
+            "machine_recipe_has_no_proven_task_production_or_collection_requirement",
+            candidate.BlockReasons);
+    }
+
+    private static StrategyCommitmentLedger BindCraftSupportIntent(
+        SmallModelPlanEnvelope plan,
+        string stateHash)
+    {
+        var step = Assert.Single(plan.Steps);
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger:machine-support",
+            Revision = 1,
+            SourceStateHash = stateHash,
+            MachineSupportIntents =
+            [
+                new MachineSupportIntent
+                {
+                    IntentId = PlanParameter(
+                        step,
+                        "machine_support_intent_id"),
+                    Revision = 1,
+                    Status = StrategyCommitmentStatuses.Active,
+                    Stage =
+                        MachineSupportIntentStages.CraftSelected,
+                    SourceDecisionId = "machine-craft:test",
+                    SourceStateHash = stateHash,
+                    GoalId = PlanParameter(
+                        step,
+                        "goal_support_parent_goal_id"),
+                    QualifiedItemId = PlanParameter(
+                        step,
+                        "output_qualified_item_id"),
+                    ItemId = PlanParameter(
+                        step,
+                        "output_item_id"),
+                    DemandClass = PlanParameter(
+                        step,
+                        "machine_demand_class"),
+                    SupportKind = PlanParameter(
+                        step,
+                        "goal_support_kind"),
+                    EvidenceStatus = PlanParameter(
+                        step,
+                        "goal_support_evidence_status"),
+                    GrossBenefit = int.Parse(PlanParameter(
+                        step,
+                        "goal_support_gross_benefit")),
+                    OpportunityCost = int.Parse(PlanParameter(
+                        step,
+                        "goal_support_opportunity_cost")),
+                    NetBenefit = int.Parse(PlanParameter(
+                        step,
+                        "goal_support_net_benefit")),
+                    SupportScore = double.Parse(
+                        PlanParameter(
+                            step,
+                            "goal_support_score"),
+                        System.Globalization.CultureInfo
+                            .InvariantCulture),
+                    RequiredAdditionalMachineCount = int.Parse(
+                        PlanParameter(
+                            step,
+                            "required_additional_machine_count"))
+                }
+            ]
+        };
+
+        SetPlanParameter(
+            step,
+            "commitment_ledger_id",
+            ledger.LedgerId);
+        SetPlanParameter(
+            step,
+            "commitment_ledger_revision",
+            "1");
+        SetPlanParameter(
+            step,
+            "material_reservation_ledger_id",
+            ledger.LedgerId);
+        SetPlanParameter(
+            step,
+            "material_reservation_ledger_revision",
+            "1");
+        SetPlanParameter(
+            step,
+            "machine_support_intent_revision",
+            "1");
+        SetPlanParameter(
+            step,
+            "machine_support_intent_stage",
+            MachineSupportIntentStages.CraftSelected);
+        SetPlanParameter(
+            step,
+            "machine_support_intent_source_state_hash",
+            stateHash);
+        return ledger;
+    }
+
+    private static string PlanParameter(
+        SmallModelPlanStep step,
+        string name) =>
+        step.Parameters.Single(parameter =>
+            parameter.Name == name).Value;
+
+    private static void SetPlanParameter(
+        SmallModelPlanStep step,
+        string name,
+        string value)
+    {
+        step.Parameters.Single(parameter =>
+            parameter.Name == name).Value = value;
     }
 }

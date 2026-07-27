@@ -208,6 +208,13 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_final_quality");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_aging_rate_per_day");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_input_probe_source");
+            foreach (var name in MachineSupportContinuationParameterNames)
+            {
+                parameters.Add(
+                    Parameter(
+                        name,
+                        CandidateParameter(candidate, name)));
+            }
 
             steps.Add(new SmallModelPlanStep
             {
@@ -270,7 +277,18 @@ namespace StardewAI.Core.Training
                 "material_reservation_ids_json",
                 "relocation_intent_id",
                 "relocation_source_state_hash",
-                "relocation_original_placement_projection_fingerprint"
+                "relocation_original_placement_projection_fingerprint",
+                "machine_support_continuation_status",
+                "machine_support_continuation_kind",
+                "machine_support_intent_id",
+                "machine_support_intent_revision",
+                "machine_support_intent_stage",
+                "machine_support_intent_source_state_hash",
+                "machine_support_goal_id",
+                "machine_support_original_net_benefit",
+                "machine_support_current_input_net_benefit",
+                "machine_support_continuation_score",
+                "machine_support_continuation_reason"
             })
             {
                 var value = CandidateParameter(candidate, name);
@@ -320,6 +338,22 @@ namespace StardewAI.Core.Training
                 }
             };
         }
+
+        private static readonly string[]
+            MachineSupportContinuationParameterNames =
+            [
+                "machine_support_continuation_status",
+                "machine_support_continuation_kind",
+                "machine_support_intent_id",
+                "machine_support_intent_revision",
+                "machine_support_intent_stage",
+                "machine_support_intent_source_state_hash",
+                "machine_support_goal_id",
+                "machine_support_original_net_benefit",
+                "machine_support_current_input_net_benefit",
+                "machine_support_continuation_score",
+                "machine_support_continuation_reason"
+            ];
 
     }
 }

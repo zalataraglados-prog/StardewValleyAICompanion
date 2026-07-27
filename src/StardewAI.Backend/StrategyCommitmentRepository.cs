@@ -26,6 +26,10 @@ public interface IStrategyCommitmentRepository
     StrategyCommitmentMutationResult UpsertMachineRelocation(
         SnapshotEnvelope snapshot,
         MachineRelocationIntentUpsertRequest request);
+
+    StrategyCommitmentMutationResult UpsertMachineSupport(
+        SnapshotEnvelope snapshot,
+        MachineSupportIntentUpsertRequest request);
 }
 
 public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentRepository
@@ -43,6 +47,8 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
     private readonly MaterialReservationLedgerService materialService = new();
     private readonly MachineRelocationIntentLedgerService
         machineRelocationService = new();
+    private readonly MachineSupportIntentLedgerService
+        machineSupportService = new();
     private readonly Dictionary<string, StrategyCommitmentLedger> cache = new(StringComparer.Ordinal);
 
     public FileStrategyCommitmentRepository()
@@ -67,6 +73,10 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 snapshot,
                 updatedAt);
             reconciled = machineRelocationService.ReconcileCompleted(
+                reconciled,
+                snapshot,
+                updatedAt);
+            reconciled = machineSupportService.ReconcileCompleted(
                 reconciled,
                 snapshot,
                 updatedAt);
@@ -173,6 +183,27 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         }
     }
 
+    public StrategyCommitmentMutationResult UpsertMachineSupport(
+        SnapshotEnvelope snapshot,
+        MachineSupportIntentUpsertRequest request)
+    {
+        lock (sync)
+        {
+            var key = IdentityKey(snapshot);
+            var current = Load(key, snapshot);
+            var result = machineSupportService.Upsert(
+                current,
+                snapshot,
+                request,
+                DateTimeOffset.UtcNow.ToString("O"));
+            if (result.Accepted && result.Ledger is not null)
+            {
+                Save(key, result.Ledger);
+            }
+            return result;
+        }
+    }
+
     private StrategyCommitmentLedger Load(string key, SnapshotEnvelope snapshot)
     {
         if (cache.TryGetValue(key, out var cached))
@@ -203,6 +234,8 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
             ledger.MaterialReservations ??= Array.Empty<MaterialReservation>();
             ledger.MachineRelocationIntents ??=
                 Array.Empty<MachineRelocationIntent>();
+            ledger.MachineSupportIntents ??=
+                Array.Empty<MachineSupportIntent>();
             ledger.History ??= Array.Empty<StrategyCommitmentHistoryEntry>();
         }
         else

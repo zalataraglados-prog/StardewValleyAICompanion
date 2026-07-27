@@ -42,6 +42,15 @@ namespace StardewAI.Core.OptionRegistry
                             ReadString(
                                 row,
                                 "qualified_item_id"));
+                    var supportIntent = relocationIntent is null
+                        ? MachineSupportIntentProjection
+                            .SelectForPlacement(
+                                commitmentLedger,
+                                ReadString(
+                                    row,
+                                    "qualified_item_id"),
+                                currentLocationId)
+                        : null;
                     var currentCandidates =
                         relocationIntent is not null &&
                         !string.Equals(
@@ -57,7 +66,8 @@ namespace StardewAI.Core.OptionRegistry
                                     currentLocationId,
                                     projectionFingerprint,
                                     commitmentLedger,
-                                    relocationIntent)
+                                    relocationIntent,
+                                    supportIntent)
                             };
                     return currentCandidates.Concat(
                         BuildRemoteMachinePlacementCandidates(
@@ -78,7 +88,8 @@ namespace StardewAI.Core.OptionRegistry
             string currentLocationId,
             string projectionFingerprint,
             StrategyCommitmentLedger? commitmentLedger,
-            MachineRelocationIntent? relocationIntent)
+            MachineRelocationIntent? relocationIntent,
+            MachineSupportIntent? supportIntent)
         {
             var slotIndex = ReadInt(row, "inventory_slot_index", -1);
             var itemId = ReadString(row, "item_id");
@@ -87,10 +98,18 @@ namespace StardewAI.Core.OptionRegistry
             var location = CurrentMachinePlacementLocation(row, currentLocationId);
             var selection = location.HasValue
                 ? relocationIntent is null
-                    ? SelectMachinePlacementTile(
-                        snapshot,
-                        location.Value,
-                        currentLocationId)
+                    ? supportIntent?.TargetTileX is not null &&
+                      supportIntent.TargetTileY is not null
+                        ? SelectExactMachinePlacementTile(
+                            snapshot,
+                            location.Value,
+                            currentLocationId,
+                            supportIntent.TargetTileX.Value,
+                            supportIntent.TargetTileY.Value)
+                        : SelectMachinePlacementTile(
+                            snapshot,
+                            location.Value,
+                            currentLocationId)
                     : SelectExactMachinePlacementTile(
                         snapshot,
                         location.Value,
@@ -150,6 +169,9 @@ namespace StardewAI.Core.OptionRegistry
             var targetY = selection?.Target.Y;
             var standX = selection?.Stand.X;
             var standY = selection?.Stand.Y;
+            var supportContinuation =
+                MachineSupportIntentProjection.Placement(
+                    supportIntent);
             return new EventCandidate
             {
                 CandidateId = "machine-place:" + currentLocationId + ":slot" + slotIndex +
@@ -191,7 +213,12 @@ namespace StardewAI.Core.OptionRegistry
                     (standX.HasValue && standY.HasValue
                         ? ";move_to_adjacent=" + standX.Value + "," + standY.Value
                         : string.Empty) +
-                    ";native_contract=Utility.tryToPlaceItem",
+                    ";native_contract=Utility.tryToPlaceItem" +
+                    (supportIntent is null
+                        ? string.Empty
+                        : MachineSupportIntentProjection
+                            .ExpectedEffectSuffix(
+                                supportContinuation)),
                 BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                 Parameters = new[]
                 {
@@ -242,6 +269,13 @@ namespace StardewAI.Core.OptionRegistry
                             ?.MachinePlacementProjectionFingerprint ??
                         string.Empty)
                 }
+                .Concat(
+                    supportIntent is null
+                        ? Array.Empty<
+                            SmallModelActionParameter>()
+                        : MachineSupportIntentProjection.Parameters(
+                            supportContinuation))
+                .ToArray()
             };
         }
 
