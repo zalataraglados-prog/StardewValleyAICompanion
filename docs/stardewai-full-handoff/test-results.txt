@@ -3199,3 +3199,14 @@ Scope boundary:
 - TransparentBridge Release build: PASS, 0 errors.
 - Core: PASS 1231/1231.
 - Backend: PASS 94/94.
+
+2026-07-27 Statue of Endless Fortune conditional-output state
+
+- Live `Data/Machines[(BC)127]` and local 1.6.15 decompile were checked before implementation.
+- Birthday branch exposes the exact current NPC and first resolvable loved item through pure native reads.
+- Ordinary branch exposes `(O)72`, `(O)337`, `(O)749`, and `(O)336` at conditional probability `0.25` each without reading or advancing `Game1.random`.
+- Exact ordinary realized identity remains blocked; the complete distribution is planning-only.
+- Overnight output replacement is explicit because the native machine row has `ClearContentsOvernightCondition=TRUE`.
+- TransparentBridge Release build: PASS, 0 errors.
+- Core: PASS 1232/1232.
+- Backend: PASS 94/94.
