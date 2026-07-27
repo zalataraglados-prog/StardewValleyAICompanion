@@ -316,10 +316,31 @@ namespace StardewAI.Core.Training
 
         private static double MachineInputOpportunityCostSignal(string expectedEffect)
         {
+            var utilityDelta = ParseDouble(
+                expectedEffect,
+                "anvil_reforge_expected_utility_delta=");
+            var improvementProbability = ParseDouble(
+                expectedEffect,
+                "anvil_reforge_improvement_probability=");
+            var utilitySignal =
+                utilityDelta.HasValue
+                    ? Math.Clamp(
+                        utilityDelta.Value * 0.10 +
+                        ((improvementProbability ?? 0.5) -
+                         0.5) * 0.02,
+                        -0.04,
+                        0.08)
+                    : 0;
             var predictedNetValue = ParseDouble(expectedEffect, "predicted_output_net_value=");
             if (predictedNetValue.HasValue)
             {
-                return Math.Round(Math.Clamp(predictedNetValue.Value * 0.0003, -0.04, 0.08), 4);
+                return Math.Round(
+                    Math.Clamp(
+                        predictedNetValue.Value * 0.0003,
+                        -0.04,
+                        0.08) +
+                    utilitySignal,
+                    4);
             }
 
             var predictedOutputValue = ParseDouble(expectedEffect, "predicted_output_total_value=");
@@ -328,12 +349,24 @@ namespace StardewAI.Core.Training
             if (predictedOutputValue.HasValue)
             {
                 var netValue = predictedOutputValue.Value - (opportunityCost ?? 0);
-                return Math.Round(Math.Clamp(netValue * 0.0003, -0.04, 0.08), 4);
+                return Math.Round(
+                    Math.Clamp(
+                        netValue * 0.0003,
+                        -0.04,
+                        0.08) +
+                    utilitySignal,
+                    4);
             }
 
             return opportunityCost.HasValue
-                ? Math.Round(Math.Clamp(opportunityCost.Value * -0.0002, -0.04, 0), 4)
-                : 0;
+                ? Math.Round(
+                    Math.Clamp(
+                        opportunityCost.Value * -0.0002,
+                        -0.04,
+                        0) +
+                    utilitySignal,
+                    4)
+                : Math.Round(utilitySignal, 4);
         }
 
         private static double MachineInfrastructureDemandSignal(string expectedEffect)

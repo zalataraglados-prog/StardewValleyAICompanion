@@ -843,7 +843,10 @@ namespace StardewAI.Core.Execution
                                     action,
                                     "machine_prediction_contract_fingerprint"),
                                 trainingContract.Fingerprint,
-                                StringComparison.Ordinal)))
+                                StringComparison.Ordinal) ||
+                             !AnvilReforgeUtilityParametersMatch(
+                                action,
+                                predictedOutput)))
                         {
                             reasons.Add(
                                 "load_machine_input_distribution_contract_mismatch");
@@ -860,6 +863,77 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool
+            AnvilReforgeUtilityParametersMatch(
+                SmallModelAction action,
+                JsonElement predictedOutput)
+        {
+            var utility =
+                AnvilReforgeUtilityProjection.Read(
+                    predictedOutput);
+            return utility.Supported &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_utility_status"),
+                    utility.Status,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_utility_metric"),
+                    utility.MetricId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_utility_ordering"),
+                    utility.Ordering,
+                    StringComparison.Ordinal) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_current_utility",
+                    utility.CurrentUtility) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_expected_utility",
+                    utility.ExpectedUtility) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_expected_utility_delta",
+                    utility.ExpectedDelta) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_improvement_probability",
+                    utility.ImprovementProbability) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_equal_probability",
+                    utility.EqualProbability) &&
+                UtilityParameterMatches(
+                    action,
+                    "anvil_reforge_degradation_probability",
+                    utility.DegradationProbability) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_decision_class"),
+                    utility.DecisionClass,
+                    StringComparison.Ordinal);
+        }
+
+        private static bool UtilityParameterMatches(
+            SmallModelAction action,
+            string name,
+            double expected)
+        {
+            return string.Equals(
+                ReadParameter(action, name),
+                AnvilReforgeUtilityProjection.Format(
+                    expected),
+                StringComparison.Ordinal);
         }
 
         private static bool MachineUsesIncubatorCompletion(

@@ -871,6 +871,48 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_item_mismatch");
         }
 
+        var tracksAnvilDistribution =
+            string.Equals(
+                request.MachinePredictionTrainingKind,
+                "complete_distribution",
+                StringComparison.Ordinal);
+        var beforeAnvilFeedback = default(
+            AnvilReforgeFeedback);
+        var beforeAnvilReason = string.Empty;
+        if (tracksAnvilDistribution &&
+            (!string.Equals(
+                machine.QualifiedItemId,
+                "(BC)Anvil",
+                StringComparison.Ordinal) ||
+             string.IsNullOrWhiteSpace(
+                 request
+                     .MachinePredictionContractFingerprint) ||
+             !TryReadAnvilReforgeFeedback(
+                 request,
+                 input,
+                 out beforeAnvilFeedback,
+                 out beforeAnvilReason) ||
+             !string.Equals(
+                 beforeAnvilFeedback.Metric,
+                 request.AnvilReforgeUtilityMetric,
+                 StringComparison.Ordinal) ||
+             !AnvilUtilityMatches(
+                 request.AnvilReforgeCurrentUtility,
+                 beforeAnvilFeedback.Utility) ||
+             !AnvilDistributionRequestIsValid(
+                 request)))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "load_machine_input",
+                requested,
+                beforeObserved,
+                string.IsNullOrWhiteSpace(
+                    beforeAnvilReason)
+                        ? "anvil_reforge_distribution_contract_invalid"
+                        : beforeAnvilReason);
+        }
+
         if (!machine.performObjectDropInAction(input, probe: true, Game1.player))
         {
             return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_probe_rejected");
@@ -892,8 +934,32 @@ public sealed partial class ModEntry : Mod
         var afterStack = afterSlotItem?.Stack ?? 0;
         var machineStarted = machine.MinutesUntilReady > 0 || machine.readyForHarvest.Value || machine.heldObject.Value is not null;
         var inventoryChanged = !string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterStack < beforeStack;
-        var verified = acted && machineStarted && inventoryChanged;
+        var afterAnvilFeedback = default(
+            AnvilReforgeFeedback);
+        var anvilFeedbackVerified =
+            !tracksAnvilDistribution ||
+            machine.heldObject.Value is not null &&
+            TryReadAnvilReforgeFeedback(
+                request,
+                machine.heldObject.Value,
+                out afterAnvilFeedback,
+                out _) &&
+            string.Equals(
+                afterAnvilFeedback.Metric,
+                beforeAnvilFeedback.Metric,
+                StringComparison.Ordinal);
+        var verified = acted &&
+            machineStarted &&
+            inventoryChanged &&
+            anvilFeedbackVerified;
+        var recordedAnvilFeedback =
+            tracksAnvilDistribution &&
+            anvilFeedbackVerified;
         RefreshTransparentMachineProbeCache();
+        var realizedDelta = recordedAnvilFeedback
+            ? afterAnvilFeedback.Utility -
+              beforeAnvilFeedback.Utility
+            : (double?)null;
 
         return new TrainingExecutionResult
         {
@@ -909,11 +975,49 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "load_machine_input",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "machine_input_loaded", "machine_processing_started_or_output_ready", "inventory_updated", "qualified_item_id=" + inputId }
-                : new[] { acted ? "performObjectDropInAction_returned_true" : "performObjectDropInAction_returned_false", machineStarted ? "machine_started" : "machine_not_started", inventoryChanged ? "inventory_changed" : "inventory_not_changed" },
+                ? new[] { "machine_input_loaded", "machine_processing_started_or_output_ready", "inventory_updated", tracksAnvilDistribution ? "anvil_reforge_realized_utility_recorded" : "deterministic_or_non_anvil_machine_output", "qualified_item_id=" + inputId }
+                : new[] { acted ? "performObjectDropInAction_returned_true" : "performObjectDropInAction_returned_false", machineStarted ? "machine_started" : "machine_not_started", inventoryChanged ? "inventory_changed" : "inventory_not_changed", anvilFeedbackVerified ? "anvil_feedback_verified_or_not_required" : "anvil_feedback_unavailable" },
             RequestedEffect = requested,
-            ObservedEffect = afterObserved + ";input_slot_index=" + inputSlot + ";input_stack_before=" + beforeStack + ";input_stack_after=" + afterStack,
+            ObservedEffect = afterObserved + ";input_slot_index=" + inputSlot + ";input_stack_before=" + beforeStack + ";input_stack_after=" + afterStack +
+                (recordedAnvilFeedback
+                    ? ";anvil_reforge_utility_metric=" + afterAnvilFeedback.Metric +
+                      ";anvil_reforge_current_utility=" + beforeAnvilFeedback.UtilityText +
+                      ";anvil_reforge_realized_utility=" + afterAnvilFeedback.UtilityText +
+                      ";anvil_reforge_realized_utility_delta=" +
+                      Math.Round(realizedDelta ?? 0, 8).ToString("0.########", CultureInfo.InvariantCulture)
+                    : string.Empty),
             BlockReasons = verified ? Array.Empty<string>() : new[] { acted ? "load_machine_input_post_state_mismatch" : "load_machine_input_action_failed" },
+            MachineOutputDistributionOutcomeKind =
+                tracksAnvilDistribution
+                    ? request
+                        .MachineOutputDistributionOutcomeKind
+                    : string.Empty,
+            AnvilReforgeUtilityMetric =
+                tracksAnvilDistribution
+                    ? afterAnvilFeedback.Metric
+                    : string.Empty,
+            AnvilReforgeCurrentUtility =
+                tracksAnvilDistribution
+                    ? beforeAnvilFeedback.Utility
+                    : null,
+            AnvilReforgeExpectedUtility =
+                tracksAnvilDistribution
+                    ? request.AnvilReforgeExpectedUtility
+                    : null,
+            AnvilReforgeRealizedUtility =
+                recordedAnvilFeedback
+                    ? afterAnvilFeedback.Utility
+                    : null,
+            AnvilReforgeRealizedUtilityDelta =
+                realizedDelta,
+            AnvilReforgeRealizedImproved =
+                recordedAnvilFeedback
+                    ? realizedDelta > 0
+                    : null,
+            AnvilReforgeRealizedOutcomeJson =
+                recordedAnvilFeedback
+                    ? afterAnvilFeedback.OutcomeJson
+                    : string.Empty,
             ChangedFacts = verified
                 ? new[]
                 {
@@ -930,6 +1034,32 @@ public sealed partial class ModEntry : Mod
                         After = afterInventory
                     }
                 }
+                .Concat(
+                    tracksAnvilDistribution
+                        ? new[]
+                        {
+                            new SimulatedFactChange
+                            {
+                                Path =
+                                    "machine.anvil.reforge.utility",
+                                Before =
+                                    beforeAnvilFeedback.UtilityText,
+                                After =
+                                    afterAnvilFeedback.UtilityText
+                            },
+                            new SimulatedFactChange
+                            {
+                                Path =
+                                    "machine.anvil.reforge.outcome",
+                                Before =
+                                    beforeAnvilFeedback.OutcomeJson,
+                                After =
+                                    afterAnvilFeedback.OutcomeJson
+                            }
+                        }
+                        : Array.Empty<
+                            SimulatedFactChange>())
+                .ToArray()
                 : Array.Empty<SimulatedFactChange>()
         };
     }

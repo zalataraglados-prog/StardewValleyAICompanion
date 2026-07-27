@@ -102,6 +102,19 @@ static partial class Program
         return string.Empty;
     }
 
+    private static double? ReadQueueParameterDouble(
+        JsonObject? item,
+        string name)
+    {
+        return double.TryParse(
+            ReadQueueParameterString(item, name),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var value)
+                ? value
+                : null;
+    }
+
     private static bool? ReadNullableBoolQueueParameter(JsonObject? item, string name)
     {
         return bool.TryParse(ReadQueueParameterString(item, name), out var value) ? value : null;

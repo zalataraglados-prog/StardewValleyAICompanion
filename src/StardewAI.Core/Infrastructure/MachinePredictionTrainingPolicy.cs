@@ -124,6 +124,13 @@ internal static class MachinePredictionTrainingPolicy
             return MachinePredictionTrainingContract.Blocked;
         }
 
+        if (!AnvilReforgeUtilityProjection
+                .Read(predictedOutput)
+                .Supported)
+        {
+            return MachinePredictionTrainingContract.Blocked;
+        }
+
         return new MachinePredictionTrainingContract(
             true,
             "complete_distribution",

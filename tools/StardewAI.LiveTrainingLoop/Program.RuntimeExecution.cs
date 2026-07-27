@@ -539,6 +539,38 @@ static partial class Program
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
         var debrisIndex = ReadQueueParameterInt(item, "debris_index");
         var inputSlotIndex = ReadQueueParameterInt(item, "input_slot_index");
+        var machinePredictionContractFingerprint =
+            ReadQueueParameterString(
+                item,
+                "machine_prediction_contract_fingerprint");
+        var machinePredictionTrainingKind =
+            ReadQueueParameterString(
+                item,
+                "machine_prediction_training_kind");
+        var machineOutputDistributionOutcomeKind =
+            ReadQueueParameterString(
+                item,
+                "machine_output_distribution_outcome_kind");
+        var anvilReforgeUtilityMetric =
+            ReadQueueParameterString(
+                item,
+                "anvil_reforge_utility_metric");
+        var anvilReforgeCurrentUtility =
+            ReadQueueParameterDouble(
+                item,
+                "anvil_reforge_current_utility");
+        var anvilReforgeExpectedUtility =
+            ReadQueueParameterDouble(
+                item,
+                "anvil_reforge_expected_utility");
+        var anvilReforgeExpectedUtilityDelta =
+            ReadQueueParameterDouble(
+                item,
+                "anvil_reforge_expected_utility_delta");
+        var anvilReforgeImprovementProbability =
+            ReadQueueParameterDouble(
+                item,
+                "anvil_reforge_improvement_probability");
         var relocationIntentId = ReadQueueParameterString(
             item,
             "relocation_intent_id");
@@ -886,6 +918,22 @@ static partial class Program
         {
             executionRequest.InputSlotIndex = inputSlotIndex.Value;
         }
+        executionRequest.MachinePredictionContractFingerprint =
+            machinePredictionContractFingerprint;
+        executionRequest.MachinePredictionTrainingKind =
+            machinePredictionTrainingKind;
+        executionRequest.MachineOutputDistributionOutcomeKind =
+            machineOutputDistributionOutcomeKind;
+        executionRequest.AnvilReforgeUtilityMetric =
+            anvilReforgeUtilityMetric;
+        executionRequest.AnvilReforgeCurrentUtility =
+            anvilReforgeCurrentUtility;
+        executionRequest.AnvilReforgeExpectedUtility =
+            anvilReforgeExpectedUtility;
+        executionRequest.AnvilReforgeExpectedUtilityDelta =
+            anvilReforgeExpectedUtilityDelta;
+        executionRequest.AnvilReforgeImprovementProbability =
+            anvilReforgeImprovementProbability;
         executionRequest.RelocationIntentId = relocationIntentId;
         executionRequest.MachineRemovalProjectionFingerprint =
             machineRemovalProjectionFingerprint;

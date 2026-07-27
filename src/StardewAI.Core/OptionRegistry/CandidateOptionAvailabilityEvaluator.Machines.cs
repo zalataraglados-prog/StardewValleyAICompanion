@@ -806,6 +806,46 @@ namespace StardewAI.Core.OptionRegistry
                 ";predicted_output_total_value=" + totalValue +
                 ";machine_additional_consumed_total_value=" + additionalValue +
                 ";predicted_output_net_value=" + netValue;
+            if (trainingContract.Kind ==
+                "complete_distribution")
+            {
+                var utility =
+                    AnvilReforgeUtilityProjection.Read(
+                        predictedOutput);
+                if (!utility.Supported)
+                {
+                    return MachineOutputPrediction
+                        .Unavailable(
+                            "machine_distribution_utility_unavailable");
+                }
+                suffix +=
+                    ";anvil_reforge_utility_status=" +
+                    utility.Status +
+                    ";anvil_reforge_utility_metric=" +
+                    utility.MetricId +
+                    ";anvil_reforge_utility_ordering=" +
+                    utility.Ordering +
+                    ";anvil_reforge_current_utility=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.CurrentUtility) +
+                    ";anvil_reforge_expected_utility=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.ExpectedUtility) +
+                    ";anvil_reforge_expected_utility_delta=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.ExpectedDelta) +
+                    ";anvil_reforge_improvement_probability=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.ImprovementProbability) +
+                    ";anvil_reforge_equal_probability=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.EqualProbability) +
+                    ";anvil_reforge_degradation_probability=" +
+                    AnvilReforgeUtilityProjection.Format(
+                        utility.DegradationProbability) +
+                    ";anvil_reforge_decision_class=" +
+                    utility.DecisionClass;
+            }
             var requiredItemId = ReadString(predictedOutput, "required_item_id");
             if (!string.IsNullOrWhiteSpace(requiredItemId))
             {

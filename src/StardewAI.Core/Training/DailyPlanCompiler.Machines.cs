@@ -172,6 +172,16 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_prediction_training_kind");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_prediction_contract_fingerprint");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_output_distribution_outcome_kind");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_utility_status");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_utility_metric");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_utility_ordering");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_current_utility");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_expected_utility");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_expected_utility_delta");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_improvement_probability");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_equal_probability");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_degradation_probability");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "anvil_reforge_decision_class");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_hatch_animal_type_id");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_suggested_hatch_name");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_unreserved_hatch_slot_count");

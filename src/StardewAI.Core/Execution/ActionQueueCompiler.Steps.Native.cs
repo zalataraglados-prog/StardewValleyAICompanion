@@ -441,6 +441,16 @@ namespace StardewAI.Core.Execution
             expectedEffect += OptionalEffect(action, "machine_prediction_training_kind");
             expectedEffect += OptionalEffect(action, "machine_prediction_contract_fingerprint");
             expectedEffect += OptionalEffect(action, "machine_output_distribution_outcome_kind");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_utility_status");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_utility_metric");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_utility_ordering");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_current_utility");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_expected_utility");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_expected_utility_delta");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_improvement_probability");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_equal_probability");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_degradation_probability");
+            expectedEffect += OptionalEffect(action, "anvil_reforge_decision_class");
             expectedEffect += OptionalEffect(action, "incubator_hatch_animal_type_id");
             expectedEffect += OptionalEffect(action, "incubator_suggested_hatch_name");
             expectedEffect += OptionalEffect(action, "incubator_unreserved_hatch_slot_count");

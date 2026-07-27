@@ -95,6 +95,17 @@ static partial class Program
         var isVolcanoObstacle = string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
             string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal);
         var isVolcanoCombat = string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal);
+        var isAnvilReforgeSample =
+            string.Equals(
+                optionId,
+                "executor.load_machine_input",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(
+                ReadString(
+                    execution,
+                    "machine_output_distribution_outcome_kind")) &&
+            execution["anvil_reforge_realized_utility"] is
+                not null;
         var isPrimitive = isMove ||
             isVolcanoCooling ||
             isVolcanoObstacle ||
@@ -107,11 +118,18 @@ static partial class Program
             : isVolcanoCooling ? applied ? 0.10 : -0.10
             : isVolcanoObstacle ? applied ? 0.08 : -0.08
             : isVolcanoCombat ? applied ? 0.12 : -0.12
+            : isAnvilReforgeSample && applied
+                ? ReadDouble(
+                    execution,
+                    "anvil_reforge_realized_utility_delta")
             : isPrimitive ? applied ? 0.02 : -0.02
             : Math.Round(watered * 0.10 - energyCost * 0.005, 4);
         var blocked = !string.Equals(ReadString(execution, "status"), "applied", StringComparison.Ordinal) &&
             !string.Equals(ReadString(execution, "status"), "no_op", StringComparison.Ordinal);
-        var requiredMinutes = isMove || isVolcanoCooling || isVolcanoObstacle
+        var requiredMinutes = isMove ||
+            isVolcanoCooling ||
+            isVolcanoObstacle ||
+            isAnvilReforgeSample
             ? 1
             : isVolcanoCombat ? 2 : 30;
         var primitiveVerificationStatus = ReadString(execution, "primitive_verification_status");
@@ -120,6 +138,24 @@ static partial class Program
         var afterSnapshotFresh = execution["after_snapshot_fresh"]?.GetValue<bool>() == true;
         var stateHashChanged = execution["state_hash_changed"]?.GetValue<bool>() == true;
         var tickDelta = Math.Max(0, ReadLong(execution, "after_game_tick") - ReadLong(execution, "before_game_tick"));
+        var trainingRole =
+            isAnvilReforgeSample && applied
+                ? TrainingRoles.StrategyValue
+                : TrainingRoles.ExecutorCalibration;
+        var learningScope =
+            trainingRole ==
+            TrainingRoles.StrategyValue
+                ? "policy_ranker"
+                : "calibration_only";
+        var excludeFromPolicyTraining =
+            trainingRole ==
+            TrainingRoles.ExecutorCalibration;
+        var behaviorCategory =
+            isAnvilReforgeSample
+                ? OptionBehaviorCategories
+                    .EconomicStrategic
+                : OptionBehaviorCategories
+                    .Mechanical;
 
         var row = new TrainingFeatureRowEnvelope
         {
@@ -131,9 +167,10 @@ static partial class Program
             ActionFeatures = new ActionFeatureVector
             {
                 OptionIds = new[] { optionId },
-                TrainingRole = TrainingRoles.ExecutorCalibration,
-                LearningScope = "calibration_only",
-                ExcludeFromPolicyTraining = true,
+                TrainingRole = trainingRole,
+                LearningScope = learningScope,
+                ExcludeFromPolicyTraining =
+                    excludeFromPolicyTraining,
                 NormalizedParameters = item?["normalized_command"]?["parameters"] is JsonNode normalizedParameters
                     ? JsonSerializer.Deserialize<SmallModelActionParameter[]>(normalizedParameters.ToJsonString(), JsonOptions) ?? Array.Empty<SmallModelActionParameter>()
                     : Array.Empty<SmallModelActionParameter>(),
@@ -163,6 +200,13 @@ static partial class Program
                         Number("execution.estimated_ticks", ReadInt(execution, "estimated_ticks")),
                         Number("execution.actual_ticks", ReadInt(execution, "actual_ticks")),
                         Number("execution.tool_use_count", ReadInt(execution, "tool_use_count")),
+                        Number("machine.anvil.reforge.current_utility", ReadDouble(execution, "anvil_reforge_current_utility")),
+                        Number("machine.anvil.reforge.expected_utility", ReadDouble(execution, "anvil_reforge_expected_utility")),
+                        Number("machine.anvil.reforge.realized_utility", ReadDouble(execution, "anvil_reforge_realized_utility")),
+                        Number("machine.anvil.reforge.realized_utility_delta", ReadDouble(execution, "anvil_reforge_realized_utility_delta")),
+                        Number("machine.anvil.reforge.planned_expected_utility_delta", ReadQueueParameterDouble(item, "anvil_reforge_expected_utility_delta") ?? 0),
+                        Number("machine.anvil.reforge.planned_improvement_probability", ReadQueueParameterDouble(item, "anvil_reforge_improvement_probability") ?? 0),
+                        Number("machine.anvil.reforge.additional_material_sale_value", ReadQueueParameterDouble(item, "machine_additional_consumed_total_value") ?? 0),
                         Number("combat.attack_count", ReadInt(execution, "combat_attack_count")),
                         Number("combat.hit_count", ReadInt(execution, "combat_hit_count")),
                         Number("combat.damage_taken", ReadInt(execution, "combat_damage_taken")),
@@ -177,10 +221,10 @@ static partial class Program
                     Categorical = new[]
                     {
                         Category("action.primary_option_id", optionId),
-                        Category("action.intent_category", OptionBehaviorCategories.Mechanical),
-                        Category("action.behavior_category", OptionBehaviorCategories.Mechanical),
-                        Category("action.training_role", TrainingRoles.ExecutorCalibration),
-                        Category("action.learning_scope", "calibration_only"),
+                        Category("action.intent_category", behaviorCategory),
+                        Category("action.behavior_category", behaviorCategory),
+                        Category("action.training_role", trainingRole),
+                        Category("action.learning_scope", learningScope),
                         Category("action.execution_mode", options.TargetExecutionMode),
                         Category("action.actor_type", options.TargetActor.ActorType),
                         Category("action.execution_profile", isMove ? "runtime_test_move_harness" : "runtime_test_harness"),
@@ -190,15 +234,18 @@ static partial class Program
                         Category("execution.tool_qualified_item_id", ReadString(execution, "tool_qualified_item_id")),
                         Category("execution.training_impact_scope", ReadString(execution, "training_impact_scope")),
                         Category("execution.after_snapshot_note", ReadString(execution, "after_snapshot_note")),
+                        Category("machine.anvil.reforge.outcome_kind", ReadString(execution, "machine_output_distribution_outcome_kind")),
+                        Category("machine.anvil.reforge.utility_metric", ReadString(execution, "anvil_reforge_utility_metric")),
                         Category("fishing.observed_qualified_item_id", ReadChangedFactString(execution, "fishing.caught_qualified_item_id")),
                         Category("fishing.terminal_result", ReadChangedFactString(execution, "fishing.terminal_result"))
                     },
                     Boolean = new[]
                     {
                         Flag("action.hard_blocked", blocked),
-                        Flag("action.exclude_from_policy_training", true),
+                        Flag("action.exclude_from_policy_training", excludeFromPolicyTraining),
                         Flag("execution.primitive_verified", primitiveVerified),
                         Flag("execution.after_snapshot_fresh", afterSnapshotFresh),
+                        Flag("machine.anvil.reforge.realized_improved", execution["anvil_reforge_realized_improved"]?.GetValue<bool>() == true),
                         Flag("combat.target_defeated", execution["combat_target_defeated"]?.GetValue<bool>() == true),
                         Flag("fishing.max_cast_requested", ReadChangedFactBool(execution, "fishing.max_cast_requested")),
                         Flag("fishing.max_cast_observed", ReadChangedFactBool(execution, "fishing.max_cast_observed")),
@@ -213,7 +260,12 @@ static partial class Program
                 HardBlocked = blocked,
                 RequiredMinutes = requiredMinutes,
                 AvailableMinutes = AvailableMinutes(effectiveBeforeSnapshot),
-                RewardTermNames = RewardTerms(optionId, isMove, applied, watered),
+                RewardTermNames = RewardTerms(
+                    optionId,
+                    isMove,
+                    applied,
+                    watered,
+                    isAnvilReforgeSample),
                 BlockReasons = ReadArrayStrings(execution, "block_reasons")
             },
             Audit = new TrainingFeatureRowAudit

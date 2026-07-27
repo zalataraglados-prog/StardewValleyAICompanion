@@ -45,6 +45,17 @@ static partial class Program
         var status = ReadString(execution, "status");
         var applied = string.Equals(status, "applied", StringComparison.Ordinal);
         var blocked = !applied && !string.Equals(status, "no_op", StringComparison.Ordinal);
+        var isAnvilReforgeSample =
+            string.Equals(
+                optionId,
+                "executor.load_machine_input",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(
+                ReadString(
+                    execution,
+                    "machine_output_distribution_outcome_kind")) &&
+            execution["anvil_reforge_realized_utility"] is
+                not null;
         var reward = string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal)
             ? applied ? 0.05 : -0.05
             : string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal)
@@ -66,6 +77,10 @@ static partial class Program
                 ? applied ? 0.12 : -0.12
             : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)
                 ? applied ? 0.02 : -0.02
+            : isAnvilReforgeSample && applied
+                ? ReadDouble(
+                    execution,
+                    "anvil_reforge_realized_utility_delta")
             : 0;
         var episode = new PlanExecutionEpisodeEnvelope
         {
@@ -90,7 +105,11 @@ static partial class Program
             Status = status,
             Success = applied || string.Equals(status, "no_op", StringComparison.Ordinal),
             Reward = reward,
-            TrainingRole = TrainingRoles.ExecutorCalibration,
+            TrainingRole =
+                isAnvilReforgeSample && applied
+                    ? TrainingRoles.StrategyValue
+                    : TrainingRoles
+                        .ExecutorCalibration,
             FailureAttribution = blocked ? "executor_calibration" : string.Empty,
             BlockReasons = ReadArrayStrings(execution, "block_reasons"),
             EffectiveQueueItem = item is null
@@ -174,7 +193,12 @@ static partial class Program
             : null;
     }
 
-    private static string[] RewardTerms(string optionId, bool isMove, bool applied, int watered)
+    private static string[] RewardTerms(
+        string optionId,
+        bool isMove,
+        bool applied,
+        int watered,
+        bool isAnvilReforgeSample)
     {
         if (isMove)
         {
@@ -219,6 +243,24 @@ static partial class Program
             return applied
                 ? new[] { "real_volcano_monster_defeated", "native_melee_lifecycle" }
                 : new[] { "real_volcano_combat_blocked" };
+        }
+
+        if (string.Equals(
+                optionId,
+                "executor.load_machine_input",
+                StringComparison.Ordinal) &&
+            isAnvilReforgeSample)
+        {
+            return applied
+                ? new[]
+                {
+                    "machine_input_native_load_verified",
+                    "anvil_reforge_realized_utility_delta"
+                }
+                : new[]
+                {
+                    "machine_input_native_load_blocked"
+                };
         }
 
         return watered > 0 ? new[] { "real_crop_watered", "real_energy_spent" } : Array.Empty<string>();
