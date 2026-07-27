@@ -79,18 +79,34 @@ namespace StardewAI.Core.Execution
         private static SmallModelActionParameter[] BuildCloseMenuParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var activeMenuType = ActiveMenuType(snapshot);
+            var incubatorBirthMessage =
+                Infrastructure.IncubatorSnapshotProjection
+                    .IsBirthMessage(snapshot);
             var closeMenuExecutor = activeMenuType switch
             {
                 "LevelUpMenu" => "LevelUpMenu native completion path",
                 "ShippingMenu" => "ShippingMenu native OK-button completion path",
+                "DialogueBox" when incubatorBirthMessage =>
+                    "incubator birth message native input path",
                 _ => "Game1.exitActiveMenu"
             };
-            var parameters = new List<SmallModelActionParameter>(action.Parameters)
+            var parameters = new List<SmallModelActionParameter>(
+                action.Parameters.Where(parameter =>
+                    !string.Equals(
+                        parameter.Name,
+                        "interaction_kind",
+                        StringComparison.Ordinal)))
             {
                 Parameter("compiler_context.active_menu_open", ActiveMenuOpen(snapshot).ToString().ToLowerInvariant()),
                 Parameter("compiler_context.active_menu_type", activeMenuType),
                 Parameter("compiler_context.close_menu_executor", closeMenuExecutor)
             };
+            if (incubatorBirthMessage)
+            {
+                parameters.Add(Parameter(
+                    "interaction_kind",
+                    "incubator_birth_message"));
+            }
 
             return parameters.ToArray();
         }

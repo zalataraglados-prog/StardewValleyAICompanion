@@ -653,6 +653,20 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.prepare_incubator_sleep")
+            {
+                pending.Completion.SetResult(
+                    ExecutePrepareIncubatorSleep(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.enter_ready_incubator_house")
+            {
+                pending.Completion.SetResult(
+                    ExecuteEnterReadyIncubatorHouse(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_idle_machine_target")
             {
                 pending.Completion.SetResult(

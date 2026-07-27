@@ -3154,3 +3154,13 @@ Result: PASS; Core 1218/1218, Backend 87/87, solution build 0 errors. Existing d
 Scope boundary:
 - Ordinary deterministic learned machine recipes can use exact same-map Workbench-connected materials and continue through the ordinary machine lifecycle.
 - Storage Workbench runtime, remote Workbench routing, special/conditional/random/custom machines, multiplayer lock contention and ownership/sharing remain pending.
+
+2026-07-27 incubator natural lifecycle and compatibility catalog
+
+- Core: PASS 1229/1229.
+- Backend: PASS 94/94.
+- TransparentBridge build: PASS, 0 errors.
+- RuntimeTestHarness build: PASS, 0 errors.
+- Ordinary Incubator natural run: PASS, `runtime-incubator-natural-cycle-20260727-080024`, 9000 minutes, 6 native sleeps, `White Chicken:NaturalPip`, occupancy 7 -> 8, egg cleared, dynamic catalog 8 compatible of 9 native egg IDs.
+- Ostrich Incubator natural run: PASS, `runtime-incubator-natural-cycle-20260727-080236`, 9000 minutes, 6 native sleeps, `Ostrich:NaturalOllie`, occupancy 7 -> 8, egg cleared, dynamic catalog 1 compatible of 9 native egg IDs.
+- Both runs used per-run copied saves and hidden/silent game processes. No shared source save was the runtime target.

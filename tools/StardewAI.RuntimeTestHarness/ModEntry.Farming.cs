@@ -914,13 +914,16 @@ public sealed partial class ModEntry : Mod
                 : Array.Empty<int>();
     }
 
-    private static bool CanAdvanceOrdinaryDialogue(DialogueBox dialogueBox, bool allowSpeakerlessSocialContinuation = false)
+    private static bool CanAdvanceOrdinaryDialogue(
+        DialogueBox dialogueBox,
+        bool allowSpeakerlessSocialContinuation = false,
+        bool allowEventDialogue = false)
     {
         return !dialogueBox.isQuestion &&
             (dialogueBox.responses is null || dialogueBox.responses.Length == 0) &&
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
             string.IsNullOrWhiteSpace(Game1.currentLocation?.lastQuestionKey) &&
-            !Game1.eventUp &&
+            (!Game1.eventUp || allowEventDialogue) &&
             ((dialogueBox.characterDialogue is not null &&
                 !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name)) ||
                 allowSpeakerlessSocialContinuation);

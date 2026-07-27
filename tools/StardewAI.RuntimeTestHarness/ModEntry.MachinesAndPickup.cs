@@ -694,6 +694,19 @@ public sealed partial class ModEntry : Mod
                 ? request.ExpectedShopId
                 : "(BC)" + request.ExpectedShopId;
         var machineTemplate = ItemRegistry.Create<StardewValley.Object>(machineItemId);
+        long? removedFixtureAnimalId = null;
+        if (machineTemplate.GetMachineData()?.IsIncubator == true &&
+            location is AnimalHouse animalHouse &&
+            animalHouse.isFull() &&
+            animalHouse.animalsThatLiveHere.Count > 0)
+        {
+            removedFixtureAnimalId =
+                animalHouse.animalsThatLiveHere[^1];
+            animalHouse.animalsThatLiveHere.RemoveAt(
+                animalHouse.animalsThatLiveHere.Count - 1);
+            animalHouse.animals.Remove(
+                removedFixtureAnimalId.Value);
+        }
         var placementAccepted = machineTemplate.placementAction(
             location,
             target.X * Game1.tileSize,
@@ -737,7 +750,7 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "debug_setup_machine_input_target",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot }
+                ? new[] { "isolated_runtime_fixture_machine_accepts_input_probe", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, "removed_fixture_animal_id=" + (removedFixtureAnimalId?.ToString() ?? "none") }
                 : new[] { "fixture_machine_input_probe_rejected", "location_id=" + locationId, "qualified_item_id=" + inputItemId, "input_slot_index=" + inputSlot, moveReason },
             RequestedEffect = "location.machines[" + locationId + ":" + target.X + "," + target.Y + "].loadable_inputs.length>0;qualified_item_id=" + inputItemId,
             ObservedEffect = MachineObservedEffect(location, target) + ";location_id=" + locationId + ";stand_tile=" + stand.X + "," + stand.Y + ";input_slot_index=" + inputSlot + ";input_probe_accepts=" + accepts.ToString().ToLowerInvariant(),

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
@@ -161,6 +163,93 @@ public sealed class IncubatorHatchMainlineTests
             queue.Items[0].BlockingReasons);
     }
 
+    [Fact]
+    public void BirthMessageCloseIsCompilerBoundFromReadyIncubator()
+    {
+        var snapshot = Snapshot(
+            activeMenuType: "DialogueBox",
+            menuOpen: true,
+            ready: true,
+            nativeSelected: true,
+            occupantCount: 7,
+            occupantLimit: 8,
+            unreservedSlots: 0,
+            eventUp: true,
+            dialogueCharacterPresent: false,
+            dialogueSpeakerName: "");
+        var plan = new SmallModelPlanEnvelope
+        {
+            PlanId = "plan.incubator.birth-message",
+            SourceModel = "small-model.test",
+            StateHash = snapshot.StateHash,
+            GoalId = "goal.autonomous.singleplayer",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef
+            {
+                ActorId = "training_farmer.main",
+                ActorType = "training_farmer",
+                ControlSurface = "training_sandbox"
+            },
+            Steps = new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = "plan.step.close-birth-message",
+                    Kind = "close_menu",
+                    EstimatedMinutes = 1
+                }
+            }
+        };
+        var recoveryOption =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "recovery.stabilize_day" },
+                    includeExecutorCalibrationOptions: true)
+                .Options
+                .Single();
+        Assert.True(
+            recoveryOption.EventCandidates.Any(candidate =>
+                candidate.Kind == "recovery_close_menu"),
+            "candidate_kinds=" + string.Join(
+                ",",
+                recoveryOption.EventCandidates.Select(candidate =>
+                    candidate.Kind)) +
+            ";option_blocks=" +
+            string.Join(
+                ",",
+                recoveryOption.BlockingReasons));
+        var recoveryCandidate =
+            recoveryOption.EventCandidates.Single(candidate =>
+                candidate.Kind == "recovery_close_menu");
+
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot);
+
+        Assert.True(recoveryCandidate.Available);
+        Assert.Contains(
+            recoveryCandidate.Parameters,
+            parameter =>
+                parameter.Name == "interaction_kind" &&
+                parameter.Value == "incubator_birth_message");
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.close_menu", item.OptionId);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "interaction_kind" &&
+                parameter.Value == "incubator_birth_message");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name ==
+                    "compiler_context.close_menu_executor" &&
+                parameter.Value ==
+                    "incubator birth message native input path");
+    }
+
     private static string CandidateParameter(
         StardewAI.Contracts.Training.PolicyEventCandidatePrediction
             candidate,
@@ -178,7 +267,10 @@ public sealed class IncubatorHatchMainlineTests
         bool nativeSelected,
         int occupantCount,
         int occupantLimit,
-        int unreservedSlots)
+        int unreservedSlots,
+        bool eventUp = false,
+        bool dialogueCharacterPresent = true,
+        string dialogueSpeakerName = "Lewis")
     {
         var minutes = ready ? 0 : -1;
         var heldItem = ready
@@ -191,10 +283,14 @@ public sealed class IncubatorHatchMainlineTests
             : "idle";
         var stateJson = $$"""
         {
+          "time": {
+            "time": {"value":1800,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "player": {
             "location_id": {"value":"Coop1","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_y": {"value":5,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":200,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory_capacity": {"value":{"occupied_stacks":1,"empty_slots":1,"has_empty_slot":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[{"slot_index":0,"item_id":"176","qualified_item_id":"(O)176","stack":1,"quality":0,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -252,11 +348,13 @@ public sealed class IncubatorHatchMainlineTests
             }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
-            "active_menu": {"value":{"is_open":{{menuOpen.ToString().ToLowerInvariant()}},"type":"{{activeMenuType}}"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "active_menu": {"value":{"is_open":{{menuOpen.ToString().ToLowerInvariant()}},"type":"{{activeMenuType}}","last_question_key":null,"is_sleep_prompt":false,"event_up":{{eventUp.ToString().ToLowerInvariant()}},"dialogue_is_question":false,"dialogue_response_count":0,"dialogue_transitioning":false,"dialogue_safety_timer":0,"dialogue_character_present":{{dialogueCharacterPresent.ToString().ToLowerInvariant()}},"dialogue_speaker_name":"{{dialogueSpeakerName}}"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "menu_specific_state": {"value":{"kind":"naming","done_callback_present":true,"done_button_present":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
-            "map": {"value":{"location_id":"Coop1","width":20,"height":20},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "map": {"value":{"location_id":"Coop1","width":20,"height":20},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "home_context": {"value":{"home_location_id":"FarmHouse","current_location_is_home":false,"bed_tile_x":43,"bed_tile_y":23,"bed_tile_has_bed":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "collision_grid": {"value":{"location_id":"Coop1","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},

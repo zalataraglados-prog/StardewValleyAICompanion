@@ -24,6 +24,13 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     Parameter("execution_option_id", "executor.close_menu")
                 };
+                if (Infrastructure.IncubatorSnapshotProjection
+                    .IsBirthMessage(snapshot))
+                {
+                    closeMenuParameters.Add(Parameter(
+                        "interaction_kind",
+                        "incubator_birth_message"));
+                }
                 closeMenuParameters.AddRange(LevelUpMenuRecoveryParameters(snapshot));
                 candidates.Add(new EventCandidate
                 {

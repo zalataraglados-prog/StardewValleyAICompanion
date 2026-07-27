@@ -471,7 +471,22 @@ namespace StardewAI.Core.OptionRegistry
 
             if (type == "DialogueBox")
             {
-                return SafeOrdinaryDialogueBlockReasons(snapshot);
+                var dialogueReasons =
+                    SafeOrdinaryDialogueBlockReasons(snapshot);
+                if (Infrastructure.IncubatorSnapshotProjection
+                    .IsBirthMessage(snapshot))
+                {
+                    dialogueReasons = dialogueReasons
+                        .Where(reason =>
+                            reason !=
+                                "dialogue_close_event_up_true" &&
+                            reason !=
+                                "dialogue_close_character_present_false" &&
+                            reason !=
+                                "dialogue_close_speaker_name_empty")
+                        .ToArray();
+                }
+                return dialogueReasons;
             }
 
             if (type == "ShippingMenu")

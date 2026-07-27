@@ -70,6 +70,8 @@ public sealed partial class FarmReadAdapter
             Array.FindIndex(
                 readyIncubatorsInNativeOrder,
                 candidate => ReferenceEquals(candidate, machine));
+        var compatibilityCatalog =
+            ReadIncubatorCompatibilityCatalog(machine, location);
 
         return new
         {
@@ -124,7 +126,24 @@ public sealed partial class FarmReadAdapter
             ordinary_output_collection_supported =
                 false,
             hatch_executor_status =
-                "covered_native_naming_menu_confirm"
+                "covered_native_naming_menu_confirm",
+            compatible_egg_catalog_status =
+                compatibilityCatalog.Status,
+            native_farm_animal_type_count =
+                compatibilityCatalog.NativeAnimalTypeCount,
+            native_egg_candidate_count =
+                compatibilityCatalog.NativeEggCandidateCount,
+            incubator_egg_compatibility_matrix_row_count =
+                compatibilityCatalog.MatrixRowCount,
+            incubator_egg_compatibility_matrix =
+                compatibilityCatalog.MatrixRows,
+            compatible_egg_count =
+                compatibilityCatalog.CompatibleRows.Length,
+            compatible_egg_catalog =
+                compatibilityCatalog.CompatibleRows,
+            compatibility_catalog_completeness_contract =
+                "all_distinct_Game1.farmAnimalData_EggItemIds_" +
+                "evaluated_without_row_truncation"
         };
     }
 
