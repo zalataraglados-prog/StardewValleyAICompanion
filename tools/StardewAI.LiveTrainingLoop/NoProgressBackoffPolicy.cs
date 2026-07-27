@@ -24,6 +24,28 @@ public sealed class NoProgressBackoffPolicy
     {
         if (HasExecutableItem(queue))
         {
+            if (!IsRecoveryRefreshWaitQueue(queue))
+            {
+                Reset();
+            }
+
+            return new NoProgressBackoffDecision(
+                false,
+                0,
+                0,
+                string.Empty);
+        }
+
+        return Accumulate(SemanticSignature(queue));
+    }
+
+    public NoProgressBackoffDecision ObserveExecution(
+        JsonObject queue,
+        JsonObject execution)
+    {
+        if (!IsRecoveryRefreshWaitQueue(queue) ||
+            !IsVerifiedWaitOnlyExecution(execution))
+        {
             Reset();
             return new NoProgressBackoffDecision(
                 false,
@@ -32,7 +54,13 @@ public sealed class NoProgressBackoffPolicy
                 string.Empty);
         }
 
-        var signature = SemanticSignature(queue);
+        return Accumulate(
+            "verified_recovery_refresh_wait|" +
+            SemanticSignature(queue));
+    }
+
+    private NoProgressBackoffDecision Accumulate(string signature)
+    {
         Streak = string.Equals(
             signature,
             lastSignature,
@@ -97,6 +125,63 @@ public sealed class NoProgressBackoffPolicy
                 ReadString(item, "status"),
                 "pending",
                 StringComparison.Ordinal)) == true;
+    }
+
+    private static bool IsRecoveryRefreshWaitQueue(JsonObject queue)
+    {
+        var pendingItems = queue["items"]?.AsArray()
+            .Select(node => node?.AsObject())
+            .Where(item =>
+                item is not null &&
+                string.Equals(
+                    ReadString(item, "status"),
+                    "pending",
+                    StringComparison.Ordinal))
+            .ToArray() ?? Array.Empty<JsonObject?>();
+        if (pendingItems.Length != 1)
+        {
+            return false;
+        }
+
+        var item = pendingItems[0];
+        return string.Equals(
+                ReadString(item, "option_id"),
+                "executor.wait_ticks",
+                StringComparison.Ordinal) &&
+            ReadString(item, "source_action_id").StartsWith(
+                "recovery_refresh_plan_after_stabilization.",
+                StringComparison.Ordinal);
+    }
+
+    private static bool IsVerifiedWaitOnlyExecution(
+        JsonObject execution)
+    {
+        if (!string.Equals(
+                ReadString(execution, "status"),
+                "applied",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                ReadString(execution, "primitive_kind"),
+                "wait_ticks",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                ReadString(
+                    execution,
+                    "primitive_verification_status"),
+                "verified",
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var changedFacts = execution["changed_facts"]?.AsArray();
+        return changedFacts is { Count: > 0 } &&
+            changedFacts
+                .Select(node => node?.AsObject())
+                .All(fact => string.Equals(
+                    ReadString(fact, "path"),
+                    "executor.wait_ticks",
+                    StringComparison.Ordinal));
     }
 
     private static string[] ReadStrings(JsonArray? values)

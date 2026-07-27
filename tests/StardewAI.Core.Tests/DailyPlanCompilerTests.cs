@@ -996,8 +996,8 @@ public sealed class DailyPlanCompilerTests
         };
 
         var plan = new DailyPlanCompiler().Compile(
-            "state.sleep.resume",
-            new[] { candidate });
+            new[] { candidate },
+            "state.sleep.resume");
 
         var step = Assert.Single(plan.Steps);
         Assert.Equal("sleep", step.Kind);

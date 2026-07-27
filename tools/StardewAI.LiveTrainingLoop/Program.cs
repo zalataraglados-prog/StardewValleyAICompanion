@@ -174,22 +174,50 @@ for (var attemptOrdinal = 1;
                 continue;
             }
 
-            var realAppend = AppendRealExecutionRow(options, beforeSnapshot, queue, execution, lastStateHash, lastQueueId);
+            var executionNoProgress =
+                noProgressBackoff.ObserveExecution(queue, execution);
+            var realAppend = AppendRealExecutionRow(
+                options,
+                beforeSnapshot,
+                queue,
+                execution,
+                lastStateHash,
+                lastQueueId,
+                appendToDataset: !executionNoProgress.NoProgress);
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
             socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             rowsAppended = realAppend.RowCount;
-            verifiedActions++;
-            AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
-            var train = await TrainIfNeededAsync(http, options, iteration);
-            if (train.TrainingReport is not null)
+            if (!executionNoProgress.NoProgress)
             {
-                lastTrainingReport = train.TrainingReport;
-                lastPrediction = train.Prediction;
+                verifiedActions++;
+                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
+                var train = await TrainIfNeededAsync(http, options, iteration);
+                if (train.TrainingReport is not null)
+                {
+                    lastTrainingReport = train.TrainingReport;
+                    lastPrediction = train.Prediction;
+                }
             }
-            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            else
+            {
+                AppendProgress(
+                    options,
+                    "idle_backoff",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "recovery_refresh_wait_only dataset_rows=" +
+                    rowsAppended +
+                    NoProgressDetail(executionNoProgress));
+            }
+
+            await DelayBeforeNextAttemptAsync(
+                options,
+                attemptOrdinal,
+                executionNoProgress.DelayMs);
             continue;
         }
     }

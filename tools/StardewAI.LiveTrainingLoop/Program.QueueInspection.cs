@@ -65,7 +65,8 @@ static partial class Program
         JsonObject queue,
         JsonObject execution,
         string stateHash,
-        string queueId)
+        string queueId,
+        bool appendToDataset = true)
     {
         var item = execution["effective_queue_item"]?.AsObject() ?? FindQueueItemForExecution(queue, execution) ?? queue["items"]?.AsArray().FirstOrDefault()?.AsObject();
         var effectiveBeforeSnapshot = ReadEffectiveBeforeSnapshot(execution, beforeSnapshot);
@@ -359,7 +360,23 @@ static partial class Program
             }
         };
 
-        return AppendJsonl(options.DatasetPath, row);
+        if (appendToDataset)
+        {
+            return AppendJsonl(options.DatasetPath, row);
+        }
+
+        var datasetPath = Path.GetFullPath(options.DatasetPath);
+        return new TrainingDatasetAppendResult
+        {
+            DatasetPath = datasetPath,
+            RowId = string.Empty,
+            EpisodeId = row.EpisodeId,
+            BytesWritten = 0,
+            RowCount = File.Exists(datasetPath)
+                ? File.ReadLines(datasetPath)
+                    .Count(line => !string.IsNullOrWhiteSpace(line))
+                : 0
+        };
     }
 
     private static JsonObject ReadEffectiveBeforeSnapshot(JsonObject execution, JsonObject fallback)
