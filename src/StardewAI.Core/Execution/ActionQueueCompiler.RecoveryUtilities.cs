@@ -21,6 +21,19 @@ namespace StardewAI.Core.Execution
     {
         private static CompiledActionStep[] CompileRecoverySteps(SnapshotEnvelope snapshot)
         {
+            if (Infrastructure.SleepPromptResumeProjection.IsAvailable(
+                    snapshot))
+            {
+                return new[]
+                {
+                    Step(
+                        "confirm_sleep_yes",
+                        "menus.sleep_prompt_context",
+                        "day_safely_ended",
+                        120)
+                };
+            }
+
             if (ActiveMenuOpen(snapshot))
             {
                 return Array.Empty<CompiledActionStep>();

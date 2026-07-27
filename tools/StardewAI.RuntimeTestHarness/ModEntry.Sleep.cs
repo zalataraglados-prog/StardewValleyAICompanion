@@ -34,7 +34,12 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (Game1.activeClickableMenu is not null)
+        var resumesExistingPrompt = string.Equals(
+            pending.Request.SleepResumeMode,
+            "existing_exact_prompt",
+            StringComparison.Ordinal);
+        if (Game1.activeClickableMenu is not null &&
+            (!resumesExistingPrompt || !SleepPromptOpen()))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "sleep", "day_transition=new_day", SleepObservedEffect(), "active_menu_must_be_closed_before_sleep"));
             return;
@@ -54,7 +59,29 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var path = TryBuildTilePath(Game1.currentLocation, startTile, target.StandTile, 512, out var blockReason, avoidSoftObstacles: true);
+        if (resumesExistingPrompt &&
+            !AreAdjacent(startTile, target.BedTile) &&
+            startTile != target.BedTile)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request,
+                "sleep",
+                "day_transition=new_day",
+                SleepObservedEffect(),
+                "sleep_resume_player_not_at_or_adjacent_to_bed"));
+            return;
+        }
+
+        var blockReason = string.Empty;
+        var path = resumesExistingPrompt
+            ? new List<Point>()
+            : TryBuildTilePath(
+                Game1.currentLocation,
+                startTile,
+                target.StandTile,
+                512,
+                out blockReason,
+                avoidSoftObstacles: true);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "sleep", "day_transition=new_day", SleepObservedEffect(), blockReason));
@@ -62,6 +89,10 @@ public sealed partial class ModEntry : Mod
         }
 
         activeSleep = new ActiveSleep(pending, startTile, target.BedTile, target.StandTile, path, Game1.year, Game1.dayOfMonth, Game1.timeOfDay, Game1.currentSeason);
+        if (resumesExistingPrompt)
+        {
+            activeSleep.Stage = SleepStage.ConfirmPrompt;
+        }
         Monitor.Log($"Started terminal sleep macro via stand tile {target.StandTile.X},{target.StandTile.Y} and bed touch tile {target.BedTile.X},{target.BedTile.Y}.", LogLevel.Info);
     }
 
@@ -440,7 +471,7 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "time.season", Before = sleep.StartSeason, After = Game1.currentSeason },
                 new SimulatedFactChange { Path = "time.day", Before = sleep.StartDay.ToString(), After = Game1.dayOfMonth.ToString() },
                 new SimulatedFactChange { Path = "time.time", Before = sleep.StartTime.ToString(), After = Game1.timeOfDay.ToString() },
-                new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = "false", After = (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() }
+                new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = sleep.StartMenuOpen.ToString().ToLowerInvariant(), After = (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() }
             }
         };
     }

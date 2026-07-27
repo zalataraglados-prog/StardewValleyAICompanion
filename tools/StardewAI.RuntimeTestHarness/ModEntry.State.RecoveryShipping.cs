@@ -38,6 +38,7 @@ public sealed partial class ModEntry : Mod
             StartDay = startDay;
             StartTime = startTime;
             StartSeason = startSeason;
+            StartMenuOpen = Game1.activeClickableMenu is not null;
             MaxTicks = Math.Max(600, path.Count * 90 + 600);
             LastPosition = Game1.player.Position;
         }
@@ -51,6 +52,7 @@ public sealed partial class ModEntry : Mod
         public int StartDay { get; }
         public int StartTime { get; }
         public string StartSeason { get; }
+        public bool StartMenuOpen { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public SleepStage Stage { get; set; } = SleepStage.MoveToStand;
         public int PathIndex { get; set; }

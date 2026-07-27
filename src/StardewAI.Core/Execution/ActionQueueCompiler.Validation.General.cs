@@ -37,6 +37,12 @@ namespace StardewAI.Core.Execution
                 return Array.Empty<string>();
             }
 
+            if (Infrastructure.SleepPromptResumeProjection.IsAvailable(
+                    snapshot))
+            {
+                return Array.Empty<string>();
+            }
+
             var time = ReadStateFieldInt(snapshot, "time", "time");
             if (time < 2200)
             {

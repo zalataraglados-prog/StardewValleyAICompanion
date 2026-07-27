@@ -949,8 +949,8 @@ public sealed partial class ActionQueueCompilerTests
             "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"FarmHouse","current_location_is_home":true,"entry_tile_x":27,"entry_tile_y":30,"bed_tile_x":43,"bed_tile_y":23,"bed_tile_has_bed":true,"sleep_executor_enabled":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
-            "active_menu": {"value":{"is_open":ACTIVE_MENU_OPEN,"type":"ACTIVE_MENU_TYPE"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "sleep_prompt_context": {"value":{"prompt_open":SLEEP_PROMPT_OPEN,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "active_menu": {"value":{"is_open":ACTIVE_MENU_OPEN,"type":"ACTIVE_MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"is_sleep_prompt":SLEEP_PROMPT_OPEN,"event_up":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":SLEEP_PROMPT_OPEN,"active_menu_open":ACTIVE_MENU_OPEN,"active_menu_type":"ACTIVE_MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"can_confirm_sleep":CAN_CONFIRM_SLEEP,"confirm_executor_enabled":CAN_CONFIRM_SLEEP,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "collision_grid": {"value":{"location_id":"FarmHouse","width":70,"height":46,"notable_tiles":[{"tile_x":43,"tile_y":23,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -961,6 +961,8 @@ public sealed partial class ActionQueueCompilerTests
         .Replace("ACTIVE_OBJECT", activeObjectQualifiedId)
         .Replace("ACTIVE_MENU_OPEN", activeMenuOpen ? "true" : "false")
         .Replace("ACTIVE_MENU_TYPE", activeMenuType)
+        .Replace("LAST_QUESTION_KEY", sleepPromptOpen ? "\"Sleep\"" : "null")
+        .Replace("CAN_CONFIRM_SLEEP", sleepPromptOpen ? "true" : "false")
         .Replace("SLEEP_PROMPT_OPEN", sleepPromptOpen ? "true" : "false"));
     }
 

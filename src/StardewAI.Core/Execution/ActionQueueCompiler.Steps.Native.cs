@@ -547,6 +547,25 @@ namespace StardewAI.Core.Execution
 
         private static CompiledActionStep[] CompileSleepSteps(SnapshotEnvelope snapshot, SmallModelAction? action = null)
         {
+            if (action is not null &&
+                string.Equals(
+                    ReadParameter(action, "sleep_resume_mode"),
+                    Infrastructure.SleepPromptResumeProjection.ResumeMode,
+                    StringComparison.Ordinal))
+            {
+                return Infrastructure.SleepPromptResumeProjection.IsAvailable(
+                    snapshot)
+                    ? new[]
+                    {
+                        Step(
+                            "confirm_sleep_yes",
+                            "menus.sleep_prompt_context",
+                            "day_safely_ended",
+                            120)
+                    }
+                    : Array.Empty<CompiledActionStep>();
+            }
+
             if (action is null ? ActiveMenuOpen(snapshot) : ActionSeesActiveMenuOpen(action, snapshot))
             {
                 return Array.Empty<CompiledActionStep>();

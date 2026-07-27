@@ -25,6 +25,8 @@ public sealed class LiveTrainingOptions
     public int TrainEvery { get; set; } = 1;
     public bool SkipTraining { get; set; }
     public int SleepMs { get; set; } = 1000;
+    public int NoProgressBackoffMs { get; set; }
+    public int NoProgressMaxBackoffMs { get; set; }
     public int MaxCropsPerExecution { get; set; } = 16;
     public string ExecutorOptionId { get; set; } = string.Empty;
     public int? TargetTileX { get; set; }
@@ -149,6 +151,26 @@ public sealed class LiveTrainingOptions
             else if (current == "--sleep-ms" && i + 1 < args.Length && int.TryParse(args[++i], out var sleepMs))
             {
                 options.SleepMs = Math.Max(0, sleepMs);
+            }
+            else if (current == "--no-progress-backoff-ms" &&
+                i + 1 < args.Length &&
+                int.TryParse(
+                    args[++i],
+                    out var noProgressBackoffMs))
+            {
+                options.NoProgressBackoffMs = Math.Max(
+                    0,
+                    noProgressBackoffMs);
+            }
+            else if (current == "--no-progress-max-backoff-ms" &&
+                i + 1 < args.Length &&
+                int.TryParse(
+                    args[++i],
+                    out var noProgressMaxBackoffMs))
+            {
+                options.NoProgressMaxBackoffMs = Math.Max(
+                    0,
+                    noProgressMaxBackoffMs);
             }
             else if (current == "--max-crops" && i + 1 < args.Length && int.TryParse(args[++i], out var maxCrops))
             {
@@ -285,6 +307,13 @@ public sealed class LiveTrainingOptions
         if (string.IsNullOrWhiteSpace(options.RunId))
         {
             options.RunId = "live." + DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
+        }
+
+        if (options.NoProgressBackoffMs > 0)
+        {
+            options.NoProgressMaxBackoffMs = Math.Max(
+                options.NoProgressBackoffMs,
+                options.NoProgressMaxBackoffMs);
         }
 
         if (!ExecutionTargetProfiles.IsSupported(options.TargetExecutionMode))

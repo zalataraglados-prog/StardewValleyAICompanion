@@ -279,6 +279,21 @@ namespace StardewAI.Core.Execution
         private static SmallModelActionParameter[] BuildRecoveryParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var parameters = new List<SmallModelActionParameter>(action.Parameters);
+            if (Infrastructure.SleepPromptResumeProjection.IsAvailable(
+                    snapshot))
+            {
+                parameters.Add(Parameter(
+                    "execution_option_id",
+                    "executor.sleep"));
+                parameters.Add(Parameter(
+                    "sleep_resume_mode",
+                    Infrastructure.SleepPromptResumeProjection.ResumeMode));
+                parameters.Add(Parameter(
+                    "recovery_step_kind",
+                    "resume_existing_sleep_prompt"));
+                return parameters.ToArray();
+            }
+
             var time = ReadStateFieldInt(snapshot, "time", "time");
             if (time < 2200)
             {

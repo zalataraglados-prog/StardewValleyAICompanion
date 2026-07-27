@@ -26,6 +26,14 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.sell_shop_item" ||
                 action.OptionId == "executor.choose_dialogue_response" ||
                 action.OptionId == "executor.name_hatched_animal" ||
+                (action.OptionId == "executor.sleep" &&
+                    string.Equals(
+                        ReadParameter(action, "sleep_resume_mode"),
+                        Infrastructure.SleepPromptResumeProjection.ResumeMode,
+                        StringComparison.Ordinal)) ||
+                (action.OptionId == "recovery.stabilize_day" &&
+                    Infrastructure.SleepPromptResumeProjection.IsAvailable(
+                        snapshot)) ||
                 option is null)
             {
                 return Array.Empty<string>();
@@ -52,6 +60,19 @@ namespace StardewAI.Core.Execution
             if (!string.Equals(ReadParameter(action, "compiler_context.is_terminal_step"), "true", StringComparison.OrdinalIgnoreCase))
             {
                 reasons.Add("sleep_action_must_be_terminal");
+            }
+
+            if (string.Equals(
+                    ReadParameter(action, "sleep_resume_mode"),
+                    Infrastructure.SleepPromptResumeProjection.ResumeMode,
+                    StringComparison.Ordinal))
+            {
+                reasons.AddRange(
+                    Infrastructure.SleepPromptResumeProjection.BlockReasons(
+                        snapshot));
+                return reasons
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
             }
 
             if (ActiveMenuOpen(snapshot))

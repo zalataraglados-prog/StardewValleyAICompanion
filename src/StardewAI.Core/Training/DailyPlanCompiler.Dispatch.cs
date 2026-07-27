@@ -37,7 +37,8 @@ namespace StardewAI.Core.Training
 
             if (candidate.Kind == "recovery_return_home" ||
                 candidate.Kind == "recovery_sleep_immediately" ||
-                candidate.Kind == "recovery_sleep_before_collapse")
+                candidate.Kind == "recovery_sleep_before_collapse" ||
+                candidate.Kind == "recovery_resume_sleep_prompt")
             {
                 return RecoveryExecutionSteps(candidate);
             }

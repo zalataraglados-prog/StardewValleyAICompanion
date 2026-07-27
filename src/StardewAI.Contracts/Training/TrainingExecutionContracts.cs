@@ -107,6 +107,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("wait_ticks")]
         public int? WaitTicks { get; set; }
 
+        [JsonPropertyName("sleep_resume_mode")]
+        public string SleepResumeMode { get; set; } = string.Empty;
+
         [JsonPropertyName("target_time")]
         public int? TargetTime { get; set; }
 

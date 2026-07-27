@@ -138,7 +138,11 @@ namespace StardewAI.Core.Training
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "player.at_home=true", "bed_reachable=true" },
                     ExpectedEffects = new[] { "day_safely_ended" },
                     SafetyConstraints = new[] { "terminal_sleep_only_via_recovery_candidate" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = candidate.Parameters
+                        .Where(parameter =>
+                            parameter.Name == "sleep_resume_mode")
+                        .ToArray()
                 }
             };
         }

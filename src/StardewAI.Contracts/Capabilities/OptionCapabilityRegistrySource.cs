@@ -318,6 +318,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("purchase_joja_membership"),
                 SupportedCandidate("purchase_joja_project"), SupportedCandidate("read_inventory_book"),
                 SupportedCandidate("recovery_close_menu"), SupportedCandidate("recovery_refresh_plan"),
+                SupportedCandidate("recovery_resume_sleep_prompt"),
                 SupportedCandidate("recovery_return_home"),
                 SupportedCandidate("recovery_sleep_before_collapse"),
                 SupportedCandidate("recovery_sleep_immediately"), SupportedCandidate("route_connector_tile"),

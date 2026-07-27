@@ -968,6 +968,47 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileRecoveryResumeSleepPromptPreservesTypedMode()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "recovery:resume_sleep_prompt",
+            Kind = "recovery_resume_sleep_prompt",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = "FarmHouse",
+            TileX = 9,
+            TileY = 9,
+            EstimatedTicks = 120,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "execution_option_id",
+                    Value = "executor.sleep"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "sleep_resume_mode",
+                    Value = "existing_exact_prompt"
+                }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(
+            "state.sleep.resume",
+            new[] { candidate });
+
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("sleep", step.Kind);
+        Assert.Contains(
+            step.Parameters,
+            parameter =>
+                parameter.Name == "sleep_resume_mode" &&
+                parameter.Value == "existing_exact_prompt");
+    }
+
+    [Fact]
     public void CompileRecoverySleepBeforeCollapseEmitsSleepPlanStep()
     {
         var candidate = new PolicyEventCandidatePrediction

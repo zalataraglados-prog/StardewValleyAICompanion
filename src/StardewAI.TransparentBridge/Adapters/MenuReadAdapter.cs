@@ -163,10 +163,10 @@ public sealed class MenuReadAdapter : ReadAdapterBase
             active_menu_type = menu?.GetType().Name ?? "none",
             last_question_key = lastQuestionKey,
             expected_question_key = "Sleep",
-            can_confirm_sleep = false,
-            confirm_executor_enabled = false,
+            can_confirm_sleep = promptOpen,
+            confirm_executor_enabled = promptOpen,
             confirm_action_key = "Sleep_Yes",
-            block_reason = promptOpen ? "sleep_confirm_executor_disabled" : "sleep_prompt_not_open"
+            block_reason = promptOpen ? (string?)null : "sleep_prompt_not_open"
         };
     }
 

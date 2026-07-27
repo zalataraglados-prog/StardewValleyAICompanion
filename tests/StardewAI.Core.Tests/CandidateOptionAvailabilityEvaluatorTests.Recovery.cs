@@ -122,6 +122,32 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void RecoveryResumesExactSleepPromptAtAnyTime()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                RecoverySnapshot(
+                    time: 600,
+                    menuOpen: true,
+                    currentLocationIsHome: true,
+                    sleepPromptOpen: true),
+                new[] { "recovery.stabilize_day" },
+                includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var candidate = Assert.Single(
+            option.EventCandidates,
+            item => item.Kind == "recovery_resume_sleep_prompt");
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
+        Assert.Contains(
+            candidate.Parameters,
+            parameter =>
+                parameter.Name == "sleep_resume_mode" &&
+                parameter.Value == "existing_exact_prompt");
+    }
+
+    [Fact]
     public void RecoverySleepImmediatelyAvailableAtOrPast2400WhenHomeWithBed()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
@@ -243,8 +269,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"CURRENT_LOCATION","current_location_is_home":CURRENT_HOME,"entry_tile_x":3,"entry_tile_y":9,"bed_tile_x":3,"bed_tile_y":8,"bed_tile_has_bed":true,"sleep_executor_enabled":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
-            "active_menu": {"value":{"is_open":MENU_OPEN},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "sleep_prompt_context": {"value":{"prompt_open":SLEEP_PROMPT_OPEN,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "active_menu": {"value":{"is_open":MENU_OPEN,"type":"MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"is_sleep_prompt":SLEEP_PROMPT_OPEN,"event_up":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":SLEEP_PROMPT_OPEN,"active_menu_open":MENU_OPEN,"active_menu_type":"MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"can_confirm_sleep":CAN_CONFIRM_SLEEP,"confirm_executor_enabled":CAN_CONFIRM_SLEEP,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "collision_grid": {"value":{"location_id":"CURRENT_LOCATION","width":12,"height":12,"notable_tiles":[BLOCKED_TILES]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -258,6 +284,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         .Replace("BLOCKED_TILES", RecoveryBlockedTiles(bedBlocked, adjacentBedTilesBlocked))
         .Replace("ACTIVE_OBJECT", activeObjectQualifiedId)
         .Replace("SLEEP_PROMPT_OPEN", sleepPromptOpen ? "true" : "false")
+        .Replace("CAN_CONFIRM_SLEEP", sleepPromptOpen ? "true" : "false")
+        .Replace("LAST_QUESTION_KEY", sleepPromptOpen ? "\"Sleep\"" : "null")
+        .Replace("MENU_TYPE", sleepPromptOpen ? "DialogueBox" : "")
         .Replace("MENU_OPEN", menuOpen ? "true" : "false"));
     }
 

@@ -14,15 +14,29 @@ public sealed class SleepCapabilityContractTests
     }
 
     [Fact]
-    public void StandaloneSleepPromptConfirmationRemainsDisabled()
+    public void SleepPromptConfirmationIsExposedOnlyForExactOpenPrompt()
     {
         var source = File.ReadAllText(FindRepositoryFile(
             "src", "StardewAI.TransparentBridge", "Adapters", "MenuReadAdapter.cs"));
         var sleepPromptContext = Slice(source, "private static object ReadSleepPromptContext", "private static object ReadIdentity");
 
-        Assert.Contains("can_confirm_sleep = false", sleepPromptContext, StringComparison.Ordinal);
-        Assert.Contains("confirm_executor_enabled = false", sleepPromptContext, StringComparison.Ordinal);
-        Assert.Contains("sleep_confirm_executor_disabled", sleepPromptContext, StringComparison.Ordinal);
+        Assert.Contains("promptOpen = menu is DialogueBox", sleepPromptContext, StringComparison.Ordinal);
+        Assert.Contains("can_confirm_sleep = promptOpen", sleepPromptContext, StringComparison.Ordinal);
+        Assert.Contains("confirm_executor_enabled = promptOpen", sleepPromptContext, StringComparison.Ordinal);
+        Assert.Contains("confirm_action_key = \"Sleep_Yes\"", sleepPromptContext, StringComparison.Ordinal);
+        Assert.DoesNotContain("sleep_confirm_executor_disabled", sleepPromptContext, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SleepResumeDoesNotEnableGenericDialogueConfirmation()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.Core", "Infrastructure", "SleepPromptResumeProjection.cs"));
+
+        Assert.Contains("existing_exact_prompt", source, StringComparison.Ordinal);
+        Assert.Contains("sleep_resume_active_menu_not_dialogue_box", source, StringComparison.Ordinal);
+        Assert.Contains("sleep_resume_question_key_not_sleep", source, StringComparison.Ordinal);
+        Assert.Contains("sleep_resume_player_not_at_or_adjacent_to_bed", source, StringComparison.Ordinal);
     }
 
     private static string Slice(string source, string startMarker, string endMarker)

@@ -186,14 +186,62 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileRecoveryLateNightBlocksWhenSleepPromptIsAlreadyOpen()
+    public void CompileRecoveryResumesExactExistingSleepPrompt()
     {
-        var snapshot = SleepSnapshot("", sleepPromptOpen: true);
+        var snapshot = SleepSnapshot(
+            "",
+            sleepPromptOpen: true,
+            activeMenuOpen: true,
+            activeMenuType: "DialogueBox");
 
         var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "recovery.stabilize_day"), snapshot);
 
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(
+                ",",
+                queue.CompilerDiagnostics.Concat(
+                    queue.Items.SelectMany(
+                        queued => queued.BlockingReasons))));
+        var item = Assert.Single(queue.Items);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "sleep_resume_mode" &&
+                parameter.Value == "existing_exact_prompt");
+        var step = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("confirm_sleep_yes", step.StepType);
+    }
+
+    [Fact]
+    public void CompileTerminalSleepResumeRejectsNonSleepDialogue()
+    {
+        var snapshot = SleepSnapshot(
+            "",
+            sleepPromptOpen: false,
+            activeMenuOpen: true,
+            activeMenuType: "DialogueBox");
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.sleep.resume",
+                Kind = "sleep",
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "sleep_resume_mode",
+                        Value = "existing_exact_prompt"
+                    }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
         Assert.Equal("blocked", queue.Status);
-        Assert.Contains("sleep_confirm_executor_requires_compiler_terminal_macro", queue.Items[0].BlockingReasons);
+        Assert.Contains(
+            "sleep_resume_prompt_not_open",
+            queue.Items[0].BlockingReasons);
     }
 
     [Theory]

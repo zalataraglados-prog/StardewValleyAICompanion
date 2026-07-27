@@ -45,6 +45,44 @@ namespace StardewAI.Core.OptionRegistry
                 });
             }
 
+            if (SleepPromptOpenForCandidate(snapshot))
+            {
+                var resumeBlocks =
+                    Infrastructure.SleepPromptResumeProjection.BlockReasons(
+                        snapshot);
+                candidates.Add(new EventCandidate
+                {
+                    CandidateId = "recovery:resume_sleep_prompt",
+                    Kind = "recovery_resume_sleep_prompt",
+                    Available = resumeBlocks.Length == 0,
+                    LocationId = ReadStateFieldString(
+                        snapshot,
+                        "player",
+                        "location_id"),
+                    TileX = ReadStateFieldIntOptional(
+                        snapshot,
+                        "player",
+                        "tile_x"),
+                    TileY = ReadStateFieldIntOptional(
+                        snapshot,
+                        "player",
+                        "tile_y"),
+                    ExpectedEffect =
+                        "existing_exact_sleep_prompt_confirmed;day_safely_ended",
+                    EstimatedTicks = 120,
+                    BlockReasons = resumeBlocks,
+                    Parameters = new[]
+                    {
+                        Parameter(
+                            "execution_option_id",
+                            "executor.sleep"),
+                        Parameter(
+                            "sleep_resume_mode",
+                            Infrastructure.SleepPromptResumeProjection.ResumeMode)
+                    }
+                });
+            }
+
             if (time >= 2400)
             {
                 var homeContext = ReadStateFieldValue(snapshot, "current_location", "home_context");

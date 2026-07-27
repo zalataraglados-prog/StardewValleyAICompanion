@@ -43,6 +43,9 @@ var nextArtifactIteration = NextArtifactIteration(options.SnapshotDir);
 var consecutiveErrors = 0;
 var lastErrorIteration = 0;
 var stopReason = string.Empty;
+var noProgressBackoff = new NoProgressBackoffPolicy(
+    options.NoProgressBackoffMs,
+    options.NoProgressMaxBackoffMs);
 
 for (var attemptOrdinal = 1;
     attemptOrdinal <= options.MaxAttempts &&
@@ -117,6 +120,7 @@ for (var attemptOrdinal = 1;
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
     lastQueueId = ReadString(queue, "queue_id");
     var queueStatus = ReadString(queue, "status");
+    var noProgressDecision = noProgressBackoff.Observe(queue);
     if (options.RequireExecutorFeedback)
     {
         if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
@@ -124,8 +128,18 @@ for (var attemptOrdinal = 1;
             var executableSubsetCount = ExecutableQueueItems(queue).Length;
             if (!options.ContinueAfterBlockedQueueItems || executableSubsetCount == 0)
             {
-                AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, "queue_not_pending executor_feedback_required");
-                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                AppendProgress(
+                    options,
+                    "blocked",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "queue_not_pending executor_feedback_required" +
+                    NoProgressDetail(noProgressDecision));
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal,
+                    noProgressDecision.DelayMs);
                 continue;
             }
 
@@ -292,12 +306,25 @@ static partial class Program
 
     private static readonly JsonSerializerOptions JsonlOptions = new(JsonSerializerDefaults.Web);
 
-    private static async Task DelayBeforeNextAttemptAsync(LiveTrainingOptions options, int attemptOrdinal)
+    private static async Task DelayBeforeNextAttemptAsync(
+        LiveTrainingOptions options,
+        int attemptOrdinal,
+        int minimumDelayMs = 0)
     {
-        if (options.SleepMs > 0 && attemptOrdinal < options.MaxAttempts)
+        var delayMs = Math.Max(options.SleepMs, minimumDelayMs);
+        if (delayMs > 0 && attemptOrdinal < options.MaxAttempts)
         {
-            await Task.Delay(options.SleepMs);
+            await Task.Delay(delayMs);
         }
+    }
+
+    private static string NoProgressDetail(
+        NoProgressBackoffDecision decision)
+    {
+        return decision.NoProgress
+            ? " no_progress_streak=" + decision.Streak +
+                " retry_delay_ms=" + decision.DelayMs
+            : string.Empty;
     }
 
     private static string SanitizeProgressValue(string value)

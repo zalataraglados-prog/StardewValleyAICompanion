@@ -374,6 +374,9 @@ static partial class Program
         var expectedBombMonsterHits = ReadQueueParameterInt(item, "expected_bomb_monster_hits");
         var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
         var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
+        var sleepResumeMode = ReadQueueParameterString(
+            item,
+            "sleep_resume_mode");
         var maxCrops = ReadQueueParameterInt(item, "max_crops") ?? ReadQueueParameterInt(item, "max_tool_swings");
         var maxMovementTiles = ReadQueueParameterInt(item, "max_movement_tiles");
         var expectedMineLevelDelta = ReadQueueParameterInt(item, "expected_mine_level_delta");
@@ -680,6 +683,7 @@ static partial class Program
         {
             executionRequest.WaitTicks = waitTicks.Value;
         }
+        executionRequest.SleepResumeMode = sleepResumeMode;
         if (maxCrops.HasValue)
         {
             executionRequest.MaxCrops = maxCrops.Value;
