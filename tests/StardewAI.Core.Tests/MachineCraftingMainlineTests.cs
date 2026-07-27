@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Contracts.Strategy;
@@ -9,7 +10,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class MachineCraftingMainlineTests
+public sealed partial class MachineCraftingMainlineTests
 {
     [Fact]
     public void LearnedMachineRecipeFlowsThroughCandidatePlanAndQueue()
@@ -443,6 +444,8 @@ public sealed class MachineCraftingMainlineTests
         Assert.Contains("Utility.playerCanPlaceItemHere", placement, StringComparison.Ordinal);
         Assert.DoesNotContain("potential_farm", crafting, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("with_Farm_context", crafting, StringComparison.Ordinal);
+        Assert.Contains("input.salePrice()", crafting, StringComparison.Ordinal);
+        Assert.Contains("total_sale_value", crafting, StringComparison.Ordinal);
         Assert.Contains("ReadMachineOutputItemList(ReadMemberValue(rule!, \"OutputItem\")", machineCatalog, StringComparison.Ordinal);
         Assert.DoesNotContain("ReadMemberValue(rule!, \"OutputItems\")", machineCatalog, StringComparison.Ordinal);
         Assert.Contains("ReadMemberValue(machineData, \"AdditionalConsumedItems\")", machineCatalog, StringComparison.Ordinal);
@@ -479,7 +482,7 @@ public sealed class MachineCraftingMainlineTests
             "inventory_capacity": {"value":{"occupied_stacks":2,"empty_slots":0,"has_empty_slot":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "machine_crafting": {"value":{"projection_status":"complete_known_machine_recipe_projection","rows":[{
               "recipe_name":"RECIPE_NAME","times_crafted":TIMES_CRAFTED,"output_selection_status":"exact_single_machine_output","output_item_id":"MACHINE_ITEM_ID","output_qualified_item_id":"MACHINE_QUALIFIED_ID","output_count_per_craft":1,"output_context_tags":["item_machine"],"output_machine_data":{"status":"available","additional_consumed_item_count":MACHINE_ADDITIONAL_COUNT,"additional_consumed_items":[],"prevent_time_pass_count":0,"ready_time_modifier_count":0,"only_complete_overnight":false,"output_rules":[{"minutes_until_ready":PROCESS_MINUTES,"triggers":MACHINE_TRIGGERS,"output_item":{"item_id":"PREDICTED_OUTPUT_ITEM_ID","qualified_item_id":"PREDICTED_OUTPUT_QUALIFIED_ID","preserve_id":"PREDICTED_PRESERVED_ITEM_ID"}}]},
-              "ingredient_rows":[{"requirement_id_or_category":"388","required_count":30,"available_count_before_this_ingredient":30,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":0,"qualified_item_id":"(O)388","amount":30}]}],
+              "ingredient_rows":[{"requirement_id_or_category":"388","required_count":30,"available_count_before_this_ingredient":30,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":0,"qualified_item_id":"(O)388","amount":30,"unit_sale_price":2,"total_sale_value":60}]}],
               "has_ingredients_for_one":true,"craftable_count_from_player_inventory":1,"potential_loadable_input_count":POTENTIAL_INPUTS,"potential_loadable_inputs":POTENTIAL_ROWS,"output_inventory_acceptance_after_material_consumption":READY,"craft_candidate_status":"STATUS"
             }]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -501,7 +504,7 @@ public sealed class MachineCraftingMainlineTests
         .Replace("TOTAL_DAYS", totalDays.ToString())
         .Replace("POTENTIAL_INPUTS", potentialInputs.ToString())
         .Replace("POTENTIAL_ROWS", potentialInputs > 0
-            ? "[{\"slot_index\":2,\"item_id\":\"" + inputItemId + "\",\"qualified_item_id\":\"" + inputQualifiedId + "\",\"stack\":" + potentialInputs + ",\"accepting_contexts\":[{\"location_id\":\"Farm\",\"predicted_output\":{\"status\":\"available\",\"effective_minutes_until_ready\":" + processMinutes + ",\"preserved_item_id\":\"" + predictedPreservedItemId + "\",\"item\":{\"item_id\":\"" + predictedOutputItemId + "\",\"qualified_item_id\":\"" + predictedOutputQualifiedId + "\"}}}]}]"
+            ? "[{\"slot_index\":2,\"item_id\":\"" + inputItemId + "\",\"qualified_item_id\":\"" + inputQualifiedId + "\",\"stack\":" + potentialInputs + ",\"unit_sale_price\":100,\"accepting_contexts\":[{\"location_id\":\"Farm\",\"predicted_output\":{\"status\":\"available\",\"effective_minutes_until_ready\":" + processMinutes + ",\"required_count\":1,\"sale_price\":300,\"stack\":1,\"preserved_item_id\":\"" + predictedPreservedItemId + "\",\"item\":{\"item_id\":\"" + predictedOutputItemId + "\",\"qualified_item_id\":\"" + predictedOutputQualifiedId + "\"}}}]}]"
             : "[]")
         .Replace("RECIPE_NAME", recipeName)
         .Replace("MACHINE_QUALIFIED_ID", machineQualifiedId)
@@ -617,7 +620,9 @@ public sealed class MachineCraftingMainlineTests
               "source_node_id":"chest:FarmHouse:4,5",
               "slot_index":0,
               "qualified_item_id":"(O)388",
-              "amount":30
+              "amount":30,
+              "unit_sale_price":2,
+              "total_sale_value":60
             }]
           }],
           "has_ingredients_for_one":true,

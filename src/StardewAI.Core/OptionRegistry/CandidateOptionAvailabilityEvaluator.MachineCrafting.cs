@@ -101,6 +101,10 @@ namespace StardewAI.Core.OptionRegistry
                 ingredientRows,
                 usesWorkbench,
                 commitmentLedger);
+            var materialOpportunityCost =
+                MachineCraftMaterialOpportunityCostProjection.Evaluate(
+                    ingredientRows,
+                    usesWorkbench);
             var blockReasons = new List<string>();
             if (!string.Equals(candidateStatus, readyStatus, StringComparison.Ordinal))
             {
@@ -163,11 +167,25 @@ namespace StardewAI.Core.OptionRegistry
                     ";machine_timing_status=" + demand.TimingStatus +
                     ";machine_demand_priority=" + demand.Priority +
                     ";next_arrival_source=" + demand.NextArrivalSource +
+                    ";required_additional_machine_count=" +
+                    demand.RequiredAdditionalMachineCount +
+                    ";machine_build_window_open=" +
+                    demand.BuildWindowOpen.ToString().ToLowerInvariant() +
                     ";commitment_ledger_revision=" + demand.CommitmentLedgerRevision +
                     ";material_reservation_guard_status=" + reservationGuard.Status +
                     ";material_reservation_ledger_revision=" + reservationGuard.LedgerRevision +
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
+                    ";machine_economic_value_status=" +
+                    demand.EconomicValueStatus +
+                    ";machine_backlog_processing_net_value=" +
+                    demand.BacklogProcessingNetValue +
+                    ";machine_capacity_deficit_processing_net_value=" +
+                    demand.CapacityDeficitProcessingNetValue +
+                    ";machine_craft_material_opportunity_cost_status=" +
+                    materialOpportunityCost.Status +
+                    ";machine_craft_material_opportunity_cost=" +
+                    materialOpportunityCost.TotalSaleValue +
                     ";collection_path_required=" + demand.CollectionPathRequired.ToString().ToLowerInvariant() +
                     ";crafting_source=" + craftingSource +
                     ";native_contract=" + (usesWorkbench
@@ -206,6 +224,21 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("priority_task_required", demand.PriorityTaskRequired.ToString().ToLowerInvariant()),
                     Parameter("priority_task_sources_json", JsonSerializer.Serialize(demand.PriorityTaskSources)),
                     Parameter("production_capacity_required", demand.ProductionCapacityRequired.ToString().ToLowerInvariant()),
+                    Parameter(
+                        "machine_economic_value_status",
+                        demand.EconomicValueStatus),
+                    Parameter(
+                        "machine_backlog_processing_net_value",
+                        demand.BacklogProcessingNetValue.ToString()),
+                    Parameter(
+                        "machine_capacity_deficit_processing_net_value",
+                        demand.CapacityDeficitProcessingNetValue.ToString()),
+                    Parameter(
+                        "machine_craft_material_opportunity_cost_status",
+                        materialOpportunityCost.Status),
+                    Parameter(
+                        "machine_craft_material_opportunity_cost",
+                        materialOpportunityCost.TotalSaleValue.ToString()),
                     Parameter("potential_input_count", demand.PotentialInputCount.ToString()),
                     Parameter("backlog_input_units", demand.BacklogInputUnits.ToString()),
                     Parameter("placed_same_machine_count", demand.PlacedSameMachineCount.ToString()),

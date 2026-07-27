@@ -66,15 +66,34 @@ namespace StardewAI.Core.Training
                                     candidate.ExpectedEffect,
                                     goalId)
                             : AnvilReforgeStrategicDemand.Blocked;
+                    var goalSupport = candidate.Kind ==
+                        "craft_machine_item"
+                            ? ExplicitGoalSupportProjection.Read(
+                                candidate.Kind,
+                                candidate.ExpectedEffect,
+                                goalId)
+                            : null;
                     var expectedEffect =
                         candidate.ExpectedEffect +
                         AnvilReforgeStrategicDemandProjection
                             .ExpectedEffectSuffix(
-                                anvilDemand);
+                                anvilDemand) +
+                        (goalSupport is null
+                            ? string.Empty
+                            : ExplicitGoalSupportProjection
+                                .ExpectedEffectSuffix(
+                                    goalSupport));
                     var parameters = candidate.Parameters
                         .Concat(
                             AnvilReforgeStrategicDemandProjection
                                 .Parameters(anvilDemand))
+                        .Concat(
+                            goalSupport is null
+                                ? Array.Empty<
+                                    StardewAI.Contracts.Execution
+                                        .SmallModelActionParameter>()
+                                : ExplicitGoalSupportProjection
+                                    .Parameters(goalSupport))
                         .ToArray();
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward
@@ -138,7 +157,10 @@ namespace StardewAI.Core.Training
                     }
                     if (candidate.Kind == "craft_machine_item")
                     {
-                        urgencySignal = MachineInfrastructureDemandSignal(candidate.ExpectedEffect);
+                        urgencySignal =
+                            MachineInfrastructureDemandSignal(
+                                candidate.ExpectedEffect) +
+                            (goalSupport?.Score ?? 0);
                     }
                     if (candidate.Kind == "relocate_machine_item")
                     {

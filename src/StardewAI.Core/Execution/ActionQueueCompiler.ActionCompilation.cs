@@ -88,6 +88,7 @@ namespace StardewAI.Core.Execution
         private ActionQueueItem CompileAction(
             SmallModelAction action,
             SnapshotEnvelope snapshot,
+            string goalId,
             string executionMode,
             ActionActorRef actor,
             bool globallyBlocked,
@@ -158,7 +159,11 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateCollectMachineOutputPlan(action, snapshot));
             blocking.AddRange(ValidateLoadMachineInputPlan(action, snapshot));
             blocking.AddRange(ValidateNameHatchedAnimalPlan(action, snapshot));
-            blocking.AddRange(ValidateCraftMachineItemPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateCraftMachineItemPlan(
+                action,
+                snapshot,
+                goalId,
+                commitmentLedger));
             blocking.AddRange(ValidateCraftStorageItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidatePlaceMachinePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateRemoveMachinePlan(

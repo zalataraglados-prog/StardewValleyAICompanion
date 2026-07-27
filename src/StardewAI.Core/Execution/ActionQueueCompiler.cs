@@ -61,7 +61,14 @@ namespace StardewAI.Core.Execution
             diagnostics.AddRange(ValidateExecutionTarget(modelOutput.ExecutionMode, modelOutput.Actor));
 
             var items = modelOutput.Actions
-                .Select(action => CompileAction(action, snapshot, modelOutput.ExecutionMode, modelOutput.Actor, diagnostics.Count > 0, commitmentLedger))
+                .Select(action => CompileAction(
+                    action,
+                    snapshot,
+                    modelOutput.GoalId,
+                    modelOutput.ExecutionMode,
+                    modelOutput.Actor,
+                    diagnostics.Count > 0,
+                    commitmentLedger))
                 .ToArray();
             var blocked = diagnostics.Count > 0 || items.Any(item => item.Status == "blocked");
 

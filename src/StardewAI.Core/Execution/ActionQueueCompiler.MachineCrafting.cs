@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
@@ -34,6 +35,7 @@ namespace StardewAI.Core.Execution
         private static string[] ValidateCraftMachineItemPlan(
             SmallModelAction action,
             SnapshotEnvelope snapshot,
+            string goalId,
             StrategyCommitmentLedger? commitmentLedger)
         {
             if (action.OptionId != "executor.craft_machine_item")
@@ -86,6 +88,28 @@ namespace StardewAI.Core.Execution
                 ingredientRows,
                 usesWorkbench,
                 commitmentLedger);
+            var materialOpportunityCost =
+                MachineCraftMaterialOpportunityCostProjection.Evaluate(
+                    ingredientRows,
+                    usesWorkbench);
+            var expectedGoalSupport =
+                ExplicitGoalSupportProjection.Read(
+                    "craft_machine_item",
+                    "machine_demand_class=" +
+                    demand.DemandClass +
+                    ";machine_build_window_open=" +
+                    Lower(demand.BuildWindowOpen) +
+                    ";required_additional_machine_count=" +
+                    demand.RequiredAdditionalMachineCount +
+                    ";machine_economic_value_status=" +
+                    demand.EconomicValueStatus +
+                    ";machine_capacity_deficit_processing_net_value=" +
+                    demand.CapacityDeficitProcessingNetValue +
+                    ";machine_craft_material_opportunity_cost_status=" +
+                    materialOpportunityCost.Status +
+                    ";machine_craft_material_opportunity_cost=" +
+                    materialOpportunityCost.TotalSaleValue,
+                    goalId);
             if (!string.Equals(actualReadyStatus, expectedReadyStatus, StringComparison.Ordinal) ||
                 ReadBool(source.Value, "output_inventory_acceptance_after_material_consumption") != true)
             {
@@ -143,6 +167,9 @@ namespace StardewAI.Core.Execution
                 !string.Equals(ReadParameter(action, "priority_task_required"), Lower(demand.PriorityTaskRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "priority_task_sources_json"), JsonSerializer.Serialize(demand.PriorityTaskSources), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "production_capacity_required"), Lower(demand.ProductionCapacityRequired), StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "machine_economic_value_status"), demand.EconomicValueStatus, StringComparison.Ordinal) ||
+                ReadIntParameter(action, "machine_backlog_processing_net_value") != demand.BacklogProcessingNetValue ||
+                ReadIntParameter(action, "machine_capacity_deficit_processing_net_value") != demand.CapacityDeficitProcessingNetValue ||
                 ReadIntParameter(action, "potential_input_count") != demand.PotentialInputCount ||
                 ReadIntParameter(action, "backlog_input_units") != demand.BacklogInputUnits ||
                 ReadIntParameter(action, "placed_same_machine_count") != demand.PlacedSameMachineCount ||
@@ -189,8 +216,43 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("craft_machine_item_material_reservation_projection_drifted");
             }
+            if (!string.Equals(
+                    ReadParameter(
+                        action,
+                        "machine_craft_material_opportunity_cost_status"),
+                    materialOpportunityCost.Status,
+                    StringComparison.Ordinal) ||
+                ReadIntParameter(
+                    action,
+                    "machine_craft_material_opportunity_cost") !=
+                    materialOpportunityCost.TotalSaleValue)
+            {
+                reasons.Add(
+                    "craft_machine_item_material_opportunity_cost_projection_drifted");
+            }
+            if (!GoalSupportMatches(
+                    action,
+                    expectedGoalSupport))
+            {
+                reasons.Add(
+                    "craft_machine_item_goal_support_projection_drifted");
+            }
 
             return reasons.ToArray();
+        }
+
+        private static bool GoalSupportMatches(
+            SmallModelAction action,
+            ExplicitGoalSupportDemand expected)
+        {
+            var expectedParameters =
+                ExplicitGoalSupportProjection.Parameters(
+                    expected);
+            return expectedParameters.All(parameter =>
+                string.Equals(
+                    ReadParameter(action, parameter.Name),
+                    parameter.Value,
+                    StringComparison.Ordinal));
         }
 
         private static JsonElement? MachineCraftingRow(SnapshotEnvelope snapshot, string? recipeName)

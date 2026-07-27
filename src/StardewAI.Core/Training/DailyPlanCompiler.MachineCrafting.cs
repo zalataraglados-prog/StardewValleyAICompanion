@@ -33,6 +33,11 @@ namespace StardewAI.Core.Training
                 "priority_task_required",
                 "priority_task_sources_json",
                 "production_capacity_required",
+                "machine_economic_value_status",
+                "machine_backlog_processing_net_value",
+                "machine_capacity_deficit_processing_net_value",
+                "machine_craft_material_opportunity_cost_status",
+                "machine_craft_material_opportunity_cost",
                 "potential_input_count",
                 "backlog_input_units",
                 "placed_same_machine_count",
@@ -58,7 +63,16 @@ namespace StardewAI.Core.Training
                 "material_reservation_ledger_revision",
                 "material_reservation_ids_json",
                 "collection_path_required",
-                "collection_path_source"
+                "collection_path_source",
+                "goal_support_status",
+                "goal_support_kind",
+                "goal_support_parent_goal_id",
+                "goal_support_evidence_status",
+                "goal_support_gross_benefit",
+                "goal_support_opportunity_cost",
+                "goal_support_net_benefit",
+                "goal_support_score",
+                "goal_support_reason"
             })
             {
                 parameters.Add(Parameter(name, CandidateParameter(candidate, name)));

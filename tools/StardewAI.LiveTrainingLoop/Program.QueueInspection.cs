@@ -215,6 +215,10 @@ static partial class Program
                         Number("machine.anvil.reforge.goal_capability_affinity", ReadQueueParameterDouble(item, "anvil_reforge_goal_capability_affinity") ?? 0),
                         Number("machine.anvil.reforge.loadout_adjustment", ReadQueueParameterDouble(item, "anvil_reforge_loadout_adjustment") ?? 0),
                         Number("machine.anvil.reforge.effective_demand_score", ReadQueueParameterDouble(item, "anvil_reforge_effective_demand_score") ?? 0),
+                        Number("goal.support.gross_benefit", ReadQueueParameterDouble(item, "goal_support_gross_benefit") ?? 0),
+                        Number("goal.support.opportunity_cost", ReadQueueParameterDouble(item, "goal_support_opportunity_cost") ?? 0),
+                        Number("goal.support.net_benefit", ReadQueueParameterDouble(item, "goal_support_net_benefit") ?? 0),
+                        Number("goal.support.score", ReadQueueParameterDouble(item, "goal_support_score") ?? 0),
                         Number("combat.attack_count", ReadInt(execution, "combat_attack_count")),
                         Number("combat.hit_count", ReadInt(execution, "combat_hit_count")),
                         Number("combat.damage_taken", ReadInt(execution, "combat_damage_taken")),
@@ -252,12 +256,25 @@ static partial class Program
                         Category("machine.anvil.reforge.goal_demand_status", ReadQueueParameterString(item, "anvil_reforge_goal_demand_status")),
                         Category("machine.anvil.reforge.goal_family", ReadQueueParameterString(item, "anvil_reforge_goal_family")),
                         Category("machine.anvil.reforge.goal_demand_reason", ReadQueueParameterString(item, "anvil_reforge_goal_demand_reason")),
+                        Category("goal.support.status", ReadQueueParameterString(item, "goal_support_status")),
+                        Category("goal.support.kind", ReadQueueParameterString(item, "goal_support_kind")),
+                        Category("goal.support.parent_goal_id", ReadQueueParameterString(item, "goal_support_parent_goal_id")),
+                        Category("goal.support.evidence_status", ReadQueueParameterString(item, "goal_support_evidence_status")),
+                        Category("goal.support.reason", ReadQueueParameterString(item, "goal_support_reason")),
                         Category("fishing.observed_qualified_item_id", ReadChangedFactString(execution, "fishing.caught_qualified_item_id")),
                         Category("fishing.terminal_result", ReadChangedFactString(execution, "fishing.terminal_result"))
                     },
                     Boolean = new[]
                     {
                         Flag("action.hard_blocked", blocked),
+                        Flag(
+                            "goal.support.active",
+                            string.Equals(
+                                ReadQueueParameterString(
+                                    item,
+                                    "goal_support_status"),
+                                "supported_bounded_positive_net_benefit",
+                                StringComparison.Ordinal)),
                         Flag("action.exclude_from_policy_training", excludeFromPolicyTraining),
                         Flag("execution.primitive_verified", primitiveVerified),
                         Flag("execution.after_snapshot_fresh", afterSnapshotFresh),

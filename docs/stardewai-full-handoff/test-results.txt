@@ -3297,3 +3297,16 @@ Scope boundary:
 - Backend: PASS 94/94.
 - Full solution build: PASS, 0 errors, five existing warnings.
 - No game process was started; this is planner orchestration and contract verification, not a native runtime claim.
+
+2026-07-27 explicit money-goal machine support value
+
+- Native personal/Workbench recipe-consumption rows now expose exact unit and total sale value; potential machine inputs expose unit and stack sale value.
+- Added current-backlog machine processing economics and exact recipe-material opportunity cost. Missing, ambiguous, overflowing, nonpositive, broad-goal, and future-inventory cases remain neutral.
+- Only `goal.economy.earn_money` may add the bounded machine-capacity support score, and only while the current build window and exact deterministic value chain are valid.
+- Daily planning preserves every `goal_support_*` field. Action compilation recomputes all evidence from the fresh snapshot and top-level effective goal; tampering is blocked.
+- Live training rows expose support numeric, categorical and active features.
+- Focused machine tests: PASS 27/27.
+- Core: PASS 1275/1275.
+- Backend: PASS 94/94.
+- Full solution build: PASS, 0 errors, five existing warnings.
+- No game process was started; placement/loading continuation and persistent support intent remain pending.

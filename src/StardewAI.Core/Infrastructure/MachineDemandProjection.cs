@@ -19,6 +19,9 @@ internal sealed record MachineDemandProjection(
     bool ProductionCapacityRequired,
     int PotentialInputCount,
     int BacklogInputUnits,
+    string EconomicValueStatus,
+    int BacklogProcessingNetValue,
+    int CapacityDeficitProcessingNetValue,
     int PlacedSameMachineCount,
     int IdleSameMachineCount,
     int ProcessCycleMinutes,
@@ -122,6 +125,10 @@ internal static class MachineDemandProjectionEvaluator
             ((inputs.Length > 0 && backlogUnits > 0) || (cropWave.Days >= 0 && cropWave.ServiceIntervalDays > 0));
         var productionRequired = horizonComplete && requiredAdditional > 0 && buildWindowOpen;
         var collectionRequired = ReadInt(recipe, "times_crafted") == 0;
+        var economicValue =
+            MachineDemandEconomicValueProjection.Evaluate(
+                inputs,
+                deficit);
 
         var machineScale = taskSources.Length > 0
             ? "collection_scale_one_off"
@@ -180,6 +187,9 @@ internal static class MachineDemandProjectionEvaluator
             productionRequired,
             potentialInputCount,
             backlogUnits,
+            economicValue.Status,
+            economicValue.BacklogNetValue,
+            economicValue.CapacityDeficitNetValue,
             fleet.Rows.Length,
             fleet.Rows.Count(row => row.BusyMinutes == 0),
             cycleMinutes,
@@ -202,28 +212,33 @@ internal static class MachineDemandProjectionEvaluator
             collectionRequired ? "craft_master_uncompleted_learned_recipe" : "already_crafted_at_least_once");
     }
 
-    private static PotentialInput[] ReadPotentialInputs(JsonElement recipe)
+    private static PotentialMachineDemandInput[] ReadPotentialInputs(JsonElement recipe)
     {
         if (!recipe.TryGetProperty("potential_loadable_inputs", out var rows) || rows.ValueKind != JsonValueKind.Array)
         {
-            return Array.Empty<PotentialInput>();
+            return Array.Empty<PotentialMachineDemandInput>();
         }
 
         return rows.EnumerateArray()
             .Where(row => row.ValueKind == JsonValueKind.Object)
-            .Select(row => new PotentialInput(
+            .Select(row => new PotentialMachineDemandInput(
                 ReadString(row, "qualified_item_id"),
                 ReadString(row, "item_id"),
                 Math.Max(0, ReadInt(row, "stack")),
+                TryReadNonnegativeInt(
+                    row,
+                    "unit_sale_price",
+                    out var inputSalePrice),
+                inputSalePrice,
                 ReadPredictedOutputs(row)))
             .ToArray();
     }
 
-    private static PredictedOutput[] ReadPredictedOutputs(JsonElement input)
+    private static PredictedMachineDemandOutput[] ReadPredictedOutputs(JsonElement input)
     {
         if (!input.TryGetProperty("accepting_contexts", out var contexts) || contexts.ValueKind != JsonValueKind.Array)
         {
-            return Array.Empty<PredictedOutput>();
+            return Array.Empty<PredictedMachineDemandOutput>();
         }
 
         return contexts.EnumerateArray()
@@ -238,15 +253,15 @@ internal static class MachineDemandProjectionEvaluator
             .ToArray();
     }
 
-    private static PredictedOutput[] ReadCapabilityOutputs(JsonElement recipe)
+    private static PredictedMachineDemandOutput[] ReadCapabilityOutputs(JsonElement recipe)
     {
         if (!recipe.TryGetProperty("output_machine_data", out var machineData) || machineData.ValueKind != JsonValueKind.Object ||
             !machineData.TryGetProperty("output_rules", out var rules) || rules.ValueKind != JsonValueKind.Array)
         {
-            return Array.Empty<PredictedOutput>();
+            return Array.Empty<PredictedMachineDemandOutput>();
         }
 
-        var outputs = new List<PredictedOutput>();
+        var outputs = new List<PredictedMachineDemandOutput>();
         foreach (var rule in rules.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
         {
             var minutes = ReadRuleProcessMinutes(rule);
@@ -281,28 +296,72 @@ internal static class MachineDemandProjectionEvaluator
         string.IsNullOrWhiteSpace(ReadString(output, "per_item_condition")) &&
         string.IsNullOrWhiteSpace(ReadString(output, "output_method"));
 
-    private static PredictedOutput ReadCapabilityOutput(JsonElement output, int processMinutes) => new(
+    private static PredictedMachineDemandOutput ReadCapabilityOutput(JsonElement output, int processMinutes) => new(
         ReadString(output, "qualified_item_id"),
         ReadString(output, "item_id"),
         ReadString(output, "preserve_type"),
         ReadString(output, "preserve_id"),
-        processMinutes);
+        processMinutes,
+        false,
+        0,
+        0,
+        0);
 
-    private static PredictedOutput ReadPredictedOutput(JsonElement output)
+    private static PredictedMachineDemandOutput ReadPredictedOutput(JsonElement output)
     {
         var item = output.TryGetProperty("item", out var value) && value.ValueKind == JsonValueKind.Object
             ? value
             : default;
-        return new PredictedOutput(
+        var salePriceKnown = TryReadNonnegativeInt(
+            output,
+            "sale_price",
+            out var salePrice);
+        var stackKnown = TryReadPositiveInt(
+            output,
+            "stack",
+            out var stack);
+        var requiredCountKnown = TryReadPositiveInt(
+            output,
+            "required_count",
+            out var requiredCount);
+        return new PredictedMachineDemandOutput(
             item.ValueKind == JsonValueKind.Object ? ReadString(item, "qualified_item_id") : string.Empty,
             item.ValueKind == JsonValueKind.Object ? ReadString(item, "item_id") : string.Empty,
             ReadString(output, "preserve_type"),
             ReadString(output, "preserved_item_id"),
             Math.Max(0, ReadInt(output, "effective_minutes_until_ready",
-                ReadInt(output, "override_minutes_until_ready", ReadInt(output, "rule_minutes_until_ready")))));
+                ReadInt(output, "override_minutes_until_ready", ReadInt(output, "rule_minutes_until_ready")))),
+            salePriceKnown,
+            salePrice,
+            stackKnown ? stack : 0,
+            requiredCountKnown ? requiredCount : 0);
     }
 
-    private static int ReadConservativeCycleMinutes(IReadOnlyCollection<PredictedOutput> outputs)
+    private static bool TryReadNonnegativeInt(
+        JsonElement row,
+        string property,
+        out int value)
+    {
+        value = 0;
+        return row.TryGetProperty(property, out var element) &&
+            element.ValueKind == JsonValueKind.Number &&
+            element.TryGetInt32(out value) &&
+            value >= 0;
+    }
+
+    private static bool TryReadPositiveInt(
+        JsonElement row,
+        string property,
+        out int value)
+    {
+        return TryReadNonnegativeInt(
+                   row,
+                   property,
+                   out value) &&
+               value > 0;
+    }
+
+    private static int ReadConservativeCycleMinutes(IReadOnlyCollection<PredictedMachineDemandOutput> outputs)
     {
         var durations = outputs.Select(output => output.ProcessMinutes).Where(minutes => minutes > 0).Distinct().ToArray();
         return durations.Length == 0 ? 0 : durations.Max();
@@ -313,7 +372,7 @@ internal static class MachineDemandProjectionEvaluator
         string qualifiedId,
         string itemId,
         IReadOnlyCollection<string> contextTags,
-        IReadOnlyCollection<PredictedOutput> outputs)
+        IReadOnlyCollection<PredictedMachineDemandOutput> outputs)
     {
         var sources = new List<string>();
         var quests = ReadStateFieldValue(snapshot, "quests", "active_quests");
@@ -446,8 +505,6 @@ internal static class MachineDemandProjectionEvaluator
             ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
             : Array.Empty<string>();
 
-    private sealed record PotentialInput(string QualifiedItemId, string ItemId, int Stack, PredictedOutput[] Outputs);
-    private sealed record PredictedOutput(string QualifiedItemId, string ItemId, string PreserveType, string PreservedItemId, int ProcessMinutes);
     private sealed record FleetRow(int BusyMinutes);
     private sealed record FleetProjection(FleetRow[] Rows);
 }

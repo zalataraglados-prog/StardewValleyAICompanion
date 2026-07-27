@@ -235,11 +235,17 @@ public sealed partial class PlayerReadAdapter
                 var amount = Math.Min(requiredRemaining, remainingStacks[slot]);
                 remainingStacks[slot] -= amount;
                 requiredRemaining -= amount;
+                var unitSalePrice = Math.Max(
+                    0,
+                    item!.salePrice());
                 consumed.Add(new
                 {
                     slot_index = slot,
-                    qualified_item_id = item!.QualifiedItemId,
-                    amount
+                    qualified_item_id = item.QualifiedItemId,
+                    amount,
+                    unit_sale_price = unitSalePrice,
+                    total_sale_value =
+                        (long)unitSalePrice * amount
                 });
             }
             rows.Add(new
@@ -533,12 +539,18 @@ public sealed partial class PlayerReadAdapter
             var amount = Math.Min(required, remaining[slot]);
             remaining[slot] -= amount;
             required -= amount;
+            var unitSalePrice = Math.Max(
+                0,
+                item.salePrice());
             consumed.Add(new
             {
                 source_node_id = sourceNodeId,
                 slot_index = slot,
                 qualified_item_id = item.QualifiedItemId,
-                amount
+                amount,
+                unit_sale_price = unitSalePrice,
+                total_sale_value =
+                    (long)unitSalePrice * amount
             });
         }
     }
@@ -611,6 +623,9 @@ public sealed partial class PlayerReadAdapter
             }
             if (acceptingLocations.Count > 0)
             {
+                var unitSalePrice = Math.Max(
+                    0,
+                    input.salePrice());
                 rows.Add(new
                 {
                     slot_index = slot,
@@ -618,6 +633,10 @@ public sealed partial class PlayerReadAdapter
                     qualified_item_id = input.QualifiedItemId,
                     stack = input.Stack,
                     quality = input.Quality,
+                    unit_sale_price = unitSalePrice,
+                    stack_total_sale_value =
+                        (long)unitSalePrice *
+                        input.Stack,
                     accepting_location_ids = acceptingLocations.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     accepting_location_count = acceptingLocations.Count,
                     accepting_contexts = acceptingContexts.ToArray(),
