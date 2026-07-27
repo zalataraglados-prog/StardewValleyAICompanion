@@ -3210,3 +3210,15 @@ Scope boundary:
 - TransparentBridge Release build: PASS, 0 errors.
 - Core: PASS 1232/1232.
 - Backend: PASS 94/94.
+
+2026-07-27 Mushroom Log current-environment distributions
+
+- Live `Data/Machines[(BC)MushroomLog]` and local 1.6.15 `Object.OutputMushroomLog`/`DayUpdate` were checked before implementation.
+- The bridge scans the exact 7x7 tree area and separates all-tree count effects from mature-tree pool entries and mature-moss quality effects.
+- Complete item, stack and quality marginals are emitted for the current environment. Actual identity and the joint tuple remain blocked on unread shared `Game1.random`.
+- Existing held output is exact, but the bridge does not claim that the current tree layout was its generation environment.
+- Focused Mushroom Log source and probability tests: PASS 3/3.
+- TransparentBridge Release build: PASS, 0 errors.
+- Core: PASS 1235/1235.
+- Backend: PASS 94/94.
+- No game process was started and no runtime deployment was changed.

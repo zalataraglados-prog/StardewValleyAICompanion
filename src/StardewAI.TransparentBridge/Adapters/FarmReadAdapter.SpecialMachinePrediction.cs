@@ -95,7 +95,8 @@ public sealed partial class FarmReadAdapter
         return ReadCaskSpecialState(machine) ??
             ReadIncubatorSpecialState(machine, location) ??
             ReadSolarPanelSpecialState(machine, location) ??
-            ReadEndlessFortuneSpecialState(machine);
+            ReadEndlessFortuneSpecialState(machine) ??
+            ReadMushroomLogSpecialState(machine, location);
     }
 
     private static bool IsVettedSpecialStateOutputMethod(
@@ -106,6 +107,9 @@ public sealed partial class FarmReadAdapter
                 machine,
                 outputMethod) ||
             IsVettedEndlessFortuneOutputMethod(
+                machine,
+                outputMethod) ||
+            IsVettedMushroomLogOutputMethod(
                 machine,
                 outputMethod);
     }
