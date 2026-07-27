@@ -263,6 +263,10 @@ namespace StardewAI.Core.Training
                         FullShipmentCurrentShippedCount = candidate.FullShipmentCurrentShippedCount,
                         FullShipmentAlreadyShipped = candidate.FullShipmentAlreadyShipped,
                         FullShipmentContributes = candidate.FullShipmentContributes,
+                        AvailabilityClass =
+                            "current_economic_context",
+                        AllowedNow = true,
+                        AllowedToday = true,
                         BlockReasons = candidate.BlockReasons
                     });
                 }

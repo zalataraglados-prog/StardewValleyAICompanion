@@ -427,6 +427,9 @@ namespace StardewAI.Backend.Tests
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var root = json.RootElement;
             Assert.Equal("availability_policy_prediction.v1", root.GetProperty("schema_version").GetString());
+            var goalResolution = root.GetProperty("goal_resolution");
+            Assert.Equal("not_applicable", goalResolution.GetProperty("status").GetString());
+            Assert.Equal(string.Empty, goalResolution.GetProperty("effective_goal_id").GetString());
             var ranked = root.GetProperty("prediction").GetProperty("ranked_options").EnumerateArray().ToArray();
             Assert.Empty(ranked);
             var availability = root.GetProperty("availability").GetProperty("options").EnumerateArray().ToArray();

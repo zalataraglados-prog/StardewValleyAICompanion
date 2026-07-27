@@ -252,6 +252,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("ranked_event_candidates")]
         public PolicyEventCandidatePrediction[] RankedEventCandidates { get; set; } = Array.Empty<PolicyEventCandidatePrediction>();
+
+        [JsonPropertyName("goal_resolution")]
+        public PlanningGoalResolution GoalResolution { get; set; } = new();
     }
 
     public sealed class DailyPlanCompileRequest

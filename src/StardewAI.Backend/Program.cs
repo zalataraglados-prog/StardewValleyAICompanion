@@ -57,6 +57,7 @@ builder.Services.AddSingleton<StardewTrainingSessionLauncher>();
 builder.Services.AddSingleton<TrainingReadyProbe>();
 builder.Services.AddSingleton<CandidateOptionAvailabilityEvaluator>();
 builder.Services.AddSingleton<GrandpaDirectionDailyCandidateBinding>();
+builder.Services.AddSingleton<GrandpaDailySubgoalResolver>();
 builder.Services.AddSingleton<IStrategyCommitmentRepository, FileStrategyCommitmentRepository>();
 builder.Services.AddSingleton<ActionQueueDispatchReadinessService>();
 
@@ -596,7 +597,7 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
     return Results.Ok(predictor.Predict(report, request.CandidateOptionIds));
 });
 
-app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, IStrategyCommitmentRepository commitmentRepository) =>
+app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository) =>
 {
     var report = request.TrainingReport;
     if (report is null)
@@ -625,16 +626,40 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
         ? availability.Options.Select(option => option.OptionId).ToArray()
         : availability.Options.Where(option => option.Available).Select(option => option.OptionId).ToArray();
 
+    var broadRankedEventCandidates = eventCandidateRanker.Rank(
+        report,
+        availability,
+        request.GoalId);
+    var detailedGoalResolution = goalResolver.ResolveWithBinding(
+        snapshot,
+        request.GoalId,
+        broadRankedEventCandidates);
+    var goalResolution = detailedGoalResolution.GoalResolution;
+    var effectiveGoalId = string.IsNullOrWhiteSpace(
+        goalResolution.EffectiveGoalId)
+            ? request.GoalId
+            : goalResolution.EffectiveGoalId;
+    var rankedEventCandidates = string.Equals(
+        effectiveGoalId,
+        request.GoalId,
+        StringComparison.Ordinal)
+            ? broadRankedEventCandidates
+            : eventCandidateRanker.Rank(
+                report,
+                availability,
+                effectiveGoalId);
+    rankedEventCandidates = goalResolver.ApplyBindingProvenance(
+        rankedEventCandidates,
+        detailedGoalResolution);
+
     return Results.Ok(new AvailabilityAwarePolicyPredictionEnvelope
     {
         Prediction = rankedCandidates.Length == 0
             ? new PolicyPredictionEnvelope()
             : ranker.Rank(report, rankedCandidates),
         Availability = availability,
-        RankedEventCandidates = eventCandidateRanker.Rank(
-            report,
-            availability,
-            request.GoalId)
+        RankedEventCandidates = rankedEventCandidates,
+        GoalResolution = goalResolution
     });
 });
 

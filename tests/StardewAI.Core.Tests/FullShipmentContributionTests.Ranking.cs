@@ -66,6 +66,11 @@ public sealed partial class FullShipmentContributionTests
         Assert.Equal(0, candidate.FullShipmentCurrentShippedCount);
         Assert.False(candidate.FullShipmentAlreadyShipped);
         Assert.True(candidate.FullShipmentContributes);
+        Assert.True(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(
+            "current_economic_context",
+            candidate.AvailabilityClass);
     }
 
     [Fact]

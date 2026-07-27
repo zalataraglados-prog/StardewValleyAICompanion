@@ -3284,3 +3284,16 @@ Scope boundary:
 - Full regression: Core PASS 1254/1254; Backend PASS 94/94.
 - RuntimeTestHarness and LiveTrainingLoop Release builds: PASS, 0 errors.
 - No game process was started. Explicit new runtime feedback fields remain pending one isolated native smoke.
+
+2026-07-27 Grandpa current-day subgoal resolution
+
+- Added a typed `planning_goal_resolution.v1` contract to the availability-aware ranking response.
+- The two canonical Grandpa maximum-score goal IDs now rebuild the exact current direction set and resolve only when the existing direction binder accepts at least one current candidate as `ready`.
+- No-candidate, unknown, blocked, zero-potential, time-disallowed, route-conflicting and direction-evidence-incomplete cases remain on the unresolved broad goal.
+- Successful direct candidates retain their reranked score and rank while receiving exact `grandpa_direction_id`, source-state-hash, related-factor and binding-rule provenance.
+- The LiveTrainingLoop passes the same effective subgoal into daily-plan compilation.
+- Available economic candidates now explicitly carry `allowed_now=true`, `allowed_today=true`, and `current_economic_context`, matching their `ready_now` timeline status.
+- Core: PASS 1269/1269.
+- Backend: PASS 94/94.
+- Full solution build: PASS, 0 errors, five existing warnings.
+- No game process was started; this is planner orchestration and contract verification, not a native runtime claim.

@@ -91,6 +91,11 @@ static partial class Program
             include_blocked_options = false
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
+        var resolvedGoalId = ranking["goal_resolution"]?[
+            "effective_goal_id"]?.GetValue<string>();
+        var effectiveGoalId = string.IsNullOrWhiteSpace(resolvedGoalId)
+            ? options.Goal
+            : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
         var continuationCandidates =
             QueueReplanFilter.FilterRankedCandidates(
@@ -148,7 +153,7 @@ static partial class Program
         var compileRequest = JsonSerializer.Serialize(new
         {
             state_hash = stateHash,
-            goal_id = options.Goal,
+            goal_id = effectiveGoalId,
             execution_mode = options.TargetExecutionMode,
             max_candidates = options.DailyPlanMaxCandidates,
             compile_action_queue = true,
