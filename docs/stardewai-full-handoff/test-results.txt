@@ -3248,3 +3248,15 @@ Scope boundary:
 - Focused source/runtime-contract guards: PASS 4/4.
 - Full regression: Core PASS 1239/1239; Backend PASS 94/94; solution build 0 errors.
 - All hidden game processes exited after the smokes.
+
+2026-07-27 Anvil complete-distribution training contract
+
+- Added one shared Core policy for exact and complete-distribution machine predictions; candidate generation and action compilation use the same classification.
+- Anvil admission is narrow: audited model ID, same Trinket identity, six known outcome kinds, complete rules, three Iridium Bars, ten minutes, and blocked pre-load shared RNG realization.
+- The bridge now exposes Iridium Bar availability, unit sale price and total material value with the Anvil prediction.
+- Candidate value records the unchanged Trinket identity and `3000g` additional-material cost without inventing a realized reforge value.
+- Daily planning carries and reserves the additional items plus distribution kind/model/outcome/fingerprint.
+- Action compilation recomputes the SHA-256 contract fingerprint from the current snapshot; empty or tampered fingerprints block.
+- Focused Anvil distribution mainline: PASS 6/6.
+- Full regression: Core PASS 1245/1245; Backend PASS 94/94; solution build 0 errors.
+- No game process was started; native execution and held-result feedback remain covered by EVD-163.

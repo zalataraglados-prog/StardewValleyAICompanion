@@ -490,7 +490,7 @@ public sealed partial class ActionQueueCompilerTests
 
         Assert.Equal("blocked", queue.Status);
         Assert.Contains(
-            "load_machine_input_prediction_not_exact_for_training",
+            "load_machine_input_prediction_not_trainable",
             queue.Items[0].BlockingReasons);
     }
 

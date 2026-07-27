@@ -9,6 +9,7 @@ using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
@@ -794,14 +795,59 @@ namespace StardewAI.Core.Execution
                     {
                         reasons.Add("load_machine_input_runtime_load_not_verified");
                     }
-                    if (!input.Value.TryGetProperty("predicted_output", out var predictedOutput) ||
-                        predictedOutput.ValueKind != JsonValueKind.Object ||
-                        !string.Equals(
-                            ReadString(predictedOutput, "training_eligibility_status"),
-                            "exact_current_snapshot_probe_supported",
-                            StringComparison.Ordinal))
+                    if (!input.Value.TryGetProperty(
+                            "predicted_output",
+                            out var predictedOutput) ||
+                        predictedOutput.ValueKind !=
+                            JsonValueKind.Object)
                     {
-                        reasons.Add("load_machine_input_prediction_not_exact_for_training");
+                        reasons.Add(
+                            "load_machine_input_prediction_not_trainable");
+                    }
+                    else
+                    {
+                        var trainingContract =
+                            MachinePredictionTrainingPolicy
+                                .ReadContract(
+                                    predictedOutput,
+                                    ReadString(
+                                        input.Value,
+                                        "qualified_item_id"));
+                        if (!trainingContract.Supported)
+                        {
+                            reasons.Add(
+                                "load_machine_input_prediction_not_trainable");
+                        }
+                        else if (trainingContract.Kind ==
+                            "complete_distribution" &&
+                            (!string.Equals(
+                                ReadParameter(
+                                    action,
+                                    "machine_prediction_training_kind"),
+                                trainingContract.Kind,
+                                StringComparison.Ordinal) ||
+                             !string.Equals(
+                                ReadParameter(
+                                    action,
+                                    "machine_special_prediction_model_id"),
+                                trainingContract.ModelId,
+                                StringComparison.Ordinal) ||
+                             !string.Equals(
+                                ReadParameter(
+                                    action,
+                                    "machine_output_distribution_outcome_kind"),
+                                trainingContract.OutcomeKind,
+                                StringComparison.Ordinal) ||
+                             !string.Equals(
+                                ReadParameter(
+                                    action,
+                                    "machine_prediction_contract_fingerprint"),
+                                trainingContract.Fingerprint,
+                                StringComparison.Ordinal)))
+                        {
+                            reasons.Add(
+                                "load_machine_input_distribution_contract_mismatch");
+                        }
                     }
 
                     var requestedQualifiedId = ReadParameter(action, "qualified_item_id");

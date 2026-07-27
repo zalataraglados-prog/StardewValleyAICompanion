@@ -430,10 +430,17 @@ namespace StardewAI.Core.Execution
             expectedEffect += OptionalEffect(action, "predicted_output_sale_price");
             expectedEffect += OptionalEffect(action, "predicted_output_total_value");
             expectedEffect += OptionalEffect(action, "predicted_output_net_value");
+            expectedEffect += OptionalEffect(action, "machine_additional_consumed_total_value");
+            expectedEffect += OptionalEffect(action, "machine_additional_consumed_items");
+            expectedEffect += OptionalEffect(action, "machine_additional_consumed_available");
             expectedEffect += OptionalEffect(action, "predicted_minutes_until_ready");
             expectedEffect += OptionalEffect(action, "predicted_days_until_ready");
             expectedEffect += OptionalEffect(action, "predicted_days_to_next_quality");
             expectedEffect += OptionalEffect(action, "machine_special_prediction_model_id");
+            expectedEffect += OptionalEffect(action, "machine_prediction_training_status");
+            expectedEffect += OptionalEffect(action, "machine_prediction_training_kind");
+            expectedEffect += OptionalEffect(action, "machine_prediction_contract_fingerprint");
+            expectedEffect += OptionalEffect(action, "machine_output_distribution_outcome_kind");
             expectedEffect += OptionalEffect(action, "incubator_hatch_animal_type_id");
             expectedEffect += OptionalEffect(action, "incubator_suggested_hatch_name");
             expectedEffect += OptionalEffect(action, "incubator_unreserved_hatch_slot_count");

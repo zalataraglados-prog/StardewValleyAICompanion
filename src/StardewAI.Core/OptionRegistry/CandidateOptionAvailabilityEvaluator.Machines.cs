@@ -7,6 +7,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -327,6 +328,10 @@ namespace StardewAI.Core.OptionRegistry
                         PredictMachineOutputFromSummary(machineData, qualifiedItemId, itemId, inputSalePrice, inventoryStacks);
                     var loadExecutorStatus = ReadString(input, "load_executor_status");
                     var predictionTrainingStatus = ReadMachinePredictionTrainingStatus(input);
+                    var predictionTrainingContract =
+                        ReadMachinePredictionTrainingContract(
+                            input,
+                            qualifiedItemId);
                     var incubatorPrediction =
                         ReadIncubatorPrediction(input);
                     var blockReasons = new List<string>();
@@ -363,9 +368,10 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         blockReasons.Add("machine_input_runtime_load_not_verified");
                     }
-                    if (!string.Equals(predictionTrainingStatus, "exact_current_snapshot_probe_supported", StringComparison.Ordinal))
+                    if (!predictionTrainingContract.Supported)
                     {
-                        blockReasons.Add("machine_output_not_exact_for_training");
+                        blockReasons.Add(
+                            "machine_output_not_trainable");
                     }
 
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
@@ -394,7 +400,19 @@ namespace StardewAI.Core.OptionRegistry
                             ";machine_input_executor_status=" + loadExecutorStatus +
                             ";machine_execution_status=" + machineExecutionStatus +
                             ";machine_input_dispatch_kind=" + inputDispatchKind +
-                            ";machine_prediction_training_status=" + predictionTrainingStatus,
+                            ";machine_prediction_training_status=" + predictionTrainingStatus +
+                            ";machine_prediction_training_kind=" +
+                            predictionTrainingContract.Kind +
+                            (!string.IsNullOrWhiteSpace(
+                                predictionTrainingContract.Fingerprint)
+                                ? ";machine_prediction_contract_fingerprint=" +
+                                  predictionTrainingContract.Fingerprint
+                                : string.Empty) +
+                            (!string.IsNullOrWhiteSpace(
+                                predictionTrainingContract.OutcomeKind)
+                                ? ";machine_output_distribution_outcome_kind=" +
+                                  predictionTrainingContract.OutcomeKind
+                                : string.Empty),
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -409,7 +427,16 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter(
                                 "machine_special_prediction_model_id",
                                 incubatorPrediction?.ModelId ??
-                                string.Empty),
+                                predictionTrainingContract.ModelId),
+                            Parameter(
+                                "machine_prediction_training_kind",
+                                predictionTrainingContract.Kind),
+                            Parameter(
+                                "machine_prediction_contract_fingerprint",
+                                predictionTrainingContract.Fingerprint),
+                            Parameter(
+                                "machine_output_distribution_outcome_kind",
+                                predictionTrainingContract.OutcomeKind),
                             Parameter(
                                 "incubator_hatch_animal_type_id",
                                 incubatorPrediction?.AnimalTypeId ??
@@ -696,13 +723,45 @@ namespace StardewAI.Core.OptionRegistry
                     : MachineOutputPrediction.Unavailable("machine_native_probe_" + SanitizeStatus(reason));
             }
 
-            if (!predictedOutput.TryGetProperty("item", out var outputItem) || outputItem.ValueKind != JsonValueKind.Object)
+            var trainingContract =
+                MachinePredictionTrainingPolicy.ReadContract(
+                    predictedOutput,
+                    qualifiedItemId);
+            var hasOutputItem =
+                predictedOutput.TryGetProperty(
+                    "item",
+                    out var outputItem) &&
+                outputItem.ValueKind ==
+                    JsonValueKind.Object;
+            if (!hasOutputItem &&
+                trainingContract.Kind ==
+                    "complete_distribution")
+            {
+                hasOutputItem =
+                    predictedOutput.TryGetProperty(
+                        "output_identity",
+                        out outputItem) &&
+                    outputItem.ValueKind ==
+                        JsonValueKind.Object;
+            }
+            if (!hasOutputItem)
             {
                 return MachineOutputPrediction.Unavailable("machine_native_probe_output_item_unavailable");
             }
 
             var matchedRuleId = ReadString(predictedOutput, "matched_rule_id");
-            var additionalConsumed = ReadAdditionalConsumedSummaryForRequiredItem(machineData, qualifiedItemId, itemId, matchedRuleId, inventoryStacks);
+            var additionalConsumed =
+                trainingContract.Kind ==
+                    "complete_distribution"
+                    ? ReadAdditionalConsumedSummaryFromPrediction(
+                        predictedOutput,
+                        inventoryStacks)
+                    : ReadAdditionalConsumedSummaryForRequiredItem(
+                        machineData,
+                        qualifiedItemId,
+                        itemId,
+                        matchedRuleId,
+                        inventoryStacks);
             if (!additionalConsumed.HasValue)
             {
                 return MachineOutputPrediction.Unavailable("machine_native_probe_additional_consumption_unpriced");
@@ -710,7 +769,9 @@ namespace StardewAI.Core.OptionRegistry
 
             var outputQualifiedId = ReadString(outputItem, "qualified_item_id");
             var outputItemId = ReadString(outputItem, "item_id");
-            var outputStack = Math.Max(1, ReadInt(predictedOutput, "stack"));
+            var outputStack = ReadInt(
+                predictedOutput,
+                "stack");
             if (outputStack <= 0)
             {
                 outputStack = Math.Max(1, ReadInt(outputItem, "stack"));
@@ -737,7 +798,11 @@ namespace StardewAI.Core.OptionRegistry
 
             suffix += ";predicted_output_stack=" + Math.Max(1, outputStack) +
                 ";predicted_output_sale_price=" + outputSalePrice +
-                ";predicted_output_price_source=machine_native_probe_sale_price" +
+                ";predicted_output_price_source=" +
+                (trainingContract.Kind ==
+                    "complete_distribution"
+                    ? "distribution_output_identity_sale_price"
+                    : "machine_native_probe_sale_price") +
                 ";predicted_output_total_value=" + totalValue +
                 ";machine_additional_consumed_total_value=" + additionalValue +
                 ";predicted_output_net_value=" + netValue;
@@ -857,9 +922,15 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return new MachineOutputPrediction(
-                "machine_native_probe_available",
+                trainingContract.Kind ==
+                    "complete_distribution"
+                    ? "machine_distribution_probe_available"
+                    : "machine_native_probe_available",
                 additionalValue > 0
-                    ? "machine_native_probe_total_value_minus_transparent_input_and_additional_consumed_sale_price"
+                    ? trainingContract.Kind ==
+                        "complete_distribution"
+                        ? "distribution_identity_value_minus_transparent_input_and_additional_consumed_sale_price"
+                        : "machine_native_probe_total_value_minus_transparent_input_and_additional_consumed_sale_price"
                     : "machine_native_probe_total_value_minus_transparent_input_sale_price",
                 suffix);
         }

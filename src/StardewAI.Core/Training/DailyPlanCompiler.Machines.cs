@@ -168,6 +168,10 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_days_until_ready");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_days_to_next_quality");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_special_prediction_model_id");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_prediction_training_status");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_prediction_training_kind");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_prediction_contract_fingerprint");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_output_distribution_outcome_kind");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_hatch_animal_type_id");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_suggested_hatch_name");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "incubator_unreserved_hatch_slot_count");

@@ -559,6 +559,62 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompilePreservesMachineDistributionContract()
+    {
+        var candidate =
+            new PolicyEventCandidatePrediction
+            {
+                CandidateId =
+                    "machine-input:Farm:64,15:slot0:(TR)IridiumSpur",
+                Kind = "load_machine_input_tile",
+                Rank = 1,
+                TimelineStatus = "ready_now",
+                LocationId = "Farm",
+                TileX = 64,
+                TileY = 15,
+                ItemId = "IridiumSpur",
+                QualifiedItemId =
+                    "(TR)IridiumSpur",
+                SlotIndex = 0,
+                Quantity = 1,
+                ExpectedEffect =
+                    "move_to_adjacent=63,15;input_slot_index=0;qualified_item_id=(TR)IridiumSpur;machine_additional_consumed_items=(O)337:3;machine_additional_consumed_available=(O)337:3;machine_special_prediction_model_id=anvil_trinket_reforge_distribution.v1;machine_prediction_training_kind=complete_distribution;machine_prediction_contract_fingerprint=abc123;machine_output_distribution_outcome_kind=iridium_spur",
+                EstimatedTicks = 90,
+                Available = true
+            };
+
+        var plan = new DailyPlanCompiler()
+            .Compile(
+                new[] { candidate },
+                "state.1");
+
+        var load = Assert.Single(
+            plan.Steps.Where(step =>
+                step.Kind ==
+                "load_machine_input"));
+        Assert.Contains(
+            load.Parameters,
+            parameter =>
+                parameter.Name ==
+                    "machine_prediction_training_kind" &&
+                parameter.Value ==
+                    "complete_distribution");
+        Assert.Contains(
+            load.Parameters,
+            parameter =>
+                parameter.Name ==
+                    "machine_prediction_contract_fingerprint" &&
+                parameter.Value == "abc123");
+        Assert.Contains(
+            load.Parameters,
+            parameter =>
+                parameter.Name ==
+                    "machine_output_distribution_outcome_kind" &&
+                parameter.Value ==
+                    "iridium_spur");
+    }
+
+    [Fact]
     public void CompileSkipsMachineInputCandidatesWhenInputStackAlreadyReserved()
     {
         var first = MachineInputCandidate("machine-input:Farm:64,15:slot0:(O)262", 64, 15, slotIndex: 0, stack: 1, score: 10);

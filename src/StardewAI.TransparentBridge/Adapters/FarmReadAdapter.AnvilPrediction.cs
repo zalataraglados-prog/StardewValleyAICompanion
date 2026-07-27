@@ -105,6 +105,14 @@ public sealed partial class FarmReadAdapter
         }
 
         var data = trinket.GetTrinketData();
+        var iridiumBarSalePrice =
+            ReadItemSalePrice("(O)337") ?? 0;
+        var iridiumBarAvailableCount =
+            Game1.player.Items
+                .Where(item =>
+                    item?.QualifiedItemId ==
+                    "(O)337")
+                .Sum(item => item?.Stack ?? 0);
         prediction = new
         {
             status = "available",
@@ -160,14 +168,22 @@ public sealed partial class FarmReadAdapter
                     trinket.QualifiedItemId,
                 same_trinket_identity = true,
                 stack = 1,
-                quality = trinket.Quality
+                quality = trinket.Quality,
+                sale_price =
+                    trinket.salePrice()
             },
             consumed_additional_items = new[]
             {
                 new
                 {
                     qualified_item_id = "(O)337",
-                    required_count = 3
+                    required_count = 3,
+                    available_count =
+                        iridiumBarAvailableCount,
+                    unit_sale_price =
+                        iridiumBarSalePrice,
+                    total_sale_value =
+                        iridiumBarSalePrice * 3
                 }
             },
             effective_minutes_until_ready = 10,
