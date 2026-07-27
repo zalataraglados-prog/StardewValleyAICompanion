@@ -3270,6 +3270,17 @@ Scope boundary:
 - Native Anvil loading reads the realized Trinket effect fields, records realized utility/delta, improved state and exact outcome JSON without reading or mutating the pre-load shared RNG state.
 - Successful Anvil executions become `strategy_value` / `policy_ranker` samples labeled by realized normalized utility delta. Three Iridium Bars and their `3000g` opportunity cost remain separate features.
 - Focused Anvil utility and mainline tests: PASS 15/15.
+
+2026-07-27 Anvil native feedback and cross-Trinket loadout demand
+- Added `player.trinket_loadout` with exact unlocked, occupied and empty slots plus every slot's item identity, runtime type and `trinket_item_state.v1` payload.
+- Added six decompile-bound capability classes. Frog removal explicitly preserves neither ordinary kill credit nor ordinary drops; the other five preserve native death/drop resolution.
+- The live loop now transports `goal_id` into event-candidate ranking. Explicit subgoals receive bounded deterministic capability affinity; broad Grandpa/daily goals remain exactly neutral and require downstream decomposition.
+- Candidate generation fails closed when exact loadout context is absent. Action compilation recomputes and compares the loadout projection against the fresh snapshot.
+- Hidden/silent E-drive PASS: `artifacts/runtime-machine-daily-plan-smoke/runtime-machine-daily-plan-smoke-20260727-173941`.
+- Native result: Iridium Spur `GeneralStat 5 -> 10`, 10000 ms speed duration, normalized realized utility delta `+0.8`; Iridium Bars `3 -> 0`; one verified non-excluded `strategy_value` row.
+- Runtime fixture had unlock flag `0`, native maximum slot count `1`, and one serialized locked/empty slot; planning recorded `no_unlocked_trinket_slot` and unresolved Grandpa goal demand stayed `0`.
+- PowerShell parser PASS; focused Anvil 25/25; Core 1265/1265; Backend 94/94; full Release solution build 0 errors with five existing warnings.
+- No Stardew/SMAPI/backend process remained after the run.
 - Full regression: Core PASS 1254/1254; Backend PASS 94/94.
 - RuntimeTestHarness and LiveTrainingLoop Release builds: PASS, 0 errors.
 - No game process was started. Explicit new runtime feedback fields remain pending one isolated native smoke.

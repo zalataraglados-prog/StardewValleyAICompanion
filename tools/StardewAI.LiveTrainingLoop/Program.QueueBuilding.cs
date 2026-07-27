@@ -59,6 +59,7 @@ static partial class Program
     {
         var rankRequest = JsonSerializer.Serialize(new
         {
+            goal_id = options.Goal,
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
             candidate_option_ids = objectiveContinuation is null ? options.DailyPlanCandidateOptionIds : Array.Empty<string>(),

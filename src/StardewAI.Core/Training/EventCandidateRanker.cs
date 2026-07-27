@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Training
 {
@@ -21,6 +22,14 @@ namespace StardewAI.Core.Training
         }
 
         public PolicyEventCandidatePrediction[] Rank(BaselineTrainingReport report, OptionAvailabilityEnvelope availability)
+        {
+            return Rank(report, availability, string.Empty);
+        }
+
+        public PolicyEventCandidatePrediction[] Rank(
+            BaselineTrainingReport report,
+            OptionAvailabilityEnvelope availability,
+            string goalId)
         {
             var optionScores = report.OptionScores.ToDictionary(score => score.OptionId, StringComparer.Ordinal);
             var ranked = new List<PolicyEventCandidatePrediction>();
@@ -50,6 +59,23 @@ namespace StardewAI.Core.Training
 
                 foreach (var candidate in combined)
                 {
+                    var anvilDemand = candidate.Kind ==
+                        "load_machine_input_tile"
+                            ? AnvilReforgeStrategicDemandProjection
+                                .Read(
+                                    candidate.ExpectedEffect,
+                                    goalId)
+                            : AnvilReforgeStrategicDemand.Blocked;
+                    var expectedEffect =
+                        candidate.ExpectedEffect +
+                        AnvilReforgeStrategicDemandProjection
+                            .ExpectedEffectSuffix(
+                                anvilDemand);
+                    var parameters = candidate.Parameters
+                        .Concat(
+                            AnvilReforgeStrategicDemandProjection
+                                .Parameters(anvilDemand))
+                        .ToArray();
                     var baseReward = optionScores.TryGetValue(option.OptionId, out var optionScore)
                         ? optionScore.AverageTotalReward
                         : 0;
@@ -104,7 +130,11 @@ namespace StardewAI.Core.Training
                     }
                     if (candidate.Kind == "load_machine_input_tile")
                     {
-                        urgencySignal = 0.035 + MachineInputOpportunityCostSignal(candidate.ExpectedEffect);
+                        urgencySignal = 0.035 +
+                            MachineInputOpportunityCostSignal(
+                                candidate.ExpectedEffect) +
+                            anvilDemand.EffectiveDemandScore *
+                            0.05;
                     }
                     if (candidate.Kind == "craft_machine_item")
                     {
@@ -176,7 +206,7 @@ namespace StardewAI.Core.Training
                         LocationId = candidate.LocationId,
                         TileX = candidate.TileX,
                         TileY = candidate.TileY,
-                        ExpectedEffect = candidate.ExpectedEffect,
+                        ExpectedEffect = expectedEffect,
                         ItemId = candidate.ItemId,
                         QualifiedItemId = candidate.QualifiedItemId,
                         SlotIndex = candidate.SlotIndex,
@@ -193,7 +223,7 @@ namespace StardewAI.Core.Training
                         WaitCost = candidate.WaitCost,
                         GateReasons = candidate.GateReasons,
                         BlockReasons = candidate.BlockReasons,
-                        Parameters = candidate.Parameters,
+                        Parameters = parameters,
                         FullShipmentKnown = candidate.FullShipmentKnown,
                         FullShipmentEligible = candidate.FullShipmentEligible,
                         FullShipmentCurrentShippedCount = candidate.FullShipmentCurrentShippedCount,

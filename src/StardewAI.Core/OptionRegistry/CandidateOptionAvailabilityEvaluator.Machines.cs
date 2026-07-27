@@ -332,6 +332,15 @@ namespace StardewAI.Core.OptionRegistry
                         ReadMachinePredictionTrainingContract(
                             input,
                             qualifiedItemId);
+                    var anvilLoadout =
+                        predictionTrainingContract.Kind ==
+                            "complete_distribution"
+                            ? AnvilReforgeLoadoutProjection
+                                .Read(
+                                    snapshot,
+                                    predictionTrainingContract
+                                        .OutcomeKind)
+                            : AnvilReforgeLoadout.Blocked;
                     var incubatorPrediction =
                         ReadIncubatorPrediction(input);
                     var blockReasons = new List<string>();
@@ -373,8 +382,20 @@ namespace StardewAI.Core.OptionRegistry
                         blockReasons.Add(
                             "machine_output_not_trainable");
                     }
+                    if (predictionTrainingContract.Kind ==
+                            "complete_distribution" &&
+                        !anvilLoadout.Supported)
+                    {
+                        blockReasons.Add(
+                            "anvil_reforge_loadout_context_unavailable");
+                    }
 
                     var distance = standTile.Tile is null ? 0 : Math.Abs(playerX - standTile.Tile.X) + Math.Abs(playerY - standTile.Tile.Y);
+                    var anvilLoadoutEffect =
+                        anvilLoadout.Supported
+                            ? AnvilLoadoutExpectedEffect(
+                                anvilLoadout)
+                            : string.Empty;
                     return new EventCandidate
                     {
                         CandidateId = "machine-input:" + machineLocation + ":" + x + "," + y + ":slot" + slotIndex + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
@@ -412,7 +433,8 @@ namespace StardewAI.Core.OptionRegistry
                                 predictionTrainingContract.OutcomeKind)
                                 ? ";machine_output_distribution_outcome_kind=" +
                                   predictionTrainingContract.OutcomeKind
-                                : string.Empty),
+                                : string.Empty) +
+                            anvilLoadoutEffect,
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -451,9 +473,90 @@ namespace StardewAI.Core.OptionRegistry
                                     .ToString() ??
                                 string.Empty)
                         }
+                        .Concat(
+                            AnvilLoadoutParameters(
+                                anvilLoadout))
+                        .ToArray()
                     };
                 })
                 .ToArray();
+        }
+
+        private static string
+            AnvilLoadoutExpectedEffect(
+                AnvilReforgeLoadout loadout)
+        {
+            return
+                ";anvil_reforge_loadout_status=" +
+                loadout.Status +
+                ";anvil_reforge_capability_class=" +
+                loadout.CapabilityClass +
+                ";anvil_reforge_kill_credit_policy=" +
+                loadout.KillCreditPolicy +
+                ";anvil_reforge_loot_policy=" +
+                loadout.LootPolicy +
+                ";anvil_reforge_unlocked_slot_count=" +
+                loadout.UnlockedSlotCount +
+                ";anvil_reforge_occupied_slot_count=" +
+                loadout.OccupiedSlotCount +
+                ";anvil_reforge_empty_unlocked_slot_count=" +
+                loadout.EmptyUnlockedSlotCount +
+                ";anvil_reforge_same_type_equipped_count=" +
+                loadout.SameTypeEquippedCount +
+                ";anvil_reforge_other_type_equipped_count=" +
+                loadout.OtherTypeEquippedCount +
+                ";anvil_reforge_loadout_relation=" +
+                loadout.Relation;
+        }
+
+        private static SmallModelActionParameter[]
+            AnvilLoadoutParameters(
+                AnvilReforgeLoadout loadout)
+        {
+            if (!loadout.Supported)
+            {
+                return Array.Empty<
+                    SmallModelActionParameter>();
+            }
+
+            return new[]
+            {
+                Parameter(
+                    "anvil_reforge_loadout_status",
+                    loadout.Status),
+                Parameter(
+                    "anvil_reforge_capability_class",
+                    loadout.CapabilityClass),
+                Parameter(
+                    "anvil_reforge_kill_credit_policy",
+                    loadout.KillCreditPolicy),
+                Parameter(
+                    "anvil_reforge_loot_policy",
+                    loadout.LootPolicy),
+                Parameter(
+                    "anvil_reforge_unlocked_slot_count",
+                    loadout.UnlockedSlotCount
+                        .ToString()),
+                Parameter(
+                    "anvil_reforge_occupied_slot_count",
+                    loadout.OccupiedSlotCount
+                        .ToString()),
+                Parameter(
+                    "anvil_reforge_empty_unlocked_slot_count",
+                    loadout.EmptyUnlockedSlotCount
+                        .ToString()),
+                Parameter(
+                    "anvil_reforge_same_type_equipped_count",
+                    loadout.SameTypeEquippedCount
+                        .ToString()),
+                Parameter(
+                    "anvil_reforge_other_type_equipped_count",
+                    loadout.OtherTypeEquippedCount
+                        .ToString()),
+                Parameter(
+                    "anvil_reforge_loadout_relation",
+                    loadout.Relation)
+            };
         }
 
         private static IncubatorInputPrediction?

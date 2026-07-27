@@ -1,8 +1,11 @@
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -68,6 +71,12 @@ public sealed partial class
             candidate.ExpectedEffect);
         Assert.Contains(
             "anvil_reforge_decision_class=expected_improvement",
+            candidate.ExpectedEffect);
+        Assert.Contains(
+            "anvil_reforge_capability_class=critical_hit_mobility",
+            candidate.ExpectedEffect);
+        Assert.Contains(
+            "anvil_reforge_loadout_relation=empty_unlocked_slot_available",
             candidate.ExpectedEffect);
 
         var fingerprint = ReadExpectedEffectValue(
@@ -140,6 +149,37 @@ public sealed partial class
         Assert.False(candidate.Available);
         Assert.Contains(
             "machine_output_not_trainable",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void DistributionWithoutExactLoadoutContextRemainsBlocked()
+    {
+        var snapshot = Snapshot(
+            AnvilDistributionTestFixture.StateJson
+                .Replace(
+                    """
+                    "trinket_loadout": {"value":{"schema_version":"trinket_loadout_context.v1","status":"available_exact_live_slots","unlocked_slot_count":1,"occupied_slot_count":0,"empty_unlocked_slot_count":1,"slots":[{"slot_index":0,"unlocked":true,"occupied":false,"item_id":"","qualified_item_id":"","runtime_type":"","special_state":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                    """,
+                    string.Empty,
+                    StringComparison.Ordinal));
+
+        var candidate =
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.process_machines" },
+                    includeExecutorCalibrationOptions:
+                        true)
+                .Options[0]
+                .EventCandidates
+                .Single(row =>
+                    row.Kind ==
+                    "load_machine_input_tile");
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "anvil_reforge_loadout_context_unavailable",
             candidate.BlockReasons);
     }
 
@@ -238,6 +278,32 @@ public sealed partial class ActionQueueCompilerTests
             queue.Items[0].BlockingReasons);
     }
 
+    [Fact]
+    public void CompileBlocksTamperedAnvilLoadoutProjection()
+    {
+        var snapshot = Snapshot(
+            AnvilDistributionTestFixture.StateJson);
+        var request = AnvilRequest(
+            snapshot,
+            AnvilDistributionTestFixture
+                .ReadContract(snapshot)
+                .Fingerprint);
+        request.Actions[0]
+            .Parameters
+            .Single(parameter =>
+                parameter.Name ==
+                "anvil_reforge_empty_unlocked_slot_count")
+            .Value = "0";
+
+        var queue = new ActionQueueCompiler()
+            .Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "load_machine_input_distribution_contract_mismatch",
+            queue.Items[0].BlockingReasons);
+    }
+
     private static SmallModelActionEnvelope AnvilRequest(
         StardewAI.Contracts.State.SnapshotEnvelope snapshot,
         string fingerprint)
@@ -248,6 +314,10 @@ public sealed partial class ActionQueueCompilerTests
         var utility =
             AnvilReforgeUtilityProjection.Read(
                 prediction);
+        var loadout =
+            AnvilReforgeLoadoutProjection.Read(
+                snapshot,
+                "iridium_spur");
         var request = Request(
             snapshot.StateHash,
             "executor.load_machine_input");
@@ -309,7 +379,37 @@ public sealed partial class ActionQueueCompilerTests
                     utility.DegradationProbability)),
             Parameter(
                 "anvil_reforge_decision_class",
-                utility.DecisionClass)
+                utility.DecisionClass),
+            Parameter(
+                "anvil_reforge_loadout_status",
+                loadout.Status),
+            Parameter(
+                "anvil_reforge_capability_class",
+                loadout.CapabilityClass),
+            Parameter(
+                "anvil_reforge_kill_credit_policy",
+                loadout.KillCreditPolicy),
+            Parameter(
+                "anvil_reforge_loot_policy",
+                loadout.LootPolicy),
+            Parameter(
+                "anvil_reforge_unlocked_slot_count",
+                loadout.UnlockedSlotCount.ToString()),
+            Parameter(
+                "anvil_reforge_occupied_slot_count",
+                loadout.OccupiedSlotCount.ToString()),
+            Parameter(
+                "anvil_reforge_empty_unlocked_slot_count",
+                loadout.EmptyUnlockedSlotCount.ToString()),
+            Parameter(
+                "anvil_reforge_same_type_equipped_count",
+                loadout.SameTypeEquippedCount.ToString()),
+            Parameter(
+                "anvil_reforge_other_type_equipped_count",
+                loadout.OtherTypeEquippedCount.ToString()),
+            Parameter(
+                "anvil_reforge_loadout_relation",
+                loadout.Relation)
         };
         return request;
     }
@@ -324,6 +424,7 @@ internal static class AnvilDistributionTestFixture
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x": {"value":63,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_y": {"value":15,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "trinket_loadout": {"value":{"schema_version":"trinket_loadout_context.v1","status":"available_exact_live_slots","unlocked_slot_count":1,"occupied_slot_count":0,"empty_unlocked_slot_count":1,"slots":[{"slot_index":0,"unlocked":true,"occupied":false,"item_id":"","qualified_item_id":"","runtime_type":"","special_state":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory_capacity": {"value":{"occupied_stacks":2,"empty_slots":10,"has_empty_slot":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[{"slot_index":0,"item_id":"IridiumSpur","qualified_item_id":"(TR)IridiumSpur","stack":1,"quality":0,"sale_price":0,"maximum_stack_size":1,"is_empty":false},{"slot_index":1,"item_id":"337","qualified_item_id":"(O)337","stack":3,"quality":0,"sale_price":1000,"maximum_stack_size":999,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -399,6 +500,131 @@ internal static class AnvilDistributionTestFixture
             .GetProperty("value")[0]
             .GetProperty("loadable_inputs")[0]
             .GetProperty("predicted_output");
+    }
+}
+
+public sealed class AnvilReforgeStrategicDemandProjectionTests
+{
+    public static IEnumerable<object[]> CapabilityCases =>
+        new[]
+        {
+            new object[] { "iridium_spur", "critical_hit_mobility" },
+            new object[] { "parrot_egg", "kill_triggered_currency" },
+            new object[] { "frog_egg", "enemy_removal_no_kill_or_loot_credit" },
+            new object[] { "fairy_box", "reactive_healing" },
+            new object[] { "ice_rod", "ranged_freeze_control" },
+            new object[] { "magic_quiver", "ranged_direct_damage" }
+        };
+
+    [Theory]
+    [MemberData(nameof(CapabilityCases))]
+    public void AllVettedOutcomesExposeExactCapability(
+        string outcomeKind,
+        string capability)
+    {
+        Assert.Equal(
+            capability,
+            AnvilReforgeLoadoutProjection.Capability(
+                outcomeKind));
+    }
+
+    [Fact]
+    public void BroadGrandpaGoalDoesNotInventTrinketPreference()
+    {
+        var ranked = Rank(
+            "goal.grandpa_max_score_year3",
+            Candidate(
+                "spur",
+                "critical_hit_mobility"));
+
+        var candidate = Assert.Single(ranked);
+        Assert.Equal(0.035, candidate.Score);
+        Assert.Contains(
+            "anvil_reforge_goal_demand_status=broad_goal_requires_downstream_subgoal",
+            candidate.ExpectedEffect);
+        Assert.Contains(
+            "anvil_reforge_effective_demand_score=0",
+            candidate.ExpectedEffect);
+    }
+
+    [Fact]
+    public void LootGoalPrefersDamageAndRejectsFrogRemovalSemantics()
+    {
+        var ranked = Rank(
+            "goal.quest_kill_and_preserve_drops",
+            Candidate(
+                "frog",
+                "enemy_removal_no_kill_or_loot_credit"),
+            Candidate(
+                "quiver",
+                "ranged_direct_damage"));
+
+        Assert.Equal("quiver", ranked[0].CandidateId);
+        Assert.Equal("frog", ranked[1].CandidateId);
+        Assert.Contains(
+            "anvil_reforge_effective_demand_score=-0.95",
+            ranked[1].ExpectedEffect);
+        Assert.Contains(
+            "frog_removal_conflicts_with_loot_kill_credit_and_infestation_completion",
+            ranked[1].ExpectedEffect);
+    }
+
+    [Fact]
+    public void EconomyGoalPrefersParrotCurrencyCapability()
+    {
+        var ranked = Rank(
+            "goal.economy.gold",
+            Candidate(
+                "quiver",
+                "ranged_direct_damage"),
+            Candidate(
+                "parrot",
+                "kill_triggered_currency"));
+
+        Assert.Equal("parrot", ranked[0].CandidateId);
+        Assert.Contains(
+            "anvil_reforge_goal_family=economy",
+            ranked[0].ExpectedEffect);
+    }
+
+    private static PolicyEventCandidatePrediction[] Rank(
+        string goalId,
+        params EventCandidate[] candidates)
+    {
+        return new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            new OptionAvailabilityEnvelope
+            {
+                CurrentTime = 600,
+                Options = new[]
+                {
+                    new OptionAvailability
+                    {
+                        OptionId = "farm.process_machines",
+                        Available = true,
+                        EventCandidates = candidates
+                    }
+                }
+            },
+            goalId);
+    }
+
+    private static EventCandidate Candidate(
+        string id,
+        string capability)
+    {
+        return new EventCandidate
+        {
+            CandidateId = id,
+            Kind = "load_machine_input_tile",
+            Available = true,
+            ExpectedEffect =
+                "anvil_reforge_capability_class=" +
+                capability +
+                ";anvil_reforge_unlocked_slot_count=1" +
+                ";anvil_reforge_empty_unlocked_slot_count=1" +
+                ";anvil_reforge_same_type_equipped_count=0"
+        };
     }
 }
 
@@ -490,6 +716,22 @@ public sealed class AnvilReforgeUtilityProjectionTests
                 "tools",
                 "StardewAI.LiveTrainingLoop",
                 "Program.QueueInspection.cs"));
+        var bridge = File.ReadAllText(
+            FindRepositoryFile(
+                "src",
+                "StardewAI.TransparentBridge",
+                "Adapters",
+                "PlayerReadAdapter.Trinkets.cs"));
+        var liveLoop = File.ReadAllText(
+            FindRepositoryFile(
+                "tools",
+                "StardewAI.LiveTrainingLoop",
+                "Program.QueueBuilding.cs"));
+        var backend = File.ReadAllText(
+            FindRepositoryFile(
+                "src",
+                "StardewAI.Backend",
+                "Program.cs"));
 
         Assert.Contains(
             "AnvilReforgeRealizedUtilityDelta",
@@ -529,6 +771,30 @@ public sealed class AnvilReforgeUtilityProjectionTests
             StringComparison.Ordinal);
         Assert.Contains(
             "anvil_reforge_realized_utility_delta",
+            dataset,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "trinket_loadout_context.v1",
+            bridge,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Farmer.MaximumTrinkets",
+            bridge,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "unlockStatValue != 0",
+            bridge,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "goal_id = options.Goal",
+            liveLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "request.GoalId",
+            backend,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.anvil.reforge.effective_demand_score",
             dataset,
             StringComparison.Ordinal);
     }

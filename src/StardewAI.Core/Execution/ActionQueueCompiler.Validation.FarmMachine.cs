@@ -846,7 +846,11 @@ namespace StardewAI.Core.Execution
                                 StringComparison.Ordinal) ||
                              !AnvilReforgeUtilityParametersMatch(
                                 action,
-                                predictedOutput)))
+                                predictedOutput) ||
+                             !AnvilReforgeLoadoutParametersMatch(
+                                action,
+                                snapshot,
+                                trainingContract.OutcomeKind)))
                         {
                             reasons.Add(
                                 "load_machine_input_distribution_contract_mismatch");
@@ -922,6 +926,81 @@ namespace StardewAI.Core.Execution
                         "anvil_reforge_decision_class"),
                     utility.DecisionClass,
                     StringComparison.Ordinal);
+        }
+
+        private static bool
+            AnvilReforgeLoadoutParametersMatch(
+                SmallModelAction action,
+                SnapshotEnvelope snapshot,
+                string outcomeKind)
+        {
+            var loadout =
+                AnvilReforgeLoadoutProjection.Read(
+                    snapshot,
+                    outcomeKind);
+            return loadout.Supported &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_loadout_status"),
+                    loadout.Status,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_capability_class"),
+                    loadout.CapabilityClass,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_kill_credit_policy"),
+                    loadout.KillCreditPolicy,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_loot_policy"),
+                    loadout.LootPolicy,
+                    StringComparison.Ordinal) &&
+                LoadoutParameterMatches(
+                    action,
+                    "anvil_reforge_unlocked_slot_count",
+                    loadout.UnlockedSlotCount) &&
+                LoadoutParameterMatches(
+                    action,
+                    "anvil_reforge_occupied_slot_count",
+                    loadout.OccupiedSlotCount) &&
+                LoadoutParameterMatches(
+                    action,
+                    "anvil_reforge_empty_unlocked_slot_count",
+                    loadout.EmptyUnlockedSlotCount) &&
+                LoadoutParameterMatches(
+                    action,
+                    "anvil_reforge_same_type_equipped_count",
+                    loadout.SameTypeEquippedCount) &&
+                LoadoutParameterMatches(
+                    action,
+                    "anvil_reforge_other_type_equipped_count",
+                    loadout.OtherTypeEquippedCount) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "anvil_reforge_loadout_relation"),
+                    loadout.Relation,
+                    StringComparison.Ordinal);
+        }
+
+        private static bool LoadoutParameterMatches(
+            SmallModelAction action,
+            string name,
+            int expected)
+        {
+            return string.Equals(
+                ReadParameter(action, name),
+                expected.ToString(
+                    CultureInfo.InvariantCulture),
+                StringComparison.Ordinal);
         }
 
         private static bool UtilityParameterMatches(

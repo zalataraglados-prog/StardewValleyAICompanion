@@ -631,7 +631,10 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             ? new PolicyPredictionEnvelope()
             : ranker.Rank(report, rankedCandidates),
         Availability = availability,
-        RankedEventCandidates = eventCandidateRanker.Rank(report, availability)
+        RankedEventCandidates = eventCandidateRanker.Rank(
+            report,
+            availability,
+            request.GoalId)
     });
 });
 

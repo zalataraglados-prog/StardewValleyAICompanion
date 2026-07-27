@@ -8,7 +8,12 @@ param(
     [int] $StartupTimeoutSeconds = 180,
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
+    [string] $LocationId = "Farm",
+    [string] $MachineItemId = "12",
     [string] $QualifiedItemId = "(O)262",
+    [int] $InputQuantity = 2,
+    [string] $AdditionalItemsJson = "[]",
+    [switch] $RequireAnvilDistributionFeedback,
     [switch] $KeepGameRunning
 )
 
@@ -23,6 +28,19 @@ function Invoke-JsonPost {
     param([string] $Url, $Body, [int] $TimeoutSeconds = 120)
     $json = $Body | ConvertTo-Json -Depth 64
     Invoke-RestMethod -Method Post -Uri $Url -ContentType "application/json; charset=utf-8" -Body $json -TimeoutSec $TimeoutSeconds
+}
+
+function Invoke-JsonPostRaw {
+    param(
+        [string] $Url,
+        [string] $Json,
+        [int] $TimeoutSeconds = 120)
+    Invoke-RestMethod `
+        -Method Post `
+        -Uri $Url `
+        -ContentType "application/json; charset=utf-8" `
+        -Body $Json `
+        -TimeoutSec $TimeoutSeconds
 }
 
 function Invoke-JsonGet {
@@ -126,6 +144,17 @@ function Read-QueueParameter {
     return ""
 }
 
+function Get-InventoryQualifiedCount {
+    param($Snapshot, [string] $QualifiedItemId)
+    $count = 0
+    foreach ($item in @(Read-FieldValue $Snapshot "player" "inventory")) {
+        if ([string]$item.qualified_item_id -eq $QualifiedItemId) {
+            $count += [int]$item.stack
+        }
+    }
+    return $count
+}
+
 function Wait-FullMachineSnapshot {
     param([string] $Url, [int] $TimeoutSeconds, [int] $X, [int] $Y, [string] $ItemId)
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -173,6 +202,8 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
     STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
+    STARDEWAI_TEST_AUTO_LOAD =
+        $env:STARDEWAI_TEST_AUTO_LOAD
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
@@ -186,6 +217,7 @@ $backendProcess = $null
 try {
     $env:STARDEWAI_TEST_SAVES = $savesPath
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
+    $env:STARDEWAI_TEST_AUTO_LOAD = "true"
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
@@ -221,8 +253,12 @@ try {
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
+        location_id = $LocationId
         qualified_item_id = $QualifiedItemId
-        quantity = 2
+        quantity = $InputQuantity
+        expected_shop_id = $MachineItemId
+        process_additional_items_json =
+            $AdditionalItemsJson
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
@@ -230,6 +266,65 @@ try {
     Start-Sleep -Seconds 3
     $snapshot = Wait-FullMachineSnapshot -Url $snapshotUrl -TimeoutSeconds 60 -X $TargetTileX -Y $TargetTileY -ItemId $QualifiedItemId
     Write-JsonFile $snapshotPath $snapshot
+    $snapshotJson =
+        Get-Content -LiteralPath $snapshotPath -Raw
+    Invoke-JsonPostRaw `
+        -Url "$backendUrl/api/v1/snapshots" `
+        -Json $snapshotJson `
+        -TimeoutSeconds 30 |
+        Out-Null
+    $availabilityRequest = [ordered]@{
+        state_hash = [string]$snapshot.state_hash
+        candidate_option_ids =
+            @("farm.process_machines")
+        candidates = @()
+        include_executor_calibration_options =
+            $false
+    }
+    $availability = Invoke-JsonPost `
+        -Url "$backendUrl/api/v1/planner/options/availability" `
+        -Body $availabilityRequest `
+        -TimeoutSeconds 30
+    $targetCandidates = @(
+        $availability.options |
+        Where-Object {
+            [string]$_.option_id -eq
+                "farm.process_machines"
+        } |
+        ForEach-Object { $_.event_candidates } |
+        Where-Object {
+            [string]$_.kind -eq
+                "load_machine_input_tile" -and
+            [string]$_.candidate_id -like
+                "machine-input:$LocationId`:$TargetTileX,$TargetTileY`:*:$QualifiedItemId" -and
+            [bool]$_.available
+        })
+    if ($targetCandidates.Count -ne 1) {
+        Write-JsonFile `
+            (Join-Path $runDirectory "availability-rejected.json") `
+            $availability
+        throw (
+            "Expected exactly one available target machine " +
+            "input candidate; found " +
+            $targetCandidates.Count)
+    }
+    $targetCandidateId =
+        [string]$targetCandidates[0].candidate_id
+    $parsedAdditionalItems =
+        ConvertFrom-Json -InputObject $AdditionalItemsJson
+    $additionalItems = @()
+    foreach ($parsedAdditionalItem in $parsedAdditionalItems) {
+        $additionalItems += $parsedAdditionalItem
+    }
+    $additionalCountsBefore = [ordered]@{}
+    foreach ($additionalItem in $additionalItems) {
+        $additionalId =
+            [string]$additionalItem.qualified_item_id
+        $additionalCountsBefore[$additionalId] =
+            Get-InventoryQualifiedCount `
+                -Snapshot $snapshot `
+                -QualifiedItemId $additionalId
+    }
 
     dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
         --root $loopRoot `
@@ -244,8 +339,10 @@ try {
         --train-every 1 `
         --sleep-ms 0 `
         --use-daily-plan `
-        --daily-plan-max-candidates 6 `
+        --daily-plan-max-candidates 1 `
         --daily-plan-candidate-options "farm.process_machines" `
+        --daily-plan-candidate-kind "load_machine_input_tile" `
+        --daily-plan-candidate-id $targetCandidateId `
         --after-snapshot-wait-ms 1000 `
         --continue-after-blocked-queue-items
     if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop returned exit code $LASTEXITCODE" }
@@ -265,13 +362,32 @@ try {
     $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
     $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
     $queueItems = @($queue.items)
-    $loadItem = $queueItems | Where-Object { $_.option_id -eq "executor.load_machine_input" } | Select-Object -First 1
+    $loadItem = $queueItems |
+        Where-Object {
+            $_.option_id -eq
+                "executor.load_machine_input" -and
+            [int](Read-QueueParameter `
+                -QueueItem $_ `
+                -Name "target_tile_x") -eq
+                $TargetTileX -and
+            [int](Read-QueueParameter `
+                -QueueItem $_ `
+                -Name "target_tile_y") -eq
+                $TargetTileY -and
+            [string](Read-QueueParameter `
+                -QueueItem $_ `
+                -Name "qualified_item_id") -eq
+                $QualifiedItemId
+        } |
+        Select-Object -First 1
     if ($null -eq $loadItem) {
         Write-JsonFile (Join-Path $runDirectory "daily-plan-rejected.json") $dailyPlan
         Write-JsonFile (Join-Path $runDirectory "queue-rejected.json") $queue
         throw "Machine daily-plan did not compile a load_machine_input item."
     }
     $loadExecution = @($execution.step_results) | Where-Object {
+        $_.queue_item_id -eq
+            $loadItem.queue_item_id -and
         $_.option_id -eq "executor.load_machine_input" -and
         $_.status -eq "applied" -and
         $_.primitive_verification_status -eq "verified"
@@ -281,12 +397,57 @@ try {
         throw "Live queue did not reach and verify the compiled load_machine_input item."
     }
 
+    Start-Sleep -Milliseconds 500
+    $afterSnapshot =
+        Invoke-JsonGet -Url $snapshotUrl -TimeoutSeconds 30
+    $additionalCountsAfter = [ordered]@{}
+    foreach ($additionalItem in $additionalItems) {
+        $additionalId =
+            [string]$additionalItem.qualified_item_id
+        $additionalCountsAfter[$additionalId] =
+            Get-InventoryQualifiedCount `
+                -Snapshot $afterSnapshot `
+                -QualifiedItemId $additionalId
+    }
+
+    $anvilFeedback = if (
+        $RequireAnvilDistributionFeedback) {
+        & (Join-Path $PSScriptRoot "Test-AnvilRuntimeDistributionFeedback.ps1") `
+            -LoadItem $loadItem `
+            -LoadExecution $loadExecution `
+            -DatasetPath $datasetPath `
+            -AdditionalItems $additionalItems `
+            -AdditionalCountsBefore $additionalCountsBefore `
+            -AdditionalCountsAfter $additionalCountsAfter `
+            -RunDirectory $runDirectory
+    }
+    else {
+        [pscustomobject]@{
+            Verified = $false
+            RealizedUtilityDelta = $null
+            RealizedOutcomeJson = ""
+            DatasetTrainingRole = ""
+            CapabilityClass = ""
+            LoadoutRelation = ""
+            GoalDemandStatus = ""
+            GoalFamily = ""
+            EffectiveDemandScore = $null
+        }
+    }
+
     $summary = [ordered]@{
         status = "passed"
         run_id = $RunId
         save_slot = $SaveSlot
         target_tile = "$TargetTileX,$TargetTileY"
         qualified_item_id = $QualifiedItemId
+        machine_item_id = $MachineItemId
+        target_candidate_id = $targetCandidateId
+        additional_items = $additionalItems
+        additional_counts_before =
+            $additionalCountsBefore
+        additional_counts_after =
+            $additionalCountsAfter
         setup_status = $setupResult.status
         machine_snapshot_has_loadable_input = $true
         daily_plan_status = $dailyPlan.status
@@ -296,6 +457,26 @@ try {
         executed_step_count = @($execution.step_results).Count
         verified_execution_status = $loadExecution.status
         verified_execution_reason = @($loadExecution.primitive_verification_reasons)
+        anvil_distribution_feedback_required =
+            [bool]$RequireAnvilDistributionFeedback
+        anvil_distribution_feedback_verified =
+            [bool]$anvilFeedback.Verified
+        anvil_realized_utility_delta =
+            $anvilFeedback.RealizedUtilityDelta
+        anvil_realized_outcome_json =
+            $anvilFeedback.RealizedOutcomeJson
+        anvil_dataset_training_role =
+            $anvilFeedback.DatasetTrainingRole
+        anvil_capability_class =
+            $anvilFeedback.CapabilityClass
+        anvil_loadout_relation =
+            $anvilFeedback.LoadoutRelation
+        anvil_goal_demand_status =
+            $anvilFeedback.GoalDemandStatus
+        anvil_goal_family =
+            $anvilFeedback.GoalFamily
+        anvil_effective_demand_score =
+            $anvilFeedback.EffectiveDemandScore
         dataset_path = $datasetPath
         report_path = $reportPath
         daily_plan_path = $dailyPlanPath

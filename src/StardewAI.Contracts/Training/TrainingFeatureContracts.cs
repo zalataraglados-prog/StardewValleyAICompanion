@@ -217,6 +217,9 @@ namespace StardewAI.Contracts.Training
 
     public sealed class BaselinePredictionRequest
     {
+        [JsonPropertyName("goal_id")]
+        public string GoalId { get; set; } = string.Empty;
+
         [JsonPropertyName("dataset_path")]
         public string? DatasetPath { get; set; }
 

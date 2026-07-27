@@ -70,6 +70,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["skills_detail"] = Field(ReadSkillsDetail(player), "Game1.player.GetUnmodifiedSkillLevel/GetSkillLevel/experiencePoints and Farmer.getBaseExperienceForLevel", tick),
             ["book_candidates"] = Field(ReadBookCandidates(player), "Game1.player.Items and Object.performUseAction/readBook native branches", tick),
             ["luck_context"] = Field(ReadLuckContext(player), "Game1.player.team.sharedDailyLuck, Farmer.DailyLuck/LuckLevel, Farmer.hasSpecialCharm, BuffManager.AppliedBuffs", tick),
+            ["trinket_loadout"] = Field(ReadTrinketLoadout(player), "Game1.player.stats.Get(\"trinketSlots\") unlock flag, Farmer.MaximumTrinkets, Game1.player.trinketItems and exact Trinket special state", tick),
             ["has_skull_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasSkullKey : null, "Game1.player.hasSkullKey", tick),
             ["has_rusty_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasRustyKey : null, "Game1.player.hasRustyKey", tick),
             ["married_or_roommate"] = Field(Context.IsWorldReady ? (bool?)player?.isMarriedOrRoommates() : null, "Game1.player.isMarriedOrRoommates()", tick),
