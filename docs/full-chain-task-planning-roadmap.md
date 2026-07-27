@@ -127,9 +127,52 @@ Acceptance:
 - No manual feedback is required for training samples.
 - Every iteration writes before snapshot, plan, queue, execution, after snapshot, episode, and row.
 
+### Stage 5.5: Formal Full-Training Readiness Gate
+
+Goal: turn the working closed loop into an evidence-gated, reproducible
+training system before increasing episode count.
+
+Required work:
+
+- generate one versioned option manifest from independent
+  `read/candidate/compile/runtime/output` evidence;
+- distinguish already-implemented-but-unregistered evidence from actual
+  capability gaps;
+- expose only evidence-eligible model-level candidates to policy data;
+- separate policy, mixed replay, and executor-calibration datasets;
+- remove stale-schema, simulated, duplicated, bugged, and no-op rows;
+- add a real C# model provider, checkpoint round-trip, dataset hash, and
+  evaluation manifest;
+- validate the reported 9955HX / 32-GB / RTX 5070 Laptop 8-GB training node.
+
+Acceptance:
+
+- The trainable allowlist is non-empty and every included option passes all
+  five evidence gates.
+- Every excluded option has a typed reason; an empty allowlist cannot make a
+  test pass vacuously.
+- Dataset splits are by save/day trajectory and contain all candidates,
+  exclusions, budgets, outcomes, and long-horizon rewards.
+- A C# structured ranker trains, saves, reloads, and produces schema-valid
+  allowlisted output.
+- Short neural or structured runs are reported only as infrastructure smokes.
+
+Detailed tasks and hardware boundaries are maintained in
+[`FORMAL_FULL_TRAINING_READINESS_CN.md`](FORMAL_FULL_TRAINING_READINESS_CN.md).
+
 ### Stage 6: Perfect-Policy Training And Freeze
 
 Goal: train and benchmark the strongest policy against transparent state and a mechanically perfect executor, without teaching the strategy layer to avoid goals because of low-level executor failures.
+
+Training order:
+
+- Keep the deterministic policy as V0 regression reference.
+- Train the full evidence-eligible dataset with the required C# structured
+  ranker as V1.
+- Optionally compare a constrained 0.6B-class model after V1 is reproducible.
+- Do not make 1.7B+ neural training a prerequisite on the 8-GB target laptop.
+- Run a new-save long rollout through the Year-3 Grandpa 21-point target before
+  freezing the perfect baseline.
 
 Acceptance:
 

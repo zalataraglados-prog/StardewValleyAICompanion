@@ -71,6 +71,14 @@
 - 爷爷目标用透明评分方向生成正样本。
 - 随机地图类任务必须用完美执行器，避免策略层把低层危险误判成目标不可取。
 
+### E1. 正式全量训练准入（当前阶段）
+
+- 正式训练只覆盖通过 `read/candidate/compile/runtime/output` 五门的模型级候选；注册名称、静态编译或单次烟测都不能单独构成训练资格。
+- 当前闭环能写训练记录，但现有基线聚合器不是真实学习模型，专用服务器的五类候选和 `--skip-training` 也不等于全量训练。
+- 机械动作、路径、战斗微操和工具输入继续作为执行器校准，不进入策略模型自由输出。
+- 正式首选模型是 C# 结构化候选排序器；0.6B 级受约束神经模型仅作为新笔记本上的可选对照。
+- 完整工程包、退出条件、硬件边界和执行顺序以 [`FORMAL_FULL_TRAINING_READINESS_CN.md`](FORMAL_FULL_TRAINING_READINESS_CN.md) 为当前事实源。
+
 ### F. 演示验收
 - 可展示：
   - 当前透明读数
@@ -113,22 +121,13 @@
 - 联机加入模式、独立角色输入、人格/熟练度/知识轴、可插拔引擎、扩展 MOD 接口和作弊测试 profile 服从 `docs/FUTURE_COMPANION_ARCHITECTURE_CN.md`。
 - 训练记录必须能区分完美策略、拟人适配、执行校准、玩家打断和多人资源竞争。
 
-## Worker 分工
-
-### Worker A：策略出口审查
-检查 `strategy.grandpa_progress` 的 direction 分类是否不重不漏，补充缺失 direction 和测试建议。
-
-### Worker B：动作编译器审查
-检查 ActionQueueCompiler/TimeBudgetValidator 应如何承载 strategy direction plan，不改真实仓库，只给 patch 建议。
-
-### Worker C：训练闭环审查
-检查 LiveTrainingLoop/Backend append/train/rank 是否仍可能把 calibration 样本混入 policy，或把 strategy 样本错误排除。
-
-### Worker D：演示验收审查
-检查桌面展示文件和 API 输出是否足以证明当前阶段效果，提出最小演示缺口。
-
 ## 当前下一步
 
-`strategy.grandpa_progress` direction 输出层及计划化时间校验已完成静态实现：候选方向由当前透明快照生成，编译器独立重建候选并逐字段核验，阻塞时不输出 `StrategyPlanStep`，不再使用 `auto_select_best_direction` 或 `earn_money` 猜测兜底。
+先实现训练证据注册表和由证据生成的 allowlist：
 
-当前因用户正在游玩而暂停所有构建、测试和游戏进程操作。恢复验证时依次运行爷爷方向专项、Mock policy、ActionQueueCompiler、TimeBudgetValidator 和 Core 全量测试；通过后再进入“direction 拆解为可排入日计划的具体任务候选”切片。
+1. 修复空 allowlist 可使测试空集合成立的问题；
+2. 回填已有真实运行证据，分离“已经实现但未登记”和“真实缺口”；
+3. 让候选生成、数据构建和模型提供器共同绑定同一份版本化准入清单；
+4. 未通过五门的候选必须带类型化排除原因，不能静默进入训练或被当成负奖励。
+
+该切片退出后，按正式准入文档依次闭合真实能力缺口、重建策略轨迹、接入 C# 结构化排序器并做长期完整 rollout。短训只能做基础设施烟测，不得替代正式全量训练。
