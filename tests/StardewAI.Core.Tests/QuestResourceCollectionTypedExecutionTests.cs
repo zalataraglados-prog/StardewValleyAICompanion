@@ -100,6 +100,77 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void ResourceCollectionQuestBindsMatchingMonsterDropAsSource()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            MonsterDropMiningDomainState(),
+            locationId: "UndergroundMine",
+            requiredItemId: "(O)768");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "execution_option_id" &&
+            parameter.Value == "executor.combat_monster");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" &&
+            parameter.Value == "true");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", queue.Items.SelectMany(queueItem => queueItem.BlockingReasons)));
+        Assert.Equal("executor.combat_monster", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "qualified_item_id" &&
+            parameter.Value == "(O)768");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "combat_terminal_state" &&
+            parameter.Value == "defeat");
+    }
+
+    [Fact]
+    public void SpecialOrderCollectBindsMatchingMonsterDropContextTagsAsSource()
+    {
+        var snapshot = SpecialOrderCollectionSnapshot(
+            MonsterDropMiningDomainState(),
+            locationId: "UndergroundMine",
+            acceptableContextTagSetsJson: "\"monster_drop\"");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "execution_option_id" &&
+            parameter.Value == "executor.combat_monster");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" &&
+            parameter.Value == "true");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.combat_monster", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "quest_acceptable_context_tag_sets_json" &&
+            parameter.Value == """["monster_drop"]""");
+    }
+
+    [Fact]
     public void SpecialOrderCollectBindsOnlyMatchingGrabCropContextTags()
     {
         var snapshot = Snapshot(
@@ -832,6 +903,52 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "locations":{
               "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
               "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """;
+    }
+
+    private static string MonsterDropMiningDomainState()
+    {
+        return
+            """
+            "mining":{
+              "current_mine":{"value":{"location_id":"UndergroundMine","mine_level":45,"mine_kind":"ordinary_mines"},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "tiles":{"value":{"player_tile":{"tile_x":1,"tile_y":2},"map":{"width":7,"height":5},"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":7,"height":5,"blocked_rows":["1111111","1000001","1000001","1000001","1111111"]},"exits":[],"ladders":[],"shafts":[],"elevators":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "objects":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "resource_clumps":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "monsters":{"value":[{
+                "runtime_identity":"A1B2C3D4",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Green Slime","tile_x":3,"tile_y":2,
+                "possible_drop_qualified_item_ids":["(O)768"],
+                "possible_drop_items":[{
+                  "qualified_item_id":"(O)768",
+                  "context_tags":["id_o_768","monster_drop"],
+                  "context_tag_status":"exact_item_get_context_tags"
+                }],
+                "conditional_drop_catalog_keys":[],
+                "guaranteed_drop_qualified_item_ids":["(O)768"],
+                "drop_probability_rules":[{
+                  "qualified_item_ids":["(O)768"],
+                  "per_identity_chance":1.0,
+                  "expected_quantity_per_kill":1.0,
+                  "probability_status":"exact_current_state_formula",
+                  "item_selection_status":"independent"
+                }],
+                "melee_attack_projections":[{
+                  "slot_index":2,"can_defeat_with_this_weapon":true,
+                  "terminal_effect":"defeat",
+                  "expected_attacks_to_defeat":2.0,
+                  "expected_active_damage_duration_ms":600.0,
+                  "duration_status":"exact_active_melee_phase_excluding_movement"
+                }]
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "monster_drop_catalogs":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "floor_objectives":{"value":{"must_kill_all_monsters_to_advance":false,"enemy_count":1,"ladder_has_spawned":false},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "reward_chests":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "player_resources":{"value":{"health":100,"max_health":100,"energy":200,"current_time":1200,"selected_slot_index":0,"food_slots":[],"bomb_slots":[],"cardinal_movement":{"tile_duration_ms":100}},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "completeness":{"value":{"status":"complete","unavailable_reasons":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             """;
     }

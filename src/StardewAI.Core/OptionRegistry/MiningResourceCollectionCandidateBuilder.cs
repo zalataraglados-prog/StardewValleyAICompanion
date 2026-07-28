@@ -14,7 +14,37 @@ namespace StardewAI.Core.OptionRegistry
     {
         public static EventCandidate[] Build(SnapshotEnvelope snapshot, string requiredQualifiedItemId)
         {
-            if (string.IsNullOrWhiteSpace(requiredQualifiedItemId))
+            return BuildCore(
+                snapshot,
+                new[] { requiredQualifiedItemId },
+                requiredQualifiedItemId,
+                monsterDropsOnly: false);
+        }
+
+        public static EventCandidate[] BuildMonsterDrops(
+            SnapshotEnvelope snapshot,
+            string[] targetQualifiedItemIds,
+            string candidateKey)
+        {
+            return BuildCore(
+                snapshot,
+                targetQualifiedItemIds,
+                candidateKey,
+                monsterDropsOnly: true);
+        }
+
+        private static EventCandidate[] BuildCore(
+            SnapshotEnvelope snapshot,
+            string[] targetQualifiedItemIds,
+            string candidateKey,
+            bool monsterDropsOnly)
+        {
+            var targets = targetQualifiedItemIds
+                .Where(itemId => !string.IsNullOrWhiteSpace(itemId))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(itemId => itemId, StringComparer.Ordinal)
+                .ToArray();
+            if (targets.Length == 0 || string.IsNullOrWhiteSpace(candidateKey))
             {
                 return Array.Empty<EventCandidate>();
             }
@@ -26,18 +56,48 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             var blocks = new List<string>(MiningReachDepthCandidateBuilder.MissingMiningGroups(snapshot));
-            var objective = new MiningFloorObjective
+            var resourceObjective = new MiningFloorObjective
             {
                 Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
-                TargetQualifiedItemIds = new[] { requiredQualifiedItemId },
+                TargetQualifiedItemIds = targets,
                 MinimumReserveHealth = 1,
                 LatestExitTime = 2400
             };
-            var floorStep = new MiningFloorStepPlanner().Plan(snapshot, objective);
+            var monsterDropObjective = new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = targets,
+                MinimumReserveHealth = 1,
+                LatestExitTime = 2400
+            };
+            var planner = new MiningFloorStepPlanner();
+            var resourceStep = planner.Plan(snapshot, resourceObjective);
+            var monsterDropStep = planner.Plan(snapshot, monsterDropObjective);
+            var resourceStepIsUnboundCombat =
+                (resourceStep.StepKind == MiningFloorStepKinds.CombatMonster ||
+                 resourceStep.StepKind == MiningFloorStepKinds.ShootMonster) &&
+                !resourceStep.ExpectedDropQualifiedItemIds.Any(itemId =>
+                    targets.Contains(itemId, StringComparer.OrdinalIgnoreCase));
+            var floorStep = !monsterDropsOnly &&
+                string.Equals(resourceStep.Status, "ready", StringComparison.Ordinal) &&
+                (!resourceStepIsUnboundCombat ||
+                 !string.Equals(monsterDropStep.Status, "ready", StringComparison.Ordinal))
+                ? resourceStep
+                : string.Equals(monsterDropStep.Status, "ready", StringComparison.Ordinal)
+                    ? monsterDropStep
+                    : monsterDropsOnly ? monsterDropStep : resourceStep;
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
             {
                 blocks.Add(floorStep.Reason);
+                if (!monsterDropsOnly &&
+                    !string.Equals(
+                        floorStep.Reason,
+                        monsterDropStep.Reason,
+                        StringComparison.Ordinal))
+                {
+                    blocks.Add(monsterDropStep.Reason);
+                }
             }
             else if (string.IsNullOrWhiteSpace(executionOptionId))
             {
@@ -46,26 +106,35 @@ namespace StardewAI.Core.OptionRegistry
 
             var available = blocks.Count == 0;
             var isTargetReceipt = floorStep.StepKind == MiningFloorStepKinds.PickupDebris &&
-                string.Equals(
+                targets.Contains(
                     floorStep.TargetQualifiedItemId,
-                    requiredQualifiedItemId,
-                    StringComparison.OrdinalIgnoreCase);
-            var isSourceStep = floorStep.StepKind == MiningFloorStepKinds.MineStone &&
-                floorStep.ExpectedDropQualifiedItemIds.Contains(
-                    requiredQualifiedItemId,
                     StringComparer.OrdinalIgnoreCase);
+            var isStoneSource = floorStep.StepKind == MiningFloorStepKinds.MineStone &&
+                floorStep.ExpectedDropQualifiedItemIds.Any(itemId =>
+                    targets.Contains(itemId, StringComparer.OrdinalIgnoreCase));
+            var isMonsterSource =
+                (floorStep.StepKind == MiningFloorStepKinds.CombatMonster ||
+                 floorStep.StepKind == MiningFloorStepKinds.ShootMonster) &&
+                string.Equals(
+                    floorStep.CombatTerminalState,
+                    "defeat",
+                    StringComparison.Ordinal) &&
+                floorStep.ExpectedDropQualifiedItemIds.Any(itemId =>
+                    targets.Contains(itemId, StringComparer.OrdinalIgnoreCase));
+            var isSourceStep = isStoneSource || isMonsterSource;
             var executionParameters = MiningFloorStepCompiler.BuildExecutionParameters(floorStep);
             return new[]
             {
                 new EventCandidate
                 {
-                    CandidateId = "mining:collect_quest_resource:" + requiredQualifiedItemId,
+                    CandidateId = "mining:collect_quest_resource:" + candidateKey,
                     Kind = "mining_collect_quest_resource_plan_envelope",
                     Available = available,
                     LocationId = ReadString(currentMine.Value, "location_id"),
-                    QualifiedItemId = requiredQualifiedItemId,
+                    QualifiedItemId = floorStep.TargetQualifiedItemId,
                     Quantity = 1,
-                    ExpectedEffect = "quest_required_item_id=" + requiredQualifiedItemId +
+                    ExpectedEffect = "quest_target_qualified_item_ids=" +
+                        JsonSerializer.Serialize(targets) +
                         ";rolling_floor_step=" + floorStep.StepKind +
                         ";execution_option_id=" + executionOptionId +
                         ";fresh_snapshot_replan_required=true",
@@ -80,7 +149,10 @@ namespace StardewAI.Core.OptionRegistry
                         .ToArray(),
                     Parameters = new[]
                     {
-                        Parameter("quest_required_item_id", requiredQualifiedItemId),
+                        Parameter(
+                            "quest_required_item_id",
+                            targets.Length == 1 ? targets[0] : string.Empty),
+                        Parameter("quest_target_qualified_item_ids_json", JsonSerializer.Serialize(targets)),
                         Parameter("quest_acquisition_target_step", isTargetReceipt.ToString().ToLowerInvariant()),
                         Parameter("quest_acquisition_source_step", isSourceStep.ToString().ToLowerInvariant()),
                         Parameter("latest_exit_time", "2400"),

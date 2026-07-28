@@ -132,6 +132,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 guaranteed_one_of_qualified_item_id_groups = drops.GuaranteedOneOfQualifiedItemIdGroups,
                 conditional_drop_catalog_keys = drops.ConditionalDropCatalogKeys,
                 possible_drop_qualified_item_ids = drops.PossibleDropQualifiedItemIds,
+                possible_drop_items = drops.PossibleDropItems,
                 current_death_tile_preview_qualified_item_id = drops.CurrentDeathTilePreviewQualifiedItemId,
                 current_death_tile_preview_status = drops.CurrentDeathTilePreviewStatus,
                 runtime_extra_drop_rule_inputs = drops.RuntimeExtraDropRuleInputs,

@@ -21,6 +21,8 @@ internal sealed class MiningMonsterDropProjection
 
     public string[] PossibleDropQualifiedItemIds { get; set; } = Array.Empty<string>();
 
+    public MiningDropItemProjection[] PossibleDropItems { get; set; } = Array.Empty<MiningDropItemProjection>();
+
     public string CurrentDeathTilePreviewQualifiedItemId { get; set; } = string.Empty;
 
     public string CurrentDeathTilePreviewStatus { get; set; } = "not_applicable";
@@ -88,6 +90,15 @@ internal sealed class MiningDropCatalogProjection
     public string SelectionProbabilityCompleteness { get; set; } = string.Empty;
 
     public string Source { get; set; } = string.Empty;
+}
+
+internal sealed class MiningDropItemProjection
+{
+    public string QualifiedItemId { get; set; } = string.Empty;
+
+    public string[] ContextTags { get; set; } = Array.Empty<string>();
+
+    public string ContextTagStatus { get; set; } = string.Empty;
 }
 
 internal sealed class MiningDropCatalogEntryProjection

@@ -72,6 +72,32 @@ public sealed partial class ModEntry : Mod
                 questSlayReason));
             return;
         }
+        var questResourceReason = ValidateQuestResourceSourceTarget(
+            request,
+            new[] { request.QualifiedItemId });
+        if (!string.IsNullOrWhiteSpace(questResourceReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "combat_monster",
+                requested,
+                "quest_resource_source=drifted",
+                questResourceReason));
+            return;
+        }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+                request,
+                new[] { request.QualifiedItemId },
+                out var specialCollectReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "combat_monster",
+                requested,
+                "special_order_collect_source=drifted",
+                specialCollectReason));
+            return;
+        }
 
         var target = targets[0];
         if (terminalState == "knockdown_requires_bomb_finish" && target is not Mummy)
@@ -760,6 +786,8 @@ public sealed partial class ModEntry : Mod
             result,
             request,
             requireProgress: targetDefeated && request.QuestSlayTargetStep);
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
         active.Pending.Completion.SetResult(result);
     }
 

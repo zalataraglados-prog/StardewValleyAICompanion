@@ -247,6 +247,9 @@ namespace StardewAI.Core.OptionRegistry
                 return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_collect_has_unprojected_color_tags") };
             }
 
+            var matchingMonsterDropIds = MatchingMonsterDropQualifiedItemIds(
+                snapshot,
+                fields.AcceptableContextTagSets);
             var candidates = HarvestCropCandidates(snapshot)
                 .Where(candidate => candidate.Available)
                 .Where(candidate => string.Equals(
@@ -398,6 +401,23 @@ namespace StardewAI.Core.OptionRegistry
                     .Where(candidate => FishingCandidateMatchesContextTags(
                         candidate,
                         fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                            "quest_acceptable_context_tag_sets_json",
+                            JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(MiningResourceCollectionCandidateBuilder
+                    .BuildMonsterDrops(
+                        snapshot,
+                        matchingMonsterDropIds,
+                        "special_order:" + quest.QuestKey + ":" + quest.SelectedObjectiveIndex)
+                    .Where(candidate => candidate.Available)
                     .Select(candidate => AttachQuest(
                         candidate,
                         quest,

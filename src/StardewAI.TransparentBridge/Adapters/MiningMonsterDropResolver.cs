@@ -127,6 +127,7 @@ internal static partial class MiningMonsterDropResolver
         string completeness,
         List<string> unresolved)
     {
+        var possible = Ordered(guaranteed.Concat(conditional).Concat(guaranteedOneOf.SelectMany(group => group)));
         return new MiningMonsterDropProjection
         {
             SelectedBaseDropQualifiedItemIds = selected,
@@ -134,12 +135,44 @@ internal static partial class MiningMonsterDropResolver
             ConditionalDropQualifiedItemIds = Ordered(conditional),
             GuaranteedOneOfQualifiedItemIdGroups = guaranteedOneOf.Select(Ordered).ToArray(),
             ConditionalDropCatalogKeys = Ordered(conditionalCatalogKeys),
-            PossibleDropQualifiedItemIds = Ordered(guaranteed.Concat(conditional).Concat(guaranteedOneOf.SelectMany(group => group))),
+            PossibleDropQualifiedItemIds = possible,
+            PossibleDropItems = ProjectItems(possible),
             PrimaryDropStatus = primaryStatus,
             ItemIdentityCompleteness = completeness,
             UnresolvedDynamicRules = unresolved.Distinct(StringComparer.Ordinal).OrderBy(rule => rule, StringComparer.Ordinal).ToArray(),
             Source = "MineShaft.monsterDrop; GameLocation.monsterDrop; Monster.objectsToDrop/getExtraDropItems; MineShaft.getSpecialItemForThisMineLevel"
         };
+    }
+
+    private static MiningDropItemProjection[] ProjectItems(IEnumerable<string> qualifiedItemIds)
+    {
+        return qualifiedItemIds
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(itemId => itemId, StringComparer.Ordinal)
+            .Select(itemId =>
+            {
+                try
+                {
+                    var item = ItemRegistry.Create(itemId);
+                    return new MiningDropItemProjection
+                    {
+                        QualifiedItemId = item.QualifiedItemId,
+                        ContextTags = item.GetContextTags()
+                            .OrderBy(tag => tag, StringComparer.Ordinal)
+                            .ToArray(),
+                        ContextTagStatus = "exact_item_get_context_tags"
+                    };
+                }
+                catch
+                {
+                    return new MiningDropItemProjection
+                    {
+                        QualifiedItemId = itemId,
+                        ContextTagStatus = "unavailable_item_registry_resolution_failed"
+                    };
+                }
+            })
+            .ToArray();
     }
 
 }

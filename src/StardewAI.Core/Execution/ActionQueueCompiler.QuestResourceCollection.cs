@@ -191,6 +191,15 @@ namespace StardewAI.Core.Execution
                         reasons.Add("quest_resource_fishing_source_distribution_drifted");
                     }
                 }
+                else if (action.OptionId is
+                    "executor.combat_monster" or
+                    "executor.shoot_monster")
+                {
+                    if (!MonsterDropSourceMatches(action, snapshot, qualifiedRequired))
+                    {
+                        reasons.Add("quest_resource_monster_drop_source_drifted");
+                    }
+                }
                 else
                 {
                     reasons.Add("quest_resource_source_primitive_invalid");

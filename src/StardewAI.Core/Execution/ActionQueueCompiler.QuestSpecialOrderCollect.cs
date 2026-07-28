@@ -23,7 +23,9 @@ namespace StardewAI.Core.Execution
                     "executor.harvest_ginger" or
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
-                    "executor.catch_fish") ||
+                    "executor.catch_fish" or
+                    "executor.combat_monster" or
+                    "executor.shoot_monster") ||
                 !string.Equals(
                     ReadParameter(action, "quest_next_action"),
                     "collect_items",
@@ -71,7 +73,9 @@ namespace StardewAI.Core.Execution
                     "executor.harvest_ginger" or
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
-                    "executor.catch_fish" ||
+                    "executor.catch_fish" or
+                    "executor.combat_monster" or
+                    "executor.shoot_monster" ||
                 action.OptionId == "executor.harvest_crop" &&
                 string.Equals(
                     ReadParameter(action, "harvest_method"),
@@ -179,6 +183,15 @@ namespace StardewAI.Core.Execution
                 return false;
             }
 
+            if (action.OptionId is
+                "executor.combat_monster" or
+                "executor.shoot_monster")
+            {
+                return MonsterDropSourceMatchesContextTags(
+                    action,
+                    snapshot,
+                    tagSets);
+            }
             if (action.OptionId == "executor.harvest_bush")
             {
                 var features = ReadStateFieldValue(

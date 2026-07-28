@@ -64,6 +64,32 @@ public sealed partial class ModEntry : Mod
                 questSlayReason));
             return;
         }
+        var questResourceReason = ValidateQuestResourceSourceTarget(
+            request,
+            new[] { request.QualifiedItemId });
+        if (!string.IsNullOrWhiteSpace(questResourceReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "shoot_monster",
+                requested,
+                "quest_resource_source=drifted",
+                questResourceReason));
+            return;
+        }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+                request,
+                new[] { request.QualifiedItemId },
+                out var specialCollectReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "shoot_monster",
+                requested,
+                "special_order_collect_source=drifted",
+                specialCollectReason));
+            return;
+        }
         if (!request.SlingshotSlotIndex.HasValue ||
             request.SlingshotSlotIndex.Value < 0 ||
             request.SlingshotSlotIndex.Value >= Game1.player.Items.Count ||
@@ -265,6 +291,8 @@ public sealed partial class ModEntry : Mod
             result,
             active.Pending.Request,
             requireProgress: active.Pending.Request.QuestSlayTargetStep);
+        ApplyQuestResourceSourceFeedback(result, active.Pending.Request);
+        ApplySpecialOrderCollectSourceFeedback(result, active.Pending.Request);
         active.Pending.Completion.SetResult(result);
     }
 
