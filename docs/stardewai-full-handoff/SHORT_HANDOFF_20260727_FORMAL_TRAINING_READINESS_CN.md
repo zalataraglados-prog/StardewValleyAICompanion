@@ -6,18 +6,19 @@
 - 这仍不是正式全量训练：当前专用服务器只暴露五类候选并跳过训练，`BaselineFeatureRowTrainer` 也不是真实学习模型。
 - 不得通过删除 `--skip-training`、重复短训或扩大 episode 数量绕过训练准入。
 
-## 当前唯一下一步
+## 2026-07-28 接续状态
 
-实现版本化训练证据注册表，并从
-`read/candidate/compile/runtime/output` 五门证据生成 allowlist。
+版本化训练证据注册表已经实现，并从
+`read/candidate/compile/runtime/output` 五门证据生成 allowlist。空 allowlist 会直接失败，所有排除项都有类型化原因，知识编译器会输出 `training-admission-manifest.json`。
 
-本切片必须：
+当前 allowlist 只有 `mining.reach_depth`，范围严格限定为 EVD-095 的候选绑定普通矿井滚动链，不代表任意深度完成。全部 `executor.*` 以及三个校准型高层 option 不进入策略训练。
 
-1. 阻止空 allowlist 让测试空集合成立；
-2. 回填已有真实证据；
-3. 分离“已实现但未登记”和“真实缺口”；
-4. 给所有排除项写类型化原因；
-5. 让候选生成、策略数据和模型提供器绑定同一准入清单。
+当前下一步：
+
+1. 继续回填仓库已有真实证据；
+2. 分离“已实现但未登记”和“真实缺口”；
+3. 对真实缺口进入动作编译器、执行器和输出回写开发；
+4. 不得把静态测试或窄烟测直接提升为完整 option 证据。
 
 退出后依次完成：真实缺口闭合、正式轨迹重建、C# 结构化排序器、
 离线回放、新存档到第三年 21 分长期 rollout、完美基线冻结、拟人适配。

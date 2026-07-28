@@ -3325,3 +3325,19 @@ Scope boundary:
 - Backend: PASS 95/95.
 - Full solution build: PASS, 0 errors, five existing warnings.
 - No game process was started. One hidden/silent isolated full-lifecycle smoke remains required before controlled broad policy training.
+
+2026-07-28 formal training admission registry v2
+
+- `capability_registry.v2` now generates independent read, candidate, compile, runtime, and output gates with evidence IDs, a bounded evidence scope, eligibility, and typed exclusion reasons.
+- Empty policy allowlists and inconsistent eligible/excluded declarations fail static registry initialization.
+- Policy admission excludes every `executor.*` option plus `farm.maintain_crops`, `farm.process_machines`, and `recovery.stabilize_day` calibration-only heads.
+- First admitted option: `mining.reach_depth`, limited to `candidate_bound_ordinary_mine_rolling_current_floor_supported_steps` from EVD-095. This is not arbitrary-depth completion.
+- KnowledgeCompiler now emits `training-admission-manifest.json`.
+- Focused capability/governance tests: PASS 20/20.
+- Core: PASS 1293/1293.
+- Backend: PASS 95/95.
+- KnowledgeCompiler build: PASS, 0 warnings/errors.
+- Full solution build: PASS, 0 errors, five existing warnings.
+- KnowledgeCompiler generation smoke produced `training-admission-manifest.v1`: 95 options, one admitted (`mining.reach_depth`), 94 typed exclusions, and the expected bounded evidence scope.
+- The complete knowledge command exited with one existing platform-identity blocker: the authoritative raw export is Linux while the supplied validation runtime DLL is Windows, so their assembly MVIDs intentionally do not match. The admission manifest was still generated and inspected.
+- No game process was started. Evidence backfill and actual action-gap closure remain required before formal full training.

@@ -114,6 +114,19 @@ internal static class Program
                 row.BeforeVerifierStatus,
                 row.AfterVerifierStatus,
                 row.ProductIntegrationStatus,
+                row.PolicyTrainingCandidate,
+                row.ReadTrainingGate,
+                row.CandidateTrainingGate,
+                row.CompilerTrainingGate,
+                row.RuntimeTrainingGate,
+                row.OutputTrainingGate,
+                row.ReadEvidenceIds,
+                row.CandidateEvidenceIds,
+                row.CompilerEvidenceIds,
+                row.RuntimeEvidenceIds,
+                row.OutputEvidenceIds,
+                row.TrainingExclusionReasons,
+                row.TrainingEvidenceScope,
                 row.RiskClass,
                 row.Irreversibility,
                 row.ConfirmationPolicy,
@@ -185,6 +198,19 @@ internal static class Program
                     row.BeforeVerifierStatus,
                     row.AfterVerifierStatus,
                     row.ProductIntegrationStatus,
+                    row.PolicyTrainingCandidate,
+                    row.ReadTrainingGate,
+                    row.CandidateTrainingGate,
+                    row.CompilerTrainingGate,
+                    row.RuntimeTrainingGate,
+                    row.OutputTrainingGate,
+                    row.ReadEvidenceIds,
+                    row.CandidateEvidenceIds,
+                    row.CompilerEvidenceIds,
+                    row.RuntimeEvidenceIds,
+                    row.OutputEvidenceIds,
+                    row.TrainingExclusionReasons,
+                    row.TrainingEvidenceScope,
                     row.RiskClass,
                     row.Irreversibility,
                     row.ConfirmationPolicy,
@@ -199,6 +225,37 @@ internal static class Program
                     row.TrainingEligibility,
                     row.AutonomousCandidatePolicy,
                     row.ProductStatus
+                }).ToArray()
+            });
+
+            Write(outputRoot, "training-admission-manifest.json", new
+            {
+                schema_version = "stardewai.training_admission_manifest.v1",
+                capability_schema_version = OptionCapabilityRegistrySource.SchemaVersion,
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority_policy = "Policy training admits only model-facing options whose read, candidate, compile, runtime, and output gates have explicit runtime evidence. Every excluded option carries typed reasons.",
+                option_count = optionRows.Length,
+                eligible_count = OptionCapabilityRegistrySource.TrainingAllowlist.Count,
+                allowlist = OptionCapabilityRegistrySource.TrainingAllowlist,
+                excluded_count = optionRows.Count(row => row.TrainingEligibility != OptionTrainingEligibility.Eligible),
+                options = optionRows.Select(row => new
+                {
+                    row.OptionId,
+                    row.PolicyTrainingCandidate,
+                    row.ReadTrainingGate,
+                    row.CandidateTrainingGate,
+                    row.CompilerTrainingGate,
+                    row.RuntimeTrainingGate,
+                    row.OutputTrainingGate,
+                    row.ReadEvidenceIds,
+                    row.CandidateEvidenceIds,
+                    row.CompilerEvidenceIds,
+                    row.RuntimeEvidenceIds,
+                    row.OutputEvidenceIds,
+                    row.RuntimeStatus,
+                    row.TrainingEligibility,
+                    row.TrainingExclusionReasons,
+                    row.TrainingEvidenceScope
                 }).ToArray()
             });
 

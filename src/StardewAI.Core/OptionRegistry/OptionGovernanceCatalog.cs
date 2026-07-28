@@ -112,9 +112,24 @@ namespace StardewAI.Core.OptionRegistry
                     : "unbound";
             spec.BeforeVerifierBinding = "StardewAI.Core.Verifier.Verifier";
             spec.AfterVerifierBinding = "runtime-native-postcondition.pending-e3";
-            spec.RuntimeEvidenceId = $"runtime-evidence.pending:{spec.OptionId}";
+            spec.RuntimeEvidenceId = capability.RuntimeEvidenceIds.Length > 0
+                ? string.Join(",", capability.RuntimeEvidenceIds)
+                : $"runtime-evidence.pending:{spec.OptionId}";
             spec.RuntimeStatus = capability.RuntimeEvidenceStatus;
             spec.TrainingEligibility = capability.TrainingEligibility;
+            spec.PolicyTrainingCandidate = capability.PolicyTrainingCandidate;
+            spec.ReadTrainingGate = capability.ReadTrainingGate;
+            spec.CandidateTrainingGate = capability.CandidateTrainingGate;
+            spec.CompilerTrainingGate = capability.CompilerTrainingGate;
+            spec.RuntimeTrainingGate = capability.RuntimeTrainingGate;
+            spec.OutputTrainingGate = capability.OutputTrainingGate;
+            spec.ReadEvidenceIds = capability.ReadEvidenceIds;
+            spec.CandidateEvidenceIds = capability.CandidateEvidenceIds;
+            spec.CompilerEvidenceIds = capability.CompilerEvidenceIds;
+            spec.RuntimeEvidenceIds = capability.RuntimeEvidenceIds;
+            spec.OutputEvidenceIds = capability.OutputEvidenceIds;
+            spec.TrainingExclusionReasons = capability.TrainingExclusionReasons;
+            spec.TrainingEvidenceScope = capability.TrainingEvidenceScope;
             spec.AutonomousCandidatePolicy = policy.AutonomousCandidatePolicy;
             spec.ProductStatus = OptionProductStatus.Registered;
             spec.IrreversibleEffects = policy.Irreversibility == OptionIrreversibility.None

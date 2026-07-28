@@ -58,6 +58,26 @@ namespace StardewAI.Contracts.Capabilities
         ProductIntegrated
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum TrainingEvidenceGateStatus
+    {
+        Missing,
+        DeclaredOnly,
+        RuntimeVerified
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum TrainingAdmissionExclusionReason
+    {
+        NotPolicyTrainingOption,
+        ReadEvidenceMissing,
+        CandidateEvidenceMissing,
+        CompilerEvidenceMissing,
+        RuntimeEvidenceMissing,
+        OutputEvidenceMissing,
+        ExplicitPlayerConfirmationRequired
+    }
+
     public sealed class OptionCapabilityDeclaration
     {
         [JsonPropertyName("schema_version")]
@@ -110,6 +130,46 @@ namespace StardewAI.Contracts.Capabilities
 
         [JsonPropertyName("product_integration_status")]
         public CapabilityProductIntegrationStatus ProductIntegrationStatus { get; internal set; }
+
+        [JsonPropertyName("policy_training_candidate")]
+        public bool PolicyTrainingCandidate { get; internal set; }
+
+        [JsonPropertyName("read_training_gate")]
+        public TrainingEvidenceGateStatus ReadTrainingGate { get; internal set; }
+
+        [JsonPropertyName("candidate_training_gate")]
+        public TrainingEvidenceGateStatus CandidateTrainingGate { get; internal set; }
+
+        [JsonPropertyName("compiler_training_gate")]
+        public TrainingEvidenceGateStatus CompilerTrainingGate { get; internal set; }
+
+        [JsonPropertyName("runtime_training_gate")]
+        public TrainingEvidenceGateStatus RuntimeTrainingGate { get; internal set; }
+
+        [JsonPropertyName("output_training_gate")]
+        public TrainingEvidenceGateStatus OutputTrainingGate { get; internal set; }
+
+        [JsonPropertyName("read_evidence_ids")]
+        public string[] ReadEvidenceIds { get; internal set; } = Array.Empty<string>();
+
+        [JsonPropertyName("candidate_evidence_ids")]
+        public string[] CandidateEvidenceIds { get; internal set; } = Array.Empty<string>();
+
+        [JsonPropertyName("compiler_evidence_ids")]
+        public string[] CompilerEvidenceIds { get; internal set; } = Array.Empty<string>();
+
+        [JsonPropertyName("runtime_evidence_ids")]
+        public string[] RuntimeEvidenceIds { get; internal set; } = Array.Empty<string>();
+
+        [JsonPropertyName("output_evidence_ids")]
+        public string[] OutputEvidenceIds { get; internal set; } = Array.Empty<string>();
+
+        [JsonPropertyName("training_exclusion_reasons")]
+        public TrainingAdmissionExclusionReason[] TrainingExclusionReasons { get; internal set; } =
+            Array.Empty<TrainingAdmissionExclusionReason>();
+
+        [JsonPropertyName("training_evidence_scope")]
+        public string TrainingEvidenceScope { get; internal set; } = "not_admitted";
     }
 
     public sealed class DailyCandidateCapabilityDeclaration
@@ -126,7 +186,17 @@ namespace StardewAI.Contracts.Capabilities
 
     public static class OptionCapabilityRegistrySource
     {
-        public const string SchemaVersion = "capability_registry.v1";
+        public const string SchemaVersion = "capability_registry.v2";
+
+        private sealed class TrainingEvidence
+        {
+            public string Scope { get; set; } = string.Empty;
+            public string[] ReadEvidenceIds { get; set; } = Array.Empty<string>();
+            public string[] CandidateEvidenceIds { get; set; } = Array.Empty<string>();
+            public string[] CompilerEvidenceIds { get; set; } = Array.Empty<string>();
+            public string[] RuntimeEvidenceIds { get; set; } = Array.Empty<string>();
+            public string[] OutputEvidenceIds { get; set; } = Array.Empty<string>();
+        }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
             "farm.maintain_crops", "farm.process_machines", "recovery.stabilize_day",
@@ -281,10 +351,30 @@ namespace StardewAI.Contracts.Capabilities
             "executor.read_book", "executor.select_safe_item_slot"
         };
 
+        private static readonly HashSet<string> CalibrationOnlyHighLevelIds = Set(
+            "farm.maintain_crops",
+            "farm.process_machines",
+            "recovery.stabilize_day");
+
+        private static readonly IReadOnlyDictionary<string, TrainingEvidence> TrainingEvidenceByOptionId =
+            new ReadOnlyDictionary<string, TrainingEvidence>(
+                new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
+                {
+                    ["mining.reach_depth"] = VerifiedEvidence(
+                        "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                        "EVD-095")
+                });
+
         private static readonly IReadOnlyList<OptionCapabilityDeclaration> Options = BuildOptions();
         private static readonly IReadOnlyDictionary<string, OptionCapabilityDeclaration> OptionsById =
             new ReadOnlyDictionary<string, OptionCapabilityDeclaration>(
                 Options.ToDictionary(row => row.OptionId, StringComparer.Ordinal));
+        private static readonly IReadOnlyCollection<string> EligibleTrainingOptionIds =
+            new ReadOnlyCollection<string>(Options
+                .Where(TrainingEligibilityPolicy.IsEligible)
+                .Select(row => row.OptionId)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray());
 
         private static readonly IReadOnlyList<DailyCandidateCapabilityDeclaration> Candidates =
             new ReadOnlyCollection<DailyCandidateCapabilityDeclaration>(new[]
@@ -346,17 +436,35 @@ namespace StardewAI.Contracts.Capabilities
             {
                 throw new InvalidOperationException("Capability registry contains an incomplete daily candidate declaration.");
             }
+
+            if (EligibleTrainingOptionIds.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "Capability registry produced an empty policy-training allowlist.");
+            }
+
+            if (Options.Any(row =>
+                (TrainingEligibilityPolicy.IsEligible(row) && row.TrainingExclusionReasons.Length != 0) ||
+                (!TrainingEligibilityPolicy.IsEligible(row) && row.TrainingExclusionReasons.Length == 0)))
+            {
+                throw new InvalidOperationException(
+                    "Capability registry contains an inconsistent training-admission declaration.");
+            }
+
+            if (Options.Any(row =>
+                TrainingEligibilityPolicy.IsEligible(row) &&
+                (string.IsNullOrWhiteSpace(row.TrainingEvidenceScope) ||
+                 string.Equals(row.TrainingEvidenceScope, "not_admitted", StringComparison.Ordinal))))
+            {
+                throw new InvalidOperationException(
+                    "Capability registry contains an eligible option without an evidence scope.");
+            }
         }
 
         public static IReadOnlyList<OptionCapabilityDeclaration> All => Options;
         public static IReadOnlyList<DailyCandidateCapabilityDeclaration> DailyCandidates => Candidates;
 
-        public static IReadOnlyCollection<string> TrainingAllowlist { get; } =
-            new ReadOnlyCollection<string>(Options
-                .Where(TrainingEligibilityPolicy.IsEligible)
-                .Select(row => row.OptionId)
-                .OrderBy(value => value, StringComparer.Ordinal)
-                .ToArray());
+        public static IReadOnlyCollection<string> TrainingAllowlist => EligibleTrainingOptionIds;
 
         public static bool TryGet(string optionId, out OptionCapabilityDeclaration declaration)
         {
@@ -379,35 +487,82 @@ namespace StardewAI.Contracts.Capabilities
             {
                 var hasStep = StepCompilerIds.Contains(id);
                 var hasParameter = ParameterCompilerIds.Contains(id);
+                var candidateStatus = id.StartsWith("executor.", StringComparison.Ordinal)
+                    ? CapabilityCandidateStatus.NotApplicable
+                    : id == "quest.advance"
+                        ? CapabilityCandidateStatus.PartiallyBlocked
+                        : CapabilityCandidateStatus.Declared;
+                var compilerStatus = hasStep && hasParameter
+                    ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared
+                    : hasStep
+                        ? CapabilityCompilerStatus.StepCompilerDeclared
+                        : hasParameter
+                            ? CapabilityCompilerStatus.ParameterCompilerDeclared
+                            : CapabilityCompilerStatus.Unbound;
+                var policyTrainingCandidate =
+                    !id.StartsWith("executor.", StringComparison.Ordinal) &&
+                    !CalibrationOnlyHighLevelIds.Contains(id);
+                TrainingEvidenceByOptionId.TryGetValue(id, out var evidence);
+                evidence ??= new TrainingEvidence();
+                var readGate = Gate(evidence.ReadEvidenceIds, declared: true);
+                var candidateGate = Gate(
+                    evidence.CandidateEvidenceIds,
+                    candidateStatus == CapabilityCandidateStatus.Declared);
+                var compilerGate = Gate(
+                    evidence.CompilerEvidenceIds,
+                    compilerStatus != CapabilityCompilerStatus.Unbound &&
+                    (HarnessDispatchIds.Contains(id) || InternalHighLevelExecutionIds.Contains(id)));
+                var runtimeGate = Gate(evidence.RuntimeEvidenceIds, declared: false);
+                var outputGate = Gate(evidence.OutputEvidenceIds, declared: false);
+                var exclusions = BuildTrainingExclusionReasons(
+                    policyTrainingCandidate,
+                    PlayerConfirmationIds.Contains(id),
+                    readGate,
+                    candidateGate,
+                    compilerGate,
+                    runtimeGate,
+                    outputGate);
+                var trainingEligible = exclusions.Length == 0;
                 return new OptionCapabilityDeclaration
                 {
                     OptionId = id,
                     RegistrationStatus = CapabilityRegistrationStatus.Registered,
                     ReadStatus = CapabilityReadStatus.RequiredFactContractDeclared,
-                    CandidateStatus = id.StartsWith("executor.", StringComparison.Ordinal)
-                        ? CapabilityCandidateStatus.NotApplicable
-                        : id == "quest.advance"
-                            ? CapabilityCandidateStatus.PartiallyBlocked
-                            : CapabilityCandidateStatus.Declared,
-                    CompilerStatus = hasStep && hasParameter
-                        ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared
-                        : hasStep
-                            ? CapabilityCompilerStatus.StepCompilerDeclared
-                            : hasParameter
-                                ? CapabilityCompilerStatus.ParameterCompilerDeclared
-                                : CapabilityCompilerStatus.Unbound,
+                    CandidateStatus = candidateStatus,
+                    CompilerStatus = compilerStatus,
                     HarnessDispatchSupported = HarnessDispatchIds.Contains(id),
                     ProductExecutorSupported = false,
                     InternalExecutionPipelineSupported =
                         HarnessDispatchIds.Contains(id) || InternalHighLevelExecutionIds.Contains(id),
-                    BeforeVerifierStatus = CapabilityVerifierStatus.ContractDeclared,
-                    AfterVerifierStatus = CapabilityVerifierStatus.PendingRuntimeEvidence,
-                    RuntimeEvidenceStatus = OptionRuntimeStatus.RegisteredOnly,
-                    TrainingEligibility = OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
+                    BeforeVerifierStatus = trainingEligible
+                        ? CapabilityVerifierStatus.RuntimeVerified
+                        : CapabilityVerifierStatus.ContractDeclared,
+                    AfterVerifierStatus = outputGate == TrainingEvidenceGateStatus.RuntimeVerified
+                        ? CapabilityVerifierStatus.RuntimeVerified
+                        : CapabilityVerifierStatus.PendingRuntimeEvidence,
+                    RuntimeEvidenceStatus = runtimeGate == TrainingEvidenceGateStatus.RuntimeVerified
+                        ? OptionRuntimeStatus.RuntimeVerified
+                        : OptionRuntimeStatus.RegisteredOnly,
+                    TrainingEligibility = trainingEligible
+                        ? OptionTrainingEligibility.Eligible
+                        : OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
                     AutonomousCandidateEnabled = AutonomousCandidateIds.Contains(id),
                     PlayerConfirmationRequired = PlayerConfirmationIds.Contains(id),
                     HostOnly = HostOnlyIds.Contains(id),
-                    ProductIntegrationStatus = CapabilityProductIntegrationStatus.NotIntegrated
+                    ProductIntegrationStatus = CapabilityProductIntegrationStatus.NotIntegrated,
+                    PolicyTrainingCandidate = policyTrainingCandidate,
+                    ReadTrainingGate = readGate,
+                    CandidateTrainingGate = candidateGate,
+                    CompilerTrainingGate = compilerGate,
+                    RuntimeTrainingGate = runtimeGate,
+                    OutputTrainingGate = outputGate,
+                    ReadEvidenceIds = evidence.ReadEvidenceIds,
+                    CandidateEvidenceIds = evidence.CandidateEvidenceIds,
+                    CompilerEvidenceIds = evidence.CompilerEvidenceIds,
+                    RuntimeEvidenceIds = evidence.RuntimeEvidenceIds,
+                    OutputEvidenceIds = evidence.OutputEvidenceIds,
+                    TrainingExclusionReasons = exclusions,
+                    TrainingEvidenceScope = trainingEligible ? evidence.Scope : "not_admitted"
                 };
             }).ToArray();
 
@@ -430,6 +585,8 @@ namespace StardewAI.Contracts.Capabilities
                 .Concat(AutonomousCandidateIds)
                 .Concat(PlayerConfirmationIds)
                 .Concat(HostOnlyIds)
+                .Concat(CalibrationOnlyHighLevelIds)
+                .Concat(TrainingEvidenceByOptionId.Keys)
                 .Where(id => !registered.Contains(id))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(id => id, StringComparer.Ordinal)
@@ -444,6 +601,70 @@ namespace StardewAI.Contracts.Capabilities
         private static HashSet<string> Set(params string[] values)
         {
             return new HashSet<string>(values, StringComparer.Ordinal);
+        }
+
+        private static TrainingEvidence VerifiedEvidence(string scope, params string[] evidenceIds)
+        {
+            if (string.IsNullOrWhiteSpace(scope))
+            {
+                throw new InvalidOperationException("Verified training evidence requires a bounded scope.");
+            }
+
+            var ids = evidenceIds
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            if (ids.Length == 0)
+            {
+                throw new InvalidOperationException("Verified training evidence requires at least one evidence ID.");
+            }
+
+            return new TrainingEvidence
+            {
+                Scope = scope,
+                ReadEvidenceIds = ids,
+                CandidateEvidenceIds = ids,
+                CompilerEvidenceIds = ids,
+                RuntimeEvidenceIds = ids,
+                OutputEvidenceIds = ids
+            };
+        }
+
+        private static TrainingEvidenceGateStatus Gate(string[] evidenceIds, bool declared)
+        {
+            return evidenceIds.Length > 0
+                ? TrainingEvidenceGateStatus.RuntimeVerified
+                : declared
+                    ? TrainingEvidenceGateStatus.DeclaredOnly
+                    : TrainingEvidenceGateStatus.Missing;
+        }
+
+        private static TrainingAdmissionExclusionReason[] BuildTrainingExclusionReasons(
+            bool policyTrainingCandidate,
+            bool playerConfirmationRequired,
+            TrainingEvidenceGateStatus readGate,
+            TrainingEvidenceGateStatus candidateGate,
+            TrainingEvidenceGateStatus compilerGate,
+            TrainingEvidenceGateStatus runtimeGate,
+            TrainingEvidenceGateStatus outputGate)
+        {
+            var reasons = new List<TrainingAdmissionExclusionReason>();
+            if (!policyTrainingCandidate)
+                reasons.Add(TrainingAdmissionExclusionReason.NotPolicyTrainingOption);
+            if (readGate != TrainingEvidenceGateStatus.RuntimeVerified)
+                reasons.Add(TrainingAdmissionExclusionReason.ReadEvidenceMissing);
+            if (candidateGate != TrainingEvidenceGateStatus.RuntimeVerified)
+                reasons.Add(TrainingAdmissionExclusionReason.CandidateEvidenceMissing);
+            if (compilerGate != TrainingEvidenceGateStatus.RuntimeVerified)
+                reasons.Add(TrainingAdmissionExclusionReason.CompilerEvidenceMissing);
+            if (runtimeGate != TrainingEvidenceGateStatus.RuntimeVerified)
+                reasons.Add(TrainingAdmissionExclusionReason.RuntimeEvidenceMissing);
+            if (outputGate != TrainingEvidenceGateStatus.RuntimeVerified)
+                reasons.Add(TrainingAdmissionExclusionReason.OutputEvidenceMissing);
+            if (playerConfirmationRequired)
+                reasons.Add(TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired);
+            return reasons.Distinct().ToArray();
         }
 
         private static DailyCandidateCapabilityDeclaration SupportedCandidate(string kind)
@@ -466,11 +687,17 @@ namespace StardewAI.Contracts.Capabilities
     {
         public static bool IsEligible(OptionCapabilityDeclaration declaration)
         {
-            return IsEligible(
-                declaration.RuntimeEvidenceStatus,
-                declaration.TrainingEligibility,
-                declaration.AutonomousCandidateEnabled,
-                declaration.PlayerConfirmationRequired);
+            return declaration.RuntimeEvidenceStatus >= OptionRuntimeStatus.RuntimeVerified &&
+                declaration.TrainingEligibility == OptionTrainingEligibility.Eligible &&
+                declaration.PolicyTrainingCandidate &&
+                !declaration.PlayerConfirmationRequired &&
+                declaration.ReadTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                declaration.CandidateTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                declaration.CompilerTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                declaration.RuntimeTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                declaration.OutputTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                !string.IsNullOrWhiteSpace(declaration.TrainingEvidenceScope) &&
+                !string.Equals(declaration.TrainingEvidenceScope, "not_admitted", StringComparison.Ordinal);
         }
 
         public static bool IsEligible(

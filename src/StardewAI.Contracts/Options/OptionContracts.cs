@@ -315,6 +315,46 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("training_eligibility")]
         public OptionTrainingEligibility TrainingEligibility { get; set; } = OptionTrainingEligibility.Unknown;
 
+        [JsonPropertyName("policy_training_candidate")]
+        public bool PolicyTrainingCandidate { get; set; }
+
+        [JsonPropertyName("read_training_gate")]
+        public TrainingEvidenceGateStatus ReadTrainingGate { get; set; }
+
+        [JsonPropertyName("candidate_training_gate")]
+        public TrainingEvidenceGateStatus CandidateTrainingGate { get; set; }
+
+        [JsonPropertyName("compiler_training_gate")]
+        public TrainingEvidenceGateStatus CompilerTrainingGate { get; set; }
+
+        [JsonPropertyName("runtime_training_gate")]
+        public TrainingEvidenceGateStatus RuntimeTrainingGate { get; set; }
+
+        [JsonPropertyName("output_training_gate")]
+        public TrainingEvidenceGateStatus OutputTrainingGate { get; set; }
+
+        [JsonPropertyName("read_evidence_ids")]
+        public string[] ReadEvidenceIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("candidate_evidence_ids")]
+        public string[] CandidateEvidenceIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("compiler_evidence_ids")]
+        public string[] CompilerEvidenceIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("runtime_evidence_ids")]
+        public string[] RuntimeEvidenceIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("output_evidence_ids")]
+        public string[] OutputEvidenceIds { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("training_exclusion_reasons")]
+        public TrainingAdmissionExclusionReason[] TrainingExclusionReasons { get; set; } =
+            System.Array.Empty<TrainingAdmissionExclusionReason>();
+
+        [JsonPropertyName("training_evidence_scope")]
+        public string TrainingEvidenceScope { get; set; } = "not_admitted";
+
         [JsonPropertyName("autonomous_candidate_policy")]
         public AutonomousCandidatePolicy AutonomousCandidatePolicy { get; set; } = AutonomousCandidatePolicy.Unknown;
 

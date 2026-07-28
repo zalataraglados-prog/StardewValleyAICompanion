@@ -1,3 +1,4 @@
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 using StardewAI.Core.OptionRegistry;
 
@@ -127,11 +128,15 @@ public sealed class OptionRegistryGovernanceTests
                 string.IsNullOrWhiteSpace(row.AfterVerifierBinding) ||
                 string.IsNullOrWhiteSpace(row.RuntimeEvidenceId));
 
+        Assert.Equal(
+            OptionCapabilityRegistrySource.TrainingAllowlist.OrderBy(value => value, StringComparer.Ordinal),
+            Registry()
+                .Where(row => row.TrainingEligibility == OptionTrainingEligibility.Eligible)
+                .Select(row => row.OptionId)
+                .OrderBy(value => value, StringComparer.Ordinal));
         Assert.All(
-            Registry(),
-            row => Assert.Equal(
-                OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
-                row.TrainingEligibility));
+            Registry().Where(row => row.TrainingEligibility != OptionTrainingEligibility.Eligible),
+            row => Assert.NotEmpty(row.TrainingExclusionReasons));
     }
 
     private static IReadOnlyCollection<OptionSpec> Registry()

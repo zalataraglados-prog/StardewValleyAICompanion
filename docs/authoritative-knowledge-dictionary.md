@@ -80,24 +80,30 @@ field still needs a scene-specific snapshot before its executor can be accepted.
 error, invalid, or provenance-free required fields block the dictionary build.
 
 `option-governance-matrix.json` separately records the `option_spec.v2` governance contract
-for all 89 registered options. The current registry is 2 goal templates, 29 composite
-options, and 58 executor primitives. Risk, irreversibility, confirmation, host, ownership,
+for all 95 registered options. The current registry is 2 goal templates, 29 composite
+options, and 64 executor primitives. Risk, irreversibility, confirmation, host, ownership,
 adapter, compiler/verifier binding, evidence status, autonomous-candidate policy, training
 eligibility, and product status are explicit for every entry. Unknown policies, duplicate
 IDs, missing bindings, and irreversible actions without confirmation fail registry
 initialization. Compiler or Harness registration does not promote an option to runtime
 verified or training eligible; those statuses require separately indexed E3 or E4 evidence.
 
-`capability_registry.v1` is the versioned machine-readable source for operational capability
+`capability_registry.v2` is the versioned machine-readable source for operational capability
 stages. `OptionRegistry`, compiler-binding checks, RuntimeTestHarness dispatch projection,
 product-executor projection, daily-candidate classification, bridge capability output,
 knowledge matrices, and the training allowlist consume or validate that source. The current
-baseline declares 61 step-compiler bindings, 13 parameter-compiler bindings, and 59
-RuntimeTestHarness dispatch branches. It deliberately declares zero product executors, zero
-runtime-verified options, and an empty training allowlist. The legacy `executor_enabled`
+baseline deliberately declares zero product executors. It generates
+`training-admission-manifest.json` with independent read/candidate/compile/runtime/output
+gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. The first nonempty
+allowlist contains only `mining.reach_depth`, restricted to the candidate-bound ordinary-mine
+rolling scope proven by EVD-095; this does not claim arbitrary-depth completion. The legacy `executor_enabled`
 availability field means only that the internal compiler/Harness or candidate chain is
 enabled; `product_executor_supported` is the separate product claim. Harness dispatch,
 product integration, runtime evidence, and training eligibility cannot promote one another.
+
+The 89-of-89 live field join above is the last recorded snapshot-schema join, not a current
+95-option completeness claim. Regenerate the join after each required-field change before
+promoting another option through the read gate.
 
 Candidate evaluation now exposes separate `read_eligible`, `binding_status`,
 `compile_status`, `execution_authorization`, `runtime_evidence_status`,

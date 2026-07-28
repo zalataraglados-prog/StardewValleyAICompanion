@@ -28,6 +28,22 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Equal(declaration.ProductExecutorSupported, option.ProductExecutorSupported);
             Assert.Equal(declaration.RuntimeEvidenceStatus, option.RuntimeStatus);
             Assert.Equal(declaration.TrainingEligibility, option.TrainingEligibility);
+            Assert.Equal(declaration.PolicyTrainingCandidate, option.PolicyTrainingCandidate);
+            Assert.Equal(declaration.ReadTrainingGate, option.ReadTrainingGate);
+            Assert.Equal(declaration.CandidateTrainingGate, option.CandidateTrainingGate);
+            Assert.Equal(declaration.CompilerTrainingGate, option.CompilerTrainingGate);
+            Assert.Equal(declaration.RuntimeTrainingGate, option.RuntimeTrainingGate);
+            Assert.Equal(declaration.OutputTrainingGate, option.OutputTrainingGate);
+            Assert.Equal(declaration.ReadEvidenceIds, option.ReadEvidenceIds);
+            Assert.Equal(declaration.CandidateEvidenceIds, option.CandidateEvidenceIds);
+            Assert.Equal(declaration.CompilerEvidenceIds, option.CompilerEvidenceIds);
+            Assert.Equal(declaration.RuntimeEvidenceIds, option.RuntimeEvidenceIds);
+            Assert.Equal(declaration.OutputEvidenceIds, option.OutputEvidenceIds);
+            Assert.Equal(declaration.TrainingExclusionReasons, option.TrainingExclusionReasons);
+            Assert.Equal(declaration.TrainingEvidenceScope, option.TrainingEvidenceScope);
+            Assert.Equal(
+                option.TrainingRole != TrainingRoles.ExecutorCalibration,
+                declaration.PolicyTrainingCandidate);
         }
     }
 
@@ -131,11 +147,25 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     [Fact]
     public void TrainingAllowlistRequiresRuntimeEvidenceTests()
     {
+        Assert.NotEmpty(OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.Equal(new[] { "mining.reach_depth" }, OptionCapabilityRegistrySource.TrainingAllowlist);
+
         Assert.All(OptionCapabilityRegistrySource.TrainingAllowlist, optionId =>
         {
             var declaration = OptionCapabilityRegistrySource.GetRequired(optionId);
             Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
             Assert.True(declaration.RuntimeEvidenceStatus >= OptionRuntimeStatus.RuntimeVerified);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.RuntimeTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.OutputTrainingGate);
+            Assert.NotEmpty(declaration.RuntimeEvidenceIds);
+            Assert.NotEmpty(declaration.OutputEvidenceIds);
+            Assert.Empty(declaration.TrainingExclusionReasons);
+            Assert.Equal(
+                "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                declaration.TrainingEvidenceScope);
         });
 
         Assert.False(TrainingEligibilityPolicy.IsEligible(
@@ -148,6 +178,24 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void EveryExcludedOptionHasTypedTrainingAdmissionReasonsTests()
+    {
+        var excluded = OptionCapabilityRegistrySource.All
+            .Where(row => !TrainingEligibilityPolicy.IsEligible(row))
+            .ToArray();
+
+        Assert.NotEmpty(excluded);
+        Assert.All(excluded, row => Assert.NotEmpty(row.TrainingExclusionReasons));
+        Assert.All(
+            OptionCapabilityRegistrySource.All.Where(row =>
+                row.OptionId.StartsWith("executor.", StringComparison.Ordinal) ||
+                row.OptionId is "farm.maintain_crops" or "farm.process_machines" or "recovery.stabilize_day"),
+            row => Assert.Contains(
+                TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
+                row.TrainingExclusionReasons));
     }
 
     [Fact]
