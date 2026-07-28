@@ -22,7 +22,7 @@ public sealed partial class ModEntry
             return QuestBlocked(request, requestedEffect, "request=invalid", genericReasons.ToArray());
         }
         if (request.QuestFamily is not ("ordinary_quest" or "special_order") ||
-            request.QuestInteractionKind is not ("report" or "offer_item") ||
+            request.QuestInteractionKind is not ("report" or "offer_item" or "gift") ||
             string.IsNullOrWhiteSpace(request.SocialNpcName) ||
             string.IsNullOrWhiteSpace(request.LocationId))
         {
@@ -66,7 +66,7 @@ public sealed partial class ModEntry
 
         Item? offeredItem = null;
         int? offeredSlot = null;
-        if (request.QuestInteractionKind == "offer_item")
+        if (request.QuestInteractionKind is "offer_item" or "gift")
         {
             offeredSlot = request.SocialGiftSlotIndex;
             if (!offeredSlot.HasValue || offeredSlot.Value < 0 || offeredSlot.Value >= Game1.player.Items.Count)
@@ -119,7 +119,10 @@ public sealed partial class ModEntry
                 return QuestBlocked(request, requestedEffect, QuestObservedEffect(), "special_order_live_objective_not_found");
             }
             specialObjective = specialOrder.objectives[request.QuestObjectiveIndex.Value];
-            if (!string.Equals(specialObjective.GetType().Name, "DeliverObjective", StringComparison.Ordinal) ||
+            var expectedObjectiveType = request.QuestInteractionKind == "gift"
+                ? "GiftObjective"
+                : "DeliverObjective";
+            if (!string.Equals(specialObjective.GetType().Name, expectedObjectiveType, StringComparison.Ordinal) ||
                 request.QuestExpectedCurrentCount != specialObjective.GetCount() ||
                 request.QuestExpectedTargetCount != specialObjective.GetMaxCount())
             {
@@ -134,6 +137,13 @@ public sealed partial class ModEntry
             probeAccepted = request.QuestFamily == "ordinary_quest"
                 ? ReferenceEquals(receiver.Quest, ordinaryQuest)
                 : ReferenceEquals(receiver.Order, specialOrder);
+        }
+        else if (request.QuestInteractionKind == "gift" &&
+            offeredItem is not null &&
+            specialObjective is GiftObjective giftObjective)
+        {
+            probeAccepted = NativeGiftObjectiveWouldIncrement(giftObjective, npc, offeredItem) &&
+                NativeGiftInteractionIsCurrentlyLegal(npc, offeredItem);
         }
         else if (ordinaryQuest is not null)
         {
@@ -333,6 +343,73 @@ public sealed partial class ModEntry
             }
         }
         return (null, null);
+    }
+
+    private static bool NativeGiftObjectiveWouldIncrement(
+        GiftObjective objective,
+        NPC npc,
+        Item item)
+    {
+        var contextTags = item.GetContextTags();
+        var matchesTags = objective.acceptableContextTagSets.Count == 0;
+        foreach (var set in objective.acceptableContextTagSets)
+        {
+            var setMatches = true;
+            foreach (var group in set.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!ItemContextTagManager.DoAnyTagsMatch(
+                        group.Split('/', StringSplitOptions.RemoveEmptyEntries),
+                        contextTags))
+                {
+                    setMatches = false;
+                    break;
+                }
+            }
+            if (setMatches)
+            {
+                matchesTags = true;
+                break;
+            }
+        }
+        if (!matchesTags)
+        {
+            return false;
+        }
+
+        if (objective.minimumLikeLevel.Value <= GiftObjective.LikeLevels.None)
+        {
+            return true;
+        }
+        var actual = npc.getGiftTasteForThisItem(item) switch
+        {
+            6 => GiftObjective.LikeLevels.Hated,
+            4 => GiftObjective.LikeLevels.Disliked,
+            8 => GiftObjective.LikeLevels.Neutral,
+            2 => GiftObjective.LikeLevels.Liked,
+            0 => GiftObjective.LikeLevels.Loved,
+            _ => GiftObjective.LikeLevels.None
+        };
+        return actual >= objective.minimumLikeLevel.Value;
+    }
+
+    private static bool NativeGiftInteractionIsCurrentlyLegal(NPC npc, Item item)
+    {
+        if (!npc.CanReceiveGifts())
+        {
+            return false;
+        }
+        Game1.player.friendshipData.TryGetValue(npc.Name, out var friendship);
+        var isStardropTea = string.Equals(item.QualifiedItemId, "(O)StardropTea", StringComparison.Ordinal);
+        var isSpouse = string.Equals(Game1.player.spouse, npc.Name, StringComparison.Ordinal);
+        if (!isStardropTea && friendship is not null && friendship.GiftsToday >= 1)
+        {
+            return false;
+        }
+        return isStardropTea ||
+            friendship is null ||
+            friendship.GiftsThisWeek < 2 ||
+            isSpouse ||
+            npc.isBirthday();
     }
 
     private static int OrdinaryQuestTargetCount(Quest quest)

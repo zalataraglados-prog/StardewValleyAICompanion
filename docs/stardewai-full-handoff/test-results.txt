@@ -3341,3 +3341,21 @@ Scope boundary:
 - KnowledgeCompiler generation smoke produced `training-admission-manifest.v1`: 95 options, one admitted (`mining.reach_depth`), 94 typed exclusions, and the expected bounded evidence scope.
 - The complete knowledge command exited with one existing platform-identity blocker: the authoritative raw export is Linux while the supplied validation runtime DLL is Windows, so their assembly MVIDs intentionally do not match. The admission manifest was still generated and inspected.
 - No game process was started. Evidence backfill and actual action-gap closure remain required before formal full training.
+
+2026-07-28 special-order GiftObjective native social reuse
+
+- `GiftObjective` now filters the existing native social-gift candidates by exact
+  objective context tags and the decompiled minimum-like-level ordering.
+- Candidate, daily plan, queue validation and runtime request retain exact quest,
+  objective, NPC, slot, item, tag-set and taste-threshold identities.
+- Runtime verifies the native objective predicate without invoking its mutating
+  callback, then uses only `GameLocation.checkAction` and requires matching objective
+  progress afterward.
+- Focused quest filter: PASS 94/94.
+- Full regression: Core PASS 1299/1299; Backend PASS 95/95.
+- RuntimeTestHarness Release build: PASS, 0 errors.
+- Full solution Release build: PASS, 0 errors, seven existing warnings.
+- Knowledge scan: 12 ordinary quest types, 9 special-order objective types, zero
+  catalog differences, 28 stages with 16 bound, 10 blocked and 2 observation-only.
+- The knowledge command retained only two pre-existing Grandpa method-identity
+  blockers. No game process was started.

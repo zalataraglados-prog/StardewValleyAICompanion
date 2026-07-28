@@ -156,7 +156,7 @@ namespace StardewAI.Core.Execution
             var targetX = ReadIntParameter(action, "target_tile_x");
             var targetY = ReadIntParameter(action, "target_tile_y");
             if (string.IsNullOrWhiteSpace(npcName) ||
-                interactionKind is not ("report" or "offer_item") ||
+                interactionKind is not ("report" or "offer_item" or "gift") ||
                 !targetX.HasValue ||
                 !targetY.HasValue)
             {

@@ -32,7 +32,8 @@ namespace StardewAI.Core.Training
                     : CandidateParameter(candidate, "quest_interaction_kind");
             if (candidate.Kind == "quest_npc_interaction" &&
                 actionKind != "report" &&
-                actionKind != "offer_item")
+                actionKind != "offer_item" &&
+                actionKind != "gift")
             {
                 return Array.Empty<SmallModelPlanStep>();
             }

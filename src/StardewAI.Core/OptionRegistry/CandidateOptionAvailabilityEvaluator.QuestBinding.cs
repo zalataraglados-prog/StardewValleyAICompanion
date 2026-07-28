@@ -164,6 +164,8 @@ namespace StardewAI.Core.OptionRegistry
                     };
                 case "FishObjective":
                     return BindSpecialOrderFishingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
+                case "GiftObjective":
+                    return BindSpecialOrderGiftCandidates(snapshot, candidate, fields);
                 case "ShipObjective":
                     return BindSpecialOrderShippingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ReachMineFloorObjective":
@@ -241,6 +243,104 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return false;
             }
+        }
+
+        private IEnumerable<EventCandidate> BindSpecialOrderGiftCandidates(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest,
+            PerTypeObjectiveFields fields)
+        {
+            if (fields.AcceptableContextTagSets.Length == 0)
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_gift_context_tag_sets_missing") };
+            }
+            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(fields.AcceptableContextTagSets))
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_gift_has_unprojected_color_tags") };
+            }
+            if (!QuestGiftObjectiveMatcher.IsKnownMinimumLikeLevel(fields.MinimumLikeLevel))
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_gift_minimum_like_level_unknown") };
+            }
+
+            var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
+            if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "player_inventory_unavailable_for_special_order_gift") };
+            }
+
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)
+                .Where(candidate => candidate.Kind == "route_connector_tile")
+                .ToArray();
+            var matches = new List<EventCandidate>();
+            foreach (var socialGift in SocialCandidateBuilder.Build(snapshot, "social.gift_npc", int.MaxValue))
+            {
+                var slotText = ReadParameter(socialGift.Parameters, "slot_index");
+                var slotIndex = int.TryParse(
+                    slotText,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var parsedSlot)
+                        ? parsedSlot
+                        : (int?)null;
+                var inventoryItem = slotIndex.HasValue
+                    ? inventory.Value.EnumerateArray().FirstOrDefault(item =>
+                        item.ValueKind == JsonValueKind.Object &&
+                        ReadInt(item, "slot_index") == slotIndex.Value &&
+                        ReadBool(item, "is_empty") != true)
+                    : default;
+                if (inventoryItem.ValueKind != JsonValueKind.Object ||
+                    !QuestContextTagMatcher.Matches(inventoryItem, fields.AcceptableContextTagSets) ||
+                    !QuestGiftObjectiveMatcher.MeetsMinimumLikeLevel(
+                        ReadParameter(socialGift.Parameters, "gift_taste"),
+                        fields.MinimumLikeLevel))
+                {
+                    continue;
+                }
+
+                var routed = string.IsNullOrWhiteSpace(socialGift.LocationId) ||
+                    string.Equals(socialGift.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
+                        ? socialGift
+                        : SocialRouteCandidate(
+                            snapshot,
+                            "quest.advance",
+                            socialGift,
+                            currentLocation,
+                            routeCandidates);
+                var extra = new List<SmallModelActionParameter>
+                {
+                    Parameter("quest_interaction_kind", "gift"),
+                    Parameter("quest_gift_minimum_like_level", fields.MinimumLikeLevel),
+                    Parameter(
+                        "quest_gift_acceptable_context_tag_sets_json",
+                        JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                };
+                if (routed.Kind == "route_connector_tile")
+                {
+                    extra.Add(Parameter("continuation.option_id", "quest.advance"));
+                    extra.Add(Parameter("continuation.quest_candidate_id", quest.CandidateId));
+                    extra.Add(Parameter("continuation.npc_name", ReadParameter(socialGift.Parameters, "npc_name")));
+                    extra.Add(Parameter("continuation.target_location", socialGift.LocationId));
+                    extra.Add(Parameter("continuation.slot_index", ReadParameter(socialGift.Parameters, "slot_index")));
+                    extra.Add(Parameter("continuation.qualified_item_id", ReadParameter(socialGift.Parameters, "qualified_item_id")));
+                }
+
+                matches.Add(AttachQuest(
+                    routed.Kind == "route_connector_tile"
+                        ? routed
+                        : CloneCandidate(routed, kind: "quest_npc_interaction"),
+                    quest,
+                    extra));
+                if (matches.Count >= 64)
+                {
+                    break;
+                }
+            }
+
+            return matches.Count > 0
+                ? matches
+                : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_matching_gift_not_available") };
         }
 
         private EventCandidate BindQuestLocationRoute(

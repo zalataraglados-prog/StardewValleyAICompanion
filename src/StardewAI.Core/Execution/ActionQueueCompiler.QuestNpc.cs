@@ -32,7 +32,7 @@ namespace StardewAI.Core.Execution
             var expectedTarget = ReadIntParameter(action, "quest_expected_target_count");
 
             if (string.IsNullOrWhiteSpace(npcName)) reasons.Add("quest_target_npc_required");
-            if (interactionKind is not ("report" or "offer_item")) reasons.Add("quest_interaction_kind_report_or_offer_item_required");
+            if (interactionKind is not ("report" or "offer_item" or "gift")) reasons.Add("quest_interaction_kind_report_offer_item_or_gift_required");
             if (string.IsNullOrWhiteSpace(candidateId)) reasons.Add("quest_candidate_id_required");
             if (family is not ("ordinary_quest" or "special_order")) reasons.Add("quest_family_invalid");
             if (string.IsNullOrWhiteSpace(runtimeType)) reasons.Add("quest_runtime_type_required");
@@ -64,7 +64,7 @@ namespace StardewAI.Core.Execution
                 reasons);
             ValidateQuestNpcGeometry(snapshot, npcName, targetX, targetY, standX, standY, reasons);
 
-            if (interactionKind == "offer_item")
+            if (interactionKind is "offer_item" or "gift")
             {
                 var slot = ReadIntParameter(action, "slot_index");
                 var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
@@ -87,12 +87,132 @@ namespace StardewAI.Core.Execution
                     }
                 }
             }
+            if (interactionKind == "gift")
+            {
+                ValidateQuestGiftObjective(
+                    action,
+                    snapshot,
+                    family,
+                    questKey,
+                    objectiveIndex,
+                    reasons);
+            }
 
             if (ActionSeesActiveMenuOpen(action, snapshot))
             {
                 reasons.Add("quest_npc_interact_menu_must_be_clear");
             }
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static void ValidateQuestGiftObjective(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string family,
+            string questKey,
+            int? objectiveIndex,
+            ICollection<string> reasons)
+        {
+            if (family != "special_order")
+            {
+                reasons.Add("quest_gift_requires_special_order_family");
+                return;
+            }
+
+            var state = ReadStateFieldValue(snapshot, "quests", "special_orders");
+            var orders = state.HasValue && state.Value.ValueKind == JsonValueKind.Array
+                ? JsonSerializer.Deserialize<SpecialOrderProgressRef[]>(state.Value.GetRawText()) ?? Array.Empty<SpecialOrderProgressRef>()
+                : Array.Empty<SpecialOrderProgressRef>();
+            var order = orders.SingleOrDefault(row =>
+                string.Equals(row.QuestKey, questKey, StringComparison.Ordinal));
+            if (order is null ||
+                !objectiveIndex.HasValue ||
+                objectiveIndex.Value < 0 ||
+                objectiveIndex.Value >= order.Objectives.Length)
+            {
+                reasons.Add("special_order_gift_objective_not_found");
+                return;
+            }
+
+            var objective = order.Objectives[objectiveIndex.Value];
+            var fields = objective.PerTypeFields;
+            if (!string.Equals(objective.RuntimeType, "GiftObjective", StringComparison.Ordinal) ||
+                fields is null ||
+                !fields.Available)
+            {
+                reasons.Add("special_order_gift_objective_projection_unavailable");
+                return;
+            }
+
+            var minimumLikeLevel = ReadParameter(action, "quest_gift_minimum_like_level") ?? string.Empty;
+            if (!string.Equals(minimumLikeLevel, fields.MinimumLikeLevel, StringComparison.Ordinal))
+            {
+                reasons.Add("special_order_gift_minimum_like_level_drifted");
+            }
+            var contextTagSetsJson = ReadParameter(action, "quest_gift_acceptable_context_tag_sets_json") ?? string.Empty;
+            string[] projectedTagSets;
+            try
+            {
+                projectedTagSets = JsonSerializer.Deserialize<string[]>(contextTagSetsJson) ?? Array.Empty<string>();
+            }
+            catch (JsonException)
+            {
+                projectedTagSets = Array.Empty<string>();
+            }
+            if (!projectedTagSets.SequenceEqual(fields.AcceptableContextTagSets, StringComparer.Ordinal))
+            {
+                reasons.Add("special_order_gift_context_tag_sets_drifted");
+            }
+            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(fields.AcceptableContextTagSets))
+            {
+                reasons.Add("special_order_gift_has_unprojected_color_tags");
+            }
+
+            var npcName = ReadParameter(action, "npc_name") ?? string.Empty;
+            var slotIndex = ReadIntParameter(action, "slot_index");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
+            var giftCandidate = SocialCandidateBuilder.Build(snapshot, "social.gift_npc", int.MaxValue)
+                .FirstOrDefault(candidate =>
+                    candidate.Available &&
+                    string.Equals(
+                        SocialCandidateBuilder.CandidateParameter(candidate, "npc_name"),
+                        npcName,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        SocialCandidateBuilder.CandidateParameter(candidate, "slot_index"),
+                        slotIndex?.ToString(CultureInfo.InvariantCulture),
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        SocialCandidateBuilder.CandidateParameter(candidate, "qualified_item_id"),
+                        qualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase));
+            if (giftCandidate is null)
+            {
+                reasons.Add("special_order_gift_social_candidate_drifted");
+                return;
+            }
+            if (!QuestGiftObjectiveMatcher.MeetsMinimumLikeLevel(
+                    ReadParameter(giftCandidate.Parameters, "gift_taste"),
+                    fields.MinimumLikeLevel))
+            {
+                reasons.Add("special_order_gift_minimum_like_level_not_met");
+            }
+
+            var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
+            var matchingItem = inventory.HasValue &&
+                inventory.Value.ValueKind == JsonValueKind.Array &&
+                slotIndex.HasValue
+                    ? inventory.Value.EnumerateArray().FirstOrDefault(item =>
+                        item.ValueKind == JsonValueKind.Object &&
+                        ReadInt(item, "slot_index") == slotIndex.Value &&
+                        ReadBool(item, "is_empty") != true &&
+                        string.Equals(ReadString(item, "qualified_item_id"), qualifiedItemId, StringComparison.OrdinalIgnoreCase))
+                    : default;
+            if (matchingItem.ValueKind != JsonValueKind.Object ||
+                !QuestContextTagMatcher.Matches(matchingItem, fields.AcceptableContextTagSets))
+            {
+                reasons.Add("special_order_gift_item_context_tags_drifted");
+            }
         }
 
         private static void ValidateQuestIdentityAgainstSnapshot(

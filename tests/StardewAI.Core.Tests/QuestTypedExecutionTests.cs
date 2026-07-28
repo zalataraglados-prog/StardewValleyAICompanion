@@ -251,6 +251,7 @@ public sealed class QuestTypedExecutionTests
         Assert.Contains("quest.OnItemOfferedToNpc(npc, item, probe: true)", source, StringComparison.Ordinal);
         Assert.Contains("OnNpcSocialized(npc, probe: true)", source, StringComparison.Ordinal);
         Assert.Contains("callback(Game1.player, npc, item, true)", source, StringComparison.Ordinal);
+        Assert.Contains("NativeGiftObjectiveWouldIncrement(giftObjective, npc, offeredItem)", source, StringComparison.Ordinal);
         Assert.Contains("Game1.currentLocation.checkAction(", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".currentCount.Value =", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".completed.Value =", source, StringComparison.Ordinal);

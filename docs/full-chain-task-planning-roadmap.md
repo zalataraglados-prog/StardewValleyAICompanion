@@ -36,6 +36,39 @@ The implementation chain is:
 - **`strategy.grandpa_progress` direction output** — the snapshot-aware policy selects from the current `GrandpaTrainingSampleAdapter` candidates without a guessed fallback; the action compiler independently rebuilds the current candidate set, rejects stale or mismatched metadata, emits no strategy step on block, and budgets only the validated direction. Static implementation is merged; focused and full tests remain intentionally pending while the user is playing.
 - **`raise_skill_levels` transparent input** — `player.skills_detail` exposes all six vanilla skill rows, including unmodified/effective levels, temporary buff deltas, exact accumulated experience, next-level thresholds, remaining experience, the level cap, and the Grandpa scoring formula. `player.luck_context` keeps daily luck, Special Charm, permanent Luck skill, and active Luck buffs separate. Luck has native XP sources and is not excluded from planning. Exact candidate XP slices now cover current-floor native monster defeat, bounded successful rod-fishing outcomes, every currently loaded vanilla MineShaft stone, player crop harvests, planted forage harvests, complete giant-crop harvests, complete vanilla wild-tree clearing, farm stumps/hollow logs, stationary spawned-object pickup, vanilla twig clearing, raccoon seed-spot digging, and locally deterministic ordinary artifact spots. Ordinary artifact outputs now pass through strict queue-to-runtime serialized-item multiset verification; eligible unseen-secret-note outcomes remain blocked on unexposed global RNG state. Mining stone plans preserve separate Mining/Luck bounds and source conditions; crop candidates distinguish Farming, Foraging, and Luck results; fishing, farm-harvest, pickup, and obstacle-clear executors record observed skill-XP deltas. The Grandpa direction now directly binds only current candidates with a permitted option/kind, a complete `exact*` projection status, valid nonnegative bounds, and positive possible XP. Missing native families are enumerated in `docs/skill-experience-source-audit.md` and remain a coverage backlog, not guessed candidates and not a reason to suppress already exact current actions.
 
+## Verified GitHub Issue Reconciliation (2026-07-28)
+
+GitHub issues are planning input, not gameplay authority. The following updates were
+checked against the current registry, implementation, and local 1.6.15 decompile:
+
+- **#79 aquaculture lifecycle: accepted.** Existing crab-pot collection and fish-pond
+  output/request service cover only already-configured facilities. Placement, baiting,
+  removal, stocking, native fish removal/emptying, and Golden Animal Cracker policy are
+  real lifecycle gaps. They must reuse existing collection/request primitives and the
+  generic acquisition/placement/reservation infrastructure instead of creating a second
+  service path.
+- **#80 pets and mounts: partially accepted with a correction.** Daily pet interaction
+  and bowl filling already have typed native executors. Initial pet adoption is an
+  in-game Marnie event (`Event` adoption dialogue), not a new-save creation flow.
+  Additional pets use the `PetAdoption` shop/Pet License path. Horse ownership,
+  mounting, hat/carrot state, and flute recall remain distinct lifecycle gaps.
+- **#81 persistent world configuration: accepted.** Farm-cave selection, Shrine of
+  Challenge, and Night Terrors are persistent or delayed world transitions and cannot
+  be represented by broad `interact`. Farm-cave selection is bound to the exact
+  Demetrius event rather than save creation. These remain confirmation/host-policy
+  gated until their native Before/After and next-day verifiers exist.
+- **#82 functional items and recovery: accepted as typed effect families.** Warp
+  totems/scepter, registered teleporters, weather/resource/machine-time effects,
+  staircases, Tent Kits, Spa recovery, and multiplayer bed recovery require separate
+  closed unions and verifiers. A universal `use_item` remains prohibited. Final
+  registration waits for generated decompile coverage of every native item/action
+  branch so the issue list cannot become an omission-prone handwritten catalog.
+- **#2 tracking issue: governance principles accepted, fixed counts rejected as
+  current truth.** Its `31 + 56 = 87` registry statement describes an older PR audit
+  baseline. Current generated capability, quest-stage, evidence, and training-admission
+  artifacts are the only live counts. New issue rows enter this roadmap only after the
+  same decompile/catalog/implementation reconciliation.
+
 ## Implementation Stages
 
 ### Stage 1: Plan Contract Foundation

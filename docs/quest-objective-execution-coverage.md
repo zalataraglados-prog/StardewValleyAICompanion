@@ -41,6 +41,7 @@ completion methods with `probe:false` and does not write quest counters directly
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
+| special-order `GiftObjective` | existing native social-gift candidate filtered by exact item context tags and native minimum-like-level ordering |
 | special-order `ShipObjective` | existing one-item native shipping candidate filtered by native tag-set grammar |
 | special-order `ReachMineFloorObjective` | existing rolling perfect-mining candidate with exact ordinary/Skull level conversion |
 
@@ -77,13 +78,13 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 15 bound, 11 blocked, and 2 native observation-only stages.
+contain 16 bound, 10 blocked, and 2 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
 - ordinary craft, collect, slay, harvest, construction, secret-item acquisition, accept,
   and type-11 weeding stages;
-- special-order collect, gift, Junimo Kart score, and slay
+- special-order collect, Junimo Kart score, and slay
   objectives;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
@@ -96,11 +97,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused fishing/quest/coverage tests: 16 passed;
-- full regression: Core 1,297 passed and Backend 95 passed;
-- full solution build: zero errors and five existing warnings;
+- focused quest filter: 94 passed;
+- full regression: Core 1,299 passed and Backend 95 passed;
+- full solution Release build: zero errors and seven existing warnings;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 15 bound, 11 blocked, and 2 observation-only;
+  differences, 28 stage rows with 16 bound, 10 blocked, and 2 observation-only;
 - the full knowledge build retains two pre-existing Grandpa method identity blockers,
   unrelated to the quest type scan;
 - no live game mutation test was run for this slice.
