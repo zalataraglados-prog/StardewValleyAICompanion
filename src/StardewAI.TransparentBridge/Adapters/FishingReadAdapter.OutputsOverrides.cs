@@ -159,11 +159,17 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
                     specific_bait_name_condition_matched = specificBaitNameConditionMatched,
                     specific_bait_name_condition_source = "decompiled MineShaft.getFish fishingRod.GetBait()?.Name.Contains(target internal name)",
                     special_fish_qualified_item_id = specialQualifiedItemId,
+                    special_fish_output = ReadFishingSpecialOutput(specialQualifiedItemId),
                     special_fish_chance_by_water_depth = specialChanceByWaterDepth,
                     silver_quality_chance = player.FishingLevel / 10f,
                     gold_quality_chance = player.FishingLevel / 50f + player.LuckLevel / 100f,
                     lava_area_cave_jelly_chance = mineArea == 80 ? 0.05d + player.LuckLevel * 0.05d : (double?)null,
+                    cave_jelly_output = ReadFishingSpecialOutput("(O)CaveJelly"),
                     mine_trash_item_id_range_inclusive = new[] { 167, 172 },
+                    mine_trash_outputs = Enumerable.Range(167, 6)
+                        .Select(itemId => ReadFishingSpecialOutput(
+                            "(O)" + itemId.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+                        .ToArray(),
                     fallback = usesTrainingRod
                         ? "mine_random_trash"
                         : mineArea == 80
@@ -227,6 +233,32 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             }
             default:
                 return new LocationOverrideProjection(Array.Empty<object>(), false);
+        }
+    }
+
+    private static object ReadFishingSpecialOutput(string? qualifiedItemId)
+    {
+        qualifiedItemId ??= string.Empty;
+        try
+        {
+            var item = ItemRegistry.Create(qualifiedItemId);
+            return new
+            {
+                qualified_item_id = item.QualifiedItemId,
+                context_tags = item.GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray(),
+                context_tags_projection_status = "exact_item_get_context_tags"
+            };
+        }
+        catch
+        {
+            return new
+            {
+                qualified_item_id = qualifiedItemId,
+                context_tags = Array.Empty<string>(),
+                context_tags_projection_status = "unavailable"
+            };
         }
     }
 

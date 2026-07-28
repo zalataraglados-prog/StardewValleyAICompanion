@@ -22,11 +22,30 @@ public sealed partial class ModEntry
         if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal) &&
             string.Equals(request.QuestRuntimeType, "SpecialOrder", StringComparison.Ordinal))
         {
+            if (request.QuestAcquisitionSourceStep)
+            {
+                var qualifiedItemId = ItemRegistry.QualifyItemId(crop.indexOfHarvest.Value) ??
+                    "(O)" + crop.indexOfHarvest.Value;
+                return ValidateSpecialOrderCollectSourceTarget(
+                    request,
+                    qualifiedItemId,
+                    out reason);
+            }
             return ValidateSpecialOrderCollectCropTarget(
                 request,
                 crop,
                 out remainingBefore,
                 out reason);
+        }
+        if (string.Equals(request.QuestRuntimeType, "ResourceCollectionQuest", StringComparison.Ordinal) &&
+            request.QuestAcquisitionSourceStep)
+        {
+            var qualifiedItemId = ItemRegistry.QualifyItemId(crop.indexOfHarvest.Value) ??
+                "(O)" + crop.indexOfHarvest.Value;
+            reason = ValidateQuestResourceSourceTarget(
+                request,
+                new[] { qualifiedItemId }) ?? string.Empty;
+            return string.IsNullOrWhiteSpace(reason);
         }
         if (!request.QuestAcquisitionTargetStep ||
             !string.Equals(request.QuestFamily, "ordinary_quest", StringComparison.Ordinal) ||
@@ -81,7 +100,18 @@ public sealed partial class ModEntry
         if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal) &&
             string.Equals(request.QuestRuntimeType, "SpecialOrder", StringComparison.Ordinal))
         {
+            if (request.QuestAcquisitionSourceStep)
+            {
+                ApplySpecialOrderCollectSourceFeedback(result, request);
+                return;
+            }
             ApplySpecialOrderCollectCropFeedback(result, request, remainingBefore);
+            return;
+        }
+        if (string.Equals(request.QuestRuntimeType, "ResourceCollectionQuest", StringComparison.Ordinal) &&
+            request.QuestAcquisitionSourceStep)
+        {
+            ApplyQuestResourceSourceFeedback(result, request);
             return;
         }
 

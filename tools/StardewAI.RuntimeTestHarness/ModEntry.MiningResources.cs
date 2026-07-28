@@ -608,6 +608,33 @@ public sealed partial class ModEntry : Mod
             outputCountsBefore = expectedOutputs
                 .Select(output => CountResourceClumpOutput(location, output))
                 .ToArray();
+            var outputItemIds = expectedOutputs
+                .Select(output => output.QualifiedItemId)
+                .ToArray();
+            var resourceQuestReason = ValidateQuestResourceSourceTarget(request, outputItemIds);
+            if (!string.IsNullOrWhiteSpace(resourceQuestReason))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "break_resource_clump",
+                    requested,
+                    ResourceClumpObservedEffect(location, anchor),
+                    resourceQuestReason));
+                return;
+            }
+            if (!ValidateSpecialOrderCollectSourceTarget(
+                    request,
+                    outputItemIds,
+                    out var specialOrderReason))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "break_resource_clump",
+                    requested,
+                    ResourceClumpObservedEffect(location, anchor),
+                    specialOrderReason));
+                return;
+            }
             possibleSecretNoteQualifiedItemId = location.InIslandContext() ? "(O)842" : "(O)79";
             secretNoteCountBefore = CountBushOutput(location, possibleSecretNoteQualifiedItemId, 0);
         }
@@ -868,7 +895,7 @@ public sealed partial class ModEntry : Mod
                 After = CountBushOutput(active.Location, active.PossibleSecretNoteQualifiedItemId, 0).ToString(CultureInfo.InvariantCulture)
             });
         }
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -907,7 +934,10 @@ public sealed partial class ModEntry : Mod
                 ";native_swings=" + active.SwingCount +
                 ResourceClumpOutputObservation(active),
             ChangedFacts = changedFacts.ToArray()
-        });
+        };
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteResourceClumpBlocked(ActiveResourceClump active, string reason)

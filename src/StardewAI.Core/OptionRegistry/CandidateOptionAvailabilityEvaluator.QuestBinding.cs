@@ -196,8 +196,8 @@ namespace StardewAI.Core.OptionRegistry
             QuestCandidateRef quest)
         {
             var candidates = FishingEventCandidateBuilder.Build(snapshot)
-                .Where(candidate => candidate.Kind == "catch_fish")
-                .Where(candidate => ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, quest.RequiredItemId))
+                .Where(candidate => candidate.Kind == "catch_fish" && candidate.Available)
+                .Where(candidate => FishingCandidateContainsItem(candidate, quest.RequiredItemId))
                 .Select(candidate => AttachQuest(candidate, quest))
                 .ToArray();
             return candidates.Length > 0
@@ -300,6 +300,30 @@ namespace StardewAI.Core.OptionRegistry
                             "exact_item_get_context_tags",
                             StringComparison.Ordinal) &&
                         QuestContextTagMatcher.Matches(outcome, contextTagSets));
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static bool FishingCandidateContainsItem(
+            EventCandidate candidate,
+            string requiredItemId)
+        {
+            var qualifiedRequired = requiredItemId.StartsWith("(", StringComparison.Ordinal)
+                ? requiredItemId
+                : "(O)" + requiredItemId;
+            try
+            {
+                var possibleIdsJson = ReadParameter(
+                    candidate.Parameters,
+                    "possible_qualified_item_ids_json");
+                var possibleIds = JsonSerializer.Deserialize<string[]>(possibleIdsJson) ??
+                    Array.Empty<string>();
+                return possibleIds.Contains(
+                    qualifiedRequired,
+                    StringComparer.OrdinalIgnoreCase);
             }
             catch (JsonException)
             {

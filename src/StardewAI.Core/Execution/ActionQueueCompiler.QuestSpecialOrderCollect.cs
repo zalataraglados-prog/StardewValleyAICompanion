@@ -20,7 +20,10 @@ namespace StardewAI.Core.Execution
                     "executor.collect_machine_output" or
                     "executor.pickup_debris" or
                     "executor.harvest_bush" or
-                    "executor.harvest_ginger") ||
+                    "executor.harvest_ginger" or
+                    "executor.harvest_giant_crop" or
+                    "executor.break_current_location_resource_clump" or
+                    "executor.catch_fish") ||
                 !string.Equals(
                     ReadParameter(action, "quest_next_action"),
                     "collect_items",
@@ -63,7 +66,17 @@ namespace StardewAI.Core.Execution
                 ReadParameter(action, "quest_acquisition_source_step"),
                 "true",
                 StringComparison.OrdinalIgnoreCase);
-            var sourceOption = action.OptionId is "executor.harvest_bush" or "executor.harvest_ginger";
+            var sourceOption = action.OptionId is
+                    "executor.harvest_bush" or
+                    "executor.harvest_ginger" or
+                    "executor.harvest_giant_crop" or
+                    "executor.break_current_location_resource_clump" or
+                    "executor.catch_fish" ||
+                action.OptionId == "executor.harvest_crop" &&
+                string.Equals(
+                    ReadParameter(action, "harvest_method"),
+                    "Scythe",
+                    StringComparison.OrdinalIgnoreCase);
             if (objective is null ||
                 !string.Equals(objective.RuntimeType, "CollectObjective", StringComparison.Ordinal))
             {
@@ -182,6 +195,48 @@ namespace StardewAI.Core.Execution
                 return bush.ValueKind == JsonValueKind.Object &&
                     QuestContextTagMatcher.Matches(
                         ReadQuestStringArray(bush, "bush_output_context_tags"),
+                        tagSets);
+            }
+            if (action.OptionId == "executor.catch_fish")
+            {
+                return ProjectedOutputContextTagsMatch(
+                    ReadParameter(action, "outcome_distribution_json") ?? string.Empty,
+                    tagSets);
+            }
+            if (action.OptionId == "executor.harvest_crop")
+            {
+                var crop = HarvestCropAt(snapshot, targetX.Value, targetY.Value);
+                return crop is not null &&
+                    string.Equals(
+                        ReadString(crop.Value, "harvest_method"),
+                        "Scythe",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    QuestContextTagMatcher.Matches(
+                        ReadQuestStringArray(crop.Value, "harvest_context_tags"),
+                        tagSets);
+            }
+            if (action.OptionId == "executor.harvest_giant_crop")
+            {
+                var giantCrop = GiantCropResourceClumpAt(snapshot, targetX.Value, targetY.Value);
+                return giantCrop.HasValue &&
+                    ProjectedOutputContextTagsMatch(
+                        ReadString(giantCrop.Value, "giant_crop_guaranteed_outputs_json"),
+                        tagSets);
+            }
+            if (action.OptionId == "executor.break_current_location_resource_clump")
+            {
+                var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+                var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+                var clumps = ReadStateFieldValue(snapshot, "current_location", "resource_clumps");
+                var clump = anchorX.HasValue && anchorY.HasValue &&
+                    clumps.HasValue && clumps.Value.ValueKind == JsonValueKind.Array
+                        ? clumps.Value.EnumerateArray().FirstOrDefault(row =>
+                            ReadInt(row, "tile_x") == anchorX.Value &&
+                            ReadInt(row, "tile_y") == anchorY.Value)
+                        : default;
+                return clump.ValueKind == JsonValueKind.Object &&
+                    ProjectedOutputContextTagsMatch(
+                        ReadString(clump, "expected_core_output_context_tag_sets_json"),
                         tagSets);
             }
 

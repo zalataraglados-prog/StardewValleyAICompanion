@@ -48,6 +48,24 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_bush", "bush.tile_sheet_offset=0", BushHarvestObservedEffect(location, bush, target, request.QualifiedItemId, request.ExpectedOutputQuality.Value), precheck));
             return;
         }
+        var resourceQuestReason = ValidateQuestResourceSourceTarget(
+            request,
+            new[] { request.QualifiedItemId });
+        if (!string.IsNullOrWhiteSpace(resourceQuestReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "harvest_bush",
+                "bush.tile_sheet_offset=0",
+                BushHarvestObservedEffect(
+                    location,
+                    bush,
+                    target,
+                    request.QualifiedItemId,
+                    request.ExpectedOutputQuality.Value),
+                resourceQuestReason));
+            return;
+        }
         if (!ValidateSpecialOrderCollectSourceTarget(
             request,
             request.QualifiedItemId,
@@ -284,6 +302,7 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "world_progress.collected_nut_tracker[" + active.NutKey + "]", Before = active.NutCollectedBefore.ToString().ToLowerInvariant(), After = nutAfter.ToString().ToLowerInvariant() }
             }
         };
+        ApplyQuestResourceSourceFeedback(result, request);
         ApplySpecialOrderCollectSourceFeedback(result, request);
         active.Pending.Completion.SetResult(result);
     }

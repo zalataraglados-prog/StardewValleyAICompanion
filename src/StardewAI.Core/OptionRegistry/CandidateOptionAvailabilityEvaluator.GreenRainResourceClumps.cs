@@ -51,6 +51,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Parameter("max_tool_swings", hits.ToString()),
                     Parameter("max_movement_tiles", "512"),
                     Parameter("expected_output_items_json", ReadString(clump, "expected_core_output_items_json")),
+                    Parameter("expected_output_context_tag_sets_json", ReadString(clump, "expected_core_output_context_tag_sets_json")),
                     Parameter("expected_foraging_experience_delta", ReadInt(clump, "expected_foraging_experience_delta").ToString()),
                     Parameter("output_distribution_status", ReadString(clump, "output_distribution_status")),
                     Parameter("possible_secret_note_qualified_item_id", ReadString(clump, "possible_secret_note_qualified_item_id")),

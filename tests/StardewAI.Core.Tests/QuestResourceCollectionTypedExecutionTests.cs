@@ -21,7 +21,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "foraging_experience_on_success_min":0,"foraging_experience_on_success_max":0,
                 "farming_experience_on_success_min":0,"farming_experience_on_success_max":0,
                 "harvest_experience_status":"exact","harvest_experience_basis":"native_pickup"
-              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             "locations":{
               "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -540,6 +541,179 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains(
             "special_order_collect_source_context_tags_drifted",
             Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestTreatsScytheCropAsSourceBeforeDebrisReceipt()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "farm":{
+              "crops":{"value":[{
+                "tile_x":7,"tile_y":8,"ready_for_harvest":true,
+                "harvest_item_id":"771","harvest_item_qualified_id":"(O)771",
+                "harvest_item_category":-81,
+                "harvest_context_tags":["category_greens","id_o_771"],
+                "harvest_min_stack":1,"harvest_method":"Scythe",
+                "harvest_experience_skill_id":"foraging",
+                "harvest_experience_on_success_min":3,
+                "harvest_experience_on_success_max":3,
+                "harvest_experience_condition":"native_crop_harvest",
+                "harvest_experience_projection_status":"exact"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            requiredItemId: "(O)771");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("harvest_crop_tile", candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_crop", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void SpecialOrderCollectTreatsMatchingScytheCropAsSource()
+    {
+        var snapshot = SpecialOrderCollectionSnapshot(
+            """
+            "farm":{
+              "crops":{"value":[{
+                "tile_x":7,"tile_y":8,"ready_for_harvest":true,
+                "harvest_item_id":"771","harvest_item_qualified_id":"(O)771",
+                "harvest_item_category":-81,
+                "harvest_context_tags":["category_greens","id_o_771"],
+                "harvest_min_stack":1,"harvest_method":"Scythe",
+                "harvest_experience_skill_id":"foraging",
+                "harvest_experience_on_success_min":3,
+                "harvest_experience_on_success_max":3,
+                "harvest_experience_condition":"native_crop_harvest",
+                "harvest_experience_projection_status":"exact"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            acceptableContextTagSetsJson: "\"category_greens\"");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_crop", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestBindsGuaranteedGiantCropOutputAsSource()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "farm":{
+              "resource_clumps":{"value":[{
+                "tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,
+                "is_giant_crop":true,"giant_crop_id":"Pumpkin",
+                "giant_crop_guaranteed_outputs_json":"[{\"qualified_item_id\":\"(O)276\",\"context_tags\":[\"category_vegetable\",\"id_o_276\"],\"quantity_min\":15,\"quantity_max\":21}]",
+                "giant_crop_output_projection_status":"exact_unconditional_direct_outputs",
+                "harvest_experience_skill_id":"luck",
+                "harvest_experience_on_success_min":50,
+                "harvest_experience_on_success_max":50,
+                "harvest_experience_condition":"native_giant_crop_destroy",
+                "harvest_experience_projection_status":"exact"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            requiredItemId: "(O)276");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_giant_crop", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestBindsGreenRainCoreOutputAsSource()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "current_location":{
+              "resource_clumps":{"value":[{
+                "location_id":"Farm","tile_x":20,"tile_y":20,
+                "runtime_type":"StardewValley.TerrainFeatures.ResourceClump",
+                "parent_sheet_index":44,"width":2,"height":2,"health":3,
+                "clear_kind":"green_rain_bush","clear_obstacle_executor_status":"ready",
+                "tool_slot_index":0,"expected_tool_hits_to_clear":3,
+                "expected_foraging_experience_delta":15,
+                "expected_core_output_items_json":"[{\"qualified_item_id\":\"(O)Moss\",\"quantity\":2},{\"qualified_item_id\":\"(O)771\",\"quantity\":3}]",
+                "expected_core_output_context_tag_sets_json":"[{\"qualified_item_id\":\"(O)Moss\",\"context_tags\":[\"id_o_moss\"]},{\"qualified_item_id\":\"(O)771\",\"context_tags\":[\"category_greens\"]}]",
+                "output_distribution_status":"exact_seeded_core_no_secret_note_possible",
+                "possible_secret_note_qualified_item_id":"(O)79",
+                "unseen_secret_note_count":0,"total_secret_note_count":0,
+                "secret_note_outer_roll_probability":0,
+                "secret_note_inner_roll_probability":0,
+                "secret_note_combined_probability":0,
+                "secret_note_projection_status":"exact_no_unseen_secret_note",
+                "native_contract":"axe_DoFunction_to_GameLocation.performToolAction_then_ResourceClump.destroy"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            requiredItemId: "(O)Moss");
+
+        var directCandidate = Assert.Single(Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "foraging.clear_green_rain_bushes" },
+                    includeExecutorCalibrationOptions: true)
+                .Options).EventCandidates);
+        Assert.True(directCandidate.Available, string.Join(";", directCandidate.BlockReasons));
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.break_current_location_resource_clump", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Empty(item.BlockingReasons);
     }
 
     private static string BushSourceDomainState(

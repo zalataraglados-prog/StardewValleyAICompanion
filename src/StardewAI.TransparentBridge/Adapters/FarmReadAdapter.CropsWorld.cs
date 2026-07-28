@@ -116,6 +116,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_min_stack = cropData?.HarvestMinStack,
                     harvest_max_stack = cropData?.HarvestMaxStack,
                     extra_harvest_chance = cropData?.ExtraHarvestChance,
+                    harvest_method = crop.GetHarvestMethod().ToString(),
                     watered = dirt.isWatered(),
                     needs_watering = dirt.needsWatering(),
                     harvest_experience_skill_id = experience.SkillId,

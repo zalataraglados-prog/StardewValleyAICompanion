@@ -371,7 +371,9 @@ public sealed partial class ModEntry : Mod
         {
             return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), "harvest_method_mismatch");
         }
-        if (method != HarvestMethod.Grab && !string.IsNullOrWhiteSpace(request.QuestCandidateId))
+        if (method != HarvestMethod.Grab &&
+            !string.IsNullOrWhiteSpace(request.QuestCandidateId) &&
+            !request.QuestAcquisitionSourceStep)
         {
             return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), "quest_harvest_requires_grab_method");
         }
@@ -658,6 +660,19 @@ public sealed partial class ModEntry : Mod
         {
             return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_target_not_giant_crop");
         }
+        var guaranteedOutputIds = GuaranteedGiantCropOutputIds(clump);
+        var resourceQuestReason = ValidateQuestResourceSourceTarget(request, guaranteedOutputIds);
+        if (!string.IsNullOrWhiteSpace(resourceQuestReason))
+        {
+            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, resourceQuestReason);
+        }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+                request,
+                guaranteedOutputIds,
+                out var specialOrderReason))
+        {
+            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, specialOrderReason);
+        }
 
         var axe = FindTool<Axe>();
         if (axe is null)
@@ -686,7 +701,7 @@ public sealed partial class ModEntry : Mod
         var debrisCreated = afterDebrisCount > beforeDebrisCount;
         var verified = removed && debrisCreated;
 
-        return new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -735,6 +750,9 @@ public sealed partial class ModEntry : Mod
                 }
                 : Array.Empty<SimulatedFactChange>()
         };
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        return result;
     }
 
     private static GiantCrop? GiantCropAt(GameLocation location, Point target)

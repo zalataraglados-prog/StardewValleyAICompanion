@@ -594,8 +594,11 @@ namespace StardewAI.Core.OptionRegistry
                     var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
                     var skillCondition = ReadString(clump, "harvest_experience_condition");
                     var skillStatus = ReadString(clump, "harvest_experience_projection_status");
+                    var outputProjectionStatus = ReadString(clump, "giant_crop_output_projection_status");
+                    var guaranteedOutputsJson = ReadString(clump, "giant_crop_guaranteed_outputs_json");
                     var effect = "farm.resource_clumps[" + x + "," + y + "].is_giant_crop=false" +
                         (!string.IsNullOrWhiteSpace(id) ? ";giant_crop_id=" + id : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(outputProjectionStatus) ? ";giant_crop_output_projection_status=" + outputProjectionStatus : string.Empty) +
                         ";required_tool=axe" +
                         ";resource_clump_health=" + health +
                         (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
@@ -622,7 +625,9 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_condition", skillCondition),
-                            Parameter("skill_experience_projection_status", skillStatus)
+                            Parameter("skill_experience_projection_status", skillStatus),
+                            Parameter("giant_crop_guaranteed_outputs_json", guaranteedOutputsJson),
+                            Parameter("giant_crop_output_projection_status", outputProjectionStatus)
                         }
                     };
                 })

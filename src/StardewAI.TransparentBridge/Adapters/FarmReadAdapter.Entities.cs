@@ -145,6 +145,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     ? ReadGiantCropExperience(clump, Game1.player)
                     : ReadFarmResourceClumpExperience(clump);
                 var clearance = ReadFarmResourceClumpClearance(clump, Game1.player);
+                var giantCropOutputs = clump is GiantCrop giantCrop
+                    ? ReadGuaranteedGiantCropOutputs(giantCrop)
+                    : Array.Empty<GiantCropOutputProjection>();
                 return new
                 {
                     tile_x = (int)clump.Tile.X,
@@ -156,6 +159,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     health = clump.health.Value,
                     is_giant_crop = clump is GiantCrop,
                     giant_crop_id = clump is GiantCrop giant ? giant.Id : string.Empty,
+                    giant_crop_guaranteed_outputs = giantCropOutputs,
+                    giant_crop_guaranteed_outputs_json = System.Text.Json.JsonSerializer.Serialize(giantCropOutputs),
+                    giant_crop_output_projection_status = clump is GiantCrop
+                        ? giantCropOutputs.Length > 0
+                            ? "exact_unconditional_direct_outputs"
+                            : "blocked_no_unconditional_direct_output"
+                        : "not_applicable",
                     required_tool = clump is GiantCrop ? "axe" : string.Empty,
                     executor_status = clump is GiantCrop ? "runtime_verified" : string.Empty,
                     clear_kind = clearance.ClearKind,

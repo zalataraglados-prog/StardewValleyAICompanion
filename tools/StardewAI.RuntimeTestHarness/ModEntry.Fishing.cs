@@ -457,8 +457,51 @@ public sealed partial class ModEntry : Mod
         {
             reasons.Add("catch_fish_outcome_distribution_invalid");
         }
+        var possibleItemIds = ReadFishingPossibleItemIds(
+            request.PossibleQualifiedItemIdsJson);
+        var resourceQuestReason = ValidateQuestResourceSourceTarget(
+            request,
+            possibleItemIds);
+        if (!string.IsNullOrWhiteSpace(resourceQuestReason))
+        {
+            reasons.Add(resourceQuestReason);
+        }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+                request,
+                possibleItemIds,
+                out var specialOrderReason))
+        {
+            reasons.Add(specialOrderReason);
+        }
+        var fishingQuestReason = ValidateQuestFishingAttempt(
+            request,
+            possibleItemIds);
+        if (!string.IsNullOrWhiteSpace(fishingQuestReason))
+        {
+            reasons.Add(fishingQuestReason);
+        }
 
         return reasons.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    private static string[] ReadFishingPossibleItemIds(string possibleItemIdsJson)
+    {
+        try
+        {
+            using var possibleItemIds = JsonDocument.Parse(possibleItemIdsJson);
+            return possibleItemIds.RootElement.ValueKind == JsonValueKind.Array
+                ? possibleItemIds.RootElement.EnumerateArray()
+                    .Where(item => item.ValueKind == JsonValueKind.String)
+                    .Select(item => item.GetString() ?? string.Empty)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray()
+                : Array.Empty<string>();
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private static bool TryValidateFishingOutcomeDistribution(string distributionJson, string possibleItemIdsJson)
@@ -659,7 +702,7 @@ public sealed partial class ModEntry : Mod
         ReleaseSmapiLeftButtonOverride();
         var request = active.Pending.Request;
         var afterInventory = InventoryStackSignature();
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -699,7 +742,11 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "fishing.terminal_result", Before = string.Empty, After = active.TerminalCatchResult },
                 new SimulatedFactChange { Path = "fishing.action_idle_cleanup_complete", Before = string.Empty, After = active.IdleCleanupComplete.ToString().ToLowerInvariant() }
             }
-        });
+        };
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        ApplyQuestFishingFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteBlockedCatchFish(ActiveCatchFish active, params string[] reasons)

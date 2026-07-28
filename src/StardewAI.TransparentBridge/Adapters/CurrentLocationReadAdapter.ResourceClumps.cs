@@ -32,6 +32,10 @@ public sealed partial class CurrentLocationReadAdapter
             ? Math.Max(1, (int)Math.Ceiling(Math.Max(0f, clump.health.Value) / damagePerHit.Value))
             : (int?)null;
         var outputs = isGreenRainBush ? ProjectGreenRainBushCoreOutputs(clump) : Array.Empty<ClearanceOutputItemProjection>();
+        var outputTagSets = outputs
+            .Select(output => ReadResourceClumpOutputTags(output.QualifiedItemId))
+            .Where(output => output is not null)
+            .ToArray();
         var secretNote = isGreenRainBush ? ProjectGreenRainBushSecretNote(location, player) : GreenRainSecretNoteProjection.NotApplicable();
         var status = !isGreenRainBush
             ? "not_green_rain_bush"
@@ -66,6 +70,8 @@ public sealed partial class CurrentLocationReadAdapter
             core_output_projection_status = isGreenRainBush ? "exact_from_day_save_coordinate_rng" : "not_applicable",
             expected_core_output_items = outputs,
             expected_core_output_items_json = JsonSerializer.Serialize(outputs),
+            expected_core_output_context_tag_sets = outputTagSets,
+            expected_core_output_context_tag_sets_json = JsonSerializer.Serialize(outputTagSets),
             possible_secret_note_qualified_item_id = secretNote.QualifiedItemId,
             unseen_secret_note_count = secretNote.UnseenCount,
             total_secret_note_count = secretNote.TotalCount,
@@ -101,6 +107,25 @@ public sealed partial class CurrentLocationReadAdapter
             outputs.Add(ClearanceOutputItemProjection.FromStandard("(O)MossySeed"));
         }
         return outputs.ToArray();
+    }
+
+    private static object? ReadResourceClumpOutputTags(string qualifiedItemId)
+    {
+        try
+        {
+            return new
+            {
+                qualified_item_id = qualifiedItemId,
+                context_tags = ItemRegistry.Create(qualifiedItemId)
+                    .GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray()
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static GreenRainSecretNoteProjection ProjectGreenRainBushSecretNote(GameLocation location, Farmer player)

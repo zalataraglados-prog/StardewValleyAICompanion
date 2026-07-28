@@ -92,6 +92,7 @@ public sealed partial class ActionQueueCompiler
         }
         if (expectedXp.Value != 15 || ReadInt(clump, "expected_foraging_experience_delta") != expectedXp.Value ||
             !string.Equals(ReadString(clump, "expected_core_output_items_json"), ReadParameter(action, "expected_output_items_json"), StringComparison.Ordinal) ||
+            !string.Equals(ReadString(clump, "expected_core_output_context_tag_sets_json"), ReadParameter(action, "expected_output_context_tag_sets_json"), StringComparison.Ordinal) ||
             !string.Equals(ReadString(clump, "output_distribution_status"), ReadParameter(action, "output_distribution_status"), StringComparison.Ordinal) ||
             !string.Equals(ReadString(clump, "possible_secret_note_qualified_item_id"), ReadParameter(action, "possible_secret_note_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
             ReadInt(clump, "unseen_secret_note_count") != unseenNotes.Value ||

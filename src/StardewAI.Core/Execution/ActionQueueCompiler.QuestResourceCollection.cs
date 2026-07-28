@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Core.OptionRegistry;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
@@ -127,6 +128,69 @@ namespace StardewAI.Core.Execution
                         reasons.Add("quest_resource_foraging_source_drop_drifted");
                     }
                 }
+                else if (action.OptionId == "executor.harvest_crop")
+                {
+                    var targetX = ReadIntParameter(action, "target_tile_x");
+                    var targetY = ReadIntParameter(action, "target_tile_y");
+                    var crop = targetX.HasValue && targetY.HasValue
+                        ? HarvestCropAt(snapshot, targetX.Value, targetY.Value)
+                        : null;
+                    if (crop is null ||
+                        !string.Equals(
+                            ReadString(crop.Value, "harvest_method"),
+                            "Scythe",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(
+                            ReadString(crop.Value, "harvest_item_qualified_id"),
+                            qualifiedRequired,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        reasons.Add("quest_resource_scythe_crop_source_drifted");
+                    }
+                }
+                else if (action.OptionId == "executor.harvest_giant_crop")
+                {
+                    var targetX = ReadIntParameter(action, "target_tile_x");
+                    var targetY = ReadIntParameter(action, "target_tile_y");
+                    var giantCrop = targetX.HasValue && targetY.HasValue
+                        ? GiantCropResourceClumpAt(snapshot, targetX.Value, targetY.Value)
+                        : null;
+                    if (!giantCrop.HasValue ||
+                        !ProjectedOutputContainsItem(
+                            ReadString(giantCrop.Value, "giant_crop_guaranteed_outputs_json"),
+                            qualifiedRequired))
+                    {
+                        reasons.Add("quest_resource_giant_crop_source_drifted");
+                    }
+                }
+                else if (action.OptionId == "executor.break_current_location_resource_clump")
+                {
+                    var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+                    var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+                    var clumps = ReadStateFieldValue(snapshot, "current_location", "resource_clumps");
+                    var clump = anchorX.HasValue && anchorY.HasValue &&
+                        clumps.HasValue && clumps.Value.ValueKind == System.Text.Json.JsonValueKind.Array
+                            ? clumps.Value.EnumerateArray().FirstOrDefault(row =>
+                                ReadInt(row, "tile_x") == anchorX.Value &&
+                                ReadInt(row, "tile_y") == anchorY.Value)
+                            : default;
+                    if (clump.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                        !ProjectedOutputContainsItem(
+                            ReadString(clump, "expected_core_output_items_json"),
+                            qualifiedRequired))
+                    {
+                        reasons.Add("quest_resource_current_location_clump_source_drifted");
+                    }
+                }
+                else if (action.OptionId == "executor.catch_fish")
+                {
+                    if (!ProjectedOutputContainsItem(
+                            ReadParameter(action, "outcome_distribution_json") ?? string.Empty,
+                            qualifiedRequired))
+                    {
+                        reasons.Add("quest_resource_fishing_source_distribution_drifted");
+                    }
+                }
                 else
                 {
                     reasons.Add("quest_resource_source_primitive_invalid");
@@ -144,5 +208,6 @@ namespace StardewAI.Core.Execution
             }
             return reasons.ToArray();
         }
+
     }
 }

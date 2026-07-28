@@ -38,6 +38,26 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(NativeToolBlocked(request, "harvest_ginger", target, hoe, null, staminaBefore, started, estimatedTicks, precheck[0], requested, GingerHarvestObservedEffect(location, target), precheck));
             return;
         }
+        var resourceQuestReason = ValidateQuestResourceSourceTarget(
+            request,
+            new[] { GingerQualifiedItemId });
+        if (!string.IsNullOrWhiteSpace(resourceQuestReason))
+        {
+            pending.Completion.SetResult(NativeToolBlocked(
+                request,
+                "harvest_ginger",
+                target,
+                hoe,
+                null,
+                staminaBefore,
+                started,
+                estimatedTicks,
+                resourceQuestReason,
+                requested,
+                GingerHarvestObservedEffect(location, target),
+                new[] { resourceQuestReason }));
+            return;
+        }
         if (!ValidateSpecialOrderCollectSourceTarget(
             request,
             GingerQualifiedItemId,
@@ -201,6 +221,7 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.energy", Before = tool.StaminaBefore.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") }
             }
         };
+        ApplyQuestResourceSourceFeedback(result, tool.Pending.Request);
         ApplySpecialOrderCollectSourceFeedback(result, tool.Pending.Request);
         tool.Pending.Completion.SetResult(result);
     }

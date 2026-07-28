@@ -73,6 +73,17 @@ public sealed partial class ModEntry
         string qualifiedItemId,
         out string reason)
     {
+        return ValidateSpecialOrderCollectSourceTarget(
+            request,
+            new[] { qualifiedItemId },
+            out reason);
+    }
+
+    private static bool ValidateSpecialOrderCollectSourceTarget(
+        TrainingExecutionRequest request,
+        IEnumerable<string> qualifiedItemIds,
+        out string reason)
+    {
         reason = string.Empty;
         if (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
             !string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal))
@@ -103,9 +114,10 @@ public sealed partial class ModEntry
             reason = "special_order_collect_source_progress_projection_drifted";
             return false;
         }
-        if (!NativeCollectObjectiveMatches(
-            objective,
-            ItemRegistry.Create(qualifiedItemId)))
+        if (!qualifiedItemIds.Any(qualifiedItemId =>
+            NativeCollectObjectiveMatches(
+                objective,
+                ItemRegistry.Create(qualifiedItemId))))
         {
             reason = "special_order_collect_source_context_tags_drifted";
             return false;

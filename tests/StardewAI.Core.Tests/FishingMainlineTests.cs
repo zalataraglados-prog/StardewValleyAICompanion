@@ -313,6 +313,107 @@ public sealed class FishingMainlineTests
         Assert.Equal(0.25, note.GetProperty("chance_preview").GetDouble());
     }
 
+    [Fact]
+    public void ResourceCollectionQuestBindsFishingTrashDistributionAsSourceAttempt()
+    {
+        var snapshot = Snapshot(WithQuestState(
+            MineState(80, "(O)162", 0.2, 0.05),
+            """
+            [{
+              "id":"96","quest_type":10,"runtime_type":"ResourceCollectionQuest",
+              "accepted":true,"completed":false,
+              "per_type_fields":{
+                "available":true,"item_id":"(O)168","target_npc":"Robin",
+                "number_collected":2,"number_required":10,
+                "target_count":10,"current_count":2
+              }
+            }]
+            """,
+            "[]"));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("catch_fish", candidate.Kind);
+        AssertParameter(candidate.Parameters, "quest_acquisition_source_step", "true");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
+            snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var catchItem = Assert.Single(queue.Items.Where(item =>
+            item.OptionId == "executor.catch_fish"));
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(catchItem.BlockingReasons);
+        AssertParameter(
+            catchItem.NormalizedCommand.Parameters,
+            "quest_acquisition_source_step",
+            "true");
+    }
+
+    [Fact]
+    public void SpecialOrderCollectBindsFishingTrashByNativeContextTags()
+    {
+        var snapshot = Snapshot(WithQuestState(
+            MineState(80, "(O)162", 0.2, 0.05),
+            "[]",
+            """
+            [{
+              "quest_key":"TrashOrder","quest_name":"Trash Order","quest_state":"InProgress",
+              "objectives":[{
+                "description":"Collect trash","current_count":0,"max_count":5,
+                "runtime_type":"CollectObjective","fail_on_completion":false,"complete":false,
+                "per_type_fields":{"available":true,"acceptable_context_tag_sets":["trash_item"]}
+              }],
+              "rewards":[]
+            }]
+            """));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("catch_fish", candidate.Kind);
+        AssertParameter(candidate.Parameters, "quest_acquisition_source_step", "true");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
+            snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var catchItem = Assert.Single(queue.Items.Where(item =>
+            item.OptionId == "executor.catch_fish"));
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(catchItem.BlockingReasons);
+    }
+
+    [Fact]
+    public void FishingQuestMatchesAggregatedOutcomeDistribution()
+    {
+        var snapshot = Snapshot(WithQuestState(
+            BaseState(),
+            """
+            [{
+              "id":"7","quest_type":7,"runtime_type":"FishingQuest",
+              "accepted":true,"completed":false,
+              "per_type_fields":{
+                "available":true,"item_id":"(O)145",
+                "number_fished":0,"number_to_fish":3,
+                "target_count":3,"current_count":0
+              }
+            }]
+            """,
+            "[]"));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("catch_fish", candidate.Kind);
+    }
+
     internal static string BaseState()
     {
         return """
@@ -380,11 +481,36 @@ public sealed class FishingMainlineTests
     private static string MineState(int mineArea, string specialFishId, double specialChance, double caveJellyChance)
     {
         var handler = $$"""
-        "location_get_fish_override":{"present":true,"transparent_handler_available":true,"handlers":[{"handler":"mine_shaft_fishing","mine_area":{{mineArea}},"uses_training_rod":false,"has_curiosity_lure":false,"special_fish_qualified_item_id":"{{specialFishId}}","special_fish_chance_by_water_depth":[{"water_depth":3,"special_fish_chance":{{specialChance.ToString(System.Globalization.CultureInfo.InvariantCulture)}}}],"lava_area_cave_jelly_chance":{{caveJellyChance.ToString(System.Globalization.CultureInfo.InvariantCulture)}},"mine_trash_item_id_range_inclusive":[167,172]}]}
+        "location_get_fish_override":{"present":true,"transparent_handler_available":true,"handlers":[{"handler":"mine_shaft_fishing","mine_area":{{mineArea}},"uses_training_rod":false,"has_curiosity_lure":false,"special_fish_qualified_item_id":"{{specialFishId}}","special_fish_output":{"qualified_item_id":"{{specialFishId}}","context_tags":["category_fish"],"context_tags_projection_status":"exact_item_get_context_tags"},"special_fish_chance_by_water_depth":[{"water_depth":3,"special_fish_chance":{{specialChance.ToString(System.Globalization.CultureInfo.InvariantCulture)}}}],"lava_area_cave_jelly_chance":{{caveJellyChance.ToString(System.Globalization.CultureInfo.InvariantCulture)}},"cave_jelly_output":{"qualified_item_id":"(O)CaveJelly","context_tags":["category_fish"],"context_tags_projection_status":"exact_item_get_context_tags"},"mine_trash_item_id_range_inclusive":[167,172],"mine_trash_outputs":[{"qualified_item_id":"(O)167","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"},{"qualified_item_id":"(O)168","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"},{"qualified_item_id":"(O)169","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"},{"qualified_item_id":"(O)170","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"},{"qualified_item_id":"(O)171","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"},{"qualified_item_id":"(O)172","context_tags":["trash_item"],"context_tags_projection_status":"exact_item_get_context_tags"}]}]}
         """;
         return BaseState().Replace(
             "\"location_get_fish_override\":{\"present\":false,\"transparent_handler_available\":true,\"handlers\":[]}",
             handler);
+    }
+
+    private static string WithQuestState(
+        string state,
+        string activeQuestsJson,
+        string specialOrdersJson)
+    {
+        var questState = $$"""
+          "quests": {
+            "active_quests":{"value":{{activeQuestsJson}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "special_orders":{"value":{{specialOrdersJson}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "completed_special_orders":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "accepted_special_order_types":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "mail_received":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress": {
+            "community_center":{"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "achievements":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "fishing": {
+        """;
+        return state.Replace(
+            "\"fishing\": {",
+            questState,
+            StringComparison.Ordinal);
     }
 
     private static SnapshotEnvelope Snapshot(string stateJson)

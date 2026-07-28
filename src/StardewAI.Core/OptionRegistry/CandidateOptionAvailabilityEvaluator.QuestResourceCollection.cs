@@ -93,6 +93,69 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "false"),
                         Parameter("quest_acquisition_source_step", "true")
                     }));
+            var scytheCropSourceSteps = HarvestCropCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => string.Equals(
+                    ReadParameter(candidate.Parameters, "harvest_method"),
+                    "Scythe",
+                    StringComparison.OrdinalIgnoreCase))
+                .Where(candidate => ItemIdentityMatches(
+                    candidate.ItemId,
+                    candidate.QualifiedItemId,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
+            var giantCropSourceSteps = HarvestGiantCropCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ProjectedOutputContainsItem(
+                    candidate,
+                    "giant_crop_guaranteed_outputs_json",
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
+            var currentLocationClumpSourceSteps = GreenRainResourceClumpCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ProjectedOutputContainsItem(
+                    candidate,
+                    "expected_output_items_json",
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
+            var fishingSourceSteps = FishingEventCandidateBuilder.Build(snapshot)
+                .Where(candidate => candidate.Kind == "catch_fish" && candidate.Available)
+                .Where(candidate => FishingCandidateContainsItem(
+                    candidate,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
             var machineReceipts = MachineServiceCandidates(snapshot, commitmentLedger: null)
                 .Where(candidate => candidate.Kind == "collect_machine_output_tile" && candidate.Available)
                 .Where(candidate => ItemIdentityMatches(
@@ -116,6 +179,10 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(sourceSteps)
                 .Concat(bushSourceSteps)
                 .Concat(gingerSourceSteps)
+                .Concat(scytheCropSourceSteps)
+                .Concat(giantCropSourceSteps)
+                .Concat(currentLocationClumpSourceSteps)
+                .Concat(fishingSourceSteps)
                 .Concat(machineReceipts)
                 .Concat(miningSteps)
                 .ToArray();
@@ -271,6 +338,77 @@ namespace StardewAI.Core.OptionRegistry
                                 "quest_acceptable_context_tag_sets_json",
                                 JsonSerializer.Serialize(fields.AcceptableContextTagSets))
                         })))
+                .Concat(HarvestCropCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => string.Equals(
+                        ReadParameter(candidate.Parameters, "harvest_method"),
+                        "Scythe",
+                        StringComparison.OrdinalIgnoreCase))
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "harvest_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(HarvestGiantCropCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => ProjectedOutputContextTagsMatch(
+                        candidate,
+                        "giant_crop_guaranteed_outputs_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(GreenRainResourceClumpCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => ProjectedOutputContextTagsMatch(
+                        candidate,
+                        "expected_output_context_tag_sets_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(FishingEventCandidateBuilder.Build(snapshot)
+                    .Where(candidate => candidate.Kind == "catch_fish" && candidate.Available)
+                    .Where(candidate => FishingCandidateMatchesContextTags(
+                        candidate,
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
                 .ToArray();
             return candidates.Length > 0
                 ? candidates
@@ -299,5 +437,6 @@ namespace StardewAI.Core.OptionRegistry
                 return false;
             }
         }
+
     }
 }

@@ -415,6 +415,7 @@ namespace StardewAI.Core.OptionRegistry
             var specialQualifiedItemId = String(handler, "special_fish_qualified_item_id");
             if (!usesTrainingRod && specialChance > 0d && !string.IsNullOrWhiteSpace(specialQualifiedItemId))
             {
+                var specialOutput = PropertyObject(handler, "special_fish_output");
                 candidates.Add(SpecialCandidate(
                     locationId,
                     rodSlot,
@@ -423,7 +424,9 @@ namespace StardewAI.Core.OptionRegistry
                     "mine_shaft_fishing",
                     specialQualifiedItemId,
                     cast,
-                    specialChance));
+                    specialChance,
+                    Strings(specialOutput, "context_tags"),
+                    String(specialOutput, "context_tags_projection_status")));
             }
 
             if (!usesTrainingRod && mineArea != 80)
@@ -438,6 +441,7 @@ namespace StardewAI.Core.OptionRegistry
             var weightedCaveJellyChance = remainingChance * caveJellyChance;
             if (weightedCaveJellyChance > 0d)
             {
+                var caveJellyOutput = PropertyObject(handler, "cave_jelly_output");
                 candidates.Add(SpecialCandidate(
                     locationId,
                     rodSlot,
@@ -446,25 +450,36 @@ namespace StardewAI.Core.OptionRegistry
                     "mine_shaft_fishing",
                     "(O)CaveJelly",
                     cast,
-                    weightedCaveJellyChance));
+                    weightedCaveJellyChance,
+                    Strings(caveJellyOutput, "context_tags"),
+                    String(caveJellyOutput, "context_tags_projection_status")));
             }
 
             var trashIds = Ints(handler, "mine_trash_item_id_range_inclusive");
+            var trashOutputs = Elements(handler, "mine_trash_outputs");
             if (trashIds.Length == 2 && trashIds[1] >= trashIds[0])
             {
                 var trashCount = trashIds[1] - trashIds[0] + 1;
                 var perTrashChance = remainingChance * (1d - caveJellyChance) / trashCount;
                 for (var itemId = trashIds[0]; perTrashChance > 0d && itemId <= trashIds[1]; itemId++)
                 {
+                    var qualifiedItemId = "(O)" + itemId.ToString(CultureInfo.InvariantCulture);
+                    var trashOutput = trashOutputs.FirstOrDefault(output =>
+                        string.Equals(
+                            String(output, "qualified_item_id"),
+                            qualifiedItemId,
+                            StringComparison.OrdinalIgnoreCase));
                     candidates.Add(SpecialCandidate(
                         locationId,
                         rodSlot,
                         rodQualifiedId,
                         energyCost,
                         "mine_shaft_fishing",
-                        "(O)" + itemId.ToString(CultureInfo.InvariantCulture),
+                        qualifiedItemId,
                         cast,
-                        perTrashChance));
+                        perTrashChance,
+                        Strings(trashOutput, "context_tags"),
+                        String(trashOutput, "context_tags_projection_status")));
                 }
             }
 
@@ -519,7 +534,9 @@ namespace StardewAI.Core.OptionRegistry
             string source,
             string qualifiedItemId,
             CastSelection cast,
-            double? chance)
+            double? chance,
+            string[]? contextTags = null,
+            string contextTagsProjectionStatus = "unavailable")
         {
             return OutcomeCandidate(
                 locationId,
@@ -533,7 +550,9 @@ namespace StardewAI.Core.OptionRegistry
                 qualifiedItemId,
                 cast,
                 chance,
-                chance.HasValue ? "composed_preview" : "unresolved_composed_fallthrough");
+                chance.HasValue ? "composed_preview" : "unresolved_composed_fallthrough",
+                contextTags: contextTags,
+                contextTagsProjectionStatus: contextTagsProjectionStatus);
         }
 
         private static EventCandidate OutcomeCandidate(
@@ -900,6 +919,24 @@ namespace StardewAI.Core.OptionRegistry
                 value.Value.TryGetProperty(property, out var item) && item.ValueKind == JsonValueKind.String
                     ? item.GetString() ?? string.Empty
                     : string.Empty;
+        }
+
+        private static JsonElement PropertyObject(JsonElement value, string property)
+        {
+            return value.ValueKind == JsonValueKind.Object &&
+                value.TryGetProperty(property, out var item) &&
+                item.ValueKind == JsonValueKind.Object
+                    ? item
+                    : default;
+        }
+
+        private static JsonElement[] Elements(JsonElement value, string property)
+        {
+            return value.ValueKind == JsonValueKind.Object &&
+                value.TryGetProperty(property, out var items) &&
+                items.ValueKind == JsonValueKind.Array
+                    ? items.EnumerateArray().ToArray()
+                    : Array.Empty<JsonElement>();
         }
 
         private static int Int(JsonElement? value, string property)
