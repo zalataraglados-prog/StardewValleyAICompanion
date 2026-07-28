@@ -38,6 +38,25 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(NativeToolBlocked(request, "harvest_ginger", target, hoe, null, staminaBefore, started, estimatedTicks, precheck[0], requested, GingerHarvestObservedEffect(location, target), precheck));
             return;
         }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+            request,
+            GingerQualifiedItemId,
+            out var questReason))
+        {
+            pending.Completion.SetResult(NativeToolBlocked(
+                request,
+                "harvest_ginger",
+                target,
+                hoe,
+                null,
+                staminaBefore,
+                started,
+                estimatedTicks,
+                questReason,
+                requested,
+                GingerHarvestObservedEffect(location, target)));
+            return;
+        }
 
         var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
         if (path is null)
@@ -143,7 +162,7 @@ public sealed partial class ModEntry
         if (foragingAfter != tool.BeforeForagingExperience + 7) failureReasons.Add("ginger_foraging_experience_delta_mismatch");
         if (Math.Abs(energyDelta - tool.ExpectedEnergyCost) > 0.001d) failureReasons.Add("ginger_energy_delta_mismatch");
 
-        tool.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = tool.Pending.Request.RunId,
             QueueId = tool.Pending.Request.QueueId,
@@ -181,7 +200,9 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.skills.foraging.experience", Before = tool.BeforeForagingExperience.ToString(), After = foragingAfter.ToString() },
                 new SimulatedFactChange { Path = "player.energy", Before = tool.StaminaBefore.ToString("0.###"), After = Game1.player.Stamina.ToString("0.###") }
             }
-        });
+        };
+        ApplySpecialOrderCollectSourceFeedback(result, tool.Pending.Request);
+        tool.Pending.Completion.SetResult(result);
     }
 
     private static bool IsExactGinger(GameLocation location, Vector2 tile, out HoeDirt? dirt)

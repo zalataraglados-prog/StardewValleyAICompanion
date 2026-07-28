@@ -50,7 +50,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("ordinary_quest", "LostItemQuest", "return_lost_item_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "SecretLostItemQuest", "find_secret_lost_item", Blocked, Array.Empty<string>(), "Secret item source is event-specific and not projected as a quest source."),
                 Row("ordinary_quest", "SecretLostItemQuest", "return_secret_lost_item_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
-                Row("special_order", "CollectObjective", "collect_items", Bound, new[] { "harvest_crop_tile", "pickup_debris_item", "collect_machine_output_tile" }),
+                Row("special_order", "CollectObjective", "collect_items", Bound, new[] { "harvest_crop_tile", "pickup_debris_item", "harvest_bush", "harvest_ginger", "collect_machine_output_tile" }),
                 Row("special_order", "DeliverObjective", "deliver_to_target", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("special_order", "DonateObjective", "donate_items", Bound, new[] { "quest_drop_box_donation", "route_connector_tile" }),
                 Row("special_order", "FishObjective", "catch_fish", Bound, new[] { "catch_fish" }),

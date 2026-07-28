@@ -18,7 +18,9 @@ namespace StardewAI.Core.Execution
             if (action.OptionId is not (
                     "executor.harvest_crop" or
                     "executor.collect_machine_output" or
-                    "executor.pickup_debris") ||
+                    "executor.pickup_debris" or
+                    "executor.harvest_bush" or
+                    "executor.harvest_ginger") ||
                 !string.Equals(
                     ReadParameter(action, "quest_next_action"),
                     "collect_items",
@@ -53,24 +55,34 @@ namespace StardewAI.Core.Execution
 
             var objective = ReadSpecialOrderCollectObjective(snapshot, questKey, objectiveIndex.Value);
             var tagSets = objective?.PerTypeFields?.AcceptableContextTagSets ?? Array.Empty<string>();
+            var targetStep = string.Equals(
+                ReadParameter(action, "quest_acquisition_target_step"),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+            var sourceStep = string.Equals(
+                ReadParameter(action, "quest_acquisition_source_step"),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+            var sourceOption = action.OptionId is "executor.harvest_bush" or "executor.harvest_ginger";
             if (objective is null ||
                 !string.Equals(objective.RuntimeType, "CollectObjective", StringComparison.Ordinal))
             {
                 reasons.Add("special_order_collect_objective_drifted");
             }
-            else if (!SpecialOrderCollectActionTargetMatches(
-                action,
-                snapshot,
-                tagSets))
+            else if (sourceOption &&
+                !SpecialOrderCollectSourceMatches(action, snapshot, tagSets))
+            {
+                reasons.Add("special_order_collect_source_context_tags_drifted");
+            }
+            else if (!sourceOption &&
+                !SpecialOrderCollectActionTargetMatches(action, snapshot, tagSets))
             {
                 reasons.Add("special_order_collect_item_context_tags_drifted");
             }
-            if (!string.Equals(
-                    ReadParameter(action, "quest_acquisition_target_step"),
-                    "true",
-                    StringComparison.OrdinalIgnoreCase))
+            if (targetStep == sourceStep ||
+                sourceOption != sourceStep)
             {
-                reasons.Add("special_order_collect_receipt_step_required");
+                reasons.Add("special_order_collect_acquisition_role_invalid");
             }
 
             var projectedTagSets = ReadParameter(
@@ -140,6 +152,54 @@ namespace StardewAI.Core.Execution
             return QuestContextTagMatcher.Matches(
                 ReadQuestStringArray(heldItem, "context_tags"),
                 tagSets);
+        }
+
+        private static bool SpecialOrderCollectSourceMatches(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string[] tagSets)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                return false;
+            }
+
+            if (action.OptionId == "executor.harvest_bush")
+            {
+                var features = ReadStateFieldValue(
+                    snapshot,
+                    "current_location",
+                    "large_terrain_features");
+                var bush = features.HasValue &&
+                    features.Value.ValueKind == JsonValueKind.Array
+                        ? features.Value.EnumerateArray().FirstOrDefault(feature =>
+                            ReadBool(feature, "is_bush") == true &&
+                            ReadInt(feature, "tile_x") == targetX.Value &&
+                            ReadInt(feature, "tile_y") == targetY.Value)
+                        : default;
+                return bush.ValueKind == JsonValueKind.Object &&
+                    QuestContextTagMatcher.Matches(
+                        ReadQuestStringArray(bush, "bush_output_context_tags"),
+                        tagSets);
+            }
+
+            var terrainFeatures = ReadStateFieldValue(
+                snapshot,
+                "current_location",
+                "terrain_features");
+            var ginger = terrainFeatures.HasValue &&
+                terrainFeatures.Value.ValueKind == JsonValueKind.Array
+                    ? terrainFeatures.Value.EnumerateArray().FirstOrDefault(feature =>
+                        ReadBool(feature, "is_ginger") == true &&
+                        ReadInt(feature, "tile_x") == targetX.Value &&
+                        ReadInt(feature, "tile_y") == targetY.Value)
+                    : default;
+            return ginger.ValueKind == JsonValueKind.Object &&
+                QuestContextTagMatcher.Matches(
+                    ReadQuestStringArray(ginger, "ginger_output_context_tags"),
+                    tagSets);
         }
 
         private static SpecialOrderObjectiveProgressRef? ReadSpecialOrderCollectObjective(

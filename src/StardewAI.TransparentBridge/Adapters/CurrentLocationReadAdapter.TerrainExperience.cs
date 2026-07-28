@@ -88,6 +88,12 @@ public sealed partial class CurrentLocationReadAdapter
         var energyCost = hoe?.isEfficient.Value == true
             ? 0f
             : Math.Max(0f, 2f - Game1.player.FarmingLevel * 0.1f);
+        var gingerOutputContextTags = isGinger
+            ? ItemRegistry.Create("(O)829")
+                .GetContextTags()
+                .OrderBy(tag => tag, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
         var harvestStatus = !isGinger
             ? "not_ginger"
             : hoe is null
@@ -118,6 +124,7 @@ public sealed partial class CurrentLocationReadAdapter
             ginger_exact_vanilla_runtime_types = exactVanillaRuntimeTypes,
             ginger_energy_cost = energyCost,
             ginger_output_qualified_item_id = isGinger ? "(O)829" : string.Empty,
+            ginger_output_context_tags = gingerOutputContextTags,
             ginger_output_quality = isGinger ? 0 : (int?)null,
             ginger_output_quantity_min = isGinger ? 1 : 0,
             ginger_output_quantity_max = isGinger ? 1 : 0,

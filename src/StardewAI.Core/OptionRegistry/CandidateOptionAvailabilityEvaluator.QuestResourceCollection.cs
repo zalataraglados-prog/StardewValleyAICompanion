@@ -237,6 +237,40 @@ namespace StardewAI.Core.OptionRegistry
                                 "quest_acceptable_context_tag_sets_json",
                                 JsonSerializer.Serialize(fields.AcceptableContextTagSets))
                         })))
+                .Concat(BushHarvestCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "bush_output_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(GingerHarvestCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "ginger_output_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
                 .ToArray();
             return candidates.Length > 0
                 ? candidates
@@ -245,7 +279,7 @@ namespace StardewAI.Core.OptionRegistry
                     BlockedQuestCandidate(
                         snapshot,
                         quest,
-                        "special_order_matching_grab_harvest_not_ready_in_current_projection")
+                        "special_order_matching_collect_action_not_ready_in_current_projection")
                 };
         }
 

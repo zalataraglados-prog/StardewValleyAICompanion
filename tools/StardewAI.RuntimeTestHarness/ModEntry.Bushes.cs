@@ -48,6 +48,24 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_bush", "bush.tile_sheet_offset=0", BushHarvestObservedEffect(location, bush, target, request.QualifiedItemId, request.ExpectedOutputQuality.Value), precheck));
             return;
         }
+        if (!ValidateSpecialOrderCollectSourceTarget(
+            request,
+            request.QualifiedItemId,
+            out var questReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "harvest_bush",
+                "bush.tile_sheet_offset=0",
+                BushHarvestObservedEffect(
+                    location,
+                    bush,
+                    target,
+                    request.QualifiedItemId,
+                    request.ExpectedOutputQuality.Value),
+                questReason));
+            return;
+        }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
         var path = TryBuildTilePath(location, Game1.player.TilePoint, stand, maxMovementTiles, out var pathReason, avoidSoftObstacles: true, allowRemovableObstacles: false);
@@ -240,7 +258,7 @@ public sealed partial class ModEntry
         var outputAfter = CountBushOutput(active.Location, active.QualifiedItemId, active.ExpectedQuality);
         var xpAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
         var nutAfter = !string.IsNullOrWhiteSpace(active.NutKey) && Game1.player.team.collectedNutTracker.Contains(active.NutKey);
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -265,7 +283,9 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.skills.foraging.experience", Before = active.ForagingExperienceBefore.ToString(), After = xpAfter.ToString() },
                 new SimulatedFactChange { Path = "world_progress.collected_nut_tracker[" + active.NutKey + "]", Before = active.NutCollectedBefore.ToString().ToLowerInvariant(), After = nutAfter.ToString().ToLowerInvariant() }
             }
-        });
+        };
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteBushHarvestBlocked(ActiveBushHarvest active, string reason)

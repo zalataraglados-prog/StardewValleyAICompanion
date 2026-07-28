@@ -46,6 +46,12 @@ public sealed partial class CurrentLocationReadAdapter
             _ => "ordinary_berry"
         };
         var outputId = exactVanillaType ? bush.GetShakeOffItem() ?? string.Empty : string.Empty;
+        var outputContextTags = string.IsNullOrWhiteSpace(outputId)
+            ? Array.Empty<string>()
+            : ItemRegistry.Create(outputId)
+                .GetContextTags()
+                .OrderBy(tag => tag, StringComparer.Ordinal)
+                .ToArray();
         var quantity = size is 3 or 4 ? 1 : 1 + Game1.player.ForagingLevel / 4;
         var quality = size is 3 or 4 ? 0 : Game1.player.professions.Contains(16) ? 4 : 0;
         var foragingExperience = size is 3 or 4 ? 0 : quantity;
@@ -92,6 +98,7 @@ public sealed partial class CurrentLocationReadAdapter
             bush_harvest_status = status,
             bush_projection_status = exactVanillaType ? "exact_from_native_bush_shake" : "unsupported_custom_runtime_type",
             bush_output_qualified_item_id = outputId,
+            bush_output_context_tags = outputContextTags,
             bush_output_quantity_min = quantity,
             bush_output_quantity_max = quantity,
             bush_output_quality = quality,

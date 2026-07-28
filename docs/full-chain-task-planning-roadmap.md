@@ -43,7 +43,8 @@ The implementation chain is:
   produce the target; an exact current-location bush or ginger crop may also be selected
   as a source. Spawned-object pickup, current-location debris pickup, and ready machine-output collection
   may claim progress. `CollectObjective` currently binds exact context-tag-matched
-  mature `Grab` crops, current-location debris, and ready machine outputs. Additional native acquisition families
+  mature `Grab` crops, current-location debris, and ready machine outputs as receipts,
+  plus current-location bush and ginger actions as source-only steps. Additional native acquisition families
   remain explicit graph expansion work rather than implicit generic collection.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)

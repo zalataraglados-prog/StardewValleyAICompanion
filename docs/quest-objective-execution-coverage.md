@@ -52,7 +52,7 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
 | ordinary item-harvest quest | current mature `Grab` crop whose qualified item ID or category matches the native target |
 | ordinary resource-collection quest | exact current spawned-object, current-location debris, or ready-machine receipt; exact clearable wood/stone, current-location bush, or ginger source; or rolling current-mine resource source/debris receipt |
-| special-order `CollectObjective` | current mature `Grab` crop, current-location debris, or ready machine output whose native context tags match the objective |
+| special-order `CollectObjective` | current mature `Grab` crop, current-location debris, or ready machine output as a matching native receipt; current-location bush or ginger as an exact context-tag-matched source-only step |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
@@ -108,9 +108,12 @@ Ready machine outputs expose their exact native context tags, revalidate the liv
 item before execution, and verify the ordinary quest or special-order count only after
 native machine collection updates the inventory.
 Current-location debris follows the same receipt rule and carries the live item's native
-context tags. A matching bush or ginger crop is only an ordinary-quest source step;
-native shake or Hoe use must produce debris, and a fresh snapshot must bind that exact
-debris before progress can be claimed.
+context tags. For ordinary resource quests and special-order collect objectives, a
+matching bush or ginger crop is source-only: native shake or Hoe use produces the item,
+and a fresh snapshot must bind the exact debris before predicted receipt credit. The
+runtime request carries the source role separately, rechecks the live special-order
+identity and native item tags, and records any post-action count increase only as an
+observed natural auto-pickup rather than a promised source effect.
 
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
@@ -133,8 +136,8 @@ The following objective bindings remain fail-closed:
   and type-11 weeding stages;
 - Junimo Kart score objectives;
 - acquisition families not yet attached to the bounded collect stages, including
-  scythe-created crop debris, fishing trash, special-order ginger/bush source planning,
-  giant crops, monster drops, resource clumps, and modded sources;
+  scythe-created crop debris, fishing trash, giant crops, monster drops, resource
+  clumps, and modded sources;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
   rows;

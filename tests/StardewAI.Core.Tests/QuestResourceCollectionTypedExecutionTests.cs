@@ -429,6 +429,180 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Empty(item.BlockingReasons);
     }
 
+    [Fact]
+    public void SpecialOrderCollectTreatsCurrentLocationBushAsSourceNotReceipt()
+    {
+        var snapshot = SpecialOrderCollectionSnapshot(
+            BushSourceDomainState(),
+            locationId: "IslandWest");
+
+        var bushAvailability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "foraging.harvest_bushes" }, includeExecutorCalibrationOptions: true);
+        var bushOption = Assert.Single(bushAvailability.Options);
+        Assert.True(
+            bushOption.EventCandidates.Length > 0,
+            string.Join(";", bushOption.BlockingReasons) + "|missing=" +
+            string.Join(",", bushOption.MissingStateFactors));
+        var bushCandidate = Assert.Single(bushOption.EventCandidates);
+        Assert.True(
+            bushCandidate.Available,
+            string.Join(";", bushCandidate.BlockReasons));
+        Assert.Contains(bushCandidate.Parameters, parameter =>
+            parameter.Name == "bush_output_context_tags_json" &&
+            parameter.Value.Contains("category_resource", StringComparison.Ordinal));
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(
+            candidate.Kind == "harvest_bush",
+            candidate.Kind + ":" + string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_target_step" && parameter.Value == "false");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_bush", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void SpecialOrderCollectTreatsGingerAsSourceNotReceipt()
+    {
+        var snapshot = SpecialOrderCollectionSnapshot(
+            GingerSourceDomainState(),
+            locationId: "IslandWest",
+            acceptableContextTagSetsJson: "\"id_o_829\"");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("harvest_ginger", candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_target_step" && parameter.Value == "false");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_ginger", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void SpecialOrderCollectExcludesMismatchedGingerSourceUpstream()
+    {
+        var snapshot = SpecialOrderCollectionSnapshot(
+            GingerSourceDomainState(),
+            locationId: "IslandWest",
+            acceptableContextTagSetsJson: "\"category_fish\"");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "special_order_matching_collect_action_not_ready_in_current_projection",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void SpecialOrderCollectBlocksBushSourceWhenLiveOutputTagsDrift()
+    {
+        var initial = SpecialOrderCollectionSnapshot(
+            BushSourceDomainState(),
+            locationId: "IslandWest");
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(initial, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, initial.StateHash);
+
+        var drifted = SpecialOrderCollectionSnapshot(
+            BushSourceDomainState("\"category_fish\""),
+            locationId: "IslandWest");
+        plan.StateHash = drifted.StateHash;
+        var queue = new ActionQueueCompiler().Compile(plan, drifted);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "special_order_collect_source_context_tags_drifted",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static string BushSourceDomainState(
+        string outputContextTagsJson = "\"category_resource\",\"id_o_390\"")
+    {
+        return
+            """
+            "current_location":{
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "large_terrain_features":{"value":[{
+                "tile_x":20,"tile_y":20,"runtime_type":"StardewValley.TerrainFeatures.Bush",
+                "bounding_tile_width":2,"bounding_tile_height":1,"is_bush":true,
+                "bush_size":1,"bush_kind":"ordinary_berry","ready_for_harvest":true,
+                "in_bloom":true,"tile_sheet_offset_before":1,"tile_sheet_offset_expected_after":0,
+                "bush_harvest_status":"ready","bush_projection_status":"exact_from_native_bush_shake",
+                "bush_output_qualified_item_id":"(O)390",
+                "bush_output_context_tags":[BUSH_OUTPUT_CONTEXT_TAGS],
+                "bush_output_quantity_min":1,"bush_output_quantity_max":1,
+                "bush_output_quality":0,"bush_foraging_experience_on_success_min":1,
+                "bush_foraging_experience_on_success_max":1,
+                "bush_nut_key":"","bush_nut_collected_before":false,
+                "bush_nut_collected_expected_after":false
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"IslandWest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """
+            .Replace(
+                "BUSH_OUTPUT_CONTEXT_TAGS",
+                outputContextTagsJson,
+                StringComparison.Ordinal);
+    }
+
+    private static string GingerSourceDomainState()
+    {
+        return
+            """
+            "current_location":{
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "terrain_features":{"value":[{
+                "tile_x":12,"tile_y":10,"type":"StardewValley.TerrainFeatures.HoeDirt",
+                "hoe_dirt_state":1,"has_crop":true,"crop_is_forage":true,
+                "forage_crop_id":"2","is_ginger":true,"ginger_harvest_status":"ready",
+                "ginger_required_tool_kind":"Hoe","ginger_tool_slot_index":3,
+                "ginger_energy_cost":1.4,"ginger_output_qualified_item_id":"(O)829",
+                "ginger_output_context_tags":["id_o_829"],
+                "ginger_output_quality":0,"ginger_output_quantity_min":1,
+                "ginger_output_quantity_max":1,
+                "ginger_foraging_experience_on_success_min":7,
+                "ginger_foraging_experience_on_success_max":7,
+                "ginger_hoe_dirt_state_expected_after":0,
+                "ginger_projection_status":"exact_from_native_crop_hit_with_hoe"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"IslandWest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """;
+    }
+
     private static string MachineCollectionDomainState()
     {
         return
@@ -489,16 +663,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     private static StardewAI.Contracts.State.SnapshotEnvelope SpecialOrderCollectionSnapshot(
-        string domainState)
+        string domainState,
+        string locationId = "Farm",
+        string acceptableContextTagSetsJson = "\"category_resource\"")
     {
         return Snapshot(
             """
             {
               "player":{
-                "location_id":{"value":"Farm","status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "location_id":{"value":"LOCATION_ID","status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "tile_x":{"value":18,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "tile_y":{"value":20,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "energy":{"value":270,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "skills_detail":{"value":{"foraging":{"level":8}},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory_capacity":{"value":{"occupied_stacks":0,"empty_slots":12,"has_empty_slot":true},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
@@ -510,7 +687,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                   "objectives":[{
                     "description":"Collect resources","current_count":2,"max_count":25,
                     "runtime_type":"CollectObjective","fail_on_completion":false,"complete":false,
-                    "per_type_fields":{"available":true,"acceptable_context_tag_sets":["category_resource"]}
+                    "per_type_fields":{"available":true,"acceptable_context_tag_sets":[ACCEPTABLE_CONTEXT_TAG_SETS]}
                   }],"rewards":[]
                 }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "completed_special_orders":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -524,7 +701,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "achievements":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               }
             }
-            """.Replace("DOMAIN_STATE", domainState, StringComparison.Ordinal));
+            """
+            .Replace("LOCATION_ID", locationId, StringComparison.Ordinal)
+            .Replace("ACCEPTABLE_CONTEXT_TAG_SETS", acceptableContextTagSetsJson, StringComparison.Ordinal)
+            .Replace("DOMAIN_STATE", domainState, StringComparison.Ordinal));
     }
 
     private static StardewAI.Contracts.State.SnapshotEnvelope ResourceCollectionSnapshot(

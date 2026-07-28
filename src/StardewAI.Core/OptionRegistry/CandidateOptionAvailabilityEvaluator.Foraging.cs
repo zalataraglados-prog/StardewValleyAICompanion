@@ -196,6 +196,9 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("required_tool_kind", "Hoe"),
                 Parameter("tool_slot_index", ReadInt(feature, "ginger_tool_slot_index").ToString()),
                 Parameter("qualified_item_id", "(O)829"),
+                Parameter(
+                    "ginger_output_context_tags_json",
+                    JsonSerializer.Serialize(ReadStringArray(feature, "ginger_output_context_tags"))),
                 Parameter("quantity", "1"),
                 Parameter("expected_output_quality", "0"),
                 Parameter("expected_energy_cost", ReadDouble(feature, "ginger_energy_cost").ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)),

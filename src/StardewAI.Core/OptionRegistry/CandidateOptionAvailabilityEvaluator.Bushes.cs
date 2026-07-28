@@ -138,6 +138,9 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("bush_size", ReadInt(feature, "bush_size").ToString()),
                 Parameter("bush_kind", ReadString(feature, "bush_kind")),
                 Parameter("qualified_item_id", ReadString(feature, "bush_output_qualified_item_id")),
+                Parameter(
+                    "bush_output_context_tags_json",
+                    JsonSerializer.Serialize(ReadStringArray(feature, "bush_output_context_tags"))),
                 Parameter("quantity", ReadInt(feature, "bush_output_quantity_min").ToString()),
                 Parameter("expected_output_quality", ReadInt(feature, "bush_output_quality").ToString()),
                 Parameter("expected_foraging_experience_delta", ReadInt(feature, "bush_foraging_experience_on_success_min").ToString()),
