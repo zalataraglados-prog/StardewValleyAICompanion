@@ -30,6 +30,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     regrow_days = ReadIntNullable(pair.Value, "RegrowDays"),
                     harvest_item_id = harvestItemId,
                     harvest_item_qualified_id = QualifyObjectId(harvestItemId),
+                    harvest_item_category = harvestItem.Category,
                     harvest_context_tags = harvestItem.ContextTags,
                     harvest_unit_sale_price = harvestItem.SalePrice,
                     harvest_min_stack = ReadIntNullable(pair.Value, "HarvestMinStack"),
@@ -63,7 +64,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var qualifiedId = QualifyObjectId(itemId);
         if (string.IsNullOrWhiteSpace(qualifiedId))
         {
-            return new HarvestItemProjection(null, Array.Empty<string>());
+            return new HarvestItemProjection(null, 0, Array.Empty<string>());
         }
 
         try
@@ -71,11 +72,12 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             var item = ItemRegistry.Create(qualifiedId);
             return new HarvestItemProjection(
                 item.salePrice(),
+                item.Category,
                 item.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray());
         }
         catch
         {
-            return new HarvestItemProjection(null, Array.Empty<string>());
+            return new HarvestItemProjection(null, 0, Array.Empty<string>());
         }
     }
 
@@ -90,12 +92,15 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var cropData = crop.GetData();
                 var experience = ReadCropHarvestExperience(crop);
                 var readyForHarvest = dirt.readyForHarvest();
+                var harvestItem = ReadHarvestItemProjection(crop.indexOfHarvest.Value);
                 return new
                 {
                     tile_x = (int)pair.Key.X,
                     tile_y = (int)pair.Key.Y,
                     harvest_item_id = crop.indexOfHarvest.Value,
                     harvest_item_qualified_id = QualifyObjectId(crop.indexOfHarvest.Value),
+                    harvest_item_category = harvestItem.Category,
+                    harvest_context_tags = harvestItem.ContextTags,
                     phase_days = crop.phaseDays.ToArray(),
                     current_phase = crop.currentPhase.Value,
                     phase_count = crop.phaseDays.Count,
@@ -126,7 +131,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .ToArray();
     }
 
-    private sealed record HarvestItemProjection(int? SalePrice, string[] ContextTags);
+    private sealed record HarvestItemProjection(int? SalePrice, int Category, string[] ContextTags);
 
     private static int? ReadDaysUntilNextHarvestIfWatered(Crop crop, bool readyForHarvest)
     {

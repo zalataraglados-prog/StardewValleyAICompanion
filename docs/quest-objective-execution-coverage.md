@@ -21,6 +21,9 @@ The implementation was checked against the matching Linux-server 1.6.15 decompil
   quest ID 15 additionally accepts names containing `Slime`, `Jelly`, or `Sludge`.
 - `SlayObjective.OnMonsterSlain` matches any configured
   `Monster.Name.Contains(targetName)` and honors `ignoreFarmMonsters`.
+- `ItemHarvestQuest.OnItemReceived` accepts the exact qualified item ID or, when
+  its target starts with `-`, the exact native item category. Its `Number` field
+  is a remaining count and decreases by the native `numberAdded`.
 - `DonateObjective` uses the native drop-box `QuestContainerMenu` lifecycle. Direct
   mutation of `donatedItems` is therefore prohibited.
 - `LostItemQuest.OnWarped` creates the exact quest item at its declared map/tile as an
@@ -43,6 +46,7 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary lost-item pickup | exact declared map/tile/item identity plus existing native `collect_spawned_object` candidate |
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
+| ordinary item-harvest quest | current mature `Grab` crop whose qualified item ID or category matches the native target |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
@@ -81,6 +85,13 @@ accepts only an `IsSpawnedObject` at the exact quest tile with the exact qualifi
 identity. It uses the existing native pickup executor; it does not inject the item or set
 `itemFound`.
 
+The item-harvest binding is deliberately bounded to an immediately mature `Grab` crop.
+The bridge projects its qualified harvest ID, native category, and context tags; the
+compiler rechecks the same live crop and quest remaining count. Runtime accepts feedback
+only when native harvest decreases `ItemHarvestQuest.Number` or completes the quest.
+Scythe harvest remains a two-step harvest-then-debris-pickup path and is not credited on
+the harvest frame.
+
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
 indicator. The actual interaction target is indexed from the current map's exact
@@ -94,11 +105,11 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 18 bound, 8 blocked, and 2 native observation-only stages.
+contain 19 bound, 7 blocked, and 2 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
-- ordinary craft, collect, harvest, construction, secret-item acquisition, accept,
+- ordinary craft, collect, construction, secret-item acquisition, accept,
   and type-11 weeding stages;
 - special-order collect and Junimo Kart score objectives;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
@@ -112,11 +123,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused quest filter: 96 passed;
-- full regression: Core 1,305 passed and Backend 95 passed;
-- full solution Release build: zero errors and seven existing warnings;
+- focused item-harvest filter: 3 passed;
+- full regression: Core 1,307 passed and Backend 95 passed;
+- full solution Release build: zero errors and five existing warnings emitted;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 18 bound, 8 blocked, and 2 observation-only;
+  differences, 28 stage rows with 19 bound, 7 blocked, and 2 observation-only;
 - the full knowledge build retains two pre-existing Grandpa method identity blockers,
   unrelated to the quest type scan;
 - no live game mutation test was run for this slice.

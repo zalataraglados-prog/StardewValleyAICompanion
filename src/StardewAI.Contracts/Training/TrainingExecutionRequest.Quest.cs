@@ -34,6 +34,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("quest_slay_target_step")]
         public bool QuestSlayTargetStep { get; set; }
 
+        [JsonPropertyName("quest_acquisition_target_step")]
+        public bool QuestAcquisitionTargetStep { get; set; }
+
         [JsonPropertyName("quest_drop_box_id")]
         public string QuestDropBoxId { get; set; } = string.Empty;
 

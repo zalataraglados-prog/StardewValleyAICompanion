@@ -43,7 +43,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("ordinary_quest", "FishingQuest", "fish_for_item", Bound, new[] { "catch_fish" }),
                 Row("ordinary_quest", "FishingQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "HaveBuildingQuest", "construct_building", Blocked, Array.Empty<string>(), "Quest-specific construction purchase is not bound."),
-                Row("ordinary_quest", "ItemHarvestQuest", "harvest_items", Blocked, Array.Empty<string>(), "Exact-item harvest source selection is not bound."),
+                Row("ordinary_quest", "ItemHarvestQuest", "harvest_items", Bound, new[] { "harvest_crop_tile" }),
                 Row("ordinary_quest", "ResourceCollectionQuest", "collect_resources", Blocked, Array.Empty<string>(), "Exact-item resource acquisition is not bound."),
                 Row("ordinary_quest", "ResourceCollectionQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "LostItemQuest", "find_lost_item", Bound, new[] { "collect_spawned_object", "route_connector_tile" }),

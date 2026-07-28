@@ -37,12 +37,19 @@ The implementation chain is:
 - **`raise_skill_levels` transparent input** — `player.skills_detail` exposes all six vanilla skill rows, including unmodified/effective levels, temporary buff deltas, exact accumulated experience, next-level thresholds, remaining experience, the level cap, and the Grandpa scoring formula. `player.luck_context` keeps daily luck, Special Charm, permanent Luck skill, and active Luck buffs separate. Luck has native XP sources and is not excluded from planning. Exact candidate XP slices now cover current-floor native monster defeat, bounded successful rod-fishing outcomes, every currently loaded vanilla MineShaft stone, player crop harvests, planted forage harvests, complete giant-crop harvests, complete vanilla wild-tree clearing, farm stumps/hollow logs, stationary spawned-object pickup, vanilla twig clearing, raccoon seed-spot digging, and locally deterministic ordinary artifact spots. Ordinary artifact outputs now pass through strict queue-to-runtime serialized-item multiset verification; eligible unseen-secret-note outcomes remain blocked on unexposed global RNG state. Mining stone plans preserve separate Mining/Luck bounds and source conditions; crop candidates distinguish Farming, Foraging, and Luck results; fishing, farm-harvest, pickup, and obstacle-clear executors record observed skill-XP deltas. The Grandpa direction now directly binds only current candidates with a permitted option/kind, a complete `exact*` projection status, valid nonnegative bounds, and positive possible XP. Missing native families are enumerated in `docs/skill-experience-source-audit.md` and remain a coverage backlog, not guessed candidates and not a reason to suppress already exact current actions.
 
 - **Quest-bound named-monster search** - Ordinary `SlayMonsterQuest` and vanilla special-order `SlayObjective` reuse the existing rolling MineShaft planner and native combat executors. Selection reproduces `Monster.Name.Contains` exactly, including quest 15's Slime/Jelly/Sludge fallback. Target-absent floors continue through existing opening, descent, recovery, and deadline exit primitives; compiler/runtime revalidate task identity, progress counters, mine family, live monster identity, and post-kill task progress. Unknown modded slay-order mine families remain fail closed.
+- **Quest-bound item harvest** - `ItemHarvestQuest` reuses the mature-crop executor for exact qualified-ID or native-category `Grab` harvests. Compiler and runtime rebind the remaining count and target crop; scythe debris remains a separate acquisition step instead of receiving false progress credit.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)
 
 GitHub issues are planning input, not gameplay authority. The following updates were
 checked against the current registry, implementation, and local 1.6.15 decompile:
 
+- **#20 quest lifecycle: accepted as the governing contract, not as an implementation
+  claim.** Objective identity, accepted-after provenance, native deadline, terminal
+  interaction, settlement, and recovery must remain explicit. The current
+  `ItemHarvestQuest` binding closes only mature `Grab` crops; scythe debris,
+  non-crop `ResourceCollectionQuest` sources, and special-order context-tag sources
+  enter the shared acquisition-source graph before their stages may be marked bound.
 - **#79 aquaculture lifecycle: accepted.** Existing crab-pot collection and fish-pond
   output/request service cover only already-configured facilities. Placement, baiting,
   removal, stocking, native fish removal/emptying, and Golden Animal Cracker policy are

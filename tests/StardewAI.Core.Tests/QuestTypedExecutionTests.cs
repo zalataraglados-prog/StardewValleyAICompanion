@@ -147,7 +147,8 @@ public sealed class QuestTypedExecutionTests
             QuestObjectiveIndex = 0,
             QuestExpectedCurrentCount = 2,
             QuestExpectedTargetCount = 10,
-            QuestSlayTargetStep = true
+            QuestSlayTargetStep = true,
+            QuestAcquisitionTargetStep = true
         };
 
         var json = JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -160,6 +161,7 @@ public sealed class QuestTypedExecutionTests
         Assert.Equal(0, roundTrip.QuestObjectiveIndex);
         Assert.Equal(10, roundTrip.QuestExpectedTargetCount);
         Assert.True(roundTrip.QuestSlayTargetStep);
+        Assert.True(roundTrip.QuestAcquisitionTargetStep);
     }
 
     [Fact]

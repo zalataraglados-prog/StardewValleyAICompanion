@@ -1096,6 +1096,10 @@ static partial class Program
             ReadQueueParameterString(item, "quest_slay_target_step"),
             "true",
             StringComparison.OrdinalIgnoreCase);
+        executionRequest.QuestAcquisitionTargetStep = string.Equals(
+            ReadQueueParameterString(item, "quest_acquisition_target_step"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
         executionRequest.QuestDropBoxId = ReadQueueParameterString(item, "quest_drop_box_id");
         executionRequest.QuestDropBoxSlotIndex = ReadQueueParameterInt(item, "slot_index");
         executionRequest.QuestDropBoxQualifiedItemId = ReadQueueParameterString(item, "qualified_item_id");

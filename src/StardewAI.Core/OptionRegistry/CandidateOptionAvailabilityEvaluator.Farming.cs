@@ -522,6 +522,8 @@ namespace StardewAI.Core.OptionRegistry
                     var x = ReadInt(crop, "tile_x");
                     var y = ReadInt(crop, "tile_y");
                     var harvestItemId = ReadString(crop, "harvest_item_id");
+                    var harvestQualifiedItemId = ReadString(crop, "harvest_item_qualified_id");
+                    var harvestItemCategory = ReadInt(crop, "harvest_item_category");
                     var harvestMethod = ReadString(crop, "harvest_method");
                     var skillId = ReadString(crop, "harvest_experience_skill_id");
                     var skillMinimum = NullableReadInt(crop, "harvest_experience_on_success_min");
@@ -530,6 +532,8 @@ namespace StardewAI.Core.OptionRegistry
                     var skillStatus = ReadString(crop, "harvest_experience_projection_status");
                     var effect = "farm.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
+                        (!string.IsNullOrWhiteSpace(harvestQualifiedItemId) ? ";harvest_item_qualified_id=" + harvestQualifiedItemId : string.Empty) +
+                        ";harvest_item_category=" + harvestItemCategory +
                         (!string.IsNullOrWhiteSpace(harvestMethod) ? ";harvest_method=" + harvestMethod : string.Empty) +
                         (!string.IsNullOrWhiteSpace(skillId) ? ";skill_experience_skill_id=" + skillId : string.Empty) +
                         (skillMinimum.HasValue ? ";skill_experience_on_success_min=" + skillMinimum.Value : string.Empty) +
@@ -545,6 +549,9 @@ namespace StardewAI.Core.OptionRegistry
                         LocationId = "Farm",
                         TileX = x,
                         TileY = y,
+                        ItemId = harvestItemId,
+                        QualifiedItemId = harvestQualifiedItemId,
+                        Quantity = Math.Max(1, ReadInt(crop, "harvest_min_stack")),
                         ExpectedEffect = effect,
                         EstimatedTicks = 60,
                         EnergyCost = 0,
@@ -555,7 +562,11 @@ namespace StardewAI.Core.OptionRegistry
                             Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_condition", skillCondition),
-                            Parameter("skill_experience_projection_status", skillStatus)
+                            Parameter("skill_experience_projection_status", skillStatus),
+                            Parameter("harvest_method", harvestMethod),
+                            Parameter("harvest_item_qualified_id", harvestQualifiedItemId),
+                            Parameter("harvest_item_category", harvestItemCategory.ToString()),
+                            Parameter("harvest_context_tags_json", JsonSerializer.Serialize(ReadStringArray(crop, "harvest_context_tags")))
                         }
                     };
                 })

@@ -371,6 +371,14 @@ public sealed partial class ModEntry : Mod
         {
             return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), "harvest_method_mismatch");
         }
+        if (method != HarvestMethod.Grab && !string.IsNullOrWhiteSpace(request.QuestCandidateId))
+        {
+            return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), "quest_harvest_requires_grab_method");
+        }
+        if (!ValidateQuestItemHarvestTarget(request, crop, out var questRemainingBefore, out var questReason))
+        {
+            return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), questReason);
+        }
 
         if (method == HarvestMethod.Grab && !CanInventoryAcceptHarvest(crop))
         {
@@ -452,7 +460,7 @@ public sealed partial class ModEntry : Mod
             After = Game1.player.experiencePoints[Farmer.foragingSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
         });
 
-        return new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -475,6 +483,8 @@ public sealed partial class ModEntry : Mod
             BlockReasons = verified ? Array.Empty<string>() : new[] { method == HarvestMethod.Grab && !inventoryChanged ? "harvest_crop_inventory_did_not_change" : !harvestDebrisCreated ? "harvest_crop_debris_not_created" : "harvest_crop_post_state_mismatch" },
             ChangedFacts = verified ? changed.ToArray() : Array.Empty<SimulatedFactChange>()
         };
+        ApplyQuestItemHarvestFeedback(result, request, questRemainingBefore);
+        return result;
     }
 
     private TrainingExecutionResult ExecuteSetupGiantCropTarget(TrainingExecutionRequest request)

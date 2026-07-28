@@ -54,6 +54,8 @@ namespace StardewAI.Core.OptionRegistry
                     return BindExactFishingCandidate(snapshot, candidate);
                 case "slay_monsters":
                     return BindOrdinarySlayCandidates(snapshot, candidate, quest);
+                case "harvest_items":
+                    return BindOrdinaryItemHarvestCandidates(snapshot, candidate);
                 case "go_to_location":
                     return new[] { BindQuestLocationRoute(snapshot, candidate, candidate.RequiredTargetLocation) };
                 case "deliver_to_npc":
@@ -197,6 +199,58 @@ namespace StardewAI.Core.OptionRegistry
             return candidates.Length > 0
                 ? candidates
                 : new[] { BlockedQuestCandidate(snapshot, quest, "quest_required_fish_not_available_in_current_fishing_projection") };
+        }
+
+        private IEnumerable<EventCandidate> BindOrdinaryItemHarvestCandidates(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest)
+        {
+            if (string.IsNullOrWhiteSpace(quest.RequiredItemId))
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "quest_harvest_item_identity_missing") };
+            }
+
+            var candidates = HarvestCropCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => string.Equals(
+                    ReadParameter(candidate.Parameters, "harvest_method"),
+                    "Grab",
+                    StringComparison.OrdinalIgnoreCase))
+                .Where(candidate => QuestHarvestItemMatches(candidate, quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_acquisition_target_step", "true"),
+                        Parameter("quest_required_item_id", quest.RequiredItemId)
+                    }))
+                .ToArray();
+            return candidates.Length > 0
+                ? candidates
+                : new[]
+                {
+                    BlockedQuestCandidate(
+                        snapshot,
+                        quest,
+                        "quest_matching_grab_harvest_not_ready_in_current_farm_projection")
+                };
+        }
+
+        private static bool QuestHarvestItemMatches(EventCandidate candidate, string requiredItemId)
+        {
+            if (!requiredItemId.StartsWith("-", StringComparison.Ordinal))
+            {
+                return ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, requiredItemId);
+            }
+
+            return int.TryParse(requiredItemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out var requiredCategory) &&
+                int.TryParse(
+                    ReadParameter(candidate.Parameters, "harvest_item_category"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var candidateCategory) &&
+                candidateCategory == requiredCategory;
         }
 
         private IEnumerable<EventCandidate> BindSpecialOrderFishingCandidates(

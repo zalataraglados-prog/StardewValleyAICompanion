@@ -46,7 +46,9 @@ namespace StardewAI.Core.Training
 
             var harvestItemId = ParseValue(candidate.ExpectedEffect, "harvest_item_id=");
             var harvestMethod = ParseValue(candidate.ExpectedEffect, "harvest_method=");
-            var parameters = new List<SmallModelActionParameter>();
+            var parameters = candidate.Parameters
+                .Where(parameter => parameter.Name.StartsWith("quest_", StringComparison.Ordinal))
+                .ToList();
             if (!string.IsNullOrWhiteSpace(harvestItemId))
             {
                 parameters.Add(Parameter("harvest_item_id", harvestItemId));
