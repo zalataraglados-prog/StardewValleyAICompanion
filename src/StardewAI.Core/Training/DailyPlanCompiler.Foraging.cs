@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -32,6 +33,8 @@ namespace StardewAI.Core.Training
                 Parameter("harvest_experience_basis", ParseValue(candidate.ExpectedEffect, "harvest_experience_basis=")),
                 Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles="))
             };
+            parameters.AddRange(candidate.Parameters.Where(parameter =>
+                parameter.Name.StartsWith("quest_", StringComparison.Ordinal)));
             return new[]
             {
                 new SmallModelPlanStep

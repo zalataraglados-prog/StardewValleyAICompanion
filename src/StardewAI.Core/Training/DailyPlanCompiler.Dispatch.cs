@@ -221,6 +221,7 @@ namespace StardewAI.Core.Training
 
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
+                candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||
                 candidate.Kind == "mining_acquire_golden_scythe_plan_envelope" ||
                 candidate.Kind == "mining_obtain_skull_key_plan_envelope" ||
                 candidate.Kind == "volcano_reach_caldera_plan_envelope")

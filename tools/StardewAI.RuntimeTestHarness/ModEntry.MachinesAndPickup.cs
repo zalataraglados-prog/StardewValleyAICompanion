@@ -72,6 +72,12 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_mismatch"));
             return;
         }
+        var questReceiptReason = ValidateQuestResourceReceiptTarget(request, itemId);
+        if (questReceiptReason is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, questReceiptReason));
+            return;
+        }
         if (!Game1.player.couldInventoryAcceptThisItem(debris.item ?? ItemRegistry.Create(itemId, 1, debris.itemQuality)))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_inventory_cannot_accept_item"));
@@ -219,7 +225,7 @@ public sealed partial class ModEntry : Mod
         activePickupDebris = null;
         var request = active.Pending.Request;
         var inventoryAfter = InventoryStackSignature();
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -243,7 +249,9 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter },
                 new SimulatedFactChange { Path = "player.inventory.count[" + active.QualifiedItemId + "]", Before = active.ItemCountBefore.ToString(), After = itemCountAfter.ToString() }
             }
-        });
+        };
+        ApplyQuestResourceReceiptFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompletePickupDebrisBlocked(ActivePickupDebris active, string reason)

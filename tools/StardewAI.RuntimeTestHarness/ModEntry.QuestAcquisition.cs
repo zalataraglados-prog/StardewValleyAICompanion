@@ -19,6 +19,15 @@ public sealed partial class ModEntry
         {
             return true;
         }
+        if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal) &&
+            string.Equals(request.QuestRuntimeType, "SpecialOrder", StringComparison.Ordinal))
+        {
+            return ValidateSpecialOrderCollectCropTarget(
+                request,
+                crop,
+                out remainingBefore,
+                out reason);
+        }
         if (!request.QuestAcquisitionTargetStep ||
             !string.Equals(request.QuestFamily, "ordinary_quest", StringComparison.Ordinal) ||
             !string.Equals(request.QuestRuntimeType, "ItemHarvestQuest", StringComparison.Ordinal))
@@ -67,6 +76,12 @@ public sealed partial class ModEntry
     {
         if (string.IsNullOrWhiteSpace(request.QuestCandidateId))
         {
+            return;
+        }
+        if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal) &&
+            string.Equals(request.QuestRuntimeType, "SpecialOrder", StringComparison.Ordinal))
+        {
+            ApplySpecialOrderCollectCropFeedback(result, request, remainingBefore);
             return;
         }
 

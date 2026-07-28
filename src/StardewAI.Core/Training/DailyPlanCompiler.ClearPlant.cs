@@ -74,6 +74,8 @@ namespace StardewAI.Core.Training
                 }
             }
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
+            parameters.AddRange(candidate.Parameters.Where(parameter =>
+                parameter.Name.StartsWith("quest_", StringComparison.Ordinal)));
 
             steps.Add(
                 new SmallModelPlanStep

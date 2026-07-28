@@ -24,6 +24,10 @@ The implementation was checked against the matching Linux-server 1.6.15 decompil
 - `ItemHarvestQuest.OnItemReceived` accepts the exact qualified item ID or, when
   its target starts with `-`, the exact native item category. Its `Number` field
   is a remaining count and decreases by the native `numberAdded`.
+- `ResourceCollectionQuest.OnItemReceived` accepts only the exact qualified item
+  ID and increases `numberCollected` only when the item is actually received.
+- `CollectObjective` listens to `SpecialOrder.onItemCollected` and applies the
+  native comma-group/slash-alternative context-tag grammar to the received item.
 - `DonateObjective` uses the native drop-box `QuestContainerMenu` lifecycle. Direct
   mutation of `donatedItems` is therefore prohibited.
 - `LostItemQuest.OnWarped` creates the exact quest item at its declared map/tile as an
@@ -47,6 +51,8 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
 | ordinary item-harvest quest | current mature `Grab` crop whose qualified item ID or category matches the native target |
+| ordinary resource-collection quest | exact current spawned-object receipt, exact clearable wood/stone source, or rolling current-mine resource source/debris receipt |
+| special-order `CollectObjective` | current mature `Grab` crop whose native context tags match the objective |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
@@ -92,6 +98,13 @@ only when native harvest decreases `ItemHarvestQuest.Number` or completes the qu
 Scythe harvest remains a two-step harvest-then-debris-pickup path and is not credited on
 the harvest frame.
 
+Resource acquisition distinguishes source actions from receipt actions. Clearing an
+obstacle or breaking a mine stone may create the required debris, but cannot claim task
+progress. The next fresh snapshot must select the exact debris pickup; only native item
+receipt may increase the ordinary quest count. Current exact spawned objects are direct
+receipts. The special-order binding currently follows the same strict rule for mature
+`Grab` crops and verifies the native objective count after harvest.
+
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
 indicator. The actual interaction target is indexed from the current map's exact
@@ -105,13 +118,16 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 19 bound, 7 blocked, and 2 native observation-only stages.
+contain 21 bound, 5 blocked, and 2 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
-- ordinary craft, collect, construction, secret-item acquisition, accept,
+- ordinary craft, construction, secret-item acquisition, accept,
   and type-11 weeding stages;
-- special-order collect and Junimo Kart score objectives;
+- Junimo Kart score objectives;
+- acquisition families not yet attached to the bounded collect stages, including
+  scythe-created crop debris, fishing trash, ginger, bush harvests, giant crops,
+  monster drops, resource clumps, machine outputs, and modded sources;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
   rows;
@@ -123,11 +139,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused item-harvest filter: 3 passed;
-- full regression: Core 1,307 passed and Backend 95 passed;
-- full solution Release build: zero errors and five existing warnings emitted;
+- focused resource/collect filter: 3 passed;
+- full regression: Core 1,310 passed and Backend 95 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 19 bound, 7 blocked, and 2 observation-only;
+  differences, 28 stage rows with 21 bound, 5 blocked, and 2 observation-only;
 - the full knowledge build retains two pre-existing Grandpa method identity blockers,
   unrelated to the quest type scan;
+- serial full solution Release rebuild: zero errors and seven existing warnings emitted;
 - no live game mutation test was run for this slice.

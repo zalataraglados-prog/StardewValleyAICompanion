@@ -46,6 +46,12 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", SpawnedObjectObservedEffect(location, target), "collect_spawned_object_target_not_found_or_drifted"));
             return;
         }
+        var questReceiptReason = ValidateQuestResourceReceiptTarget(request, item.QualifiedItemId);
+        if (questReceiptReason is not null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", SpawnedObjectObservedEffect(location, target), questReceiptReason));
+            return;
+        }
         if (!AreAdjacent(stand, target) || !IsTileOnMap(location, stand) ||
             !IsTileWalkable(location, stand) || IsTileOccupiedByCharacter(location, stand))
         {
@@ -266,7 +272,7 @@ public sealed partial class ModEntry
         var reasons = verified
             ? new[] { "native_checkAction_removed_exact_spawned_object", "inventory_quantity_and_quality_match_projection", "skill_deltas_observed" }
             : new[] { "collect_spawned_object_projected_output_mismatch" };
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -301,7 +307,9 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.skills.foraging.experience", Before = active.ForagingExperienceBefore.ToString(CultureInfo.InvariantCulture), After = foragingExperienceAfter.ToString(CultureInfo.InvariantCulture) },
                 new SimulatedFactChange { Path = "player.skills.farming.experience", Before = active.FarmingExperienceBefore.ToString(CultureInfo.InvariantCulture), After = farmingExperienceAfter.ToString(CultureInfo.InvariantCulture) }
             }
-        });
+        };
+        ApplyQuestResourceReceiptFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteSpawnedObjectPickupBlocked(ActiveSpawnedObjectPickup active, string reason)

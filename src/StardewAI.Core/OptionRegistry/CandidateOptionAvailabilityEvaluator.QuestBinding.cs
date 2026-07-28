@@ -56,6 +56,8 @@ namespace StardewAI.Core.OptionRegistry
                     return BindOrdinarySlayCandidates(snapshot, candidate, quest);
                 case "harvest_items":
                     return BindOrdinaryItemHarvestCandidates(snapshot, candidate);
+                case "collect_resources":
+                    return BindOrdinaryResourceCollectionCandidates(snapshot, candidate);
                 case "go_to_location":
                     return new[] { BindQuestLocationRoute(snapshot, candidate, candidate.RequiredTargetLocation) };
                 case "deliver_to_npc":
@@ -161,6 +163,8 @@ namespace StardewAI.Core.OptionRegistry
                             fields.AcceptableContextTagSets,
                             Math.Max(1, candidate.RequiredTargetCount - candidate.CurrentProgressCount))
                     };
+                case "CollectObjective":
+                    return BindSpecialOrderCollectCandidates(snapshot, candidate, fields);
                 case "DonateObjective":
                     return new[]
                     {

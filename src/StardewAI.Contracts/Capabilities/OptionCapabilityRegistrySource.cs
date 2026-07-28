@@ -400,6 +400,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("interact_endpoint"), SupportedCandidate("load_machine_input_tile"),
                 SupportedCandidate("name_hatched_animal"),
                 SupportedCandidate("mining_acquire_golden_scythe_plan_envelope"),
+                SupportedCandidate("mining_collect_quest_resource_plan_envelope"),
                 SupportedCandidate("mining_obtain_skull_key_plan_envelope"),
                 SupportedCandidate("mining_reach_depth_plan_envelope"),
                 SupportedCandidate("mining_slay_monsters_plan_envelope"), SupportedCandidate("pan_ore_spot"),

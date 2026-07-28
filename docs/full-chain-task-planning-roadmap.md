@@ -38,6 +38,12 @@ The implementation chain is:
 
 - **Quest-bound named-monster search** - Ordinary `SlayMonsterQuest` and vanilla special-order `SlayObjective` reuse the existing rolling MineShaft planner and native combat executors. Selection reproduces `Monster.Name.Contains` exactly, including quest 15's Slime/Jelly/Sludge fallback. Target-absent floors continue through existing opening, descent, recovery, and deadline exit primitives; compiler/runtime revalidate task identity, progress counters, mine family, live monster identity, and post-kill task progress. Unknown modded slay-order mine families remain fail closed.
 - **Quest-bound item harvest** - `ItemHarvestQuest` reuses the mature-crop executor for exact qualified-ID or native-category `Grab` harvests. Compiler and runtime rebind the remaining count and target crop; scythe debris remains a separate acquisition step instead of receiving false progress credit.
+- **Quest-bound resource receipt** - `ResourceCollectionQuest` now separates exact
+  source work from native item receipt: clearable wood/stone and mine nodes may
+  produce the target, while spawned-object and mine-debris pickup are the only
+  steps allowed to claim progress. `CollectObjective` currently binds exact
+  context-tag-matched mature `Grab` crops. Additional native acquisition families
+  remain explicit graph expansion work rather than implicit generic collection.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)
 
@@ -46,10 +52,11 @@ checked against the current registry, implementation, and local 1.6.15 decompile
 
 - **#20 quest lifecycle: accepted as the governing contract, not as an implementation
   claim.** Objective identity, accepted-after provenance, native deadline, terminal
-  interaction, settlement, and recovery must remain explicit. The current
-  `ItemHarvestQuest` binding closes only mature `Grab` crops; scythe debris,
-  non-crop `ResourceCollectionQuest` sources, and special-order context-tag sources
-  enter the shared acquisition-source graph before their stages may be marked bound.
+  interaction, settlement, and recovery must remain explicit. Current typed bindings
+  cover mature `Grab` item harvests, exact spawned-object/resource-debris receipts,
+  bounded clear/mine source steps, and matching `CollectObjective` crops. Scythe
+  debris and the remaining non-crop source families must enter the same acquisition
+  graph before those concrete paths may claim coverage.
 - **#79 aquaculture lifecycle: accepted.** Existing crab-pot collection and fish-pond
   output/request service cover only already-configured facilities. Placement, baiting,
   removal, stocking, native fish removal/emptying, and Golden Animal Cracker policy are

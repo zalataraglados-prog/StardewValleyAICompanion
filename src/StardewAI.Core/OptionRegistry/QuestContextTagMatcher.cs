@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
@@ -32,7 +33,20 @@ namespace StardewAI.Core.OptionRegistry
                         .Select(value => value.GetString() ?? string.Empty)
                         .Where(value => !string.IsNullOrWhiteSpace(value))
                         .ToHashSet(StringComparer.Ordinal)
-                    : new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+                    : new HashSet<string>(StringComparer.Ordinal);
+            return Matches(tags, contextTagSets);
+        }
+
+        public static bool Matches(IEnumerable<string> itemContextTags, string[] contextTagSets)
+        {
+            if (contextTagSets is null || contextTagSets.Length == 0)
+            {
+                return false;
+            }
+
+            var tags = itemContextTags
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .ToHashSet(StringComparer.Ordinal);
             foreach (var set in contextTagSets.Where(value => !string.IsNullOrWhiteSpace(value)))
             {
                 var allGroupsMatch = true;
