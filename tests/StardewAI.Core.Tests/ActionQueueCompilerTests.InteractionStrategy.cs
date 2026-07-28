@@ -870,6 +870,9 @@ public sealed partial class ActionQueueCompilerTests
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
+          "current_location": {
+            "debris": {"value":[{"debris_index":0,"debris_type":"OBJECT","chunk_type":0,"item_id":"(O)388","qualified_item_id":"(O)388","item_quality":0,"chunk_count":1,"chunks":[{"chunk_index":0,"tile_x":65,"tile_y":15,"pixel_x":4160,"pixel_y":960}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "farm": {
             "debris": {"value":[{"debris_index":0,"debris_type":"OBJECT","chunk_type":0,"item_id":"(O)388","qualified_item_id":"(O)388","item_quality":0,"chunk_count":1,"chunks":[{"chunk_index":0,"tile_x":65,"tile_y":15,"pixel_x":4160,"pixel_y":960}]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }

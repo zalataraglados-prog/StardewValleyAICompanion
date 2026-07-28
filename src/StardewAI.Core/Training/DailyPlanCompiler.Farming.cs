@@ -186,9 +186,9 @@ namespace StardewAI.Core.Training
                     TargetTileX = candidate.TileX,
                     TargetTileY = candidate.TileY,
                     EstimatedMinutes = 1,
-                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "farm.debris.target_exists=true", "player.inventory_can_accept=true" },
+                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "current_location.debris.target_exists=true", "player.inventory_can_accept=true" },
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
-                    SafetyConstraints = new[] { "target_debris_from_transparent_farm_state", "runtime_verified_debris_collect" },
+                    SafetyConstraints = new[] { "target_debris_from_transparent_current_location_state", "runtime_verified_debris_collect" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = parameters.ToArray()
                 }

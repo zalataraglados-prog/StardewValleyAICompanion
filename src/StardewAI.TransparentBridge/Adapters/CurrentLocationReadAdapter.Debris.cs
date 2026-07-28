@@ -22,9 +22,7 @@ public sealed partial class CurrentLocationReadAdapter
                 time_since_done_bouncing = debris.timeSinceDoneBouncing,
                 is_sinking = debris.isSinking.Value,
                 is_essential_item = debris.isEssentialItem(),
-                pickup_executor_status = location.IsFarm
-                    ? "covered_by_farm_debris_pickup"
-                    : "transparent_current_location_pickup_executor_pending",
+                pickup_executor_status = "covered_by_current_location_debris_pickup",
                 chunks = debris.Chunks
                     .Select((chunk, chunkIndex) => new
                     {

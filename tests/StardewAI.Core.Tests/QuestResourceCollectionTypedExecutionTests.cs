@@ -290,7 +290,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void ResourceCollectionQuestTreatsFarmBushAsSourceNotReceipt()
+    public void ResourceCollectionQuestTreatsCurrentLocationBushAsSourceNotReceipt()
     {
         var snapshot = ResourceCollectionSnapshot(
             """
@@ -311,10 +311,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             "locations":{
-              "collision_grid":{"value":{"location_id":"Farm","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "collision_grid":{"value":{"location_id":"IslandWest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
               "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
-            """);
+            """,
+            locationId: "IslandWest");
 
         var availability = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
@@ -333,6 +334,98 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
         Assert.Equal("pending", queue.Status);
         Assert.Equal("executor.harvest_bush", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestBindsCurrentLocationDebrisOutsideFarm()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "current_location":{
+              "debris":{"value":[{
+                "debris_index":0,"item_id":"829","qualified_item_id":"(O)829",
+                "item_quality":0,"chunk_count":1,
+                "item":{"item_id":"829","qualified_item_id":"(O)829","context_tags":["id_o_829"]},
+                "chunks":[{"chunk_index":0,"tile_x":12,"tile_y":10}]
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "map":{"value":{"location_id":"IslandWest","width":100,"height":100},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"IslandWest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            locationId: "IslandWest",
+            requiredItemId: "(O)829");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("pickup_debris_item", candidate.Kind);
+        Assert.Equal("IslandWest", candidate.LocationId);
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items.Where(row => row.OptionId == "executor.pickup_debris"));
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", queue.Items.SelectMany(queueItem => queueItem.BlockingReasons)));
+        Assert.Empty(item.BlockingReasons);
+        var step = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("IslandWest(12,10):debris_index=0", step.Target);
+        Assert.Contains(
+            "current_location.debris[0].chunk_count_decreases_or_removed=true",
+            step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestTreatsGingerHarvestAsSourceNotReceipt()
+    {
+        var snapshot = ResourceCollectionSnapshot(
+            """
+            "current_location":{
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "terrain_features":{"value":[{
+                "tile_x":12,"tile_y":10,"type":"StardewValley.TerrainFeatures.HoeDirt",
+                "hoe_dirt_state":1,"has_crop":true,"crop_is_forage":true,
+                "forage_crop_id":"2","is_ginger":true,"ginger_harvest_status":"ready",
+                "ginger_required_tool_kind":"Hoe","ginger_tool_slot_index":3,
+                "ginger_energy_cost":1.4,"ginger_output_qualified_item_id":"(O)829",
+                "ginger_output_quality":0,"ginger_output_quantity_min":1,
+                "ginger_output_quantity_max":1,
+                "ginger_foraging_experience_on_success_min":7,
+                "ginger_foraging_experience_on_success_max":7,
+                "ginger_hoe_dirt_state_expected_after":0,
+                "ginger_projection_status":"exact_from_native_crop_hit_with_hoe"
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            "locations":{
+              "collision_grid":{"value":{"location_id":"IslandWest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """,
+            locationId: "IslandWest",
+            requiredItemId: "(O)829");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("harvest_ginger", candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_source_step" && parameter.Value == "true");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_target_step" && parameter.Value == "false");
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.harvest_ginger", item.OptionId);
         Assert.Empty(item.BlockingReasons);
     }
 
@@ -361,6 +454,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               "route_action_branch_coverage":{"value":{"rows":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             "current_location":{
+              "debris":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
               "map":{"value":{"location_id":"Farm","width":100,"height":100},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             """;
@@ -379,6 +473,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             "current_location":{
+              "debris":{"value":[{
+                "debris_index":0,"item_id":"390","qualified_item_id":"(O)390",
+                "item_quality":0,"chunk_count":1,
+                "item":{"item_id":"390","qualified_item_id":"(O)390","context_tags":["category_resource","id_o_390"]},
+                "chunks":[{"chunk_index":0,"tile_x":20,"tile_y":20}]
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
               "map":{"value":{"location_id":"Farm","width":100,"height":100},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             },
             "locations":{
@@ -429,7 +529,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
     private static StardewAI.Contracts.State.SnapshotEnvelope ResourceCollectionSnapshot(
         string domainState,
-        string locationId = "Farm")
+        string locationId = "Farm",
+        string requiredItemId = "(O)390")
     {
         return Snapshot(
             """
@@ -449,7 +550,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                   "id":"96","quest_type":10,"runtime_type":"ResourceCollectionQuest",
                   "accepted":true,"completed":false,
                   "per_type_fields":{
-                    "available":true,"item_id":"(O)390","target_npc":"Robin",
+                    "available":true,"item_id":"REQUIRED_ITEM_ID","target_npc":"Robin",
                     "number_collected":2,"number_required":10,
                     "target_count":10,"current_count":2
                   }
@@ -468,6 +569,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             }
             """
             .Replace("LOCATION_ID", locationId, StringComparison.Ordinal)
+            .Replace("REQUIRED_ITEM_ID", requiredItemId, StringComparison.Ordinal)
             .Replace("DOMAIN_STATE", domainState, StringComparison.Ordinal));
     }
 }

@@ -404,7 +404,6 @@ namespace StardewAI.Core.Execution
 
             var targetLocation = ReadParameter(action, "target_location");
             if (!string.IsNullOrWhiteSpace(targetLocation) &&
-                !string.Equals(targetLocation, "Farm", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase))
             {
                 reasons.Add("pickup_debris_target_location_mismatch");
@@ -413,10 +412,15 @@ namespace StardewAI.Core.Execution
             JsonElement? targetDebris = null;
             if (targetX.HasValue && targetY.HasValue)
             {
-                targetDebris = DebrisAt(snapshot, targetX.Value, targetY.Value, ReadIntParameter(action, "debris_index"));
+                targetDebris = DebrisAt(
+                    snapshot,
+                    targetLocation,
+                    targetX.Value,
+                    targetY.Value,
+                    ReadIntParameter(action, "debris_index"));
                 if (!targetDebris.HasValue)
                 {
-                    reasons.Add("pickup_debris_not_verified_by_transparent_farm_state");
+                    reasons.Add("pickup_debris_not_verified_by_transparent_current_location_state");
                 }
             }
 
@@ -429,9 +433,26 @@ namespace StardewAI.Core.Execution
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
         }
 
-        private static JsonElement? DebrisAt(SnapshotEnvelope snapshot, int targetX, int targetY, int? debrisIndex)
+        private static JsonElement? DebrisAt(
+            SnapshotEnvelope snapshot,
+            string? targetLocation,
+            int targetX,
+            int targetY,
+            int? debrisIndex)
         {
-            var debris = ReadStateFieldValue(snapshot, "farm", "debris");
+            var playerLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            var effectiveTargetLocation = string.IsNullOrWhiteSpace(targetLocation)
+                ? playerLocation
+                : targetLocation;
+            var debris = string.IsNullOrWhiteSpace(effectiveTargetLocation) ||
+                string.Equals(effectiveTargetLocation, playerLocation, StringComparison.OrdinalIgnoreCase)
+                    ? ReadStateFieldValue(snapshot, "current_location", "debris")
+                    : null;
+            if ((!debris.HasValue || debris.Value.ValueKind != JsonValueKind.Array) &&
+                string.Equals(effectiveTargetLocation, "Farm", StringComparison.OrdinalIgnoreCase))
+            {
+                debris = ReadStateFieldValue(snapshot, "farm", "debris");
+            }
             if (!debris.HasValue || debris.Value.ValueKind != JsonValueKind.Array)
             {
                 return null;

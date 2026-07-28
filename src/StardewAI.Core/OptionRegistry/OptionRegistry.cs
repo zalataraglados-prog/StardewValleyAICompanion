@@ -616,7 +616,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.inventory", "player.inventory_capacity", "farm.debris", "menus.active_menu" },
+                new[] { "player.location_id", "player.inventory", "player.inventory_capacity", "current_location.debris", "menus.active_menu" },
                 new[] { "collectible debris removed and inventory updated" },
                 new[] { "block_unverified_debris", "block_inventory_full_or_unverified_item", "block_menu_unsafe_pickup" }));
 

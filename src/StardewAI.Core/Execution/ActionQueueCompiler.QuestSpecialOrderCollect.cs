@@ -114,6 +114,7 @@ namespace StardewAI.Core.Execution
             {
                 var debris = DebrisAt(
                     snapshot,
+                    ReadParameter(action, "target_location"),
                     targetX.Value,
                     targetY.Value,
                     ReadIntParameter(action, "debris_index"));

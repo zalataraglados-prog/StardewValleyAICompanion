@@ -189,7 +189,9 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static CompiledActionStep[] CompilePickupDebrisStep(SmallModelAction action)
+        private static CompiledActionStep[] CompilePickupDebrisStep(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
         {
             var x = ReadIntParameter(action, "target_tile_x");
             var y = ReadIntParameter(action, "target_tile_y");
@@ -200,12 +202,21 @@ namespace StardewAI.Core.Execution
 
             var debrisIndex = ReadIntParameter(action, "debris_index");
             var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
+            var targetLocation = ReadParameter(action, "target_location");
+            if (string.IsNullOrWhiteSpace(targetLocation))
+            {
+                targetLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            }
+            if (string.IsNullOrWhiteSpace(targetLocation))
+            {
+                targetLocation = "current_location";
+            }
             return new[]
             {
                 Step(
                     "pickup_debris",
-                    "Farm(" + x.Value + "," + y.Value + "):" + (debrisIndex.HasValue ? "debris_index=" + debrisIndex.Value : qualifiedItemId),
-                    "farm.debris[" + (debrisIndex.HasValue ? debrisIndex.Value.ToString() : x.Value + "," + y.Value) + "].chunk_count_decreases_or_removed=true;player.inventory.updated",
+                    targetLocation + "(" + x.Value + "," + y.Value + "):" + (debrisIndex.HasValue ? "debris_index=" + debrisIndex.Value : qualifiedItemId),
+                    "current_location.debris[" + (debrisIndex.HasValue ? debrisIndex.Value.ToString() : x.Value + "," + y.Value) + "].chunk_count_decreases_or_removed=true;player.inventory.updated",
                     30)
             };
         }

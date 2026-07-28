@@ -779,7 +779,13 @@ namespace StardewAI.Core.OptionRegistry
 
         private static EventCandidate[] PickupDebrisCandidates(SnapshotEnvelope snapshot)
         {
-            var debris = ReadStateFieldValue(snapshot, "farm", "debris");
+            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
+            var debris = ReadStateFieldValue(snapshot, "current_location", "debris");
+            if ((!debris.HasValue || debris.Value.ValueKind != JsonValueKind.Array) &&
+                string.Equals(locationId, "Farm", StringComparison.OrdinalIgnoreCase))
+            {
+                debris = ReadStateFieldValue(snapshot, "farm", "debris");
+            }
             if (!debris.HasValue || debris.Value.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<EventCandidate>();
@@ -820,13 +826,13 @@ namespace StardewAI.Core.OptionRegistry
                     var distance = tile is null ? 0 : Math.Abs(playerX - x) + Math.Abs(playerY - y);
                     return new EventCandidate
                     {
-                        CandidateId = "pickup-debris:Farm:" + index + ":" + x + "," + y + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
+                        CandidateId = "pickup-debris:" + locationId + ":" + index + ":" + x + "," + y + ":" + (string.IsNullOrWhiteSpace(qualifiedItemId) ? itemId : qualifiedItemId),
                         Kind = "pickup_debris_item",
                         Available = blockReasons.Count == 0,
-                        LocationId = "Farm",
+                        LocationId = locationId,
                         TileX = tile?.X,
                         TileY = tile?.Y,
-                        ExpectedEffect = "farm.debris[" + index + "].chunk_count_decreases_or_removed=true" +
+                        ExpectedEffect = "current_location.debris[" + index + "].chunk_count_decreases_or_removed=true" +
                             (!string.IsNullOrWhiteSpace(qualifiedItemId) ? ";qualified_item_id=" + qualifiedItemId : string.Empty) +
                             (!string.IsNullOrWhiteSpace(itemId) ? ";item_id=" + itemId : string.Empty) +
                             ";debris_index=" + index +
@@ -836,7 +842,7 @@ namespace StardewAI.Core.OptionRegistry
                         Quantity = Math.Max(1, ReadInt(item, "chunk_count")),
                         EstimatedTicks = Math.Max(60, distance * 60 + 30),
                         EnergyCost = 0,
-                        AvailabilityClass = "transparent_debris_runtime_collect",
+                        AvailabilityClass = "transparent_current_location_debris_runtime_collect",
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                         Parameters = new[]
                         {

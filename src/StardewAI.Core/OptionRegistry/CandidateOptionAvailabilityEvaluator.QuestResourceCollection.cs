@@ -36,7 +36,7 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "true"),
                         Parameter("quest_acquisition_source_step", "false")
                     }));
-            var farmDebrisReceipts = PickupDebrisCandidates(snapshot)
+            var currentDebrisReceipts = PickupDebrisCandidates(snapshot)
                 .Where(candidate => candidate.Available)
                 .Where(candidate => ItemIdentityMatches(
                     candidate.ItemId,
@@ -63,26 +63,36 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "false"),
                         Parameter("quest_acquisition_source_step", "true")
                     }));
-            var bushSourceSteps = string.Equals(
-                    ReadStateFieldString(snapshot, "player", "location_id"),
-                    "Farm",
-                    StringComparison.OrdinalIgnoreCase)
-                ? BushHarvestCandidates(snapshot)
-                    .Where(candidate => candidate.Available)
-                    .Where(candidate => ItemIdentityMatches(
-                        candidate.ItemId,
-                        candidate.QualifiedItemId,
-                        quest.RequiredItemId))
-                    .Select(candidate => AttachQuest(
-                        candidate,
-                        quest,
-                        new[]
-                        {
-                            Parameter("quest_required_item_id", quest.RequiredItemId),
-                            Parameter("quest_acquisition_target_step", "false"),
-                            Parameter("quest_acquisition_source_step", "true")
-                        }))
-                : Enumerable.Empty<EventCandidate>();
+            var bushSourceSteps = BushHarvestCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ItemIdentityMatches(
+                    candidate.ItemId,
+                    candidate.QualifiedItemId,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
+            var gingerSourceSteps = GingerHarvestCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ItemIdentityMatches(
+                    candidate.ItemId,
+                    candidate.QualifiedItemId,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
             var machineReceipts = MachineServiceCandidates(snapshot, commitmentLedger: null)
                 .Where(candidate => candidate.Kind == "collect_machine_output_tile" && candidate.Available)
                 .Where(candidate => ItemIdentityMatches(
@@ -102,9 +112,10 @@ namespace StardewAI.Core.OptionRegistry
                 .Build(snapshot, QualifyQuestObjectId(quest.RequiredItemId))
                 .Select(candidate => AttachQuest(candidate, quest));
             var candidates = directReceipts
-                .Concat(farmDebrisReceipts)
+                .Concat(currentDebrisReceipts)
                 .Concat(sourceSteps)
                 .Concat(bushSourceSteps)
+                .Concat(gingerSourceSteps)
                 .Concat(machineReceipts)
                 .Concat(miningSteps)
                 .ToArray();

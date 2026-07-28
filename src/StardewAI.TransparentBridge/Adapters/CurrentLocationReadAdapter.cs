@@ -240,7 +240,10 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 qualified_item_id = item.QualifiedItemId,
                 display_name = item.DisplayName,
                 stack = item.Stack,
-                quality = item.Quality
+                quality = item.Quality,
+                context_tags = item.GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray()
             };
     }
 

@@ -344,7 +344,7 @@ public sealed partial class ActionQueueCompilerTests
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("pickup_debris", step.StepType);
         Assert.Equal("Farm(65,15):debris_index=0", step.Target);
-        Assert.Contains("farm.debris[0].chunk_count_decreases_or_removed=true", step.ExpectedEffect);
+        Assert.Contains("current_location.debris[0].chunk_count_decreases_or_removed=true", step.ExpectedEffect);
     }
 
     [Fact]

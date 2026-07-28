@@ -33,7 +33,7 @@ namespace StardewAI.Core.Execution
                 ["executor.plant_seed"] = (action, _) => CompilePlantSeedStep(action),
                 ["executor.harvest_crop"] = (action, _) => CompileHarvestCropStep(action),
                 ["executor.harvest_giant_crop"] = (action, _) => CompileHarvestGiantCropStep(action),
-                ["executor.pickup_debris"] = (action, _) => CompilePickupDebrisStep(action),
+                ["executor.pickup_debris"] = CompilePickupDebrisStep,
                 ["executor.collect_spawned_object"] = (action, _) => CompileCollectSpawnedObjectStep(action),
                 ["executor.harvest_ginger"] = (action, _) => CompileHarvestGingerStep(action),
                 ["executor.harvest_bush"] = (action, _) => CompileHarvestBushStep(action),

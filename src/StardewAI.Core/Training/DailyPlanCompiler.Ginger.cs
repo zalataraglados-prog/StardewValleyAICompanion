@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -43,7 +44,8 @@ namespace StardewAI.Core.Training
                         Parameter("expected_hoe_dirt_state_after", ParseValue(candidate.ExpectedEffect, "expected_hoe_dirt_state_after=")),
                         Parameter("ginger_projection_status", ParseValue(candidate.ExpectedEffect, "ginger_projection_status=")),
                         Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles="))
-                    }
+                    }.Concat(candidate.Parameters.Where(parameter =>
+                        parameter.Name.StartsWith("quest_", StringComparison.Ordinal))).ToArray()
                 }
             };
         }

@@ -445,7 +445,7 @@ public sealed class DailyPlanCompilerTests
         Assert.Equal("Farm", plan.Steps[1].TargetLocation);
         Assert.Equal(65, plan.Steps[1].TargetTileX);
         Assert.Equal(15, plan.Steps[1].TargetTileY);
-        Assert.Contains(plan.Steps[1].Preconditions, condition => condition == "farm.debris.target_exists=true");
+        Assert.Contains(plan.Steps[1].Preconditions, condition => condition == "current_location.debris.target_exists=true");
         Assert.Contains(plan.Steps[1].SafetyConstraints, constraint => constraint == "runtime_verified_debris_collect");
         Assert.Contains(plan.Steps[1].Parameters, parameter =>
             parameter.Name == "debris_index" && parameter.Value == "0");
