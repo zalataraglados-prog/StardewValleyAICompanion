@@ -48,11 +48,27 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "false"),
                         Parameter("quest_acquisition_source_step", "true")
                     }));
+            var machineReceipts = MachineServiceCandidates(snapshot, commitmentLedger: null)
+                .Where(candidate => candidate.Kind == "collect_machine_output_tile" && candidate.Available)
+                .Where(candidate => ItemIdentityMatches(
+                    candidate.ItemId,
+                    candidate.QualifiedItemId,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "true"),
+                        Parameter("quest_acquisition_source_step", "false")
+                    }));
             var miningSteps = MiningResourceCollectionCandidateBuilder
                 .Build(snapshot, QualifyQuestObjectId(quest.RequiredItemId))
                 .Select(candidate => AttachQuest(candidate, quest));
             var candidates = directReceipts
                 .Concat(sourceSteps)
+                .Concat(machineReceipts)
                 .Concat(miningSteps)
                 .ToArray();
             return candidates.Length > 0
@@ -137,6 +153,25 @@ namespace StardewAI.Core.OptionRegistry
                             "quest_acceptable_context_tag_sets_json",
                             JsonSerializer.Serialize(fields.AcceptableContextTagSets))
                     }))
+                .Concat(MachineServiceCandidates(snapshot, commitmentLedger: null)
+                    .Where(candidate =>
+                        candidate.Kind == "collect_machine_output_tile" &&
+                        candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "output_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "true"),
+                            Parameter("quest_acquisition_source_step", "false"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
                 .ToArray();
             return candidates.Length > 0
                 ? candidates

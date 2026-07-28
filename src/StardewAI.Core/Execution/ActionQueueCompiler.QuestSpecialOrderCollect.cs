@@ -15,7 +15,7 @@ namespace StardewAI.Core.Execution
             SmallModelAction action,
             SnapshotEnvelope snapshot)
         {
-            if (action.OptionId != "executor.harvest_crop" ||
+            if (action.OptionId is not ("executor.harvest_crop" or "executor.collect_machine_output") ||
                 !string.Equals(
                     ReadParameter(action, "quest_next_action"),
                     "collect_items",
@@ -50,20 +50,17 @@ namespace StardewAI.Core.Execution
 
             var objective = ReadSpecialOrderCollectObjective(snapshot, questKey, objectiveIndex.Value);
             var tagSets = objective?.PerTypeFields?.AcceptableContextTagSets ?? Array.Empty<string>();
-            var targetX = ReadIntParameter(action, "target_tile_x");
-            var targetY = ReadIntParameter(action, "target_tile_y");
-            var crop = targetX.HasValue && targetY.HasValue
-                ? HarvestCropAt(snapshot, targetX.Value, targetY.Value)
-                : null;
             if (objective is null ||
-                !string.Equals(objective.RuntimeType, "CollectObjective", StringComparison.Ordinal) ||
-                crop is null ||
-                !string.Equals(ReadString(crop.Value, "harvest_method"), "Grab", StringComparison.OrdinalIgnoreCase) ||
-                !QuestContextTagMatcher.Matches(
-                    ReadQuestStringArray(crop.Value, "harvest_context_tags"),
-                    tagSets))
+                !string.Equals(objective.RuntimeType, "CollectObjective", StringComparison.Ordinal))
             {
-                reasons.Add("special_order_collect_crop_or_context_tags_drifted");
+                reasons.Add("special_order_collect_objective_drifted");
+            }
+            else if (!SpecialOrderCollectActionTargetMatches(
+                action,
+                snapshot,
+                tagSets))
+            {
+                reasons.Add("special_order_collect_item_context_tags_drifted");
             }
             if (!string.Equals(
                     ReadParameter(action, "quest_acquisition_target_step"),
@@ -84,6 +81,47 @@ namespace StardewAI.Core.Execution
                 reasons.Add("special_order_collect_context_tag_sets_parameter_drifted");
             }
             return reasons.ToArray();
+        }
+
+        private static bool SpecialOrderCollectActionTargetMatches(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string[] tagSets)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                return false;
+            }
+
+            if (action.OptionId == "executor.harvest_crop")
+            {
+                var crop = HarvestCropAt(snapshot, targetX.Value, targetY.Value);
+                return crop is not null &&
+                    string.Equals(
+                        ReadString(crop.Value, "harvest_method"),
+                        "Grab",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    QuestContextTagMatcher.Matches(
+                        ReadQuestStringArray(crop.Value, "harvest_context_tags"),
+                        tagSets);
+            }
+
+            var machine = MachineAt(
+                snapshot,
+                ReadParameter(action, "target_location"),
+                targetX.Value,
+                targetY.Value);
+            if (machine is null ||
+                !machine.Value.TryGetProperty("held_item", out var heldItem) ||
+                heldItem.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+            return QuestContextTagMatcher.Matches(
+                ReadQuestStringArray(heldItem, "context_tags"),
+                tagSets);
         }
 
         private static SpecialOrderObjectiveProgressRef? ReadSpecialOrderCollectObjective(

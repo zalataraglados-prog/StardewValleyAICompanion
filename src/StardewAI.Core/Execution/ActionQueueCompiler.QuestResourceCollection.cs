@@ -75,7 +75,10 @@ namespace StardewAI.Core.Execution
 
             if (targetStep)
             {
-                if (action.OptionId is not ("executor.pickup_debris" or "executor.collect_spawned_object") ||
+                if (action.OptionId is not (
+                        "executor.pickup_debris" or
+                        "executor.collect_spawned_object" or
+                        "executor.collect_machine_output") ||
                     !string.Equals(
                         ReadParameter(action, "qualified_item_id"),
                         qualifiedRequired,

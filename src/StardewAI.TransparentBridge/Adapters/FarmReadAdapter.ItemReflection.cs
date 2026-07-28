@@ -26,6 +26,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 stack = item.Stack,
                 quality = item.Quality,
                 sale_price = item.salePrice(),
+                context_tags = item.GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray(),
                 special_state =
                     ReadItemSpecialState(item)
             };

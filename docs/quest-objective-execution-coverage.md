@@ -51,8 +51,8 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
 | ordinary item-harvest quest | current mature `Grab` crop whose qualified item ID or category matches the native target |
-| ordinary resource-collection quest | exact current spawned-object receipt, exact clearable wood/stone source, or rolling current-mine resource source/debris receipt |
-| special-order `CollectObjective` | current mature `Grab` crop whose native context tags match the objective |
+| ordinary resource-collection quest | exact current spawned-object or ready-machine receipt, exact clearable wood/stone source, or rolling current-mine resource source/debris receipt |
+| special-order `CollectObjective` | current mature `Grab` crop or ready machine output whose native context tags match the objective |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
@@ -104,6 +104,9 @@ progress. The next fresh snapshot must select the exact debris pickup; only nati
 receipt may increase the ordinary quest count. Current exact spawned objects are direct
 receipts. The special-order binding currently follows the same strict rule for mature
 `Grab` crops and verifies the native objective count after harvest.
+Ready machine outputs expose their exact native context tags, revalidate the live held
+item before execution, and verify the ordinary quest or special-order count only after
+native machine collection updates the inventory.
 
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
@@ -127,7 +130,7 @@ The following objective bindings remain fail-closed:
 - Junimo Kart score objectives;
 - acquisition families not yet attached to the bounded collect stages, including
   scythe-created crop debris, fishing trash, ginger, bush harvests, giant crops,
-  monster drops, resource clumps, machine outputs, and modded sources;
+  monster drops, resource clumps, and modded sources;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
   rows;
@@ -139,8 +142,8 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused resource/collect filter: 3 passed;
-- full regression: Core 1,310 passed and Backend 95 passed;
+- focused resource/collect filter: 5 passed;
+- full regression: Core 1,312 passed and Backend 95 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
   differences, 28 stage rows with 21 bound, 5 blocked, and 2 observation-only;
 - the full knowledge build retains two pre-existing Grandpa method identity blockers,

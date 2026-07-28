@@ -71,6 +71,8 @@ namespace StardewAI.Core.Training
                     parameters.Add(Parameter(name, value));
                 }
             }
+            parameters.AddRange(candidate.Parameters.Where(parameter =>
+                parameter.Name.StartsWith("quest_", StringComparison.Ordinal)));
 
             steps.Add(new SmallModelPlanStep
             {

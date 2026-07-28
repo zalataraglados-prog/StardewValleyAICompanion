@@ -77,6 +77,9 @@ namespace StardewAI.Core.OptionRegistry
                         ? Math.Max(0, ReadInt(heldItem, "sale_price"))
                         : 0;
                     var outputTotalValue = outputSalePrice * outputStack;
+                    var outputContextTags = heldItem.ValueKind == JsonValueKind.Object
+                        ? ReadStringArray(heldItem, "context_tags")
+                        : Array.Empty<string>();
                     var experienceProjectionStatus = ReadString(machine, "harvest_experience_projection_status");
                     var experienceDeltasJson = ReadString(machine, "harvest_experience_deltas_json");
                     var masteryExperienceDelta = ReadIntOptional(machine, "harvest_mastery_experience_delta");
@@ -147,7 +150,8 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("expected_mastery_experience_delta", (masteryExperienceDelta ?? 0).ToString()),
                         Parameter("skill_experience_projection_status", experienceProjectionStatus),
                         Parameter("skill_experience_condition", "native_machine_output_collection"),
-                        Parameter("machine_location_id", machineLocation)
+                        Parameter("machine_location_id", machineLocation),
+                        Parameter("output_context_tags_json", JsonSerializer.Serialize(outputContextTags))
                     };
                     if (positiveExperienceDeltas.Length == 1)
                     {

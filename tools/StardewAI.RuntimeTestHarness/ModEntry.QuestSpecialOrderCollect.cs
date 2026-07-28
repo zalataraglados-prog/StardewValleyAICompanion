@@ -13,8 +13,28 @@ public sealed partial class ModEntry
         out int? currentBefore,
         out string reason)
     {
+        var harvestQualifiedId = ItemRegistry.QualifyItemId(crop.indexOfHarvest.Value) ??
+            "(O)" + crop.indexOfHarvest.Value;
+        return ValidateSpecialOrderCollectItemTarget(
+            request,
+            ItemRegistry.Create(harvestQualifiedId),
+            out currentBefore,
+            out reason);
+    }
+
+    private static bool ValidateSpecialOrderCollectItemTarget(
+        TrainingExecutionRequest request,
+        Item item,
+        out int? currentBefore,
+        out string reason)
+    {
         currentBefore = null;
         reason = string.Empty;
+        if (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
+            !string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal))
+        {
+            return true;
+        }
         if (!request.QuestAcquisitionTargetStep ||
             !request.QuestObjectiveIndex.HasValue)
         {
@@ -40,11 +60,7 @@ public sealed partial class ModEntry
             reason = "special_order_collect_progress_projection_drifted";
             return false;
         }
-
-        var harvestQualifiedId = ItemRegistry.QualifyItemId(crop.indexOfHarvest.Value) ??
-            "(O)" + crop.indexOfHarvest.Value;
-        var harvestItem = ItemRegistry.Create(harvestQualifiedId);
-        if (!NativeCollectObjectiveMatches(objective, harvestItem))
+        if (!NativeCollectObjectiveMatches(objective, item))
         {
             reason = "special_order_collect_context_tags_drifted";
             return false;
@@ -69,6 +85,14 @@ public sealed partial class ModEntry
     }
 
     private static void ApplySpecialOrderCollectCropFeedback(
+        TrainingExecutionResult result,
+        TrainingExecutionRequest request,
+        int? currentBefore)
+    {
+        ApplySpecialOrderCollectFeedback(result, request, currentBefore);
+    }
+
+    private static void ApplySpecialOrderCollectFeedback(
         TrainingExecutionResult result,
         TrainingExecutionRequest request,
         int? currentBefore)

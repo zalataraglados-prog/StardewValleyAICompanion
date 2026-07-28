@@ -453,6 +453,19 @@ public sealed partial class ModEntry : Mod
         {
             return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, "collect_machine_output_item_mismatch");
         }
+        var resourceQuestReason = ValidateQuestResourceReceiptTarget(request, outputId);
+        if (resourceQuestReason is not null)
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, resourceQuestReason);
+        }
+        if (!ValidateSpecialOrderCollectItemTarget(
+            request,
+            output,
+            out var specialOrderCollectCountBefore,
+            out var specialOrderCollectReason))
+        {
+            return BlockedWithPrimitive(request, "collect_machine_output", requested, beforeObserved, specialOrderCollectReason);
+        }
 
         if (!Game1.player.couldInventoryAcceptThisItem(output))
         {
@@ -495,7 +508,7 @@ public sealed partial class ModEntry : Mod
             (!string.Equals(beforeInventory, afterInventory, StringComparison.Ordinal) || afterItemCount > beforeItemCount) &&
             experienceVerified;
 
-        return new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -554,6 +567,12 @@ public sealed partial class ModEntry : Mod
                 .ToArray()
                 : Array.Empty<SimulatedFactChange>()
         };
+        ApplyQuestResourceReceiptFeedback(result, request);
+        if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal))
+        {
+            ApplySpecialOrderCollectFeedback(result, request, specialOrderCollectCountBefore);
+        }
+        return result;
     }
 
     private static bool TryReadExpectedSkillExperience(
