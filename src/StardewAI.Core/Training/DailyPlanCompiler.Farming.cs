@@ -86,7 +86,9 @@ namespace StardewAI.Core.Training
             }
 
             var giantCropId = ParseValue(candidate.ExpectedEffect, "giant_crop_id=");
-            var parameters = new List<SmallModelActionParameter>();
+            var parameters = candidate.Parameters
+                .Where(parameter => parameter.Name.StartsWith("quest_", StringComparison.Ordinal))
+                .ToList();
             if (!string.IsNullOrWhiteSpace(giantCropId))
             {
                 parameters.Add(Parameter("giant_crop_id", giantCropId));

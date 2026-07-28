@@ -78,7 +78,17 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, questReceiptReason));
             return;
         }
-        if (!Game1.player.couldInventoryAcceptThisItem(debris.item ?? ItemRegistry.Create(itemId, 1, debris.itemQuality)))
+        var debrisItem = debris.item ?? ItemRegistry.Create(itemId, 1, debris.itemQuality);
+        if (!ValidateSpecialOrderCollectItemTarget(
+            request,
+            debrisItem,
+            out _,
+            out var specialOrderCollectReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, specialOrderCollectReason));
+            return;
+        }
+        if (!Game1.player.couldInventoryAcceptThisItem(debrisItem))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_inventory_cannot_accept_item"));
             return;
@@ -251,6 +261,10 @@ public sealed partial class ModEntry : Mod
             }
         };
         ApplyQuestResourceReceiptFeedback(result, request);
+        if (string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal))
+        {
+            ApplySpecialOrderCollectFeedback(result, request, request.QuestExpectedCurrentCount);
+        }
         active.Pending.Completion.SetResult(result);
     }
 

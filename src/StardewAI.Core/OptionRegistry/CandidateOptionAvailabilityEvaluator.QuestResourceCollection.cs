@@ -36,6 +36,21 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "true"),
                         Parameter("quest_acquisition_source_step", "false")
                     }));
+            var farmDebrisReceipts = PickupDebrisCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ItemIdentityMatches(
+                    candidate.ItemId,
+                    candidate.QualifiedItemId,
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "true"),
+                        Parameter("quest_acquisition_source_step", "false")
+                    }));
             var sourceSteps = ClearObstacleCandidates(snapshot)
                 .Where(candidate => candidate.Available)
                 .Where(candidate => ClearCandidateProducesItem(candidate, quest.RequiredItemId))
@@ -48,6 +63,26 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "false"),
                         Parameter("quest_acquisition_source_step", "true")
                     }));
+            var bushSourceSteps = string.Equals(
+                    ReadStateFieldString(snapshot, "player", "location_id"),
+                    "Farm",
+                    StringComparison.OrdinalIgnoreCase)
+                ? BushHarvestCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => ItemIdentityMatches(
+                        candidate.ItemId,
+                        candidate.QualifiedItemId,
+                        quest.RequiredItemId))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_required_item_id", quest.RequiredItemId),
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true")
+                        }))
+                : Enumerable.Empty<EventCandidate>();
             var machineReceipts = MachineServiceCandidates(snapshot, commitmentLedger: null)
                 .Where(candidate => candidate.Kind == "collect_machine_output_tile" && candidate.Available)
                 .Where(candidate => ItemIdentityMatches(
@@ -67,7 +102,9 @@ namespace StardewAI.Core.OptionRegistry
                 .Build(snapshot, QualifyQuestObjectId(quest.RequiredItemId))
                 .Select(candidate => AttachQuest(candidate, quest));
             var candidates = directReceipts
+                .Concat(farmDebrisReceipts)
                 .Concat(sourceSteps)
+                .Concat(bushSourceSteps)
                 .Concat(machineReceipts)
                 .Concat(miningSteps)
                 .ToArray();
@@ -160,6 +197,23 @@ namespace StardewAI.Core.OptionRegistry
                     .Where(candidate => CandidateContextTagsMatch(
                         candidate,
                         "output_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "true"),
+                            Parameter("quest_acquisition_source_step", "false"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(PickupDebrisCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "debris_context_tags_json",
                         fields.AcceptableContextTagSets))
                     .Select(candidate => AttachQuest(
                         candidate,

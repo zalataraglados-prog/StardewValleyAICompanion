@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -48,7 +49,8 @@ namespace StardewAI.Core.Training
                         Parameter("bush_nut_collected_expected_after", ParseValue(candidate.ExpectedEffect, "bush_nut_collected_expected_after=")),
                         Parameter("bush_projection_status", ParseValue(candidate.ExpectedEffect, "bush_projection_status=")),
                         Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles="))
-                    }
+                    }.Concat(candidate.Parameters.Where(parameter =>
+                        parameter.Name.StartsWith("quest_", StringComparison.Ordinal))).ToArray()
                 }
             };
         }

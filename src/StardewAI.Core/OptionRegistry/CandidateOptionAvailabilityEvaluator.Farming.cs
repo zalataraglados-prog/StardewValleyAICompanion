@@ -795,6 +795,10 @@ namespace StardewAI.Core.OptionRegistry
                     var tile = FirstDebrisChunkTile(item);
                     var qualifiedItemId = ReadString(item, "qualified_item_id");
                     var itemId = ReadString(item, "item_id");
+                    var contextTags = item.TryGetProperty("item", out var itemState) &&
+                        itemState.ValueKind == JsonValueKind.Object
+                            ? ReadStringArray(itemState, "context_tags")
+                            : Array.Empty<string>();
                     var blockReasons = new List<string>();
                     if (tile is null)
                     {
@@ -833,7 +837,11 @@ namespace StardewAI.Core.OptionRegistry
                         EstimatedTicks = Math.Max(60, distance * 60 + 30),
                         EnergyCost = 0,
                         AvailabilityClass = "transparent_debris_runtime_collect",
-                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray()
+                        BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = new[]
+                        {
+                            Parameter("debris_context_tags_json", JsonSerializer.Serialize(contextTags))
+                        }
                     };
                 })
                 .OrderBy(candidate => candidate.TileY ?? int.MaxValue)

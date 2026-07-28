@@ -40,9 +40,10 @@ The implementation chain is:
 - **Quest-bound item harvest** - `ItemHarvestQuest` reuses the mature-crop executor for exact qualified-ID or native-category `Grab` harvests. Compiler and runtime rebind the remaining count and target crop; scythe debris remains a separate acquisition step instead of receiving false progress credit.
 - **Quest-bound resource receipt** - `ResourceCollectionQuest` now separates exact
   source work from native item receipt: clearable wood/stone and mine nodes may
-  produce the target, while spawned-object pickup, mine-debris pickup, and ready
-  machine-output collection may claim progress. `CollectObjective` currently binds
-  exact context-tag-matched mature `Grab` crops and ready machine outputs. Additional native acquisition families
+  produce the target; an exact farm bush may also be selected as a farm-only source.
+  Spawned-object pickup, farm/mine debris pickup, and ready machine-output collection
+  may claim progress. `CollectObjective` currently binds exact context-tag-matched
+  mature `Grab` crops, farm debris, and ready machine outputs. Additional native acquisition families
   remain explicit graph expansion work rather than implicit generic collection.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)

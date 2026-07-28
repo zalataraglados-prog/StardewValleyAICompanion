@@ -117,6 +117,16 @@ namespace StardewAI.Core.Execution
                         reasons.Add("quest_resource_clearance_source_drop_drifted");
                     }
                 }
+                else if (action.OptionId == "executor.harvest_bush")
+                {
+                    if (!string.Equals(
+                        ReadParameter(action, "qualified_item_id"),
+                        qualifiedRequired,
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        reasons.Add("quest_resource_bush_source_drop_drifted");
+                    }
+                }
                 else
                 {
                     reasons.Add("quest_resource_source_primitive_invalid");

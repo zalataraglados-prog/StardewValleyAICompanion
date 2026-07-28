@@ -15,7 +15,10 @@ namespace StardewAI.Core.Execution
             SmallModelAction action,
             SnapshotEnvelope snapshot)
         {
-            if (action.OptionId is not ("executor.harvest_crop" or "executor.collect_machine_output") ||
+            if (action.OptionId is not (
+                    "executor.harvest_crop" or
+                    "executor.collect_machine_output" or
+                    "executor.pickup_debris") ||
                 !string.Equals(
                     ReadParameter(action, "quest_next_action"),
                     "collect_items",
@@ -105,6 +108,20 @@ namespace StardewAI.Core.Execution
                         StringComparison.OrdinalIgnoreCase) &&
                     QuestContextTagMatcher.Matches(
                         ReadQuestStringArray(crop.Value, "harvest_context_tags"),
+                        tagSets);
+            }
+            if (action.OptionId == "executor.pickup_debris")
+            {
+                var debris = DebrisAt(
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    ReadIntParameter(action, "debris_index"));
+                return debris is not null &&
+                    debris.Value.TryGetProperty("item", out var debrisItem) &&
+                    debrisItem.ValueKind == JsonValueKind.Object &&
+                    QuestContextTagMatcher.Matches(
+                        ReadQuestStringArray(debrisItem, "context_tags"),
                         tagSets);
             }
 
