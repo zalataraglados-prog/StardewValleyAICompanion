@@ -199,6 +199,26 @@ namespace StardewAI.Core.Execution
                     Blocked("no_reachable_monster_with_possible_target_drop");
             }
 
+            if (objective.Kind == MiningObjectiveKinds.SlayNamedMonster)
+            {
+                var questTarget = SelectMonster(
+                    monsters,
+                    search,
+                    grid,
+                    "quest_target_monster_reachable",
+                    movementTileDurationMs: movementTileDurationMs,
+                    bombFinisherAvailable: bombFinisherAvailable,
+                    targetMonsterNameFragments: objective.TargetMonsterNameFragments,
+                    matchAnySlimeName: objective.MatchAnySlimeName);
+                if (questTarget is not null)
+                {
+                    questTarget.SourceMatchStatus = objective.MatchAnySlimeName
+                        ? "native_quest15_slime_name_match"
+                        : "native_monster_name_contains";
+                    return questTarget;
+                }
+            }
+
             if (objective.Kind == MiningObjectiveKinds.CollectResourceOrArtifact)
             {
                 if (TryFieldValue(mining, "debris", out var debris))

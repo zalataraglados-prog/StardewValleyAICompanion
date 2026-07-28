@@ -52,6 +52,8 @@ namespace StardewAI.Core.OptionRegistry
             {
                 case "fish_for_item":
                     return BindExactFishingCandidate(snapshot, candidate);
+                case "slay_monsters":
+                    return BindOrdinarySlayCandidates(snapshot, candidate, quest);
                 case "go_to_location":
                     return new[] { BindQuestLocationRoute(snapshot, candidate, candidate.RequiredTargetLocation) };
                 case "deliver_to_npc":
@@ -170,6 +172,8 @@ namespace StardewAI.Core.OptionRegistry
                     return BindSpecialOrderShippingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ReachMineFloorObjective":
                     return BindSpecialOrderMineDepthCandidates(snapshot, candidate, fields.SkullCave);
+                case "SlayObjective":
+                    return BindSpecialOrderSlayCandidates(snapshot, candidate, fields);
                 default:
                     return new[]
                     {
@@ -653,6 +657,65 @@ namespace StardewAI.Core.OptionRegistry
             return candidates.Length > 0
                 ? candidates
                 : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_mining_state_not_available") };
+        }
+
+        private static IEnumerable<EventCandidate> BindOrdinarySlayCandidates(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest,
+            QuestProgressRef liveQuest)
+        {
+            var targetName = liveQuest.PerTypeFields?.MonsterName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(targetName))
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "quest_target_monster_name_missing") };
+            }
+
+            var candidates = MiningSlayMonsterCandidateBuilder.Build(
+                    snapshot,
+                    new[] { targetName },
+                    "ordinary_mines",
+                    matchAnySlimeName: string.Equals(liveQuest.Id, "15", StringComparison.Ordinal),
+                    ignoreFarmMonsters: liveQuest.PerTypeFields?.IgnoreFarmMonsters ?? true)
+                .Select(candidate => AttachQuest(candidate, quest))
+                .ToArray();
+            return candidates.Length > 0
+                ? candidates
+                : new[] { BlockedQuestCandidate(snapshot, quest, "ordinary_slay_mining_state_not_available") };
+        }
+
+        private static IEnumerable<EventCandidate> BindSpecialOrderSlayCandidates(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest,
+            PerTypeObjectiveFields fields)
+        {
+            if (fields.TargetNames.Length == 0)
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_target_monster_names_missing") };
+            }
+
+            var targetFamily = MiningSlayMonsterCandidateBuilder.ResolveSpecialOrderLocationFamily(quest.QuestKey);
+            if (string.IsNullOrWhiteSpace(targetFamily))
+            {
+                return new[]
+                {
+                    BlockedQuestCandidate(
+                        snapshot,
+                        quest,
+                        "special_order_target_monster_location_family_unresolved:" + quest.QuestKey)
+                };
+            }
+
+            var candidates = MiningSlayMonsterCandidateBuilder.Build(
+                    snapshot,
+                    fields.TargetNames,
+                    targetFamily,
+                    matchAnySlimeName: false,
+                    ignoreFarmMonsters: fields.IgnoreFarmMonsters)
+                .Select(candidate => AttachQuest(candidate, quest))
+                .ToArray();
+            return candidates.Length > 0
+                ? candidates
+                : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_slay_mining_state_not_available") };
         }
 
         private static JsonElement? FindQuestInventoryItem(

@@ -62,6 +62,16 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "combat_monster", requested, "matching_target_count=" + targets.Length, targets.Length == 0 ? "combat_target_not_found_or_moved" : "combat_target_ambiguous"));
             return;
         }
+        if (!ValidateQuestSlayTarget(request, targets[0], out var questSlayReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "combat_monster",
+                requested,
+                "quest_slay_target=drifted",
+                questSlayReason));
+            return;
+        }
 
         var target = targets[0];
         if (terminalState == "knockdown_requires_bomb_finish" && target is not Mummy)
@@ -705,7 +715,7 @@ public sealed partial class ModEntry : Mod
         {
             changedFacts.Add(new SimulatedFactChange { Path = "player.inventory.stack_signature", Before = active.InventoryBefore, After = inventoryAfter });
         }
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -745,7 +755,12 @@ public sealed partial class ModEntry : Mod
             CombatMethod = "melee",
             CombatTerminalState = active.TerminalState,
             ChangedFacts = changedFacts.ToArray()
-        });
+        };
+        ApplyQuestSlayFeedback(
+            result,
+            request,
+            requireProgress: targetDefeated && request.QuestSlayTargetStep);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteCombatMonsterBlocked(ActiveCombatMonster active, string reason)

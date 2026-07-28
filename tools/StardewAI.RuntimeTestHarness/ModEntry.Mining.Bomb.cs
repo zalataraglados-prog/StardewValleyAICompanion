@@ -83,6 +83,16 @@ public sealed partial class ModEntry : Mod
                 return;
             }
             targetMonster = targetMonsters[0];
+            if (!ValidateQuestSlayTarget(request, targetMonster, out var questSlayReason))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "place_bomb",
+                    requested,
+                    "quest_slay_target=drifted",
+                    questSlayReason));
+                return;
+            }
             var damageRectangle = new Rectangle(
                 (target.X - request.BombRadiusTiles.Value) * Game1.tileSize,
                 (target.Y - request.BombRadiusTiles.Value) * Game1.tileSize,
@@ -474,6 +484,12 @@ public sealed partial class ModEntry : Mod
                     })
                 .ToArray()
         };
+        ApplyQuestSlayFeedback(
+            result,
+            active.Pending.Request,
+            requireProgress: verified &&
+                targetFinalized &&
+                active.Pending.Request.QuestSlayTargetStep);
         active.Pending.Completion.SetResult(result);
     }
 

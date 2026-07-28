@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 
@@ -138,6 +139,12 @@ namespace StardewAI.Core.Execution
             plan.EscapeTileY = best.EscapeY;
             plan.ExpectedBombMonsterHits = 1;
             plan.SafetyWindowStatus = "mummy_bomb_finish_fuse_escape_verified";
+            if (objective.Kind == MiningObjectiveKinds.SlayNamedMonster)
+            {
+                plan.SourceMatchStatus = objective.MatchAnySlimeName
+                    ? "native_quest15_slime_name_match"
+                    : "native_monster_name_contains";
+            }
             return plan;
         }
 
@@ -168,6 +175,13 @@ namespace StardewAI.Core.Execution
             {
                 var targets = new HashSet<string>(objective.TargetQualifiedItemIds ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
                 return targets.Count > 0 && ReadStrings(monster, "possible_drop_qualified_item_ids").Any(targets.Contains);
+            }
+            if (objective.Kind == MiningObjectiveKinds.SlayNamedMonster)
+            {
+                return QuestMonsterTargetRules.Matches(
+                    ReadString(monster, "name"),
+                    objective.TargetMonsterNameFragments,
+                    objective.MatchAnySlimeName);
             }
             var x = ReadInt(monster, "tile_x");
             var y = ReadInt(monster, "tile_y");

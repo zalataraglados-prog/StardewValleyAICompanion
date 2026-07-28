@@ -34,6 +34,7 @@ namespace StardewAI.Core.Execution
         public const string ReachDepth = "reach_depth";
         public const string CollectResourceOrArtifact = "collect_resource_or_artifact";
         public const string CollectMonsterDrop = "collect_monster_drop";
+        public const string SlayNamedMonster = "slay_named_monster";
         public const string AcquireGoldenScythe = "acquire_golden_scythe";
         public const string AcquireSkullKey = "acquire_skull_key";
     }
@@ -45,6 +46,10 @@ namespace StardewAI.Core.Execution
         public string[] TargetQualifiedItemIds { get; set; } = Array.Empty<string>();
 
         public string[] TargetSourceQualifiedItemIds { get; set; } = Array.Empty<string>();
+
+        public string[] TargetMonsterNameFragments { get; set; } = Array.Empty<string>();
+
+        public bool MatchAnySlimeName { get; set; }
 
         public int MinimumReserveHealth { get; set; }
 

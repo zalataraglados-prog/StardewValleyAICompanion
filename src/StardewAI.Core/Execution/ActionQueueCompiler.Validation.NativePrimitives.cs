@@ -77,6 +77,7 @@ namespace StardewAI.Core.Execution
                     break;
             }
 
+            ValidateAttachedSlayQuestPlan(action, snapshot, reasons);
             return reasons.ToArray();
         }
 

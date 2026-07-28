@@ -54,6 +54,16 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "shoot_monster", requested, "matching_target_count=" + targets.Length, "slingshot_target_not_unique"));
             return;
         }
+        if (!ValidateQuestSlayTarget(request, targets[0], out var questSlayReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "shoot_monster",
+                requested,
+                "quest_slay_target=drifted",
+                questSlayReason));
+            return;
+        }
         if (!request.SlingshotSlotIndex.HasValue ||
             request.SlingshotSlotIndex.Value < 0 ||
             request.SlingshotSlotIndex.Value >= Game1.player.Items.Count ||
@@ -214,7 +224,7 @@ public sealed partial class ModEntry : Mod
         var ammoAfter = active.Slingshot.attachments.Count > 0 && active.Slingshot.attachments[0] is StardewValley.Object ammo
             ? ammo.Stack
             : 0;
-        active.Pending.Completion.SetResult(new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = active.Pending.Request.RunId,
             QueueId = active.Pending.Request.QueueId,
@@ -250,7 +260,12 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "mining.monsters[target].health", Before = active.TargetHealthBefore.ToString(), After = active.Target.Health.ToString() },
                 new SimulatedFactChange { Path = "player.slingshot.ammo.stack", Before = active.AmmoCountBefore.ToString(), After = ammoAfter.ToString() }
             }
-        });
+        };
+        ApplyQuestSlayFeedback(
+            result,
+            active.Pending.Request,
+            requireProgress: active.Pending.Request.QuestSlayTargetStep);
+        active.Pending.Completion.SetResult(result);
     }
 
     private void CompleteShootMonsterBlocked(ActiveShootMonster active, string reason)

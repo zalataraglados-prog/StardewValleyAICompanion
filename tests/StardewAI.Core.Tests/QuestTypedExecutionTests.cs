@@ -146,7 +146,8 @@ public sealed class QuestTypedExecutionTests
             QuestInteractionKind = "offer_item",
             QuestObjectiveIndex = 0,
             QuestExpectedCurrentCount = 2,
-            QuestExpectedTargetCount = 10
+            QuestExpectedTargetCount = 10,
+            QuestSlayTargetStep = true
         };
 
         var json = JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -158,6 +159,7 @@ public sealed class QuestTypedExecutionTests
         Assert.Equal("special_order:RobinOrder", roundTrip!.QuestCandidateId);
         Assert.Equal(0, roundTrip.QuestObjectiveIndex);
         Assert.Equal(10, roundTrip.QuestExpectedTargetCount);
+        Assert.True(roundTrip.QuestSlayTargetStep);
     }
 
     [Fact]
@@ -256,6 +258,10 @@ public sealed class QuestTypedExecutionTests
         Assert.DoesNotContain(".currentCount.Value =", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".completed.Value =", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".donatedItems.Add", source, StringComparison.Ordinal);
+        Assert.Contains("ValidateQuestSlayTarget", source, StringComparison.Ordinal);
+        Assert.Contains("ApplyQuestSlayFeedback", source, StringComparison.Ordinal);
+        Assert.Contains("matching_quest_slay_progress_changed", source, StringComparison.Ordinal);
+        Assert.Contains("QuestMonsterTargetRules.Matches", source, StringComparison.Ordinal);
     }
 
     [Fact]

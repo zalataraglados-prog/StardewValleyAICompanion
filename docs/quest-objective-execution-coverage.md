@@ -17,6 +17,10 @@ The implementation was checked against the matching Linux-server 1.6.15 decompil
 - `DeliverObjective` registers its handler on `SpecialOrder.onItemDelivered`;
 - `ReachMineFloorObjective` subtracts 120 from Skull Cavern levels before updating
   objective progress;
+- `SlayMonsterQuest.OnMonsterSlain` matches `Monster.Name.Contains(monsterName)`;
+  quest ID 15 additionally accepts names containing `Slime`, `Jelly`, or `Sludge`.
+- `SlayObjective.OnMonsterSlain` matches any configured
+  `Monster.Name.Contains(targetName)` and honors `ignoreFarmMonsters`.
 - `DonateObjective` uses the native drop-box `QuestContainerMenu` lifecycle. Direct
   mutation of `donatedItems` is therefore prohibited.
 - `LostItemQuest.OnWarped` creates the exact quest item at its declared map/tile as an
@@ -38,12 +42,14 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary socialize quest | next exact `who_to_greet` NPC plus native report terminal |
 | ordinary lost-item pickup | exact declared map/tile/item identity plus existing native `collect_spawned_object` candidate |
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
+| ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
 | special-order `GiftObjective` | existing native social-gift candidate filtered by exact item context tags and native minimum-like-level ordering |
 | special-order `ShipObjective` | existing one-item native shipping candidate filtered by native tag-set grammar |
 | special-order `ReachMineFloorObjective` | existing rolling perfect-mining candidate with exact ordinary/Skull level conversion |
+| special-order `SlayObjective` | rolling ordinary/Skull mine search plus exact-name native mining combat |
 
 Every bound candidate carries the quest candidate ID, family, runtime type, selected
 objective index, and expected current/target counts. The action compiler rebinds those
@@ -56,6 +62,16 @@ values to the fresh snapshot. The NPC runtime then:
 5. calls native `GameLocation.checkAction`;
 6. accepts feedback only when that same objective changes count, completes, or is
    removed.
+
+Slay candidates retain task identity while reusing the rolling mining planner. A
+matching live monster is selected before general floor work. If none is present, the
+planner uses the existing recovery, opening, descent, and deadline-exit primitives,
+then replans from the next transparent snapshot. Vanilla order identity selects
+ordinary mines for `Clint`/`Wizard2` and Skull Cavern for
+`DesertFestivalMarlon1`; unknown or modded slay sources fail closed until their mine
+family is authoritative. Compiler and runtime recheck the same task, counts, mine
+family, live monster identity, and native name rule. Mummy knockdown is an
+intermediate step; matching quest progress is required after the bomb finalizer.
 
 Cross-map NPC routes retain an exact quest continuation so replanning cannot silently
 switch to an ordinary social talk or another quest.
@@ -78,14 +94,13 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 16 bound, 10 blocked, and 2 native observation-only stages.
+contain 18 bound, 8 blocked, and 2 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
-- ordinary craft, collect, slay, harvest, construction, secret-item acquisition, accept,
+- ordinary craft, collect, harvest, construction, secret-item acquisition, accept,
   and type-11 weeding stages;
-- special-order collect, Junimo Kart score, and slay
-  objectives;
+- special-order collect and Junimo Kart score objectives;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
   rows;
@@ -97,11 +112,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused quest filter: 94 passed;
-- full regression: Core 1,299 passed and Backend 95 passed;
+- focused quest filter: 96 passed;
+- full regression: Core 1,305 passed and Backend 95 passed;
 - full solution Release build: zero errors and seven existing warnings;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 16 bound, 10 blocked, and 2 observation-only;
+  differences, 28 stage rows with 18 bound, 8 blocked, and 2 observation-only;
 - the full knowledge build retains two pre-existing Grandpa method identity blockers,
   unrelated to the quest type scan;
 - no live game mutation test was run for this slice.

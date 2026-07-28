@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 
@@ -18,7 +19,9 @@ namespace StardewAI.Core.Execution
             string[]? targetDropIds = null,
             IReadOnlyDictionary<string, MonsterDropCatalogInfo>? dropCatalogs = null,
             double? movementTileDurationMs = null,
-            bool bombFinisherAvailable = false)
+            bool bombFinisherAvailable = false,
+            string[]? targetMonsterNameFragments = null,
+            bool matchAnySlimeName = false)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -40,6 +43,11 @@ namespace StardewAI.Core.Execution
                         Combat = ReadBestCombatProjection(monster, search.Start, grid, movementTileDurationMs, bombFinisherAvailable)
                     };
                 })
+                .Where(row => targetMonsterNameFragments is not { Length: > 0 } ||
+                    QuestMonsterTargetRules.Matches(
+                        ReadString(row.Monster, "name"),
+                        targetMonsterNameFragments,
+                        matchAnySlimeName))
                 .Where(row => targets is null || row.Match.MatchedIds.Length > 0)
                 .Where(row => !IsRevivingMummy(row.Monster) || row.Combat is not null)
                 .Where(row => CanDefeatWithAvailableCombat(row.Monster, row.Combat))
