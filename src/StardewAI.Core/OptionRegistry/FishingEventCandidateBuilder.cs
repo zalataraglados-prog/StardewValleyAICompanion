@@ -171,7 +171,9 @@ namespace StardewAI.Core.OptionRegistry
                                 expectedChance.HasValue ? "rule_local_preview" : "unresolved_rule_local_probability",
                                 IntNullable(output, "effective_fish_difficulty"),
                                 Bool(rule, "is_boss_fish") == true,
-                                MaximumRawFishQuality(rodContext)));
+                                MaximumRawFishQuality(rodContext),
+                                Strings(output, "context_tags"),
+                                String(output, "context_tags_projection_status")));
                         }
                     }
 
@@ -549,7 +551,9 @@ namespace StardewAI.Core.OptionRegistry
             string probabilityStatus,
             int? effectiveFishDifficulty = null,
             bool isBossFish = false,
-            int? maximumRawFishQuality = null)
+            int? maximumRawFishQuality = null,
+            string[]? contextTags = null,
+            string contextTagsProjectionStatus = "unavailable")
         {
             return new EventCandidate
             {
@@ -590,7 +594,9 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("route_distance_tiles", cast.RouteDistance),
                     Parameter("water_depth", cast.Bobber.WaterDepth),
                     Parameter("rule_local_catch_chance_preview", chance),
-                    Parameter("rule_local_probability_status", probabilityStatus)
+                    Parameter("rule_local_probability_status", probabilityStatus),
+                    Parameter("context_tags_json", JsonSerializer.Serialize(contextTags ?? Array.Empty<string>())),
+                    Parameter("context_tags_projection_status", contextTagsProjectionStatus)
                 }.Concat(FishingOutcomeExperienceParameters(
                     effectiveFishDifficulty,
                     isBossFish,
@@ -626,6 +632,8 @@ namespace StardewAI.Core.OptionRegistry
                             qualified_item_id = candidate.QualifiedItemId,
                             chance_preview = ParameterDouble(candidate, "rule_local_catch_chance_preview"),
                             probability_status = CandidateParameter(candidate, "rule_local_probability_status"),
+                            context_tags = ParseStringArrayParameter(candidate, "context_tags_json"),
+                            context_tags_projection_status = CandidateParameter(candidate, "context_tags_projection_status"),
                             effective_fish_difficulty = CandidateInt(candidate, "effective_fish_difficulty"),
                             is_boss_fish = CandidateBool(candidate, "is_boss_fish"),
                             maximum_raw_fish_quality = CandidateInt(candidate, "maximum_raw_fish_quality")
@@ -710,6 +718,23 @@ namespace StardewAI.Core.OptionRegistry
             return bool.TryParse(CandidateParameter(candidate, name), out var value) && value;
         }
 
+        private static string[] ParseStringArrayParameter(EventCandidate candidate, string name)
+        {
+            var json = CandidateParameter(candidate, name);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return Array.Empty<string>();
+            }
+            try
+            {
+                return JsonSerializer.Deserialize<string[]>(json) ?? Array.Empty<string>();
+            }
+            catch (JsonException)
+            {
+                return Array.Empty<string>();
+            }
+        }
+
         private static int? IntNullable(JsonElement element, string property)
         {
             return element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed)
@@ -734,6 +759,8 @@ namespace StardewAI.Core.OptionRegistry
             public int outcome_index { get; set; }
             public string item_id { get; set; } = string.Empty;
             public string qualified_item_id { get; set; } = string.Empty;
+            public string[] context_tags { get; set; } = Array.Empty<string>();
+            public string context_tags_projection_status { get; set; } = string.Empty;
             public double? chance_preview { get; set; }
             public string probability_status { get; set; } = string.Empty;
             public int? effective_fish_difficulty { get; set; }

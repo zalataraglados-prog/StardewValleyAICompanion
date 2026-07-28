@@ -53,7 +53,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("special_order", "CollectObjective", "collect_items", Blocked, Array.Empty<string>(), "Context-tag acquisition sources are not bound."),
                 Row("special_order", "DeliverObjective", "deliver_to_target", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("special_order", "DonateObjective", "donate_items", Bound, new[] { "quest_drop_box_donation", "route_connector_tile" }),
-                Row("special_order", "FishObjective", "catch_fish", Blocked, Array.Empty<string>(), "Fishing outcomes do not yet project native item context tags."),
+                Row("special_order", "FishObjective", "catch_fish", Bound, new[] { "catch_fish" }),
                 Row("special_order", "GiftObjective", "give_gifts", Blocked, Array.Empty<string>(), "Context-tag and minimum-like-level gift selection is not bound."),
                 Row("special_order", "JKScoreObjective", "achieve_junimo_kart_score", Blocked, Array.Empty<string>(), "Junimo Kart play is not implemented."),
                 Row("special_order", "ReachMineFloorObjective", "reach_mine_floor", Bound, new[] { "reach_mine_depth" }),

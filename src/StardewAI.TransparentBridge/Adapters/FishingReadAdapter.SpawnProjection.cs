@@ -143,6 +143,10 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             && caught.Length > 0
                 ? caught[0]
                 : 0;
+        var contextTags = ItemRegistry.Create(parsedItem.QualifiedItemId)
+            .GetContextTags()
+            .OrderBy(tag => tag, StringComparer.Ordinal)
+            .ToArray();
         var catchLimitReached = spawn.CatchLimit > -1 && catchCount >= spawn.CatchLimit;
         var targetedByBait = spawn.ItemId == targetedFishId;
         var effectiveFishDifficulty = EffectiveNextCatchDifficulty(requirements?.Difficulty, spawn.IsBossFish, player);
@@ -181,6 +185,8 @@ public sealed partial class FishingReadAdapter : ReadAdapterBase
             display_name = parsedItem.DisplayName,
             category = parsedItem.Category,
             object_type = parsedItem.ObjectType,
+            context_tags = contextTags,
+            context_tags_projection_status = "exact_item_get_context_tags",
             base_fish_difficulty = requirements?.Difficulty,
             effective_fish_difficulty = effectiveFishDifficulty,
             fishing_experience_inputs_complete = hasFishData && requirements?.ParseStatus == "parsed" && effectiveFishDifficulty.HasValue,

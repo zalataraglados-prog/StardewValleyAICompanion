@@ -313,7 +313,7 @@ public sealed class FishingMainlineTests
         Assert.Equal(0.25, note.GetProperty("chance_preview").GetDouble());
     }
 
-    private static string BaseState()
+    internal static string BaseState()
     {
         return """
         {

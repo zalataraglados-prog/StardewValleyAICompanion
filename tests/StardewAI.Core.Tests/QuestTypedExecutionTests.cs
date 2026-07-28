@@ -462,4 +462,66 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("executor.collect_spawned_object", queueItem.OptionId);
         Assert.Empty(queueItem.BlockingReasons);
     }
+
+    [Fact]
+    public void SpecialOrderFishObjectiveBindsOnlyNativeContextTagMatchedCatch()
+    {
+        var baseState = FishingMainlineTests.BaseState()
+            .Replace(
+                "\"qualified_item_id\":\"(O)145\",",
+                "\"qualified_item_id\":\"(O)145\",\"context_tags\":[\"category_fish\",\"fish_ocean\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",",
+                StringComparison.Ordinal);
+        var closingBrace = baseState.LastIndexOf('}');
+        var state = baseState[..closingBrace] + """
+        ,"quests":{
+          "active_quests":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+          "special_orders":{"value":[{
+            "quest_key":"OceanFish","quest_name":"Ocean Fish","quest_state":"InProgress","special_rule":"","is_island_order":0,
+            "objectives":[{
+              "description":"Catch ocean fish","current_count":0,"max_count":5,"runtime_type":"FishObjective","fail_on_completion":false,"complete":false,
+              "per_type_fields":{"available":true,"acceptable_context_tag_sets":["category_fish,fish_ocean"]}
+            }],
+            "rewards":[]
+          }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+          "completed_special_orders":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+          "accepted_special_order_types":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+          "mail_received":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+        },
+        "world_progress":{
+          "community_center":{"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+          "achievements":{"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+        }}
+        """;
+        var snapshot = Snapshot(state);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("catch_fish", candidate.Kind);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_next_action" && parameter.Value == "catch_fish");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_candidate_id" && parameter.Value == "special_order:OceanFish");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Contains(queue.Items, item =>
+            item.OptionId == "executor.catch_fish" && item.BlockingReasons.Length == 0);
+
+        var nonMatching = Snapshot(state.Replace(
+            "[\"category_fish,fish_ocean\"]",
+            "[\"fish_river\"]",
+            StringComparison.Ordinal));
+        var blocked = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(nonMatching, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true)
+            .Options);
+        var blockedCandidate = Assert.Single(blocked.EventCandidates);
+        Assert.False(blockedCandidate.Available);
+        Assert.Contains(
+            "special_order_matching_fish_not_available_in_current_fishing_projection",
+            blockedCandidate.BlockReasons);
+    }
 }

@@ -162,6 +162,8 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         BindSpecialOrderDropBoxCandidate(snapshot, candidate, order, fields)
                     };
+                case "FishObjective":
+                    return BindSpecialOrderFishingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ShipObjective":
                     return BindSpecialOrderShippingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ReachMineFloorObjective":
@@ -189,6 +191,56 @@ namespace StardewAI.Core.OptionRegistry
             return candidates.Length > 0
                 ? candidates
                 : new[] { BlockedQuestCandidate(snapshot, quest, "quest_required_fish_not_available_in_current_fishing_projection") };
+        }
+
+        private IEnumerable<EventCandidate> BindSpecialOrderFishingCandidates(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest,
+            string[] contextTagSets)
+        {
+            if (contextTagSets.Length == 0)
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_fish_context_tag_sets_missing") };
+            }
+            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(contextTagSets))
+            {
+                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_fish_has_unprojected_color_tags") };
+            }
+
+            var candidates = FishingEventCandidateBuilder.Build(snapshot)
+                .Where(candidate => candidate.Kind == "catch_fish" && candidate.Available)
+                .Where(candidate => FishingCandidateMatchesContextTags(candidate, contextTagSets))
+                .Select(candidate => AttachQuest(candidate, quest))
+                .ToArray();
+            return candidates.Length > 0
+                ? candidates
+                : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_matching_fish_not_available_in_current_fishing_projection") };
+        }
+
+        private static bool FishingCandidateMatchesContextTags(
+            EventCandidate candidate,
+            string[] contextTagSets)
+        {
+            var distributionJson = ReadParameter(candidate.Parameters, "outcome_distribution_json");
+            if (string.IsNullOrWhiteSpace(distributionJson))
+            {
+                return false;
+            }
+            try
+            {
+                using var document = JsonDocument.Parse(distributionJson);
+                return document.RootElement.ValueKind == JsonValueKind.Array &&
+                    document.RootElement.EnumerateArray().Any(outcome =>
+                        string.Equals(
+                            ReadString(outcome, "context_tags_projection_status"),
+                            "exact_item_get_context_tags",
+                            StringComparison.Ordinal) &&
+                        QuestContextTagMatcher.Matches(outcome, contextTagSets));
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
         }
 
         private EventCandidate BindQuestLocationRoute(
