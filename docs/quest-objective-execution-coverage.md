@@ -19,6 +19,8 @@ The implementation was checked against the matching Linux-server 1.6.15 decompil
   objective progress;
 - `DonateObjective` uses the native drop-box `QuestContainerMenu` lifecycle. Direct
   mutation of `donatedItems` is therefore prohibited.
+- `LostItemQuest.OnWarped` creates the exact quest item at its declared map/tile as an
+  `IsSpawnedObject` overlay object, and `OnItemReceived` advances `itemFound`.
 
 The runtime terminal calls `GameLocation.checkAction`; it does not call quest
 completion methods with `probe:false` and does not write quest counters directly.
@@ -34,6 +36,7 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary item delivery | existing NPC route plus `quest_npc_interaction` terminal |
 | ordinary slay/fishing/resource report | existing NPC route plus native report terminal |
 | ordinary socialize quest | next exact `who_to_greet` NPC plus native report terminal |
+| ordinary lost-item pickup | exact declared map/tile/item identity plus existing native `collect_spawned_object` candidate |
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
@@ -55,6 +58,11 @@ values to the fresh snapshot. The NPC runtime then:
 Cross-map NPC routes retain an exact quest continuation so replanning cannot silently
 switch to an ordinary social talk or another quest.
 
+The lost-item pickup binding routes to the declared location and, after a fresh snapshot,
+accepts only an `IsSpawnedObject` at the exact quest tile with the exact qualified item
+identity. It uses the existing native pickup executor; it does not inject the item or set
+`itemFound`.
+
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
 indicator. The actual interaction target is indexed from the current map's exact
@@ -65,10 +73,15 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 
 ## Explicit remaining blockers
 
+The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
+It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
+special-order objective types, with no uncatalogued type. Its 28 stage rows currently
+contain 14 bound, 12 blocked, and 2 native observation-only stages.
+
 The following objective bindings remain fail-closed:
 
-- ordinary craft, collect, slay, harvest, construction, lost-item pickup, accept, and
-  base/no-action quest stages;
+- ordinary craft, collect, slay, harvest, construction, secret-item acquisition, accept,
+  and type-11 weeding stages;
 - special-order collect, fish, gift, Junimo Kart score, and slay
   objectives;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
@@ -82,8 +95,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- Core tests: 1,109 passed.
-- Backend tests: 67 passed.
-- Runtime harness: builds with zero errors and two pre-existing obsolete Cat/Dog
-  warnings.
-- No live game mutation test was run for this slice.
+- focused quest and coverage tests: 10 passed;
+- full regression: Core 1,296 passed and Backend 95 passed;
+- full solution build: zero errors and five existing warnings;
+- knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
+  differences, 28 stage rows;
+- the full knowledge build retains two pre-existing Grandpa method identity blockers,
+  unrelated to the quest type scan;
+- no live game mutation test was run for this slice.

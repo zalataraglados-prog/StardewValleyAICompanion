@@ -65,12 +65,58 @@ namespace StardewAI.Core.OptionRegistry
                         return new[] { BlockedQuestCandidate(snapshot, candidate, "quest_lost_item_not_in_inventory") };
                     }
                     return new[] { BindQuestNpcCandidate(snapshot, candidate, candidate.RequiredTargetNpc, "report", string.Empty, null) };
+                case "find_lost_item":
+                    return new[] { BindLostItemCandidate(snapshot, candidate) };
                 case "greet_npcs":
                     var targetNpc = quest.PerTypeFields?.WhoToGreet?.FirstOrDefault() ?? string.Empty;
                     return new[] { BindQuestNpcCandidate(snapshot, candidate, targetNpc, "report", string.Empty, null) };
                 default:
                     return new[] { BlockedQuestCandidate(snapshot, candidate, "quest_objective_binding_not_executable:" + candidate.NextActionCategory) };
             }
+        }
+
+        private EventCandidate BindLostItemCandidate(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest)
+        {
+            if (string.IsNullOrWhiteSpace(quest.RequiredTargetLocation) ||
+                !quest.RequiredTargetTileX.HasValue ||
+                !quest.RequiredTargetTileY.HasValue ||
+                string.IsNullOrWhiteSpace(quest.RequiredItemId))
+            {
+                return BlockedQuestCandidate(snapshot, quest, "lost_item_exact_target_fields_missing");
+            }
+
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            if (!string.Equals(currentLocation, quest.RequiredTargetLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                return BindQuestLocationRoute(snapshot, quest, quest.RequiredTargetLocation);
+            }
+
+            var targetX = quest.RequiredTargetTileX.Value;
+            var targetY = quest.RequiredTargetTileY.Value;
+            var pickup = SpawnedObjectForagingCandidates(snapshot)
+                .FirstOrDefault(candidate =>
+                    candidate.TileX == targetX &&
+                    candidate.TileY == targetY &&
+                    ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, quest.RequiredItemId));
+            if (pickup is null)
+            {
+                return BlockedQuestCandidate(
+                    snapshot,
+                    quest,
+                    "lost_item_spawned_object_not_present_at_exact_target:" +
+                    quest.RequiredTargetLocation + ":" + targetX + "," + targetY);
+            }
+
+            return AttachQuest(
+                pickup,
+                quest,
+                new[]
+                {
+                    Parameter("quest_lost_item_target_tile_x", targetX.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("quest_lost_item_target_tile_y", targetY.ToString(CultureInfo.InvariantCulture))
+                });
         }
 
         private IEnumerable<EventCandidate> BindSpecialOrderCandidate(

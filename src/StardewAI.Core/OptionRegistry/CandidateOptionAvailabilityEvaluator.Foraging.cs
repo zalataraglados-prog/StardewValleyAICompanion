@@ -60,6 +60,11 @@ namespace StardewAI.Core.OptionRegistry
                                 Parameter("qualified_item_id", qualifiedItemId),
                                 Parameter("quantity", totalQuantity.ToString()),
                                 Parameter("projected_harvest_quality", projectedQuality.ToString()),
+                                Parameter("foraging_experience_on_success_min", ReadInt(item, "foraging_experience_on_success_min").ToString()),
+                                Parameter("foraging_experience_on_success_max", ReadInt(item, "foraging_experience_on_success_max").ToString()),
+                                Parameter("farming_experience_on_success_min", ReadInt(item, "farming_experience_on_success_min").ToString()),
+                                Parameter("farming_experience_on_success_max", ReadInt(item, "farming_experience_on_success_max").ToString()),
+                                Parameter("harvest_experience_status", ReadString(item, "harvest_experience_status")),
                                 Parameter("max_movement_tiles", "512")
                             }
                         }));

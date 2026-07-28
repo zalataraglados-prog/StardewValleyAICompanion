@@ -244,6 +244,8 @@ namespace StardewAI.Core.OptionRegistry
             string itemId = string.Empty;
             int targetCount = 0;
             int currentCount = 0;
+            int? targetTileX = null;
+            int? targetTileY = null;
             bool complete = quest.Completed;
 
             if (complete)
@@ -282,6 +284,11 @@ namespace StardewAI.Core.OptionRegistry
                     itemId = fields.ItemId;
                     targetCount = fields.TargetCount;
                     currentCount = fields.CurrentCount;
+                    if (quest.RuntimeType == "LostItemQuest")
+                    {
+                        targetTileX = fields.TileX;
+                        targetTileY = fields.TileY;
+                    }
                     if (quest.QuestType == 5)
                     {
                         targetCount = fields.TotalToGreet;
@@ -316,6 +323,8 @@ namespace StardewAI.Core.OptionRegistry
                 RequiredTargetNpc = targetNpc,
                 RequiredItemId = itemId,
                 RequiredTargetCount = targetCount,
+                RequiredTargetTileX = targetTileX,
+                RequiredTargetTileY = targetTileY,
                 CurrentProgressCount = currentCount,
                 IsComplete = complete,
                 DaysRemaining = quest.DaysLeft,

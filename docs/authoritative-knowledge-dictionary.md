@@ -105,6 +105,25 @@ The 89-of-89 live field join above is the last recorded snapshot-schema join, no
 95-option completeness claim. Regenerate the join after each required-field change before
 promoting another option through the read gate.
 
+## Action omission boundary
+
+The authoritative dictionary cannot, by itself, prove that every playable action is
+implemented. Runtime content and decompiled types establish what exists; executable
+coverage additionally requires a typed candidate, compiler binding, runtime terminal, and
+verified output delta.
+
+`quest-action-coverage-matrix.json` closes the enumeration side of that boundary for native
+quests. The knowledge compiler scans the 1.6.15 `Quest` and `OrderObjective` subclasses and
+joins them to `QuestActionCoverageCatalog`. A native subclass absent from the catalog is a
+blocking source-validation issue. The current scan found all 12 ordinary quest runtime
+types and all 9 special-order objective runtime types, with zero uncatalogued or
+catalog-only types. Their 28 action stages currently contain 14 bound stages, 12 explicit
+implementation gaps, and 2 native observation-only stages.
+
+This matrix guarantees that the scanned native quest type surface is not silently omitted.
+It does not turn the 12 blocked stages into executable actions, cover mod-added runtime
+types without rescanning the active mod set, or replace isolated runtime verification.
+
 Candidate evaluation now exposes separate `read_eligible`, `binding_status`,
 `compile_status`, `execution_authorization`, `runtime_evidence_status`,
 `training_eligibility`, and `product_status` fields. Production snapshots apply the

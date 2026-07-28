@@ -4,6 +4,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 
@@ -389,5 +390,76 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             parameter.Name == "quest_drop_box_id" && parameter.Value == "crop_box");
         Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "target_tile_x" && parameter.Value == "10");
+    }
+
+    [Fact]
+    public void LostItemQuestBindsExactNativeSpawnedObjectPickup()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Forest","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":18,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":20,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[{
+              "tile_x":20,"tile_y":20,"item_id":"788","qualified_item_id":"(O)788",
+              "is_spawned_object":true,"spawned_object_pickup_status":"ready",
+              "projected_total_quantity":1,"projected_harvest_quality":0,
+              "projected_gatherer_duplicate":false,
+              "foraging_experience_on_success_min":0,"foraging_experience_on_success_max":0,
+              "farming_experience_on_success_min":0,"farming_experience_on_success_max":0,
+              "harvest_experience_status":"exact","harvest_experience_basis":"quest_item_native_pickup"
+            }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Forest","width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "quests": {
+            "active_quests": {"value":[{
+              "id":"102","quest_type":9,"runtime_type":"LostItemQuest","accepted":true,"completed":false,
+              "per_type_fields":{"available":true,"npc_name":"Linus","location_of_item":"Forest","item_id":"(O)788","tile_x":20,"tile_y":20,"item_found":false}
+            }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "special_orders": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "completed_special_orders": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "accepted_special_order_types": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "mail_received": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "world_progress": {
+            "community_center": {"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "achievements": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var option = availability.Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.Equal("collect_spawned_object", candidate.Kind);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal(20, candidate.TileX);
+        Assert.Equal(20, candidate.TileY);
+        Assert.Equal("(O)788", candidate.QualifiedItemId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_next_action" && parameter.Value == "find_lost_item");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var queueItem = Assert.Single(queue.Items);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.collect_spawned_object", queueItem.OptionId);
+        Assert.Empty(queueItem.BlockingReasons);
     }
 }

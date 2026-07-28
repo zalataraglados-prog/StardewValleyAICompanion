@@ -428,6 +428,12 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("required_target_count")]
         public int RequiredTargetCount { get; set; }
 
+        [JsonPropertyName("required_target_tile_x")]
+        public int? RequiredTargetTileX { get; set; }
+
+        [JsonPropertyName("required_target_tile_y")]
+        public int? RequiredTargetTileY { get; set; }
+
         [JsonPropertyName("current_progress_count")]
         public int CurrentProgressCount { get; set; }
 

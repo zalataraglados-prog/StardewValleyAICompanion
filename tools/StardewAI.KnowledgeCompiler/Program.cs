@@ -259,6 +259,51 @@ internal static class Program
                 }).ToArray()
             });
 
+            var questActionCoverage = new QuestActionCoverageBuilder().Build(decompileRoot);
+            if (questActionCoverage.SourceStatus != "native_decompile_scanned")
+            {
+                issues.Add(new(
+                    "warning",
+                    "quest_action_native_source_not_scanned",
+                    "quest-action-coverage-matrix",
+                    questActionCoverage.SourceStatus));
+            }
+            foreach (var runtimeType in questActionCoverage.UncataloguedOrdinaryRuntimeTypes)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "ordinary_quest_runtime_type_missing_from_action_catalog",
+                    runtimeType,
+                    "native decompile contains a quest subclass with no declared action stages"));
+            }
+            foreach (var runtimeType in questActionCoverage.UncataloguedSpecialOrderObjectiveRuntimeTypes)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "special_order_objective_missing_from_action_catalog",
+                    runtimeType,
+                    "native decompile contains an objective subclass with no declared action stages"));
+            }
+            Write(outputRoot, "quest-action-coverage-matrix.json", new
+            {
+                schema_version = "stardewai.quest_action_coverage.v1",
+                authority = "Stardew Valley 1.6.15 native decompile joined to typed quest candidate bindings",
+                source_status = questActionCoverage.SourceStatus,
+                quest_source_directory = questActionCoverage.QuestSourceDirectory,
+                objective_source_directory = questActionCoverage.ObjectiveSourceDirectory,
+                discovered_ordinary_runtime_types = questActionCoverage.DiscoveredOrdinaryRuntimeTypes,
+                discovered_special_order_objective_runtime_types = questActionCoverage.DiscoveredSpecialOrderObjectiveRuntimeTypes,
+                uncatalogued_ordinary_runtime_types = questActionCoverage.UncataloguedOrdinaryRuntimeTypes,
+                uncatalogued_special_order_objective_runtime_types = questActionCoverage.UncataloguedSpecialOrderObjectiveRuntimeTypes,
+                catalog_ordinary_types_missing_from_source = questActionCoverage.CatalogOrdinaryTypesMissingFromSource,
+                catalog_special_order_types_missing_from_source = questActionCoverage.CatalogSpecialOrderTypesMissingFromSource,
+                stage_count = QuestActionCoverageCatalog.All.Count,
+                bound_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.Bound),
+                blocked_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.Blocked),
+                native_observation_only_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.NativeObservationOnly),
+                stages = QuestActionCoverageCatalog.All
+            });
+
             var downstreamRows = registry.All
                 .OrderBy(row => row.OptionId, StringComparer.Ordinal)
                 .Select(row =>
