@@ -596,6 +596,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_harvest_crop_target" &&
             request.OptionId != "debug.setup_giant_crop_target" &&
             request.OptionId != "debug.setup_debris_target" &&
+            request.OptionId != "debug.setup_book_fixture" &&
             request.OptionId != "debug.setup_machine_output_target" &&
             request.OptionId != "debug.setup_material_inventory_graph" &&
             request.OptionId != "debug.setup_crab_pot_target" &&
@@ -639,6 +640,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.place_machine" &&
             request.OptionId != "executor.remove_machine" &&
             request.OptionId != "executor.place_storage" &&
+            request.OptionId != "executor.read_book" &&
             request.OptionId != "executor.catch_fish" &&
             request.OptionId != "executor.choose_dialogue_response" &&
             request.OptionId != "executor.social_interact" &&

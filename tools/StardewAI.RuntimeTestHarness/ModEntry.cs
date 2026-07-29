@@ -681,6 +681,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_book_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupBookFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_output_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineOutputTarget(pending.Request));
