@@ -806,6 +806,7 @@ namespace StardewAI.Core.OptionRegistry
                     var tile = FirstDebrisChunkTile(item);
                     var qualifiedItemId = ReadString(item, "qualified_item_id");
                     var itemId = ReadString(item, "item_id");
+                    var itemQuality = ReadInt(item, "item_quality");
                     var contextTags = item.TryGetProperty("item", out var itemState) &&
                         itemState.ValueKind == JsonValueKind.Object
                             ? ReadStringArray(itemState, "context_tags")
@@ -851,7 +852,8 @@ namespace StardewAI.Core.OptionRegistry
                         BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                         Parameters = new[]
                         {
-                            Parameter("debris_context_tags_json", JsonSerializer.Serialize(contextTags))
+                            Parameter("debris_context_tags_json", JsonSerializer.Serialize(contextTags)),
+                            Parameter("item_quality", itemQuality.ToString())
                         }
                     };
                 })

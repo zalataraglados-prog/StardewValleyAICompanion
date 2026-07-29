@@ -36,21 +36,23 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "true"),
                         Parameter("quest_acquisition_source_step", "false")
                     }));
-            var currentDebrisReceipts = PickupDebrisCandidates(snapshot)
-                .Where(candidate => candidate.Available)
-                .Where(candidate => ItemIdentityMatches(
-                    candidate.ItemId,
-                    candidate.QualifiedItemId,
-                    quest.RequiredItemId))
-                .Select(candidate => AttachQuest(
-                    candidate,
-                    quest,
-                    new[]
-                    {
-                        Parameter("quest_required_item_id", quest.RequiredItemId),
-                        Parameter("quest_acquisition_target_step", "true"),
-                        Parameter("quest_acquisition_source_step", "false")
-                    }));
+            var currentDebrisReceipts = CurrentLocationIsProjectedMine(snapshot)
+                ? Enumerable.Empty<EventCandidate>()
+                : PickupDebrisCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => ItemIdentityMatches(
+                        candidate.ItemId,
+                        candidate.QualifiedItemId,
+                        quest.RequiredItemId))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_required_item_id", quest.RequiredItemId),
+                            Parameter("quest_acquisition_target_step", "true"),
+                            Parameter("quest_acquisition_source_step", "false")
+                        }));
             var sourceSteps = ClearObstacleCandidates(snapshot)
                 .Where(candidate => candidate.Available)
                 .Where(candidate => ClearCandidateProducesItem(candidate, quest.RequiredItemId))
@@ -218,6 +220,30 @@ namespace StardewAI.Core.OptionRegistry
             return itemId.StartsWith("(", StringComparison.Ordinal)
                 ? itemId
                 : "(O)" + itemId;
+        }
+
+        private static bool CurrentLocationIsProjectedMine(SnapshotEnvelope snapshot)
+        {
+            var currentMine = ReadStateFieldValue(
+                snapshot,
+                "mining",
+                "current_mine");
+            if (!currentMine.HasValue ||
+                currentMine.Value.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var mineLocation = ReadString(currentMine.Value, "location_id");
+            var playerLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            return !string.IsNullOrWhiteSpace(mineLocation) &&
+                string.Equals(
+                    mineLocation,
+                    playerLocation,
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static int ReadIntParameter(

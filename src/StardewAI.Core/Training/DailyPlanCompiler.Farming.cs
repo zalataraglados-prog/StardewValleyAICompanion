@@ -162,6 +162,11 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("item_id", itemId));
             }
+            var parameterNames = new HashSet<string>(
+                parameters.Select(parameter => parameter.Name),
+                StringComparer.Ordinal);
+            parameters.AddRange(candidate.Parameters.Where(parameter =>
+                parameterNames.Add(parameter.Name)));
 
             return new[]
             {

@@ -429,8 +429,77 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("pickup_debris_inventory_cannot_accept_item");
             }
+            if (targetDebris.HasValue &&
+                !PickupDebrisIdentityMatches(action, targetDebris.Value))
+            {
+                reasons.Add("pickup_debris_item_identity_drifted");
+            }
+            if (targetDebris.HasValue &&
+                !PickupDebrisContextTagsMatch(action, targetDebris.Value))
+            {
+                reasons.Add("pickup_debris_context_tags_drifted");
+            }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool PickupDebrisIdentityMatches(
+            SmallModelAction action,
+            JsonElement debris)
+        {
+            var requestedItemId =
+                ReadParameter(action, "item_id") ?? string.Empty;
+            var requestedQualifiedItemId =
+                ReadParameter(action, "qualified_item_id") ?? string.Empty;
+            if ((!string.IsNullOrWhiteSpace(requestedItemId) ||
+                 !string.IsNullOrWhiteSpace(requestedQualifiedItemId)) &&
+                !ItemHarvestIdentityMatches(
+                    ReadString(debris, "item_id"),
+                    ReadString(debris, "qualified_item_id"),
+                    !string.IsNullOrWhiteSpace(requestedQualifiedItemId)
+                        ? requestedQualifiedItemId
+                        : requestedItemId))
+            {
+                return false;
+            }
+
+            var requestedQuality = ReadIntParameter(action, "item_quality");
+            return !requestedQuality.HasValue ||
+                requestedQuality.Value == ReadInt(debris, "item_quality");
+        }
+
+        private static bool PickupDebrisContextTagsMatch(
+            SmallModelAction action,
+            JsonElement debris)
+        {
+            var projectedJson =
+                ReadParameter(action, "debris_context_tags_json");
+            if (string.IsNullOrWhiteSpace(projectedJson))
+            {
+                return true;
+            }
+
+            string[] projected;
+            try
+            {
+                projected = JsonSerializer.Deserialize<string[]>(
+                    projectedJson) ?? Array.Empty<string>();
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            if (!debris.TryGetProperty("item", out var item) ||
+                item.ValueKind != JsonValueKind.Object)
+            {
+                return projected.Length == 0;
+            }
+
+            return new HashSet<string>(
+                    projected,
+                    StringComparer.Ordinal)
+                .SetEquals(ReadQuestStringArray(item, "context_tags"));
         }
 
         private static JsonElement? DebrisAt(

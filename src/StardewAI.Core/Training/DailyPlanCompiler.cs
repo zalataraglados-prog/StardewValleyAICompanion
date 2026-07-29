@@ -58,6 +58,7 @@ namespace StardewAI.Core.Training
             var reservedMachineAdditionalConsumedCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             var reservedInventorySlots = new HashSet<int>();
             var reservedInventorySlotQuantities = new Dictionary<int, int>();
+            var reservedDebrisTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var candidate in OrderedCandidates(candidates))
             {
                 var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) &&
@@ -98,7 +99,8 @@ namespace StardewAI.Core.Training
                     reservedMachineInputCounts,
                     reservedMachineAdditionalConsumedCounts,
                     reservedInventorySlots,
-                    reservedInventorySlotQuantities);
+                    reservedInventorySlotQuantities,
+                    reservedDebrisTargets);
                 if (reservationConflicts.Length > 0)
                 {
                     audit.Add(CandidateAudit(
@@ -193,7 +195,7 @@ namespace StardewAI.Core.Training
 
                 if (!rollingDeferred)
                 {
-                    ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities);
+                    ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities, reservedDebrisTargets);
                 }
                 selected++;
             }
@@ -331,7 +333,8 @@ namespace StardewAI.Core.Training
             IReadOnlyDictionary<string, int> reservedMachineInputCounts,
             IReadOnlyDictionary<string, int> reservedMachineAdditionalConsumedCounts,
             ISet<int> reservedInventorySlots,
-            IReadOnlyDictionary<int, int> reservedInventorySlotQuantities)
+            IReadOnlyDictionary<int, int> reservedInventorySlotQuantities,
+            ISet<string> reservedDebrisTargets)
         {
             var reasons = new List<string>();
             var plantTileKey = PlantTileReservationKey(candidate);
@@ -391,6 +394,13 @@ namespace StardewAI.Core.Training
                 }
             }
 
+            var debrisTarget = DebrisReservationKey(candidate);
+            if (!string.IsNullOrWhiteSpace(debrisTarget) &&
+                reservedDebrisTargets.Contains(debrisTarget))
+            {
+                reasons.Add("daily_plan_debris_target_already_reserved");
+            }
+
             return reasons.ToArray();
         }
 
@@ -401,7 +411,8 @@ namespace StardewAI.Core.Training
             IDictionary<string, int> reservedMachineInputCounts,
             IDictionary<string, int> reservedMachineAdditionalConsumedCounts,
             ISet<int> reservedInventorySlots,
-            IDictionary<int, int> reservedInventorySlotQuantities)
+            IDictionary<int, int> reservedInventorySlotQuantities,
+            ISet<string> reservedDebrisTargets)
         {
             var plantTileKey = PlantTileReservationKey(candidate);
             if (!string.IsNullOrWhiteSpace(plantTileKey))
@@ -445,6 +456,50 @@ namespace StardewAI.Core.Training
                         : shipQuantity.Value;
                 }
             }
+
+            var debrisTarget = DebrisReservationKey(candidate);
+            if (!string.IsNullOrWhiteSpace(debrisTarget))
+            {
+                reservedDebrisTargets.Add(debrisTarget);
+            }
+        }
+
+        private static string DebrisReservationKey(
+            PolicyEventCandidatePrediction candidate)
+        {
+            var debrisIndex = CandidateParameter(candidate, "debris_index");
+            if (string.IsNullOrWhiteSpace(debrisIndex))
+            {
+                debrisIndex = ParseValue(
+                    candidate.ExpectedEffect,
+                    "debris_index=");
+            }
+            if (string.IsNullOrWhiteSpace(debrisIndex))
+            {
+                return string.Empty;
+            }
+
+            var executionOptionId = ParseValue(
+                candidate.ExpectedEffect,
+                "execution_option_id=");
+            if (candidate.Kind != "pickup_debris_item" &&
+                !string.Equals(
+                    executionOptionId,
+                    "executor.pickup_debris",
+                    StringComparison.Ordinal))
+            {
+                return string.Empty;
+            }
+
+            var targetX = candidate.TileX?.ToString() ??
+                CandidateParameter(candidate, "target_tile_x");
+            var targetY = candidate.TileY?.ToString() ??
+                CandidateParameter(candidate, "target_tile_y");
+            var itemId = !string.IsNullOrWhiteSpace(candidate.QualifiedItemId)
+                ? candidate.QualifiedItemId
+                : CandidateParameter(candidate, "qualified_item_id");
+            return candidate.LocationId + "|" + debrisIndex + "|" +
+                targetX + "," + targetY + "|" + itemId;
         }
 
         private static string PlantTileReservationKey(PolicyEventCandidatePrediction candidate)

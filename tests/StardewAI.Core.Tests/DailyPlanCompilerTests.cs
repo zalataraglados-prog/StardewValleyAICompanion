@@ -454,6 +454,28 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileReservesPhysicalDebrisAcrossQuestCandidates()
+    {
+        var first = DebrisCandidate(
+            "quest:one:bound:pickup-debris:Farm:0:65,15:(O)388",
+            score: 10);
+        var second = DebrisCandidate(
+            "quest:two:bound:pickup-debris:Farm:0:65,15:(O)388",
+            score: 9);
+
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { first, second },
+            "state.1",
+            maxCandidates: 4);
+
+        Assert.Equal(2, plan.Steps.Length);
+        Assert.Contains(plan.CandidateAudit, audit =>
+            audit.CandidateId == second.CandidateId &&
+            audit.Decision == "skipped" &&
+            audit.Reasons.Contains("daily_plan_debris_target_already_reserved"));
+    }
+
+    [Fact]
     public void CompileTurnsMachineOutputCandidateIntoMoveThenCollectSteps()
     {
         var candidate = new PolicyEventCandidatePrediction
@@ -849,6 +871,39 @@ public sealed class DailyPlanCompilerTests
             ExpectedEffect = "farm.crops[" + x + "," + y + "].needs_watering=false",
             EstimatedTicks = 60,
             EnergyCost = 2
+        };
+    }
+
+    private static PolicyEventCandidatePrediction DebrisCandidate(
+        string candidateId,
+        double score)
+    {
+        return new PolicyEventCandidatePrediction
+        {
+            CandidateId = candidateId,
+            Kind = "pickup_debris_item",
+            Rank = 1,
+            Score = score,
+            TimelineStatus = "ready_now",
+            LocationId = "Farm",
+            TileX = 65,
+            TileY = 15,
+            ItemId = "388",
+            QualifiedItemId = "(O)388",
+            Quantity = 1,
+            ExpectedEffect =
+                "current_location.debris[0].chunk_count_decreases_or_removed=true;" +
+                "qualified_item_id=(O)388;item_id=388;debris_index=0",
+            EstimatedTicks = 90,
+            Available = true,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "quest_candidate_id",
+                    Value = candidateId
+                }
+            }
         };
     }
 

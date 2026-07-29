@@ -366,6 +366,27 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileBlocksPickupDebrisWhenProjectedItemIdentityDrifts()
+    {
+        var snapshot = DebrisSnapshot(inventoryHasEmptySlot: true);
+        var request = Request(snapshot.StateHash, "executor.pickup_debris");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "65" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "15" },
+            new SmallModelActionParameter { Name = "debris_index", Value = "0" },
+            new SmallModelActionParameter { Name = "qualified_item_id", Value = "(O)390" }
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "pickup_debris_item_identity_drifted",
+            queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void CompileCollectMachineOutputBuildsVerifiedMachineStep()
     {
         var snapshot = MachineOutputSnapshot(inventoryHasEmptySlot: true);

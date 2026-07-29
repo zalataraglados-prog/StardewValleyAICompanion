@@ -332,6 +332,16 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var pickupStep = Assert.Single(plan.Steps.Where(step =>
+            step.Kind == "pickup_debris"));
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "quest_candidate_id");
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "quest_next_action" &&
+            parameter.Value == "collect_resources");
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "quest_acquisition_target_step" &&
+            parameter.Value == "true");
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         var item = Assert.Single(queue.Items.Where(row => row.OptionId == "executor.pickup_debris"));
 
@@ -352,6 +362,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("pickup_debris_item", candidate.Kind);
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var pickupStep = Assert.Single(plan.Steps.Where(step =>
+            step.Kind == "pickup_debris"));
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "quest_next_action" &&
+            parameter.Value == "collect_items");
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "quest_acceptable_context_tag_sets_json");
+        Assert.Contains(pickupStep.Parameters, parameter =>
+            parameter.Name == "debris_context_tags_json");
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         var item = Assert.Single(queue.Items.Where(row => row.OptionId == "executor.pickup_debris"));
 
@@ -359,6 +378,48 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             queue.Status == "pending",
             string.Join(";", queue.Items.SelectMany(queueItem => queueItem.BlockingReasons)));
         Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void ResourceCollectionQuestUsesOnlyMiningOwnerForMineDebris()
+    {
+        var miningState = MonsterDropMiningDomainState()
+            .Replace(
+                "\"debris\":{\"value\":[],\"status\":\"available\"",
+                "\"debris\":{\"value\":[{" +
+                "\"debris_index\":0,\"item_id\":\"390\"," +
+                "\"qualified_item_id\":\"(O)390\",\"item_quality\":0," +
+                "\"chunk_count\":1,\"chunks\":[{" +
+                "\"chunk_index\":0,\"tile_x\":3,\"tile_y\":2}]}]," +
+                "\"status\":\"available\"",
+                StringComparison.Ordinal) +
+            """
+            "current_location":{
+              "debris":{"value":[{
+                "debris_index":0,"item_id":"390","qualified_item_id":"(O)390",
+                "item_quality":0,"chunk_count":1,
+                "item":{"item_id":"390","qualified_item_id":"(O)390","context_tags":["category_resource","id_o_390"]},
+                "chunks":[{"chunk_index":0,"tile_x":3,"tile_y":2}]
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            },
+            """;
+        var snapshot = ResourceCollectionSnapshot(
+            miningState,
+            locationId: "UndergroundMine");
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "quest.advance" },
+                includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal(
+            "mining_collect_quest_resource_plan_envelope",
+            candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "debris_index" && parameter.Value == "0");
     }
 
     [Fact]
