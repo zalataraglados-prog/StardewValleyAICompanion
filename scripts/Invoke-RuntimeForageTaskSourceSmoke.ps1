@@ -10,9 +10,14 @@ param(
     [int] $TargetTileY = 15,
     [ValidateSet("bush", "ginger")]
     [string] $SourceKind = "bush",
-    [ValidateSet("ordinary_quest", "special_order")]
+    [ValidateSet("none", "ordinary_quest", "special_order")]
     [string] $TaskFamily = "ordinary_quest",
     [string] $TaskId = "stardewai.runtime.forage-source",
+    [ValidateSet("dry_standard", "rain_efficient", "dry_insufficient_energy")]
+    [string] $GingerFixtureProfile = "dry_standard",
+    [switch] $FillInventory,
+    [ValidateSet("ready", "blocked_insufficient_energy")]
+    [string] $ExpectedSourceStatus = "ready",
     [switch] $KeepGameRunning
 )
 
@@ -187,6 +192,28 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 
+$smokeModsPath = Join-Path (
+    Join-Path $RuntimeRoot "smoke-mods"
+) $RunId
+New-Item -ItemType Directory -Force -Path $smokeModsPath |
+    Out-Null
+foreach ($modName in @(
+    "StardewAI.TransparentBridge",
+    "StardewAI.RuntimeTestHarness"
+)) {
+    $sourceMod = Join-Path (
+        Join-Path $runtimeGameDir "Mods"
+    ) $modName
+    $targetMod = Join-Path $smokeModsPath $modName
+    New-Item -ItemType Directory -Force -Path $targetMod |
+        Out-Null
+    Copy-Item `
+        -Path (Join-Path $sourceMod "*") `
+        -Destination $targetMod `
+        -Recurse `
+        -Force
+}
+
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
     STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
@@ -195,6 +222,7 @@ $previousEnv = @{
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+    SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
 }
 
 $process = $null
@@ -206,6 +234,7 @@ try {
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle Hidden -PassThru
     $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
@@ -227,6 +256,8 @@ try {
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
         rule_key = $SourceKind
+        fixture_ginger_profile = if ($SourceKind -eq "ginger") { $GingerFixtureProfile } else { "" }
+        debug_fill_inventory = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest
     if ($setupResult.status -ne "applied" -or $setupResult.primitive_verification_status -ne "verified") {
@@ -236,9 +267,9 @@ try {
     $sourceSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $source = Find-ForageSource -Snapshot $sourceSnapshot
     $sourceStatus = if ($SourceKind -eq "bush") { [string]$source.bush_harvest_status } else { [string]$source.ginger_harvest_status }
-    if ($null -eq $source -or $sourceStatus -ne "ready") {
+    if ($null -eq $source -or $sourceStatus -ne $ExpectedSourceStatus) {
         Write-JsonFile (Join-Path $runDirectory "source-snapshot-rejected.json") $sourceSnapshot
-        throw "Fixture did not expose a ready $SourceKind at $LocationId $TargetTileX,$TargetTileY."
+        throw "Fixture exposed $sourceStatus instead of $ExpectedSourceStatus for $SourceKind at $LocationId $TargetTileX,$TargetTileY."
     }
     $qualifiedOutputId = if ($SourceKind -eq "bush") {
         [string]$source.bush_output_qualified_item_id
@@ -246,31 +277,64 @@ try {
         [string]$source.ginger_output_qualified_item_id
     }
 
-    $taskSetupRequest = [ordered]@{
-        schema_version = "training_execution_request.v1"
-        run_id = $RunId
-        queue_id = "runtime-forage-task-source"
-        queue_item_id = "runtime-forage-task-source.task-setup"
-        before_state_hash = $sourceSnapshot.state_hash
-        option_id = "debug.setup_collection_task_fixture"
-        execution_mode = "training_singleplayer"
-        actor = "training_farmer.main"
-        save_isolation_path = $savesPath
-        request_nonce = [guid]::NewGuid().ToString("N")
-        created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        quest_id = $TaskId
-        quest_family = $TaskFamily
-        quest_expected_target_count = 1
-        qualified_item_id = $qualifiedOutputId
+    $taskSetupResult = [pscustomobject]@{
+        status = "not_requested"
+        primitive_verification_status = "not_requested"
     }
-    $taskSetupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $taskSetupRequest
-    if ($taskSetupResult.status -ne "applied" -or $taskSetupResult.primitive_verification_status -ne "verified") {
-        throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
+    if ($TaskFamily -ne "none") {
+        $taskSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-forage-task-source"
+            queue_item_id = "runtime-forage-task-source.task-setup"
+            before_state_hash = $sourceSnapshot.state_hash
+            option_id = "debug.setup_collection_task_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            quest_id = $TaskId
+            quest_family = $TaskFamily
+            quest_expected_target_count = 1
+            qualified_item_id = $qualifiedOutputId
+        }
+        $taskSetupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $taskSetupRequest
+        if ($taskSetupResult.status -ne "applied" -or $taskSetupResult.primitive_verification_status -ne "verified") {
+            throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 300
     }
-    Start-Sleep -Milliseconds 300
     $beforeHarvestSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $source = Find-ForageSource -Snapshot $beforeHarvestSnapshot
     if ($null -eq $source) { throw "Forage source disappeared before execution." }
+    if ($ExpectedSourceStatus -ne "ready") {
+        $summary = [ordered]@{
+            status = "passed"
+            run_id = $RunId
+            save_slot = $SaveSlot
+            source_kind = $SourceKind
+            fixture_profile = $GingerFixtureProfile
+            location_id = $LocationId
+            target_tile = "$TargetTileX,$TargetTileY"
+            task_family = $TaskFamily
+            source_status_before = $sourceStatus
+            expected_source_status = $ExpectedSourceStatus
+            harvest_status = "excluded_upstream"
+            smoke_mods_path = $smokeModsPath
+            loaded_mod_allowlist = @(
+                "StardewAI.TransparentBridge",
+                "StardewAI.RuntimeTestHarness"
+            )
+            executor_health = $executorHealth
+            smapi_process_id = $process.Id
+        }
+        Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
+        Write-JsonFile (Join-Path $runDirectory "before-snapshot.json") $beforeHarvestSnapshot
+        Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
+        $summary | ConvertTo-Json -Depth 24
+        return
+    }
 
     $harvestRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -303,7 +367,9 @@ try {
         $harvestRequest.tool_slot_index = [int]$source.ginger_tool_slot_index
         $harvestRequest.required_tool_kind = [string]$source.ginger_required_tool_kind
     }
-    Add-CollectionTaskFields -Request $harvestRequest -SourceStep $true
+    if ($TaskFamily -ne "none") {
+        Add-CollectionTaskFields -Request $harvestRequest -SourceStep $true
+    }
     $harvestResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $harvestRequest
     if ($harvestResult.status -ne "applied" -or $harvestResult.primitive_verification_status -ne "verified") {
         throw "Native forage harvest failed: $(@($harvestResult.block_reasons) -join ',')"
@@ -316,11 +382,15 @@ try {
     } else {
         $null -eq $sourceAfter
     }
-    $taskProgressAfterSource = Read-CollectionTaskProgress -Snapshot $afterSourceSnapshot
+    $taskProgressAfterSource = if ($TaskFamily -eq "none") {
+        $null
+    } else {
+        Read-CollectionTaskProgress -Snapshot $afterSourceSnapshot
+    }
     $pickupResult = $null
     $afterReceiptSnapshot = $afterSourceSnapshot
 
-    if ($taskProgressAfterSource -eq 0) {
+    if ($TaskFamily -ne "none" -and $taskProgressAfterSource -eq 0) {
         $receipt = Wait-TaskReceiptOrStableDebris -Url $snapshotUrl -QualifiedItemId $qualifiedOutputId
         $afterSourceSnapshot = $receipt.snapshot
         $taskProgressAfterSource = Read-CollectionTaskProgress -Snapshot $afterSourceSnapshot
@@ -357,13 +427,29 @@ try {
             $afterReceiptSnapshot = $afterSourceSnapshot
         }
     }
-    $taskProgressAfterReceipt = Read-CollectionTaskProgress -Snapshot $afterReceiptSnapshot
+    $taskProgressAfterReceipt = if ($TaskFamily -eq "none") {
+        $null
+    } else {
+        Read-CollectionTaskProgress -Snapshot $afterReceiptSnapshot
+    }
 
     $summary = [ordered]@{
-        status = if ($sourceConsumed -and $taskProgressAfterReceipt -ge 1) { "passed" } else { "failed" }
+        status = if ($sourceConsumed -and
+            ($TaskFamily -eq "none" -or $taskProgressAfterReceipt -ge 1)) {
+            "passed"
+        } else {
+            "failed"
+        }
         run_id = $RunId
         save_slot = $SaveSlot
         source_kind = $SourceKind
+        fixture_profile = if ($SourceKind -eq "ginger") { $GingerFixtureProfile } else { "" }
+        inventory_full = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
+        smoke_mods_path = $smokeModsPath
+        loaded_mod_allowlist = @(
+            "StardewAI.TransparentBridge",
+            "StardewAI.RuntimeTestHarness"
+        )
         location_id = $LocationId
         target_tile = "$TargetTileX,$TargetTileY"
         qualified_output_item_id = $qualifiedOutputId

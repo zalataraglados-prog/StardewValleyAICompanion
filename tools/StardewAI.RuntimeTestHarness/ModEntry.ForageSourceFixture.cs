@@ -102,6 +102,21 @@ public sealed partial class ModEntry
         TrainingExecutionRequest request)
     {
         var started = DateTimeOffset.UtcNow.ToString("O");
+        var profile = string.IsNullOrWhiteSpace(request.FixtureGingerProfile)
+            ? "dry_standard"
+            : request.FixtureGingerProfile;
+        if (profile is not (
+            "dry_standard" or
+            "rain_efficient" or
+            "dry_insufficient_energy"))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_forage_source_fixture",
+                "current_location.terrain_features[target].is_ginger=true",
+                "fixture_ginger_profile=" + profile,
+                "fixture_ginger_profile_unknown");
+        }
         if (!TryResolveForageFixtureLocation(
                 request,
                 out var location,
@@ -126,7 +141,28 @@ public sealed partial class ModEntry
             hoe = new Hoe();
             InstallFixtureItem(Game1.player, hoe);
         }
-        Game1.player.Stamina = Math.Max(Game1.player.Stamina, 200f);
+        hoe.isEfficient.Value = profile == "rain_efficient";
+        var weather = location.GetWeather();
+        weather.IsRaining = profile == "rain_efficient";
+        weather.IsSnowing = false;
+        weather.IsLightning = false;
+        weather.IsDebrisWeather = false;
+        weather.IsGreenRain = false;
+        if (location.GetLocationContextId() == "Default")
+        {
+            Game1.isRaining = weather.IsRaining;
+            Game1.isSnowing = false;
+            Game1.isLightning = false;
+            Game1.isDebrisWeather = false;
+            Game1.isGreenRain = false;
+        }
+        Game1.player.Stamina = profile == "dry_insufficient_energy"
+            ? 0f
+            : Math.Max(Game1.player.Stamina, 200f);
+        if (request.DebugFillInventory)
+        {
+            FillGingerFixtureInventory(hoe);
+        }
 
         var before = ForageFixtureObservedEffect(location, target);
         var tile = new Vector2(target.X, target.Y);
@@ -148,7 +184,13 @@ public sealed partial class ModEntry
         var verified = moved &&
             IsExactGinger(location, tile, out _) &&
             Game1.player.Items.OfType<Hoe>().Any(tool => tool.GetType() == typeof(Hoe)) &&
-            AreAdjacent(stand, target);
+            AreAdjacent(stand, target) &&
+            location.IsRainingHere() == (profile == "rain_efficient") &&
+            hoe.isEfficient.Value == (profile == "rain_efficient") &&
+            (!request.DebugFillInventory ||
+             !Game1.player.couldInventoryAcceptThisItem(
+                 GingerQualifiedItemId,
+                 1));
 
         return ForageFixtureResult(
             request,
@@ -161,7 +203,30 @@ public sealed partial class ModEntry
             "ginger",
             GingerQualifiedItemId,
             verified,
-            verified ? "isolated_native_ginger_ready" : moved ? "fixture_ginger_not_ready" : moveReason);
+            verified
+                ? "isolated_native_ginger_" + profile +
+                  (request.DebugFillInventory ? "_inventory_full" : string.Empty)
+                : moved
+                    ? "fixture_ginger_not_ready"
+                    : moveReason);
+    }
+
+    private static void FillGingerFixtureInventory(Hoe hoe)
+    {
+        var hoeSlot = Game1.player.Items.IndexOf(hoe);
+        var fillerIds = new[] { "(O)390", "(O)388", "(O)770", "(O)382" };
+        for (var index = 0; index < Game1.player.MaxItems; index++)
+        {
+            if (index == hoeSlot)
+            {
+                continue;
+            }
+
+            Game1.player.Items[index] =
+                ItemRegistry.Create(
+                    fillerIds[index % fillerIds.Length],
+                    999);
+        }
     }
 
     private static bool TryResolveForageFixtureLocation(
