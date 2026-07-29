@@ -25,6 +25,20 @@ public sealed partial class TrainingExecutionRequest
     public string MachineOutputDistributionOutcomeKind { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("fixture_machine_harvest_use_native_config")]
+    public bool FixtureMachineHarvestUseNativeConfig { get; set; }
+
+    [JsonPropertyName("fixture_machine_harvest_experience_override")]
+    public bool FixtureMachineHarvestExperienceOverride { get; set; }
+
+    [JsonPropertyName("fixture_machine_harvest_experience_raw")]
+    public string FixtureMachineHarvestExperienceRaw { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("fixture_machine_harvest_skill_profile")]
+    public string FixtureMachineHarvestSkillProfile { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("anvil_reforge_utility_metric")]
     public string AnvilReforgeUtilityMetric { get; set; } =
         string.Empty;

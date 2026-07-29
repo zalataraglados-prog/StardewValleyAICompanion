@@ -377,7 +377,36 @@ public sealed partial class ModEntry : Mod
         ClearReadyMachineOutputsForFixture(farm, tile);
         farm.objects.Remove(tile);
 
-        var machine = new StardewValley.Object(tile, string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "12" : request.ExpectedShopId)
+        var machineItemId = string.IsNullOrWhiteSpace(request.ExpectedShopId)
+            ? "12"
+            : request.ExpectedShopId;
+        if (request.FixtureMachineHarvestUseNativeConfig)
+        {
+            var nativeMachine = DataLoader.Machines(Game1.content)
+                .Where(pair =>
+                    !string.IsNullOrWhiteSpace(
+                        pair.Value.ExperienceGainOnHarvest))
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(nativeMachine.Key))
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_output_target",
+                    "machine_harvest_experience=native_configured",
+                    "native_machine=unavailable",
+                    "native_machine_harvest_experience_fixture_unavailable");
+            }
+            machineItemId = nativeMachine.Key.StartsWith(
+                "(BC)",
+                StringComparison.Ordinal)
+                ? nativeMachine.Key[4..]
+                : nativeMachine.Key;
+        }
+
+        MachineHarvestExperienceFixture.ApplySkillProfile(
+            request.FixtureMachineHarvestSkillProfile);
+        var machine = new StardewValley.Object(tile, machineItemId)
         {
             heldObject =
             {
@@ -389,10 +418,33 @@ public sealed partial class ModEntry : Mod
             }
         };
         machine.MinutesUntilReady = 0;
+        var machineData = machine.GetMachineData();
+        if (request.FixtureMachineHarvestExperienceOverride)
+        {
+            if (machineData is null)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_machine_output_target",
+                    "machine_harvest_experience=" +
+                        request.FixtureMachineHarvestExperienceRaw,
+                    "machine_data=unavailable",
+                    "machine_harvest_experience_fixture_data_unavailable");
+            }
+            machineData.ExperienceGainOnHarvest =
+                request.FixtureMachineHarvestExperienceRaw;
+        }
         farm.objects[tile] = machine;
         MoveFixtureFarmerToFarmAdjacent(target);
 
-        var verified = MachineAt(farm, target) is { readyForHarvest.Value: true, heldObject.Value: not null };
+        var verified = MachineAt(farm, target) is
+            { readyForHarvest.Value: true, heldObject.Value: not null } &&
+            machineData is not null &&
+            (!request.FixtureMachineHarvestExperienceOverride ||
+             string.Equals(
+                 machineData.ExperienceGainOnHarvest ?? string.Empty,
+                 request.FixtureMachineHarvestExperienceRaw,
+                 StringComparison.Ordinal));
         return new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -410,7 +462,12 @@ public sealed partial class ModEntry : Mod
                 ? new[] { "isolated_runtime_fixture_machine_output_ready", "qualified_item_id=" + outputItemId }
                 : new[] { "fixture_machine_output_not_ready", "qualified_item_id=" + outputItemId },
             RequestedEffect = "farm.machines[" + target.X + "," + target.Y + "].ready_for_harvest=true;held_item=" + outputItemId,
-            ObservedEffect = MachineObservedEffect(farm, target),
+            ObservedEffect = MachineObservedEffect(farm, target) +
+                ";machine_qualified_item_id=" + machine.QualifiedItemId +
+                ";harvest_experience_raw=" +
+                (machineData?.ExperienceGainOnHarvest ?? string.Empty) +
+                ";skill_profile=" +
+                request.FixtureMachineHarvestSkillProfile,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_machine_output_not_ready" },
             ChangedFacts = verified
                 ? new[]

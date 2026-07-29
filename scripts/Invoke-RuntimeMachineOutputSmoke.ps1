@@ -94,6 +94,28 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 
+$smokeModsPath = Join-Path (
+    Join-Path $RuntimeRoot "smoke-mods"
+) $RunId
+New-Item -ItemType Directory -Force -Path $smokeModsPath |
+    Out-Null
+foreach ($modName in @(
+    "StardewAI.TransparentBridge",
+    "StardewAI.RuntimeTestHarness"
+)) {
+    $sourceMod = Join-Path (
+        Join-Path $runtimeGameDir "Mods"
+    ) $modName
+    $targetMod = Join-Path $smokeModsPath $modName
+    New-Item -ItemType Directory -Force -Path $targetMod |
+        Out-Null
+    Copy-Item `
+        -Path (Join-Path $sourceMod "*") `
+        -Destination $targetMod `
+        -Recurse `
+        -Force
+}
+
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
     STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
@@ -102,6 +124,7 @@ $previousEnv = @{
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+    SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
 }
 
 $process = $null
@@ -113,87 +136,210 @@ try {
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle Hidden -PassThru
     $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
     $initialSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
 
-    $setupRequest = [ordered]@{
-        schema_version = "training_execution_request.v1"
-        run_id = $RunId
-        queue_id = "runtime-machine-output-smoke"
-        queue_item_id = "runtime-machine-output-smoke.setup"
-        before_state_hash = $initialSnapshot.state_hash
-        option_id = "debug.setup_machine_output_target"
-        execution_mode = "training_singleplayer"
-        actor = "training_farmer.main"
-        save_isolation_path = $savesPath
-        request_nonce = [guid]::NewGuid().ToString("N")
-        created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        target_tile_x = $TargetTileX
-        target_tile_y = $TargetTileY
-        qualified_item_id = $QualifiedItemId
-        quantity = 1
-    }
-    $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
-    Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
-    Start-Sleep -Milliseconds 500
-    $beforeCollectSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $targetMachine = Find-MachineAtTile -Snapshot $beforeCollectSnapshot -X $TargetTileX -Y $TargetTileY
-    if ($null -eq $targetMachine) {
-        Write-JsonFile (Join-Path $runDirectory "snapshot-before-collect-rejected.json") $beforeCollectSnapshot
-        throw "Fixture did not produce transparent machine at $TargetTileX,$TargetTileY."
-    }
+    $cases = @(
+        [ordered]@{
+            name = "native_configured"
+            use_native = $true
+            override = $false
+            raw = ""
+            skill_profile = "zero"
+        },
+        [ordered]@{
+            name = "no_configured_experience"
+            use_native = $false
+            override = $true
+            raw = ""
+            skill_profile = "zero"
+        },
+        [ordered]@{
+            name = "multi_skill_sink_and_invalid"
+            use_native = $false
+            override = $true
+            raw =
+                "Farming 5 Mining 3 Luck 20 Invalid 7 " +
+                "Fishing nope Combat -2"
+            skill_profile = "zero"
+        },
+        [ordered]@{
+            name = "mastery_threshold_order"
+            use_native = $false
+            override = $true
+            raw = "Farming 5 Mining 3"
+            skill_profile = "mastery_threshold_order"
+        }
+    )
+    $caseResults = @()
+    $snapshot = $initialSnapshot
+    foreach ($case in $cases) {
+        $caseName = [string]$case.name
+        $setupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-machine-output-smoke"
+            queue_item_id =
+                "runtime-machine-output-smoke.$caseName.setup"
+            before_state_hash = $snapshot.state_hash
+            option_id = "debug.setup_machine_output_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = $TargetTileX
+            target_tile_y = $TargetTileY
+            qualified_item_id = $QualifiedItemId
+            quantity = 1
+            fixture_machine_harvest_use_native_config =
+                [bool]$case.use_native
+            fixture_machine_harvest_experience_override =
+                [bool]$case.override
+            fixture_machine_harvest_experience_raw =
+                [string]$case.raw
+            fixture_machine_harvest_skill_profile =
+                [string]$case.skill_profile
+        }
+        $setupResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $setupRequest `
+            -TimeoutSeconds 120
+        Write-JsonFile `
+            (Join-Path $runDirectory "$caseName-setup.json") `
+            $setupResult
+        if (
+            $setupResult.status -ne "applied" -or
+            $setupResult.primitive_verification_status -ne "verified"
+        ) {
+            throw "$caseName fixture failed: " +
+                (@($setupResult.block_reasons) -join ",")
+        }
 
-    $collectRequest = [ordered]@{
-        schema_version = "training_execution_request.v1"
-        run_id = $RunId
-        queue_id = "runtime-machine-output-smoke"
-        queue_item_id = "runtime-machine-output-smoke.collect"
-        before_state_hash = $beforeCollectSnapshot.state_hash
-        option_id = "executor.collect_machine_output"
-        execution_mode = "training_singleplayer"
-        actor = "training_farmer.main"
-        save_isolation_path = $savesPath
-        request_nonce = [guid]::NewGuid().ToString("N")
-        created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        target_tile_x = $TargetTileX
-        target_tile_y = $TargetTileY
-        qualified_item_id = $QualifiedItemId
+        Start-Sleep -Milliseconds 300
+        $beforeCollectSnapshot = Wait-WorldSnapshot `
+            -Url $snapshotUrl `
+            -TimeoutSeconds 30
+        $targetMachine = Find-MachineAtTile `
+            -Snapshot $beforeCollectSnapshot `
+            -X $TargetTileX `
+            -Y $TargetTileY
+        if ($null -eq $targetMachine) {
+            throw "$caseName did not project the fixture machine"
+        }
+
+        $collectRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-machine-output-smoke"
+            queue_item_id =
+                "runtime-machine-output-smoke.$caseName.collect"
+            before_state_hash = $beforeCollectSnapshot.state_hash
+            option_id = "executor.collect_machine_output"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            location_id = [string]$targetMachine.location_id
+            target_tile_x = $TargetTileX
+            target_tile_y = $TargetTileY
+            qualified_item_id =
+                [string]$targetMachine.held_item.qualified_item_id
+            expected_skill_experience_deltas_json =
+                [string]$targetMachine.harvest_experience_deltas_json
+            expected_mastery_experience_delta =
+                [int]$targetMachine.harvest_mastery_experience_delta
+        }
+        $collectResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $collectRequest `
+            -TimeoutSeconds 120
+        Start-Sleep -Milliseconds 300
+        $afterSnapshot = Wait-WorldSnapshot `
+            -Url $snapshotUrl `
+            -TimeoutSeconds 30
+        $afterMachine = Find-MachineAtTile `
+            -Snapshot $afterSnapshot `
+            -X $TargetTileX `
+            -Y $TargetTileY
+        $heldAfter = if (
+            $null -ne $afterMachine -and
+            $null -ne $afterMachine.held_item
+        ) {
+            [string]$afterMachine.held_item.qualified_item_id
+        }
+        else {
+            ""
+        }
+        $passed =
+            $collectResult.status -eq "applied" -and
+            $collectResult.primitive_verification_status -eq "verified" -and
+            [string]::IsNullOrWhiteSpace($heldAfter)
+        $caseResult = [ordered]@{
+            name = $caseName
+            machine_qualified_item_id =
+                [string]$targetMachine.qualified_item_id
+            harvest_experience_raw =
+                [string]$targetMachine.harvest_experience_raw
+            harvest_experience_entries =
+                @($targetMachine.harvest_experience_entries)
+            projected_skill_deltas_json =
+                [string]$targetMachine.harvest_experience_deltas_json
+            projected_mastery_delta =
+                [int]$targetMachine.harvest_mastery_experience_delta
+            projection_status =
+                [string]$targetMachine.harvest_experience_projection_status
+            collect_status = $collectResult.status
+            collect_verification =
+                $collectResult.primitive_verification_status
+            collect_block_reasons =
+                @($collectResult.block_reasons)
+            machine_held_after = $heldAfter
+            result = if ($passed) { "passed" } else { "failed" }
+        }
+        Write-JsonFile `
+            (Join-Path $runDirectory "$caseName-before.json") `
+            $beforeCollectSnapshot
+        Write-JsonFile `
+            (Join-Path $runDirectory "$caseName-collect.json") `
+            $collectResult
+        Write-JsonFile `
+            (Join-Path $runDirectory "$caseName-after.json") `
+            $afterSnapshot
+        $caseResults += [pscustomobject]$caseResult
+        $snapshot = $afterSnapshot
     }
-    $collectResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $collectRequest -TimeoutSeconds 120
-    Start-Sleep -Milliseconds 500
-    $afterSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $afterMachine = Find-MachineAtTile -Snapshot $afterSnapshot -X $TargetTileX -Y $TargetTileY
-    $heldAfter = if ($null -ne $afterMachine -and $null -ne $afterMachine.held_item) { [string]$afterMachine.held_item.qualified_item_id } else { "" }
 
     $summary = [ordered]@{
-        status = if ($setupResult.status -eq "applied" -and $setupResult.primitive_verification_status -eq "verified" -and $collectResult.status -eq "applied" -and $collectResult.primitive_verification_status -eq "verified" -and [string]::IsNullOrWhiteSpace($heldAfter)) { "passed" } else { "failed" }
+        status = if (
+            @($caseResults |
+                Where-Object { $_.result -ne "passed" }).Count -eq 0
+        ) {
+            "passed"
+        }
+        else {
+            "failed"
+        }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
         target_tile = "$TargetTileX,$TargetTileY"
         qualified_item_id = $QualifiedItemId
-        setup_status = $setupResult.status
-        setup_verification = $setupResult.primitive_verification_status
-        machine_present_before = $null -ne $targetMachine
-        machine_held_before = if ($null -ne $targetMachine -and $null -ne $targetMachine.held_item) { [string]$targetMachine.held_item.qualified_item_id } else { "" }
-        collect_status = $collectResult.status
-        collect_verification = $collectResult.primitive_verification_status
-        collect_reasons = @($collectResult.primitive_verification_reasons)
-        collect_block_reasons = @($collectResult.block_reasons)
-        machine_held_after = $heldAfter
-        bridge_state_hash_before = $beforeCollectSnapshot.state_hash
-        bridge_state_hash_after = $afterSnapshot.state_hash
-        state_hash_changed = $beforeCollectSnapshot.state_hash -ne $afterSnapshot.state_hash
+        smoke_mods_path = $smokeModsPath
+        loaded_mod_allowlist = @(
+            "StardewAI.TransparentBridge",
+            "StardewAI.RuntimeTestHarness"
+        )
+        cases = $caseResults
         executor_health = $executorHealth
         smapi_process_id = $process.Id
     }
 
-    Write-JsonFile (Join-Path $runDirectory "collect-result.json") $collectResult
     Write-JsonFile (Join-Path $runDirectory "initial-snapshot.json") $initialSnapshot
-    Write-JsonFile (Join-Path $runDirectory "before-collect-snapshot.json") $beforeCollectSnapshot
-    Write-JsonFile (Join-Path $runDirectory "after-snapshot.json") $afterSnapshot
     Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 12
     if ($summary.status -ne "passed") { throw "Runtime machine output smoke failed. See $runDirectory" }
