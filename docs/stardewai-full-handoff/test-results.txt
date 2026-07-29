@@ -3391,3 +3391,15 @@ Scope boundary:
   - `artifacts\runtime-forage-task-source-smoke\runtime-ginger-special-retry-20260729\summary.json`
 - The Bush special-order run kept objective progress at `0/1` after the native source action and advanced to `1/1` only after fresh transparent debris pickup. Other runs advanced through observed native auto-pickup.
 - Focused source guards 10/10; Core 1345/1345; Backend 95/95; full Release solution build 0 errors with five existing warnings.
+
+2026-07-29 single-tile native obstacle runtime calibration
+
+- Parameterized the existing isolated fixture and smoke for Grass, Twig, SeedSpot and ordinary ArtifactSpot; no second executor was added.
+- The fixture only creates exact native obstacle/tool state. Every output, XP, statistic, mail and terrain change remains owned by the existing native executor.
+- Twig PASS: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-twig-20260729\summary.json`; `(O)294` removed, `(O)388 x1`, Foraging XP `+1`, exact output unit-state multiset matched.
+- SeedSpot first run exposed a false verifier block because native success replaces the object with expected HoeDirt. The verifier now requires the original spot object to be absent and the projected terrain/output/stat/mail effects to match.
+- SeedSpot fixed PASS: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-seed-spot-fixed-20260729\summary.json`; seasonal seed output, Foraging XP `+15`, `ArtifactSpotsDug +1`, HoeDirt and defense-book mail state matched.
+- Ordinary ArtifactSpot PASS: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-artifact-spot-active-hoe-20260729\summary.json`; active Hoe enabled exact enchantment-aware projection, the strict output multiset matched, and XP/stat/terrain state verified.
+- Grass regression PASS: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-grass-regression-20260729\summary.json`; non-artifact obstacles still require the tile to become fully clear.
+- Focused source guards 3/3; Core 1348/1348; Backend 95/95; full Release solution build 0 errors with five existing warnings.
+- Generous, defense-book-hit, Island/Desert override and zero-output ArtifactSpot variants remain runtime-pending; global-RNG secret-note outcomes remain fail closed.

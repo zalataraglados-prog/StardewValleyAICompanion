@@ -8,6 +8,8 @@ param(
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
     [int] $MaxToolSwings = 8,
+    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot")]
+    [string] $FixtureKind = "grass",
     [switch] $KeepGameRunning
 )
 
@@ -73,14 +75,20 @@ function Wait-WorldSnapshot {
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
             $timeReadable = $snapshot.in_game_time.status -in @("available", "derived")
             $locationReadable = $false
+            $objectsReadable = $false
             if ($null -ne $snapshot.state -and
                 $snapshot.state.PSObject.Properties.Name -contains "player" -and
                 $snapshot.state.player.PSObject.Properties.Name -contains "location_id") {
                 $locationReadable = $snapshot.state.player.location_id.status -in @("available", "derived")
             }
+            if ($null -ne $snapshot.state -and
+                $snapshot.state.PSObject.Properties.Name -contains "current_location" -and
+                $snapshot.state.current_location.PSObject.Properties.Name -contains "objects") {
+                $objectsReadable = $snapshot.state.current_location.objects.status -in @("available", "derived")
+            }
 
-            $lastStatus = "save_id=$($snapshot.save_id.status);in_game_time=$($snapshot.in_game_time.status);location_id_readable=$locationReadable;completeness=$($snapshot.completeness)"
-            if ($saveReadable -and $timeReadable -and $locationReadable) {
+            $lastStatus = "save_id=$($snapshot.save_id.status);in_game_time=$($snapshot.in_game_time.status);location_id_readable=$locationReadable;objects_readable=$objectsReadable;completeness=$($snapshot.completeness)"
+            if ($saveReadable -and $timeReadable -and $locationReadable -and $objectsReadable) {
                 return $snapshot
             }
         }
@@ -92,6 +100,16 @@ function Wait-WorldSnapshot {
     }
 
     throw "Timed out waiting for world-ready snapshot. Last status: $lastStatus"
+}
+
+function Find-TargetObject {
+    param($Snapshot)
+    return $Snapshot.state.current_location.objects.value |
+        Where-Object {
+            [int]$_.tile_x -eq $TargetTileX -and
+            [int]$_.tile_y -eq $TargetTileY
+        } |
+        Select-Object -First 1
 }
 
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
@@ -171,9 +189,21 @@ try {
     $setupRequest.option_id = "debug.setup_clear_obstacle"
     $setupRequest.request_nonce = [guid]::NewGuid().ToString("N")
     $setupRequest.created_at = [DateTimeOffset]::UtcNow.ToString("O")
+    $setupRequest.rule_key = $FixtureKind
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
 
     $readySnapshot = Wait-WorldSnapshot -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -TimeoutSeconds 30
+    $targetObject = Find-TargetObject -Snapshot $readySnapshot
+    if ($FixtureKind -ne "grass") {
+        if ($null -eq $targetObject) {
+            Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
+            throw "Fixture did not expose a transparent $FixtureKind object at $TargetTileX,$TargetTileY."
+        }
+        if ([string]$targetObject.clear_obstacle_executor_status -ne "ready") {
+            Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
+            throw "Transparent $FixtureKind projection is not ready: $($targetObject.clear_obstacle_executor_status)."
+        }
+    }
 
     $clearRequest = [ordered]@{} + $baseRequest
     $clearRequest.queue_item_id = "runtime-clear-obstacle-smoke.clear"
@@ -181,12 +211,30 @@ try {
     $clearRequest.option_id = "executor.clear_obstacle"
     $clearRequest.request_nonce = [guid]::NewGuid().ToString("N")
     $clearRequest.created_at = [DateTimeOffset]::UtcNow.ToString("O")
+    $clearRequest.target_location = [string]$readySnapshot.state.player.location_id.value
+    if ($FixtureKind -ne "grass") {
+        $clearRequest.max_crops = [int]$targetObject.expected_tool_hits_to_clear
+        $clearRequest.tool_slot_index = [int]$targetObject.tool_slot_index
+        $clearRequest.required_tool_kind = [string]$targetObject.required_tool_kind
+        $clearRequest.clear_output_projection_status = [string]$targetObject.clear_output_projection_status
+        $clearRequest.clear_output_items_json = [string]$targetObject.clear_output_items_json
+        $clearRequest.expected_foraging_experience_delta = [int]$targetObject.harvest_experience_on_success_min
+        if ($FixtureKind -in @("seed_spot", "artifact_spot")) {
+            $clearRequest.artifact_spots_dug_before = [int]$targetObject.artifact_spots_dug_before
+            $clearRequest.artifact_spots_dug_delta = [int]$targetObject.artifact_spots_dug_delta
+            $clearRequest.artifact_spots_dug_expected_after = [int]$targetObject.artifact_spots_dug_expected_after
+            $clearRequest.clear_terrain_feature_expected_after = [string]$targetObject.clear_terrain_feature_expected_after
+            $clearRequest.defense_book_mail_before = [int]$targetObject.defense_book_mail_before
+            $clearRequest.defense_book_mail_expected_after = [int]$targetObject.defense_book_mail_expected_after
+        }
+    }
     $clearResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $clearRequest -TimeoutSeconds 120
 
     $afterSnapshot = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8765/api/v1/snapshot?profile=full" -Headers @{ "Accept" = "application/json" } -TimeoutSec 10
+    $targetObjectAfter = Find-TargetObject -Snapshot $afterSnapshot
 
     $summary = [ordered]@{
-        status = if ($setupResult.status -eq "applied" -and $clearResult.status -eq "applied" -and $clearResult.primitive_verification_status -eq "verified") { "passed" } else { "unexpected_result" }
+        status = if ($setupResult.status -eq "applied" -and $clearResult.status -eq "applied" -and $clearResult.primitive_verification_status -eq "verified" -and ($FixtureKind -eq "grass" -or $null -eq $targetObjectAfter)) { "passed" } else { "unexpected_result" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
@@ -195,6 +243,10 @@ try {
         bridge_state_hash_ready = $readySnapshot.state_hash
         bridge_state_hash_after = $afterSnapshot.state_hash
         target_tile = "$TargetTileX,$TargetTileY"
+        fixture_kind = $FixtureKind
+        target_qualified_item_id = if ($null -eq $targetObject) { "" } else { [string]$targetObject.qualified_item_id }
+        target_projection_status = if ($null -eq $targetObject) { "not_applicable" } else { [string]$targetObject.clear_obstacle_executor_status }
+        target_present_after = $null -ne $targetObjectAfter
         executor_health = $executorHealth
         setup_status = $setupResult.status
         setup_verification = $setupResult.primitive_verification_status

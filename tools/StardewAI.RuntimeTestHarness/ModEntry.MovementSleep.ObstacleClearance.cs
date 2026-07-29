@@ -256,10 +256,13 @@ public sealed partial class ModEntry : Mod
             (!expectedArtifactSpotsDugAfter.HasValue || (long)artifactSpotsDugAfter == expectedArtifactSpotsDugAfter.Value) &&
             (string.IsNullOrWhiteSpace(expectedTerrainFeatureAfter) || targetTerrainFeatureAfter == expectedTerrainFeatureAfter) &&
             (!expectedDefenseBookMailAfter.HasValue || defenseBookMailAfter == expectedDefenseBookMailAfter.Value);
-        var verified = after == "clear" &&
+        var targetClearanceCompleted = targetIsArtifactSpot
+            ? !location.objects.ContainsKey(target.ToVector2())
+            : after == "clear";
+        var verified = targetClearanceCompleted &&
             (!expectedForagingExperience.HasValue || foragingExperienceDelta == expectedForagingExperience.Value) &&
             projectedOutputMatched;
-        var verificationFailureReason = after != "clear"
+        var verificationFailureReason = !targetClearanceCompleted
             ? "target_obstacle_still_present"
             : expectedForagingExperience.HasValue && foragingExperienceDelta != expectedForagingExperience.Value
                 ? "projected_foraging_experience_mismatch"
