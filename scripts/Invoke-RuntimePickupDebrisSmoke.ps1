@@ -8,6 +8,10 @@ param(
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
     [string] $QualifiedItemId = "(O)388",
+    [string] $LocationId = "Farm",
+    [ValidateSet("none", "ordinary_quest", "special_order")]
+    [string] $TaskFamily = "none",
+    [string] $TaskId = "stardewai.runtime.debris-receipt",
     [switch] $KeepGameRunning
 )
 
@@ -52,26 +56,26 @@ function Wait-WorldSnapshot {
         try {
             $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 5
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
-            $farmReadable = $false
+            $debrisReadable = $false
             if ($null -ne $snapshot.state -and
-                $snapshot.state.PSObject.Properties.Name -contains "farm" -and
-                $snapshot.state.farm.PSObject.Properties.Name -contains "debris") {
-                $farmReadable = $snapshot.state.farm.debris.status -in @("available", "derived")
+                $snapshot.state.PSObject.Properties.Name -contains "current_location" -and
+                $snapshot.state.current_location.PSObject.Properties.Name -contains "debris") {
+                $debrisReadable = $snapshot.state.current_location.debris.status -in @("available", "derived")
             }
 
-            $lastStatus = "save_id=$($snapshot.save_id.status);farm_debris_readable=$farmReadable"
-            if ($saveReadable -and $farmReadable) { return $snapshot }
+            $lastStatus = "save_id=$($snapshot.save_id.status);current_location_debris_readable=$debrisReadable"
+            if ($saveReadable -and $debrisReadable) { return $snapshot }
         }
         catch { $lastStatus = $_.Exception.Message }
         Start-Sleep -Seconds 2
     }
-    throw "Timed out waiting for world-ready farm debris snapshot. Last status: $lastStatus"
+    throw "Timed out waiting for world-ready current-location debris snapshot. Last status: $lastStatus"
 }
 
 function Find-DebrisAtTile {
     param($Snapshot, [int] $X, [int] $Y, [string] $ItemId)
-    if ($null -eq $Snapshot.state.farm.debris.value) { return $null }
-    foreach ($debris in @($Snapshot.state.farm.debris.value)) {
+    if ($null -eq $Snapshot.state.current_location.debris.value) { return $null }
+    foreach ($debris in @($Snapshot.state.current_location.debris.value)) {
         $qualified = [string]$debris.qualified_item_id
         if (-not [string]::IsNullOrWhiteSpace($ItemId) -and $qualified -ne $ItemId) { continue }
         foreach ($chunk in @($debris.chunks)) {
@@ -83,8 +87,8 @@ function Find-DebrisAtTile {
 
 function Find-DebrisForItem {
     param($Snapshot, [string] $ItemId)
-    if ($null -eq $Snapshot.state.farm.debris.value) { return $null }
-    foreach ($debris in @($Snapshot.state.farm.debris.value)) {
+    if ($null -eq $Snapshot.state.current_location.debris.value) { return $null }
+    foreach ($debris in @($Snapshot.state.current_location.debris.value)) {
         $qualified = [string]$debris.qualified_item_id
         if ([string]::IsNullOrWhiteSpace($ItemId) -or $qualified -eq $ItemId) { return $debris }
     }
@@ -101,8 +105,49 @@ function Get-FirstDebrisTile {
 
 function Count-Debris {
     param($Snapshot)
-    if ($null -eq $Snapshot.state.farm.debris.value) { return 0 }
-    return @($Snapshot.state.farm.debris.value).Count
+    if ($null -eq $Snapshot.state.current_location.debris.value) { return 0 }
+    return @($Snapshot.state.current_location.debris.value).Count
+}
+
+function Read-CollectionTaskProgress {
+    param($Snapshot)
+    if ($TaskFamily -eq "special_order") {
+        $order = $Snapshot.state.quests.special_orders.value |
+            Where-Object { [string]$_.quest_key -eq $TaskId } |
+            Select-Object -First 1
+        if ($null -eq $order) {
+            if ($TaskId -in @($Snapshot.state.quests.completed_special_orders.value)) { return 1 }
+            return $null
+        }
+        return [int]@($order.objectives)[0].current_count
+    }
+    $quest = $Snapshot.state.quests.active_quests.value |
+        Where-Object {
+            [string]$_.id -eq $TaskId -and
+            [string]$_.runtime_type -eq "ResourceCollectionQuest"
+        } |
+        Select-Object -First 1
+    if ($null -eq $quest) { return $null }
+    return [int]$quest.per_type_fields.number_collected
+}
+
+function Add-CollectionTaskFields {
+    param([System.Collections.IDictionary] $Request)
+    if ($TaskFamily -eq "none") { return }
+    $Request.quest_candidate_id = "runtime_fixture:$TaskId"
+    $Request.quest_family = $TaskFamily
+    $Request.quest_id = $TaskId
+    $Request.quest_key = if ($TaskFamily -eq "special_order") { $TaskId } else { "" }
+    $Request.quest_objective_index = if ($TaskFamily -eq "special_order") { 0 } else { $null }
+    $Request.quest_runtime_type = if ($TaskFamily -eq "special_order") {
+        "SpecialOrder"
+    } else {
+        "ResourceCollectionQuest"
+    }
+    $Request.quest_expected_current_count = 0
+    $Request.quest_expected_target_count = 1
+    $Request.quest_acquisition_source_step = $false
+    $Request.quest_acquisition_target_step = $true
 }
 
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
@@ -161,12 +206,17 @@ try {
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
         qualified_item_id = $QualifiedItemId
+        location_id = $LocationId
         quantity = 1
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
     Start-Sleep -Milliseconds 500
     $beforePickupSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+    $observedLocation = [string]$beforePickupSnapshot.state.player.location_id.value
+    if ($observedLocation -ne $LocationId) {
+        throw "Debris fixture location mismatch: expected $LocationId, observed $observedLocation."
+    }
     $targetDebris = Find-DebrisForItem -Snapshot $beforePickupSnapshot -ItemId $QualifiedItemId
     $debrisTile = if ($null -ne $targetDebris) { Get-FirstDebrisTile -Debris $targetDebris } else { $null }
     if ($null -eq $targetDebris) {
@@ -176,6 +226,36 @@ try {
     if ($null -eq $debrisTile) {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-pickup-rejected.json") $beforePickupSnapshot
         throw "Fixture debris has no transparent chunk tile."
+    }
+    $taskSetupResult = $null
+    if ($TaskFamily -ne "none") {
+        $taskSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-pickup-debris-smoke"
+            queue_item_id = "runtime-pickup-debris-smoke.task-setup"
+            before_state_hash = $beforePickupSnapshot.state_hash
+            option_id = "debug.setup_collection_task_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            quest_id = $TaskId
+            quest_family = $TaskFamily
+            quest_expected_target_count = 1
+            qualified_item_id = $QualifiedItemId
+        }
+        $taskSetupResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $taskSetupRequest `
+            -TimeoutSeconds 120
+        if ($taskSetupResult.status -ne "applied" -or
+            $taskSetupResult.primitive_verification_status -ne "verified") {
+            throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 300
+        $beforePickupSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     }
 
     $pickupRequest = [ordered]@{
@@ -194,22 +274,33 @@ try {
         target_tile_y = $debrisTile.y
         debris_index = [int]$targetDebris.debris_index
         qualified_item_id = $QualifiedItemId
+        target_location = $LocationId
     }
+    Add-CollectionTaskFields -Request $pickupRequest
     $pickupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $pickupRequest -TimeoutSeconds 120
     Start-Sleep -Milliseconds 500
     $afterSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $afterDebris = Find-DebrisAtTile -Snapshot $afterSnapshot -X $debrisTile.x -Y $debrisTile.y -ItemId $QualifiedItemId
     $beforeDebrisCount = Count-Debris -Snapshot $beforePickupSnapshot
     $afterDebrisCount = Count-Debris -Snapshot $afterSnapshot
+    $taskProgressAfter = if ($TaskFamily -eq "none") {
+        $null
+    } else {
+        Read-CollectionTaskProgress -Snapshot $afterSnapshot
+    }
 
     $summary = [ordered]@{
-        status = if ($setupResult.status -eq "applied" -and $setupResult.primitive_verification_status -eq "verified" -and $pickupResult.status -eq "applied" -and $pickupResult.primitive_verification_status -eq "verified" -and $null -eq $afterDebris -and $afterDebrisCount -lt $beforeDebrisCount) { "passed" } else { "failed" }
+        status = if ($setupResult.status -eq "applied" -and $setupResult.primitive_verification_status -eq "verified" -and $pickupResult.status -eq "applied" -and $pickupResult.primitive_verification_status -eq "verified" -and $null -eq $afterDebris -and $afterDebrisCount -lt $beforeDebrisCount -and ($TaskFamily -eq "none" -or $taskProgressAfter -ge 1)) { "passed" } else { "failed" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
+        location_id = $LocationId
         target_tile = "$TargetTileX,$TargetTileY"
         transparent_debris_tile = "$($debrisTile.x),$($debrisTile.y)"
         qualified_item_id = $QualifiedItemId
+        task_family = $TaskFamily
+        task_setup_status = if ($null -eq $taskSetupResult) { "not_requested" } else { $taskSetupResult.status }
+        task_progress_after = $taskProgressAfter
         setup_status = $setupResult.status
         setup_verification = $setupResult.primitive_verification_status
         debris_present_before = $null -ne $targetDebris
@@ -232,6 +323,9 @@ try {
     Write-JsonFile (Join-Path $runDirectory "initial-snapshot.json") $initialSnapshot
     Write-JsonFile (Join-Path $runDirectory "before-pickup-snapshot.json") $beforePickupSnapshot
     Write-JsonFile (Join-Path $runDirectory "after-snapshot.json") $afterSnapshot
+    if ($null -ne $taskSetupResult) {
+        Write-JsonFile (Join-Path $runDirectory "task-setup-result.json") $taskSetupResult
+    }
     Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 12
     if ($summary.status -ne "passed") { throw "Runtime pickup debris smoke failed. See $runDirectory" }

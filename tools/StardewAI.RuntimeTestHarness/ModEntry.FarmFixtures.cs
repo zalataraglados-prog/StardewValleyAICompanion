@@ -802,15 +802,27 @@ public sealed partial class ModEntry : Mod
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var farm = Game1.getFarm();
-        Game1.currentLocation = farm;
-        Game1.player.currentLocation = farm;
+        var locationId = string.IsNullOrWhiteSpace(request.LocationId)
+            ? "Farm"
+            : request.LocationId;
+        var location = Game1.getLocationFromName(locationId);
+        if (location is null)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_debris_target",
+                "current_location.debris[target].chunk_count>0",
+                "location_id=" + locationId,
+                "fixture_location_not_found");
+        }
+        Game1.currentLocation = location;
+        Game1.player.currentLocation = location;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var itemId = string.IsNullOrWhiteSpace(request.QualifiedItemId)
             ? QualifyObjectId(string.IsNullOrWhiteSpace(request.ShopItemId) ? "388" : request.ShopItemId)
             : request.QualifiedItemId;
         var origin = new Vector2(target.X * Game1.tileSize + 32, target.Y * Game1.tileSize + 32);
-        var beforeCount = farm.debris.Count;
+        var beforeCount = location.debris.Count;
         var debris = new Debris(ItemRegistry.Create(itemId, Math.Max(1, request.Quantity ?? 1)), origin, Utility.PointToVector2(Game1.player.StandingPixel))
         {
             timeSinceDoneBouncing = -60000f,
@@ -824,10 +836,21 @@ public sealed partial class ModEntry : Mod
             chunk.hasPassedRestingLineOnce.Value = true;
         }
 
-        farm.debris.Add(debris);
-        MoveFixtureFarmerToFarmAdjacent(target);
-        var afterCount = farm.debris.Count;
-        var verified = DebrisAt(farm, target, afterCount - 1) is not null;
+        location.debris.Add(debris);
+        var moved = MoveFixtureFarmerToLocationAdjacent(
+            location,
+            target,
+            out var stand,
+            out var moveReason);
+        var afterCount = location.debris.Count;
+        var verified = moved &&
+            DebrisAt(location, target, afterCount - 1) is not null;
+        var factPrefix = string.Equals(
+            location.NameOrUniqueName,
+            "Farm",
+            StringComparison.OrdinalIgnoreCase)
+                ? "farm.debris"
+                : "current_location.debris";
 
         return new TrainingExecutionResult
         {
@@ -843,17 +866,24 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "debug_setup_debris_target",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "isolated_runtime_fixture_debris_present", "qualified_item_id=" + itemId, "debris_index=" + (afterCount - 1) }
-                : new[] { "fixture_debris_not_present", "qualified_item_id=" + itemId },
-            RequestedEffect = "farm.debris[" + (afterCount - 1) + "].chunk_count>0",
-            ObservedEffect = DebrisObservedEffect(farm, target, afterCount - 1),
-            BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_debris_not_present" },
+                ? new[] { "isolated_runtime_fixture_debris_present", "location_id=" + location.NameOrUniqueName, "qualified_item_id=" + itemId, "debris_index=" + (afterCount - 1) }
+                : new[] { moved ? "fixture_debris_not_present" : moveReason, "qualified_item_id=" + itemId },
+            RequestedEffect = factPrefix + "[" + (afterCount - 1) + "].chunk_count>0",
+            ObservedEffect = DebrisObservedEffect(location, target, afterCount - 1) +
+                ";location_id=" + location.NameOrUniqueName +
+                ";stand_tile=" + stand.X + "," + stand.Y,
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[] { moved ? "fixture_debris_not_present" : moveReason },
+            TargetLocation = location.NameOrUniqueName,
+            TargetTileX = target.X,
+            TargetTileY = target.Y,
             ChangedFacts = verified
                 ? new[]
                 {
                     new SimulatedFactChange
                     {
-                        Path = "farm.debris.count",
+                        Path = factPrefix + ".count",
                         Before = beforeCount.ToString(),
                         After = afterCount.ToString()
                     }

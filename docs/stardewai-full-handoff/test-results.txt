@@ -3374,3 +3374,20 @@ Scope boundary:
 - Mine area-80 fishing trash ordinary/special hidden runtime PASS: `runtime-task-fishing-trash-ordinary-final-20260729` and `runtime-task-fishing-trash-special-final-20260729`; `quest.advance` compiled `source=true,target=false`, retained all eight possible outputs, observed `(O)167`, and advanced native progress.
 - Debris fallback IDs are qualified before publication when the native item object has not materialized.
 - Focused task/debris guards 8/8; fishing Backend guards 9/9; Core 1341/1341; Backend 95/95; Release solution build 0 errors, 5 existing warnings.
+
+2026-07-29 non-Farm debris and forage task-source runtime calibration
+
+- Extended the isolated debris fixture and smoke to use an explicit loaded location and `current_location.debris`, while retaining `farm.debris` only as the Farm compatibility projection.
+- Added one native-only forage fixture for exact vanilla Bush and Ginger sources. It creates world state but never invokes harvest methods, awards output, or mutates task progress.
+- Added a shared task-attached forage smoke that reads output identity, quality, quantity, XP, runtime type, interaction geometry and Hoe slot from a fresh full transparent snapshot.
+- Hidden/silent Forest debris receipt PASS for ordinary and special tasks:
+  - `artifacts\runtime-pickup-debris-smoke\runtime-nonfarm-debris-ordinary-20260729\summary.json`
+  - `artifacts\runtime-pickup-debris-smoke\runtime-nonfarm-debris-special-20260729\summary.json`
+- Hidden/silent Bush source PASS:
+  - `artifacts\runtime-forage-task-source-smoke\runtime-bush-ordinary-20260729\summary.json`
+  - `artifacts\runtime-forage-task-source-smoke\runtime-bush-special-20260729\summary.json`
+- Hidden/silent Ginger source PASS:
+  - `artifacts\runtime-forage-task-source-smoke\runtime-ginger-ordinary-20260729\summary.json`
+  - `artifacts\runtime-forage-task-source-smoke\runtime-ginger-special-retry-20260729\summary.json`
+- The Bush special-order run kept objective progress at `0/1` after the native source action and advanced to `1/1` only after fresh transparent debris pickup. Other runs advanced through observed native auto-pickup.
+- Focused source guards 10/10; Core 1345/1345; Backend 95/95; full Release solution build 0 errors with five existing warnings.

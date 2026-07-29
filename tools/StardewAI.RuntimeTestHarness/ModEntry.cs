@@ -619,6 +619,12 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupGreenRainResourceClumpFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_forage_source_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupForageSourceFixture(pending.Request));
+                return;
+            }
 
             if (pending.Request.OptionId == "debug.setup_clear_obstacle")
             {

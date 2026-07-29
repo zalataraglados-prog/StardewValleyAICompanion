@@ -54,6 +54,8 @@ public sealed class TaskAcquisitionRuntimeCalibrationSourceGuardTests
     [InlineData("Invoke-RuntimeGiantCropSmoke.ps1")]
     [InlineData("Invoke-RuntimeGreenRainResourceClumpSmoke.ps1")]
     [InlineData("Invoke-RuntimeFishingDailyPlanSmoke.ps1")]
+    [InlineData("Invoke-RuntimePickupDebrisSmoke.ps1")]
+    [InlineData("Invoke-RuntimeForageTaskSourceSmoke.ps1")]
     public void SourceCalibrationScriptsPreserveNativeTaskRoles(string fileName)
     {
         var smoke = ReadRepositoryFile("scripts", fileName);
@@ -63,6 +65,44 @@ public sealed class TaskAcquisitionRuntimeCalibrationSourceGuardTests
         Assert.Contains("debug.setup_collection_task_fixture", smoke, StringComparison.Ordinal);
         Assert.Contains("quest_acquisition_source_step", smoke, StringComparison.Ordinal);
         Assert.Contains("quest_acquisition_target_step", smoke, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ForageFixtureConstructsNativeSourcesWithoutHarvestingOrCreditingTasks()
+    {
+        var fixture = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.ForageSourceFixture.cs");
+
+        Assert.Contains("new Bush(", fixture, StringComparison.Ordinal);
+        Assert.Contains("new HoeDirt(", fixture, StringComparison.Ordinal);
+        Assert.Contains("new Crop(", fixture, StringComparison.Ordinal);
+        Assert.DoesNotContain("addItemToInventory", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("performToolAction", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("checkAction", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(".shake(", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(".harvest(", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OnItemReceived", fixture, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("onItemCollected", fixture, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ForageSmokeBuildsExecutionFromTransparentNativeProjection()
+    {
+        var smoke = ReadRepositoryFile(
+            "scripts",
+            "Invoke-RuntimeForageTaskSourceSmoke.ps1");
+
+        Assert.Contains("current_location.large_terrain_features.value", smoke, StringComparison.Ordinal);
+        Assert.Contains("current_location.terrain_features.value", smoke, StringComparison.Ordinal);
+        Assert.Contains("current_location.debris.value", smoke, StringComparison.Ordinal);
+        Assert.Contains("bush_output_qualified_item_id", smoke, StringComparison.Ordinal);
+        Assert.Contains("ginger_tool_slot_index", smoke, StringComparison.Ordinal);
+        Assert.Contains("expected_foraging_experience_delta", smoke, StringComparison.Ordinal);
+        Assert.Contains("\"executor.harvest_bush\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("\"executor.harvest_ginger\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("option_id = \"executor.pickup_debris\"", smoke, StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
