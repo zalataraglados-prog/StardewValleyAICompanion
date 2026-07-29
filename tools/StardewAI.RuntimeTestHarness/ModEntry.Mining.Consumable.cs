@@ -51,11 +51,6 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_active_menu_must_be_closed"));
             return;
         }
-        if (Game1.player.UsingTool || Game1.player.isEating || !Game1.player.CanMove)
-        {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_tool_or_animation_conflict"));
-            return;
-        }
         if (!request.SlotIndex.HasValue || request.SlotIndex.Value < 0 || request.SlotIndex.Value >= Game1.player.Items.Count)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "consume_food", requested, ConsumeFoodObservedEffect(request.SlotIndex), "consume_food_slot_out_of_range"));
@@ -130,11 +125,29 @@ public sealed partial class ModEntry : Mod
         switch (active.Stage)
         {
             case ConsumeFoodStage.PressUse:
-                if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || Game1.player.isEating || !Game1.player.CanMove)
+                if (Game1.activeClickableMenu is not null ||
+                    Game1.dialogueUp)
                 {
-                    CompleteConsumeFoodBlocked(active, "consume_food_pre_input_state_drift");
+                    CompleteConsumeFoodBlocked(
+                        active,
+                        "consume_food_pre_input_menu_state_drift");
                     return;
                 }
+                if (Game1.player.UsingTool ||
+                    Game1.player.isEating ||
+                    !Game1.player.CanMove ||
+                    Game1.player.FarmerSprite.PauseForSingleAnimation)
+                {
+                    active.PreInputSettleTicks++;
+                    if (active.PreInputSettleTicks > 180)
+                    {
+                        CompleteConsumeFoodBlocked(
+                            active,
+                            "consume_food_pre_input_animation_timeout");
+                    }
+                    return;
+                }
+                active.PreInputSettleTicks = 0;
                 if (!ConsumeFoodSlotMatches(active))
                 {
                     CompleteConsumeFoodBlocked(active, "consume_food_slot_drift_before_input");

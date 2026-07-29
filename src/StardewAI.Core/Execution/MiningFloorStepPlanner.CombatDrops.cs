@@ -169,10 +169,20 @@ namespace StardewAI.Core.Execution
                         ? projection.DurationMs / projection.ExplosiveAreaValueMultiplier
                         : projection.DurationMs));
             return meleeWithMovement.Concat(rangedWithPolicy)
-                .OrderBy(projection => projection.SelectionCostMs)
+                .OrderBy(CombatExposureWindows)
+                .ThenBy(projection => projection.SelectionCostMs)
                 .ThenBy(projection => projection.Method == "melee" ? 0 : 1)
                 .ThenBy(projection => projection.SlotIndex)
                 .FirstOrDefault();
+        }
+
+        private static int CombatExposureWindows(
+            MonsterCombatProjectionInfo projection)
+        {
+            return Math.Max(
+                1,
+                (int)Math.Ceiling(
+                    (projection.ExpectedAttacks ?? double.MaxValue) / 4d));
         }
 
         private static IEnumerable<MonsterCombatProjectionInfo> ReadCombatProjections(
@@ -440,6 +450,39 @@ namespace StardewAI.Core.Execution
                     plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
                     plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
                     plan.CombatWeaponSlotIndex = row.Combat?.Method == "melee" ? row.Combat.SlotIndex : null;
+                    plan.ExpectedCombatAttacks = row.Combat?.ExpectedAttacks;
+                    plan.ExpectedCombatDurationMs = row.Combat?.DurationMs;
+                    plan.EstimatedTargetCostMs =
+                        row.Combat is not null &&
+                        movementTileDurationMs.HasValue
+                            ? row.Combat.DurationMs +
+                                row.Candidate!.Distance *
+                                movementTileDurationMs.Value
+                            : null;
+                    plan.CombatDurationStatus = row.Combat is null
+                        ? "unavailable_no_complete_active_melee_projection"
+                        : movementTileDurationMs.HasValue
+                            ? "exact_active_melee_plus_unobstructed_bfs_movement"
+                            : "exact_active_melee_only";
+                    if (string.Equals(
+                            plan.CombatTerminalState,
+                            "defeat",
+                            StringComparison.Ordinal))
+                    {
+                        plan.SkillExperienceSkillId = "combat";
+                        plan.ExpectedSkillExperience = ReadInt(
+                            row.Monster,
+                            "combat_experience_on_defeat");
+                        plan.SkillExperienceMinimum =
+                            plan.ExpectedSkillExperience;
+                        plan.SkillExperienceMaximum =
+                            plan.ExpectedSkillExperience;
+                        plan.SkillExperienceCondition = ReadString(
+                            row.Monster,
+                            "combat_experience_condition");
+                        plan.SkillExperienceProjectionStatus =
+                            "exact_for_native_monster_defeat";
+                    }
                     return plan;
                 })
                 .FirstOrDefault();

@@ -44,9 +44,9 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "executor=busy", "pickup_debris_executor_busy"));
             return;
         }
-        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "player=busy_or_menu_open", "pickup_debris_tool_or_menu_conflict"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), "player=menu_open", "pickup_debris_menu_conflict"));
             return;
         }
 
@@ -58,10 +58,30 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_item_identity_required"));
             return;
         }
-        var debris = DebrisAt(location, target, request.DebrisIndex, request.QualifiedItemId);
-        var chunk = debris is null ? null : DebrisChunkAt(debris, target);
-        if (debris is null || chunk is null)
+        if (!TryRebindPickupDebris(
+                location,
+                target,
+                request.DebrisIndex,
+                request.QualifiedItemId,
+                out var debris,
+                out var chunk))
         {
+            var itemCountAfterNativeCollection = CountInventoryItem(
+                request.QualifiedItemId);
+            if (request.InventoryItemTotalBefore.HasValue &&
+                itemCountAfterNativeCollection >
+                    request.InventoryItemTotalBefore.Value &&
+                ManhattanDistance(Game1.player.TilePoint, target) <= 3)
+            {
+                pending.Completion.SetResult(
+                    CompletePickupDebrisAlreadyCollected(
+                        request,
+                        location,
+                        target,
+                        beforeObserved,
+                        itemCountAfterNativeCollection));
+                return;
+            }
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pickup_debris", DebrisRequestedEffect(request), beforeObserved, "pickup_debris_target_not_found"));
             return;
         }
@@ -150,14 +170,29 @@ public sealed partial class ModEntry : Mod
             CompletePickupDebrisBlocked(active, "pickup_debris_removed_without_inventory_gain");
             return;
         }
-        if (Game1.player.UsingTool || Game1.activeClickableMenu is not null || Game1.dialogueUp)
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp)
         {
-            CompletePickupDebrisBlocked(active, "pickup_debris_tool_or_menu_conflict_during_move");
+            CompletePickupDebrisBlocked(
+                active,
+                "pickup_debris_menu_conflict_during_move");
             return;
         }
+        if (Game1.player.UsingTool || !Game1.player.CanMove)
+        {
+            StopAllMovement();
+            active.TransientBusyTicks++;
+            if (active.TransientBusyTicks > 180)
+            {
+                CompletePickupDebrisBlocked(
+                    active,
+                    "pickup_debris_transient_tool_state_timeout");
+            }
+            return;
+        }
+        active.TransientBusyTicks = 0;
 
         var target = DebrisChunkTile(active.Chunk);
-        if (Game1.player.TilePoint == target)
+        if (ManhattanDistance(Game1.player.TilePoint, target) <= 1)
         {
             StopAllMovement();
             active.WaitAtTargetTicks++;
@@ -172,7 +207,22 @@ public sealed partial class ModEntry : Mod
 
         if (active.PathIndex >= active.Path.Count || active.PathTarget != target)
         {
-            var path = TryBuildTilePath(active.Location, Game1.player.TilePoint, target, 512, out var pathReason, avoidSoftObstacles: true);
+            var path = IsTileWalkable(active.Location, target) &&
+                !IsTileOccupiedByCharacter(active.Location, target)
+                    ? TryBuildTilePath(
+                        active.Location,
+                        Game1.player.TilePoint,
+                        target,
+                        512,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        active.Location,
+                        target,
+                        512,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
             if (path is null)
             {
                 active.PathFailures++;
@@ -268,6 +318,72 @@ public sealed partial class ModEntry : Mod
         active.Pending.Completion.SetResult(result);
     }
 
+    private TrainingExecutionResult CompletePickupDebrisAlreadyCollected(
+        TrainingExecutionRequest request,
+        GameLocation location,
+        Point target,
+        string beforeObserved,
+        int itemCountAfter)
+    {
+        StopAllMovement();
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            ActualTicks = 0,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TrainingImpactScope = "executor_calibration",
+            PrimitiveKind = "pickup_debris",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[]
+            {
+                "target_chunk_absent_after_native_proximity_collection",
+                "inventory_item_count_increased_since_snapshot",
+                "player_remained_within_three_tiles_of_snapshot_target",
+                "no_direct_debris_collect_call"
+            },
+            RequestedEffect = DebrisRequestedEffect(request),
+            ObservedEffect =
+                beforeObserved +
+                ";debris_present=false;item_count=" +
+                itemCountAfter +
+                ";player.tile=" +
+                Game1.player.TilePoint.X +
+                "," +
+                Game1.player.TilePoint.Y,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "player.inventory.count[" +
+                        request.QualifiedItemId +
+                        "]",
+                    Before = request.InventoryItemTotalBefore!.Value
+                        .ToString(),
+                    After = itemCountAfter.ToString()
+                },
+                new SimulatedFactChange
+                {
+                    Path = "locations[" +
+                        location.NameOrUniqueName +
+                        "].debris.near[" +
+                        target.X +
+                        "," +
+                        target.Y +
+                        "]",
+                    Before = "present_in_snapshot",
+                    After = "absent_at_executor_start"
+                }
+            }
+        };
+    }
+
     private void CompletePickupDebrisBlocked(ActivePickupDebris active, string reason)
     {
         StopAllMovement();
@@ -308,6 +424,93 @@ public sealed partial class ModEntry : Mod
         }
 
         return null;
+    }
+
+    private static bool TryRebindPickupDebris(
+        GameLocation location,
+        Point snapshotTarget,
+        int? debrisIndex,
+        string qualifiedItemId,
+        out Debris debris,
+        out Chunk chunk)
+    {
+        const int maximumNaturalChunkDriftTiles = 3;
+        if (debrisIndex.HasValue &&
+            debrisIndex.Value >= 0 &&
+            debrisIndex.Value < location.debris.Count)
+        {
+            var indexed = location.debris[debrisIndex.Value];
+            var indexedChunk = NearestDebrisChunk(
+                indexed,
+                snapshotTarget,
+                maximumNaturalChunkDriftTiles);
+            if (indexedChunk is not null &&
+                string.Equals(
+                    DebrisQualifiedItemId(indexed),
+                    qualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                debris = indexed;
+                chunk = indexedChunk;
+                return true;
+            }
+        }
+
+        var candidates = location.debris
+            .Where(value => string.Equals(
+                DebrisQualifiedItemId(value),
+                qualifiedItemId,
+                StringComparison.OrdinalIgnoreCase))
+            .Select(value => new
+            {
+                Debris = value,
+                Chunk = NearestDebrisChunk(
+                    value,
+                    snapshotTarget,
+                    maximumNaturalChunkDriftTiles)
+            })
+            .Where(value => value.Chunk is not null)
+            .Select(value => new
+            {
+                value.Debris,
+                Chunk = value.Chunk!,
+                Distance = ManhattanDistance(
+                    snapshotTarget,
+                    DebrisChunkTile(value.Chunk!))
+            })
+            .OrderBy(value => value.Distance)
+            .ToArray();
+        if (candidates.Length == 0 ||
+            candidates.Length > 1 &&
+            candidates[0].Distance == candidates[1].Distance)
+        {
+            debris = null!;
+            chunk = null!;
+            return false;
+        }
+
+        debris = candidates[0].Debris;
+        chunk = candidates[0].Chunk;
+        return true;
+    }
+
+    private static Chunk? NearestDebrisChunk(
+        Debris debris,
+        Point target,
+        int maximumDistance)
+    {
+        return debris.Chunks
+            .Select(value => new
+            {
+                Chunk = value,
+                Distance = ManhattanDistance(
+                    target,
+                    DebrisChunkTile(value))
+            })
+            .Where(value => value.Distance <= maximumDistance)
+            .OrderBy(value => value.Distance)
+            .FirstOrDefault()
+            ?.Chunk;
     }
 
     private static string DebrisQualifiedItemId(Debris debris)

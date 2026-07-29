@@ -234,19 +234,7 @@ public sealed partial class ModEntry : Mod
         }
 
         var currentPlayerTile = Game1.player.TilePoint;
-        if (currentPlayerTile != active.LastObservedTile)
-        {
-            if (!active.CombatInterrupted)
-            {
-                active.MovementTiles += ManhattanDistance(active.LastObservedTile, currentPlayerTile);
-            }
-            active.LastObservedTile = currentPlayerTile;
-            if (active.MovementTiles > active.MaxMovementTiles)
-            {
-                CompleteMineStoneBlocked(active, "mine_stone_movement_budget_exceeded");
-                return;
-            }
-        }
+        active.LastObservedTile = currentPlayerTile;
 
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (!mine.objects.TryGetValue(targetVector, out var current))
@@ -288,7 +276,10 @@ public sealed partial class ModEntry : Mod
             var next = active.Path[active.PathIndex];
             if (Game1.player.TilePoint == next)
             {
-                active.PathIndex++;
+                if (!AdvanceMineStonePath(active))
+                {
+                    return;
+                }
                 active.StuckTicks = 0;
                 return;
             }
@@ -310,7 +301,10 @@ public sealed partial class ModEntry : Mod
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
-                active.PathIndex++;
+                if (!AdvanceMineStonePath(active))
+                {
+                    return;
+                }
             }
 
             if (!movedSinceLastTick)
@@ -368,6 +362,22 @@ public sealed partial class ModEntry : Mod
         }
 
         RecordMineStoneCompletedSwing(active, mine.objects.TryGetValue(targetVector, out var afterSwing) ? afterSwing.MinutesUntilReady : 0);
+    }
+
+    private bool AdvanceMineStonePath(ActiveMineStone active)
+    {
+        active.PathIndex++;
+        active.MovementTiles++;
+        if (active.MovementTiles <= active.MaxMovementTiles ||
+            AreAdjacent(Game1.player.TilePoint, active.Target))
+        {
+            return true;
+        }
+
+        CompleteMineStoneBlocked(
+            active,
+            "mine_stone_movement_budget_exceeded");
+        return false;
     }
 
     private static bool TryReplanMineStone(ActiveMineStone active, MineShaft mine, out string blockReason)
@@ -764,23 +774,42 @@ public sealed partial class ModEntry : Mod
         }
 
         var currentPlayerTile = Game1.player.TilePoint;
-        if (currentPlayerTile != active.LastObservedTile)
-        {
-            if (!active.CombatInterrupted)
-            {
-                active.MovementTiles += ManhattanDistance(active.LastObservedTile, currentPlayerTile);
-            }
-            active.LastObservedTile = currentPlayerTile;
-            if (active.MovementTiles > active.MaxMovementTiles)
-            {
-                CompleteResourceClumpBlocked(active, "resource_clump_movement_budget_exceeded");
-                return;
-            }
-        }
+        active.LastObservedTile = currentPlayerTile;
 
         var targetPresent = active.Location.resourceClumps.Any(clump => ReferenceEquals(clump, active.Clump));
         if (!targetPresent)
         {
+            if (active.BeginIssued &&
+                !active.ReleaseIssued &&
+                Game1.player.UsingTool)
+            {
+                if (Game1.player.canReleaseTool)
+                {
+                    Game1.player.EndUsingTool();
+                    active.ReleaseIssued = true;
+                }
+                active.PostRemovalSettleTicks++;
+                if (active.PostRemovalSettleTicks > 180)
+                {
+                    CompleteResourceClumpBlocked(
+                        active,
+                        "resource_clump_post_removal_tool_release_timeout");
+                }
+                return;
+            }
+            if (Game1.player.UsingTool ||
+                !Game1.player.CanMove ||
+                Game1.player.FarmerSprite.PauseForSingleAnimation)
+            {
+                active.PostRemovalSettleTicks++;
+                if (active.PostRemovalSettleTicks > 180)
+                {
+                    CompleteResourceClumpBlocked(
+                        active,
+                        "resource_clump_post_removal_animation_timeout");
+                }
+                return;
+            }
             if (active.BeginIssued)
             {
                 RecordResourceClumpSwing(active, 0f);
@@ -807,41 +836,95 @@ public sealed partial class ModEntry : Mod
         }
         active.CombatInterrupted = false;
 
+        if (!active.BeginIssued &&
+            (Game1.player.UsingTool ||
+             !Game1.player.CanMove ||
+             Game1.player.FarmerSprite.PauseForSingleAnimation))
+        {
+            StopAllMovement();
+            active.TransientBusyTicks++;
+            if (active.TransientBusyTicks > 180)
+            {
+                CompleteResourceClumpBlocked(
+                    active,
+                    "resource_clump_pre_move_animation_timeout");
+            }
+            return;
+        }
+        active.TransientBusyTicks = 0;
+
         if (!active.BeginIssued && Game1.player.TilePoint != active.Stand)
         {
-            if (active.PathIndex >= active.Path.Count)
+            if (active.PathIndex >= active.Path.Count ||
+                active.Path[active.PathIndex] != Game1.player.TilePoint &&
+                !AreAdjacent(
+                    Game1.player.TilePoint,
+                    active.Path[active.PathIndex]))
             {
-                CompleteResourceClumpBlocked(active, "resource_clump_path_exhausted_before_stand");
+                if (!TryReplanResourceClump(
+                        active,
+                        out var exhaustedReason))
+                {
+                    DelayOrBlockResourceClumpReplan(
+                        active,
+                        "resource_clump_dynamic_path_unavailable:" +
+                            exhaustedReason);
+                }
                 return;
             }
 
             var next = active.Path[active.PathIndex];
             if (Game1.player.TilePoint == next)
             {
-                active.PathIndex++;
+                if (!AdvanceResourceClumpPath(active))
+                {
+                    return;
+                }
                 active.StuckTicks = 0;
                 return;
             }
             if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
             {
-                CompleteResourceClumpBlocked(active, "resource_clump_dynamic_path_blocked");
+                StopAllMovement();
+                if (!TryReplanResourceClump(
+                        active,
+                        out var changedReason))
+                {
+                    DelayOrBlockResourceClumpReplan(
+                        active,
+                        "resource_clump_dynamic_path_unavailable:" +
+                            changedReason);
+                }
                 return;
             }
 
+            active.PathFailureTicks = 0;
             var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
             active.LastPosition = Game1.player.Position;
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
             if (Game1.player.TilePoint == next)
             {
-                active.PathIndex++;
+                if (!AdvanceResourceClumpPath(active))
+                {
+                    return;
+                }
             }
             if (!movedSinceLastTick)
             {
                 active.StuckTicks++;
                 if (active.StuckTicks > 45)
                 {
-                    CompleteResourceClumpBlocked(active, "resource_clump_movement_stuck");
+                    StopAllMovement();
+                    if (!TryReplanResourceClump(
+                            active,
+                            out var stuckReason))
+                    {
+                        DelayOrBlockResourceClumpReplan(
+                            active,
+                            "resource_clump_movement_stuck:" +
+                                stuckReason);
+                    }
                 }
             }
             else
@@ -883,6 +966,66 @@ public sealed partial class ModEntry : Mod
         }
 
         RecordResourceClumpSwing(active, active.Clump.health.Value);
+    }
+
+    private bool AdvanceResourceClumpPath(ActiveResourceClump active)
+    {
+        active.PathIndex++;
+        active.MovementTiles++;
+        if (active.MovementTiles <= active.MaxMovementTiles ||
+            Game1.player.TilePoint == active.Stand)
+        {
+            return true;
+        }
+
+        CompleteResourceClumpBlocked(
+            active,
+            "resource_clump_movement_budget_exceeded");
+        return false;
+    }
+
+    private static bool TryReplanResourceClump(
+        ActiveResourceClump active,
+        out string blockReason)
+    {
+        var remainingMovementTiles =
+            active.MaxMovementTiles - active.MovementTiles;
+        if (remainingMovementTiles <= 0)
+        {
+            blockReason = "movement_budget_exhausted";
+            return false;
+        }
+
+        var path = TryBuildTilePath(
+            active.Location,
+            Game1.player.TilePoint,
+            active.Stand,
+            remainingMovementTiles,
+            out blockReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
+        if (path is null)
+        {
+            return false;
+        }
+
+        active.Path = path;
+        active.PathIndex = 0;
+        active.StuckTicks = 0;
+        active.PathFailureTicks = 0;
+        active.LastPosition = Game1.player.Position;
+        return true;
+    }
+
+    private void DelayOrBlockResourceClumpReplan(
+        ActiveResourceClump active,
+        string reason)
+    {
+        active.PathFailureTicks++;
+        if (active.PathFailureTicks > 180)
+        {
+            CompleteResourceClumpBlocked(active, reason);
+        }
     }
 
     private static void RecordResourceClumpSwing(ActiveResourceClump active, float health)
@@ -1179,7 +1322,9 @@ public sealed partial class ModEntry : Mod
         for (var index = 0; index < active.ExpectedOutputs.Length; index++)
         {
             var output = active.ExpectedOutputs[index];
-            if (CountResourceClumpOutput(active.Location, output) - active.OutputCountsBefore[index] != output.Quantity)
+            if (CountResourceClumpOutput(active.Location, output) -
+                active.OutputCountsBefore[index] <
+                output.Quantity)
             {
                 return false;
             }

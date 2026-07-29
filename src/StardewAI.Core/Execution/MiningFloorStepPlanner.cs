@@ -52,6 +52,10 @@ namespace StardewAI.Core.Execution
             var search = Search(grid, start);
             var hasResources = TryFieldValue(mining, "player_resources", out var resources);
             var restoreSlot = hasResources ? ReadInt(resources, "selected_slot_index") : null;
+            JsonElement? playerInventory = snapshot.State.TryGetValue("player", out var player) &&
+                                           TryFieldValue(player, "inventory", out var inventory)
+                ? inventory
+                : null;
             var movementTileDurationMs = hasResources ? ReadMovementTileDuration(resources) : null;
             var bombFinisherAvailable = hasResources && HasAvailableBomb(resources);
             var mustKillAll = ReadBool(objectives, "must_kill_all_monsters_to_advance");
@@ -106,12 +110,46 @@ namespace StardewAI.Core.Execution
                 return retreat ?? Blocked("retreat_required_but_exit_unreachable:" + mandatoryRetreatReason);
             }
 
-            if (hasResources && NeedsHealing(resources, monsters, objective, out var healthReason))
+            if (hasResources && NeedsHealing(
+                    resources,
+                    monsters,
+                    objective,
+                    out var healthReason,
+                    out var requiredHealth,
+                    out var maximumMonsterDamage))
             {
-                var healing = SelectFood(resources, objective.MinimumReserveHealth, restoreSlot);
+                var immediateThreat = SelectImmediateThreat(
+                    monsters,
+                    search,
+                    grid,
+                    start,
+                    objective.ThreatRadiusTiles,
+                    bombFinisherAvailable,
+                    movementTileDurationMs);
+                var currentHealth = ReadInt(resources, "health") ?? 0;
+                if (immediateThreat is not null &&
+                    currentHealth > maximumMonsterDamage)
+                {
+                    immediateThreat.Reason =
+                        "immediate_monster_threat_preempts_recovery";
+                    immediateThreat.SafetyWindowStatus =
+                        "blocked_by_immediate_monster_threat";
+                    immediateThreat.RestoreSlotIndex = restoreSlot;
+                    return immediateThreat;
+                }
+
+                var healing = SelectFood(
+                    resources,
+                    requiredHealth,
+                    restoreSlot);
                 if (healing is not null)
                 {
                     healing.Reason = healthReason;
+                    if (immediateThreat is not null)
+                    {
+                        healing.SafetyWindowStatus =
+                            "critical_one_hit_recovery_preempts_immediate_threat";
+                    }
                     return healing;
                 }
                 var retreat = SelectMineExit(tiles, search, grid, "retreat_unsafe_health_without_recovery_food");
@@ -136,33 +174,127 @@ namespace StardewAI.Core.Execution
                 var claimed = ReadBool(objectives, "golden_scythe_claimed");
                 if (claimed)
                 {
-                    return SelectMineExit(tiles, search, grid, "golden_scythe_acquired_exit_quarry_mine") ??
-                        Blocked("golden_scythe_acquired_but_native_exit_unreachable");
+                    var exit = SelectMineExit(
+                        tiles,
+                        search,
+                        grid,
+                        "golden_scythe_acquired_exit_quarry_mine");
+                    if (exit is not null)
+                    {
+                        return exit;
+                    }
                 }
-                if (!claimed && ReadInventoryEmptySlots(resources) <= 0)
+                else if (ReadInventoryEmptySlots(resources) <= 0)
                 {
                     return Blocked("golden_scythe_inventory_full");
                 }
-                if (!tiles.TryGetProperty("golden_scythe_altars", out var altars) ||
-                    altars.ValueKind != JsonValueKind.Array ||
-                    altars.GetArrayLength() == 0)
+                var altars = default(JsonElement);
+                if (!claimed &&
+                    (!tiles.TryGetProperty("golden_scythe_altars", out altars) ||
+                     altars.ValueKind != JsonValueKind.Array ||
+                     altars.GetArrayLength() == 0))
                 {
                     return Blocked("golden_scythe_altar_action_unavailable");
                 }
 
-                var threat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
+                var threat = SelectImmediateThreat(
+                    monsters,
+                    search,
+                    grid,
+                    start,
+                    objective.ThreatRadiusTiles,
+                    bombFinisherAvailable,
+                    movementTileDurationMs);
                 if (threat is not null)
                 {
-                    threat.Reason = "golden_scythe_route_interrupted_by_immediate_monster_threat";
-                    threat.SafetyWindowStatus = "blocked_by_immediate_monster_threat";
+                    threat.Reason =
+                        "golden_scythe_route_interrupted_by_immediate_monster_threat";
+                    threat.SafetyWindowStatus =
+                        "blocked_by_immediate_monster_threat";
                     threat.RestoreSlotIndex = restoreSlot;
                     return threat;
                 }
 
-                var altarStep = SelectGoldenScytheAltarStep(altars, search, grid);
-                if (altarStep is not null)
+                if (claimed)
                 {
-                    return altarStep;
+                    var exitBlocker = SelectMonster(
+                        monsters,
+                        search,
+                        grid,
+                        "golden_scythe_exit_route_blocked_by_dynamic_monster",
+                        movementTileDurationMs: movementTileDurationMs,
+                        bombFinisherAvailable: bombFinisherAvailable);
+                    if (exitBlocker is not null)
+                    {
+                        exitBlocker.SafetyWindowStatus =
+                            "mandatory_exit_route_dynamic_blocker";
+                        exitBlocker.RestoreSlotIndex = restoreSlot;
+                        return exitBlocker;
+                    }
+
+                    var exitRouteStone = SelectStone(
+                        objects,
+                        search,
+                        grid);
+                    if (exitRouteStone is not null)
+                    {
+                        if (exitRouteStone.EstimatedMovementTiles >
+                            ObjectiveApproachHorizonTiles)
+                        {
+                            return BuildObjectiveApproachStep(
+                                exitRouteStone,
+                                MiningFloorStepKinds.MoveToMineExitRoute,
+                                "approach_golden_scythe_exit_route_clearance",
+                                "golden_scythe_exit_route_clearance_replan_required");
+                        }
+
+                        exitRouteStone.Reason =
+                            "golden_scythe_exit_route_blocked_by_removable_stone";
+                        return exitRouteStone;
+                    }
+                }
+
+                if (!claimed)
+                {
+                    var altarStep = SelectGoldenScytheAltarStep(
+                        altars,
+                        search,
+                        grid);
+                    if (altarStep is not null)
+                    {
+                        return altarStep;
+                    }
+                }
+
+                var routeClump = SelectResourceClump(
+                    resourceClumps,
+                    search,
+                    grid);
+                if (routeClump is not null)
+                {
+                    if (routeClump.EstimatedMovementTiles >
+                        ObjectiveApproachHorizonTiles)
+                    {
+                        var approach = BuildObjectiveApproachStep(
+                            routeClump,
+                            claimed
+                                ? MiningFloorStepKinds.MoveToMineExitRoute
+                                : MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                            claimed
+                                ? "approach_golden_scythe_exit_route_clearance"
+                                : "approach_golden_scythe_route_clearance",
+                            claimed
+                                ? "golden_scythe_exit_route_clearance_replan_required"
+                                : "golden_scythe_route_clearance_replan_required");
+                        approach.TargetQualifiedItemId = "(W)53";
+                        return approach;
+                    }
+
+                    routeClump.Reason =
+                        claimed
+                            ? "golden_scythe_exit_route_blocked_by_removable_resource_clump"
+                            : "golden_scythe_route_blocked_by_removable_resource_clump";
+                    return routeClump;
                 }
             }
 
@@ -187,7 +319,7 @@ namespace StardewAI.Core.Execution
             {
                 if (TryFieldValue(mining, "debris", out var monsterDebris))
                 {
-                    var existingDrop = SelectDebris(monsterDebris, search, grid, objective.TargetQualifiedItemIds, restoreSlot);
+                    var existingDrop = SelectDebris(monsterDebris, search, grid, objective.TargetQualifiedItemIds, restoreSlot, playerInventory);
                     if (existingDrop is not null)
                     {
                         existingDrop.Reason = "target_monster_drop_already_on_floor";
@@ -223,18 +355,26 @@ namespace StardewAI.Core.Execution
             {
                 if (TryFieldValue(mining, "debris", out var debris))
                 {
-                    var pickup = SelectDebris(debris, search, grid, objective.TargetQualifiedItemIds, restoreSlot);
+                    var pickup = SelectDebris(debris, search, grid, objective.TargetQualifiedItemIds, restoreSlot, playerInventory);
                     if (pickup is not null)
                     {
                         return pickup;
                     }
                 }
 
-                var threat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
+                var threat = SelectImmediateThreat(
+                    monsters,
+                    search,
+                    grid,
+                    start,
+                    objective.ThreatRadiusTiles,
+                    bombFinisherAvailable,
+                    movementTileDurationMs);
                 if (threat is not null)
                 {
                     threat.Reason = "unsafe_tool_window_combat_interrupt";
-                    threat.SafetyWindowStatus = "blocked_by_immediate_monster_threat";
+                    threat.SafetyWindowStatus =
+                        "blocked_by_immediate_monster_threat";
                     threat.RestoreSlotIndex = restoreSlot;
                     return threat;
                 }
@@ -248,11 +388,20 @@ namespace StardewAI.Core.Execution
                 var reward = SelectMineRewardChest(rewardChests, search, grid);
                 if (reward is not null)
                 {
-                    var rewardThreat = SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs);
+                    var rewardThreat = SelectImmediateThreat(
+                        monsters,
+                        search,
+                        grid,
+                        start,
+                        objective.ThreatRadiusTiles,
+                        bombFinisherAvailable,
+                        movementTileDurationMs);
                     if (rewardThreat is not null)
                     {
-                        rewardThreat.Reason = "mandatory_reward_chest_interrupted_by_immediate_monster_threat";
-                        rewardThreat.SafetyWindowStatus = "blocked_by_immediate_monster_threat";
+                        rewardThreat.Reason =
+                            "mandatory_reward_chest_interrupted_by_immediate_monster_threat";
+                        rewardThreat.SafetyWindowStatus =
+                            "blocked_by_immediate_monster_threat";
                         rewardThreat.RestoreSlotIndex = restoreSlot;
                         return rewardThreat;
                     }
@@ -269,7 +418,7 @@ namespace StardewAI.Core.Execution
             if (TryFieldValue(mining, "debris", out var opportunisticDebris) &&
                 SelectImmediateThreat(monsters, search, grid, start, objective.ThreatRadiusTiles, bombFinisherAvailable, movementTileDurationMs) is null)
             {
-                var pickup = SelectDebris(opportunisticDebris, search, grid, Array.Empty<string>(), restoreSlot, maximumDistance: 3);
+                var pickup = SelectDebris(opportunisticDebris, search, grid, Array.Empty<string>(), restoreSlot, playerInventory, maximumDistance: 3);
                 if (pickup is not null)
                 {
                     pickup.Reason = "opportunistic_debris_within_three_tiles";
@@ -305,11 +454,6 @@ namespace StardewAI.Core.Execution
             }
 
             var resourceClumpPlan = SelectResourceClump(resourceClumps, search, grid);
-            if (objective.Kind == MiningObjectiveKinds.AcquireGoldenScythe && resourceClumpPlan is not null)
-            {
-                resourceClumpPlan.Reason = "golden_scythe_route_blocked_by_removable_resource_clump";
-                return resourceClumpPlan;
-            }
 
             if (mustKillAll)
             {
@@ -345,13 +489,16 @@ namespace StardewAI.Core.Execution
                 requireReserve: false);
             if (unsafeShaft is not null && hasResources)
             {
-                var requiredHealth = (unsafeShaft.ExpectedHealthCost ?? 0) + Math.Max(1, objective.MinimumReserveHealth);
+                var shaftRequiredHealth = (unsafeShaft.ExpectedHealthCost ?? 0) + Math.Max(1, objective.MinimumReserveHealth);
                 var maxHealth = ReadInt(resources, "max_health") ?? 0;
-                if (requiredHealth > maxHealth)
+                if (shaftRequiredHealth > maxHealth)
                 {
                     return Blocked("shaft_health_reserve_unreachable_at_max_health");
                 }
-                var healing = SelectFood(resources, requiredHealth, restoreSlot);
+                var healing = SelectFood(
+                    resources,
+                    shaftRequiredHealth,
+                    restoreSlot);
                 if (healing is not null)
                 {
                     healing.Reason = "shaft_health_reserve_requires_recovery";

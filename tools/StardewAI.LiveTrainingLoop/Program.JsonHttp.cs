@@ -10,6 +10,41 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static string SnapshotIngestUrl(LiveTrainingOptions options)
+    {
+        var ingestUrl = options.BackendUrl + "/api/v1/snapshots";
+        if (!Uri.TryCreate(
+                options.BridgeSnapshotUrl,
+                UriKind.Absolute,
+                out var bridgeUri))
+        {
+            return ingestUrl;
+        }
+
+        foreach (var pair in bridgeUri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (!string.Equals(
+                    Uri.UnescapeDataString(parts[0]),
+                    "profile",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var profile = parts.Length == 2
+                ? Uri.UnescapeDataString(parts[1])
+                : string.Empty;
+            return string.IsNullOrWhiteSpace(profile)
+                ? ingestUrl
+                : ingestUrl + "?profile=" +
+                    Uri.EscapeDataString(profile);
+        }
+
+        return ingestUrl;
+    }
+
     private static async Task<(JsonObject? TrainingReport, JsonObject? Prediction)> TrainIfNeededAsync(HttpClient http, LiveTrainingOptions options, int iteration)
     {
         if (options.SkipTraining)

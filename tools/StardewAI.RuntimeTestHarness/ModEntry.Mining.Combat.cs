@@ -132,9 +132,21 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (activeEmergencyCombatFood is not null)
+        {
+            return;
+        }
+
         var active = activeCombatMonster;
         try
         {
+            if (Context.IsWorldReady &&
+                Game1.currentLocation is MineShaft mine &&
+                TryStartEmergencyCombatFood(mine))
+            {
+                return;
+            }
+
             TickCombatMonsterCore(active);
         }
         catch (Exception ex)
@@ -145,6 +157,11 @@ public sealed partial class ModEntry : Mod
 
     private void TickManualAutoCombat()
     {
+        if (activeEmergencyCombatFood is not null)
+        {
+            return;
+        }
+
         var executorCombatInterrupt = activeMineStone?.CombatInterrupted == true ||
             activeResourceClump?.CombatInterrupted == true ||
             activeBreakContainer?.CombatInterrupted == true ||
@@ -157,8 +174,15 @@ public sealed partial class ModEntry : Mod
             !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
         {
             ReleaseManualAutoCombatInput();
+            ResetManualAutoCombatClearance();
             RestoreManualAutoCombatTool();
             manualAutoCombatTarget = null;
+            return;
+        }
+
+        if (manualAutoCombatClearanceTarget.HasValue)
+        {
+            TickManualAutoCombatClearance(mine);
             return;
         }
 
@@ -200,6 +224,12 @@ public sealed partial class ModEntry : Mod
             manualAutoCombatTargetHealth = target.Health;
         }
 
+        if (executorCombatInterrupt &&
+            TryStartEmergencyCombatFood(mine))
+        {
+            return;
+        }
+
         var weapon = BestCombatWeapon(target);
         if (weapon is null)
         {
@@ -225,7 +255,10 @@ public sealed partial class ModEntry : Mod
         manualAutoCombatRestoreSlotIndex ??= Game1.player.CurrentToolIndex;
         SelectTool(weapon);
         Game1.player.faceDirection(DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection));
-        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var reason))
+        if (!TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(weapon),
+                pressed: true,
+                out var reason))
         {
             Monitor.Log($"Manual auto-combat input failed: {reason}.", LogLevel.Error);
             manualAutoCombatEnabled = false;
@@ -239,7 +272,17 @@ public sealed partial class ModEntry : Mod
 
     private void MoveTowardCombatTarget(MineShaft mine, Monster target)
     {
-        var path = BuildAdjacentToolPath(mine, target.TilePoint, 512, out _);
+        if (AreAdjacent(Game1.player.TilePoint, target.TilePoint))
+        {
+            StartMoving(DirectionToPixel(
+                Game1.player.GetBoundingBox().Center,
+                target.GetBoundingBox().Center,
+                Game1.player.FacingDirection));
+            MovePlayerForTick();
+            return;
+        }
+
+        var path = BuildAdjacentToolPath(mine, target.TilePoint, 512, out _, avoidSoftObstacles: true);
         if (path is null)
         {
             return;
@@ -254,11 +297,121 @@ public sealed partial class ModEntry : Mod
         var next = path[nextIndex];
         if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
         {
+            if (!IsTileOccupiedByCharacter(mine, next))
+            {
+                BeginManualAutoCombatClearance(mine, next);
+            }
             return;
         }
 
         StartMoving(DirectionTo(Game1.player.TilePoint, next));
         MovePlayerForTick();
+    }
+
+    private bool BeginManualAutoCombatClearance(
+        MineShaft mine,
+        Point tile)
+    {
+        var tool = SelectClearanceTool(mine, tile);
+        if (tool is null || !AreAdjacent(Game1.player.TilePoint, tile))
+        {
+            return false;
+        }
+
+        StopAllMovement();
+        manualAutoCombatRestoreSlotIndex ??=
+            Game1.player.CurrentToolIndex;
+        manualAutoCombatClearanceTarget = tile;
+        manualAutoCombatClearanceSwings = 0;
+        Monitor.Log(
+            $"Manual auto-combat clearance: {ObstacleLabel(mine, tile)} " +
+                $"at {tile.X},{tile.Y} with {tool.GetType().Name}.",
+            LogLevel.Info);
+        return true;
+    }
+
+    private void TickManualAutoCombatClearance(MineShaft mine)
+    {
+        if (!manualAutoCombatClearanceTarget.HasValue)
+        {
+            return;
+        }
+
+        var target = manualAutoCombatClearanceTarget.Value;
+        if (manualAutoCombatClearanceButtonHeld)
+        {
+            TryApplySmapiButtonOverride(
+                SButton.C,
+                pressed: false,
+                out _);
+            manualAutoCombatClearanceButtonHeld = false;
+            return;
+        }
+
+        if (string.Equals(
+                ObstacleLabel(mine, target),
+                "clear",
+                StringComparison.Ordinal))
+        {
+            ResetManualAutoCombatClearance();
+            return;
+        }
+
+        if (!AreAdjacent(Game1.player.TilePoint, target))
+        {
+            ResetManualAutoCombatClearance();
+            return;
+        }
+
+        var tool = SelectClearanceTool(mine, target);
+        if (tool is null ||
+            Game1.player.Stamina <= 0f ||
+            manualAutoCombatClearanceSwings >= 64)
+        {
+            ResetManualAutoCombatClearance();
+            return;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return;
+        }
+
+        SelectTool(tool);
+        Game1.player.faceDirection(
+            DirectionTo(Game1.player.TilePoint, target));
+        Game1.player.lastClick = new Vector2(
+            target.X * Game1.tileSize,
+            target.Y * Game1.tileSize);
+        if (!TryApplySmapiButtonOverride(
+                SButton.C,
+                pressed: true,
+                out var inputReason))
+        {
+            Monitor.Log(
+                "Manual auto-combat clearance input failed: " +
+                    inputReason +
+                    ".",
+                LogLevel.Error);
+            ResetManualAutoCombatClearance();
+            return;
+        }
+
+        manualAutoCombatClearanceButtonHeld = true;
+        manualAutoCombatClearanceSwings++;
+    }
+
+    private void ResetManualAutoCombatClearance()
+    {
+        if (manualAutoCombatClearanceButtonHeld)
+        {
+            TryApplySmapiButtonOverride(
+                SButton.C,
+                pressed: false,
+                out _);
+        }
+        manualAutoCombatClearanceTarget = null;
+        manualAutoCombatClearanceButtonHeld = false;
+        manualAutoCombatClearanceSwings = 0;
     }
 
     private void ReleaseManualAutoCombatInput()
@@ -268,7 +421,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
         manualAutoCombatInputHeld = false;
     }
 
@@ -352,7 +505,10 @@ public sealed partial class ModEntry : Mod
         var releasedAttackThisTick = false;
         if (active.AttackButtonHeld)
         {
-            if (!TryApplySmapiButtonOverride(SButton.C, pressed: false, out var releaseReason))
+            if (!TryApplySmapiButtonOverride(
+                    HeavyHitterInputButton(active.Weapon),
+                    pressed: false,
+                    out var releaseReason))
             {
                 CompleteCombatMonsterBlocked(active, releaseReason);
                 return;
@@ -393,6 +549,16 @@ public sealed partial class ModEntry : Mod
                 var path = BuildAdjacentToolPath(mine, targetTile, Math.Max(1, active.MaxMovementTiles - active.MovementTiles), out var pathReason, avoidSoftObstacles: true);
                 if (path is null)
                 {
+                    if (active.Target.isGlider.Value)
+                    {
+                        StopAllMovement();
+                        active.Path.Clear();
+                        active.PathIndex = 0;
+                        active.LastNoProgressReason =
+                            "combat_glider_waiting_for_native_approach";
+                        return;
+                    }
+
                     active.PathFailures++;
                     if (active.PathFailures > 120)
                     {
@@ -483,7 +649,10 @@ public sealed partial class ModEntry : Mod
         SelectTool(active.Weapon);
         Game1.player.faceDirection(attackDirection);
         Game1.player.lastClick = new Vector2(targetCenter.X, targetCenter.Y);
-        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        if (!TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(active.Weapon),
+                pressed: true,
+                out var inputReason))
         {
             CompleteCombatMonsterBlocked(active, inputReason);
             return;
@@ -585,19 +754,14 @@ public sealed partial class ModEntry : Mod
 
     private static bool IsMonsterWithinCombatReach(Monster target, MeleeWeapon weapon)
     {
+        _ = weapon;
         if (AreAdjacent(Game1.player.TilePoint, target.TilePoint))
         {
             return true;
         }
 
-        var playerCenter = Game1.player.GetBoundingBox().Center;
         var targetBox = target.GetBoundingBox();
-        var targetCenter = targetBox.Center;
-        var reach = weapon.type.Value == MeleeWeapon.dagger ? 64 : 96 + Math.Max(0, weapon.addedAreaOfEffect.Value);
-        var deltaX = targetCenter.X - playerCenter.X;
-        var deltaY = targetCenter.Y - playerCenter.Y;
-        return targetBox.Intersects(Game1.player.GetBoundingBox()) ||
-            deltaX * deltaX + deltaY * deltaY <= reach * reach;
+        return targetBox.Intersects(Game1.player.GetBoundingBox());
     }
 
     private static int TrackCombatProgress(ActiveCombatMonster active)
@@ -680,7 +844,8 @@ public sealed partial class ModEntry : Mod
             .Where(weapon => !weapon.isScythe())
             .Where(weapon => string.IsNullOrWhiteSpace(requiredEnchantmentRuntimeType) ||
                 weapon.enchantments.Any(enchantment => string.Equals(enchantment.GetType().Name, requiredEnchantmentRuntimeType, StringComparison.Ordinal)))
-            .OrderByDescending(weapon => CombatWeaponScore(weapon, target))
+            .OrderBy(weapon => CombatExpectedHitCount(weapon, target))
+            .ThenByDescending(weapon => CombatWeaponScore(weapon, target))
             .ThenByDescending(weapon => weapon.maxDamage.Value)
             .ThenBy(weapon => weapon.QualifiedItemId, StringComparer.Ordinal)
             .FirstOrDefault();
@@ -705,6 +870,19 @@ public sealed partial class ModEntry : Mod
 
     private static double CombatWeaponScore(MeleeWeapon weapon, Monster target)
     {
+        var expectedDamage = CombatExpectedDamage(weapon, target);
+        var swipeSpeed = Math.Max(40d, (400d - weapon.speed.Value * 40d) * (1d - Game1.player.buffs.WeaponSpeedMultiplier));
+        var animationFactor = weapon.type.Value == MeleeWeapon.dagger ? 0.5d : weapon.type.Value == MeleeWeapon.club ? 1.6d : 0.75d;
+        return expectedDamage / Math.Max(40d, swipeSpeed * animationFactor);
+    }
+
+    private static int CombatExpectedHitCount(MeleeWeapon weapon, Monster target)
+    {
+        return Math.Max(1, (int)Math.Ceiling(target.Health / CombatExpectedDamage(weapon, target)));
+    }
+
+    private static double CombatExpectedDamage(MeleeWeapon weapon, Monster target)
+    {
         var attackMultiplier = 1d + Game1.player.buffs.AttackMultiplier;
         var averageDamage = ((weapon.minDamage.Value + weapon.maxDamage.Value) / 2d) * attackMultiplier;
         var postResilience = Math.Max(1d, averageDamage - target.resilience.Value);
@@ -717,15 +895,15 @@ public sealed partial class ModEntry : Mod
         }
         criticalChance = Math.Clamp(criticalChance * (1d + Game1.player.buffs.CriticalChanceMultiplier), 0d, 1d);
         var criticalMultiplier = weapon.critMultiplier.Value * (1d + Game1.player.buffs.CriticalPowerMultiplier);
-        var expectedDamage = postResilience * hitChance * (1d + criticalChance * Math.Max(0d, criticalMultiplier - 1d));
-        var swipeSpeed = Math.Max(40d, (400d - weapon.speed.Value * 40d) * (1d - Game1.player.buffs.WeaponSpeedMultiplier));
-        var animationFactor = weapon.type.Value == MeleeWeapon.dagger ? 0.5d : weapon.type.Value == MeleeWeapon.club ? 1.6d : 0.75d;
-        return expectedDamage / Math.Max(40d, swipeSpeed * animationFactor);
+        return Math.Max(1d, postResilience * hitChance * (1d + criticalChance * Math.Max(0d, criticalMultiplier - 1d)));
     }
 
     private void CompleteCombatMonster(ActiveCombatMonster active, bool targetDefeated = true, string terminalVerificationReason = "native_fire_tool_defeated_target")
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(
+            HeavyHitterInputButton(active.Weapon),
+            pressed: false,
+            out _);
         StopAllMovement();
         activeCombatMonster = null;
         RecordCombatHealth(active);
@@ -793,7 +971,10 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteCombatMonsterBlocked(ActiveCombatMonster active, string reason)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(
+            HeavyHitterInputButton(active.Weapon),
+            pressed: false,
+            out _);
         StopAllMovement();
         if (ReferenceEquals(Game1.player.CurrentTool, active.Weapon))
         {

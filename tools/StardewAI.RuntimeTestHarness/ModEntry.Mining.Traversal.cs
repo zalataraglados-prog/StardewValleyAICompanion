@@ -620,9 +620,9 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_requires_loaded_mineshaft"));
             return;
         }
-        if (Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.player.UsingTool || !Game1.player.CanMove)
+        if (Game1.activeClickableMenu is not null || Game1.dialogueUp)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_tool_or_menu_conflict"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "exit_mine", requested, ExitMineObservedEffect(), "exit_mine_menu_conflict"));
             return;
         }
 
@@ -707,9 +707,60 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (activeEmergencyCombatFood is not null)
+        {
+            StopAllMovement();
+            active.CombatInterrupted = true;
+            active.CombatInterruptedTicks++;
+            return;
+        }
+
+        if (active.PostClaimDialogueButtonHeld)
+        {
+            TryApplySmapiLeftButtonOverride(pressed: false, out _);
+            active.PostClaimDialogueButtonHeld = false;
+            return;
+        }
+        if (Game1.activeClickableMenu is DialogueBox postClaimDialogue)
+        {
+            if (IsNativeExitMinePrompt(active, postClaimDialogue))
+            {
+                active.PromptOpened = true;
+            }
+            else
+            {
+                if (!IsGoldenScytheClaimDialogue(active, postClaimDialogue))
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_unexpected_dialogue_before_move");
+                    return;
+                }
+                if (postClaimDialogue.transitioning || postClaimDialogue.safetyTimer > 0)
+                {
+                    return;
+                }
+                if (active.PostClaimDialoguePressAttempts >= 12)
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_golden_scythe_claim_dialogue_not_closed");
+                    return;
+                }
+                if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+                {
+                    CompleteExitMineBlocked(active, "exit_mine_golden_scythe_claim_dialogue_press_failed:" + pressReason);
+                    return;
+                }
+                active.PostClaimDialogueButtonHeld = true;
+                active.PostClaimDialoguePressAttempts++;
+                return;
+            }
+        }
+
         if (active.PromptOpened)
         {
-            if (Game1.activeClickableMenu is not DialogueBox || !string.Equals(active.MineBefore.lastQuestionKey, "ExitMine", StringComparison.Ordinal))
+            if (Game1.activeClickableMenu is not DialogueBox ||
+                !string.Equals(
+                    active.MineBefore.lastQuestionKey,
+                    "ExitMine",
+                    StringComparison.Ordinal))
             {
                 CompleteExitMineBlocked(active, "exit_mine_prompt_drift");
                 return;
@@ -721,6 +772,27 @@ public sealed partial class ModEntry : Mod
             active.DialogueConfirmed = true;
             return;
         }
+        if (Game1.activeClickableMenu is not null)
+        {
+            CompleteExitMineBlocked(active, "exit_mine_unexpected_menu_before_move");
+            return;
+        }
+
+        if (Game1.player.UsingTool ||
+            !Game1.player.CanMove ||
+            Game1.player.FarmerSprite.PauseForSingleAnimation)
+        {
+            StopAllMovement();
+            active.PreMoveSettleTicks++;
+            if (active.PreMoveSettleTicks > 180)
+            {
+                CompleteExitMineBlocked(
+                    active,
+                    "exit_mine_pre_move_animation_timeout");
+            }
+            return;
+        }
+        active.PreMoveSettleTicks = 0;
 
         if (ImmediateMiningThreat(active.MineBefore))
         {
@@ -811,6 +883,30 @@ public sealed partial class ModEntry : Mod
         active.PromptOpened = true;
     }
 
+    private static bool IsNativeExitMinePrompt(
+        ActiveExitMine active,
+        DialogueBox dialogue)
+    {
+        return ReferenceEquals(Game1.currentLocation, active.MineBefore) &&
+            string.Equals(
+                active.MineBefore.lastQuestionKey,
+                "ExitMine",
+                StringComparison.Ordinal) &&
+            dialogue.isQuestion &&
+            dialogue.responses is { Length: 2 };
+    }
+
+    private static bool IsGoldenScytheClaimDialogue(ActiveExitMine active, DialogueBox dialogue)
+    {
+        return active.MineLevelBefore == 77377 &&
+            Game1.player.mailReceived.Contains("gotGoldenScythe") &&
+            CountInventoryItems("(W)53") > 0 &&
+            !dialogue.isQuestion &&
+            (dialogue.responses is null || dialogue.responses.Length == 0) &&
+            dialogue.characterDialogue is null &&
+            !Game1.eventUp;
+    }
+
     private static bool TryReplanExitMine(ActiveExitMine active, out string blockReason)
     {
         var repaired = BuildCompilerMineExitPath(
@@ -832,6 +928,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteExitMine(ActiveExitMine active)
     {
+        TryApplySmapiLeftButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeExitMine = null;
         var request = active.Pending.Request;
@@ -873,6 +970,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteExitMineBlocked(ActiveExitMine active, string reason)
     {
+        TryApplySmapiLeftButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeExitMine = null;
         var result = BlockedWithPrimitive(active.Pending.Request, "exit_mine", active.RequestedEffect, ExitMineObservedEffect(), reason);

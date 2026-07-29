@@ -270,11 +270,13 @@ public sealed partial class ModEntry : Mod
             return false;
         }
 
-        Game1.player.faceDirection(DirectionTo(active.Stand, active.Target));
-        var grabTile = Game1.player.GetGrabTile();
-        if ((int)grabTile.X != active.Target.X || (int)grabTile.Y != active.Target.Y)
+        var placementDirection = DirectionTo(
+            active.Stand,
+            active.Target);
+        Game1.player.faceDirection(placementDirection);
+        if (Game1.player.FacingDirection != placementDirection)
         {
-            reason = "bomb_facing_grab_tile_mismatch";
+            reason = "bomb_facing_direction_mismatch";
             return false;
         }
 

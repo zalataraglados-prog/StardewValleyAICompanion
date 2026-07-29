@@ -10,6 +10,8 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class MiningFloorStepPlanner
     {
+        private const int ObjectiveApproachHorizonTiles = 4;
+
         private static MiningFloorStepPlan? SelectGoldenScytheAltarStep(
             JsonElement altars,
             SearchResult search,
@@ -29,21 +31,13 @@ namespace StardewAI.Core.Execution
 
             if (candidate.Distance > 0)
             {
-                return new MiningFloorStepPlan
-                {
-                    Status = "ready",
-                    StepKind = MiningFloorStepKinds.MoveToGoldenScytheAltar,
-                    Reason = "approach_golden_scythe_altar",
-                    TargetTileX = candidate.StandX,
-                    TargetTileY = candidate.StandY,
-                    StandTileX = candidate.StandX,
-                    StandTileY = candidate.StandY,
-                    EstimatedMovementTiles = candidate.Distance,
-                    EstimatedToolSwings = 0,
-                    TargetQualifiedItemId = "(W)53",
-                    SafetyWindowStatus = "golden_scythe_route_clear",
-                    Path = candidate.Path
-                };
+                var approach = BuildObjectiveApproachStep(
+                    candidate,
+                    MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                    "approach_golden_scythe_altar",
+                    "golden_scythe_route_clear");
+                approach.TargetQualifiedItemId = "(W)53";
+                return approach;
             }
 
             var step = Build(
@@ -75,27 +69,75 @@ namespace StardewAI.Core.Execution
 
             if (candidate.Distance > 0)
             {
-                return new MiningFloorStepPlan
-                {
-                    Status = "ready",
-                    StepKind = MiningFloorStepKinds.MoveToSkullKeyChest,
-                    Reason = "approach_skull_key_reward_chest",
-                    TargetTileX = candidate.StandX,
-                    TargetTileY = candidate.StandY,
-                    StandTileX = candidate.StandX,
-                    StandTileY = candidate.StandY,
-                    EstimatedMovementTiles = candidate.Distance,
-                    EstimatedToolSwings = 0,
-                    TargetName = "SkullKeyChest",
-                    SafetyWindowStatus = "skull_key_reward_route_clear",
-                    Path = candidate.Path
-                };
+                var approach = BuildObjectiveApproachStep(
+                    candidate,
+                    MiningFloorStepKinds.MoveToSkullKeyChest,
+                    "approach_skull_key_reward_chest",
+                    "skull_key_reward_route_clear");
+                approach.TargetName = "SkullKeyChest";
+                return approach;
             }
 
             var step = Build(MiningFloorStepKinds.ClaimSkullKey, "skull_key_reward_chest_adjacent", candidate);
             step.TargetName = "SkullKeyChest";
             step.SafetyWindowStatus = "skull_key_reward_interaction_window_clear";
             return step;
+        }
+
+        private static MiningFloorStepPlan BuildObjectiveApproachStep(
+            Candidate candidate,
+            string stepKind,
+            string reason,
+            string safetyWindowStatus)
+        {
+            var waypointIndex = Math.Min(
+                ObjectiveApproachHorizonTiles,
+                candidate.Path.Length - 1);
+            var waypoint = candidate.Path[waypointIndex];
+            return new MiningFloorStepPlan
+            {
+                Status = "ready",
+                StepKind = stepKind,
+                Reason = reason,
+                TargetTileX = waypoint.X,
+                TargetTileY = waypoint.Y,
+                StandTileX = waypoint.X,
+                StandTileY = waypoint.Y,
+                EstimatedMovementTiles = waypointIndex,
+                EstimatedToolSwings = 0,
+                SafetyWindowStatus = safetyWindowStatus,
+                Path = candidate.Path
+                    .Take(waypointIndex + 1)
+                    .ToArray()
+            };
+        }
+
+        private static MiningFloorStepPlan BuildObjectiveApproachStep(
+            MiningFloorStepPlan source,
+            string stepKind,
+            string reason,
+            string safetyWindowStatus)
+        {
+            var waypointIndex = Math.Min(
+                ObjectiveApproachHorizonTiles,
+                source.Path.Length - 1);
+            var waypoint = source.Path[waypointIndex];
+            return new MiningFloorStepPlan
+            {
+                Status = "ready",
+                StepKind = stepKind,
+                Reason = reason,
+                TargetTileX = waypoint.X,
+                TargetTileY = waypoint.Y,
+                StandTileX = waypoint.X,
+                StandTileY = waypoint.Y,
+                EstimatedMovementTiles = waypointIndex,
+                EstimatedToolSwings = 0,
+                SafetyWindowStatus = safetyWindowStatus,
+                Path = source.Path
+                    .Take(waypointIndex + 1)
+                    .ToArray()
+            };
         }
 
         private static MiningFloorStepPlan? SelectMineRewardChest(JsonElement rewardChests, SearchResult search, bool[,] grid)

@@ -87,6 +87,70 @@ public sealed partial class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void GoldenScytheObjectiveReplansAfterFourTileApproachHorizon()
+    {
+        var plan = Plan(
+            goldenScytheAltars:
+                "[{\"tile_x\":18,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            rows: new[]
+            {
+                "11111111111111111111",
+                "10000000000000000001",
+                "10000000000000000001",
+                "10000000000000000001",
+                "11111111111111111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe
+            });
+
+        Assert.Equal(
+            MiningFloorStepKinds.MoveToGoldenScytheAltar,
+            plan.StepKind);
+        Assert.Equal(5, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+        Assert.Equal(4, plan.EstimatedMovementTiles);
+        Assert.Equal(5, plan.Path.Length);
+    }
+
+    [Fact]
+    public void GoldenScytheObjectiveApproachesDistantRouteClumpBeforeBreaking()
+    {
+        var plan = Plan(
+            goldenScytheAltars:
+                "[{\"tile_x\":18,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            resourceClumps:
+                "[{\"tile_x\":15,\"tile_y\":1,\"width\":2,\"height\":2,\"parent_sheet_index\":754,\"health\":8,\"expected_hits_remaining\":3,\"selected_tool_slot_index\":3,\"required_tool\":\"pickaxe\",\"minimum_upgrade_level\":0,\"selected_tool_qualified_item_id\":\"(T)GoldPickaxe\",\"selected_tool_upgrade_level\":3,\"selected_tool_additional_power\":0,\"selected_tool_effective_upgrade_level\":3,\"damage_per_hit\":3,\"native_executor_supported\":true,\"tool_gate_satisfied\":true,\"executor_status\":\"native_executor_available\",\"expected_core_output_items_json\":\"[]\",\"runtime_type\":\"StardewValley.TerrainFeatures.ResourceClump\"}]",
+            rows: new[]
+            {
+                "11111111111111111111",
+                "10000000000000011001",
+                "10000000000000011001",
+                "11111111111111111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe
+            });
+
+        Assert.Equal(
+            MiningFloorStepKinds.MoveToGoldenScytheAltar,
+            plan.StepKind);
+        Assert.Equal(
+            "approach_golden_scythe_route_clearance",
+            plan.Reason);
+        Assert.Equal(5, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+        Assert.Equal(4, plan.EstimatedMovementTiles);
+        Assert.Equal(5, plan.Path.Length);
+    }
+
+    [Fact]
     public void GoldenScytheObjectiveClaimsAdjacentUnclaimedAltar()
     {
         var plan = Plan(
@@ -117,6 +181,60 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal("Mine", plan.ExpectedTargetLocation);
         Assert.Equal(67, plan.ExpectedArrivalTileX);
         Assert.Equal(10, plan.ExpectedArrivalTileY);
+    }
+
+    [Fact]
+    public void GoldenScytheObjectiveClearsRouteWhenClaimedExitIsNotYetReachable()
+    {
+        var plan = Plan(
+            goldenScytheAltars: "[{\"tile_x\":2,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            exits: "[{\"tile_x\":5,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            objects: "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":1}]",
+            rows: new[] { "1111111", "1001001", "1001001", "1001001", "1111111" },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe
+            });
+
+        Assert.Equal(MiningFloorStepKinds.MineStone, plan.StepKind);
+        Assert.Equal(3, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+    }
+
+    [Fact]
+    public void GoldenScytheClaimedExitApproachUsesExitRouteSemantics()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":18,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            objects: "[{\"tile_x\":8,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":1}]",
+            rows: new[]
+            {
+                "11111111111111111111",
+                "10000000010000000001",
+                "10000000010000000001",
+                "10000000010000000001",
+                "11111111111111111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe
+            });
+
+        Assert.Equal(
+            MiningFloorStepKinds.MoveToMineExitRoute,
+            plan.StepKind);
+        Assert.Equal(
+            "approach_golden_scythe_exit_route_clearance",
+            plan.Reason);
+        Assert.Equal(
+            "executor.move_to_tile",
+            MiningFloorStepCompiler.ExecutionOptionId(plan));
     }
 
     [Fact]

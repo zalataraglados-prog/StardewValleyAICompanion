@@ -97,7 +97,14 @@ namespace StardewAI.Core.Execution
             };
         }
 
-        private static MiningFloorStepPlan? SelectDebris(JsonElement debris, SearchResult search, bool[,] grid, string[] targetIds, int? restoreSlot, int? maximumDistance = null)
+        private static MiningFloorStepPlan? SelectDebris(
+            JsonElement debris,
+            SearchResult search,
+            bool[,] grid,
+            string[] targetIds,
+            int? restoreSlot,
+            JsonElement? playerInventory,
+            int? maximumDistance = null)
         {
             var targets = new HashSet<string>(targetIds, StringComparer.OrdinalIgnoreCase);
             MiningFloorStepPlan? best = null;
@@ -123,11 +130,33 @@ namespace StardewAI.Core.Execution
                     var plan = Build(MiningFloorStepKinds.PickupDebris, "target_debris_reachable", candidate);
                     plan.TargetQualifiedItemId = qualifiedItemId;
                     plan.DebrisIndex = ReadInt(row, "debris_index");
+                    plan.InventoryItemTotalBefore = InventoryItemTotal(
+                        playerInventory,
+                        qualifiedItemId);
                     plan.RestoreSlotIndex = restoreSlot;
                     best = plan;
                 }
             }
             return best;
+        }
+
+        private static int? InventoryItemTotal(
+            JsonElement? inventory,
+            string qualifiedItemId)
+        {
+            if (!inventory.HasValue ||
+                inventory.Value.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return inventory.Value
+                .EnumerateArray()
+                .Where(item => string.Equals(
+                    ReadString(item, "qualified_item_id"),
+                    qualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase))
+                .Sum(item => Math.Max(0, ReadInt(item, "stack") ?? 0));
         }
 
         private static MiningFloorStepPlan? SelectContainer(JsonElement objects, SearchResult search, bool[,] grid, int? maximumDistance = null)

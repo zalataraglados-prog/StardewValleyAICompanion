@@ -42,6 +42,75 @@ public sealed class MiningSnapshotValidationTests
         Assert.Contains(errors, error => error.Contains("non-readable status must not carry a default value"));
     }
 
+    [Fact]
+    public void SnapshotValidatorAcceptsPurposeLimitedMiningProfile()
+    {
+        var raw = PurposeLimitedMiningSnapshotJson();
+
+        var errors = SnapshotValidator.ValidateRaw(
+            raw,
+            out var snapshot,
+            "mining");
+
+        Assert.Empty(errors);
+        Assert.NotNull(snapshot);
+        Assert.Equal(
+            MiningProfileDomains.OrderBy(value => value),
+            snapshot!.State.Keys.OrderBy(value => value));
+    }
+
+    [Fact]
+    public void SnapshotValidatorKeepsPurposeLimitedMiningProfileFailClosed()
+    {
+        var raw = PurposeLimitedMiningSnapshotJson(
+            omittedDomain: "mining");
+
+        var errors = SnapshotValidator.ValidateRaw(
+            raw,
+            out _,
+            "mining");
+
+        Assert.Contains("missing state domain: mining", errors);
+    }
+
+    [Fact]
+    public void SnapshotValidatorRejectsUnknownPurposeProfile()
+    {
+        var errors = SnapshotValidator.ValidateRaw(
+            PurposeLimitedMiningSnapshotJson(),
+            out _,
+            "anything");
+
+        Assert.Contains("unsupported snapshot profile: anything", errors);
+    }
+
+    private static string PurposeLimitedMiningSnapshotJson(
+        string? omittedDomain = null)
+    {
+        var state = MiningProfileDomains
+            .Where(domain => domain != omittedDomain)
+            .ToDictionary(
+                domain => domain,
+                _ => JsonSerializer.SerializeToElement(
+                    new Dictionary<string, object>
+                    {
+                        ["marker"] = Field("available")
+                    },
+                    JsonOptions),
+                StringComparer.Ordinal);
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = "snapshot.v1",
+            BridgeVersion = "test",
+            GameTick = 812,
+            RealTimestamp = "2026-07-30T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return JsonSerializer.Serialize(snapshot, JsonOptions);
+    }
+
     private static string MiningSnapshotJson(bool badEnvelope = false)
     {
         var stateObjects = RequiredDomains.ToDictionary(
@@ -213,6 +282,18 @@ public sealed class MiningSnapshotValidationTests
         "world_progress",
         "menus",
         "modded_state"
+    };
+
+    private static readonly string[] MiningProfileDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "mining"
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

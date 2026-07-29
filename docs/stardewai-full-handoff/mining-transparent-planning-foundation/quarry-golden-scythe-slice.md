@@ -26,7 +26,8 @@ The model-facing command is `mining.acquire_golden_scythe`. `mining.reach_depth`
 5. If the altar stand tile is reachable but not adjacent, compile `executor.move_to_tile`.
 6. When adjacent and unclaimed, compile `executor.interact` with `interaction_kind=map_action` and `expected_action_type=GoldenScythe`.
 7. Verify native claim through both `gotGoldenScythe` and increased `(W)53` inventory count.
-8. On the next fresh snapshot, compile the already validated `executor.exit_mine` path and verify the Quarry Mine destination `Mine(67,10)`.
+8. On the next fresh snapshot, compile route-enabling combat/stone/resource-clump work only when the native exit is not yet reachable.
+9. As soon as the exit is reachable, compile the already validated `executor.exit_mine` path and verify the Quarry Mine destination `Mine(67,10)`.
 
 ## Decompiled Rules
 
@@ -37,10 +38,10 @@ The model-facing command is `mining.acquire_golden_scythe`. `mining.reach_depth`
 
 ## Validation State
 
-`debug.setup_quarry_mine` and `Invoke-RuntimeQuarryGoldenScytheLoop.ps1` now define the repeatable isolated boundary without running it. The setup enters generated mine sentinel `77377`, optionally resets only the isolated fixture's `gotGoldenScythe` mail and `(W)53` inventory items, then verifies the side branch, altar action, unclaimed state, and free inventory slot.
+`debug.setup_quarry_mine` and `Invoke-RuntimeQuarryGoldenScytheLoop.ps1` define the repeatable isolated boundary. The setup enters generated mine sentinel `77377`, resets only the isolated fixture's `gotGoldenScythe` mail and `(W)53` inventory items, then verifies the side branch, altar action, unclaimed state, and free inventory slot.
 
-The loop reads only `profile=mining`, compiles one high-level `mining.acquire_golden_scythe` action per fresh snapshot, and records one verified executor row per step without fitting during collection. Before the reward is claimed, an exit is a terminal failure. After the native altar interaction is verified through both mail and inventory increase, any further clearance action is a terminal failure; only `executor.exit_mine` reaching `Mine(67,10)` succeeds. Ladder, shaft, Volcano, stale snapshot, blocked primitive, and step-limit paths fail closed.
+The loop reads only `profile=mining`, compiles one high-level `mining.acquire_golden_scythe` action per fresh snapshot, and records one verified executor row per step without fitting during collection. Before the reward is claimed, an exit is a terminal failure. After the native altar interaction is verified through both mail and inventory increase, only route-enabling combat or clearance may precede `executor.exit_mine`; descent and unrelated work remain forbidden. Ladder, shaft, Volcano, stale snapshot, blocked primitive, and step-limit paths fail closed. Executor HTTP timeout is independently configurable and set to 600 seconds for this loop because the runtime exit state machine has a larger bounded tick budget than the generic 180-second backend request timeout.
 
 Supported MineShaft resource clumps now compile to `executor.break_resource_clump` with exact anchor, footprint, parent-sheet index, perimeter stand tile, hit tile, and Axe/Pickaxe slot. The executor uses native movement and tool input and verifies natural clump removal; unsupported indexes and insufficient tool upgrades fail closed.
 
-RuntimeTestHarness and LiveTrainingLoop Release builds pass with `EnableModDeploy=false`, and the loop passes PowerShell parsing. Unit and runtime tests were intentionally not executed. No runtime-complete claim is made until an isolated save verifies approach, native resource-clump clearance where present, native claim, fresh after-state, native return, training-row contents, and duration.
+Hidden/silent isolated run `runtime-quarry-golden-scythe-20260730-052042` passed the complete boundary. It verified 59 of 59 native actions: 49 moves, 8 melee combats, one `GoldenScythe` interaction, and one `ExitMine_Leave`. The claim changed both `gotGoldenScythe` and `(W)53` inventory count, the exit reached `Mine(67,10)`, all after-snapshots were fresh, all state hashes changed, and 59 training rows were written. The exit action consumed 3116 ticks, which confirms why its client timeout must exceed 180 seconds while remaining bounded by the executor state machine. Melee uses the shared native heavy-hitter input mapping and only attacks from collision-box contact or a cardinally adjacent tile; BFS and native tool clearance handle blocked approach rather than assuming weapon range can cross mine obstacles.

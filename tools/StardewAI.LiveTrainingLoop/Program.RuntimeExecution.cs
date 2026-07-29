@@ -171,7 +171,10 @@ static partial class Program
             var executionPath = Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + itemSuffix + ".json");
             var afterPath = Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + itemSuffix + ".json");
             await File.WriteAllTextAsync(afterPath, finalAfterJson, Encoding.UTF8);
-            await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/snapshots", finalAfterJson);
+            await PostJsonStringAsync(
+                http,
+                SnapshotIngestUrl(options),
+                finalAfterJson);
 
             execution["queue_execution_mode"] = "sequential_queue_items";
             execution["queue_item_index"] = itemIndex;

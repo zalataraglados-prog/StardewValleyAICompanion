@@ -79,6 +79,10 @@ public sealed partial class ModEntry : Mod
     private int manualAutoCombatAttackCount;
     private int manualAutoCombatHitCount;
     private int? manualAutoCombatRestoreSlotIndex;
+    private Point? manualAutoCombatClearanceTarget;
+    private bool manualAutoCombatClearanceButtonHeld;
+    private int manualAutoCombatClearanceSwings;
+    private ActiveEmergencyCombatFood? activeEmergencyCombatFood;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveMaterialTransfer? activeMaterialTransfer;
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
@@ -386,6 +390,7 @@ public sealed partial class ModEntry : Mod
         TickVolcanoObstacle();
         TickVolcanoCombat();
         TickBreakContainer();
+        TickEmergencyCombatFood();
         TickCombatMonster();
         TickManualAutoCombat();
         TickConsumeFood();

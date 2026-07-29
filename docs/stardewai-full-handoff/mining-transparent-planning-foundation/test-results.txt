@@ -2,13 +2,13 @@
 
 ## Status
 
-- Offline and runtime validation updated on 2026-07-16.
-- Full solution: PASS Core 917/917 and Backend 49/49.
+- Offline and runtime validation updated on 2026-07-30.
+- Current full regression: PASS Core 1384/1384 and Backend 100/100.
 - Hidden/silent isolated E: runtime smoke PASS at level 99: 118 objects, 79 breakable stones, 17 containers, 7 monsters, 50x50 collision rows, and five snapshots at 127-164 ms / 232,759 bytes.
 - Hidden/silent isolated E: native one-stone smoke PASS: target `(4,6)`, health sequence `8,4,0`, two native GoldPickaxe swings, object removed, 46 ticks, and a snapshot at 155 ms / 248,761 bytes.
 - Hidden/silent isolated E: rolling reach-depth PASS: levels 96/97/98 visited, two stone steps, two ladder descents, terminal exit, five fresh changed after-states, and five training rows.
 - Hidden/silent isolated E: Skull Cavern shaft PASS: area 121, level 130 to 134, deterministic delta 4, health 140 to 128, native prompt and post-fall dialogue handled, fresh changed after-state, and one training row.
-- Quarry Mine / Golden Scythe bounded loop: RuntimeTestHarness and LiveTrainingLoop static builds PASS with deployment disabled; `Invoke-RuntimeQuarryGoldenScytheLoop.ps1` PowerShell syntax parse PASS; tests and game runtime intentionally not run by user instruction.
+- Quarry Mine / Golden Scythe bounded loop: hidden/silent isolated PASS at `runtime-quarry-golden-scythe-20260730-052042`; 59/59 native actions verified, including 49 moves, 8 combats, native claim, and native exit to `Mine(67,10)`; 59 fresh changed after-states and training rows.
 - MineShaft resource-clump native executor: Core, TransparentBridge, LiveTrainingLoop, and RuntimeTestHarness Release builds PASS; Quarry loop PowerShell syntax parse PASS; direct mutation source scan PASS; tests and game runtime intentionally not run by user instruction.
 - Volcano Dungeon transparent/planning slice: Core and TransparentBridge static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
 - Volcano native cooling executor: Contracts, Core, LiveTrainingLoop, and RuntimeTestHarness static builds PASS with deployment disabled; tests and game runtime intentionally not run by user instruction.
@@ -27,4 +27,4 @@
 
 ## Runtime
 
-- Read-side validation, one native stone lifecycle, the ordinary-mine rolling reach-depth loop, and one native Skull Cavern shaft lifecycle are complete. Supported MineShaft resource clumps now have a fully typed candidate/compiler/request/result chain and a statically verified native-input executor; runtime evidence is pending. Quarry Mine is represented by `mining.acquire_golden_scythe`. Volcano Dungeon is represented by the separate `volcano` transparent domain and `volcano.reach_caldera` planner, with switch-touch, forward-warp, watering-can cooling, stone removal, container removal, and supported vanilla melee implemented as native-input boundaries. Volcano runtime evidence and full-loop duration calibration remain pending. Ordinary mines, Skull Cavern, Quarry Mine, and Volcano Dungeon are four separate boundaries.
+- Read-side validation, one native stone lifecycle, the ordinary-mine rolling reach-depth loop, one native Skull Cavern shaft lifecycle, and the complete Quarry Mine Golden Scythe claim-and-exit loop are runtime verified. Supported MineShaft resource clumps have a typed candidate/compiler/request/result chain and participate in route clearance, though a dedicated forced-clump runtime matrix remains pending. Volcano Dungeon is represented by the separate `volcano` transparent domain and `volcano.reach_caldera` planner, with switch-touch, forward-warp, watering-can cooling, stone removal, container removal, and supported vanilla melee implemented as native-input boundaries. Volcano runtime evidence and full-loop duration calibration remain pending. Ordinary mines, Skull Cavern, Quarry Mine, and Volcano Dungeon are four separate boundaries.

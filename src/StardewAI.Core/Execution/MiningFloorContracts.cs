@@ -22,6 +22,7 @@ namespace StardewAI.Core.Execution
         public const string PickupDebris = "pickup_debris";
         public const string ConsumeFood = "consume_food";
         public const string MoveToGoldenScytheAltar = "move_to_golden_scythe_altar";
+        public const string MoveToMineExitRoute = "move_to_mine_exit_route";
         public const string ClaimGoldenScythe = "claim_golden_scythe";
         public const string MoveToSkullKeyChest = "move_to_skull_key_chest";
         public const string ClaimSkullKey = "claim_skull_key";
@@ -182,6 +183,8 @@ namespace StardewAI.Core.Execution
         public int? FoodSlotIndex { get; set; }
 
         public int? DebrisIndex { get; set; }
+
+        public int? InventoryItemTotalBefore { get; set; }
 
         public int? RestoreSlotIndex { get; set; }
 

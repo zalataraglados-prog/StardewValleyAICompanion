@@ -74,7 +74,11 @@ app.MapGet("/health", () => new
 app.MapPost("/api/v1/snapshots", async (HttpRequest request, StateStore store) =>
 {
     store.PrepareForSnapshotIngest();
-    var (errors, snapshot) = await SnapshotValidator.ValidateAsync(request.Body, request.HttpContext.RequestAborted);
+    var profile = request.Query["profile"].ToString();
+    var (errors, snapshot) = await SnapshotValidator.ValidateAsync(
+        request.Body,
+        request.HttpContext.RequestAborted,
+        profile);
     if (errors.Count > 0)
     {
         return Results.UnprocessableEntity(new { message = "snapshot validation failed", errors });
@@ -928,14 +932,27 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] MiningRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "mining"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? profile = null)
     {
         try
         {
             var snapshot = await JsonSerializer.DeserializeAsync<SnapshotEnvelope>(rawPayload, JsonOptions, cancellationToken);
-            return (ValidateDeserialized(snapshot), snapshot);
+            return (ValidateDeserialized(snapshot, profile), snapshot);
         }
         catch (JsonException ex)
         {
@@ -943,12 +960,15 @@ public static class SnapshotValidator
         }
     }
 
-    public static List<string> ValidateRaw(string rawPayload, out SnapshotEnvelope? snapshot)
+    public static List<string> ValidateRaw(
+        string rawPayload,
+        out SnapshotEnvelope? snapshot,
+        string? profile = null)
     {
         try
         {
             snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(rawPayload, JsonOptions);
-            return ValidateDeserialized(snapshot);
+            return ValidateDeserialized(snapshot, profile);
         }
         catch (JsonException ex)
         {
@@ -957,14 +977,16 @@ public static class SnapshotValidator
         }
     }
 
-    private static List<string> ValidateDeserialized(SnapshotEnvelope? snapshot)
+    private static List<string> ValidateDeserialized(
+        SnapshotEnvelope? snapshot,
+        string? profile)
     {
         if (snapshot is null)
         {
             return new List<string> { "snapshot deserialization failed" };
         }
 
-        var errors = Validate(snapshot);
+        var errors = Validate(snapshot, profile);
         var computed = SnapshotHash.ComputeStateHash(snapshot.State);
         if (!string.Equals(snapshot.StateHash, computed, StringComparison.OrdinalIgnoreCase))
         {
@@ -973,7 +995,9 @@ public static class SnapshotValidator
         return errors;
     }
 
-    public static List<string> Validate(SnapshotEnvelope snapshot)
+    public static List<string> Validate(
+        SnapshotEnvelope snapshot,
+        string? profile = null)
     {
         var errors = new List<string>();
         if (snapshot.SchemaVersion != "snapshot.v1")
@@ -996,7 +1020,8 @@ public static class SnapshotValidator
             errors.Add("state_hash is required");
         }
 
-        foreach (var domain in RequiredDomains)
+        var requiredDomains = RequiredDomainsForProfile(profile, errors);
+        foreach (var domain in requiredDomains)
         {
             if (!snapshot.State.ContainsKey(domain))
             {
@@ -1010,6 +1035,25 @@ public static class SnapshotValidator
         }
 
         return errors;
+    }
+
+    private static string[] RequiredDomainsForProfile(
+        string? profile,
+        List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(profile) ||
+            string.Equals(profile, "full", StringComparison.OrdinalIgnoreCase))
+        {
+            return RequiredDomains;
+        }
+
+        if (string.Equals(profile, "mining", StringComparison.OrdinalIgnoreCase))
+        {
+            return MiningRequiredDomains;
+        }
+
+        errors.Add("unsupported snapshot profile: " + profile);
+        return Array.Empty<string>();
     }
 
     private static void ValidateTransparentFields(JsonElement element, string path, List<string> errors)

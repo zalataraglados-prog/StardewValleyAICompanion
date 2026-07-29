@@ -21,18 +21,33 @@ namespace StardewAI.Core.Execution
             return new Candidate(x.Value, y.Value, x.Value, y.Value, distance, 0, false, search.PathTo(x.Value, y.Value));
         }
 
-        private static bool NeedsHealing(JsonElement resources, JsonElement monsters, MiningFloorObjective objective, out string reason)
+        private static bool NeedsHealing(
+            JsonElement resources,
+            JsonElement monsters,
+            MiningFloorObjective objective,
+            out string reason,
+            out int requiredHealth,
+            out int maximumMonsterDamage)
         {
             var health = ReadInt(resources, "health") ?? 0;
-            var maxDamage = monsters.ValueKind == JsonValueKind.Array
+            var maxHealth = ReadInt(resources, "max_health") ?? health;
+            maximumMonsterDamage = monsters.ValueKind == JsonValueKind.Array
                 ? monsters.EnumerateArray().Select(monster => ReadInt(monster, "damage_to_farmer") ?? 0).DefaultIfEmpty(0).Max()
                 : 0;
-            var floor = Math.Max(objective.MinimumReserveHealth, maxDamage * 2);
+            var floor = Math.Max(
+                objective.MinimumReserveHealth,
+                maximumMonsterDamage * 2);
             reason = health <= floor ? "health_below_two_hit_or_configured_reserve" : string.Empty;
+            requiredHealth = Math.Min(
+                maxHealth,
+                Math.Max(health + 1, floor + 1));
             return health <= floor;
         }
 
-        private static MiningFloorStepPlan? SelectFood(JsonElement resources, int minimumReserveHealth, int? restoreSlot)
+        private static MiningFloorStepPlan? SelectFood(
+            JsonElement resources,
+            int requiredHealth,
+            int? restoreSlot)
         {
             if (!resources.TryGetProperty("food_slots", out var foods) || foods.ValueKind != JsonValueKind.Array)
             {
@@ -41,17 +56,30 @@ namespace StardewAI.Core.Execution
             var health = ReadInt(resources, "health") ?? 0;
             return foods.EnumerateArray()
                 .Where(food => (ReadInt(food, "health_recovery") ?? 0) > 0)
-                .OrderBy(food => Math.Abs(health + (ReadInt(food, "health_recovery") ?? 0) - Math.Max(health, minimumReserveHealth)))
-                .ThenBy(food => ReadInt(food, "sell_price") ?? int.MaxValue)
-                .Select(food => new MiningFloorStepPlan
+                .Select(food => new
+                {
+                    Food = food,
+                    Recovery = ReadInt(food, "health_recovery") ?? 0,
+                    ResultingHealth = health +
+                        (ReadInt(food, "health_recovery") ?? 0)
+                })
+                .OrderBy(row => row.ResultingHealth >= requiredHealth ? 0 : 1)
+                .ThenBy(row => row.ResultingHealth >= requiredHealth
+                    ? row.ResultingHealth - requiredHealth
+                    : requiredHealth - row.ResultingHealth)
+                .ThenBy(row => ReadInt(row.Food, "sell_price") ?? int.MaxValue)
+                .Select(row => new MiningFloorStepPlan
                 {
                     Status = "ready",
                     StepKind = MiningFloorStepKinds.ConsumeFood,
                     Reason = "health_recovery_required",
-                    FoodSlotIndex = ReadInt(food, "slot_index"),
+                    FoodSlotIndex = ReadInt(row.Food, "slot_index"),
                     RestoreSlotIndex = restoreSlot,
-                    TargetQualifiedItemId = ReadString(food, "qualified_item_id"),
-                    SafetyWindowStatus = "native_eating_lifecycle_handles_recovery_window"
+                    TargetQualifiedItemId = ReadString(
+                        row.Food,
+                        "qualified_item_id"),
+                    SafetyWindowStatus =
+                        "clear_of_immediate_monster_threat_at_snapshot"
                 })
                 .FirstOrDefault();
         }

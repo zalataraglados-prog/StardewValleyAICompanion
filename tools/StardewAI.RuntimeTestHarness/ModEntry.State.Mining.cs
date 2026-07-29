@@ -153,7 +153,7 @@ public sealed partial class ModEntry : Mod
         public Point Anchor { get; }
         public Point HitTile { get; }
         public Point Stand { get; }
-        public List<Point> Path { get; }
+        public List<Point> Path { get; set; }
         public Tool Tool { get; }
         public string RequiredToolKind { get; }
         public int MinimumUpgradeLevel { get; }
@@ -181,12 +181,15 @@ public sealed partial class ModEntry : Mod
         public bool CombatInterrupted { get; set; }
         public int MovementTiles { get; set; }
         public int PathIndex { get; set; }
+        public int PathFailureTicks { get; set; }
         public int StuckTicks { get; set; }
+        public int TransientBusyTicks { get; set; }
         public Vector2 LastPosition { get; set; }
         public Point LastObservedTile { get; set; }
         public int SwingCount { get; set; }
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
+        public int PostRemovalSettleTicks { get; set; }
         public List<float> ObservedHealth { get; } = new();
     }
 

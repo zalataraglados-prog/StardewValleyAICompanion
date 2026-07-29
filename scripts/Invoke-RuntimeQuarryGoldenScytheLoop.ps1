@@ -152,6 +152,7 @@ $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $runtimeSaves = Join-Path $RuntimeRoot "saves"
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
+$smokeModsPath = Join-Path (Join-Path $RuntimeRoot "smoke-mods") $RunId
 $trainingRoot = Join-Path $runDirectory "training"
 $backendLog = Join-Path $runDirectory "backend.log"
 $backendErrorLog = Join-Path $runDirectory "backend-error.log"
@@ -196,6 +197,7 @@ $previousEnv = @{
     STARDEWAI_QUARRY_RESET_GOLDEN_SCYTHE = $env:STARDEWAI_QUARRY_RESET_GOLDEN_SCYTHE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+    SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
 }
 
 try {
@@ -210,6 +212,24 @@ try {
     & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
     & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 
+    New-Item -ItemType Directory -Force -Path $smokeModsPath | Out-Null
+    foreach ($modName in @(
+        "StardewAI.TransparentBridge",
+        "StardewAI.RuntimeTestHarness"
+    )) {
+        $sourceMod = Join-Path (Join-Path $runtimeGameDir "Mods") $modName
+        $targetMod = Join-Path $smokeModsPath $modName
+        if (-not (Test-Path -LiteralPath $sourceMod -PathType Container)) {
+            throw "Required smoke mod is missing: $sourceMod"
+        }
+        New-Item -ItemType Directory -Force -Path $targetMod | Out-Null
+        Copy-Item `
+            -Path (Join-Path $sourceMod "*") `
+            -Destination $targetMod `
+            -Recurse `
+            -Force
+    }
+
     $env:STARDEWAI_TEST_SAVES = $runtimeSaves
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $runtimeSaves
@@ -219,6 +239,7 @@ try {
     $env:STARDEWAI_QUARRY_RESET_GOLDEN_SCYTHE = "1"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $gameStart = @{
         FilePath = $smapiExe
@@ -275,6 +296,7 @@ try {
             "--backend-url", "http://127.0.0.1:5108",
             "--bridge-snapshot-url", "http://127.0.0.1:8765/api/v1/snapshot?profile=mining",
             "--executor-url", "http://127.0.0.1:8767",
+            "--executor-timeout-seconds", "600",
             "--no-manifest",
             "--run-id", $RunId,
             "--artifact-run-id", $artifactRunId,
@@ -382,9 +404,6 @@ try {
             break
         }
 
-        if ($beforeQuarry.claimed) {
-            throw "Step $step continued Quarry Mine clearance after the reward had already been claimed."
-        }
         if ($null -eq $afterQuarry -or $afterQuarry.level -ne 77377 -or $afterQuarry.kind -ne "quarry_mine") {
             throw "Step $step left the Quarry Mine before the verified terminal exit."
         }
@@ -416,6 +435,11 @@ try {
         all_state_hashes_changed = @($stepSummaryArray | Where-Object { -not $_.state_hash_changed }).Count -eq 0
         dataset_path = $datasetPath
         dataset_rows = $datasetRows
+        smoke_mods_path = $smokeModsPath
+        loaded_mod_allowlist = @(
+            "StardewAI.TransparentBridge",
+            "StardewAI.RuntimeTestHarness"
+        )
         game_process_id = $gameProcess.Id
         backend_process_id = $backendProcess.Id
         steps = @($stepSummaryArray)

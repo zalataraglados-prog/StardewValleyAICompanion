@@ -304,6 +304,38 @@ public sealed partial class ModEntry : Mod
         public bool RightButtonHeld { get; set; }
         public bool NativeConfirmationIssued { get; set; }
         public bool EatingObserved { get; set; }
+        public int PreInputSettleTicks { get; set; }
+    }
+
+    private sealed class ActiveEmergencyCombatFood
+    {
+        public ActiveEmergencyCombatFood(
+            MineShaft mine,
+            int slotIndex,
+            string qualifiedItemId,
+            int stackBefore,
+            int restoreSlotIndex,
+            int healthBefore)
+        {
+            Mine = mine;
+            SlotIndex = slotIndex;
+            QualifiedItemId = qualifiedItemId;
+            StackBefore = stackBefore;
+            RestoreSlotIndex = restoreSlotIndex;
+            HealthBefore = healthBefore;
+        }
+
+        public MineShaft Mine { get; }
+        public int SlotIndex { get; }
+        public string QualifiedItemId { get; }
+        public int StackBefore { get; }
+        public int RestoreSlotIndex { get; }
+        public int HealthBefore { get; }
+        public ConsumeFoodStage Stage { get; set; }
+        public int ElapsedTicks { get; set; }
+        public int SettleTicks { get; set; }
+        public bool RightButtonHeld { get; set; }
+        public bool EatingObserved { get; set; }
     }
 
     private sealed class ActivePickupDebris
@@ -348,6 +380,7 @@ public sealed partial class ModEntry : Mod
         public int StuckTicks { get; set; }
         public Vector2 LastPosition { get; set; }
         public int WaitAtTargetTicks { get; set; }
+        public int TransientBusyTicks { get; set; }
     }
 
     private sealed class ActiveDescendLadder
@@ -490,6 +523,9 @@ public sealed partial class ModEntry : Mod
             RetreatReason = retreatReason;
             RequestedEffect = requestedEffect;
             LastPosition = Game1.player.Position;
+            MaxTicks = Math.Max(
+                1800,
+                maxMovementTiles * 90 + 600);
         }
 
         public PendingExecution Pending { get; }
@@ -509,8 +545,11 @@ public sealed partial class ModEntry : Mod
         public string RetreatReason { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
-        public int MaxTicks { get; } = 1800;
+        public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }
+        public int PreMoveSettleTicks { get; set; }
+        public bool PostClaimDialogueButtonHeld { get; set; }
+        public int PostClaimDialoguePressAttempts { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public bool CombatInterrupted { get; set; }
         public int PathIndex { get; set; }

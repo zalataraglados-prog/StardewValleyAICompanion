@@ -55,6 +55,10 @@ public sealed class FarmResourceClumpRuntimeCalibrationSourceGuardTests
         Assert.True(
             experienceCheck >= 0 &&
             emptyOutputReturn > experienceCheck);
+        Assert.Contains(
+            "active.OutputCountsBefore[index] <\n                output.Quantity",
+            runtime.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
     }
 
     [Fact]

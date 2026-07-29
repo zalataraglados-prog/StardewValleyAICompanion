@@ -21,7 +21,7 @@ using var http = new HttpClient
 };
 using var executorHttp = new HttpClient
 {
-    Timeout = TimeSpan.FromSeconds(180)
+    Timeout = TimeSpan.FromSeconds(options.ExecutorTimeoutSeconds)
 };
 
 AppendProgress(options, "start", 0, string.Empty, string.Empty, "concurrency=1 target=" + options.TargetExecutionMode + " feedback=" + options.FeedbackMode);
@@ -74,7 +74,10 @@ for (var attemptOrdinal = 1;
         await File.WriteAllTextAsync(snapshotPath, snapshotJson, Encoding.UTF8);
         persistedIterationCount++;
 
-    var ingest = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/snapshots", snapshotJson);
+    var ingest = await PostJsonStringAsync(
+        http,
+        SnapshotIngestUrl(options),
+        snapshotJson);
     lastStateHash = ReadString(ingest, "state_hash");
 
     var ready = await http.GetFromJsonAsync<JsonObject>(options.ReadyProbeUrl);

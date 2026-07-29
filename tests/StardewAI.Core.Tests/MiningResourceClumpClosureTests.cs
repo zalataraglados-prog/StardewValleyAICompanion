@@ -74,6 +74,64 @@ public sealed class MiningResourceClumpClosureTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RuntimeReleasesDestroyingSwingBeforeReportingCompletion()
+    {
+        var source = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MiningResources.cs");
+        var absentBranch = source.IndexOf(
+            "if (!targetPresent)",
+            StringComparison.Ordinal);
+        var completion = source.IndexOf(
+            "CompleteResourceClump(active);",
+            absentBranch,
+            StringComparison.Ordinal);
+        var release = source.IndexOf(
+            "Game1.player.EndUsingTool();",
+            absentBranch,
+            StringComparison.Ordinal);
+
+        Assert.True(absentBranch >= 0);
+        Assert.True(release > absentBranch);
+        Assert.True(completion > release);
+        Assert.Contains(
+            "resource_clump_post_removal_tool_release_timeout",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RuntimeReplansClumpPathAfterCombatDisplacement()
+    {
+        var source = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MiningResources.cs");
+
+        Assert.Contains(
+            "TryReplanResourceClump(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "active.MaxMovementTiles - active.MovementTiles",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resource_clump_pre_move_animation_timeout",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "active.Path[active.PathIndex] != Game1.player.TilePoint",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DelayOrBlockResourceClumpReplan(",
+            source,
+            StringComparison.Ordinal);
+    }
+
     private static SnapshotEnvelope ResourceClumpSnapshot()
     {
         const string outputJson =

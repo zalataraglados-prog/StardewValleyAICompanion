@@ -365,12 +365,24 @@ public sealed partial class MiningFloorStepPlannerTests
                 TargetSourceQualifiedItemIds = new[] { "(O)751" }
             },
             objects: "[{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2}]",
-            debris: "[{\"debris_index\":6,\"qualified_item_id\":\"(O)390\",\"chunks\":[{\"tile_x\":3,\"tile_y\":2}]}]");
+            debris: "[{\"debris_index\":6,\"qualified_item_id\":\"(O)390\",\"chunks\":[{\"tile_x\":3,\"tile_y\":2}]}]",
+            playerInventory: "[{\"slot_index\":0,\"qualified_item_id\":\"(O)390\",\"stack\":21},{\"slot_index\":1,\"qualified_item_id\":\"(O)390\",\"stack\":10}]");
 
         Assert.Equal(MiningFloorStepKinds.PickupDebris, plan.StepKind);
         Assert.Equal("(O)390", plan.TargetQualifiedItemId);
         Assert.Equal(6, plan.DebrisIndex);
         Assert.Equal(3, plan.TargetTileX);
+        Assert.Equal(31, plan.InventoryItemTotalBefore);
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "max_movement_tiles" &&
+                parameter.Value == "34");
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "inventory_item_total_before" &&
+                parameter.Value == "31");
     }
 
     [Fact]
@@ -458,12 +470,29 @@ public sealed partial class MiningFloorStepPlannerTests
                 TargetSourceQualifiedItemIds = new[] { "(O)751" }
             },
             objects: "[{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2}]",
-            monsters: "[{\"runtime_identity\":\"threat\",\"tile_x\":2,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":2,\"selected_drop_qualified_item_ids\":[]}]");
+            monsters: "[{\"runtime_identity\":\"threat\",\"runtime_type\":\"StardewValley.Monsters.GreenSlime\",\"name\":\"Green Slime\",\"tile_x\":2,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":2,\"combat_experience_on_defeat\":3,\"combat_experience_condition\":\"native_defeat\",\"selected_drop_qualified_item_ids\":[],\"melee_attack_projections\":[{\"slot_index\":1,\"expected_attacks_to_defeat\":3.0,\"expected_active_damage_duration_ms\":900.0,\"duration_status\":\"exact_active_melee_phase_excluding_movement\",\"terminal_effect\":\"defeat\"}]}]",
+            resources: "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[],\"cardinal_movement\":{\"tile_duration_ms\":100.0}}");
 
         Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
         Assert.Equal("unsafe_tool_window_combat_interrupt", plan.Reason);
         Assert.Equal("blocked_by_immediate_monster_threat", plan.SafetyWindowStatus);
         Assert.Equal(4, plan.RestoreSlotIndex);
+        Assert.Equal(3d, plan.ExpectedCombatAttacks);
+        Assert.Equal(900d, plan.ExpectedCombatDurationMs);
+        Assert.Equal(1, plan.CombatWeaponSlotIndex);
+        Assert.Equal(3, plan.ExpectedSkillExperience);
+        var parameters =
+            MiningFloorStepCompiler.BuildExecutionParameters(plan);
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "max_movement_tiles" &&
+                parameter.Value == "80");
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "max_attacks" &&
+                parameter.Value == "10");
     }
 
     [Fact]
@@ -476,13 +505,88 @@ public sealed partial class MiningFloorStepPlannerTests
                 TargetQualifiedItemIds = new[] { "(O)768" },
                 MinimumReserveHealth = 20
             },
-            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":3,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":8,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
-            resources: "{\"health\":10,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[{\"slot_index\":7,\"qualified_item_id\":\"(O)194\",\"health_recovery\":25,\"sell_price\":120}]}");
+            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":6,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":8,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
+            resources: "{\"health\":10,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[{\"slot_index\":7,\"qualified_item_id\":\"(O)194\",\"health_recovery\":25,\"sell_price\":120},{\"slot_index\":8,\"qualified_item_id\":\"(O)247\",\"health_recovery\":5,\"sell_price\":100}]}");
 
         Assert.Equal(MiningFloorStepKinds.ConsumeFood, plan.StepKind);
         Assert.Equal(7, plan.FoodSlotIndex);
         Assert.Equal(4, plan.RestoreSlotIndex);
         Assert.Equal("health_below_two_hit_or_configured_reserve", plan.Reason);
+    }
+
+    [Fact]
+    public void ImmediateThreatPreemptsLowHealthRecoveryUntilCombatWindowClears()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" },
+                MinimumReserveHealth = 20
+            },
+            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":2,\"tile_y\":2,\"health\":20,\"damage_to_farmer\":8,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
+            resources: "{\"health\":10,\"max_health\":100,\"selected_slot_index\":4,\"melee_weapons\":[{\"slot_index\":1,\"qualified_item_id\":\"(W)4\",\"can_damage\":true,\"minimum_damage\":10,\"maximum_damage\":20,\"attack_speed_ms\":400}],\"food_slots\":[{\"slot_index\":7,\"qualified_item_id\":\"(O)194\",\"health_recovery\":25,\"sell_price\":120}]}");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal(
+            "immediate_monster_threat_preempts_recovery",
+            plan.Reason);
+        Assert.Equal(
+            "blocked_by_immediate_monster_threat",
+            plan.SafetyWindowStatus);
+    }
+
+    [Fact]
+    public void OneHitLethalImmediateThreatUsesNativeFoodBeforeCombat()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectMonsterDrop,
+                TargetQualifiedItemIds = new[] { "(O)768" },
+                MinimumReserveHealth = 20
+            },
+            monsters: "[{\"runtime_identity\":\"target\",\"tile_x\":2,\"tile_y\":2,\"health\":166,\"damage_to_farmer\":18,\"selected_drop_qualified_item_ids\":[\"(O)768\"]}]",
+            resources: "{\"health\":15,\"max_health\":140,\"selected_slot_index\":4,\"melee_weapons\":[{\"slot_index\":1,\"qualified_item_id\":\"(W)4\",\"can_damage\":true,\"minimum_damage\":10,\"maximum_damage\":20,\"attack_speed_ms\":400}],\"food_slots\":[{\"slot_index\":7,\"qualified_item_id\":\"(O)773\",\"health_recovery\":200,\"sell_price\":1000}]}");
+
+        Assert.Equal(MiningFloorStepKinds.ConsumeFood, plan.StepKind);
+        Assert.Equal(7, plan.FoodSlotIndex);
+        Assert.Equal(
+            "critical_one_hit_recovery_preempts_immediate_threat",
+            plan.SafetyWindowStatus);
+    }
+
+    [Fact]
+    public void ImmediateThreatPrefersFewerContactExposureWindowsBeforeRawSpeed()
+    {
+        var plan = ObjectivePlan(
+            new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.CollectResourceOrArtifact,
+                TargetSourceQualifiedItemIds = new[] { "(O)751" }
+            },
+            objects: "[{\"tile_x\":6,\"tile_y\":2,\"qualified_item_id\":\"(O)751\",\"best_pickaxe_hits_remaining\":2}]",
+            monsters: """
+            [
+              {
+                "runtime_identity":"threat",
+                "tile_x":2,
+                "tile_y":2,
+                "health":405,
+                "damage_to_farmer":24,
+                "melee_attack_projections":[
+                  {"slot_index":1,"expected_attacks_to_defeat":14.1,"expected_active_damage_duration_ms":2900.0,"duration_status":"exact_active_melee_phase_excluding_movement"},
+                  {"slot_index":12,"expected_attacks_to_defeat":3.9,"expected_active_damage_duration_ms":4100.0,"duration_status":"exact_active_melee_phase_excluding_movement"}
+                ]
+              }
+            ]
+            """,
+            resources: "{\"health\":100,\"max_health\":140,\"selected_slot_index\":4,\"food_slots\":[],\"cardinal_movement\":{\"tile_duration_ms\":100.0}}");
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal(12, plan.CombatWeaponSlotIndex);
+        Assert.Equal(3.9d, plan.ExpectedCombatAttacks);
+        Assert.Equal(4100d, plan.ExpectedCombatDurationMs);
     }
 
     [Fact]

@@ -26,6 +26,7 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.DescendShaft => "executor.descend_shaft",
                 MiningFloorStepKinds.ExitMine => "executor.exit_mine",
                 MiningFloorStepKinds.MoveToGoldenScytheAltar => "executor.move_to_tile",
+                MiningFloorStepKinds.MoveToMineExitRoute => "executor.move_to_tile",
                 MiningFloorStepKinds.ClaimGoldenScythe => "executor.interact",
                 MiningFloorStepKinds.MoveToSkullKeyChest => "executor.move_to_tile",
                 MiningFloorStepKinds.ClaimSkullKey => "executor.interact",
@@ -49,9 +50,14 @@ namespace StardewAI.Core.Execution
             Add(parameters, "target_tile_y", plan.TargetTileY);
             Add(parameters, "stand_tile_x", plan.StandTileX);
             Add(parameters, "stand_tile_y", plan.StandTileY);
-            Add(parameters, "max_movement_tiles", plan.EstimatedMovementTiles > 0 ? Math.Max(8, plan.EstimatedMovementTiles + 8) : (int?)null);
+            Add(parameters, "max_movement_tiles", MaxMovementTiles(plan));
             Add(parameters, "max_tool_swings", plan.EstimatedToolSwings > 0 ? Math.Max(1, plan.EstimatedToolSwings + 2) : (int?)null);
+            Add(parameters, "max_attacks", MaxCombatAttacks(plan));
             Add(parameters, "debris_index", plan.DebrisIndex);
+            Add(
+                parameters,
+                "inventory_item_total_before",
+                plan.InventoryItemTotalBefore);
             Add(parameters, "slot_index", plan.FoodSlotIndex);
             Add(parameters, "restore_slot_index", plan.RestoreSlotIndex);
             Add(parameters, "tool_slot_index", plan.ToolSlotIndex);
@@ -162,6 +168,44 @@ namespace StardewAI.Core.Execution
                 parameters.Add(Parameter("native_contract", "one_reward_open_then_wait_dumpContents_then_empty_chest_cleanup_checkAction"));
             }
             return parameters.ToArray();
+        }
+
+        private static int? MaxMovementTiles(MiningFloorStepPlan plan)
+        {
+            if (plan.StepKind == MiningFloorStepKinds.CombatMonster &&
+                plan.ExpectedCombatAttacks.HasValue)
+            {
+                var expectedAttacks = Math.Max(
+                    1,
+                    (int)Math.Ceiling(plan.ExpectedCombatAttacks.Value));
+                return Math.Min(
+                    512,
+                    Math.Max(
+                        64,
+                        plan.EstimatedMovementTiles +
+                        expectedAttacks * 16 +
+                        32));
+            }
+
+            return plan.EstimatedMovementTiles > 0
+                ? Math.Min(
+                    512,
+                    Math.Max(32, plan.EstimatedMovementTiles + 32))
+                : null;
+        }
+
+        private static int? MaxCombatAttacks(MiningFloorStepPlan plan)
+        {
+            if (plan.StepKind != MiningFloorStepKinds.CombatMonster ||
+                !plan.ExpectedCombatAttacks.HasValue)
+            {
+                return null;
+            }
+
+            var expectedAttacks = Math.Max(
+                1,
+                (int)Math.Ceiling(plan.ExpectedCombatAttacks.Value));
+            return Math.Min(256, Math.Max(8, expectedAttacks * 2 + 4));
         }
 
         private static void Add(List<SmallModelActionParameter> parameters, string name, int? value)

@@ -12,17 +12,29 @@ public sealed partial class MiningFloorStepPlannerTests
     {
         var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartMineStone", StringComparison.Ordinal);
-        var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
+        var end = source.IndexOf("\n    private ", start + 1, StringComparison.Ordinal);
         var mineStoneSource = source[start..end];
+        var tickStart = source.IndexOf("private void TickMineStoneCore", StringComparison.Ordinal);
+        var tickEnd = source.IndexOf("\n    private ", tickStart + 1, StringComparison.Ordinal);
+        var tickMineStoneSource = source[tickStart..tickEnd];
+        var advanceStart = source.IndexOf("private bool AdvanceMineStonePath", StringComparison.Ordinal);
+        var advanceEnd = source.IndexOf("\n    private ", advanceStart + 1, StringComparison.Ordinal);
+        var advanceMineStoneSource = source[advanceStart..advanceEnd];
 
         Assert.Contains("executor.mine_stone", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.player.BeginUsingTool()", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("Game1.player.EndUsingTool()", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("RecordMineStoneCompletedSwing(active, 0);", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("native_pickaxe_lifecycle_removed_breakable_stone", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("ImmediateMiningThreat(mine)", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("active.CombatInterrupted = true", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("active.ElapsedTicks - active.CombatInterruptedTicks", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.BeginUsingTool()", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.EndUsingTool()", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("RecordMineStoneCompletedSwing(active, 0);", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("native_pickaxe_lifecycle_removed_breakable_stone", source, StringComparison.Ordinal);
+        Assert.Contains("ImmediateMiningThreat(mine)", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.CombatInterrupted = true", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.ElapsedTicks - active.CombatInterruptedTicks", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("AdvanceMineStonePath(active)", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.MovementTiles++", advanceMineStoneSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "active.MovementTiles += ManhattanDistance",
+            tickMineStoneSource,
+            StringComparison.Ordinal);
         Assert.Contains("activeMineStone?.CombatInterrupted == true", source, StringComparison.Ordinal);
         Assert.Contains("RestoreManualAutoCombatTool()", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".DoFunction(", mineStoneSource, StringComparison.Ordinal);
@@ -44,18 +56,24 @@ public sealed partial class MiningFloorStepPlannerTests
     {
         var source = RuntimeHarnessSources.All;
         var start = source.IndexOf("private void StartMineStone", StringComparison.Ordinal);
-        var end = source.IndexOf("private void StartSetupMiningFloor", start, StringComparison.Ordinal);
+        var end = source.IndexOf("\n    private ", start + 1, StringComparison.Ordinal);
         var mineStoneSource = source[start..end];
+        var tickStart = source.IndexOf("private void TickMineStoneCore", StringComparison.Ordinal);
+        var tickEnd = source.IndexOf("\n    private ", tickStart + 1, StringComparison.Ordinal);
+        var tickMineStoneSource = source[tickStart..tickEnd];
+        var pathStart = source.IndexOf("private static List<Point>? BuildCompilerAdjacentPath", StringComparison.Ordinal);
+        var pathEnd = source.IndexOf("\n    private ", pathStart + 1, StringComparison.Ordinal);
+        var pathSource = source[pathStart..pathEnd];
 
         Assert.Contains("request.StandTileX", mineStoneSource, StringComparison.Ordinal);
         Assert.Contains("BuildCompilerAdjacentPath", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("avoidSoftObstacles: true", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("allowRemovableObstacles: false", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("TryReplanMineStone", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("mine_stone_dynamic_path_unavailable", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true", pathSource, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", pathSource, StringComparison.Ordinal);
+        Assert.Contains("TryReplanMineStone", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("mine_stone_dynamic_path_unavailable", tickMineStoneSource, StringComparison.Ordinal);
         Assert.Contains("path ?? new List<Point>()", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("if (!active.CombatInterrupted)", mineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("StopAllMovement();", mineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.CombatInterruptedTicks++", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("StopAllMovement();", tickMineStoneSource, StringComparison.Ordinal);
         Assert.DoesNotContain("mine_stone_path_changed", mineStoneSource, StringComparison.Ordinal);
     }
 
@@ -80,6 +98,12 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("TryReplanDescendLadder", source, StringComparison.Ordinal);
         Assert.Contains("TryReplanDescendShaft", source, StringComparison.Ordinal);
         Assert.Contains("TryReplanExitMine", source, StringComparison.Ordinal);
+        Assert.Contains("IsNativeExitMinePrompt(active, postClaimDialogue)", source, StringComparison.Ordinal);
+        Assert.Contains("active.PromptOpened = true;", source, StringComparison.Ordinal);
+        Assert.Contains("IsGoldenScytheClaimDialogue(active, postClaimDialogue)", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiLeftButtonOverride(pressed: true", source, StringComparison.Ordinal);
+        Assert.Contains("exit_mine_unexpected_dialogue_before_move", source, StringComparison.Ordinal);
+        Assert.Contains("if (activeEmergencyCombatFood is not null)", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -158,12 +182,21 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("CombatPlayerHealthSequence", combatSource, StringComparison.Ordinal);
         Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
         Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
-        Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint", combatSource, StringComparison.Ordinal);
+        Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("target.GetBoundingBox().Center", combatSource, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint, 512, out _, avoidSoftObstacles: true)", combatSource, StringComparison.Ordinal);
+        Assert.Contains(".OrderBy(weapon => CombatExpectedHitCount(weapon, target))", combatSource, StringComparison.Ordinal);
+        Assert.Contains("private static int CombatExpectedHitCount", combatSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.maxHealth * 3 / 4", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.UsingTool", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.FarmerSprite.PauseForSingleAnimation", source, StringComparison.Ordinal);
         Assert.Contains("ResolveCombatWeapon(target, request.CombatWeaponSlotIndex", combatSource, StringComparison.Ordinal);
         Assert.Contains("weapon.enchantments.Any", combatSource, StringComparison.Ordinal);
         Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
         Assert.Contains("TrackCombatProgress(active) > 600", combatSource, StringComparison.Ordinal);
         Assert.Contains("combat_no_movement_or_damage_progress", combatSource, StringComparison.Ordinal);
+        Assert.Contains("active.Target.isGlider.Value", combatSource, StringComparison.Ordinal);
+        Assert.Contains("combat_glider_waiting_for_native_approach", combatSource, StringComparison.Ordinal);
         Assert.Contains("out var pathReason, avoidSoftObstacles: true", combatSource, StringComparison.Ordinal);
         Assert.Contains("ApplyExecutorMovementInput", source, StringComparison.Ordinal);
         Assert.Contains("SButton.W, SButton.D, SButton.S, SButton.A", source, StringComparison.Ordinal);
@@ -222,7 +255,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("PlaceBombStage.AimPlacement", bombSource, StringComparison.Ordinal);
         Assert.Contains("PrepareNativeBombPlacement", bombSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.TilePoint != active.Stand", bombSource, StringComparison.Ordinal);
-        Assert.Contains("Game1.player.GetGrabTile()", bombSource, StringComparison.Ordinal);
+        Assert.Contains("AreAdjacent(active.Stand, active.Target)", bombSource, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.FacingDirection != placementDirection", bombSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.GetGrabTile()", bombSource, StringComparison.Ordinal);
         Assert.Contains("BombPlacementCursorPatch.ScreenPixel", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.setMousePosition", bombSource, StringComparison.Ordinal);
         Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
@@ -275,6 +310,8 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", recoverySource, StringComparison.Ordinal);
         Assert.Contains("answerDialogueAction(\"Eat_Yes\"", recoverySource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.isEating", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("active.PreInputSettleTicks++", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("consume_food_pre_input_animation_timeout", recoverySource, StringComparison.Ordinal);
         Assert.Contains("consume_food_health_not_recovered", recoverySource, StringComparison.Ordinal);
         Assert.Contains("RestoreConsumeFoodSlot(active)", recoverySource, StringComparison.Ordinal);
         Assert.DoesNotContain("eatHeldObject(", recoverySource, StringComparison.Ordinal);
@@ -282,6 +319,56 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.DoesNotContain("Game1.player.health =", recoverySource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.health +=", recoverySource, StringComparison.Ordinal);
         Assert.DoesNotContain("reduceActiveItemByOne", recoverySource, StringComparison.Ordinal);
+
+        Assert.Contains(
+            "TryStartEmergencyCombatFood",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "healthRecoveredOnConsumption()",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "answerDialogueAction(\"Eat_Yes\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Emergency combat recovery",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TickEmergencyCombatFood();\n        TickCombatMonster();",
+            source.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
+
+        var combatTickStart = source.IndexOf(
+            "private void TickCombatMonster()",
+            StringComparison.Ordinal);
+        var combatTickEnd = source.IndexOf(
+            "\n    private ",
+            combatTickStart + 1,
+            StringComparison.Ordinal);
+        var combatTickSource = source[combatTickStart..combatTickEnd];
+        Assert.Contains(
+            "if (activeEmergencyCombatFood is not null)",
+            combatTickSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryStartEmergencyCombatFood(mine)",
+            combatTickSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BeginManualAutoCombatClearance(mine, next)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SelectClearanceTool(mine, target)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "manualAutoCombatClearanceSwings >= 64",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -294,11 +381,20 @@ public sealed partial class MiningFloorStepPlannerTests
         var pickupSource = source[start..end];
 
         Assert.Contains("TryBuildTilePath", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("ManhattanDistance(Game1.player.TilePoint, target) <= 1", pickupSource, StringComparison.Ordinal);
         Assert.Contains("MovePlayerForTick()", pickupSource, StringComparison.Ordinal);
         Assert.Contains("ImmediateMiningThreat(mine)", pickupSource, StringComparison.Ordinal);
         Assert.Contains("active.CombatInterrupted = true", pickupSource, StringComparison.Ordinal);
         Assert.Contains("activePickupDebris?.CombatInterrupted == true", source, StringComparison.Ordinal);
+        Assert.Contains("active.TransientBusyTicks++", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("pickup_debris_transient_tool_state_timeout", pickupSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.UsingTool || !Game1.player.CanMove)", pickupSource[..pickupSource.IndexOf("activePickupDebris = new ActivePickupDebris", StringComparison.Ordinal)], StringComparison.Ordinal);
         Assert.Contains("game_update_naturally_collected_chunk", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("target_chunk_absent_after_native_proximity_collection", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("inventory_item_count_increased_since_snapshot", pickupSource, StringComparison.Ordinal);
+        Assert.Contains("ManhattanDistance(Game1.player.TilePoint, target) <= 3", pickupSource, StringComparison.Ordinal);
         Assert.DoesNotContain(".collect(", pickupSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Chunks.Remove", pickupSource, StringComparison.Ordinal);
         Assert.DoesNotContain("debris.Remove", pickupSource, StringComparison.Ordinal);
@@ -316,7 +412,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("non_item_visual_or_numeric_debris", bridge, StringComparison.Ordinal);
         Assert.Contains("string.IsNullOrWhiteSpace(qualifiedItemId)", planner, StringComparison.Ordinal);
         Assert.Contains("pickup_debris_item_identity_required", runtime, StringComparison.Ordinal);
-        Assert.Contains("DebrisAt(location, target, request.DebrisIndex, request.QualifiedItemId)", runtime, StringComparison.Ordinal);
+        Assert.Contains("TryRebindPickupDebris(", runtime, StringComparison.Ordinal);
+        Assert.Contains("maximumNaturalChunkDriftTiles = 3", runtime, StringComparison.Ordinal);
+        Assert.Contains("candidates[0].Distance == candidates[1].Distance", runtime, StringComparison.Ordinal);
         Assert.Contains("Concat(indexes.Where(index => index != debrisIndex.Value))", runtime, StringComparison.Ordinal);
     }
 
@@ -401,6 +499,10 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("ExpectedMineExitDestination", exitSource, StringComparison.Ordinal);
         Assert.Contains("BuildCompilerMineExitPath", exitSource, StringComparison.Ordinal);
         Assert.Contains("is < 1 or > 2", exitSource, StringComparison.Ordinal);
+        Assert.Contains("active.PreMoveSettleTicks++", exitSource, StringComparison.Ordinal);
+        Assert.Contains("exit_mine_pre_move_animation_timeout", exitSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("exit_mine_tool_or_menu_conflict", exitSource, StringComparison.Ordinal);
+        Assert.Contains("maxMovementTiles * 90 + 600", source, StringComparison.Ordinal);
         Assert.DoesNotContain("warpFarmer(", exitSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.enterMine(", exitSource, StringComparison.Ordinal);
     }
@@ -443,6 +545,7 @@ public sealed partial class MiningFloorStepPlannerTests
         bool goldenScytheApplicable = false,
         bool goldenScytheClaimed = false,
         string skullKeyRewardChests = "[]",
+        string resourceClumps = "[]",
         bool skullKeyApplicable = false,
         bool hasSkullKey = false,
         int? mineLevel = null,
@@ -464,7 +567,7 @@ public sealed partial class MiningFloorStepPlannerTests
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
-            "resource_clumps": {"status":"available","value":[]},
+            "resource_clumps": {"status":"available","value":RESOURCE_CLUMPS},
             "monsters": {"status":"available","value":MONSTERS},
             "floor_objectives": {"status":"available","value":{"must_kill_all_monsters_to_advance":MUST_KILL_ALL,"golden_scythe_applicable":GOLDEN_SCYTHE_APPLICABLE,"golden_scythe_claimed":GOLDEN_SCYTHE_CLAIMED,"skull_key_applicable":SKULL_KEY_APPLICABLE,"skull_key_acquired":HAS_SKULL_KEY,"skull_key_reward_chests":SKULL_KEY_REWARD_CHESTS}},
             "reward_chests": {"status":"available","value":[]},
@@ -481,6 +584,7 @@ public sealed partial class MiningFloorStepPlannerTests
             .Replace("HEIGHT", height.ToString(), StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
+            .Replace("RESOURCE_CLUMPS", resourceClumps, StringComparison.Ordinal)
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal)
             .Replace("MINE_LEVEL", (mineLevel ?? (mineKind == "skull_cavern" ? 121 : mineKind == "quarry_mine" ? 77377 : 40)).ToString(), StringComparison.Ordinal)
@@ -499,10 +603,14 @@ public sealed partial class MiningFloorStepPlannerTests
         string monsters = "[]",
         string debris = "[]",
         string resources = "{\"health\":100,\"max_health\":100,\"selected_slot_index\":4,\"food_slots\":[]}",
-        string dropCatalogs = "[]")
+        string dropCatalogs = "[]",
+        string playerInventory = "[]")
     {
         var json = """
         {
+          "player": {
+            "inventory": {"status":"available","value":PLAYER_INVENTORY}
+          },
           "mining": {
             "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":[],"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":8,"height":5,"blocked_rows":["11111111","10000001","10000001","10000001","11111111"]}}},
             "objects": {"status":"available","value":OBJECTS},
@@ -520,6 +628,7 @@ public sealed partial class MiningFloorStepPlannerTests
             .Replace("MONSTERS", monsters, StringComparison.Ordinal)
             .Replace("DROP_CATALOGS", dropCatalogs, StringComparison.Ordinal)
             .Replace("DEBRIS", debris, StringComparison.Ordinal)
+            .Replace("PLAYER_INVENTORY", playerInventory, StringComparison.Ordinal)
             .Replace("RESOURCES", resources, StringComparison.Ordinal);
         return new MiningFloorStepPlanner().Plan(Snapshot(json), objective);
     }

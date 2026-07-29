@@ -15,6 +15,7 @@ public sealed class LiveTrainingOptions
     public string BridgeSnapshotUrl { get; set; } = "http://127.0.0.1:8765/api/v1/snapshot";
     public string SnapshotFile { get; set; } = string.Empty;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
+    public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
     public string RunId { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
     public string ArtifactRunId { get; set; } = string.Empty;
@@ -99,6 +100,15 @@ public sealed class LiveTrainingOptions
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
                 options.ExecutorUrl = args[++i].TrimEnd('/');
+            }
+            else if (current == "--executor-timeout-seconds" &&
+                i + 1 < args.Length &&
+                int.TryParse(args[++i], out var executorTimeoutSeconds))
+            {
+                options.ExecutorTimeoutSeconds = Math.Clamp(
+                    executorTimeoutSeconds,
+                    30,
+                    3600);
             }
             else if (current == "--save-isolation-path" && i + 1 < args.Length)
             {
