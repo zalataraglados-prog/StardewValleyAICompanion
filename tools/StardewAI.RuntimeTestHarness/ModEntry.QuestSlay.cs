@@ -16,7 +16,8 @@ public sealed partial class ModEntry
         out string reason)
     {
         reason = string.Empty;
-        if (string.IsNullOrWhiteSpace(request.QuestCandidateId))
+        if (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
+            !request.QuestSlayTargetStep)
         {
             return true;
         }
@@ -100,7 +101,8 @@ public sealed partial class ModEntry
         TrainingExecutionRequest request,
         bool requireProgress)
     {
-        if (string.IsNullOrWhiteSpace(request.QuestCandidateId))
+        if (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
+            !request.QuestSlayTargetStep)
         {
             return;
         }

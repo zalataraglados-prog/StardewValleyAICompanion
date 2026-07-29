@@ -3359,3 +3359,9 @@ Scope boundary:
   catalog differences, 28 stages with 16 bound, 10 blocked and 2 observation-only.
 - The knowledge command retained only two pre-existing Grandpa method-identity
   blockers. No game process was started.
+2026-07-29 task-attached monster-drop runtime calibration
+- Ordinary ResourceCollectionQuest hidden runtime PASS: `runtime-quest-monster-drop-final-ordinary-20260729`, native combat and pickup advanced `0/1 -> 1/1`.
+- Special-order CollectObjective hidden runtime PASS: `runtime-quest-monster-drop-final-special-20260729`, native combat and pickup advanced `0/1 -> 1/1`.
+- Explicit isolated save slots now default to auto-load unless the caller explicitly disables it.
+- Typed task-step gates prevent collection work from entering slay validation and prevent slay work from entering special-order collection validation.
+- Core 1333/1333; Backend 95/95; Release solution build 0 errors, 5 existing warnings.

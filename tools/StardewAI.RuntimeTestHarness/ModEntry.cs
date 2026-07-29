@@ -182,6 +182,10 @@ public sealed partial class ModEntry : Mod
         {
             config.AutoLoad = autoLoadEnabled;
         }
+        else if (!string.IsNullOrWhiteSpace(slotName))
+        {
+            config.AutoLoad = true;
+        }
 
         var executorTimeout = Environment.GetEnvironmentVariable("STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS");
         if (int.TryParse(executorTimeout, out var timeoutSeconds))
@@ -595,6 +599,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_mining_combat_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupMiningCombatFixture(pending.Request));
+                return;
+            }
+            if (pending.Request.OptionId == "debug.setup_quest_monster_drop_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupQuestMonsterDropFixture(pending.Request));
                 return;
             }
 

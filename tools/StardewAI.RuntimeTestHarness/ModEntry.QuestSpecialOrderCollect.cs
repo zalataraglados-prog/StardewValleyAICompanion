@@ -86,7 +86,8 @@ public sealed partial class ModEntry
     {
         reason = string.Empty;
         if (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
-            !string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal))
+            !string.Equals(request.QuestFamily, "special_order", StringComparison.Ordinal) ||
+            !request.QuestAcquisitionSourceStep)
         {
             return true;
         }

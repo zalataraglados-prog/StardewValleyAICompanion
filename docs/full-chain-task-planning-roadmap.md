@@ -44,8 +44,11 @@ The implementation chain is:
   as a source. Spawned-object pickup, current-location debris pickup, and ready machine-output collection
   may claim progress. `CollectObjective` currently binds exact context-tag-matched
   mature `Grab` crops, current-location debris, and ready machine outputs as receipts,
-  plus current-location bush and ginger actions as source-only steps. Additional native acquisition families
-  remain explicit graph expansion work rather than implicit generic collection.
+  plus current-location bush, ginger, scythe crops, guaranteed giant crops, Green Rain
+  clumps, fishing distributions, and direct MineShaft monster drops as source-only
+  steps. Ordinary and special-order direct monster-drop paths have hidden native
+  combat-and-pickup calibration. Additional native acquisition families remain
+  explicit graph expansion work rather than implicit generic collection.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)
 

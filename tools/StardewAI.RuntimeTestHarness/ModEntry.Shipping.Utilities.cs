@@ -585,6 +585,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "debug.setup_volcano_floor" &&
             request.OptionId != "debug.setup_breakable_container" &&
             request.OptionId != "debug.setup_mining_combat_fixture" &&
+            request.OptionId != "debug.setup_quest_monster_drop_fixture" &&
             request.OptionId != "debug.setup_clear_obstacle" &&
             request.OptionId != "debug.setup_plant_seed_target" &&
             request.OptionId != "debug.setup_harvest_crop_target" &&
