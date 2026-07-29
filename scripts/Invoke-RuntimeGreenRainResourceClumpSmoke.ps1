@@ -2,15 +2,14 @@ param(
     [string] $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [string] $SaveSlot = "",
-    [string] $RunId = ("runtime-giant-crop-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
-    [string] $OutputDirectory = "artifacts\runtime-giant-crop-smoke",
+    [string] $RunId = ("runtime-green-rain-resource-clump-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
+    [string] $OutputDirectory = "artifacts\runtime-green-rain-resource-clump-smoke",
     [int] $StartupTimeoutSeconds = 120,
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
-    [string] $GiantCropId = "276",
     [ValidateSet("none", "ordinary_quest", "special_order")]
     [string] $TaskFamily = "none",
-    [string] $TaskId = "stardewai.runtime.giant-crop-source",
+    [string] $TaskId = "stardewai.runtime.green-rain-resource-clump-source",
     [switch] $KeepGameRunning
 )
 
@@ -55,43 +54,38 @@ function Wait-WorldSnapshot {
         try {
             $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 5
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
-            $farmReadable = $false
+            $resourceClumpsReadable = $false
             if ($null -ne $snapshot.state -and
-                $snapshot.state.PSObject.Properties.Name -contains "farm" -and
-                $snapshot.state.farm.PSObject.Properties.Name -contains "resource_clumps") {
-                $farmReadable = $snapshot.state.farm.resource_clumps.status -in @("available", "derived")
+                $snapshot.state.PSObject.Properties.Name -contains "current_location" -and
+                $snapshot.state.current_location.PSObject.Properties.Name -contains "resource_clumps") {
+                $resourceClumpsReadable =
+                    $snapshot.state.current_location.resource_clumps.status -in @("available", "derived")
             }
 
-            $lastStatus = "save_id=$($snapshot.save_id.status);farm_resource_clumps_readable=$farmReadable"
-            if ($saveReadable -and $farmReadable) { return $snapshot }
+            $lastStatus = "save_id=$($snapshot.save_id.status);current_location_resource_clumps_readable=$resourceClumpsReadable"
+            if ($saveReadable -and $resourceClumpsReadable) { return $snapshot }
         }
         catch { $lastStatus = $_.Exception.Message }
         Start-Sleep -Seconds 2
     }
-    throw "Timed out waiting for world-ready farm resource-clump snapshot. Last status: $lastStatus"
+    throw "Timed out waiting for world-ready current-location resource-clump snapshot. Last status: $lastStatus"
 }
 
-function Find-GiantCrop {
+function Find-GreenRainResourceClump {
     param($Snapshot, [int] $X, [int] $Y)
-    if ($null -eq $Snapshot.state.farm.resource_clumps.value) { return $null }
-    foreach ($clump in @($Snapshot.state.farm.resource_clumps.value)) {
-        $cx = [int]$clump.tile_x
-        $cy = [int]$clump.tile_y
-        $width = [Math]::Max(1, [int]$clump.width)
-        $height = [Math]::Max(1, [int]$clump.height)
-        if ($clump.is_giant_crop -eq $true -and
-            $X -ge $cx -and $X -lt ($cx + $width) -and
-            $Y -ge $cy -and $Y -lt ($cy + $height)) {
-            return $clump
-        }
-    }
-    return $null
+    return $Snapshot.state.current_location.resource_clumps.value |
+        Where-Object {
+            [int]$_.tile_x -eq $X -and
+            [int]$_.tile_y -eq $Y -and
+            [string]$_.clear_kind -eq "green_rain_bush"
+        } |
+        Select-Object -First 1
 }
 
 function Count-Debris {
     param($Snapshot)
-    if ($null -eq $Snapshot.state.farm.debris.value) { return 0 }
-    return @($Snapshot.state.farm.debris.value).Count
+    if ($null -eq $Snapshot.state.current_location.debris.value) { return 0 }
+    return @($Snapshot.state.current_location.debris.value).Count
 }
 
 function Read-CollectionTaskProgress {
@@ -161,7 +155,7 @@ function Wait-StableMatchingDebris {
         }
         Start-Sleep -Milliseconds 120
     }
-    throw "Matching giant-crop debris did not settle. Last status: $lastStatus"
+    throw "Matching Green Rain resource-clump debris did not settle. Last status: $lastStatus"
 }
 
 function Add-CollectionTaskFields {
@@ -227,10 +221,10 @@ try {
     $setupRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId
-        queue_id = "runtime-giant-crop-smoke"
-        queue_item_id = "runtime-giant-crop-smoke.setup"
+        queue_id = "runtime-green-rain-resource-clump-smoke"
+        queue_item_id = "runtime-green-rain-resource-clump-smoke.setup"
         before_state_hash = $initialSnapshot.state_hash
-        option_id = "debug.setup_giant_crop_target"
+        option_id = "debug.setup_green_rain_resource_clump"
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
@@ -238,35 +232,37 @@ try {
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
-        giant_crop_id = $GiantCropId
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
     Start-Sleep -Milliseconds 500
-    $beforeHarvestSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $beforeClump = Find-GiantCrop -Snapshot $beforeHarvestSnapshot -X $TargetTileX -Y $TargetTileY
+    $beforeBreakSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+    $beforeClump = Find-GreenRainResourceClump -Snapshot $beforeBreakSnapshot -X $TargetTileX -Y $TargetTileY
     if ($null -eq $beforeClump) {
-        Write-JsonFile (Join-Path $runDirectory "snapshot-before-giant-harvest-rejected.json") $beforeHarvestSnapshot
-        throw "Fixture did not produce giant crop resource clump at $TargetTileX,$TargetTileY."
+        Write-JsonFile (Join-Path $runDirectory "snapshot-before-break-rejected.json") $beforeBreakSnapshot
+        throw "Fixture did not produce a Green Rain resource clump at $TargetTileX,$TargetTileY."
     }
-    $guaranteedOutput = @($beforeClump.giant_crop_guaranteed_outputs) |
+    if ([string]$beforeClump.clear_obstacle_executor_status -ne "ready") {
+        throw "Green Rain resource clump is not executable: $($beforeClump.clear_obstacle_executor_status)"
+    }
+    $guaranteedOutput = @($beforeClump.expected_core_output_items) |
         Select-Object -First 1
     $qualifiedOutputId = if ($null -eq $guaranteedOutput) {
         ""
     } else {
-        [string]$guaranteedOutput.qualified_item_id
+        [string]$guaranteedOutput.qualifiedItemId
     }
     $taskSetupResult = $null
     if ($TaskFamily -ne "none") {
         if ([string]::IsNullOrWhiteSpace($qualifiedOutputId)) {
-            throw "Giant crop exposes no guaranteed task output."
+            throw "Green Rain resource clump exposes no guaranteed task output."
         }
         $taskSetupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
-            queue_id = "runtime-giant-crop-smoke"
-            queue_item_id = "runtime-giant-crop-smoke.task-setup"
-            before_state_hash = $beforeHarvestSnapshot.state_hash
+            queue_id = "runtime-green-rain-resource-clump-smoke"
+            queue_item_id = "runtime-green-rain-resource-clump-smoke.task-setup"
+            before_state_hash = $beforeBreakSnapshot.state_hash
             option_id = "debug.setup_collection_task_fixture"
             execution_mode = "training_singleplayer"
             actor = "training_farmer.main"
@@ -287,20 +283,22 @@ try {
             throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
         }
         Start-Sleep -Milliseconds 300
-        $beforeHarvestSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-        $beforeClump = Find-GiantCrop `
-            -Snapshot $beforeHarvestSnapshot `
+        $beforeBreakSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+        $beforeClump = Find-GreenRainResourceClump `
+            -Snapshot $beforeBreakSnapshot `
             -X $TargetTileX `
             -Y $TargetTileY
     }
 
-    $harvestRequest = [ordered]@{
+    $standTileX = [int]$beforeBreakSnapshot.state.player.tile_x.value
+    $standTileY = [int]$beforeBreakSnapshot.state.player.tile_y.value
+    $breakRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId
-        queue_id = "runtime-giant-crop-smoke"
-        queue_item_id = "runtime-giant-crop-smoke.harvest"
-        before_state_hash = $beforeHarvestSnapshot.state_hash
-        option_id = "executor.harvest_giant_crop"
+        queue_id = "runtime-green-rain-resource-clump-smoke"
+        queue_item_id = "runtime-green-rain-resource-clump-smoke.break"
+        before_state_hash = $beforeBreakSnapshot.state_hash
+        option_id = "executor.break_current_location_resource_clump"
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
@@ -308,17 +306,30 @@ try {
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
-        giant_crop_id = $GiantCropId
+        stand_tile_x = $standTileX
+        stand_tile_y = $standTileY
+        resource_clump_tile_x = [int]$beforeClump.tile_x
+        resource_clump_tile_y = [int]$beforeClump.tile_y
+        resource_clump_width = [int]$beforeClump.width
+        resource_clump_height = [int]$beforeClump.height
+        resource_clump_parent_sheet_index = [int]$beforeClump.parent_sheet_index
+        target_runtime_type = [string]$beforeClump.runtime_type
+        tool_slot_index = [int]$beforeClump.tool_slot_index
+        required_tool_kind = [string]$beforeClump.required_tool_kind
+        expected_foraging_experience_delta = [int]$beforeClump.expected_foraging_experience_delta
+        expected_output_items_json = [string]$beforeClump.expected_core_output_items_json
+        max_crops = [Math]::Max(1, [int]$beforeClump.expected_tool_hits_to_clear + 2)
+        max_movement_tiles = 16
     }
-    Add-CollectionTaskFields -Request $harvestRequest -SourceStep $true
+    Add-CollectionTaskFields -Request $breakRequest -SourceStep $true
     if ($TaskFamily -ne "none") {
-        $harvestRequest.qualified_item_id = $qualifiedOutputId
+        $breakRequest.qualified_item_id = $qualifiedOutputId
     }
-    $harvestResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $harvestRequest -TimeoutSeconds 120
+    $breakResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $breakRequest -TimeoutSeconds 120
     Start-Sleep -Milliseconds 500
     $afterSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
-    $afterClump = Find-GiantCrop -Snapshot $afterSnapshot -X $TargetTileX -Y $TargetTileY
-    $beforeDebrisCount = Count-Debris -Snapshot $beforeHarvestSnapshot
+    $afterClump = Find-GreenRainResourceClump -Snapshot $afterSnapshot -X $TargetTileX -Y $TargetTileY
+    $beforeDebrisCount = Count-Debris -Snapshot $beforeBreakSnapshot
     $afterDebrisCount = Count-Debris -Snapshot $afterSnapshot
     $taskProgressAfterSource = if ($TaskFamily -eq "none") {
         $null
@@ -340,14 +351,14 @@ try {
     }
     if ($TaskFamily -ne "none" -and $taskProgressAfterSource -eq 0) {
         if ($null -eq $debris) {
-            throw "Giant crop created no matching transparent debris."
+            throw "Green Rain resource clump created no matching transparent debris."
         }
         $chunk = @($debris.chunks)[0]
         $pickupRequest = [ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId
-            queue_id = "runtime-giant-crop-smoke"
-            queue_item_id = "runtime-giant-crop-smoke.pickup"
+            queue_id = "runtime-green-rain-resource-clump-smoke"
+            queue_item_id = "runtime-green-rain-resource-clump-smoke.pickup"
             before_state_hash = $afterSnapshot.state_hash
             option_id = "executor.pickup_debris"
             execution_mode = "training_singleplayer"
@@ -382,17 +393,16 @@ try {
         status = if (
             $setupResult.status -eq "applied" -and
             $setupResult.primitive_verification_status -eq "verified" -and
-            $harvestResult.status -eq "applied" -and
-            $harvestResult.primitive_verification_status -eq "verified" -and
+            $breakResult.status -eq "applied" -and
+            $breakResult.primitive_verification_status -eq "verified" -and
             $null -eq $afterClump -and
-            $afterDebrisCount -gt $beforeDebrisCount -and
+            ($TaskFamily -ne "none" -or $afterDebrisCount -gt $beforeDebrisCount) -and
             ($TaskFamily -eq "none" -or $taskProgressAfterReceipt -ge 1)
         ) { "passed" } else { "failed" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
         target_tile = "$TargetTileX,$TargetTileY"
-        giant_crop_id = $GiantCropId
         guaranteed_output_qualified_item_id = $qualifiedOutputId
         task_family = $TaskFamily
         task_setup_status = if ($null -eq $taskSetupResult) { "not_requested" } else { $taskSetupResult.status }
@@ -401,25 +411,25 @@ try {
         pickup_status = if ($null -eq $pickupResult) { "not_required" } else { $pickupResult.status }
         setup_status = $setupResult.status
         setup_verification = $setupResult.primitive_verification_status
-        giant_crop_present_before = $null -ne $beforeClump
-        harvest_status = $harvestResult.status
-        harvest_verification = $harvestResult.primitive_verification_status
-        harvest_reasons = @($harvestResult.primitive_verification_reasons)
-        harvest_block_reasons = @($harvestResult.block_reasons)
-        giant_crop_present_after = $null -ne $afterClump
+        resource_clump_present_before = $null -ne $beforeClump
+        break_status = $breakResult.status
+        break_verification = $breakResult.primitive_verification_status
+        break_reasons = @($breakResult.primitive_verification_reasons)
+        break_block_reasons = @($breakResult.block_reasons)
+        resource_clump_present_after = $null -ne $afterClump
         debris_count_before = $beforeDebrisCount
         debris_count_after = $afterDebrisCount
         debris_count_increased = $afterDebrisCount -gt $beforeDebrisCount
-        bridge_state_hash_before = $beforeHarvestSnapshot.state_hash
+        bridge_state_hash_before = $beforeBreakSnapshot.state_hash
         bridge_state_hash_after = $afterSnapshot.state_hash
-        state_hash_changed = $beforeHarvestSnapshot.state_hash -ne $afterSnapshot.state_hash
+        state_hash_changed = $beforeBreakSnapshot.state_hash -ne $afterSnapshot.state_hash
         executor_health = $executorHealth
         smapi_process_id = $process.Id
     }
 
-    Write-JsonFile (Join-Path $runDirectory "harvest-result.json") $harvestResult
+    Write-JsonFile (Join-Path $runDirectory "break-result.json") $breakResult
     Write-JsonFile (Join-Path $runDirectory "initial-snapshot.json") $initialSnapshot
-    Write-JsonFile (Join-Path $runDirectory "before-harvest-snapshot.json") $beforeHarvestSnapshot
+    Write-JsonFile (Join-Path $runDirectory "before-break-snapshot.json") $beforeBreakSnapshot
     Write-JsonFile (Join-Path $runDirectory "after-snapshot.json") $afterSnapshot
     if ($null -ne $taskSetupResult) {
         Write-JsonFile (Join-Path $runDirectory "task-setup-result.json") $taskSetupResult
@@ -430,7 +440,7 @@ try {
     }
     Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 12
-    if ($summary.status -ne "passed") { throw "Runtime giant crop smoke failed. See $runDirectory" }
+    if ($summary.status -ne "passed") { throw "Runtime Green Rain resource-clump smoke failed. See $runDirectory" }
 }
 finally {
     foreach ($key in $previousEnv.Keys) {

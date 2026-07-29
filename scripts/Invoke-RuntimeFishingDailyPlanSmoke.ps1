@@ -12,6 +12,11 @@ param(
     [int] $FishingMaxAttempts = 1,
     [int] $MineFishingLevel = 0,
     [int] $MineFishingMaxAttempts = 12,
+    [ValidateSet("none", "ordinary_quest", "special_order")]
+    [string] $TaskFamily = "none",
+    [string] $TaskId = "stardewai.runtime.fishing-source",
+    [string] $TaskQualifiedItemId = "",
+    [int] $TaskTargetCount = 99,
     [string] $RunId = ("runtime-fishing-daily-plan-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-fishing-daily-plan-smoke",
     [int] $BackendPort = 5129,
@@ -96,6 +101,31 @@ function Wait-FishingSnapshot {
         Start-Sleep -Seconds 2
     }
     throw "The isolated save did not reach a fully transparent fishable state. Put this test save on a fishable map with a rod before retrying. Last status: $lastStatus"
+}
+
+function Read-CollectionTaskProgress {
+    param($Snapshot)
+    if ($TaskFamily -eq "special_order") {
+        $order = $Snapshot.state.quests.special_orders.value |
+            Where-Object { [string]$_.quest_key -eq $TaskId } |
+            Select-Object -First 1
+        if ($null -eq $order) {
+            if ($TaskId -in @($Snapshot.state.quests.completed_special_orders.value)) {
+                return $TaskTargetCount
+            }
+            return $null
+        }
+        if (@($order.objectives).Count -eq 0) { return $null }
+        return [int]@($order.objectives)[0].current_count
+    }
+    $quest = $Snapshot.state.quests.active_quests.value |
+        Where-Object {
+            [string]$_.id -eq $TaskId -and
+            [string]$_.runtime_type -eq "ResourceCollectionQuest"
+        } |
+        Select-Object -First 1
+    if ($null -eq $quest) { return $null }
+    return [int]$quest.per_type_fields.number_collected
 }
 
 function Resolve-CompactTrainingAttempts {
@@ -522,6 +552,53 @@ try {
     else {
         $snapshot = Wait-FishingSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
     }
+    $taskSetupResult = $null
+    $taskProgressBefore = $null
+    if ($TaskFamily -ne "none") {
+        if ([string]::IsNullOrWhiteSpace($TaskQualifiedItemId)) {
+            if ($MineFishingLevel -gt 0) {
+                $TaskQualifiedItemId = "(O)167"
+            }
+            else {
+                throw "TaskQualifiedItemId is required outside the MineShaft fishing fixture."
+            }
+        }
+        if ($TaskTargetCount -le 0) {
+            throw "TaskTargetCount must be positive."
+        }
+        $taskSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-fishing-fixture"
+            queue_item_id = "runtime-fishing-fixture.collection-task"
+            before_state_hash = $snapshot.state_hash
+            option_id = "debug.setup_collection_task_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            quest_id = $TaskId
+            quest_family = $TaskFamily
+            quest_expected_target_count = $TaskTargetCount
+            qualified_item_id = $TaskQualifiedItemId
+        }
+        $taskSetupResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $taskSetupRequest `
+            -TimeoutSeconds 120
+        Write-JsonFile (Join-Path $runDirectory "task-setup-result.json") $taskSetupResult
+        if ($taskSetupResult.status -ne "applied" -or
+            $taskSetupResult.primitive_verification_status -ne "verified") {
+            throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 300
+        $snapshot = Wait-FishingSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
+        $taskProgressBefore = Read-CollectionTaskProgress -Snapshot $snapshot
+        if ($taskProgressBefore -ne 0) {
+            throw "Collection task fixture did not publish progress 0/$TaskTargetCount."
+        }
+    }
     Write-JsonFile $snapshotPath $snapshot
 
     $attemptIterations = if ($MineFishingLevel -gt 0) {
@@ -529,6 +606,12 @@ try {
     }
     else {
         [Math]::Max(1, $FishingMaxAttempts)
+    }
+    $dailyPlanCandidateOptions = if ($TaskFamily -eq "none") {
+        "fishing.catch_fish"
+    }
+    else {
+        "quest.advance"
     }
     dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
         --root $loopRoot `
@@ -544,7 +627,7 @@ try {
         --sleep-ms 0 `
         --use-daily-plan `
         --daily-plan-max-candidates 1 `
-        --daily-plan-candidate-options "fishing.catch_fish" `
+        --daily-plan-candidate-options $dailyPlanCandidateOptions `
         --after-snapshot-wait-ms 1000
     if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop returned exit code $LASTEXITCODE" }
 
@@ -564,7 +647,15 @@ try {
 
     $winningAttempt = @($attemptRecords) | Where-Object {
         $stepObservedCatch = $_.observed_caught_qualified_item_id
-        $requiredCatchMatched = if ($MineFishingLevel -gt 0) { $stepObservedCatch -eq "(O)162" } else { -not [string]::IsNullOrWhiteSpace($stepObservedCatch) }
+        $requiredCatchMatched = if ($TaskFamily -ne "none") {
+            $stepObservedCatch -eq $TaskQualifiedItemId
+        }
+        elseif ($MineFishingLevel -gt 0) {
+            $stepObservedCatch -eq "(O)162"
+        }
+        else {
+            -not [string]::IsNullOrWhiteSpace($stepObservedCatch)
+        }
         $_.option_id -eq "executor.catch_fish" -and
         $null -ne $_.primitive_verified -and
         $requiredCatchMatched
@@ -655,11 +746,52 @@ try {
         if ($missingMineCatchIds.Count -gt 0 -or $unexpectedMineCatchIds.Count -gt 0) {
             throw "Mine area-80 compiled distribution was incomplete or contained unexpected results. Missing=$($missingMineCatchIds -join ','); unexpected=$($unexpectedMineCatchIds -join ',')"
         }
-        if ($observedCatch -ne "(O)162") {
-            throw "Mine area-80 smoke requires observed Lava Eel (O)162; observed $observedCatch."
+        $requiredMineCatch = if ($TaskFamily -ne "none") {
+            $TaskQualifiedItemId
         }
-        if (@($catchExecution.primitive_verification_reasons) -notcontains "bobber_bar_success_observed") {
+        else {
+            "(O)162"
+        }
+        if ($observedCatch -ne $requiredMineCatch) {
+            throw "Mine area-80 smoke requires observed $requiredMineCatch; observed $observedCatch."
+        }
+        if ($requiredMineCatch -eq "(O)162" -and
+            @($catchExecution.primitive_verification_reasons) -notcontains "bobber_bar_success_observed") {
             throw "Lava Eel catch did not report the required BobberBar minigame."
+        }
+        if ($requiredMineCatch -ne "(O)162" -and
+            @($catchExecution.primitive_verification_reasons) -notcontains "special_catch_without_bobber_bar_observed") {
+            throw "Mine trash catch did not report the native no-BobberBar path."
+        }
+    }
+    $taskProgressAfter = $null
+    $compiledQuestFamily = ""
+    $compiledQuestId = ""
+    $compiledQuestSourceStep = ""
+    $compiledQuestTargetStep = ""
+    if ($TaskFamily -ne "none") {
+        $compiledQuestFamily = [string](@($catchItem.normalized_command.parameters) |
+            Where-Object { $_.name -eq "quest_family" } |
+            Select-Object -ExpandProperty value -First 1)
+        $compiledQuestId = [string](@($catchItem.normalized_command.parameters) |
+            Where-Object { $_.name -eq "quest_id" } |
+            Select-Object -ExpandProperty value -First 1)
+        $compiledQuestSourceStep = [string](@($catchItem.normalized_command.parameters) |
+            Where-Object { $_.name -eq "quest_acquisition_source_step" } |
+            Select-Object -ExpandProperty value -First 1)
+        $compiledQuestTargetStep = [string](@($catchItem.normalized_command.parameters) |
+            Where-Object { $_.name -eq "quest_acquisition_target_step" } |
+            Select-Object -ExpandProperty value -First 1)
+        if ($compiledQuestFamily -ne $TaskFamily -or
+            $compiledQuestId -ne $TaskId -or
+            $compiledQuestSourceStep -ne "True" -or
+            $compiledQuestTargetStep -ne "False") {
+            throw "Fishing catch was not compiled as the requested task acquisition source."
+        }
+        $finalTaskSnapshot = Wait-FishingSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+        $taskProgressAfter = Read-CollectionTaskProgress -Snapshot $finalTaskSnapshot
+        if ($null -eq $taskProgressAfter -or $taskProgressAfter -le $taskProgressBefore) {
+            throw "Task-attached fishing run did not advance native progress from $taskProgressBefore."
         }
     }
     $datasetText = Get-Content -LiteralPath $datasetPath -Raw
@@ -677,6 +809,17 @@ try {
         fixture_qualified_item_id = if (-not [string]::IsNullOrWhiteSpace($FishFrenzyQualifiedItemId)) { $FishFrenzyQualifiedItemId } else { $FishPondQualifiedItemId }
         mine_level = if ($MineFishingLevel -gt 0) { $MineFishingLevel } else { $null }
         mine_area = if ($MineFishingLevel -gt 0) { 80 } else { $null }
+        task_family = $TaskFamily
+        task_id = if ($TaskFamily -eq "none") { "" } else { $TaskId }
+        task_qualified_item_id = if ($TaskFamily -eq "none") { "" } else { $TaskQualifiedItemId }
+        task_target_count = if ($TaskFamily -eq "none") { $null } else { $TaskTargetCount }
+        task_setup_status = if ($null -eq $taskSetupResult) { "not_requested" } else { $taskSetupResult.status }
+        task_progress_before = $taskProgressBefore
+        task_progress_after = $taskProgressAfter
+        compiled_quest_family = $compiledQuestFamily
+        compiled_quest_id = $compiledQuestId
+        compiled_quest_acquisition_source_step = $compiledQuestSourceStep
+        compiled_quest_acquisition_target_step = $compiledQuestTargetStep
         fish_pond_occupant_count_before = $fishPondBeforeCount
         fish_pond_occupant_count_after = $fishPondAfterCount
         fish_pond_actual_top_left_tile = if ($null -ne $fishPondSetup) { "$actualFishPondTileX,$actualFishPondTileY" } else { "" }

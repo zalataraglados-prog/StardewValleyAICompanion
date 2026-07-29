@@ -46,9 +46,10 @@ The implementation chain is:
   mature `Grab` crops, current-location debris, and ready machine outputs as receipts,
   plus current-location bush, ginger, scythe crops, guaranteed giant crops, Green Rain
   clumps, fishing distributions, and direct MineShaft monster drops as source-only
-  steps. Ordinary and special-order direct monster-drop paths have hidden native
-  combat-and-pickup calibration. Additional native acquisition families remain
-  explicit graph expansion work rather than implicit generic collection.
+  steps. Ordinary and special-order hidden native calibration now covers scythe
+  crops, giant crops, Green Rain clumps, complete MineShaft fishing distributions,
+  and direct monster drops. Additional native acquisition families remain explicit
+  graph expansion work rather than implicit generic collection.
 
 ## Verified GitHub Issue Reconciliation (2026-07-28)
 

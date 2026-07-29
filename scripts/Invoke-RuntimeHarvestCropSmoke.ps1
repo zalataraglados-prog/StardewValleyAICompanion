@@ -9,6 +9,9 @@ param(
     [int] $TargetTileY = 15,
     [string] $SeedId = "472",
     [string] $HarvestMethod = "Grab",
+    [ValidateSet("none", "ordinary_quest", "special_order")]
+    [string] $TaskFamily = "none",
+    [string] $TaskId = "stardewai.runtime.crop-source",
     [switch] $FillInventoryBeforeHarvest,
     [switch] $KeepGameRunning
 )
@@ -92,6 +95,102 @@ function Count-DebrisForItem {
     return $count
 }
 
+function Read-CollectionTaskProgress {
+    param($Snapshot)
+    if ($TaskFamily -eq "special_order") {
+        $order = $Snapshot.state.quests.special_orders.value |
+            Where-Object { [string]$_.quest_key -eq $TaskId } |
+            Select-Object -First 1
+        if ($null -eq $order) {
+            if ($TaskId -in @($Snapshot.state.quests.completed_special_orders.value)) {
+                return 1
+            }
+            return $null
+        }
+        if (@($order.objectives).Count -eq 0) { return $null }
+        return [int]@($order.objectives)[0].current_count
+    }
+    $quest = $Snapshot.state.quests.active_quests.value |
+        Where-Object {
+            [string]$_.id -eq $TaskId -and
+            [string]$_.runtime_type -eq "ResourceCollectionQuest"
+        } |
+        Select-Object -First 1
+    if ($null -eq $quest) { return $null }
+    return [int]$quest.per_type_fields.number_collected
+}
+
+function Find-MatchingDebris {
+    param($Snapshot, [string] $QualifiedItemId)
+    return $Snapshot.state.current_location.debris.value |
+        Where-Object {
+            [string]$_.qualified_item_id -eq $QualifiedItemId -and
+            @($_.chunks).Count -gt 0
+        } |
+        Select-Object -First 1
+}
+
+function Wait-StableMatchingDebris {
+    param([string] $Url, [string] $QualifiedItemId, [int] $TimeoutSeconds = 12)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $previousSignature = ""
+    $lastStatus = "not_observed"
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-WorldSnapshot -Url $Url -TimeoutSeconds 10
+        $progress = Read-CollectionTaskProgress -Snapshot $snapshot
+        if ($progress -gt 0) {
+            return [pscustomobject]@{
+                snapshot = $snapshot
+                debris = $null
+            }
+        }
+        $debris = Find-MatchingDebris `
+            -Snapshot $snapshot `
+            -QualifiedItemId $QualifiedItemId
+        if ($null -ne $debris) {
+            $chunk = @($debris.chunks)[0]
+            $signature = "$($debris.debris_index):$($chunk.pixel_x):$($chunk.pixel_y)"
+            $velocitySettled =
+                [Math]::Abs([double]$chunk.x_velocity) -lt 0.01 -and
+                [Math]::Abs([double]$chunk.y_velocity) -lt 0.01
+            if ($velocitySettled -and
+                $signature -eq $previousSignature) {
+                return [pscustomobject]@{
+                    snapshot = $snapshot
+                    debris = $debris
+                }
+            }
+            $previousSignature = $signature
+            $lastStatus = "signature=$signature;xv=$($chunk.x_velocity);yv=$($chunk.y_velocity)"
+        } else {
+            $ids = @($snapshot.state.current_location.debris.value |
+                ForEach-Object { [string]$_.qualified_item_id }) -join ","
+            $lastStatus = "matching_debris=missing;visible_ids=$ids"
+        }
+        Start-Sleep -Milliseconds 120
+    }
+    throw "Matching debris did not settle before pickup. Last status: $lastStatus"
+}
+
+function Add-CollectionTaskFields {
+    param([System.Collections.IDictionary] $Request, [bool] $SourceStep)
+    if ($TaskFamily -eq "none") { return }
+    $Request.quest_candidate_id = "runtime_fixture:$TaskId"
+    $Request.quest_family = $TaskFamily
+    $Request.quest_id = $TaskId
+    $Request.quest_key = if ($TaskFamily -eq "special_order") { $TaskId } else { "" }
+    $Request.quest_objective_index = if ($TaskFamily -eq "special_order") { 0 } else { $null }
+    $Request.quest_runtime_type = if ($TaskFamily -eq "special_order") {
+        "SpecialOrder"
+    } else {
+        "ResourceCollectionQuest"
+    }
+    $Request.quest_expected_current_count = 0
+    $Request.quest_expected_target_count = 1
+    $Request.quest_acquisition_source_step = $SourceStep
+    $Request.quest_acquisition_target_step = -not $SourceStep
+}
+
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
@@ -157,6 +256,49 @@ try {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-harvest-rejected.json") $beforeHarvestSnapshot
         throw "Fixture did not produce ready_for_harvest crop at $TargetTileX,$TargetTileY."
     }
+    $harvestItemId = if ($null -eq $beforeCrop.harvest_item_id) {
+        ""
+    } else {
+        [string]$beforeCrop.harvest_item_id
+    }
+    $qualifiedHarvestItemId = if ([string]::IsNullOrWhiteSpace($harvestItemId)) {
+        ""
+    } elseif ($harvestItemId.StartsWith("(O)")) {
+        $harvestItemId
+    } else {
+        "(O)$harvestItemId"
+    }
+    $taskSetupResult = $null
+    if ($TaskFamily -ne "none") {
+        $taskSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-harvest-crop-smoke"
+            queue_item_id = "runtime-harvest-crop-smoke.task-setup"
+            before_state_hash = $beforeHarvestSnapshot.state_hash
+            option_id = "debug.setup_collection_task_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            quest_id = $TaskId
+            quest_family = $TaskFamily
+            quest_expected_target_count = 1
+            qualified_item_id = $qualifiedHarvestItemId
+        }
+        $taskSetupResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $taskSetupRequest `
+            -TimeoutSeconds 120
+        if ($taskSetupResult.status -ne "applied" -or
+            $taskSetupResult.primitive_verification_status -ne "verified") {
+            throw "Collection task fixture failed: $(@($taskSetupResult.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 300
+        $beforeHarvestSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+        $beforeCrop = Find-Crop -Snapshot $beforeHarvestSnapshot -X $TargetTileX -Y $TargetTileY
+    }
 
     $harvestRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -174,14 +316,70 @@ try {
         target_tile_y = $TargetTileY
         harvest_method = $HarvestMethod
     }
+    Add-CollectionTaskFields -Request $harvestRequest -SourceStep $true
     $harvestResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $harvestRequest -TimeoutSeconds 120
     Start-Sleep -Milliseconds 500
     $afterSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $afterCrop = Find-Crop -Snapshot $afterSnapshot -X $TargetTileX -Y $TargetTileY
-    $harvestItemId = if ($null -eq $beforeCrop.harvest_item_id) { "" } else { [string]$beforeCrop.harvest_item_id }
-    $qualifiedHarvestItemId = if ([string]::IsNullOrWhiteSpace($harvestItemId)) { "" } elseif ($harvestItemId.StartsWith("(O)")) { $harvestItemId } else { "(O)$harvestItemId" }
     $beforeHarvestDebrisCount = Count-DebrisForItem -Snapshot $beforeHarvestSnapshot -QualifiedItemId $qualifiedHarvestItemId
     $afterHarvestDebrisCount = Count-DebrisForItem -Snapshot $afterSnapshot -QualifiedItemId $qualifiedHarvestItemId
+    $taskProgressAfterSource = if ($TaskFamily -eq "none") {
+        $null
+    } else {
+        Read-CollectionTaskProgress -Snapshot $afterSnapshot
+    }
+    $pickupResult = $null
+    $afterReceiptSnapshot = $afterSnapshot
+    if ($TaskFamily -ne "none" -and $taskProgressAfterSource -eq 0) {
+        $settled = Wait-StableMatchingDebris `
+            -Url $snapshotUrl `
+            -QualifiedItemId $qualifiedHarvestItemId
+        $afterSnapshot = $settled.snapshot
+        $debris = $settled.debris
+        $taskProgressAfterSource = Read-CollectionTaskProgress -Snapshot $afterSnapshot
+        if ($taskProgressAfterSource -gt 0) {
+            $afterReceiptSnapshot = $afterSnapshot
+        }
+    }
+    if ($TaskFamily -ne "none" -and $taskProgressAfterSource -eq 0) {
+        if ($null -eq $debris) {
+            throw "Task source created no matching transparent debris."
+        }
+        $chunk = @($debris.chunks)[0]
+        $pickupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-harvest-crop-smoke"
+            queue_item_id = "runtime-harvest-crop-smoke.pickup"
+            before_state_hash = $afterSnapshot.state_hash
+            option_id = "executor.pickup_debris"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$chunk.tile_x
+            target_tile_y = [int]$chunk.tile_y
+            debris_index = [int]$debris.debris_index
+            qualified_item_id = $qualifiedHarvestItemId
+        }
+        Add-CollectionTaskFields -Request $pickupRequest -SourceStep $false
+        $pickupResult = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $pickupRequest `
+            -TimeoutSeconds 120
+        if ($pickupResult.status -ne "applied" -or
+            $pickupResult.primitive_verification_status -ne "verified") {
+            throw "Task debris pickup failed: $(@($pickupResult.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 300
+        $afterReceiptSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+    }
+    $taskProgressAfterReceipt = if ($TaskFamily -eq "none") {
+        $null
+    } else {
+        Read-CollectionTaskProgress -Snapshot $afterReceiptSnapshot
+    }
 
     $expectedInventoryBlock = [bool]$FillInventoryBeforeHarvest -and $HarvestMethod -eq "Grab"
     $harvestPassed = if ($expectedInventoryBlock) {
@@ -191,7 +389,12 @@ try {
     }
 
     $summary = [ordered]@{
-        status = if ($setupResult.status -eq "applied" -and $setupResult.primitive_verification_status -eq "verified" -and $harvestPassed) { "passed" } else { "failed" }
+        status = if (
+            $setupResult.status -eq "applied" -and
+            $setupResult.primitive_verification_status -eq "verified" -and
+            $harvestPassed -and
+            ($TaskFamily -eq "none" -or $taskProgressAfterReceipt -ge 1)
+        ) { "passed" } else { "failed" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
@@ -199,6 +402,11 @@ try {
         seed_id = $SeedId
         harvest_method = $HarvestMethod
         harvest_item_id = $qualifiedHarvestItemId
+        task_family = $TaskFamily
+        task_setup_status = if ($null -eq $taskSetupResult) { "not_requested" } else { $taskSetupResult.status }
+        task_progress_after_source = $taskProgressAfterSource
+        task_progress_after_receipt = $taskProgressAfterReceipt
+        pickup_status = if ($null -eq $pickupResult) { "not_required" } else { $pickupResult.status }
         fill_inventory_before_harvest = [bool]$FillInventoryBeforeHarvest
         expected_inventory_block = $expectedInventoryBlock
         setup_status = $setupResult.status
@@ -228,6 +436,13 @@ try {
     Write-JsonFile (Join-Path $runDirectory "harvest-request.json") $harvestRequest
     Write-JsonFile (Join-Path $runDirectory "harvest-result.json") $harvestResult
     Write-JsonFile (Join-Path $runDirectory "snapshot-after-harvest.json") $afterSnapshot
+    if ($null -ne $taskSetupResult) {
+        Write-JsonFile (Join-Path $runDirectory "task-setup-result.json") $taskSetupResult
+    }
+    if ($null -ne $pickupResult) {
+        Write-JsonFile (Join-Path $runDirectory "pickup-result.json") $pickupResult
+        Write-JsonFile (Join-Path $runDirectory "snapshot-after-receipt.json") $afterReceiptSnapshot
+    }
     Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 64
 }

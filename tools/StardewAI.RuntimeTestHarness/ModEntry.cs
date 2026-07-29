@@ -607,6 +607,18 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupQuestMonsterDropFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_collection_task_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupCollectionTaskFixture(pending.Request));
+                return;
+            }
+            if (pending.Request.OptionId == "debug.setup_green_rain_resource_clump")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupGreenRainResourceClumpFixture(pending.Request));
+                return;
+            }
 
             if (pending.Request.OptionId == "debug.setup_clear_obstacle")
             {

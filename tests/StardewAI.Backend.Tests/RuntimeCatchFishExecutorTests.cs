@@ -182,8 +182,13 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("observed_caught_qualified_item_ids_in_attempt_order", smokeSource);
         Assert.Contains("winning_execution_path", smokeSource);
         Assert.DoesNotContain("$executionFiles[-1]", smokeSource, StringComparison.Ordinal);
-        Assert.Contains("Mine area-80 smoke requires observed Lava Eel (O)162", smokeSource);
+        Assert.Contains("Mine area-80 smoke requires observed $requiredMineCatch", smokeSource);
         Assert.Contains("bobber_bar_success_observed", smokeSource);
+        Assert.Contains("special_catch_without_bobber_bar_observed", smokeSource);
+        Assert.Contains("[ValidateSet(\"none\", \"ordinary_quest\", \"special_order\")]", smokeSource);
+        Assert.Contains("\"quest.advance\"", smokeSource);
+        Assert.Contains("quest_acquisition_source_step", smokeSource);
+        Assert.Contains("task_progress_after", smokeSource);
         Assert.Contains("(O)CaveJelly", smokeSource);
         Assert.Contains("(O)172", smokeSource);
         Assert.Contains("player.increaseBackpackSize(36 - player.MaxItems)", source);

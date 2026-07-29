@@ -3365,3 +3365,12 @@ Scope boundary:
 - Explicit isolated save slots now default to auto-load unless the caller explicitly disables it.
 - Typed task-step gates prevent collection work from entering slay validation and prevent slay work from entering special-order collection validation.
 - Core 1333/1333; Backend 95/95; Release solution build 0 errors, 5 existing warnings.
+
+2026-07-29 task-attached production-source runtime calibration
+- Shared native task fixture now installs ordinary ResourceCollectionQuest or special-order CollectObjective state without mutating progress; monster-drop setup reuses it.
+- Scythe crop ordinary/special hidden runtime PASS: `runtime-task-scythe-ordinary-final-20260729` and `runtime-task-scythe-special-final4-20260729`.
+- Giant crop ordinary/special hidden runtime PASS: `runtime-task-giant-ordinary-20260729` and `runtime-task-giant-special-20260729`.
+- Green Rain clump ordinary/special hidden runtime PASS: `runtime-task-green-rain-ordinary-final2-20260729` and `runtime-task-green-rain-special-final-20260729`; native Axe lifecycle, seeded core output and `+15` Foraging XP were verified.
+- Mine area-80 fishing trash ordinary/special hidden runtime PASS: `runtime-task-fishing-trash-ordinary-final-20260729` and `runtime-task-fishing-trash-special-final-20260729`; `quest.advance` compiled `source=true,target=false`, retained all eight possible outputs, observed `(O)167`, and advanced native progress.
+- Debris fallback IDs are qualified before publication when the native item object has not materialized.
+- Focused task/debris guards 8/8; fishing Backend guards 9/9; Core 1341/1341; Backend 95/95; Release solution build 0 errors, 5 existing warnings.

@@ -13,7 +13,9 @@ public sealed partial class CurrentLocationReadAdapter
                 debris_type = debris.debrisType.Value.ToString(),
                 chunk_type = debris.chunkType.Value,
                 item_id = debris.itemId.Value,
-                qualified_item_id = debris.item?.QualifiedItemId ?? debris.itemId.Value,
+                qualified_item_id = debris.item?.QualifiedItemId ??
+                    ItemRegistry.QualifyItemId(debris.itemId.Value) ??
+                    debris.itemId.Value,
                 item_quality = debris.itemQuality,
                 item = SummarizeItem(debris.item),
                 chunk_count = debris.Chunks.Count,
