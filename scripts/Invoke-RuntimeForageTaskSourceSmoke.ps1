@@ -13,10 +13,12 @@ param(
     [ValidateSet("none", "ordinary_quest", "special_order")]
     [string] $TaskFamily = "ordinary_quest",
     [string] $TaskId = "stardewai.runtime.forage-source",
+    [ValidateSet("berry_standard", "berry_botanist", "tea_leaf", "golden_walnut", "golden_walnut_collected", "berry_cooldown")]
+    [string] $BushFixtureProfile = "berry_standard",
     [ValidateSet("dry_standard", "rain_efficient", "dry_insufficient_energy")]
     [string] $GingerFixtureProfile = "dry_standard",
     [switch] $FillInventory,
-    [ValidateSet("ready", "blocked_insufficient_energy")]
+    [ValidateSet("ready", "blocked_insufficient_energy", "golden_walnut_already_collected", "bush_shake_cooldown_active")]
     [string] $ExpectedSourceStatus = "ready",
     [switch] $KeepGameRunning
 )
@@ -256,6 +258,7 @@ try {
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
         rule_key = $SourceKind
+        fixture_bush_profile = if ($SourceKind -eq "bush") { $BushFixtureProfile } else { "" }
         fixture_ginger_profile = if ($SourceKind -eq "ginger") { $GingerFixtureProfile } else { "" }
         debug_fill_inventory = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
     }
@@ -314,7 +317,7 @@ try {
             run_id = $RunId
             save_slot = $SaveSlot
             source_kind = $SourceKind
-            fixture_profile = $GingerFixtureProfile
+            fixture_profile = if ($SourceKind -eq "bush") { $BushFixtureProfile } else { $GingerFixtureProfile }
             location_id = $LocationId
             target_tile = "$TargetTileX,$TargetTileY"
             task_family = $TaskFamily
@@ -443,7 +446,7 @@ try {
         run_id = $RunId
         save_slot = $SaveSlot
         source_kind = $SourceKind
-        fixture_profile = if ($SourceKind -eq "ginger") { $GingerFixtureProfile } else { "" }
+        fixture_profile = if ($SourceKind -eq "bush") { $BushFixtureProfile } else { $GingerFixtureProfile }
         inventory_full = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
         smoke_mods_path = $smokeModsPath
         loaded_mod_allowlist = @(

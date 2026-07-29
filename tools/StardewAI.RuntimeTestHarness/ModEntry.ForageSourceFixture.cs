@@ -43,6 +43,24 @@ public sealed partial class ModEntry
         TrainingExecutionRequest request)
     {
         var started = DateTimeOffset.UtcNow.ToString("O");
+        var profile = string.IsNullOrWhiteSpace(request.FixtureBushProfile)
+            ? "berry_standard"
+            : request.FixtureBushProfile;
+        if (profile is not (
+            "berry_standard" or
+            "berry_botanist" or
+            "tea_leaf" or
+            "golden_walnut" or
+            "golden_walnut_collected" or
+            "berry_cooldown"))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_forage_source_fixture",
+                "current_location.large_terrain_features[target].bush_harvest_status=ready",
+                "fixture_bush_profile=" + profile,
+                "fixture_bush_profile_unknown");
+        }
         if (!TryResolveForageFixtureLocation(
                 request,
                 out var location,
@@ -58,17 +76,42 @@ public sealed partial class ModEntry
         }
 
         Game1.currentSeason = "spring";
-        Game1.dayOfMonth = 16;
-        ClearForageFixtureArea(location, target, 2, 1);
+        Game1.dayOfMonth = profile == "tea_leaf" ? 22 : 16;
+        var size = profile switch
+        {
+            "tea_leaf" => 3,
+            "golden_walnut" or "golden_walnut_collected" => 4,
+            _ => 1
+        };
+        var width = size == 3 ? 1 : 2;
+        ClearForageFixtureArea(location, target, width, 1);
+        Game1.player.foragingLevel.Value =
+            profile == "berry_botanist" ? 10 : 8;
+        Game1.player.professions.Remove(16);
+        if (profile == "berry_botanist")
+        {
+            Game1.player.professions.Add(16);
+        }
         var before = ForageFixtureObservedEffect(location, target);
         var bush = new Bush(
             new Vector2(target.X, target.Y),
-            1,
-            location);
+            size,
+            location,
+            datePlantedOverride:
+                (int)Game1.stats.DaysPlayed -
+                (size == 3 ? 20 : 0));
         bush.townBush.Value = false;
         bush.tileSheetOffset.Value = 1;
-        bush.shakeTimer = 0f;
+        bush.shakeTimer = profile == "berry_cooldown" ? 60000f : 0f;
         bush.setUpSourceRect();
+        var nutKey =
+            "Bush_" + location.Name + "_" +
+            target.X + "_" + target.Y;
+        Game1.player.team.collectedNutTracker.Remove(nutKey);
+        if (profile == "golden_walnut_collected")
+        {
+            Game1.player.team.collectedNutTracker.Add(nutKey);
+        }
         location.largeTerrainFeatures.Add(bush);
         var moved = MoveFixtureFarmerToLocationAdjacent(
             location,
@@ -76,8 +119,19 @@ public sealed partial class ModEntry
             out var stand,
             out var moveReason);
         var projection = ProjectBushHarvest(location, bush);
+        var expectedStatus = profile switch
+        {
+            "golden_walnut_collected" =>
+                "golden_walnut_already_collected",
+            "berry_cooldown" =>
+                "bush_shake_cooldown_active",
+            _ => "ready"
+        };
         var verified = moved &&
-            string.Equals(projection.Status, "ready", StringComparison.Ordinal) &&
+            string.Equals(
+                projection.Status,
+                expectedStatus,
+                StringComparison.Ordinal) &&
             !string.IsNullOrWhiteSpace(projection.QualifiedItemId) &&
             AreAdjacent(stand, target) &&
             !bush.getBoundingBox().Contains(
@@ -95,7 +149,11 @@ public sealed partial class ModEntry
             "bush",
             projection.QualifiedItemId,
             verified,
-            verified ? "isolated_native_bush_ready" : moved ? "fixture_bush_not_ready" : moveReason);
+            verified
+                ? "isolated_native_bush_" + profile
+                : moved
+                    ? "fixture_bush_status=" + projection.Status
+                    : moveReason);
     }
 
     private TrainingExecutionResult ExecuteSetupGingerSourceFixture(
