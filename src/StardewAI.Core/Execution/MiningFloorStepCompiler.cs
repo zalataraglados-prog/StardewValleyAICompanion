@@ -61,6 +61,35 @@ namespace StardewAI.Core.Execution
             Add(parameters, "resource_clump_width", plan.ResourceClumpWidth);
             Add(parameters, "resource_clump_height", plan.ResourceClumpHeight);
             Add(parameters, "resource_clump_parent_sheet_index", plan.ResourceClumpParentSheetIndex);
+            Add(parameters, "resource_clump_health", plan.ResourceClumpHealth);
+            Add(
+                parameters,
+                "resource_clump_minimum_upgrade_level",
+                plan.ResourceClumpMinimumUpgradeLevel);
+            Add(
+                parameters,
+                "resource_clump_tool_qualified_item_id",
+                plan.ResourceClumpToolQualifiedItemId);
+            Add(
+                parameters,
+                "resource_clump_tool_upgrade_level",
+                plan.ResourceClumpToolUpgradeLevel);
+            Add(
+                parameters,
+                "resource_clump_tool_additional_power",
+                plan.ResourceClumpToolAdditionalPower);
+            Add(
+                parameters,
+                "resource_clump_tool_effective_upgrade_level",
+                plan.ResourceClumpToolEffectiveUpgradeLevel);
+            Add(
+                parameters,
+                "resource_clump_damage_per_hit",
+                plan.ResourceClumpDamagePerHit);
+            Add(
+                parameters,
+                "possible_secret_note_qualified_item_id",
+                plan.ResourceClumpPossibleSecretNoteQualifiedItemId);
             Add(parameters, "expected_mine_level_delta", plan.ExpectedMineLevelDelta);
             Add(parameters, "expected_mine_level_after", plan.ExpectedMineLevelAfter);
             Add(parameters, "expected_health_cost", plan.ExpectedHealthCost);

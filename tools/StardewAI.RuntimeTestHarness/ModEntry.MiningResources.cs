@@ -565,6 +565,14 @@ public sealed partial class ModEntry : Mod
         if (!TryResourceClumpRequirement(clump.parentSheetIndex.Value, out var requiredToolKind, out var minimumUpgradeLevel) ||
             !string.Equals(requiredToolKind, request.RequiredToolKind, StringComparison.Ordinal) ||
             (farmRequest && clump.parentSheetIndex.Value is not ResourceClump.stumpIndex and not ResourceClump.hollowLogIndex) ||
+            (!farmRequest && !currentLocationRequest &&
+                (!IsSupportedMiningResourceClumpIndex(
+                        clump.parentSheetIndex.Value) ||
+                    clump.GetType() != typeof(ResourceClump) ||
+                    !string.Equals(
+                        request.TargetRuntimeType,
+                        typeof(ResourceClump).FullName,
+                        StringComparison.Ordinal))) ||
             (currentLocationRequest && (clump.GetType() != typeof(ResourceClump) || !clump.IsGreenRainBush() ||
                 !string.Equals(request.TargetRuntimeType, typeof(ResourceClump).FullName, StringComparison.Ordinal))))
         {
@@ -648,6 +656,38 @@ public sealed partial class ModEntry : Mod
             }
             possibleSecretNoteQualifiedItemId = location.InIslandContext() ? "(O)842" : "(O)79";
             secretNoteCountBefore = CountBushOutput(location, possibleSecretNoteQualifiedItemId, 0);
+        }
+        else if (!farmRequest)
+        {
+            if (!TryParseClearanceOutputItems(
+                    request.ExpectedOutputItemsJson,
+                    out expectedOutputs) ||
+                expectedOutputs.Length == 0 ||
+                !MiningResourceClumpCoreProjectionMatches(
+                    clump,
+                    expectedOutputs))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "break_resource_clump",
+                    requested,
+                    ResourceClumpObservedEffect(location, anchor),
+                    "mining_resource_clump_output_projection_drifted"));
+                return;
+            }
+            outputCountsBefore = expectedOutputs
+                .Select(output =>
+                    CountResourceClumpOutput(location, output))
+                .ToArray();
+            if (location.HasUnlockedAreaSecretNotes(Game1.player))
+            {
+                possibleSecretNoteQualifiedItemId =
+                    location.InIslandContext() ? "(O)842" : "(O)79";
+                secretNoteCountBefore = CountBushOutput(
+                    location,
+                    possibleSecretNoteQualifiedItemId,
+                    0);
+            }
         }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
@@ -859,7 +899,9 @@ public sealed partial class ModEntry : Mod
             ResourceClumpToolTracePatch.Complete(active.Clump);
         if (!ResourceClumpProjectedOutputsMatch(active))
         {
-            CompleteResourceClumpBlocked(active, "green_rain_resource_clump_output_or_experience_mismatch");
+            CompleteResourceClumpBlocked(
+                active,
+                "resource_clump_output_or_experience_mismatch");
             return;
         }
         StopAllMovement();
@@ -895,7 +937,11 @@ public sealed partial class ModEntry : Mod
             var output = active.ExpectedOutputs[index];
             changedFacts.Add(new SimulatedFactChange
             {
-                Path = "current_location.output.item_multiset[" + output.QualifiedItemId + ",quality=" + output.Quality + "," + output.UnitStateSha256 + "]",
+                Path = active.FactPathPrefix +
+                    ".output.item_multiset[" +
+                    output.QualifiedItemId + ",quality=" +
+                    output.Quality + "," +
+                    output.UnitStateSha256 + "]",
                 Before = active.OutputCountsBefore[index].ToString(CultureInfo.InvariantCulture),
                 After = CountResourceClumpOutput(active.Location, output).ToString(CultureInfo.InvariantCulture)
             });
@@ -1010,6 +1056,18 @@ public sealed partial class ModEntry : Mod
         return !string.IsNullOrWhiteSpace(requiredToolKind);
     }
 
+    private static bool IsSupportedMiningResourceClumpIndex(int index)
+    {
+        return index is
+            ResourceClump.quarryBoulderIndex or
+            ResourceClump.meteoriteIndex or
+            ResourceClump.boulderIndex or
+            ResourceClump.mineRock1Index or
+            ResourceClump.mineRock2Index or
+            ResourceClump.mineRock3Index or
+            ResourceClump.mineRock4Index;
+    }
+
     private static bool ResourceClumpToolMatches(Tool tool, string requiredToolKind)
     {
         return requiredToolKind == "axe" && tool is Axe ||
@@ -1057,6 +1115,56 @@ public sealed partial class ModEntry : Mod
         return true;
     }
 
+    private static bool MiningResourceClumpCoreProjectionMatches(
+        ResourceClump clump,
+        IReadOnlyList<ClearanceOutputItemExpectation> expected)
+    {
+        var projected =
+            new Dictionary<ClearanceOutputItemKey, int>();
+        void Add(string qualifiedItemId, int quantity)
+        {
+            projected[ResourceClumpOutputKey(
+                ItemRegistry.Create(qualifiedItemId))] = quantity;
+        }
+
+        switch (clump.parentSheetIndex.Value)
+        {
+            case ResourceClump.boulderIndex:
+                Add("(O)390", 15);
+                break;
+            case ResourceClump.quarryBoulderIndex:
+            case ResourceClump.mineRock1Index:
+            case ResourceClump.mineRock2Index:
+            case ResourceClump.mineRock3Index:
+            case ResourceClump.mineRock4Index:
+                Add("(O)390", 10);
+                break;
+            case ResourceClump.meteoriteIndex:
+                Add("(O)386", 10);
+                Add("(O)390", 8);
+                Add("(O)749", 2);
+                var random = Utility.CreateRandom(
+                    Game1.uniqueIDForThisGame,
+                    clump.Tile.X,
+                    clump.Tile.Y * 983728f);
+                if (random.NextDouble() < 0.25)
+                {
+                    Add("(O)74", 1);
+                }
+                break;
+            default:
+                return false;
+        }
+
+        return expected.Count == projected.Count &&
+            expected.All(output =>
+                output.Quality == 0 &&
+                projected.TryGetValue(
+                    output.Key,
+                    out var quantity) &&
+                quantity == output.Quantity);
+    }
+
     private static bool ResourceClumpProjectedOutputsMatch(ActiveResourceClump active)
     {
         if (active.ExpectedForagingExperienceDelta.HasValue &&
@@ -1100,12 +1208,42 @@ public sealed partial class ModEntry : Mod
     private static int CountResourceClumpOutput(GameLocation location, ClearanceOutputItemExpectation expected)
     {
         var debris = location.debris
-            .Where(row => row.item is Item item && ResourceClumpOutputKey(item) == expected.Key)
-            .Sum(row => row.item!.Stack);
+            .Where(row =>
+                ResourceClumpDebrisOutputKey(row) == expected.Key)
+            .Sum(row => row.item?.Stack ??
+                Math.Max(1, row.Chunks.Count));
         var inventory = Game1.player.Items
             .Where(item => item is not null && ResourceClumpOutputKey(item) == expected.Key)
             .Sum(item => item!.Stack);
         return debris + inventory;
+    }
+
+    private static ClearanceOutputItemKey?
+        ResourceClumpDebrisOutputKey(Debris debris)
+    {
+        if (debris.item is Item item)
+        {
+            return ResourceClumpOutputKey(item);
+        }
+        var qualifiedItemId =
+            ItemRegistry.QualifyItemId(debris.itemId.Value) ??
+            debris.itemId.Value;
+        if (string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return null;
+        }
+        try
+        {
+            return ResourceClumpOutputKey(
+                ItemRegistry.Create(
+                    qualifiedItemId,
+                    1,
+                    debris.itemQuality));
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static ClearanceOutputItemKey ResourceClumpOutputKey(Item item)

@@ -198,8 +198,39 @@ namespace StardewAI.Core.Execution
                     plan.ResourceClumpWidth = row.Width;
                     plan.ResourceClumpHeight = row.Height;
                     plan.ResourceClumpParentSheetIndex = ReadInt(row.Clump, "parent_sheet_index");
+                    plan.ResourceClumpHealth = ReadDouble(
+                        row.Clump,
+                        "health");
                     plan.ToolSlotIndex = ReadInt(row.Clump, "selected_tool_slot_index");
                     plan.RequiredToolKind = ReadString(row.Clump, "required_tool");
+                    plan.ResourceClumpMinimumUpgradeLevel = ReadInt(
+                        row.Clump,
+                        "minimum_upgrade_level");
+                    plan.ResourceClumpToolQualifiedItemId = ReadString(
+                        row.Clump,
+                        "selected_tool_qualified_item_id");
+                    plan.ResourceClumpToolUpgradeLevel = ReadInt(
+                        row.Clump,
+                        "selected_tool_upgrade_level");
+                    plan.ResourceClumpToolAdditionalPower = ReadInt(
+                        row.Clump,
+                        "selected_tool_additional_power");
+                    plan.ResourceClumpToolEffectiveUpgradeLevel = ReadInt(
+                        row.Clump,
+                        "selected_tool_effective_upgrade_level");
+                    plan.ResourceClumpDamagePerHit = ReadDouble(
+                        row.Clump,
+                        "damage_per_hit");
+                    plan.ExpectedOutputItemsJson = ReadString(
+                        row.Clump,
+                        "expected_core_output_items_json");
+                    plan.ResourceClumpPossibleSecretNoteQualifiedItemId =
+                        ReadString(
+                            row.Clump,
+                            "possible_secret_note_qualified_item_id");
+                    plan.TargetRuntimeType = ReadString(
+                        row.Clump,
+                        "runtime_type");
                     plan.SafetyWindowStatus = "clear_at_snapshot";
                     return plan;
                 })

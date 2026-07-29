@@ -636,6 +636,14 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupFarmResourceClumpFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId ==
+                "debug.setup_mining_resource_clump")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupMiningResourceClumpFixture(
+                        pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_forage_source_fixture")
             {
                 pending.Completion.SetResult(

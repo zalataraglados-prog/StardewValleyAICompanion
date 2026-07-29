@@ -9,6 +9,7 @@ using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using StardewAI.Contracts.State;
 using System.Reflection;
+using System.Text.Json;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -164,7 +165,10 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             {
                 var index = clump.parentSheetIndex.Value;
                 var requirement = ResourceClumpRequirement(index);
-                var supported = !string.IsNullOrWhiteSpace(requirement.ToolKind);
+                var exactVanillaType = clump.GetType() == typeof(ResourceClump);
+                var supported = exactVanillaType &&
+                    IsMiningResourceClumpParentIndex(index) &&
+                    !string.IsNullOrWhiteSpace(requirement.ToolKind);
                 Tool? tool = requirement.ToolKind == "axe"
                     ? player.Items.OfType<Axe>()
                         .OrderByDescending(candidate =>
@@ -191,6 +195,13 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     ? NativeToolPowerProjection.ResourceClumpDamage(tool!)
                     : (float?)null;
                 var health = clump.health.Value;
+                var coreOutputs = supported
+                    ? ProjectMiningResourceClumpCoreOutputs(clump)
+                    : Array.Empty<ClearanceOutputItemProjection>();
+                var possibleSecretNoteId =
+                    mine.HasUnlockedAreaSecretNotes(player)
+                        ? "(O)79"
+                        : string.Empty;
                 return new
                 {
                     tile_x = (int)clump.Tile.X,
@@ -212,8 +223,24 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     tool_gate_satisfied = gateSatisfied,
                     damage_per_hit = damagePerHit,
                     expected_hits_remaining = damagePerHit.HasValue ? (int)Math.Ceiling(health / damagePerHit.Value) : (int?)null,
+                    expected_core_output_items = coreOutputs,
+                    expected_core_output_items_json =
+                        JsonSerializer.Serialize(coreOutputs),
+                    core_output_projection_status = supported
+                        ? "exact_vanilla_destroy_core_outputs"
+                        : "unavailable_unsupported_runtime_type_or_parent_sheet_index",
+                    possible_secret_note_qualified_item_id =
+                        possibleSecretNoteId,
+                    secret_note_outer_roll_probability =
+                        possibleSecretNoteId.Length > 0 ? 0.05 : 0,
+                    secret_note_projection_status =
+                        possibleSecretNoteId.Length > 0
+                            ? "bounded_global_rng_optional_identity_not_realized"
+                            : "exact_secret_notes_not_unlocked",
                     executor_status = !supported
-                        ? "blocked_unsupported_resource_clump_parent_sheet_index"
+                        ? exactVanillaType
+                            ? "blocked_unsupported_resource_clump_parent_sheet_index"
+                            : "blocked_custom_resource_clump_runtime_type"
                         : gateSatisfied
                             ? "native_executor_available"
                             : "blocked_missing_required_tool_or_upgrade",
@@ -221,6 +248,50 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 };
             })
             .ToArray();
+    }
+
+    private static ClearanceOutputItemProjection[]
+        ProjectMiningResourceClumpCoreOutputs(ResourceClump clump)
+    {
+        return clump.parentSheetIndex.Value switch
+        {
+            ResourceClump.boulderIndex => new[]
+            {
+                ClearanceOutputItemProjection.FromStandard("(O)390", 15)
+            },
+            ResourceClump.quarryBoulderIndex or
+            ResourceClump.mineRock1Index or
+            ResourceClump.mineRock2Index or
+            ResourceClump.mineRock3Index or
+            ResourceClump.mineRock4Index => new[]
+            {
+                ClearanceOutputItemProjection.FromStandard("(O)390", 10)
+            },
+            ResourceClump.meteoriteIndex =>
+                ProjectMeteoriteCoreOutputs(clump),
+            _ => Array.Empty<ClearanceOutputItemProjection>()
+        };
+    }
+
+    private static ClearanceOutputItemProjection[]
+        ProjectMeteoriteCoreOutputs(ResourceClump clump)
+    {
+        var outputs = new List<ClearanceOutputItemProjection>
+        {
+            ClearanceOutputItemProjection.FromStandard("(O)386", 10),
+            ClearanceOutputItemProjection.FromStandard("(O)390", 8),
+            ClearanceOutputItemProjection.FromStandard("(O)749", 2)
+        };
+        var random = Utility.CreateRandom(
+            Game1.uniqueIDForThisGame,
+            clump.Tile.X,
+            clump.Tile.Y * 983728f);
+        if (random.NextDouble() < 0.25)
+        {
+            outputs.Add(
+                ClearanceOutputItemProjection.FromStandard("(O)74"));
+        }
+        return outputs.ToArray();
     }
 
     private static (string ToolKind, int MinimumUpgradeLevel) ResourceClumpRequirement(int parentSheetIndex)
@@ -234,6 +305,18 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             ResourceClump.mineRock1Index or ResourceClump.mineRock2Index or ResourceClump.mineRock3Index or ResourceClump.mineRock4Index => ("pickaxe", 0),
             _ => (string.Empty, 0)
         };
+    }
+
+    private static bool IsMiningResourceClumpParentIndex(int index)
+    {
+        return index is
+            ResourceClump.quarryBoulderIndex or
+            ResourceClump.meteoriteIndex or
+            ResourceClump.boulderIndex or
+            ResourceClump.mineRock1Index or
+            ResourceClump.mineRock2Index or
+            ResourceClump.mineRock3Index or
+            ResourceClump.mineRock4Index;
     }
 
 }

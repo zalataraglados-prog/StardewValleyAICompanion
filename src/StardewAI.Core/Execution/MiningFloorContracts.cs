@@ -199,6 +199,27 @@ namespace StardewAI.Core.Execution
 
         public int? ResourceClumpParentSheetIndex { get; set; }
 
+        public double? ResourceClumpHealth { get; set; }
+
+        public int? ResourceClumpMinimumUpgradeLevel { get; set; }
+
+        public string ResourceClumpToolQualifiedItemId { get; set; } =
+            string.Empty;
+
+        public int? ResourceClumpToolUpgradeLevel { get; set; }
+
+        public int? ResourceClumpToolAdditionalPower { get; set; }
+
+        public int? ResourceClumpToolEffectiveUpgradeLevel { get; set; }
+
+        public double? ResourceClumpDamagePerHit { get; set; }
+
+        public string ResourceClumpPossibleSecretNoteQualifiedItemId
+        {
+            get;
+            set;
+        } = string.Empty;
+
         public int? ExpectedMineLevelDelta { get; set; }
 
         public int? ExpectedMineLevelAfter { get; set; }
