@@ -119,6 +119,17 @@ public sealed partial class ModEntry : Mod
         harmony.Patch(
             original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
             prefix: new HarmonyMethod(typeof(CrabPotCaughtFishPatch), nameof(CrabPotCaughtFishPatch.Prefix)));
+        harmony.Patch(
+            original: AccessTools.Method(
+                typeof(ResourceClump),
+                nameof(ResourceClump.performToolAction),
+                new[] { typeof(Tool), typeof(int), typeof(Vector2) }),
+            prefix: new HarmonyMethod(
+                typeof(ResourceClumpToolTracePatch),
+                nameof(ResourceClumpToolTracePatch.Prefix)),
+            postfix: new HarmonyMethod(
+                typeof(ResourceClumpToolTracePatch),
+                nameof(ResourceClumpToolTracePatch.Postfix)));
         if (IsVanillaAiHostMode() &&
             string.Equals(
                 Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),
@@ -617,6 +628,12 @@ public sealed partial class ModEntry : Mod
             {
                 pending.Completion.SetResult(
                     ExecuteSetupGreenRainResourceClumpFixture(pending.Request));
+                return;
+            }
+            if (pending.Request.OptionId == "debug.setup_farm_resource_clump")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFarmResourceClumpFixture(pending.Request));
                 return;
             }
             if (pending.Request.OptionId == "debug.setup_forage_source_fixture")

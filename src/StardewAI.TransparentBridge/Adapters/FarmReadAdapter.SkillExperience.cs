@@ -98,8 +98,11 @@ public sealed partial class FarmReadAdapter
 
         var selected = player.Items
             .Select((item, index) => new { Tool = item as Axe, SlotIndex = index })
-            .Where(row => row.Tool is not null && row.Tool.UpgradeLevel >= minimumUpgrade)
-            .OrderByDescending(row => row.Tool!.UpgradeLevel)
+            .Where(row => row.Tool is not null &&
+                NativeToolPowerProjection.EffectiveUpgradeLevel(row.Tool) >=
+                    minimumUpgrade)
+            .OrderByDescending(row =>
+                NativeToolPowerProjection.EffectiveUpgradeLevel(row.Tool!))
             .ThenBy(row => row.SlotIndex)
             .FirstOrDefault();
         if (selected is null)
@@ -107,14 +110,23 @@ public sealed partial class FarmReadAdapter
             return ResourceClumpClearanceProjection.Blocked(clearKind, minimumUpgrade, "blocked_required_axe_upgrade_missing");
         }
 
-        var damage = Math.Max(1f, (selected.Tool!.UpgradeLevel + 1) * 0.75f);
+        var selectedTool = selected.Tool!;
+        var additionalPower =
+            NativeToolPowerProjection.AdditionalPower(selectedTool);
+        var effectiveUpgrade =
+            NativeToolPowerProjection.EffectiveUpgradeLevel(selectedTool);
+        var damage =
+            NativeToolPowerProjection.ResourceClumpDamage(selectedTool);
         var expectedHits = Math.Max(1, (int)Math.Ceiling(Math.Max(0f, clump.health.Value) / damage));
         return new ResourceClumpClearanceProjection
         {
             ClearKind = clearKind,
             MinimumToolUpgradeLevel = minimumUpgrade,
             ToolSlotIndex = selected.SlotIndex,
-            ToolUpgradeLevel = selected.Tool.UpgradeLevel,
+            ToolUpgradeLevel = selectedTool.UpgradeLevel,
+            ToolAdditionalPower = additionalPower,
+            ToolEffectiveUpgradeLevel = effectiveUpgrade,
+            DamagePerHit = damage,
             ExpectedToolHits = expectedHits,
             Status = "ready"
         };
@@ -186,6 +198,12 @@ internal sealed class ResourceClumpClearanceProjection
     public int? ToolSlotIndex { get; init; }
 
     public int? ToolUpgradeLevel { get; init; }
+
+    public int? ToolAdditionalPower { get; init; }
+
+    public int? ToolEffectiveUpgradeLevel { get; init; }
+
+    public float? DamagePerHit { get; init; }
 
     public int? ExpectedToolHits { get; init; }
 

@@ -24,10 +24,19 @@ public sealed partial class CurrentLocationReadAdapter
         var axe = player.Items
             .Select((item, index) => new { Tool = item as Axe, SlotIndex = index })
             .Where(row => row.Tool is not null)
-            .OrderByDescending(row => row.Tool!.UpgradeLevel)
+            .OrderByDescending(row =>
+                NativeToolPowerProjection.EffectiveUpgradeLevel(row.Tool!))
             .ThenBy(row => row.SlotIndex)
             .FirstOrDefault();
-        var damagePerHit = axe is null ? (float?)null : Math.Max(1f, (axe.Tool!.UpgradeLevel + 1) * 0.75f);
+        var additionalPower = axe is null
+            ? (int?)null
+            : NativeToolPowerProjection.AdditionalPower(axe.Tool!);
+        var effectiveUpgradeLevel = axe is null
+            ? (int?)null
+            : NativeToolPowerProjection.EffectiveUpgradeLevel(axe.Tool!);
+        var damagePerHit = axe is null
+            ? (float?)null
+            : NativeToolPowerProjection.ResourceClumpDamage(axe.Tool!);
         var expectedHits = damagePerHit.HasValue
             ? Math.Max(1, (int)Math.Ceiling(Math.Max(0f, clump.health.Value) / damagePerHit.Value))
             : (int?)null;
@@ -63,6 +72,8 @@ public sealed partial class CurrentLocationReadAdapter
             minimum_tool_upgrade_level = isGreenRainBush ? 0 : (int?)null,
             tool_slot_index = axe?.SlotIndex,
             tool_upgrade_level = axe?.Tool?.UpgradeLevel,
+            tool_additional_power = additionalPower,
+            tool_effective_upgrade_level = effectiveUpgradeLevel,
             damage_per_hit = damagePerHit,
             expected_tool_hits_to_clear = expectedHits,
             expected_foraging_experience_delta = isGreenRainBush ? 15 : (int?)null,

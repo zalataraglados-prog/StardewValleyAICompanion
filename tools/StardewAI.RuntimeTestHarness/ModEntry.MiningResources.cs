@@ -575,7 +575,7 @@ public sealed partial class ModEntry : Mod
             request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
             Game1.player.Items[request.ToolSlotIndex.Value] is not Tool tool ||
             !ResourceClumpToolMatches(tool, requiredToolKind) ||
-            tool.UpgradeLevel < minimumUpgradeLevel)
+            ResourceClumpEffectiveUpgradeLevel(tool) < minimumUpgradeLevel)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_required_tool_or_upgrade_unavailable"));
             return;
@@ -588,6 +588,17 @@ public sealed partial class ModEntry : Mod
         if (Game1.player.Stamina <= 0f)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "break_resource_clump", requested, ResourceClumpObservedEffect(location, anchor), "resource_clump_energy_exhausted"));
+            return;
+        }
+        if (farmRequest &&
+            request.ExpectedForagingExperienceDelta != 25)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "break_resource_clump",
+                requested,
+                ResourceClumpObservedEffect(location, anchor),
+                "farm_resource_clump_foraging_experience_projection_drifted"));
             return;
         }
 
@@ -654,6 +665,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        ResourceClumpToolTracePatch.Begin(clump);
         activeResourceClump = new ActiveResourceClump(
             pending,
             location,
@@ -673,7 +685,7 @@ public sealed partial class ModEntry : Mod
             farmRequest || currentLocationRequest,
             expectedOutputs,
             outputCountsBefore,
-            currentLocationRequest ? 15 : null,
+            farmRequest ? 25 : currentLocationRequest ? 15 : null,
             possibleSecretNoteQualifiedItemId,
             secretNoteCountBefore,
             requested);
@@ -843,6 +855,8 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteResourceClump(ActiveResourceClump active)
     {
+        var nativeToolTrace =
+            ResourceClumpToolTracePatch.Complete(active.Clump);
         if (!ResourceClumpProjectedOutputsMatch(active))
         {
             CompleteResourceClumpBlocked(active, "green_rain_resource_clump_output_or_experience_mismatch");
@@ -923,7 +937,9 @@ public sealed partial class ModEntry : Mod
                 "native_" + active.RequiredToolKind + "_lifecycle_removed_resource_clump",
                 "multi_tile_clump_identity_verified",
                 "natural_resource_clump_drops_left_as_game_debris",
-                active.ExpectedOutputs.Length > 0 ? "seeded_core_output_and_foraging_experience_verified" : "generic_resource_clump_contract_verified",
+                active.ExpectedForagingExperienceDelta.HasValue
+                    ? "projected_foraging_experience_verified"
+                    : "generic_resource_clump_contract_verified",
                 "native_swing_count=" + active.SwingCount
             },
             RequestedEffect = active.RequestedEffect,
@@ -932,6 +948,8 @@ public sealed partial class ModEntry : Mod
                 ";size=" + active.Width + "x" + active.Height +
                 ";health_sequence=" + string.Join(",", active.ObservedHealth.Select(value => value.ToString("0.###", CultureInfo.InvariantCulture))) +
                 ";native_swings=" + active.SwingCount +
+                ";native_tool_callbacks=" +
+                string.Join("|", nativeToolTrace) +
                 ResourceClumpOutputObservation(active),
             ChangedFacts = changedFacts.ToArray()
         };
@@ -942,6 +960,8 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteResourceClumpBlocked(ActiveResourceClump active, string reason)
     {
+        var nativeToolTrace =
+            ResourceClumpToolTracePatch.Complete(active.Clump);
         StopAllMovement();
         if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
         {
@@ -953,7 +973,10 @@ public sealed partial class ModEntry : Mod
             active.Pending.Request,
             "break_resource_clump",
             active.RequestedEffect,
-            ResourceClumpObservedEffect(active.Location, active.Anchor) + ";native_swings=" + active.SwingCount,
+            ResourceClumpObservedEffect(active.Location, active.Anchor) +
+                ";native_swings=" + active.SwingCount +
+                ";native_tool_callbacks=" +
+                string.Join("|", nativeToolTrace),
             reason);
         result.ToolQualifiedItemId = active.Tool.QualifiedItemId;
         result.ToolUpgradeLevel = active.Tool.UpgradeLevel;
@@ -993,6 +1016,17 @@ public sealed partial class ModEntry : Mod
             requiredToolKind == "pickaxe" && tool is Pickaxe;
     }
 
+    private static int ResourceClumpEffectiveUpgradeLevel(Tool tool)
+    {
+        var additionalPower = tool switch
+        {
+            Axe axe => axe.additionalPower.Value,
+            Pickaxe pickaxe => pickaxe.additionalPower.Value,
+            _ => 0
+        };
+        return tool.UpgradeLevel + additionalPower;
+    }
+
     private static bool GreenRainCoreProjectionMatches(ResourceClump clump, IReadOnlyList<ClearanceOutputItemExpectation> expected)
     {
         var random = Utility.CreateRandom(
@@ -1025,14 +1059,14 @@ public sealed partial class ModEntry : Mod
 
     private static bool ResourceClumpProjectedOutputsMatch(ActiveResourceClump active)
     {
-        if (active.ExpectedOutputs.Length == 0)
-        {
-            return true;
-        }
         if (active.ExpectedForagingExperienceDelta.HasValue &&
             Game1.player.experiencePoints[Farmer.foragingSkill] - active.ForagingExperienceBefore != active.ExpectedForagingExperienceDelta.Value)
         {
             return false;
+        }
+        if (active.ExpectedOutputs.Length == 0)
+        {
+            return true;
         }
         for (var index = 0; index < active.ExpectedOutputs.Length; index++)
         {

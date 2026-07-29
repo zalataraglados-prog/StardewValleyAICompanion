@@ -166,12 +166,30 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 var requirement = ResourceClumpRequirement(index);
                 var supported = !string.IsNullOrWhiteSpace(requirement.ToolKind);
                 Tool? tool = requirement.ToolKind == "axe"
-                    ? player.Items.OfType<Axe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
+                    ? player.Items.OfType<Axe>()
+                        .OrderByDescending(candidate =>
+                            NativeToolPowerProjection.EffectiveUpgradeLevel(
+                                candidate))
+                        .FirstOrDefault()
                     : requirement.ToolKind == "pickaxe"
-                        ? player.Items.OfType<Pickaxe>().OrderByDescending(candidate => candidate.UpgradeLevel).FirstOrDefault()
+                        ? player.Items.OfType<Pickaxe>()
+                            .OrderByDescending(candidate =>
+                                NativeToolPowerProjection
+                                    .EffectiveUpgradeLevel(candidate))
+                            .FirstOrDefault()
                         : null;
-                var gateSatisfied = supported && tool is not null && tool.UpgradeLevel >= requirement.MinimumUpgradeLevel;
-                var damagePerHit = gateSatisfied ? Math.Max(1f, (tool!.UpgradeLevel + 1) * 0.75f) : (float?)null;
+                var additionalPower = tool is null
+                    ? (int?)null
+                    : NativeToolPowerProjection.AdditionalPower(tool);
+                var effectiveUpgradeLevel = tool is null
+                    ? (int?)null
+                    : NativeToolPowerProjection.EffectiveUpgradeLevel(tool);
+                var gateSatisfied = supported &&
+                    tool is not null &&
+                    effectiveUpgradeLevel >= requirement.MinimumUpgradeLevel;
+                var damagePerHit = gateSatisfied
+                    ? NativeToolPowerProjection.ResourceClumpDamage(tool!)
+                    : (float?)null;
                 var health = clump.health.Value;
                 return new
                 {
@@ -187,6 +205,9 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                     selected_tool_slot_index = tool is null ? (int?)null : player.Items.IndexOf(tool),
                     selected_tool_qualified_item_id = tool?.QualifiedItemId ?? string.Empty,
                     selected_tool_upgrade_level = tool?.UpgradeLevel,
+                    selected_tool_additional_power = additionalPower,
+                    selected_tool_effective_upgrade_level =
+                        effectiveUpgradeLevel,
                     native_executor_supported = supported,
                     tool_gate_satisfied = gateSatisfied,
                     damage_per_hit = damagePerHit,

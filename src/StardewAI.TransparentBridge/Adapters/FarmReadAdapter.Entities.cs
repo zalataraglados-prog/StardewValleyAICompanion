@@ -172,6 +172,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     minimum_tool_upgrade_level = clearance.MinimumToolUpgradeLevel,
                     tool_slot_index = clearance.ToolSlotIndex,
                     tool_upgrade_level = clearance.ToolUpgradeLevel,
+                    tool_additional_power = clearance.ToolAdditionalPower,
+                    tool_effective_upgrade_level =
+                        clearance.ToolEffectiveUpgradeLevel,
+                    damage_per_hit = clearance.DamagePerHit,
                     expected_tool_hits_to_clear = clearance.ExpectedToolHits,
                     clear_obstacle_executor_status = clearance.Status,
                     harvest_experience_skill_id = experience.SkillId,
