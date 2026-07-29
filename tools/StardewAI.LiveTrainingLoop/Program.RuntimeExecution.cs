@@ -483,6 +483,8 @@ static partial class Program
         var expectedSkillExperienceDeltasJson = ReadQueueParameterString(item, "expected_skill_experience_deltas_json");
         var expectedMasteryExperienceDelta = ReadQueueParameterInt(item, "expected_mastery_experience_delta");
         var expectedStardropMaxStaminaDelta = ReadQueueParameterInt(item, "expected_stardrop_max_stamina_delta");
+        var rewardBranch = ReadQueueParameterString(item, "reward_branch");
+        var nativeGainExperienceCallAmount = ReadQueueParameterInt(item, "native_gain_experience_call_amount");
         var buildingTileX = ReadQueueParameterInt(item, "building_tile_x");
         var buildingTileY = ReadQueueParameterInt(item, "building_tile_y");
         var fishTypeItemId = ReadQueueParameterString(item, "fish_type_item_id");
@@ -808,6 +810,8 @@ static partial class Program
         executionRequest.ExpectedSkillExperienceDeltasJson = expectedSkillExperienceDeltasJson;
         executionRequest.ExpectedMasteryExperienceDelta = expectedMasteryExperienceDelta;
         executionRequest.ExpectedStardropMaxStaminaDelta = expectedStardropMaxStaminaDelta;
+        executionRequest.RewardBranch = rewardBranch;
+        executionRequest.NativeGainExperienceCallAmount = nativeGainExperienceCallAmount;
         executionRequest.BuildingTileX = buildingTileX;
         executionRequest.BuildingTileY = buildingTileY;
         executionRequest.FishTypeItemId = fishTypeItemId;

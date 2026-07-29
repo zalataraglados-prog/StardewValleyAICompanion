@@ -49,6 +49,31 @@ public sealed class MineRewardChestMainlineTests
     }
 
     [Fact]
+    public void CompilerRejectsStardropProjectionDrift()
+    {
+        var initial = Snapshot(StateJson("ready", false));
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            new CandidateOptionAvailabilityEvaluator().Evaluate(
+                initial,
+                new[] { "mining.claim_reward_chests" },
+                true));
+        var plan = new DailyPlanCompiler().Compile(ranked, initial.StateHash);
+        var drifted = Snapshot(StateJson("ready", false).Replace(
+            "\"expected_stardrop_max_stamina_delta\":0",
+            "\"expected_stardrop_max_stamina_delta\":34",
+            StringComparison.Ordinal));
+        plan.StateHash = drifted.StateHash;
+
+        var queue = new ActionQueueCompiler().Compile(plan, drifted);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "mine_reward_chest_projection_drifted",
+            queue.Items.Single().BlockingReasons);
+    }
+
+    [Fact]
     public void ReachDepthClaimsLoadedRewardBeforeLeavingFloor()
     {
         var snapshot = Snapshot(StateJson("ready", false));

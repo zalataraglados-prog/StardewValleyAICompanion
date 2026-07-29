@@ -4,6 +4,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
+using System.Reflection;
 using TileLocation = xTile.Dimensions.Location;
 using TileRectangle = xTile.Dimensions.Rectangle;
 
@@ -11,6 +12,9 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private static readonly FieldInfo? MineRewardTreasureRoomField = typeof(MineShaft)
+        .GetField("netIsTreasureRoom", BindingFlags.Instance | BindingFlags.NonPublic);
+
     private void StartMineRewardChest(PendingExecution pending)
     {
         var request = pending.Request;
@@ -23,7 +27,8 @@ public sealed partial class ModEntry
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
             string.IsNullOrWhiteSpace(request.QualifiedItemId) || !request.Quantity.HasValue ||
-            !request.ExpectedSkillExperienceDelta.HasValue || !request.ExpectedOutputQuality.HasValue)
+            !request.ExpectedSkillExperienceDelta.HasValue || !request.ExpectedOutputQuality.HasValue ||
+            !request.NativeGainExperienceCallAmount.HasValue || !request.ExpectedStardropMaxStaminaDelta.HasValue)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "claim_mine_reward_chest", "native_chest_dump_contents=true", "request=missing_typed_fields", "mine_reward_chest_typed_fields_required"));
             return;
@@ -99,6 +104,11 @@ public sealed partial class ModEntry
         {
             reasons.Add("mine_reward_chest_family_drifted");
         }
+        var rewardBranch = RuntimeMineRewardBranch(mine);
+        if (!string.Equals(request.RewardBranch, rewardBranch, StringComparison.Ordinal))
+        {
+            reasons.Add("mine_reward_chest_branch_drifted");
+        }
         if (!AreAdjacent(target, stand) || !IsTileOnMap(mine, stand) || !IsTileWalkable(mine, stand) || IsTileOccupiedByCharacter(mine, stand))
         {
             reasons.Add("mine_reward_chest_interaction_geometry_drifted");
@@ -108,21 +118,27 @@ public sealed partial class ModEntry
             !string.Equals(request.ExpectedActionType, "MineRewardChest", StringComparison.Ordinal) ||
             !string.Equals(request.QualifiedItemId, item.QualifiedItemId, StringComparison.OrdinalIgnoreCase) ||
             request.Quantity != item.Stack || request.ExpectedOutputQuality != item.Quality ||
-            request.ExpectedSkillExperienceDelta != 0)
+            !string.Equals(request.ExpectedSkillId, "luck", StringComparison.Ordinal) ||
+            request.ExpectedSkillExperienceDelta != 0 ||
+            request.NativeGainExperienceCallAmount != 25 + mine.mineLevel)
         {
             reasons.Add("mine_reward_chest_projection_drifted");
         }
         var isStardrop = item.QualifiedItemId == "(O)434";
         if (isStardrop)
         {
-            if (request.ExpectedStardropMaxStaminaDelta != 34 || Game1.player.mailReceived.Contains("CF_Mines"))
+            if (request.ExpectedStardropMaxStaminaDelta != 34 ||
+                !TryParseClearanceOutputItems(request.ExpectedOutputItemsJson, out var outputs) ||
+                outputs.Length != 0 ||
+                Game1.player.mailReceived.Contains("CF_Mines"))
             {
                 reasons.Add("mine_reward_stardrop_progress_drifted");
             }
         }
         else
         {
-            if (!Game1.player.couldInventoryAcceptThisItem(item) ||
+            if (request.ExpectedStardropMaxStaminaDelta != 0 ||
+                !Game1.player.couldInventoryAcceptThisItem(item) ||
                 !TryParseClearanceOutputItems(request.ExpectedOutputItemsJson, out var outputs) || outputs.Length != 1)
             {
                 reasons.Add("mine_reward_chest_inventory_projection_unavailable");
@@ -130,16 +146,45 @@ public sealed partial class ModEntry
             else
             {
                 outputExpectation = outputs[0];
-                var inventoryUnit = item.getOne();
-                inventoryUnit.Stack = 1;
-                inventoryUnit.HasBeenInInventory = true;
-                if (outputExpectation.Key != ClearanceOutputItemKey.From(inventoryUnit) || outputExpectation.Quantity != item.Stack)
+                var runtimeKey = ClearanceOutputItemKey.FromInventoryReceipt(item);
+                if (outputExpectation.Key != runtimeKey || outputExpectation.Quantity != item.Stack)
                 {
                     reasons.Add("mine_reward_chest_unit_state_projection_drifted");
                 }
             }
         }
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static string RuntimeMineRewardBranch(MineShaft mine)
+    {
+        var mineKind = RuntimeMineKind(mine);
+        if (mineKind == "ordinary_mines" &&
+            mine.mineLevel is 10 or 20 or 40 or 50 or 60 or 70 or 80 or 90 or 100 or 110)
+        {
+            return mine.mineLevel == 100
+                ? "ordinary_fixed_stardrop"
+                : "ordinary_fixed_reward";
+        }
+        if (mineKind != "skull_cavern")
+        {
+            return "unsupported_mine_chest";
+        }
+        if (mine.mineLevel is 220 or 320 or 420)
+        {
+            return "skull_cavern_forced_treasure";
+        }
+        return ReadMineRewardTreasureRoom(mine)
+            ? "skull_cavern_treasure_room"
+            : "unsupported_mine_chest";
+    }
+
+    private static bool ReadMineRewardTreasureRoom(MineShaft mine)
+    {
+        var netBool = MineRewardTreasureRoomField?.GetValue(mine);
+        return netBool?.GetType()
+            .GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)?
+            .GetValue(netBool) is true;
     }
 
     private void TickMineRewardChest()

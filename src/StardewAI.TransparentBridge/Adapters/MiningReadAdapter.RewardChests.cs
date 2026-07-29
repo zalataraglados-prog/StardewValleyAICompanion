@@ -62,10 +62,7 @@ public sealed partial class MiningReadAdapter
         object[] projectedItems;
         if (item is not null && !isStardrop && needsInventorySpace)
         {
-            var inventoryUnit = item.getOne();
-            inventoryUnit.Stack = 1;
-            inventoryUnit.HasBeenInInventory = true;
-            projectedItems = new object[] { ClearanceOutputItemProjection.From(inventoryUnit) with { Quantity = item.Stack } };
+            projectedItems = new object[] { ClearanceOutputItemProjection.FromInventoryReceipt(item) };
         }
         else
         {

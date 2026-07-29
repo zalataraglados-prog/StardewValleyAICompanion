@@ -25,6 +25,9 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
+    private static readonly MethodInfo? AddLevelChestsMethod = typeof(MineShaft)
+        .GetMethod("addLevelChests", BindingFlags.Instance | BindingFlags.NonPublic);
+
     private void StartSetupMiningFloor(PendingExecution pending)
     {
         var request = pending.Request;
@@ -42,6 +45,8 @@ public sealed partial class ModEntry : Mod
         }
 
         var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        ResetMineRewardChestFixtureIfEnabled(
+            request.MineLevel.Value);
         if (Environment.GetEnvironmentVariable("STARDEWAI_RESET_SKULL_KEY_FIXTURE") == "1")
         {
             Game1.player.hasSkullKey = false;
@@ -83,6 +88,8 @@ public sealed partial class ModEntry : Mod
         }
 
         var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        ResetMineRewardChestFixtureIfEnabled(
+            request.MineLevel.Value);
         var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
             ? EnsureMiningCalibrationLoadout()
             : MiningCalibrationLoadoutFacts.Disabled;
@@ -92,8 +99,35 @@ public sealed partial class ModEntry : Mod
             "skull_cavern",
             beforeLocation,
             calibrationLoadout,
-            createForcedShaft: true);
+            createForcedShaft: !string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "STARDEWAI_SKIP_SKULL_CAVERN_SHAFT_FIXTURE"),
+                "1",
+                StringComparison.Ordinal));
         Game1.enterMine(request.MineLevel.Value);
+    }
+
+    private static void ResetMineRewardChestFixtureIfEnabled(
+        int mineLevel)
+    {
+        if (!string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "STARDEWAI_RESET_MINE_REWARD_CHEST_FIXTURE"),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        EnsureFixtureInventoryCapacity(Game1.player);
+        Game1.player.chestConsumedMineLevels.Remove(mineLevel);
+        if (mineLevel == 100 &&
+            Game1.player.mailReceived.Remove("CF_Mines"))
+        {
+            Game1.player.maxStamina.Value = Math.Max(
+                0,
+                Game1.player.maxStamina.Value - 34);
+        }
     }
 
     private void StartSetupQuarryMine(PendingExecution pending)
@@ -454,6 +488,10 @@ public sealed partial class ModEntry : Mod
             mine.mineLevel == active.MineLevel &&
             mine.map is not null &&
             string.Equals(RuntimeMineKind(mine), active.ExpectedMineKind, StringComparison.Ordinal);
+        if (loaded)
+        {
+            EnsureMineRewardChestFixtureIfEnabled(mine!);
+        }
         if (loaded && active.CreateForcedShaft && !active.ShaftCreationIssued)
         {
             var target = FindSkullCavernShaftFixtureTile(mine!);
@@ -482,6 +520,22 @@ public sealed partial class ModEntry : Mod
         {
             CompleteMineSetup(active, mine, verified);
         }
+    }
+
+    private static void EnsureMineRewardChestFixtureIfEnabled(MineShaft mine)
+    {
+        if (!string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "STARDEWAI_RESET_MINE_REWARD_CHEST_FIXTURE"),
+                "1",
+                StringComparison.Ordinal) ||
+            mine.overlayObjects.Values.Any(value =>
+                value is Chest chest && chest.GetType() == typeof(Chest)))
+        {
+            return;
+        }
+
+        AddLevelChestsMethod?.Invoke(mine, null);
     }
 
     private void TickQuarrySetup()

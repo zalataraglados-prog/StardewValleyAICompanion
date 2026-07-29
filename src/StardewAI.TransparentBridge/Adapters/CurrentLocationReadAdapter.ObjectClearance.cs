@@ -201,14 +201,36 @@ internal sealed record ClearanceOutputItemProjection(
 
     public static ClearanceOutputItemProjection From(Item item)
     {
+        var unit = CloneUnit(item);
+        return FromUnit(unit, item.Stack);
+    }
+
+    public static ClearanceOutputItemProjection FromInventoryReceipt(Item item)
+    {
+        var unit = CloneUnit(item);
+        unit.HasBeenInInventory = true;
+        return FromUnit(unit, item.Stack);
+    }
+
+    private static Item CloneUnit(Item item)
+    {
         var unit = item.getOne();
         unit.Stack = 1;
+        if (item is Tool sourceTool && unit is Tool unitTool)
+        {
+            unitTool.swingTicker = sourceTool.swingTicker;
+        }
         if (unit is StardewObject objectUnit)
         {
             // Object's constructor randomizes this ground-debris animation flag.
             // It doesn't affect inventory identity or stacking semantics.
             objectUnit.Flipped = false;
         }
+        return unit;
+    }
+
+    private static ClearanceOutputItemProjection FromUnit(Item unit, int quantity)
+    {
         using var stream = new MemoryStream();
         SaveSerializer.GetSerializer(unit.GetType()).Serialize(stream, unit);
         var stateHash = Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();
@@ -217,6 +239,6 @@ internal sealed record ClearanceOutputItemProjection(
             unit.QualifiedItemId,
             unit.Quality,
             stateHash,
-            item.Stack);
+            quantity);
     }
 }

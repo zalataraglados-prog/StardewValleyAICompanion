@@ -630,6 +630,7 @@ public sealed partial class ModEntry : Mod
             request.OptionId != "executor.pan_ore_spot" &&
             request.OptionId != "executor.collect_fish_pond_output" &&
             request.OptionId != "executor.complete_fish_pond_request" &&
+            request.OptionId != "executor.claim_mine_reward_chest" &&
             request.OptionId != "executor.collect_machine_output" &&
             request.OptionId != "executor.load_machine_input" &&
             request.OptionId != "executor.name_hatched_animal" &&

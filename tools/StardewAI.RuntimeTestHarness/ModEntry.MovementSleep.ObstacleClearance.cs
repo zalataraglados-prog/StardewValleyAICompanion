@@ -794,8 +794,23 @@ public sealed partial class ModEntry : Mod
     {
         public static ClearanceOutputItemKey From(Item item)
         {
+            return FromUnit(item, hasBeenInInventory: item.HasBeenInInventory);
+        }
+
+        public static ClearanceOutputItemKey FromInventoryReceipt(Item item)
+        {
+            return FromUnit(item, hasBeenInInventory: true);
+        }
+
+        private static ClearanceOutputItemKey FromUnit(Item item, bool hasBeenInInventory)
+        {
             var unit = item.getOne();
             unit.Stack = 1;
+            unit.HasBeenInInventory = hasBeenInInventory;
+            if (item is Tool sourceTool && unit is Tool unitTool)
+            {
+                unitTool.swingTicker = sourceTool.swingTicker;
+            }
             if (unit is StardewValley.Object objectUnit)
             {
                 objectUnit.Flipped = false;
