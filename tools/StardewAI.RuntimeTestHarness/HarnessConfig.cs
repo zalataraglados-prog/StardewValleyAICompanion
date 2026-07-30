@@ -27,4 +27,6 @@ public sealed class HarnessConfig
     public int ExecutorRequestTimeoutSeconds { get; set; } = 600;
 
     public bool DisableMovementTimeouts { get; set; }
+
+    public bool FreezeClockWhileExecutorIdle { get; set; }
 }

@@ -25,32 +25,18 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
-    private bool TryStartEmergencyCombatFood(MineShaft mine)
+    private bool TryStartEmergencyCombatFood(GameLocation location)
     {
-        var nearbyDamage = mine.characters
-            .OfType<Monster>()
-            .Where(monster =>
-                monster.Health > 0 &&
-                ManhattanDistance(
-                    Game1.player.TilePoint,
-                    monster.TilePoint) <= 4)
-            .Select(monster => Math.Max(0, monster.DamageToFarmer))
-            .DefaultIfEmpty(0)
-            .Max();
-        var recoveryThreshold = Math.Max(
-            Game1.player.maxHealth * 3 / 4,
-            nearbyDamage * 3 + 1);
-        if (Game1.player.health > recoveryThreshold ||
-            Game1.player.health >= Game1.player.maxHealth ||
-            Game1.activeClickableMenu is not null ||
+        if (!EmergencyCombatFoodNeeded(location))
+        {
+            return false;
+        }
+
+        if (Game1.activeClickableMenu is not null ||
             Game1.dialogueUp ||
             Game1.player.UsingTool ||
             !Game1.player.CanMove ||
-            Game1.player.FarmerSprite.PauseForSingleAnimation ||
-            Game1.player.hasBuff("25") ||
-            Game1.player.hasBuff("6") ||
-            Game1.player.team.SpecialOrderRuleActive("SC_NO_FOOD") &&
-            mine.getMineArea() == MineShaft.desertArea)
+            Game1.player.FarmerSprite.PauseForSingleAnimation)
         {
             return false;
         }
@@ -78,7 +64,7 @@ public sealed partial class ModEntry : Mod
         RestoreManualAutoCombatTool();
         StopAllMovement();
         activeEmergencyCombatFood = new ActiveEmergencyCombatFood(
-            mine,
+            location,
             food.Index,
             food.Item.QualifiedItemId,
             food.Item.Stack,
@@ -94,6 +80,40 @@ public sealed partial class ModEntry : Mod
         return true;
     }
 
+    private static bool EmergencyCombatFoodNeeded(
+        GameLocation location)
+    {
+        var nearbyDamage = location.characters
+            .OfType<Monster>()
+            .Where(monster =>
+                monster.Health > 0 &&
+                ManhattanDistance(
+                    Game1.player.TilePoint,
+                    monster.TilePoint) <= 4)
+            .Select(monster => Math.Max(0, monster.DamageToFarmer))
+            .DefaultIfEmpty(0)
+            .Max();
+        var recoveryThreshold = Math.Max(
+            Game1.player.maxHealth * 3 / 4,
+            nearbyDamage * 3 + 1);
+        if (Game1.player.health > recoveryThreshold ||
+            Game1.player.health >= Game1.player.maxHealth ||
+            Game1.player.hasBuff("25") ||
+            Game1.player.hasBuff("6") ||
+            Game1.player.team.SpecialOrderRuleActive("SC_NO_FOOD") &&
+            location is MineShaft mine &&
+            mine.getMineArea() == MineShaft.desertArea)
+        {
+            return false;
+        }
+
+        return Game1.player.Items
+            .OfType<StardewValley.Object>()
+            .Any(item =>
+                item.Edibility > 0 &&
+                item.healthRecoveredOnConsumption() > 0);
+    }
+
     private void TickEmergencyCombatFood()
     {
         var active = activeEmergencyCombatFood;
@@ -104,12 +124,28 @@ public sealed partial class ModEntry : Mod
 
         active.ElapsedTicks++;
         if (!Context.IsWorldReady ||
-            !ReferenceEquals(Game1.currentLocation, active.Mine) ||
-            active.ElapsedTicks > 900)
+            !ReferenceEquals(Game1.currentLocation, active.Location))
         {
             FinishEmergencyCombatFood(
                 active,
-                "location_or_timeout");
+                "location_changed");
+            return;
+        }
+        if (active.ElapsedTicks > 900)
+        {
+            if (EmergencyCombatFoodWasConsumed(active))
+            {
+                RecoverEmergencyCombatFoodAnimation();
+                FinishEmergencyCombatFood(
+                    active,
+                    "native_food_consumed_animation_recovered");
+            }
+            else
+            {
+                FinishEmergencyCombatFood(
+                    active,
+                    "timeout_at_" + active.Stage);
+            }
             return;
         }
 
@@ -185,7 +221,7 @@ public sealed partial class ModEntry : Mod
                 return;
 
             case ConsumeFoodStage.ConfirmPrompt:
-                if (Game1.activeClickableMenu is not DialogueBox ||
+                if (Game1.activeClickableMenu is not DialogueBox prompt ||
                     !string.Equals(
                         Game1.currentLocation.lastQuestionKey,
                         "Eat",
@@ -196,36 +232,94 @@ public sealed partial class ModEntry : Mod
                         "eat_prompt_drift");
                     return;
                 }
-                Game1.currentLocation.answerDialogueAction(
-                    "Eat_Yes",
-                    new[] { "Eat" });
-                Game1.activeClickableMenu = null;
-                Game1.dialogueUp = false;
+                if (prompt.transitioning || prompt.safetyTimer > 0)
+                {
+                    return;
+                }
+                if (!TryApplySmapiButtonOverride(
+                        SButton.Y,
+                        pressed: true,
+                        out var confirmReason))
+                {
+                    FinishEmergencyCombatFood(
+                        active,
+                        "confirm_press_failed:" + confirmReason);
+                    return;
+                }
+                active.ConfirmationButtonHeld = true;
+                active.Stage = ConsumeFoodStage.ReleaseConfirmation;
+                return;
+
+            case ConsumeFoodStage.ReleaseConfirmation:
+                ReleaseEmergencyCombatFoodConfirmationButton(active);
+                active.Stage = ConsumeFoodStage.WaitForPromptClose;
+                return;
+
+            case ConsumeFoodStage.WaitForPromptClose:
+                if (Game1.activeClickableMenu is DialogueBox &&
+                    string.Equals(
+                        Game1.currentLocation.lastQuestionKey,
+                        "Eat",
+                        StringComparison.Ordinal))
+                {
+                    return;
+                }
+                if (Game1.activeClickableMenu is not null ||
+                    Game1.dialogueUp)
+                {
+                    FinishEmergencyCombatFood(
+                        active,
+                        "unexpected_menu_after_confirmation");
+                    return;
+                }
                 active.Stage = ConsumeFoodStage.WaitForCompletion;
                 return;
 
             case ConsumeFoodStage.WaitForCompletion:
                 active.EatingObserved |= Game1.player.isEating;
-                if (Game1.player.isEating ||
+                var consumed = EmergencyCombatFoodWasConsumed(active);
+                if (Game1.player.UsingTool ||
+                    Game1.player.isEating ||
                     !Game1.player.CanMove ||
                     Game1.player.FarmerSprite.PauseForSingleAnimation)
                 {
+                    active.CompletionSettleTicks++;
+                    if (consumed &&
+                        active.CompletionSettleTicks > 180)
+                    {
+                        RecoverEmergencyCombatFoodAnimation();
+                        FinishEmergencyCombatFood(
+                            active,
+                            "native_food_consumed_animation_recovered");
+                    }
                     return;
                 }
-                if (!active.EatingObserved)
+                if (!consumed)
                 {
                     return;
                 }
 
-                var stackAfter = ConsumeFoodStackAt(
-                    active.SlotIndex,
-                    active.QualifiedItemId);
-                var status = stackAfter == active.StackBefore - 1
-                    ? "native_food_consumed"
-                    : "food_stack_delta_mismatch";
-                FinishEmergencyCombatFood(active, status);
+                FinishEmergencyCombatFood(
+                    active,
+                    "native_food_consumed");
                 return;
         }
+    }
+
+    private static bool EmergencyCombatFoodWasConsumed(
+        ActiveEmergencyCombatFood active)
+    {
+        return ConsumeFoodStackAt(
+                active.SlotIndex,
+                active.QualifiedItemId) ==
+                active.StackBefore - 1 &&
+            Game1.player.health > active.HealthBefore;
+    }
+
+    private static void RecoverEmergencyCombatFoodAnimation()
+    {
+        Game1.player.completelyStopAnimatingOrDoingAction();
+        Game1.player.forceCanMove();
     }
 
     private static bool EmergencyCombatFoodSlotMatches(
@@ -247,6 +341,7 @@ public sealed partial class ModEntry : Mod
         string status)
     {
         ReleaseEmergencyCombatFoodRightButton(active);
+        ReleaseEmergencyCombatFoodConfirmationButton(active);
         if (!Game1.player.UsingTool &&
             active.RestoreSlotIndex >= 0 &&
             active.RestoreSlotIndex < Game1.player.Items.Count)
@@ -263,7 +358,9 @@ public sealed partial class ModEntry : Mod
                 "->" +
                 Game1.player.health +
                 ".",
-            status == "native_food_consumed"
+            status.StartsWith(
+                "native_food_consumed",
+                StringComparison.Ordinal)
                 ? LogLevel.Info
                 : LogLevel.Warn);
         activeEmergencyCombatFood = null;
@@ -278,5 +375,19 @@ public sealed partial class ModEntry : Mod
         }
         TryApplySmapiRightButtonOverride(pressed: false, out _);
         active.RightButtonHeld = false;
+    }
+
+    private void ReleaseEmergencyCombatFoodConfirmationButton(
+        ActiveEmergencyCombatFood active)
+    {
+        if (!active.ConfirmationButtonHeld)
+        {
+            return;
+        }
+        TryApplySmapiButtonOverride(
+            SButton.Y,
+            pressed: false,
+            out _);
+        active.ConfirmationButtonHeld = false;
     }
 }

@@ -37,6 +37,7 @@ public sealed partial class ModEntry : Mod
         public List<SimulatedFactChange> ChangedFacts { get; } = new();
         public int MovementClearanceActions { get; set; }
         public int MovementExtraTicks { get; set; }
+        public int MovementIncidentalDialogues { get; set; }
     }
 
     private sealed class ActiveTileMove
@@ -69,6 +70,8 @@ public sealed partial class ModEntry : Mod
         public int? CurrentDirection { get; set; }
         public int StuckTicks { get; set; }
         public int SoftObstacleTicks { get; set; }
+        public bool IncidentalDialogueButtonHeld { get; set; }
+        public int IncidentalDialoguePressAttempts { get; set; }
         public int MaxTicks { get; }
         public Vector2 LastPosition { get; set; }
         public string StartedAt { get; }

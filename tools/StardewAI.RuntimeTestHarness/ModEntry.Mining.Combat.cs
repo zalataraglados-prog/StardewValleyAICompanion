@@ -142,8 +142,23 @@ public sealed partial class ModEntry : Mod
         {
             if (Context.IsWorldReady &&
                 Game1.currentLocation is MineShaft mine &&
-                TryStartEmergencyCombatFood(mine))
+                EmergencyCombatFoodNeeded(mine))
             {
+                TryApplySmapiButtonOverride(
+                    HeavyHitterInputButton(active.Weapon),
+                    pressed: false,
+                    out _);
+                active.AttackButtonHeld = false;
+                if (active.ClearanceTool is not null)
+                {
+                    TryApplySmapiButtonOverride(
+                        HeavyHitterInputButton(active.ClearanceTool),
+                        pressed: false,
+                        out _);
+                }
+                active.ClearanceButtonHeld = false;
+                StopAllMovement();
+                TryStartEmergencyCombatFood(mine);
                 return;
             }
 

@@ -96,9 +96,42 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (activeEmergencyCombatFood is not null)
+        {
+            return;
+        }
+
         var active = activeVolcanoCombat;
         try
         {
+            if (activeEmergencyCombatFood is not null)
+            {
+                active.LastNoProgressReason =
+                    "emergency_food_in_progress";
+                return;
+            }
+            if (Context.IsWorldReady &&
+                Game1.currentLocation is VolcanoDungeon volcano &&
+                EmergencyCombatFoodNeeded(volcano))
+            {
+                TryApplySmapiButtonOverride(
+                    HeavyHitterInputButton(active.Weapon),
+                    pressed: false,
+                    out _);
+                active.AttackButtonHeld = false;
+                if (active.ClearanceTool is not null)
+                {
+                    TryApplySmapiButtonOverride(
+                        HeavyHitterInputButton(active.ClearanceTool),
+                        pressed: false,
+                        out _);
+                }
+                active.ClearanceButtonHeld = false;
+                StopAllMovement();
+                TryStartEmergencyCombatFood(volcano);
+                return;
+            }
+
             TickVolcanoCombatCore(active);
         }
         catch (Exception ex)
@@ -133,33 +166,77 @@ public sealed partial class ModEntry : Mod
         var targetPresent = volcano.characters.Contains(active.Target);
         if (active.Target.Health <= 0 || !targetPresent)
         {
-            if (active.Target.Health <= 0)
-            {
-                CompleteVolcanoCombat(active);
-            }
-            else
+            if (active.Target.Health > 0)
             {
                 CompleteVolcanoCombatBlocked(active, "volcano_combat_target_disappeared_without_defeat");
+                return;
             }
+
+            StopAllMovement();
+            if (active.AttackButtonHeld)
+            {
+                if (!TryApplySmapiButtonOverride(
+                        HeavyHitterInputButton(active.Weapon),
+                        pressed: false,
+                        out var releaseReason))
+                {
+                    CompleteVolcanoCombatBlocked(active, releaseReason);
+                    return;
+                }
+                active.AttackButtonHeld = false;
+                return;
+            }
+            if (TickVolcanoCombatDefeatDialogue(active))
+            {
+                return;
+            }
+            if (Game1.player.UsingTool ||
+                !Game1.player.CanMove ||
+                Game1.player.FarmerSprite.PauseForSingleAnimation)
+            {
+                active.DefeatSettleTicks++;
+                if (active.DefeatSettleTicks > 180)
+                {
+                    CompleteVolcanoCombatBlocked(active, "volcano_combat_defeat_animation_settle_timeout");
+                }
+                return;
+            }
+
+            CompleteVolcanoCombat(active);
             return;
         }
 
         if (TrackVolcanoCombatProgress(active) > 600)
         {
-            CompleteVolcanoCombatBlocked(active, "volcano_combat_no_movement_or_damage_progress");
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_no_movement_or_damage_progress:" +
+                    active.LastNoProgressReason);
             return;
         }
 
         var releasedAttackThisTick = false;
         if (active.AttackButtonHeld)
         {
-            if (!TryApplySmapiButtonOverride(SButton.C, pressed: false, out var releaseReason))
+            if (!TryApplySmapiButtonOverride(
+                    HeavyHitterInputButton(active.Weapon),
+                    pressed: false,
+                    out var releaseReason))
             {
                 CompleteVolcanoCombatBlocked(active, releaseReason);
                 return;
             }
             active.AttackButtonHeld = false;
             releasedAttackThisTick = true;
+            active.LastNoProgressReason =
+                "released_attack_input";
+        }
+
+        if (TickVolcanoCombatClearance(active, volcano))
+        {
+            active.LastNoProgressReason =
+                "route_clearance";
+            return;
         }
 
         if (!IsMonsterWithinCombatReach(active.Target, active.Weapon))
@@ -173,9 +250,19 @@ public sealed partial class ModEntry : Mod
                     Math.Max(1, active.MaxMovementTiles - active.MovementTiles),
                     out var pathReason,
                     avoidSoftObstacles: true,
-                    allowRemovableObstacles: false);
+                    allowRemovableObstacles: true);
                 if (path is null)
                 {
+                    if (active.Target.isGlider.Value)
+                    {
+                        StopAllMovement();
+                        active.Path.Clear();
+                        active.PathIndex = 0;
+                        active.LastNoProgressReason =
+                            "glider_waiting_for_reachable_approach";
+                        return;
+                    }
+
                     active.PathFailures++;
                     if (active.PathFailures > 120)
                     {
@@ -199,8 +286,38 @@ public sealed partial class ModEntry : Mod
                 active.PathIndex++;
                 return;
             }
-            if (!IsTileWalkable(volcano, next) || IsTileOccupiedByCharacter(volcano, next))
+            if (IsTileOccupiedByCharacter(volcano, next))
             {
+                active.Path.Clear();
+                active.PathIndex = 0;
+                active.PathFailures++;
+                return;
+            }
+            if (volcano.warps.Any(
+                    warp => warp.X == next.X && warp.Y == next.Y))
+            {
+                StopAllMovement();
+                active.Path.Clear();
+                active.PathIndex = 0;
+                if (!active.Target.isGlider.Value)
+                {
+                    active.PathFailures++;
+                    if (active.PathFailures > 120)
+                    {
+                        CompleteVolcanoCombatBlocked(
+                            active,
+                            "volcano_combat_route_crosses_connector");
+                    }
+                }
+                return;
+            }
+            if (!IsTileWalkable(volcano, next))
+            {
+                if (BeginVolcanoCombatClearance(active, volcano, next))
+                {
+                    return;
+                }
+
                 active.Path.Clear();
                 active.PathIndex = 0;
                 active.PathFailures++;
@@ -215,6 +332,8 @@ public sealed partial class ModEntry : Mod
             }
             StartMoving(DirectionTo(Game1.player.TilePoint, next));
             MovePlayerForTick();
+            active.LastNoProgressReason =
+                "moving_to_combat_reach";
             if (Game1.player.TilePoint == next)
             {
                 active.PathIndex++;
@@ -229,9 +348,35 @@ public sealed partial class ModEntry : Mod
         }
 
         StopAllMovement();
-        if (active.Target.isInvincible() || Game1.player.UsingTool || releasedAttackThisTick ||
-            Game1.activeClickableMenu is not null || Game1.eventUp)
+        if (active.Target.isInvincible())
         {
+            active.LastNoProgressReason =
+                "target_invincible";
+            return;
+        }
+        if (Game1.player.UsingTool)
+        {
+            active.LastNoProgressReason =
+                "native_weapon_animation";
+            return;
+        }
+        if (releasedAttackThisTick)
+        {
+            active.LastNoProgressReason =
+                "released_attack_input";
+            return;
+        }
+        if (Game1.activeClickableMenu is not null)
+        {
+            active.LastNoProgressReason =
+                "active_menu:" +
+                    Game1.activeClickableMenu.GetType().Name;
+            return;
+        }
+        if (Game1.eventUp)
+        {
+            active.LastNoProgressReason =
+                "event_up";
             return;
         }
         if (active.AttackCount >= active.MaxAttacks)
@@ -241,24 +386,218 @@ public sealed partial class ModEntry : Mod
         }
 
         var targetCenter = active.Target.GetBoundingBox().Center;
-        Game1.player.CurrentToolIndex = active.WeaponSlotIndex;
+        SelectTool(active.Weapon);
         Game1.player.faceDirection(DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection));
         Game1.player.lastClick = new Vector2(targetCenter.X, targetCenter.Y);
-        if (!TryApplySmapiButtonOverride(SButton.C, pressed: true, out var inputReason))
+        if (!TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(active.Weapon),
+                pressed: true,
+                out var inputReason))
         {
             CompleteVolcanoCombatBlocked(active, inputReason);
             return;
         }
         active.AttackButtonHeld = true;
         active.AttackCount++;
+        active.LastNoProgressReason =
+            "attack_input_issued";
+    }
+
+    private bool TickVolcanoCombatDefeatDialogue(ActiveVolcanoCombat active)
+    {
+        if (active.DefeatDialogueButtonHeld)
+        {
+            if (!TryApplySmapiLeftButtonOverride(
+                    pressed: false,
+                    out var releaseReason))
+            {
+                CompleteVolcanoCombatBlocked(
+                    active,
+                    "volcano_combat_defeat_dialogue_release_failed:" +
+                        releaseReason);
+                return true;
+            }
+            active.DefeatDialogueButtonHeld = false;
+            return true;
+        }
+
+        if (Game1.activeClickableMenu is null)
+        {
+            return false;
+        }
+        if (Game1.activeClickableMenu is not DialogueBox dialogue ||
+            dialogue.isQuestion ||
+            dialogue.characterDialogue is not null ||
+            Game1.eventUp)
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_defeat_interrupted_by_non_incidental_menu");
+            return true;
+        }
+
+        StopAllMovement();
+        if (dialogue.transitioning || dialogue.safetyTimer > 0)
+        {
+            return true;
+        }
+        if (active.DefeatDialoguePressAttempts >= 16)
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_defeat_dialogue_dismiss_budget_exceeded");
+            return true;
+        }
+        if (!TryApplySmapiLeftButtonOverride(
+                pressed: true,
+                out var pressReason))
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_defeat_dialogue_press_failed:" +
+                    pressReason);
+            return true;
+        }
+
+        active.DefeatDialoguePressAttempts++;
+        active.DefeatDialogueButtonHeld = true;
+        return true;
+    }
+
+    private bool BeginVolcanoCombatClearance(
+        ActiveVolcanoCombat active,
+        VolcanoDungeon volcano,
+        Point tile)
+    {
+        var tool = SelectClearanceTool(volcano, tile);
+        if (tool is null || !AreAdjacent(Game1.player.TilePoint, tile))
+        {
+            return false;
+        }
+
+        StopAllMovement();
+        active.ClearanceTarget = tile;
+        active.ClearanceTool = tool;
+        active.ClearanceBefore = ObstacleLabel(volcano, tile);
+        active.ClearanceSwings = 0;
+        active.Path.Clear();
+        active.PathIndex = 0;
+        return true;
+    }
+
+    private bool TickVolcanoCombatClearance(
+        ActiveVolcanoCombat active,
+        VolcanoDungeon volcano)
+    {
+        if (!active.ClearanceTarget.HasValue)
+        {
+            return false;
+        }
+
+        var target = active.ClearanceTarget.Value;
+        if (active.ClearanceButtonHeld)
+        {
+            TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(active.ClearanceTool!),
+                pressed: false,
+                out _);
+            active.ClearanceButtonHeld = false;
+            return true;
+        }
+
+        if (string.Equals(
+                ObstacleLabel(volcano, target),
+                "clear",
+                StringComparison.Ordinal))
+        {
+            active.Pending.MovementClearanceActions++;
+            active.Pending.ChangedFacts.Add(new SimulatedFactChange
+            {
+                Path = "volcano.combat.route_clearance[" +
+                    target.X + "," + target.Y + "]",
+                Before = active.ClearanceBefore,
+                After = "clear"
+            });
+            ResetVolcanoCombatClearance(active);
+            return true;
+        }
+
+        if (IsMonsterWithinCombatReach(active.Target, active.Weapon))
+        {
+            ResetVolcanoCombatClearance(active);
+            return false;
+        }
+
+        if (!AreAdjacent(Game1.player.TilePoint, target))
+        {
+            ResetVolcanoCombatClearance(active);
+            active.Path.Clear();
+            active.PathIndex = 0;
+            return true;
+        }
+
+        var tool = SelectClearanceTool(volcano, target);
+        if (tool is null)
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_route_obstacle_not_clearable");
+            return true;
+        }
+        if (Game1.player.UsingTool)
+        {
+            return true;
+        }
+        if (active.ClearanceSwings >= 64)
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_clearance_swing_budget_exceeded");
+            return true;
+        }
+
+        active.ClearanceTool = tool;
+        SelectTool(tool);
+        Game1.player.faceDirection(
+            DirectionTo(Game1.player.TilePoint, target));
+        Game1.player.lastClick = new Vector2(
+            target.X * Game1.tileSize,
+            target.Y * Game1.tileSize);
+        if (!TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(tool),
+                pressed: true,
+                out var inputReason))
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_clearance_" + inputReason);
+            return true;
+        }
+
+        active.ClearanceButtonHeld = true;
+        active.ClearanceSwings++;
+        active.NoProgressTicks = 0;
+        return true;
+    }
+
+    private static void ResetVolcanoCombatClearance(
+        ActiveVolcanoCombat active)
+    {
+        active.ClearanceTarget = null;
+        active.ClearanceTool = null;
+        active.ClearanceBefore = string.Empty;
+        active.ClearanceSwings = 0;
+        active.NoProgressTicks = 0;
     }
 
     private static int TrackVolcanoCombatProgress(ActiveVolcanoCombat active)
     {
         if (Vector2.DistanceSquared(active.LastProgressPosition, Game1.player.Position) >= 0.01f ||
+            Vector2.DistanceSquared(active.LastProgressTargetPosition, active.Target.Position) >= 0.01f ||
             active.Target.Health < active.LastProgressTargetHealth)
         {
             active.LastProgressPosition = Game1.player.Position;
+            active.LastProgressTargetPosition = active.Target.Position;
             active.LastProgressTargetHealth = active.Target.Health;
             active.NoProgressTicks = 0;
         }
@@ -302,7 +641,22 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteVolcanoCombat(ActiveVolcanoCombat active)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(
+            HeavyHitterInputButton(active.Weapon),
+            pressed: false,
+            out _);
+        if (active.ClearanceTool is not null)
+        {
+            TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(active.ClearanceTool),
+                pressed: false,
+                out _);
+        }
+        if (active.DefeatDialogueButtonHeld)
+        {
+            TryApplySmapiLeftButtonOverride(pressed: false, out _);
+            active.DefeatDialogueButtonHeld = false;
+        }
         StopAllMovement();
         RestoreSlot(active.RestoreSlotIndex);
         activeVolcanoCombat = null;
@@ -354,7 +708,22 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteVolcanoCombatBlocked(ActiveVolcanoCombat active, string reason)
     {
-        TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        TryApplySmapiButtonOverride(
+            HeavyHitterInputButton(active.Weapon),
+            pressed: false,
+            out _);
+        if (active.ClearanceTool is not null)
+        {
+            TryApplySmapiButtonOverride(
+                HeavyHitterInputButton(active.ClearanceTool),
+                pressed: false,
+                out _);
+        }
+        if (active.DefeatDialogueButtonHeld)
+        {
+            TryApplySmapiLeftButtonOverride(pressed: false, out _);
+            active.DefeatDialogueButtonHeld = false;
+        }
         StopAllMovement();
         if (ReferenceEquals(Game1.player.CurrentTool, active.Weapon))
         {

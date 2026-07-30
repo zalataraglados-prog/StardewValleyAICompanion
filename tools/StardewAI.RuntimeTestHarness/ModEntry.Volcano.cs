@@ -272,7 +272,20 @@ public sealed partial class ModEntry : Mod
     {
         return volcano.characters.OfType<Monster>().Any(monster =>
             monster.Health > 0 &&
-            Math.Abs(monster.TilePoint.X - Game1.player.TilePoint.X) + Math.Abs(monster.TilePoint.Y - Game1.player.TilePoint.Y) <= 3);
+            Math.Abs(
+                monster.TilePoint.X -
+                Game1.player.TilePoint.X) +
+                Math.Abs(
+                    monster.TilePoint.Y -
+                    Game1.player.TilePoint.Y) <= 3 &&
+            (monster.isGlider.Value ||
+                BuildAdjacentToolPath(
+                    volcano,
+                    monster.TilePoint,
+                    3,
+                    out _,
+                    avoidSoftObstacles: true,
+                    allowRemovableObstacles: false) is not null));
     }
 
     private void CompleteVolcanoCoolLava(ActiveVolcanoCoolLava active)

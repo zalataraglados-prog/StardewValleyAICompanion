@@ -223,6 +223,7 @@ public sealed partial class ModEntry : Mod
 
     private void StartMovingIfNeeded(ActiveTileMove move, int direction)
     {
+        Game1.player.forceCanMove();
         if (move.CurrentDirection == direction)
         {
             return;

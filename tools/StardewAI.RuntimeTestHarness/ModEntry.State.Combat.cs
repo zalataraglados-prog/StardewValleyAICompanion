@@ -302,6 +302,7 @@ public sealed partial class ModEntry : Mod
         public int ElapsedTicks { get; set; }
         public ConsumeFoodStage Stage { get; set; }
         public bool RightButtonHeld { get; set; }
+        public bool ConfirmationButtonHeld { get; set; }
         public bool NativeConfirmationIssued { get; set; }
         public bool EatingObserved { get; set; }
         public int PreInputSettleTicks { get; set; }
@@ -310,14 +311,14 @@ public sealed partial class ModEntry : Mod
     private sealed class ActiveEmergencyCombatFood
     {
         public ActiveEmergencyCombatFood(
-            MineShaft mine,
+            GameLocation location,
             int slotIndex,
             string qualifiedItemId,
             int stackBefore,
             int restoreSlotIndex,
             int healthBefore)
         {
-            Mine = mine;
+            Location = location;
             SlotIndex = slotIndex;
             QualifiedItemId = qualifiedItemId;
             StackBefore = stackBefore;
@@ -325,7 +326,7 @@ public sealed partial class ModEntry : Mod
             HealthBefore = healthBefore;
         }
 
-        public MineShaft Mine { get; }
+        public GameLocation Location { get; }
         public int SlotIndex { get; }
         public string QualifiedItemId { get; }
         public int StackBefore { get; }
@@ -334,7 +335,9 @@ public sealed partial class ModEntry : Mod
         public ConsumeFoodStage Stage { get; set; }
         public int ElapsedTicks { get; set; }
         public int SettleTicks { get; set; }
+        public int CompletionSettleTicks { get; set; }
         public bool RightButtonHeld { get; set; }
+        public bool ConfirmationButtonHeld { get; set; }
         public bool EatingObserved { get; set; }
     }
 
@@ -565,6 +568,8 @@ public sealed partial class ModEntry : Mod
         ReleaseUse,
         WaitForPrompt,
         ConfirmPrompt,
+        ReleaseConfirmation,
+        WaitForPromptClose,
         WaitForCompletion
     }
 

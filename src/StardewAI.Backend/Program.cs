@@ -944,6 +944,20 @@ public static class SnapshotValidator
         "mining"
     };
 
+    private static readonly string[] VolcanoRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "current_location",
+        "locations",
+        "menus",
+        "transport",
+        "volcano"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
         CancellationToken cancellationToken = default,
@@ -1050,6 +1064,11 @@ public static class SnapshotValidator
         if (string.Equals(profile, "mining", StringComparison.OrdinalIgnoreCase))
         {
             return MiningRequiredDomains;
+        }
+
+        if (string.Equals(profile, "volcano", StringComparison.OrdinalIgnoreCase))
+        {
+            return VolcanoRequiredDomains;
         }
 
         errors.Add("unsupported snapshot profile: " + profile);

@@ -30,6 +30,7 @@ public sealed partial class ModEntry : Mod
     private HarnessConfig config = new();
     private int ticksSeen;
     private bool loadAttempted;
+    private bool executorIdlePauseApplied;
     private HttpListener? executorListener;
     private CancellationTokenSource? executorCancellation;
     private readonly ConcurrentQueue<PendingExecution> pendingExecutions = new();
@@ -237,6 +238,16 @@ public sealed partial class ModEntry : Mod
         {
             config.DisableMovementTimeouts = disableTimeouts;
         }
+
+        var freezeClockWhileIdle = Environment.GetEnvironmentVariable(
+            "STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE");
+        if (bool.TryParse(
+                freezeClockWhileIdle,
+                out var freezeClockWhileIdleEnabled))
+        {
+            config.FreezeClockWhileExecutorIdle =
+                freezeClockWhileIdleEnabled;
+        }
     }
 
     private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -420,7 +431,7 @@ public sealed partial class ModEntry : Mod
         TickPanOreSpot();
         TickFishPondService();
 
-        if (activeTileMove is not null || activeSleep is not null || activeWait is not null || activeCatchFish is not null || activeMineFishingSetup is not null || activeMineSetup is not null || activeQuarrySetup is not null || activeVolcanoSetup is not null || activeNativeTool is not null || activeMineStone is not null || activeResourceClump is not null || activeVolcanoCoolLava is not null || activeVolcanoObstacle is not null || activeVolcanoCombat is not null || activeBreakContainer is not null || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null || activeConsumeFood is not null || activePickupDebris is not null || activeSpawnedObjectPickup is not null || activeBushHarvest is not null || activeCrabPotCollect is not null || activeAnimalProductHarvest is not null || activePetInteraction is not null || activeMuseumDonation is not null || activeQuestDropBoxDonation is not null || activeCommunityCenterDonation is not null || activeJojaDevelopment is not null || activeFarmhouseUpgrade is not null || activePanOreSpot is not null || activeFishPondService is not null || activeDescendLadder is not null || activeDescendShaft is not null || activeExitMine is not null || activeShipInventoryToBin is not null || activeMaterialTransfer is not null || activeWorkbenchCraft is not null || activeDialogueAdvance is not null || activeShippingSummaryClose is not null || activeSkullKeyChestInteraction is not null || activeMineRewardChest is not null)
+        if (HasActiveExecutorOperation())
         {
             return;
         }
@@ -1120,6 +1131,27 @@ public sealed partial class ModEntry : Mod
     {
         try
         {
+            var shouldPauseForExecutorIdle =
+                config.FreezeClockWhileExecutorIdle &&
+                Context.IsWorldReady &&
+                pendingExecutions.IsEmpty &&
+                !HasActiveExecutorOperation();
+            if (config.FreezeClockWhileExecutorIdle && Game1.options is not null)
+            {
+                Game1.options.pauseWhenOutOfFocus = false;
+            }
+            if (shouldPauseForExecutorIdle)
+            {
+                Game1.gameTimeInterval = 0;
+                Game1.paused = true;
+                executorIdlePauseApplied = true;
+            }
+            else if (executorIdlePauseApplied)
+            {
+                Game1.paused = false;
+                executorIdlePauseApplied = false;
+            }
+
             if (!ApplyExecutorMovementInput(out var movementInputReason))
             {
                 executorMovementDirection = null;
@@ -1187,6 +1219,52 @@ public sealed partial class ModEntry : Mod
                 CompleteBlockedShippingSummaryClose(summaryClose, "shipping_summary_input_dispatch_exception:" + ex.GetType().Name);
             }
         }
+    }
+
+    private bool HasActiveExecutorOperation()
+    {
+        return activeTileMove is not null ||
+            activeSleep is not null ||
+            activeWait is not null ||
+            activeCatchFish is not null ||
+            activeMineFishingSetup is not null ||
+            activeMineSetup is not null ||
+            activeQuarrySetup is not null ||
+            activeVolcanoSetup is not null ||
+            activeNativeTool is not null ||
+            activeMineStone is not null ||
+            activeResourceClump is not null ||
+            activeVolcanoCoolLava is not null ||
+            activeVolcanoObstacle is not null ||
+            activeVolcanoCombat is not null ||
+            activeBreakContainer is not null ||
+            activeCombatMonster is not null ||
+            activeShootMonster is not null ||
+            activePlaceBomb is not null ||
+            activeConsumeFood is not null ||
+            activePickupDebris is not null ||
+            activeSpawnedObjectPickup is not null ||
+            activeBushHarvest is not null ||
+            activeCrabPotCollect is not null ||
+            activeAnimalProductHarvest is not null ||
+            activePetInteraction is not null ||
+            activeMuseumDonation is not null ||
+            activeQuestDropBoxDonation is not null ||
+            activeCommunityCenterDonation is not null ||
+            activeJojaDevelopment is not null ||
+            activeFarmhouseUpgrade is not null ||
+            activePanOreSpot is not null ||
+            activeFishPondService is not null ||
+            activeDescendLadder is not null ||
+            activeDescendShaft is not null ||
+            activeExitMine is not null ||
+            activeShipInventoryToBin is not null ||
+            activeMaterialTransfer is not null ||
+            activeWorkbenchCraft is not null ||
+            activeDialogueAdvance is not null ||
+            activeShippingSummaryClose is not null ||
+            activeSkullKeyChestInteraction is not null ||
+            activeMineRewardChest is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

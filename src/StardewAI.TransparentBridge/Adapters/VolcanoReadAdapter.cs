@@ -404,17 +404,38 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
         }
 
         var rows = new string[height];
+        var staticRows = new string[height];
         var collisionMask = CollisionMask.All & ~CollisionMask.Farmers;
         for (var y = 0; y < height; y++)
         {
             var row = new char[width];
+            var staticRow = new char[width];
             for (var x = 0; x < width; x++)
             {
                 var blocked = volcano.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
                     volcano.farmers.Any(farmer => farmer != Game1.player && farmer.TilePoint.X == x && farmer.TilePoint.Y == y);
                 row[x] = blocked ? '1' : '0';
+
+                var mapPassable = volcano.isTilePassable(
+                    new xTile.Dimensions.Location(x, y),
+                    Game1.viewport);
+                var isLava = volcano.waterTiles is not null &&
+                    x >= 0 &&
+                    y >= 0 &&
+                    x < volcano.waterTiles.waterTiles.GetLength(0) &&
+                    y < volcano.waterTiles.waterTiles.GetLength(1) &&
+                    volcano.waterTiles[x, y];
+                var cooled = volcano.cooledLavaTiles.TryGetValue(
+                    new Vector2(x, y),
+                    out var isCooled) &&
+                    isCooled;
+                staticRow[x] = cooled ||
+                    mapPassable && !isLava
+                    ? '0'
+                    : '1';
             }
             rows[y] = new string(row);
+            staticRows[y] = new string(staticRow);
         }
 
         cachedCollisionSignature = signature;
@@ -425,9 +446,12 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
             height,
             encoding = "row_major_strings_1_blocked_0_passable",
             blocked_rows = rows,
+            static_blocked_rows = staticRows,
             excludes_current_player = true,
             includes_loaded_map_objects_characters_and_other_farmers = true,
-            source = "GameLocation.IsTileBlockedBy; decompiled method is read-only"
+            static_rows_exclude_objects_characters_farmers_and_gates = true,
+            static_rows_include_uncooled_lava = true,
+            source = "GameLocation.IsTileBlockedBy plus GameLocation.isTilePassable and live waterTiles/cooledLavaTiles; decompiled methods are read-only"
         };
         return cachedCollisionContext;
     }

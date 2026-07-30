@@ -182,16 +182,43 @@ public sealed partial class ModEntry : Mod
                 return;
 
             case ConsumeFoodStage.ConfirmPrompt:
-                if (Game1.activeClickableMenu is not DialogueBox || !string.Equals(Game1.currentLocation.lastQuestionKey, "Eat", StringComparison.Ordinal))
+                if (Game1.activeClickableMenu is not DialogueBox prompt ||
+                    !string.Equals(Game1.currentLocation.lastQuestionKey, "Eat", StringComparison.Ordinal))
                 {
                     CompleteConsumeFoodBlocked(active, "consume_food_eat_prompt_drift");
                     return;
                 }
+                if (prompt.transitioning || prompt.safetyTimer > 0)
+                {
+                    return;
+                }
 
-                Game1.currentLocation.answerDialogueAction("Eat_Yes", new[] { "Eat" });
-                Game1.activeClickableMenu = null;
-                Game1.dialogueUp = false;
+                if (!TryApplySmapiButtonOverride(SButton.Y, pressed: true, out var confirmReason))
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_confirm_press_failed:" + confirmReason);
+                    return;
+                }
+                active.ConfirmationButtonHeld = true;
                 active.NativeConfirmationIssued = true;
+                active.Stage = ConsumeFoodStage.ReleaseConfirmation;
+                return;
+
+            case ConsumeFoodStage.ReleaseConfirmation:
+                ReleaseConsumeFoodConfirmationButton(active);
+                active.Stage = ConsumeFoodStage.WaitForPromptClose;
+                return;
+
+            case ConsumeFoodStage.WaitForPromptClose:
+                if (Game1.activeClickableMenu is DialogueBox &&
+                    string.Equals(Game1.currentLocation.lastQuestionKey, "Eat", StringComparison.Ordinal))
+                {
+                    return;
+                }
+                if (Game1.activeClickableMenu is not null || Game1.dialogueUp)
+                {
+                    CompleteConsumeFoodBlocked(active, "consume_food_unexpected_menu_after_confirmation");
+                    return;
+                }
                 active.Stage = ConsumeFoodStage.WaitForCompletion;
                 return;
 
@@ -243,6 +270,7 @@ public sealed partial class ModEntry : Mod
     private void CompleteConsumeFood(ActiveConsumeFood active, int stackAfter)
     {
         ReleaseConsumeFoodRightButton(active);
+        ReleaseConsumeFoodConfirmationButton(active);
         RestoreConsumeFoodSlot(active);
         activeConsumeFood = null;
         var request = active.Pending.Request;
@@ -286,6 +314,7 @@ public sealed partial class ModEntry : Mod
     private void CompleteConsumeFoodBlocked(ActiveConsumeFood active, string reason)
     {
         ReleaseConsumeFoodRightButton(active);
+        ReleaseConsumeFoodConfirmationButton(active);
         RestoreConsumeFoodSlot(active);
         activeConsumeFood = null;
         var result = BlockedWithPrimitive(active.Pending.Request, "consume_food", active.RequestedEffect, ConsumeFoodObservedEffect(active.FoodSlotIndex), reason);
@@ -308,6 +337,16 @@ public sealed partial class ModEntry : Mod
         }
         TryApplySmapiRightButtonOverride(pressed: false, out _);
         active.RightButtonHeld = false;
+    }
+
+    private void ReleaseConsumeFoodConfirmationButton(ActiveConsumeFood active)
+    {
+        if (!active.ConfirmationButtonHeld)
+        {
+            return;
+        }
+        TryApplySmapiButtonOverride(SButton.Y, pressed: false, out _);
+        active.ConfirmationButtonHeld = false;
     }
 
     private static void RestoreConsumeFoodSlot(ActiveConsumeFood active)

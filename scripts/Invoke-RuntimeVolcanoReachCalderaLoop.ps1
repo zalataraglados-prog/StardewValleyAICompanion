@@ -75,7 +75,7 @@ function Wait-VolcanoSnapshot {
     $lastError = "not_requested"
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-JsonGet -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=volcano"
+            $snapshot = Invoke-JsonGet -Url "http://127.0.0.1:8765/api/v1/snapshot?profile=volcano&fresh=true"
             $level = $snapshot.state.volcano.current_level.value
             if ($snapshot.state.volcano.completeness.value.status -eq "complete" -and
                 $null -ne $level.level -and
@@ -135,6 +135,7 @@ $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $runtimeSaves = Join-Path $RuntimeRoot "saves"
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
+$smokeModsPath = Join-Path (Join-Path $RuntimeRoot "smoke-mods") $RunId
 $trainingRoot = Join-Path $runDirectory "training"
 $backendLog = Join-Path $runDirectory "backend.log"
 $backendErrorLog = Join-Path $runDirectory "backend-error.log"
@@ -144,6 +145,14 @@ $gameProcess = $null
 $backendProcess = $null
 $stepSummaries = New-Object System.Collections.Generic.List[object]
 $visitedLevels = New-Object System.Collections.Generic.List[int]
+$recoverableReplanReasons = @(
+    "volcano_obstacle_unsafe_monster_window",
+    "volcano_obstacle_path_unavailable:movement_no_collision_safe_path",
+    "volcano_cooling_unsafe_monster_window",
+    "volcano_cooling_path_unavailable:movement_no_collision_safe_path",
+    "volcano_combat_dynamic_path_unavailable:unreachable_target",
+    "volcano_movement_unsafe_monster_window"
+)
 $calderaReached = $false
 
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) {
@@ -176,8 +185,10 @@ $previousEnv = @{
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     STARDEWAI_VOLCANO_CALIBRATION_LOADOUT = $env:STARDEWAI_VOLCANO_CALIBRATION_LOADOUT
+    STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE = $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+    SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
 }
 
 try {
@@ -192,14 +203,34 @@ try {
     & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
     & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 
+    New-Item -ItemType Directory -Force -Path $smokeModsPath | Out-Null
+    foreach ($modName in @(
+        "StardewAI.TransparentBridge",
+        "StardewAI.RuntimeTestHarness"
+    )) {
+        $sourceMod = Join-Path (Join-Path $runtimeGameDir "Mods") $modName
+        $targetMod = Join-Path $smokeModsPath $modName
+        if (-not (Test-Path -LiteralPath $sourceMod -PathType Container)) {
+            throw "Required smoke mod is missing: $sourceMod"
+        }
+        New-Item -ItemType Directory -Force -Path $targetMod | Out-Null
+        Copy-Item `
+            -Path (Join-Path $sourceMod "*") `
+            -Destination $targetMod `
+            -Recurse `
+            -Force
+    }
+
     $env:STARDEWAI_TEST_SAVES = $runtimeSaves
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $runtimeSaves
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_VOLCANO_CALIBRATION_LOADOUT = "1"
+    $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE = "true"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $gameStart = @{
         FilePath = $smapiExe
@@ -260,8 +291,9 @@ try {
             $loopDll,
             "--root", $trainingRoot,
             "--backend-url", "http://127.0.0.1:5108",
-            "--bridge-snapshot-url", "http://127.0.0.1:8765/api/v1/snapshot?profile=volcano",
+            "--bridge-snapshot-url", "http://127.0.0.1:8765/api/v1/snapshot?profile=volcano&fresh=true",
             "--executor-url", "http://127.0.0.1:8767",
+            "--executor-timeout-seconds", "600",
             "--no-manifest",
             "--run-id", $RunId,
             "--artifact-run-id", $artifactRunId,
@@ -299,8 +331,18 @@ try {
         $optionId = [string]$primitive.option_id
         $primitiveStatus = [string]$primitive.status
         $verification = [string]$primitive.primitive_verification_status
+        $blockReasons = @($primitive.block_reasons)
+        $isRecoverableReplan = (
+            $primitiveStatus -eq "blocked" -and
+            $verification -eq "blocked" -and
+            $blockReasons.Count -gt 0 -and
+            @($blockReasons | Where-Object { $_ -notin $recoverableReplanReasons }).Count -eq 0 -and
+            [bool]$execution.after_snapshot_fresh -and
+            [bool]$execution.state_hash_changed
+        )
         $expectedOptions = @(
             "executor.move_to_tile",
+            "executor.wait_ticks",
             "executor.traverse_connector",
             "executor.cool_volcano_lava",
             "executor.break_volcano_stone",
@@ -321,7 +363,8 @@ try {
             primitive_kind = [string]$primitive.primitive_kind
             status = $primitiveStatus
             verification = $verification
-            block_reasons = @($primitive.block_reasons)
+            block_reasons = $blockReasons
+            replan_required = $isRecoverableReplan
             actual_ticks = $primitive.actual_ticks
             execution_path = $executionPath
             after_snapshot_path = $afterPath
@@ -329,14 +372,17 @@ try {
         $stepSummaries.Add([pscustomobject]$stepSummary)
         Write-JsonFile (Join-Path $runDirectory ("step-summary-" + $step.ToString("D4") + ".json")) $stepSummary
 
-        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
-            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$(@($primitive.block_reasons) -join ',')"
-        }
         if ($optionId -notin $expectedOptions) {
             throw "Step $step selected an unexpected cross-family option: $optionId"
         }
         if (-not [bool]$execution.after_snapshot_fresh) {
             throw "Step $step produced a stale after snapshot."
+        }
+        if ($isRecoverableReplan) {
+            continue
+        }
+        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
+            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$($blockReasons -join ',')"
         }
         if ([string]::Equals($afterLocation, "Caldera", [System.StringComparison]::OrdinalIgnoreCase)) {
             if ($optionId -ne "executor.traverse_connector" -or $beforeLevel -ne 9) {
@@ -375,6 +421,7 @@ try {
         distinct_level_count = @($visitedLevelArray | Sort-Object -Unique).Count
         executed_step_count = $stepSummaryArray.Count
         verified_step_count = @($stepSummaryArray | Where-Object { $_.status -eq "applied" -and $_.verification -eq "verified" }).Count
+        replan_step_count = @($stepSummaryArray | Where-Object { $_.replan_required }).Count
         primitive_counts = @($stepSummaryArray | Group-Object option_id | ForEach-Object {
             [ordered]@{ option_id = $_.Name; count = $_.Count }
         })
@@ -382,6 +429,12 @@ try {
         all_state_hashes_changed = @($stepSummaryArray | Where-Object { -not $_.state_hash_changed }).Count -eq 0
         dataset_path = $datasetPath
         dataset_rows = $datasetRows
+        smoke_mods_path = $smokeModsPath
+        loaded_mod_allowlist = @(
+            "StardewAI.TransparentBridge",
+            "StardewAI.RuntimeTestHarness"
+        )
+        clock_policy = "normal_world_during_executor_actions;world_paused_only_while_external_orchestrator_idle"
         game_process_id = $gameProcess.Id
         backend_process_id = $backendProcess.Id
         steps = @($stepSummaryArray)

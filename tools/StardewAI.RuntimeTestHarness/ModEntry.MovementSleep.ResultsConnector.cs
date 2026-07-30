@@ -27,6 +27,7 @@ public sealed partial class ModEntry : Mod
 {
     private void CompleteMove(ActiveTileMove move, string verificationStatus, string[] verificationReasons)
     {
+        ReleaseMovementIncidentalDialogueButton(move);
         StopAllMovement();
         activeTileMove = null;
         move.Pending.Completion.SetResult(CompletedMove(move.Pending, move.StartTile, move.TargetTile, Game1.player.TilePoint, verificationStatus, verificationReasons));
@@ -34,6 +35,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteBlockedMove(ActiveTileMove move, string reason)
     {
+        ReleaseMovementIncidentalDialogueButton(move);
         StopAllMovement();
         activeTileMove = null;
         move.Pending.Completion.SetResult(BlockedWithPrimitive(

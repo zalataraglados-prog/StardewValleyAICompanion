@@ -308,7 +308,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("executor.consume_food", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ImmediateMiningThreat(mine)", recoverySource, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiRightButtonOverride(pressed: true", recoverySource, StringComparison.Ordinal);
-        Assert.Contains("answerDialogueAction(\"Eat_Yes\"", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.Y, pressed: true", recoverySource, StringComparison.Ordinal);
+        Assert.Contains("WaitForPromptClose", recoverySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("answerDialogueAction(\"Eat_Yes\"", recoverySource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.isEating", recoverySource, StringComparison.Ordinal);
         Assert.Contains("active.PreInputSettleTicks++", recoverySource, StringComparison.Ordinal);
         Assert.Contains("consume_food_pre_input_animation_timeout", recoverySource, StringComparison.Ordinal);
@@ -329,7 +331,7 @@ public sealed partial class MiningFloorStepPlannerTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "answerDialogueAction(\"Eat_Yes\"",
+            "ReleaseEmergencyCombatFoodConfirmationButton",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

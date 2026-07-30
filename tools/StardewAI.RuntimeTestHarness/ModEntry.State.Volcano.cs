@@ -184,6 +184,7 @@ public sealed partial class ModEntry : Mod
             LastMovementPosition = Game1.player.Position;
             LastMovementTile = Game1.player.TilePoint;
             LastProgressTargetHealth = target.Health;
+            LastProgressTargetPosition = target.Position;
             TargetHealthSequence.Add(target.Health);
             PlayerHealthSequence.Add(Game1.player.health);
         }
@@ -212,13 +213,23 @@ public sealed partial class ModEntry : Mod
         public int PathFailures { get; set; }
         public int StuckTicks { get; set; }
         public bool AttackButtonHeld { get; set; }
+        public int DefeatSettleTicks { get; set; }
+        public bool DefeatDialogueButtonHeld { get; set; }
+        public int DefeatDialoguePressAttempts { get; set; }
         public int AttackCount { get; set; }
         public int HitCount { get; set; }
         public Vector2 LastProgressPosition { get; set; }
         public Vector2 LastMovementPosition { get; set; }
         public Point LastMovementTile { get; set; }
         public int LastProgressTargetHealth { get; set; }
+        public Vector2 LastProgressTargetPosition { get; set; }
         public int NoProgressTicks { get; set; }
+        public string LastNoProgressReason { get; set; } = "combat_initializing";
+        public Point? ClearanceTarget { get; set; }
+        public Tool? ClearanceTool { get; set; }
+        public string ClearanceBefore { get; set; } = string.Empty;
+        public bool ClearanceButtonHeld { get; set; }
+        public int ClearanceSwings { get; set; }
         public List<int> TargetHealthSequence { get; } = new();
         public List<int> PlayerHealthSequence { get; } = new();
     }

@@ -343,16 +343,20 @@ public sealed class ModEntry : Mod
     private async Task<SnapshotEnvelope> GetLatestSnapshotAsync(HttpListenerRequest request)
     {
         var profile = SnapshotProfile(request);
-        lock (snapshotLock)
+        var forceRefresh = SnapshotForceRefresh(request);
+        if (!forceRefresh)
         {
-            if (profileSnapshots.TryGetValue(profile, out var cached) && IsSnapshotFresh(cached, Interlocked.Read(ref latestGameTick)))
+            lock (snapshotLock)
             {
-                return cached;
+                if (profileSnapshots.TryGetValue(profile, out var cached) && IsSnapshotFresh(cached, Interlocked.Read(ref latestGameTick)))
+                {
+                    return cached;
+                }
             }
         }
 
         var completion = new TaskCompletionSource<SnapshotEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
-        pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(profile, completion));
+        pendingSnapshotRequests.Enqueue(new PendingSnapshotRequest(profile, forceRefresh, completion));
         return await completion.Task.WaitAsync(TimeSpan.FromSeconds(180));
     }
 
@@ -383,7 +387,8 @@ public sealed class ModEntry : Mod
             requests.Add(request);
         }
 
-        foreach (var group in requests.GroupBy(item => item.Profile, StringComparer.OrdinalIgnoreCase))
+        foreach (var group in requests.GroupBy(
+                     item => (Profile: item.Profile.ToLowerInvariant(), item.ForceRefresh)))
         {
             try
             {
@@ -391,9 +396,11 @@ public sealed class ModEntry : Mod
                 SnapshotEnvelope snapshot;
                 lock (snapshotLock)
                 {
-                    snapshot = profileSnapshots.TryGetValue(group.Key, out var cached) && IsSnapshotFresh(cached, currentGameTick)
+                    snapshot = !group.Key.ForceRefresh &&
+                               profileSnapshots.TryGetValue(group.Key.Profile, out var cached) &&
+                               IsSnapshotFresh(cached, currentGameTick)
                         ? cached
-                        : RefreshSnapshotCache(group.Key, publishSnapshotEvent: true);
+                        : RefreshSnapshotCache(group.Key.Profile, publishSnapshotEvent: true);
                 }
 
                 foreach (var request in group)
@@ -403,7 +410,7 @@ public sealed class ModEntry : Mod
             }
             catch (Exception ex)
             {
-                Monitor.Log($"Main-thread snapshot collection failed for profile '{group.Key}': {ex}", LogLevel.Error);
+                Monitor.Log($"Main-thread snapshot collection failed for profile '{group.Key.Profile}': {ex}", LogLevel.Error);
                 foreach (var request in group)
                 {
                     request.Completion.TrySetException(ex);
@@ -608,6 +615,12 @@ public sealed class ModEntry : Mod
             ? profile
             : "light";
         return value is "daily" or "route" or "shop" or "machine" or "training_machine" or "fishing" or "mining" or "volcano" or "full" ? value : "light";
+    }
+
+    private static bool SnapshotForceRefresh(HttpListenerRequest request)
+    {
+        return ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("fresh", out var value) &&
+               (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1");
     }
 
     private static ISet<string>? AllowedDomainsForProfile(string profile)
@@ -896,5 +909,6 @@ public sealed class ModEntry : Mod
 
     private sealed record PendingSnapshotRequest(
         string Profile,
+        bool ForceRefresh,
         TaskCompletionSource<SnapshotEnvelope> Completion);
 }

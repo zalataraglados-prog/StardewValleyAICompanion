@@ -231,6 +231,28 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (TickMovementIncidentalDialogue(move))
+        {
+            return;
+        }
+
+        if ((string.Equals(
+                 move.Pending.Request.OptionId,
+                 "executor.move_to_tile",
+                 StringComparison.Ordinal) ||
+             string.Equals(
+                 move.Pending.Request.OptionId,
+                 "executor.traverse_connector",
+                 StringComparison.Ordinal)) &&
+            Game1.currentLocation is VolcanoDungeon volcano &&
+            ImmediateVolcanoThreat(volcano))
+        {
+            CompleteBlockedMove(
+                move,
+                "volcano_movement_unsafe_monster_window");
+            return;
+        }
+
         if (Game1.player.TilePoint == move.TargetTile)
         {
             if (move.AllowsLocationChange)
@@ -396,6 +418,12 @@ public sealed partial class ModEntry : Mod
         }
 
         var direction = DirectionTo(currentTile, nextTile);
+        if (move.CurrentDirection.HasValue &&
+            move.CurrentDirection.Value != direction &&
+            !HasReachedTurnCenter(currentTile, move.CurrentDirection.Value))
+        {
+            direction = move.CurrentDirection.Value;
+        }
         var movedSinceLastTick = Vector2.DistanceSquared(move.LastPosition, Game1.player.Position) >= 0.01f;
         move.LastPosition = Game1.player.Position;
         StartMovingIfNeeded(move, direction);
@@ -418,7 +446,16 @@ public sealed partial class ModEntry : Mod
 
         if (move.StuckTicks > 45)
         {
-            CompleteBlockedMove(move, "movement_stuck_or_collision_blocked");
+            CompleteBlockedMove(
+                move,
+                "movement_stuck_or_collision_blocked:" +
+                "tile=" + currentTile.X + "," + currentTile.Y +
+                ";next=" + nextTile.X + "," + nextTile.Y +
+                ";direction=" + direction +
+                ";can_move=" + Game1.player.CanMove.ToString().ToLowerInvariant() +
+                ";using_tool=" + Game1.player.UsingTool.ToString().ToLowerInvariant() +
+                ";menu=" + (Game1.activeClickableMenu?.GetType().FullName ?? "none") +
+                ";standing_pixel=" + Game1.player.StandingPixel.X + "," + Game1.player.StandingPixel.Y);
             return;
         }
 
@@ -427,6 +464,85 @@ public sealed partial class ModEntry : Mod
         {
             CompleteBlockedMove(move, "movement_timeout");
         }
+    }
+
+    private bool TickMovementIncidentalDialogue(ActiveTileMove move)
+    {
+        if (move.IncidentalDialogueButtonHeld)
+        {
+            if (!TryApplySmapiLeftButtonOverride(
+                    pressed: false,
+                    out var releaseReason))
+            {
+                CompleteBlockedMove(
+                    move,
+                    "movement_incidental_dialogue_release_failed:" +
+                        releaseReason);
+                return true;
+            }
+            move.IncidentalDialogueButtonHeld = false;
+            return true;
+        }
+
+        if (Game1.activeClickableMenu is null)
+        {
+            return false;
+        }
+        if (Game1.activeClickableMenu is not DialogueBox dialogue ||
+            dialogue.isQuestion ||
+            dialogue.characterDialogue is not null ||
+            Game1.eventUp)
+        {
+            CompleteBlockedMove(
+                move,
+                "movement_interrupted_by_non_incidental_menu");
+            return true;
+        }
+
+        StopAllMovement();
+        move.CurrentDirection = null;
+        move.StuckTicks = 0;
+        move.LastPosition = Game1.player.Position;
+        if (dialogue.transitioning || dialogue.safetyTimer > 0)
+        {
+            return true;
+        }
+        if (move.IncidentalDialoguePressAttempts >= 16)
+        {
+            CompleteBlockedMove(
+                move,
+                "movement_incidental_dialogue_dismiss_budget_exceeded");
+            return true;
+        }
+        if (!TryApplySmapiLeftButtonOverride(
+                pressed: true,
+                out var pressReason))
+        {
+            CompleteBlockedMove(
+                move,
+                "movement_incidental_dialogue_press_failed:" +
+                    pressReason);
+            return true;
+        }
+
+        if (move.IncidentalDialoguePressAttempts == 0)
+        {
+            move.Pending.MovementIncidentalDialogues++;
+        }
+        move.IncidentalDialoguePressAttempts++;
+        move.IncidentalDialogueButtonHeld = true;
+        return true;
+    }
+
+    private void ReleaseMovementIncidentalDialogueButton(
+        ActiveTileMove move)
+    {
+        if (!move.IncidentalDialogueButtonHeld)
+        {
+            return;
+        }
+        TryApplySmapiLeftButtonOverride(pressed: false, out _);
+        move.IncidentalDialogueButtonHeld = false;
     }
 
     private static bool IsFarmerCenteredOnTile(Point tile)
@@ -439,6 +555,24 @@ public sealed partial class ModEntry : Mod
             (int)Math.Ceiling(Game1.player.getMovementSpeed() / 2f));
         return Math.Abs(center.X - targetX) <= tolerance &&
             Math.Abs(center.Y - targetY) <= tolerance;
+    }
+
+    private static bool HasReachedTurnCenter(Point tile, int currentDirection)
+    {
+        var center = Game1.player.StandingPixel;
+        var targetX = tile.X * Game1.tileSize + Game1.tileSize / 2;
+        var targetY = tile.Y * Game1.tileSize + Game1.tileSize / 2;
+        var tolerance = Math.Max(
+            2,
+            (int)Math.Ceiling(Game1.player.getMovementSpeed() / 2f));
+        return currentDirection switch
+        {
+            0 => center.Y <= targetY + tolerance,
+            1 => center.X >= targetX - tolerance,
+            2 => center.Y >= targetY - tolerance,
+            3 => center.X <= targetX + tolerance,
+            _ => true
+        };
     }
 
     private void SettleFarmerOnTargetTile(ActiveTileMove move)
@@ -551,6 +685,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteConnectorMoveAfterLocationChange(ActiveTileMove move)
     {
+        ReleaseMovementIncidentalDialogueButton(move);
         StopAllMovement();
         activeTileMove = null;
 
@@ -602,8 +737,13 @@ public sealed partial class ModEntry : Mod
 
     private static string MovementCostSuffix(PendingExecution pending)
     {
-        return pending.MovementExtraTicks > 0 || pending.MovementClearanceActions > 0
-            ? ";movement_extra_ticks=" + pending.MovementExtraTicks + ";clearance_actions=" + pending.MovementClearanceActions
+        return pending.MovementExtraTicks > 0 ||
+            pending.MovementClearanceActions > 0 ||
+            pending.MovementIncidentalDialogues > 0
+            ? ";movement_extra_ticks=" + pending.MovementExtraTicks +
+                ";clearance_actions=" + pending.MovementClearanceActions +
+                ";incidental_dialogues=" +
+                pending.MovementIncidentalDialogues
             : string.Empty;
     }
 
