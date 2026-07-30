@@ -23,7 +23,9 @@ namespace StardewAI.Core.Execution
             bool bombFinisherAvailable = false,
             string[]? targetMonsterNameFragments = null,
             bool matchAnySlimeName = false,
-            string combatIntent = TrainingCombatIntents.TargetDefeat)
+            string combatIntent = TrainingCombatIntents.TargetDefeat,
+            string targetRuntimeIdentity = "",
+            bool requireMelee = false)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -34,6 +36,12 @@ namespace StardewAI.Core.Execution
                 ? new HashSet<string>(targetDropIds, StringComparer.OrdinalIgnoreCase)
                 : null;
             return monsters.EnumerateArray()
+                .Where(monster =>
+                    string.IsNullOrWhiteSpace(targetRuntimeIdentity) ||
+                    string.Equals(
+                        ReadString(monster, "runtime_identity"),
+                        targetRuntimeIdentity,
+                        StringComparison.Ordinal))
                 .Select(monster =>
                 {
                     var possible = ExpandMonsterPossibleDrops(monster, dropCatalogs);
@@ -42,7 +50,13 @@ namespace StardewAI.Core.Execution
                         Monster = monster,
                         Candidate = TargetCandidate(monster, search, grid, estimatedSwings: 0, deterministicLadder: false),
                         Match = BuildMonsterDropMatch(monster, targets, possible, dropCatalogs),
-                        Combat = ReadBestCombatProjection(monster, search.Start, grid, movementTileDurationMs, bombFinisherAvailable)
+                        Combat = ReadBestCombatProjection(
+                            monster,
+                            search.Start,
+                            grid,
+                            movementTileDurationMs,
+                            bombFinisherAvailable,
+                            requireMelee)
                     };
                 })
                 .Where(row => targetMonsterNameFragments is not { Length: > 0 } ||
@@ -142,7 +156,8 @@ namespace StardewAI.Core.Execution
             (int X, int Y) playerTile,
             bool[,] grid,
             double? movementTileDurationMs,
-            bool bombFinisherAvailable)
+            bool bombFinisherAvailable,
+            bool requireMelee = false)
         {
             var melee = ReadCombatProjections(monster, "melee_attack_projections", "melee", "expected_attacks_to_defeat",
                     "exact_active_melee_phase_excluding_movement")
@@ -171,7 +186,9 @@ namespace StardewAI.Core.Execution
                     string.Equals(projection.AmmoQualifiedItemId, "(O)441", StringComparison.Ordinal)
                         ? projection.DurationMs / projection.ExplosiveAreaValueMultiplier
                         : projection.DurationMs));
-            return meleeWithMovement.Concat(rangedWithPolicy)
+            return (requireMelee
+                    ? meleeWithMovement
+                    : meleeWithMovement.Concat(rangedWithPolicy))
                 .OrderBy(CombatExposureWindows)
                 .ThenBy(projection => projection.SelectionCostMs)
                 .ThenBy(projection => projection.Method == "melee" ? 0 : 1)
@@ -439,7 +456,13 @@ namespace StardewAI.Core.Execution
                 {
                     Monster = monster,
                     Candidate = TargetCandidate(monster, search, grid, 0, false),
-                    Combat = ReadBestCombatProjection(monster, start, grid, movementTileDurationMs, bombFinisherAvailable)
+                    Combat = ReadBestCombatProjection(
+                        monster,
+                        start,
+                        grid,
+                        movementTileDurationMs,
+                        bombFinisherAvailable,
+                        requireMelee: true)
                 })
                 .Where(row => row.Candidate is not null)
                 .OrderBy(row => row.Candidate!.Distance)

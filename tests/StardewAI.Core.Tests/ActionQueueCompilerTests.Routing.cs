@@ -292,6 +292,70 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompilePlanMoveToTileSkipsCloserSideObstacleThatDoesNotReduceRequiredClears()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[{"tile_x":1,"tile_y":0,"type":"Grass"},{"tile_x":3,"tile_y":1,"type":"Grass"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":6,"height":2},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":6,"height":2,"notable_tiles":[{"tile_x":1,"tile_y":0,"collision_blocked":true},{"tile_x":2,"tile_y":0,"collision_blocked":true},{"tile_x":3,"tile_y":0,"collision_blocked":true},{"tile_x":4,"tile_y":0,"collision_blocked":true},{"tile_x":5,"tile_y":0,"collision_blocked":true},{"tile_x":3,"tile_y":1,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.skip.side.clear",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 5,
+                TargetTileY = 1,
+                EstimatedMinutes = 2
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal(3, queue.Items.Length);
+        Assert.Equal("executor.clear_obstacle", queue.Items[1].OptionId);
+        Assert.Contains(
+            queue.Items[1].NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "target_tile_x" &&
+                parameter.Value == "3");
+        Assert.Contains(
+            queue.Items[1].NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "target_tile_y" &&
+                parameter.Value == "1");
+        Assert.DoesNotContain(
+            queue.Items,
+            item => item.NormalizedCommand.Parameters.Any(
+                parameter =>
+                    parameter.Name == "target_tile_x" &&
+                    parameter.Value == "1") &&
+                item.NormalizedCommand.Parameters.Any(
+                    parameter =>
+                        parameter.Name == "target_tile_y" &&
+                        parameter.Value == "0"));
+    }
+
+    [Fact]
     public void CompilePlanMoveToTileDoesNotInsertPartialRepairWhenBudgetCannotReachTarget()
     {
         var snapshot = Snapshot("""

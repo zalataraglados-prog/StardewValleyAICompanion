@@ -14,6 +14,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$recoverableReplanReasons = @(
+    "combat_disengaged_transit_target",
+    "combat_target_not_found_or_moved"
+)
 
 function Write-JsonFile {
     param([string] $Path, $Value)
@@ -335,6 +339,17 @@ try {
         $optionId = [string]$primitive.option_id
         $primitiveStatus = [string]$primitive.status
         $verification = [string]$primitive.primitive_verification_status
+        $blockReasons = @($primitive.block_reasons)
+        $isRecoverableReplan = (
+            $primitiveStatus -eq "blocked" -and
+            $verification -eq "blocked" -and
+            $blockReasons.Count -gt 0 -and
+            @($blockReasons | Where-Object {
+                $_ -notin $recoverableReplanReasons
+            }).Count -eq 0 -and
+            [bool]$execution.after_snapshot_fresh -and
+            [bool]$execution.state_hash_changed
+        )
         $expectedOptions = @(
             "executor.move_to_tile",
             "executor.mine_stone",
@@ -367,7 +382,8 @@ try {
             primitive_kind = [string]$primitive.primitive_kind
             status = $primitiveStatus
             verification = $verification
-            block_reasons = @($primitive.block_reasons)
+            block_reasons = $blockReasons
+            replan_required = $isRecoverableReplan
             actual_ticks = $primitive.actual_ticks
             execution_path = $executionPath
             after_snapshot_path = $afterPath
@@ -375,14 +391,17 @@ try {
         $stepSummaries.Add([pscustomobject]$stepSummary)
         Write-JsonFile (Join-Path $runDirectory ("step-summary-" + $step.ToString("D4") + ".json")) $stepSummary
 
-        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
-            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$(@($primitive.block_reasons) -join ',')"
-        }
         if ($optionId -notin $expectedOptions) {
             throw "Step $step selected an unexpected cross-family option: $optionId"
         }
         if (-not [bool]$execution.after_snapshot_fresh) {
             throw "Step $step produced a stale after snapshot."
+        }
+        if ($isRecoverableReplan) {
+            continue
+        }
+        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
+            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$($blockReasons -join ',')"
         }
 
         if ($optionId -eq "executor.interact") {

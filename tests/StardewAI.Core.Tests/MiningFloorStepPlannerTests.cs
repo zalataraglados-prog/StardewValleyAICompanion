@@ -132,6 +132,13 @@ public sealed partial class MiningFloorStepPlannerTests
                 "10000000000000011001",
                 "11111111111111111111"
             },
+            staticRows: new[]
+            {
+                "11111111111111111111",
+                "10000000000000000001",
+                "10000000000000000001",
+                "11111111111111111111"
+            },
             mineKind: "quarry_mine",
             goldenScytheApplicable: true,
             objective: new MiningFloorObjective
@@ -192,6 +199,7 @@ public sealed partial class MiningFloorStepPlannerTests
             exits: "[{\"tile_x\":5,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
             objects: "[{\"tile_x\":3,\"tile_y\":2,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":1}]",
             rows: new[] { "1111111", "1001001", "1001001", "1001001", "1111111" },
+            staticRows: new[] { "1111111", "1000001", "1000001", "1000001", "1111111" },
             mineKind: "quarry_mine",
             goldenScytheApplicable: true,
             goldenScytheClaimed: true,
@@ -219,6 +227,14 @@ public sealed partial class MiningFloorStepPlannerTests
                 "10001001",
                 "11111111"
             },
+            staticRows: new[]
+            {
+                "11111111",
+                "10000001",
+                "10000001",
+                "10000001",
+                "11111111"
+            },
             mineKind: "quarry_mine",
             goldenScytheApplicable: true,
             goldenScytheClaimed: true,
@@ -230,7 +246,7 @@ public sealed partial class MiningFloorStepPlannerTests
 
         Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
         Assert.Equal(
-            "golden_scythe_exit_route_blocked_by_dynamic_monster",
+            "quarry_route_blocked_by_attributed_monster",
             plan.Reason);
         Assert.Equal(
             TrainingCombatIntents.TransitRouteClearance,
@@ -241,6 +257,21 @@ public sealed partial class MiningFloorStepPlannerTests
                 parameter.Name == "combat_intent" &&
                 parameter.Value ==
                     TrainingCombatIntents.TransitRouteClearance);
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "route_objective_id" &&
+                parameter.Value == "golden_scythe_exit");
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "blocked_route_cell_x" &&
+                parameter.Value == "4");
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "route_target_stand_tile_x");
+        Assert.True(plan.ExpectedConnectivityGain >= 1);
     }
 
     [Fact]
@@ -252,9 +283,17 @@ public sealed partial class MiningFloorStepPlannerTests
             rows: new[]
             {
                 "11111111111111111111",
-                "10000000010000000001",
-                "10000000010000000001",
-                "10000000010000000001",
+                "10000000100000000001",
+                "10000000100000000001",
+                "10000000100000000001",
+                "11111111111111111111"
+            },
+            staticRows: new[]
+            {
+                "11111111111111111111",
+                "10000000000000000001",
+                "10000000000000000001",
+                "10000000000000000001",
                 "11111111111111111111"
             },
             mineKind: "quarry_mine",
@@ -274,6 +313,117 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal(
             "executor.move_to_tile",
             MiningFloorStepCompiler.ExecutionOptionId(plan));
+    }
+
+    [Fact]
+    public void GoldenScytheExitChoosesAttributedBlockerOverCloserSideMonster()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":6,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            monsters: """
+            [
+              {"runtime_identity":"side-monster","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Side Slime","tile_x":2,"tile_y":1,"health":20,"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":2.0,"expected_active_damage_duration_ms":600.0,"terminal_effect":"defeat"}]},
+              {"runtime_identity":"route-blocker","runtime_type":"StardewValley.Monsters.GreenSlime","name":"Route Slime","tile_x":4,"tile_y":2,"health":20,"melee_attack_projections":[{"slot_index":1,"expected_attacks_to_defeat":3.0,"expected_active_damage_duration_ms":900.0,"terminal_effect":"defeat"}]}
+            ]
+            """,
+            rows: new[]
+            {
+                "11111111",
+                "10011111",
+                "10001001",
+                "11111111"
+            },
+            staticRows: new[]
+            {
+                "11111111",
+                "10001111",
+                "10000001",
+                "11111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe,
+                ThreatRadiusTiles = 1
+            });
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal("route-blocker", plan.TargetRuntimeIdentity);
+        Assert.Equal(4, plan.BlockedRouteCellX);
+        Assert.Equal(
+            "exact_static_route_cell_identity",
+            plan.BlockerAttributionStatus);
+    }
+
+    [Fact]
+    public void GoldenScytheExitFailsClosedForUnattributedDynamicBlock()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":6,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            objects: "[{\"tile_x\":2,\"tile_y\":1,\"qualified_item_id\":\"(O)32\",\"is_breakable_stone\":true,\"best_pickaxe_hits_remaining\":1}]",
+            rows: new[]
+            {
+                "11111111",
+                "10111111",
+                "10001001",
+                "11111111"
+            },
+            staticRows: new[]
+            {
+                "11111111",
+                "10001111",
+                "10000001",
+                "11111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe
+            });
+
+        Assert.Equal(MiningFloorStepKinds.Blocked, plan.StepKind);
+        Assert.Equal("quarry_route_blocker_unattributed", plan.Reason);
+    }
+
+    [Fact]
+    public void GoldenScytheRouteClearanceFreshSnapshotShowsConnectivityGain()
+    {
+        var before = Plan(
+            exits: "[{\"tile_x\":6,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            monsters: "[{\"runtime_identity\":\"route-blocker\",\"runtime_type\":\"StardewValley.Monsters.GreenSlime\",\"name\":\"Green Slime\",\"tile_x\":4,\"tile_y\":2,\"health\":20,\"melee_attack_projections\":[{\"slot_index\":1,\"expected_attacks_to_defeat\":3.0,\"expected_active_damage_duration_ms\":900.0,\"terminal_effect\":\"defeat\"}]}]",
+            rows: new[] { "11111111", "11111111", "10001001", "11111111" },
+            staticRows: new[] { "11111111", "11111111", "10000001", "11111111" },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe,
+                ThreatRadiusTiles = 1
+            });
+        var after = Plan(
+            exits: "[{\"tile_x\":6,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            rows: new[] { "11111111", "11111111", "10000001", "11111111" },
+            staticRows: new[] { "11111111", "11111111", "10000001", "11111111" },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe,
+                ThreatRadiusTiles = 1
+            });
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, before.StepKind);
+        Assert.True(before.ExpectedConnectivityGain >= 1);
+        Assert.Equal(MiningFloorStepKinds.ExitMine, after.StepKind);
+        Assert.Equal(
+            "golden_scythe_acquired_exit_quarry_mine",
+            after.Reason);
     }
 
     [Fact]

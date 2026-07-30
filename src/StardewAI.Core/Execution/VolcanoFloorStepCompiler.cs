@@ -82,6 +82,39 @@ namespace StardewAI.Core.Execution
                 parameters,
                 "combat_intent",
                 plan.CombatIntent);
+            Add(parameters, "route_objective_id", plan.RouteObjectiveId);
+            Add(
+                parameters,
+                "route_target_tile_x",
+                plan.RouteTargetTileX);
+            Add(
+                parameters,
+                "route_target_tile_y",
+                plan.RouteTargetTileY);
+            Add(
+                parameters,
+                "route_target_stand_tile_x",
+                plan.RouteTargetStandTileX);
+            Add(
+                parameters,
+                "route_target_stand_tile_y",
+                plan.RouteTargetStandTileY);
+            Add(
+                parameters,
+                "blocked_route_cell_x",
+                plan.BlockedRouteCellX);
+            Add(
+                parameters,
+                "blocked_route_cell_y",
+                plan.BlockedRouteCellY);
+            Add(
+                parameters,
+                "blocker_attribution_status",
+                plan.BlockerAttributionStatus);
+            Add(
+                parameters,
+                "expected_connectivity_gain",
+                plan.ExpectedConnectivityGain);
             Add(
                 parameters,
                 "target_runtime_identity",

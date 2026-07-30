@@ -173,6 +173,18 @@ namespace StardewAI.Core.Execution
                 }
 
                 var claimed = ReadBool(objectives, "golden_scythe_claimed");
+                var altars = default(JsonElement);
+                if (!claimed &&
+                    (!tiles.TryGetProperty(
+                        "golden_scythe_altars",
+                        out altars) ||
+                     altars.ValueKind != JsonValueKind.Array ||
+                     altars.GetArrayLength() == 0))
+                {
+                    return Blocked(
+                        "golden_scythe_altar_action_unavailable");
+                }
+
                 if (claimed)
                 {
                     var exit = SelectMineExit(
@@ -188,14 +200,6 @@ namespace StardewAI.Core.Execution
                 else if (ReadInventoryEmptySlots(resources) <= 0)
                 {
                     return Blocked("golden_scythe_inventory_full");
-                }
-                var altars = default(JsonElement);
-                if (!claimed &&
-                    (!tiles.TryGetProperty("golden_scythe_altars", out altars) ||
-                     altars.ValueKind != JsonValueKind.Array ||
-                     altars.GetArrayLength() == 0))
-                {
-                    return Blocked("golden_scythe_altar_action_unavailable");
                 }
 
                 var threat = SelectImmediateThreat(
@@ -216,47 +220,6 @@ namespace StardewAI.Core.Execution
                     return threat;
                 }
 
-                if (claimed)
-                {
-                    var exitBlocker = SelectMonster(
-                        monsters,
-                        search,
-                        grid,
-                        "golden_scythe_exit_route_blocked_by_dynamic_monster",
-                        movementTileDurationMs: movementTileDurationMs,
-                        bombFinisherAvailable: bombFinisherAvailable,
-                        combatIntent:
-                            TrainingCombatIntents.TransitRouteClearance);
-                    if (exitBlocker is not null)
-                    {
-                        exitBlocker.SafetyWindowStatus =
-                            "mandatory_exit_route_dynamic_blocker";
-                        exitBlocker.RestoreSlotIndex = restoreSlot;
-                        return exitBlocker;
-                    }
-
-                    var exitRouteStone = SelectStone(
-                        objects,
-                        search,
-                        grid);
-                    if (exitRouteStone is not null)
-                    {
-                        if (exitRouteStone.EstimatedMovementTiles >
-                            ObjectiveApproachHorizonTiles)
-                        {
-                            return BuildObjectiveApproachStep(
-                                exitRouteStone,
-                                MiningFloorStepKinds.MoveToMineExitRoute,
-                                "approach_golden_scythe_exit_route_clearance",
-                                "golden_scythe_exit_route_clearance_replan_required");
-                        }
-
-                        exitRouteStone.Reason =
-                            "golden_scythe_exit_route_blocked_by_removable_stone";
-                        return exitRouteStone;
-                    }
-                }
-
                 if (!claimed)
                 {
                     var altarStep = SelectGoldenScytheAltarStep(
@@ -269,36 +232,78 @@ namespace StardewAI.Core.Execution
                     }
                 }
 
-                var routeClump = SelectResourceClump(
-                    resourceClumps,
-                    search,
-                    grid);
-                if (routeClump is not null)
+                if (!TryStaticCollision(
+                        tiles,
+                        out var staticGrid,
+                        out var staticStart) ||
+                    staticStart != start)
                 {
-                    if (routeClump.EstimatedMovementTiles >
-                        ObjectiveApproachHorizonTiles)
-                    {
-                        var approach = BuildObjectiveApproachStep(
-                            routeClump,
-                            claimed
-                                ? MiningFloorStepKinds.MoveToMineExitRoute
-                                : MiningFloorStepKinds.MoveToGoldenScytheAltar,
-                            claimed
-                                ? "approach_golden_scythe_exit_route_clearance"
-                                : "approach_golden_scythe_route_clearance",
-                            claimed
-                                ? "golden_scythe_exit_route_clearance_replan_required"
-                                : "golden_scythe_route_clearance_replan_required");
-                        approach.TargetQualifiedItemId = "(W)53";
-                        return approach;
-                    }
-
-                    routeClump.Reason =
-                        claimed
-                            ? "golden_scythe_exit_route_blocked_by_removable_resource_clump"
-                            : "golden_scythe_route_blocked_by_removable_resource_clump";
-                    return routeClump;
+                    return Blocked(
+                        "golden_scythe_static_route_context_unavailable");
                 }
+
+                var staticSearch = Search(
+                    staticGrid,
+                    staticStart);
+                var staticRoute = claimed
+                    ? SelectMineExit(
+                        tiles,
+                        staticSearch,
+                        staticGrid,
+                        "golden_scythe_acquired_exit_quarry_mine")
+                    : SelectGoldenScytheAltarStep(
+                        altars,
+                        staticSearch,
+                        staticGrid,
+                        boundedApproach: false);
+                if (staticRoute is null)
+                {
+                    return Blocked(
+                        "golden_scythe_static_objective_route_unreachable");
+                }
+
+                var routeBlocker =
+                    SelectAttributedQuarryRouteBlocker(
+                    staticRoute,
+                    claimed
+                        ? "golden_scythe_exit"
+                        : "golden_scythe_altar",
+                    objects,
+                    resourceClumps,
+                    monsters,
+                    search,
+                    grid,
+                    movementTileDurationMs,
+                    bombFinisherAvailable);
+                routeBlocker.RestoreSlotIndex = restoreSlot;
+                routeBlocker.TargetQualifiedItemId =
+                    string.IsNullOrWhiteSpace(
+                        routeBlocker.TargetQualifiedItemId)
+                        ? "(W)53"
+                        : routeBlocker.TargetQualifiedItemId;
+                if (string.Equals(
+                        routeBlocker.Status,
+                        "ready",
+                        StringComparison.Ordinal) &&
+                    routeBlocker.EstimatedMovementTiles >
+                        ObjectiveApproachHorizonTiles)
+                {
+                    var approach = BuildObjectiveApproachStep(
+                        routeBlocker,
+                        claimed
+                            ? MiningFloorStepKinds.MoveToMineExitRoute
+                            : MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                        claimed
+                            ? "approach_golden_scythe_exit_route_clearance"
+                            : "approach_golden_scythe_route_clearance",
+                        claimed
+                            ? "golden_scythe_exit_route_clearance_replan_required"
+                            : "golden_scythe_route_clearance_replan_required");
+                    approach.RestoreSlotIndex = restoreSlot;
+                    approach.TargetQualifiedItemId = "(W)53";
+                    return approach;
+                }
+                return routeBlocker;
             }
 
             if (bombFinisherAvailable)

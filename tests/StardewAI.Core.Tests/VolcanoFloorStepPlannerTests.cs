@@ -255,7 +255,7 @@ public sealed class VolcanoFloorStepPlannerTests
                 ],
                 "blocked_rows":[
                   "11111111111111",
-                  "10100000000001",
+                  "10000000000001",
                   "11111111111111"
                 ]
               },
@@ -608,6 +608,214 @@ public sealed class VolcanoFloorStepPlannerTests
             parameter =>
                 parameter.Name == "max_movement_tiles" &&
                 int.Parse(parameter.Value) < 512);
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "route_objective_id" &&
+                parameter.Value == "volcano_forward_connector");
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "blocked_route_cell_x" &&
+                parameter.Value == "5");
+    }
+
+    [Fact]
+    public void PlannerChoosesRouteBlockerOverCloserSideMonster()
+    {
+        var snapshot = Snapshot("""
+        {
+          "volcano": {
+            "current_level": {"status":"available","value":{"level":7}},
+            "tiles": {"status":"available","value":{
+              "player_tile":{"tile_x":1,"tile_y":2},
+              "collision_context":{
+                "status":"available",
+                "static_blocked_rows":[
+                  "1111111111",
+                  "1000011111",
+                  "1000000001",
+                  "1111111111"
+                ],
+                "blocked_rows":[
+                  "1111111111",
+                  "1000111111",
+                  "1000001001",
+                  "1111111111"
+                ]
+              },
+              "coolable_uncooled_tiles":[]
+            }},
+            "connectors": {"status":"available","value":{
+              "forward_warps":[{
+                "tile_x":8,
+                "tile_y":2,
+                "target_location":"VolcanoDungeon8",
+                "target_tile_x":0,
+                "target_tile_y":1
+              }]
+            }},
+            "gates": {"status":"available","value":[]},
+            "objects": {"status":"available","value":[]},
+            "monsters": {"status":"available","value":[
+              {
+                "runtime_identity":"SIDE",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Side Slime",
+                "tile_x":4,
+                "tile_y":1,
+                "is_glider":false,
+                "melee_executor_supported":true
+              },
+              {
+                "runtime_identity":"BLOCKER",
+                "runtime_type":"StardewValley.Monsters.GreenSlime",
+                "name":"Route Slime",
+                "tile_x":6,
+                "tile_y":2,
+                "is_glider":false,
+                "melee_executor_supported":true
+              }
+            ]},
+            "player_resources": {"status":"available","value":{
+              "pickaxe_slots":[],
+              "heavy_hitter_slots":[],
+              "weapon_slots":[{
+                "slot_index":2,
+                "maximum_damage":120,
+                "is_scythe":false
+              }]
+            }}
+          }
+        }
+        """);
+
+        var step = new VolcanoFloorStepPlanner().Plan(snapshot);
+
+        Assert.Equal(VolcanoFloorStepKinds.CombatMonster, step.StepKind);
+        Assert.Equal("BLOCKER", step.TargetRuntimeIdentity);
+        Assert.Equal(6, step.BlockedRouteCellX);
+        Assert.Equal(
+            "exact_weighted_route_cell_identity",
+            step.BlockerAttributionStatus);
+    }
+
+    [Fact]
+    public void PlannerFailsClosedForUnattributedDynamicRouteBlock()
+    {
+        var snapshot = Snapshot("""
+        {
+          "volcano": {
+            "current_level": {"status":"available","value":{"level":7}},
+            "tiles": {"status":"available","value":{
+              "player_tile":{"tile_x":1,"tile_y":1},
+              "collision_context":{
+                "status":"available",
+                "static_blocked_rows":[
+                  "1111111111",
+                  "1000000001",
+                  "1111111111"
+                ],
+                "blocked_rows":[
+                  "1111111111",
+                  "1000010001",
+                  "1111111111"
+                ]
+              },
+              "coolable_uncooled_tiles":[]
+            }},
+            "connectors": {"status":"available","value":{
+              "forward_warps":[{
+                "tile_x":8,
+                "tile_y":1,
+                "target_location":"VolcanoDungeon8",
+                "target_tile_x":0,
+                "target_tile_y":1
+              }]
+            }},
+            "gates": {"status":"available","value":[]},
+            "objects": {"status":"available","value":[]},
+            "monsters": {"status":"available","value":[]},
+            "player_resources": {"status":"available","value":{
+              "pickaxe_slots":[],
+              "heavy_hitter_slots":[],
+              "weapon_slots":[]
+            }}
+          }
+        }
+        """);
+
+        var step = new VolcanoFloorStepPlanner().Plan(snapshot);
+
+        Assert.Equal(VolcanoFloorStepKinds.Blocked, step.StepKind);
+        Assert.Equal("volcano_route_blocker_unattributed", step.Reason);
+    }
+
+    [Fact]
+    public void PlannerUsesDynamicAlternateRouteInsteadOfClearingMonster()
+    {
+        var snapshot = Snapshot("""
+        {
+          "volcano": {
+            "current_level": {"status":"available","value":{"level":7}},
+            "tiles": {"status":"available","value":{
+              "player_tile":{"tile_x":1,"tile_y":1},
+              "collision_context":{
+                "status":"available",
+                "static_blocked_rows":[
+                  "11111111",
+                  "10000001",
+                  "10000001",
+                  "11111111"
+                ],
+                "blocked_rows":[
+                  "11111111",
+                  "10000101",
+                  "10000001",
+                  "11111111"
+                ]
+              },
+              "coolable_uncooled_tiles":[]
+            }},
+            "connectors": {"status":"available","value":{
+              "forward_warps":[{
+                "tile_x":6,
+                "tile_y":1,
+                "target_location":"VolcanoDungeon8",
+                "target_tile_x":0,
+                "target_tile_y":1
+              }]
+            }},
+            "gates": {"status":"available","value":[]},
+            "objects": {"status":"available","value":[]},
+            "monsters": {"status":"available","value":[{
+              "runtime_identity":"SIDE-ROUTE",
+              "runtime_type":"StardewValley.Monsters.GreenSlime",
+              "name":"Tiger Slime",
+              "tile_x":5,
+              "tile_y":1,
+              "is_glider":false,
+              "melee_executor_supported":true
+            }]},
+            "player_resources": {"status":"available","value":{
+              "pickaxe_slots":[],
+              "heavy_hitter_slots":[],
+              "weapon_slots":[{
+                "slot_index":2,
+                "maximum_damage":120,
+                "is_scythe":false
+              }]
+            }}
+          }
+        }
+        """);
+
+        var step = new VolcanoFloorStepPlanner().Plan(snapshot);
+
+        Assert.Equal(
+            VolcanoFloorStepKinds.TraverseForwardConnector,
+            step.StepKind);
+        Assert.NotEqual("SIDE-ROUTE", step.TargetRuntimeIdentity);
     }
 
     private static SnapshotEnvelope Snapshot(string json)

@@ -62,6 +62,24 @@ namespace StardewAI.Core.Execution
         public string CombatIntent { get; set; } =
             TrainingCombatIntents.TargetDefeat;
 
+        public string RouteObjectiveId { get; set; } = string.Empty;
+
+        public int? RouteTargetTileX { get; set; }
+
+        public int? RouteTargetTileY { get; set; }
+
+        public int? RouteTargetStandTileX { get; set; }
+
+        public int? RouteTargetStandTileY { get; set; }
+
+        public int? BlockedRouteCellX { get; set; }
+
+        public int? BlockedRouteCellY { get; set; }
+
+        public string BlockerAttributionStatus { get; set; } = string.Empty;
+
+        public int? ExpectedConnectivityGain { get; set; }
+
         public string TargetRuntimeIdentity { get; set; } = string.Empty;
 
         public string TargetRuntimeType { get; set; } = string.Empty;
@@ -165,19 +183,21 @@ namespace StardewAI.Core.Execution
                         routeProgress,
                         immediateSearch))
                 {
-                    var dynamicRouteBlocker = SelectNearestMonster(
+                    var dynamicRouteBlocker =
+                        SelectAttributedRouteMonster(
+                        routeProgress,
                         monsters,
                         resources,
                         immediateSearch,
                         immediateStart,
                         connectors,
-                        TrainingCombatIntents.TransitRouteClearance,
-                        maximumGroundDistanceFromPlayer: null,
-                        maximumGliderDistanceFromPlayer: null);
+                        immediateGrid);
                     if (dynamicRouteBlocker is not null)
                     {
                         return dynamicRouteBlocker;
                     }
+                    return Blocked(
+                        "volcano_route_blocker_unattributed");
                 }
 
                 return routeProgress;
@@ -190,13 +210,7 @@ namespace StardewAI.Core.Execution
             VolcanoFloorStepPlan plan,
             SearchResult dynamicSearch)
         {
-            if (plan.StepKind is not (
-                    VolcanoFloorStepKinds.PressDwarfSwitch or
-                    VolcanoFloorStepKinds.CoolLavaTile or
-                    VolcanoFloorStepKinds.CombatMonster or
-                    VolcanoFloorStepKinds.BreakStone or
-                    VolcanoFloorStepKinds.BreakContainer) ||
-                !plan.StandTileX.HasValue ||
+            if (!plan.StandTileX.HasValue ||
                 !plan.StandTileY.HasValue)
             {
                 return true;
@@ -281,6 +295,105 @@ namespace StardewAI.Core.Execution
             return null;
         }
 
+        private static VolcanoFloorStepPlan?
+            SelectAttributedRouteMonster(
+                VolcanoFloorStepPlan routeProgress,
+                JsonElement monsters,
+                JsonElement resources,
+                SearchResult dynamicSearch,
+                (int X, int Y) start,
+                JsonElement connectors,
+                bool[][] dynamicGrid)
+        {
+            var pathLength =
+                routeProgress.StepKind ==
+                    VolcanoFloorStepKinds
+                        .TraverseForwardConnector
+                    ? Math.Max(
+                        1,
+                        routeProgress.Path.Length - 1)
+                    : routeProgress.Path.Length;
+            for (var index = 1;
+                 index < pathLength;
+                 index++)
+            {
+                var cell = routeProgress.Path[index];
+                if (!InBounds(
+                        dynamicGrid,
+                        cell.X,
+                        cell.Y) ||
+                    !dynamicGrid[cell.Y][cell.X])
+                {
+                    continue;
+                }
+
+                var matches = monsters.ValueKind ==
+                    JsonValueKind.Array
+                    ? monsters.EnumerateArray()
+                        .Where(monster =>
+                            VolcanoEntityOccupiesTile(
+                                monster,
+                                cell.X,
+                                cell.Y))
+                        .ToArray()
+                    : Array.Empty<JsonElement>();
+                if (matches.Length != 1)
+                {
+                    return null;
+                }
+
+                var selected = SelectNearestMonster(
+                    monsters,
+                    resources,
+                    dynamicSearch,
+                    start,
+                    connectors,
+                    TrainingCombatIntents
+                        .TransitRouteClearance,
+                    maximumGroundDistanceFromPlayer:
+                        int.MaxValue,
+                    maximumGliderDistanceFromPlayer:
+                        int.MaxValue,
+                    targetRuntimeIdentity: ReadString(
+                        matches[0],
+                        "runtime_identity"));
+                if (selected is null)
+                {
+                    return null;
+                }
+
+                selected.Reason =
+                    "forward_route_attributed_dynamic_monster";
+                selected.RouteObjectiveId =
+                    string.IsNullOrWhiteSpace(
+                        routeProgress.RouteObjectiveId)
+                        ? "volcano_forward_route"
+                        : routeProgress.RouteObjectiveId;
+                selected.RouteTargetTileX =
+                    routeProgress.TargetTileX;
+                selected.RouteTargetTileY =
+                    routeProgress.TargetTileY;
+                selected.RouteTargetStandTileX =
+                    routeProgress.StandTileX;
+                selected.RouteTargetStandTileY =
+                    routeProgress.StandTileY;
+                selected.BlockedRouteCellX = cell.X;
+                selected.BlockedRouteCellY = cell.Y;
+                selected.BlockerAttributionStatus =
+                    "exact_static_route_cell_identity";
+                selected.ExpectedConnectivityGain =
+                    VolcanoExpectedConnectivityGain(
+                        routeProgress.Path,
+                        index,
+                        pathLength,
+                        dynamicGrid,
+                        matches[0]);
+                return selected;
+            }
+
+            return null;
+        }
+
         private static VolcanoFloorStepPlan? SelectNearestMonster(
             JsonElement monsters,
             JsonElement resources,
@@ -289,7 +402,8 @@ namespace StardewAI.Core.Execution
             JsonElement connectors,
             string combatIntent,
             int? maximumGroundDistanceFromPlayer,
-            int? maximumGliderDistanceFromPlayer = null)
+            int? maximumGliderDistanceFromPlayer = null,
+            string targetRuntimeIdentity = "")
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -299,6 +413,17 @@ namespace StardewAI.Core.Execution
             var candidates = new List<(JsonElement Monster, int StandX, int StandY, int Distance, VolcanoPathTile[] Path)>();
             foreach (var monster in monsters.EnumerateArray())
             {
+                if (!string.IsNullOrWhiteSpace(
+                        targetRuntimeIdentity) &&
+                    !string.Equals(
+                        ReadString(
+                            monster,
+                            "runtime_identity"),
+                        targetRuntimeIdentity,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
                 var x = ReadInt(monster, "tile_x");
                 var y = ReadInt(monster, "tile_y");
                 var isGlider = ReadBool(monster, "is_glider");
@@ -313,6 +438,14 @@ namespace StardewAI.Core.Execution
 
                 if (isGlider)
                 {
+                    if (ConnectorSeparatesTiles(
+                            connectors,
+                            start,
+                            (x, y)))
+                    {
+                        continue;
+                    }
+
                     var hasReachableApproach = Directions.Any(
                         direction => search.TryPath(
                             x + direction.X,
@@ -320,11 +453,7 @@ namespace StardewAI.Core.Execution
                             out _));
                     if (!hasReachableApproach)
                     {
-                        if (!maximumDistance.HasValue ||
-                            ConnectorSeparatesTiles(
-                                connectors,
-                                start,
-                                (x, y)))
+                        if (!maximumDistance.HasValue)
                         {
                             continue;
                         }
@@ -388,6 +517,65 @@ namespace StardewAI.Core.Execution
                 CombatIntent = combatIntent,
                 Path = selected.Path
             };
+        }
+
+        private static bool VolcanoEntityOccupiesTile(
+            JsonElement entity,
+            int tileX,
+            int tileY)
+        {
+            if (!entity.TryGetProperty(
+                    "bounding_box",
+                    out var bounds) ||
+                bounds.ValueKind != JsonValueKind.Object)
+            {
+                return ReadInt(entity, "tile_x") == tileX &&
+                    ReadInt(entity, "tile_y") == tileY;
+            }
+
+            var x = ReadInt(bounds, "x");
+            var y = ReadInt(bounds, "y");
+            var width = ReadInt(bounds, "width");
+            var height = ReadInt(bounds, "height");
+            return width > 0 &&
+                height > 0 &&
+                x < (tileX + 1) * 64 &&
+                x + width > tileX * 64 &&
+                y < (tileY + 1) * 64 &&
+                y + height > tileY * 64;
+        }
+
+        private static int VolcanoExpectedConnectivityGain(
+            VolcanoPathTile[] path,
+            int blockedIndex,
+            int pathLength,
+            bool[][] dynamicGrid,
+            JsonElement blocker)
+        {
+            var gain = 0;
+            for (var index = blockedIndex;
+                 index < pathLength;
+                 index++)
+            {
+                var cell = path[index];
+                if (!InBounds(
+                        dynamicGrid,
+                        cell.X,
+                        cell.Y))
+                {
+                    break;
+                }
+                if (dynamicGrid[cell.Y][cell.X] &&
+                    !VolcanoEntityOccupiesTile(
+                        blocker,
+                        cell.X,
+                        cell.Y))
+                {
+                    break;
+                }
+                gain++;
+            }
+            return Math.Max(1, gain);
         }
 
         private static bool ConnectorSeparatesTiles(
@@ -484,7 +672,8 @@ namespace StardewAI.Core.Execution
                         monster,
                         resources,
                         stand,
-                        pathToStand);
+                        pathToStand,
+                        route.Goal);
                 }
                 if (obstacleByTile.TryGetValue(key, out var obstacle))
                 {
@@ -492,7 +681,8 @@ namespace StardewAI.Core.Execution
                         obstacle,
                         resources,
                         stand,
-                        pathToStand);
+                        pathToStand,
+                        route.Goal);
                 }
                 if (lavaTiles.Contains(key))
                 {
@@ -513,6 +703,20 @@ namespace StardewAI.Core.Execution
                         EstimatedMovementTiles =
                             Math.Max(0, pathToStand.Length - 1),
                         WateringCanSlotIndex = wateringCanSlot,
+                        RouteObjectiveId =
+                            route.Goal.Kind ==
+                                RouteGoalKinds.Connector
+                                ? "volcano_forward_connector"
+                                : "volcano_dwarf_switch",
+                        RouteTargetTileX = route.Goal.X,
+                        RouteTargetTileY = route.Goal.Y,
+                        RouteTargetStandTileX = stand.X,
+                        RouteTargetStandTileY = stand.Y,
+                        BlockedRouteCellX = tile.X,
+                        BlockedRouteCellY = tile.Y,
+                        BlockerAttributionStatus =
+                            "exact_weighted_route_cell_identity",
+                        ExpectedConnectivityGain = 1,
                         Path = pathToStand
                     };
                 }
@@ -551,6 +755,12 @@ namespace StardewAI.Core.Execution
                     ExpectedArrivalTileY = hasExactArrival
                         ? targetY
                         : (int?)null,
+                    RouteObjectiveId =
+                        "volcano_forward_connector",
+                    RouteTargetTileX = route.Goal.X,
+                    RouteTargetTileY = route.Goal.Y,
+                    RouteTargetStandTileX = route.Goal.X,
+                    RouteTargetStandTileY = route.Goal.Y,
                     Path = route.Path
                 };
             }
@@ -566,6 +776,11 @@ namespace StardewAI.Core.Execution
                 StandTileY = route.Goal.Y,
                 EstimatedMovementTiles =
                     Math.Max(0, route.Path.Length - 1),
+                RouteObjectiveId = "volcano_dwarf_switch",
+                RouteTargetTileX = route.Goal.X,
+                RouteTargetTileY = route.Goal.Y,
+                RouteTargetStandTileX = route.Goal.X,
+                RouteTargetStandTileY = route.Goal.Y,
                 Path = route.Path
             };
         }
@@ -574,7 +789,8 @@ namespace StardewAI.Core.Execution
             JsonElement obstacle,
             JsonElement resources,
             VolcanoPathTile stand,
-            VolcanoPathTile[] path)
+            VolcanoPathTile[] path,
+            RouteGoal routeGoal)
         {
             var isStone = ReadBool(obstacle, "is_breakable_stone");
             var slots = isStone ? "pickaxe_slots" : "heavy_hitter_slots";
@@ -618,6 +834,22 @@ namespace StardewAI.Core.Execution
                 TargetQualifiedItemId =
                     ReadString(obstacle, "qualified_item_id"),
                 ToolSlotIndex = toolSlot,
+                RouteObjectiveId =
+                    routeGoal.Kind ==
+                        RouteGoalKinds.Connector
+                        ? "volcano_forward_connector"
+                        : "volcano_dwarf_switch",
+                RouteTargetTileX = routeGoal.X,
+                RouteTargetTileY = routeGoal.Y,
+                RouteTargetStandTileX = stand.X,
+                RouteTargetStandTileY = stand.Y,
+                BlockedRouteCellX =
+                    ReadInt(obstacle, "tile_x"),
+                BlockedRouteCellY =
+                    ReadInt(obstacle, "tile_y"),
+                BlockerAttributionStatus =
+                    "exact_weighted_route_cell_identity",
+                ExpectedConnectivityGain = 1,
                 Path = path
             };
         }
@@ -626,7 +858,8 @@ namespace StardewAI.Core.Execution
             JsonElement monster,
             JsonElement resources,
             VolcanoPathTile stand,
-            VolcanoPathTile[] path)
+            VolcanoPathTile[] path,
+            RouteGoal routeGoal)
         {
             var supported = ReadBool(
                 monster,
@@ -662,6 +895,22 @@ namespace StardewAI.Core.Execution
                 CombatWeaponSlotIndex = weaponSlot,
                 CombatIntent =
                     TrainingCombatIntents.TransitRouteClearance,
+                RouteObjectiveId =
+                    routeGoal.Kind ==
+                        RouteGoalKinds.Connector
+                        ? "volcano_forward_connector"
+                        : "volcano_dwarf_switch",
+                RouteTargetTileX = routeGoal.X,
+                RouteTargetTileY = routeGoal.Y,
+                RouteTargetStandTileX = stand.X,
+                RouteTargetStandTileY = stand.Y,
+                BlockedRouteCellX =
+                    ReadInt(monster, "tile_x"),
+                BlockedRouteCellY =
+                    ReadInt(monster, "tile_y"),
+                BlockerAttributionStatus =
+                    "exact_weighted_route_cell_identity",
+                ExpectedConnectivityGain = 1,
                 Path = path
             };
         }

@@ -45,6 +45,22 @@ public sealed class QuarryGoldenScytheRuntimeSourceGuardTests
             "Golden Scythe claim and native Quarry Mine exit were both verified",
             source,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "\"combat_disengaged_transit_target\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"combat_target_not_found_or_moved\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[bool]$execution.after_snapshot_fresh -and",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[bool]$execution.state_hash_changed",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -141,7 +157,11 @@ public sealed class QuarryGoldenScytheRuntimeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "HeavyHitterInputButton(weapon)",
+            "TryStartReactiveMineCombat(",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "private void MoveTowardCombatTarget",
             source,
             StringComparison.Ordinal);
     }

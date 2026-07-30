@@ -159,10 +159,21 @@ namespace StardewAI.Core.Execution
                 .Sum(item => Math.Max(0, ReadInt(item, "stack") ?? 0));
         }
 
-        private static MiningFloorStepPlan? SelectContainer(JsonElement objects, SearchResult search, bool[,] grid, int? maximumDistance = null)
+        private static MiningFloorStepPlan? SelectContainer(
+            JsonElement objects,
+            SearchResult search,
+            bool[,] grid,
+            int? maximumDistance = null,
+            int? targetTileX = null,
+            int? targetTileY = null)
         {
             return objects.EnumerateArray()
                 .Where(obj => ReadBool(obj, "is_container"))
+                .Where(obj =>
+                    !targetTileX.HasValue ||
+                    !targetTileY.HasValue ||
+                    ReadInt(obj, "tile_x") == targetTileX &&
+                    ReadInt(obj, "tile_y") == targetTileY)
                 .Select(obj => new
                 {
                     Object = obj,
@@ -182,7 +193,12 @@ namespace StardewAI.Core.Execution
                 .FirstOrDefault();
         }
 
-        private static MiningFloorStepPlan? SelectResourceClump(JsonElement resourceClumps, SearchResult search, bool[,] grid)
+        private static MiningFloorStepPlan? SelectResourceClump(
+            JsonElement resourceClumps,
+            SearchResult search,
+            bool[,] grid,
+            int? originTileX = null,
+            int? originTileY = null)
         {
             if (resourceClumps.ValueKind != JsonValueKind.Array)
             {
@@ -190,6 +206,11 @@ namespace StardewAI.Core.Execution
             }
 
             return resourceClumps.EnumerateArray()
+                .Where(clump =>
+                    !originTileX.HasValue ||
+                    !originTileY.HasValue ||
+                    ReadInt(clump, "tile_x") == originTileX &&
+                    ReadInt(clump, "tile_y") == originTileY)
                 .Where(clump =>
                     ReadBool(clump, "native_executor_supported") &&
                     ReadBool(clump, "tool_gate_satisfied") &&

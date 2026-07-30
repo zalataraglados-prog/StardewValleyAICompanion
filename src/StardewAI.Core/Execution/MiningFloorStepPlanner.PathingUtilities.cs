@@ -84,7 +84,12 @@ namespace StardewAI.Core.Execution
                 .FirstOrDefault();
         }
 
-        private static MiningFloorStepPlan? SelectStone(JsonElement objects, SearchResult search, bool[,] grid)
+        private static MiningFloorStepPlan? SelectStone(
+            JsonElement objects,
+            SearchResult search,
+            bool[,] grid,
+            int? targetTileX = null,
+            int? targetTileY = null)
         {
             if (objects.ValueKind != JsonValueKind.Array)
             {
@@ -93,6 +98,11 @@ namespace StardewAI.Core.Execution
 
             return objects.EnumerateArray()
                 .Where(obj => ReadBool(obj, "is_breakable_stone"))
+                .Where(obj =>
+                    !targetTileX.HasValue ||
+                    !targetTileY.HasValue ||
+                    ReadInt(obj, "tile_x") == targetTileX &&
+                    ReadInt(obj, "tile_y") == targetTileY)
                 .Select(obj =>
                 {
                     var swings = Math.Max(1, ReadInt(obj, "best_pickaxe_hits_remaining") ?? 1);
@@ -287,13 +297,39 @@ namespace StardewAI.Core.Execution
 
         private static bool TryCollision(JsonElement tiles, out bool[,] grid, out (int X, int Y) start)
         {
+            return TryCollision(
+                tiles,
+                "blocked_rows",
+                out grid,
+                out start);
+        }
+
+        private static bool TryStaticCollision(
+            JsonElement tiles,
+            out bool[,] grid,
+            out (int X, int Y) start)
+        {
+            return TryCollision(
+                tiles,
+                "static_blocked_rows",
+                out grid,
+                out start);
+        }
+
+        private static bool TryCollision(
+            JsonElement tiles,
+            string rowsProperty,
+            out bool[,] grid,
+            out (int X, int Y) start)
+        {
             grid = new bool[0, 0];
             start = default;
             if (!tiles.TryGetProperty("player_tile", out var playerTile) ||
                 !tiles.TryGetProperty("collision_context", out var collision) ||
                 ReadString(collision, "status") != "available" ||
                 ReadString(collision, "encoding") != "row_major_strings_1_blocked_0_passable" ||
-                !collision.TryGetProperty("blocked_rows", out var rows) || rows.ValueKind != JsonValueKind.Array)
+                !collision.TryGetProperty(rowsProperty, out var rows) ||
+                rows.ValueKind != JsonValueKind.Array)
             {
                 return false;
             }

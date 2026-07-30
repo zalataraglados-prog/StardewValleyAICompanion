@@ -173,13 +173,67 @@ namespace StardewAI.Core.Execution
                 .GroupBy(obstacle => TileKey(obstacle.X, obstacle.Y))
                 .Select(group => group.OrderBy(obstacle => obstacle.EnergyCost).First())
                 .ToArray();
+            var clearableObstacleKeys = clearableObstacles
+                .Select(obstacle => TileKey(obstacle.X, obstacle.Y))
+                .ToHashSet(StringComparer.Ordinal);
             while (repairs.Count < maxClears)
             {
+                var requiredClearsBefore =
+                    MinimumClearableObstaclesToTarget(
+                        currentX,
+                        currentY,
+                        targetX,
+                        targetY,
+                        width,
+                        height,
+                        blocked,
+                        unsupported,
+                        clearableObstacleKeys);
                 var repair = clearableObstacles
                     .Where(obstacle => blocked.Contains(TileKey(obstacle.X, obstacle.Y)))
                     .Select(obstacle => RepairCandidateForObstacle(currentX, currentY, targetX, targetY, width, height, blocked, unsupported, obstacle))
                     .Where(candidate => candidate is not null)
-                    .OrderBy(candidate => Math.Abs(currentX - candidate!.StandX) + Math.Abs(currentY - candidate.StandY))
+                    .Select(candidate =>
+                    {
+                        var simulatedBlocked =
+                            new HashSet<string>(
+                                blocked,
+                                StringComparer.Ordinal);
+                        simulatedBlocked.Remove(
+                            TileKey(
+                                candidate!.ObstacleX,
+                                candidate.ObstacleY));
+                        return new
+                        {
+                            Repair = candidate,
+                            RequiredClearsAfter =
+                                MinimumClearableObstaclesToTarget(
+                                    candidate.StandX,
+                                    candidate.StandY,
+                                    targetX,
+                                    targetY,
+                                    width,
+                                    height,
+                                    simulatedBlocked,
+                                    unsupported,
+                                    clearableObstacleKeys)
+                        };
+                    })
+                    .Where(candidate =>
+                        candidate.RequiredClearsAfter <
+                            requiredClearsBefore)
+                    .OrderBy(candidate =>
+                        candidate.RequiredClearsAfter)
+                    .ThenBy(candidate =>
+                        Math.Abs(
+                            currentX -
+                            candidate.Repair!.StandX) +
+                        Math.Abs(
+                            currentY -
+                            candidate.Repair.StandY))
+                    .ThenBy(candidate =>
+                        candidate.Repair!.EnergyCost)
+                    .Select(candidate => candidate.Repair)
                     .FirstOrDefault();
                 if (repair is null)
                 {
@@ -199,6 +253,95 @@ namespace StardewAI.Core.Execution
             return PathExists(currentX, currentY, targetX, targetY, width, height, blocked, unsupported)
                 ? repairs.ToArray()
                 : Array.Empty<MoveRepairObstacle>();
+        }
+
+        private static int MinimumClearableObstaclesToTarget(
+            int startX,
+            int startY,
+            int targetX,
+            int targetY,
+            int width,
+            int height,
+            HashSet<string> blocked,
+            HashSet<string> unsupported,
+            HashSet<string> clearable)
+        {
+            if (!TileInBounds(startX, startY, width, height) ||
+                !TileInBounds(targetX, targetY, width, height) ||
+                unsupported.Contains(TileKey(startX, startY)) ||
+                unsupported.Contains(TileKey(targetX, targetY)))
+            {
+                return int.MaxValue;
+            }
+
+            var distances = new Dictionary<string, int>(
+                StringComparer.Ordinal)
+            {
+                [TileKey(startX, startY)] = 0
+            };
+            var pending = new LinkedList<(int X, int Y)>();
+            pending.AddFirst((startX, startY));
+            while (pending.Count > 0)
+            {
+                var current = pending.First!.Value;
+                pending.RemoveFirst();
+                var currentKey = TileKey(current.X, current.Y);
+                var currentDistance = distances[currentKey];
+                if (current.X == targetX &&
+                    current.Y == targetY)
+                {
+                    return currentDistance;
+                }
+
+                foreach (var next in Neighbors(
+                    current.X,
+                    current.Y))
+                {
+                    if (!TileInBounds(
+                            next.X,
+                            next.Y,
+                            width,
+                            height))
+                    {
+                        continue;
+                    }
+
+                    var nextKey = TileKey(next.X, next.Y);
+                    if (unsupported.Contains(nextKey))
+                    {
+                        continue;
+                    }
+
+                    var blockedStep = blocked.Contains(nextKey);
+                    if (blockedStep && !clearable.Contains(nextKey))
+                    {
+                        continue;
+                    }
+
+                    var nextDistance =
+                        currentDistance +
+                        (blockedStep ? 1 : 0);
+                    if (distances.TryGetValue(
+                            nextKey,
+                            out var existingDistance) &&
+                        existingDistance <= nextDistance)
+                    {
+                        continue;
+                    }
+
+                    distances[nextKey] = nextDistance;
+                    if (blockedStep)
+                    {
+                        pending.AddLast(next);
+                    }
+                    else
+                    {
+                        pending.AddFirst(next);
+                    }
+                }
+            }
+
+            return int.MaxValue;
         }
 
         private static MoveRepairObstacle? RepairCandidateForObstacle(

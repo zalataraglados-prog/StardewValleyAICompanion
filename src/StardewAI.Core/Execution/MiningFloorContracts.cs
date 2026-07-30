@@ -110,6 +110,24 @@ namespace StardewAI.Core.Execution
         public string CombatIntent { get; set; } =
             TrainingCombatIntents.TargetDefeat;
 
+        public string RouteObjectiveId { get; set; } = string.Empty;
+
+        public int? RouteTargetTileX { get; set; }
+
+        public int? RouteTargetTileY { get; set; }
+
+        public int? RouteTargetStandTileX { get; set; }
+
+        public int? RouteTargetStandTileY { get; set; }
+
+        public int? BlockedRouteCellX { get; set; }
+
+        public int? BlockedRouteCellY { get; set; }
+
+        public string BlockerAttributionStatus { get; set; } = string.Empty;
+
+        public int? ExpectedConnectivityGain { get; set; }
+
         public string SkillExperienceSkillId { get; set; } = string.Empty;
 
         public int? ExpectedSkillExperience { get; set; }

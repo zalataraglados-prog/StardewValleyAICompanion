@@ -30,17 +30,25 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
         }
 
         var rows = new string[height];
+        var staticRows = new string[height];
         var collisionMask = CollisionMask.All & ~CollisionMask.Farmers;
         for (var y = 0; y < height; y++)
         {
             var row = new char[width];
+            var staticRow = new char[width];
             for (var x = 0; x < width; x++)
             {
                 var blocked = mine.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
                     mine.farmers.Any(farmer => farmer != Game1.player && FarmerBlocksTile(farmer, x, y));
                 row[x] = blocked ? '1' : '0';
+                staticRow[x] = mine.isTilePassable(
+                    new xTile.Dimensions.Location(x, y),
+                    Game1.viewport)
+                    ? '0'
+                    : '1';
             }
             rows[y] = new string(row);
+            staticRows[y] = new string(staticRow);
         }
 
         cachedCollisionSignature = signature;
@@ -51,9 +59,11 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             height,
             encoding = "row_major_strings_1_blocked_0_passable",
             blocked_rows = rows,
+            static_blocked_rows = staticRows,
             excludes_current_player = true,
             includes_map_objects_characters_terrain_and_other_farmers = true,
-            source = "GameLocation.IsTileBlockedBy; decompiled method is read-only"
+            static_rows_exclude_objects_characters_terrain_farmers_and_resource_clumps = true,
+            source = "GameLocation.IsTileBlockedBy plus GameLocation.isTilePassable; decompiled methods are read-only"
         };
         return cachedCollisionContext;
     }

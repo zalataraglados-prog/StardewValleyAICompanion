@@ -15,7 +15,8 @@ namespace StardewAI.Core.Execution
         private static MiningFloorStepPlan? SelectGoldenScytheAltarStep(
             JsonElement altars,
             SearchResult search,
-            bool[,] grid)
+            bool[,] grid,
+            bool boundedApproach = true)
         {
             var candidate = altars.EnumerateArray()
                 .Select(altar => TargetCandidate(altar, search, grid, estimatedSwings: 0, deterministicLadder: false))
@@ -31,11 +32,16 @@ namespace StardewAI.Core.Execution
 
             if (candidate.Distance > 0)
             {
-                var approach = BuildObjectiveApproachStep(
-                    candidate,
-                    MiningFloorStepKinds.MoveToGoldenScytheAltar,
-                    "approach_golden_scythe_altar",
-                    "golden_scythe_route_clear");
+                var approach = boundedApproach
+                    ? BuildObjectiveApproachStep(
+                        candidate,
+                        MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                        "approach_golden_scythe_altar",
+                        "golden_scythe_route_clear")
+                    : Build(
+                        MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                        "golden_scythe_static_altar_route",
+                        candidate);
                 approach.TargetQualifiedItemId = "(W)53";
                 return approach;
             }
@@ -134,6 +140,19 @@ namespace StardewAI.Core.Execution
                 EstimatedMovementTiles = waypointIndex,
                 EstimatedToolSwings = 0,
                 SafetyWindowStatus = safetyWindowStatus,
+                RouteObjectiveId = source.RouteObjectiveId,
+                RouteTargetTileX = source.RouteTargetTileX,
+                RouteTargetTileY = source.RouteTargetTileY,
+                RouteTargetStandTileX =
+                    source.RouteTargetStandTileX,
+                RouteTargetStandTileY =
+                    source.RouteTargetStandTileY,
+                BlockedRouteCellX = source.BlockedRouteCellX,
+                BlockedRouteCellY = source.BlockedRouteCellY,
+                BlockerAttributionStatus =
+                    source.BlockerAttributionStatus,
+                ExpectedConnectivityGain =
+                    source.ExpectedConnectivityGain,
                 Path = source.Path
                     .Take(waypointIndex + 1)
                     .ToArray()
