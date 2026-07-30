@@ -151,6 +151,8 @@ $recoverableReplanReasons = @(
     "volcano_cooling_unsafe_monster_window",
     "volcano_cooling_path_unavailable:movement_no_collision_safe_path",
     "volcano_combat_dynamic_path_unavailable:unreachable_target",
+    "volcano_combat_disengaged_transit_target",
+    "volcano_combat_movement_budget_exceeded",
     "volcano_movement_unsafe_monster_window"
 )
 $calderaReached = $false

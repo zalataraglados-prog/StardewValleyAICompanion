@@ -366,6 +366,7 @@ static partial class Program
         var combatWeaponSlotIndex = ReadQueueParameterInt(item, "combat_weapon_slot_index");
         var combatMethod = ReadQueueParameterString(item, "combat_method");
         var combatTerminalState = ReadQueueParameterString(item, "combat_terminal_state");
+        var combatIntent = ReadQueueParameterString(item, "combat_intent");
         var slingshotSlotIndex = ReadQueueParameterInt(item, "slingshot_slot_index");
         var slingshotAmmoQualifiedItemId = ReadQueueParameterString(item, "slingshot_ammo_qualified_item_id");
         var bombSlotIndex = ReadQueueParameterInt(item, "bomb_slot_index");
@@ -671,6 +672,10 @@ static partial class Program
         }
         executionRequest.CombatMethod = combatMethod;
         executionRequest.CombatTerminalState = combatTerminalState;
+        if (!string.IsNullOrWhiteSpace(combatIntent))
+        {
+            executionRequest.CombatIntent = combatIntent;
+        }
         executionRequest.SlingshotSlotIndex = slingshotSlotIndex;
         executionRequest.SlingshotAmmoQualifiedItemId = slingshotAmmoQualifiedItemId;
         executionRequest.BombSlotIndex = bombSlotIndex;

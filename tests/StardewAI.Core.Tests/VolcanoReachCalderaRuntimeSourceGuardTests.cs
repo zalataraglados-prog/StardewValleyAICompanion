@@ -54,6 +54,14 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "\"volcano_combat_disengaged_transit_target\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"volcano_combat_movement_budget_exceeded\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "\"volcano_movement_unsafe_monster_window\"",
             source,
             StringComparison.Ordinal);
@@ -175,6 +183,18 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "active.LastProgressTargetPosition",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ShouldDisengageVolcanoTransitCombat(active)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TrainingCombatIntents.TransitSelfDefense",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "active.InitialTargetTile",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -47,7 +47,7 @@ namespace StardewAI.Core.Execution
                 parameters,
                 "max_movement_tiles",
                 plan.StepKind == VolcanoFloorStepKinds.CombatMonster
-                    ? 512
+                    ? CombatMovementBudget(plan)
                     : plan.EstimatedMovementTiles > 0
                         ? Math.Max(8, plan.EstimatedMovementTiles + 8)
                         : (int?)null);
@@ -80,6 +80,10 @@ namespace StardewAI.Core.Execution
                 plan.CombatWeaponSlotIndex);
             Add(
                 parameters,
+                "combat_intent",
+                plan.CombatIntent);
+            Add(
+                parameters,
                 "target_runtime_identity",
                 plan.TargetRuntimeIdentity);
             Add(
@@ -106,6 +110,22 @@ namespace StardewAI.Core.Execution
                 parameters.Add(Parameter("connector_kind", "warp"));
             }
             return parameters.ToArray();
+        }
+
+        private static int CombatMovementBudget(
+            VolcanoFloorStepPlan plan)
+        {
+            return plan.CombatIntent switch
+            {
+                StardewAI.Contracts.Training.TrainingCombatIntents
+                    .TransitSelfDefense => 16,
+                StardewAI.Contracts.Training.TrainingCombatIntents
+                    .TransitRouteClearance => Math.Clamp(
+                        plan.EstimatedMovementTiles + 16,
+                        16,
+                        128),
+                _ => 512
+            };
         }
 
         private static void Add(

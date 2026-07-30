@@ -163,6 +163,7 @@ public sealed partial class ModEntry : Mod
             int restoreSlotIndex,
             int maxAttacks,
             int maxMovementTiles,
+            string combatIntent,
             string requestedEffect)
         {
             Pending = pending;
@@ -178,7 +179,9 @@ public sealed partial class ModEntry : Mod
             PlayerHealthBefore = Game1.player.health;
             MaxAttacks = maxAttacks;
             MaxMovementTiles = maxMovementTiles;
+            CombatIntent = combatIntent;
             RequestedEffect = requestedEffect;
+            InitialTargetTile = target.TilePoint;
             MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
             LastProgressPosition = Game1.player.Position;
             LastMovementPosition = Game1.player.Position;
@@ -202,6 +205,8 @@ public sealed partial class ModEntry : Mod
         public int PlayerHealthBefore { get; }
         public int MaxAttacks { get; }
         public int MaxMovementTiles { get; }
+        public string CombatIntent { get; }
+        public Point InitialTargetTile { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }

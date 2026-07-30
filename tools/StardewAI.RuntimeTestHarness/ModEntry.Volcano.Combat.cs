@@ -35,7 +35,27 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var requested = "volcano.monsters[target].present=false;native_input=melee";
+        var combatIntent = string.IsNullOrWhiteSpace(
+                request.CombatIntent)
+            ? TrainingCombatIntents.TargetDefeat
+            : request.CombatIntent;
+        if (combatIntent is not (
+                TrainingCombatIntents.TargetDefeat or
+                TrainingCombatIntents.TransitSelfDefense or
+                TrainingCombatIntents.TransitRouteClearance))
+        {
+            pending.Completion.SetResult(
+                BlockedWithPrimitive(
+                    request,
+                    "combat_volcano_monster",
+                    "volcano.monsters[target].present=false;native_input=melee",
+                    "combat_intent=" + combatIntent,
+                    "volcano_combat_intent_unsupported"));
+            return;
+        }
+        var requested =
+            "volcano.monsters[target].present=false;native_input=melee;combat_intent=" +
+            combatIntent;
         if (string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeType) ||
             string.IsNullOrWhiteSpace(request.TargetName))
@@ -86,6 +106,7 @@ public sealed partial class ModEntry : Mod
             Game1.player.CurrentToolIndex,
             Math.Clamp(request.MaxAttacks, 1, 256),
             Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
+            combatIntent,
             requested);
     }
 
@@ -203,6 +224,14 @@ public sealed partial class ModEntry : Mod
             }
 
             CompleteVolcanoCombat(active);
+            return;
+        }
+
+        if (ShouldDisengageVolcanoTransitCombat(active))
+        {
+            CompleteVolcanoCombatBlocked(
+                active,
+                "volcano_combat_disengaged_transit_target");
             return;
         }
 
@@ -608,6 +637,37 @@ public sealed partial class ModEntry : Mod
         return active.NoProgressTicks;
     }
 
+    private static bool ShouldDisengageVolcanoTransitCombat(
+        ActiveVolcanoCombat active)
+    {
+        if (string.Equals(
+                active.CombatIntent,
+                TrainingCombatIntents.TargetDefeat,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var playerDistance = ManhattanDistance(
+            Game1.player.TilePoint,
+            active.Target.TilePoint);
+        if (playerDistance <= 4)
+        {
+            return false;
+        }
+        if (string.Equals(
+                active.CombatIntent,
+                TrainingCombatIntents.TransitSelfDefense,
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return ManhattanDistance(
+                active.InitialTargetTile,
+                active.Target.TilePoint) > 2;
+    }
+
     private static void ObserveVolcanoCombatMovement(ActiveVolcanoCombat active)
     {
         var currentPosition = Game1.player.Position;
@@ -757,6 +817,7 @@ public sealed partial class ModEntry : Mod
             ";target_name=" + active.TargetName +
             ";target_health=" + active.Target.Health +
             ";player_health=" + Game1.player.health +
+            ";combat_intent=" + active.CombatIntent +
             ";attacks=" + active.AttackCount +
             ";hits=" + active.HitCount;
     }}

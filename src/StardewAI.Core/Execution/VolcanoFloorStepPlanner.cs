@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution
@@ -57,6 +58,9 @@ namespace StardewAI.Core.Execution
         public int? ToolSlotIndex { get; set; }
 
         public int? CombatWeaponSlotIndex { get; set; }
+
+        public string CombatIntent { get; set; } =
+            TrainingCombatIntents.TargetDefeat;
 
         public string TargetRuntimeIdentity { get; set; } = string.Empty;
 
@@ -132,6 +136,7 @@ namespace StardewAI.Core.Execution
                 immediateSearch,
                 immediateStart,
                 connectors,
+                TrainingCombatIntents.TransitSelfDefense,
                 maximumGroundDistanceFromPlayer: 3,
                 maximumGliderDistanceFromPlayer: 3);
             if (immediateThreat is not null)
@@ -166,6 +171,7 @@ namespace StardewAI.Core.Execution
                         immediateSearch,
                         immediateStart,
                         connectors,
+                        TrainingCombatIntents.TransitRouteClearance,
                         maximumGroundDistanceFromPlayer: null,
                         maximumGliderDistanceFromPlayer: null);
                     if (dynamicRouteBlocker is not null)
@@ -281,6 +287,7 @@ namespace StardewAI.Core.Execution
             SearchResult search,
             (int X, int Y) start,
             JsonElement connectors,
+            string combatIntent,
             int? maximumGroundDistanceFromPlayer,
             int? maximumGliderDistanceFromPlayer = null)
         {
@@ -378,6 +385,7 @@ namespace StardewAI.Core.Execution
                 TargetRuntimeType = ReadString(selected.Monster, "runtime_type"),
                 TargetName = ReadString(selected.Monster, "name"),
                 CombatWeaponSlotIndex = weaponSlot,
+                CombatIntent = combatIntent,
                 Path = selected.Path
             };
         }
@@ -652,6 +660,8 @@ namespace StardewAI.Core.Execution
                     ReadString(monster, "runtime_type"),
                 TargetName = ReadString(monster, "name"),
                 CombatWeaponSlotIndex = weaponSlot,
+                CombatIntent =
+                    TrainingCombatIntents.TransitRouteClearance,
                 Path = path
             };
         }

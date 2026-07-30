@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Tests;
@@ -367,6 +368,16 @@ public sealed class VolcanoFloorStepPlannerTests
             VolcanoFloorStepKinds.CombatMonster,
             step.StepKind);
         Assert.Equal("A2", step.TargetRuntimeIdentity);
+        Assert.Equal(
+            TrainingCombatIntents.TransitSelfDefense,
+            step.CombatIntent);
+        var parameters =
+            VolcanoFloorStepCompiler.BuildExecutionParameters(step);
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "max_movement_tiles" &&
+                parameter.Value == "16");
     }
 
     [Fact]
@@ -580,6 +591,23 @@ public sealed class VolcanoFloorStepPlannerTests
         Assert.Equal("BLOCKER", step.TargetRuntimeIdentity);
         Assert.Equal(4, step.StandTileX);
         Assert.Equal(1, step.StandTileY);
+        Assert.Equal(
+            TrainingCombatIntents.TransitRouteClearance,
+            step.CombatIntent);
+
+        var parameters =
+            VolcanoFloorStepCompiler.BuildExecutionParameters(step);
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "combat_intent" &&
+                parameter.Value ==
+                    TrainingCombatIntents.TransitRouteClearance);
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "max_movement_tiles" &&
+                int.Parse(parameter.Value) < 512);
     }
 
     private static SnapshotEnvelope Snapshot(string json)
