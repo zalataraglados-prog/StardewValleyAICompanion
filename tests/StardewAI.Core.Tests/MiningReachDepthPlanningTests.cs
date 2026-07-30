@@ -358,6 +358,9 @@ public sealed class MiningReachDepthPlanningTests
         Assert.Contains("target_depth=$TargetMineLevel", source, StringComparison.Ordinal);
         Assert.Contains("executor.exit_mine", source, StringComparison.Ordinal);
         Assert.Contains("after_snapshot_fresh", source, StringComparison.Ordinal);
+        Assert.Contains("$recoverableTransitCombatReasons", source, StringComparison.Ordinal);
+        Assert.Contains("$isTransitCombat", source, StringComparison.Ordinal);
+        Assert.Contains("replan_required = $isRecoverableReplan", source, StringComparison.Ordinal);
         Assert.Contains("live-training-feature-rows.jsonl", source, StringComparison.Ordinal);
         Assert.Contains("$stepSummaries.ToArray()", source, StringComparison.Ordinal);
         Assert.Contains("$visitedDepths.ToArray()", source, StringComparison.Ordinal);

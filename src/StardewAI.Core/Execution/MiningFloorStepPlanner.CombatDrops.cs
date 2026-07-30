@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Execution
 {
@@ -21,7 +22,8 @@ namespace StardewAI.Core.Execution
             double? movementTileDurationMs = null,
             bool bombFinisherAvailable = false,
             string[]? targetMonsterNameFragments = null,
-            bool matchAnySlimeName = false)
+            bool matchAnySlimeName = false,
+            string combatIntent = TrainingCombatIntents.TargetDefeat)
         {
             if (monsters.ValueKind != JsonValueKind.Array)
             {
@@ -68,6 +70,7 @@ namespace StardewAI.Core.Execution
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.CombatMethod = row.Combat?.Method ?? "melee";
                     plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
+                    plan.CombatIntent = combatIntent;
                     if (string.Equals(plan.CombatTerminalState, "defeat", StringComparison.Ordinal))
                     {
                         plan.SkillExperienceSkillId = "combat";
@@ -448,6 +451,8 @@ namespace StardewAI.Core.Execution
                     plan.TargetName = ReadString(row.Monster, "name");
                     plan.CombatMethod = "melee";
                     plan.CombatTerminalState = row.Combat?.TerminalEffect ?? "defeat";
+                    plan.CombatIntent =
+                        TrainingCombatIntents.TransitSelfDefense;
                     plan.RequiredWeaponEnchantmentRuntimeType = ReadRequiredWeaponEnchantment(row.Monster);
                     plan.CombatWeaponSlotIndex = row.Combat?.Method == "melee" ? row.Combat.SlotIndex : null;
                     plan.ExpectedCombatAttacks = row.Combat?.ExpectedAttacks;

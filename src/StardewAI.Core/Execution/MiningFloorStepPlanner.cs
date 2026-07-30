@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Execution
 {
@@ -223,7 +224,9 @@ namespace StardewAI.Core.Execution
                         grid,
                         "golden_scythe_exit_route_blocked_by_dynamic_monster",
                         movementTileDurationMs: movementTileDurationMs,
-                        bombFinisherAvailable: bombFinisherAvailable);
+                        bombFinisherAvailable: bombFinisherAvailable,
+                        combatIntent:
+                            TrainingCombatIntents.TransitRouteClearance);
                     if (exitBlocker is not null)
                     {
                         exitBlocker.SafetyWindowStatus =

@@ -132,6 +132,7 @@ static partial class Program
             CombatPlayerHealthSequence = ReadArrayInts(execution, "combat_player_health_sequence"),
             CombatDamageTaken = execution["combat_damage_taken"]?.GetValue<int>(),
             CombatTargetDefeated = execution["combat_target_defeated"]?.GetValue<bool>(),
+            CombatIntent = ReadString(execution, "combat_intent"),
             RecoveryFoodSlotIndex = execution["recovery_food_slot_index"]?.GetValue<int>(),
             RecoveryFoodQualifiedItemId = ReadString(execution, "recovery_food_qualified_item_id"),
             RecoveryFoodStackBefore = execution["recovery_food_stack_before"]?.GetValue<int>(),

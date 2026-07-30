@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Execution
 {
@@ -105,6 +106,9 @@ namespace StardewAI.Core.Execution
         public string CombatMethod { get; set; } = string.Empty;
 
         public string CombatTerminalState { get; set; } = string.Empty;
+
+        public string CombatIntent { get; set; } =
+            TrainingCombatIntents.TargetDefeat;
 
         public string SkillExperienceSkillId { get; set; } = string.Empty;
 

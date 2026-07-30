@@ -117,6 +117,11 @@ $backendProcess = $null
 $gameProcess = $null
 $stepSummaries = New-Object System.Collections.Generic.List[object]
 $visitedDepths = New-Object System.Collections.Generic.List[int]
+$recoverableTransitCombatReasons = @(
+    "combat_disengaged_transit_target",
+    "combat_movement_budget_exceeded",
+    "slingshot_disengaged_transit_target"
+)
 $objectiveReached = $false
 $terminalExitVerified = $false
 $skullKeyTransitionObserved = $false
@@ -243,6 +248,23 @@ try {
         $primitiveStatus = [string]$primitive.status
         $verification = [string]$primitive.primitive_verification_status
         $optionId = [string]$primitive.option_id
+        $blockReasons = @($primitive.block_reasons)
+        $combatIntent = [string]$primitive.combat_intent
+        $isTransitCombat = $combatIntent -in @(
+            "transit_self_defense",
+            "transit_route_clearance"
+        )
+        $isRecoverableReplan = (
+            $isTransitCombat -and
+            $primitiveStatus -eq "blocked" -and
+            $verification -eq "blocked" -and
+            $blockReasons.Count -gt 0 -and
+            @($blockReasons | Where-Object {
+                $_ -notin $recoverableTransitCombatReasons
+            }).Count -eq 0 -and
+            [bool]$execution.after_snapshot_fresh -and
+            [bool]$execution.state_hash_changed
+        )
         $stepSummary = [ordered]@{
             step = $step
             before_depth = $beforeLevel
@@ -257,7 +279,9 @@ try {
             primitive_kind = [string]$primitive.primitive_kind
             status = $primitiveStatus
             verification = $verification
-            block_reasons = @($primitive.block_reasons)
+            block_reasons = $blockReasons
+            combat_intent = $combatIntent
+            replan_required = $isRecoverableReplan
             actual_ticks = $primitive.actual_ticks
             execution_path = $executionPath
             after_snapshot_path = $afterPath
@@ -265,11 +289,14 @@ try {
         $stepSummaries.Add([pscustomobject]$stepSummary)
         Write-JsonFile (Join-Path $runDirectory ("step-summary-" + $step.ToString("D4") + ".json")) $stepSummary
 
-        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
-            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$(@($primitive.block_reasons) -join ',')"
-        }
         if (-not [bool]$execution.after_snapshot_fresh) {
             throw "Step $step produced a stale after snapshot."
+        }
+        if ($isRecoverableReplan) {
+            continue
+        }
+        if ($loopExitCode -ne 0 -or $primitiveStatus -ne "applied" -or $verification -ne "verified") {
+            throw "Step $step failed: option=$optionId status=$primitiveStatus verification=$verification reasons=$($blockReasons -join ',')"
         }
 
         if ($AcquireSkullKey -and $beforeHasSkullKey) {
@@ -327,6 +354,7 @@ try {
         distinct_depth_count = @($visitedDepthArray | Sort-Object -Unique).Count
         executed_step_count = $stepSummaryArray.Count
         verified_step_count = @($stepSummaryArray | Where-Object { $_.status -eq "applied" -and $_.verification -eq "verified" }).Count
+        replan_step_count = @($stepSummaryArray | Where-Object { $_.replan_required }).Count
         primitive_counts = @($stepSummaryArray | Group-Object option_id | ForEach-Object {
             [ordered]@{ option_id = $_.Name; count = $_.Count }
         })

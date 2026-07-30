@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Execution
 {
@@ -123,6 +124,12 @@ namespace StardewAI.Core.Execution
             Add(parameters, "combat_weapon_slot_index", plan.CombatWeaponSlotIndex);
             Add(parameters, "combat_method", plan.CombatMethod);
             Add(parameters, "combat_terminal_state", plan.CombatTerminalState);
+            if (plan.StepKind is
+                MiningFloorStepKinds.CombatMonster or
+                MiningFloorStepKinds.ShootMonster)
+            {
+                Add(parameters, "combat_intent", plan.CombatIntent);
+            }
             Add(parameters, "skill_experience_skill_id", plan.SkillExperienceSkillId);
             Add(parameters, "expected_skill_experience", plan.ExpectedSkillExperience);
             Add(parameters, "skill_experience_on_success_min", plan.SkillExperienceMinimum);
@@ -178,13 +185,26 @@ namespace StardewAI.Core.Execution
                 var expectedAttacks = Math.Max(
                     1,
                     (int)Math.Ceiling(plan.ExpectedCombatAttacks.Value));
-                return Math.Min(
+                var targetDefeatBudget = Math.Min(
                     512,
                     Math.Max(
                         64,
                         plan.EstimatedMovementTiles +
                         expectedAttacks * 16 +
                         32));
+                return TrainingCombatIntentRules.BoundMovementBudget(
+                    plan.CombatIntent,
+                    plan.EstimatedMovementTiles,
+                    targetDefeatBudget);
+            }
+
+            if (plan.StepKind == MiningFloorStepKinds.CombatMonster &&
+                plan.CombatIntent != TrainingCombatIntents.TargetDefeat)
+            {
+                return TrainingCombatIntentRules.BoundMovementBudget(
+                    plan.CombatIntent,
+                    plan.EstimatedMovementTiles,
+                    512);
             }
 
             return plan.EstimatedMovementTiles > 0

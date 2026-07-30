@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Tests;
@@ -205,6 +206,44 @@ public sealed partial class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void GoldenScytheExitMonsterUsesBoundedRouteClearanceIntent()
+    {
+        var plan = Plan(
+            exits: "[{\"tile_x\":6,\"tile_y\":2,\"expected_destination\":{\"location_id\":\"Mine\",\"tile_x\":67,\"tile_y\":10}}]",
+            monsters: "[{\"runtime_identity\":\"route-blocker\",\"runtime_type\":\"StardewValley.Monsters.GreenSlime\",\"name\":\"Green Slime\",\"tile_x\":4,\"tile_y\":2,\"health\":20,\"melee_attack_projections\":[{\"slot_index\":1,\"expected_attacks_to_defeat\":3.0,\"expected_active_damage_duration_ms\":900.0,\"terminal_effect\":\"defeat\"}]}]",
+            rows: new[]
+            {
+                "11111111",
+                "10001001",
+                "10001001",
+                "10001001",
+                "11111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            goldenScytheClaimed: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe,
+                ThreatRadiusTiles = 1
+            });
+
+        Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
+        Assert.Equal(
+            "golden_scythe_exit_route_blocked_by_dynamic_monster",
+            plan.Reason);
+        Assert.Equal(
+            TrainingCombatIntents.TransitRouteClearance,
+            plan.CombatIntent);
+        Assert.Contains(
+            MiningFloorStepCompiler.BuildExecutionParameters(plan),
+            parameter =>
+                parameter.Name == "combat_intent" &&
+                parameter.Value ==
+                    TrainingCombatIntents.TransitRouteClearance);
+    }
+
+    [Fact]
     public void GoldenScytheClaimedExitApproachUsesExitRouteSemantics()
     {
         var plan = Plan(
@@ -358,6 +397,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal(MiningFloorStepKinds.CombatMonster, plan.StepKind);
         Assert.Equal(4, plan.TargetTileX);
         Assert.Equal("kill_all_floor_requires_combat", plan.Reason);
+        Assert.Equal(
+            TrainingCombatIntents.TargetDefeat,
+            plan.CombatIntent);
     }
 
     [Fact]

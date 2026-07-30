@@ -36,7 +36,19 @@ public sealed partial class ModEntry : Mod
         }
 
         var terminalState = string.IsNullOrWhiteSpace(request.CombatTerminalState) ? "defeat" : request.CombatTerminalState;
-        var requested = "target_monster.terminal_state=" + terminalState + ";native_input=Farmer.FireTool";
+        if (!TryResolveCombatIntent(request, out var combatIntent))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "combat_monster",
+                "target_monster.terminal_state=" + terminalState +
+                    ";native_input=Farmer.FireTool",
+                "combat_intent=" + request.CombatIntent,
+                "combat_intent_unsupported"));
+            return;
+        }
+        var requested = "target_monster.terminal_state=" + terminalState +
+            ";native_input=Farmer.FireTool;combat_intent=" + combatIntent;
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeType) || string.IsNullOrWhiteSpace(request.TargetName))
@@ -121,6 +133,7 @@ public sealed partial class ModEntry : Mod
             Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
             string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal),
             terminalState,
+            combatIntent,
             requested);
         Monitor.Log($"Combat lock: {target.Name} [{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target):X8}], health={target.Health}, manual_movement={activeCombatMonster.ManualMovement}.", LogLevel.Info);
     }
@@ -474,7 +487,9 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (active.ManualMovement && active.Target.Health > 0)
+        if (active.ManualMovement &&
+            active.CombatIntent == TrainingCombatIntents.TargetDefeat &&
+            active.Target.Health > 0)
         {
             var nearestTarget = mine.characters.OfType<Monster>()
                 .Where(monster => monster.Health > 0)
@@ -507,6 +522,17 @@ public sealed partial class ModEntry : Mod
             {
                 CompleteCombatMonsterBlocked(active, "combat_target_disappeared_without_defeat");
             }
+            return;
+        }
+
+        if (ShouldDisengageCombatIntent(
+                active.CombatIntent,
+                active.InitialTargetTile,
+                active.Target))
+        {
+            CompleteCombatMonsterBlocked(
+                active,
+                "combat_disengaged_transit_target");
             return;
         }
 
@@ -973,6 +999,7 @@ public sealed partial class ModEntry : Mod
             CombatTargetDefeated = targetDefeated,
             CombatMethod = "melee",
             CombatTerminalState = active.TerminalState,
+            CombatIntent = active.CombatIntent,
             ChangedFacts = changedFacts.ToArray()
         };
         ApplyQuestSlayFeedback(
@@ -1012,6 +1039,7 @@ public sealed partial class ModEntry : Mod
         result.CombatTargetDefeated = active.Target.Health <= 0;
         result.CombatMethod = "melee";
         result.CombatTerminalState = active.TerminalState;
+        result.CombatIntent = active.CombatIntent;
         var inventoryAfter = InventoryStackSignature();
         result.ChangedFacts = active.Pending.ChangedFacts
             .Concat(string.Equals(active.InventoryBefore, inventoryAfter, StringComparison.Ordinal)
@@ -1028,6 +1056,7 @@ public sealed partial class ModEntry : Mod
             ";target_name=" + active.TargetName +
             ";target_health=" + active.Target.Health +
             ";player_health=" + Game1.player.health +
+            ";combat_intent=" + active.CombatIntent +
             ";attacks=" + active.AttackCount +
             ";hits=" + active.HitCount;
     }

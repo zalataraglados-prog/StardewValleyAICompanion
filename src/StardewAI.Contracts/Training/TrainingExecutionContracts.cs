@@ -3,15 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.Training
 {
-    public static class TrainingCombatIntents
-    {
-        public const string TargetDefeat = "target_defeat";
-        public const string TransitSelfDefense =
-            "transit_self_defense";
-        public const string TransitRouteClearance =
-            "transit_route_clearance";
-    }
-
     public sealed partial class TrainingExecutionRequest
     {
         [JsonPropertyName("schema_version")]
@@ -917,6 +908,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("combat_terminal_state")]
         public string CombatTerminalState { get; set; } = string.Empty;
+
+        [JsonPropertyName("combat_intent")]
+        public string CombatIntent { get; set; } = string.Empty;
 
         [JsonPropertyName("combat_consumable_qualified_item_id")]
         public string CombatConsumableQualifiedItemId { get; set; } = string.Empty;

@@ -78,6 +78,7 @@ public sealed partial class ModEntry : Mod
             int ammoCountBefore,
             int restoreSlotIndex,
             int maxAttacks,
+            string combatIntent,
             string requestedEffect)
         {
             Pending = pending;
@@ -89,7 +90,9 @@ public sealed partial class ModEntry : Mod
             AmmoCountBefore = ammoCountBefore;
             RestoreSlotIndex = restoreSlotIndex;
             MaxAttacks = maxAttacks;
+            CombatIntent = combatIntent;
             RequestedEffect = requestedEffect;
+            InitialTargetTile = target.TilePoint;
             TargetHealthBefore = target.Health;
             LastTargetHealth = target.Health;
             TargetHealthSequence.Add(target.Health);
@@ -105,6 +108,8 @@ public sealed partial class ModEntry : Mod
         public int AmmoCountBefore { get; }
         public int RestoreSlotIndex { get; }
         public int MaxAttacks { get; }
+        public string CombatIntent { get; }
+        public Point InitialTargetTile { get; }
         public string RequestedEffect { get; }
         public int TargetHealthBefore { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
@@ -194,7 +199,17 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActiveCombatMonster
     {
-        public ActiveCombatMonster(PendingExecution pending, string locationId, Monster target, MeleeWeapon weapon, int maxAttacks, int maxMovementTiles, bool manualMovement, string terminalState, string requestedEffect)
+        public ActiveCombatMonster(
+            PendingExecution pending,
+            string locationId,
+            Monster target,
+            MeleeWeapon weapon,
+            int maxAttacks,
+            int maxMovementTiles,
+            bool manualMovement,
+            string terminalState,
+            string combatIntent,
+            string requestedEffect)
         {
             Pending = pending;
             LocationId = locationId;
@@ -209,7 +224,9 @@ public sealed partial class ModEntry : Mod
             MaxMovementTiles = maxMovementTiles;
             ManualMovement = manualMovement;
             TerminalState = terminalState;
+            CombatIntent = combatIntent;
             RequestedEffect = requestedEffect;
+            InitialTargetTile = target.TilePoint;
             MaxTicks = Math.Clamp(1200 + maxAttacks * 120, 1800, 7200);
             LastProgressPosition = Game1.player.Position;
             LastMovementPosition = Game1.player.Position;
@@ -233,6 +250,8 @@ public sealed partial class ModEntry : Mod
         public int MaxMovementTiles { get; }
         public bool ManualMovement { get; }
         public string TerminalState { get; }
+        public string CombatIntent { get; }
+        public Point InitialTargetTile { get; }
         public string RequestedEffect { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }

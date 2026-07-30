@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Tests;
@@ -481,13 +482,22 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal(900d, plan.ExpectedCombatDurationMs);
         Assert.Equal(1, plan.CombatWeaponSlotIndex);
         Assert.Equal(3, plan.ExpectedSkillExperience);
+        Assert.Equal(
+            TrainingCombatIntents.TransitSelfDefense,
+            plan.CombatIntent);
         var parameters =
             MiningFloorStepCompiler.BuildExecutionParameters(plan);
         Assert.Contains(
             parameters,
             parameter =>
                 parameter.Name == "max_movement_tiles" &&
-                parameter.Value == "80");
+                parameter.Value == "16");
+        Assert.Contains(
+            parameters,
+            parameter =>
+                parameter.Name == "combat_intent" &&
+                parameter.Value ==
+                    TrainingCombatIntents.TransitSelfDefense);
         Assert.Contains(
             parameters,
             parameter =>
@@ -534,6 +544,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal(
             "blocked_by_immediate_monster_threat",
             plan.SafetyWindowStatus);
+        Assert.Equal(
+            TrainingCombatIntents.TransitSelfDefense,
+            plan.CombatIntent);
     }
 
     [Fact]

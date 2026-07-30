@@ -35,14 +35,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var combatIntent = string.IsNullOrWhiteSpace(
-                request.CombatIntent)
-            ? TrainingCombatIntents.TargetDefeat
-            : request.CombatIntent;
-        if (combatIntent is not (
-                TrainingCombatIntents.TargetDefeat or
-                TrainingCombatIntents.TransitSelfDefense or
-                TrainingCombatIntents.TransitRouteClearance))
+        if (!TryResolveCombatIntent(request, out var combatIntent))
         {
             pending.Completion.SetResult(
                 BlockedWithPrimitive(
@@ -227,7 +220,10 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (ShouldDisengageVolcanoTransitCombat(active))
+        if (ShouldDisengageCombatIntent(
+                active.CombatIntent,
+                active.InitialTargetTile,
+                active.Target))
         {
             CompleteVolcanoCombatBlocked(
                 active,
@@ -637,37 +633,6 @@ public sealed partial class ModEntry : Mod
         return active.NoProgressTicks;
     }
 
-    private static bool ShouldDisengageVolcanoTransitCombat(
-        ActiveVolcanoCombat active)
-    {
-        if (string.Equals(
-                active.CombatIntent,
-                TrainingCombatIntents.TargetDefeat,
-                StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var playerDistance = ManhattanDistance(
-            Game1.player.TilePoint,
-            active.Target.TilePoint);
-        if (playerDistance <= 4)
-        {
-            return false;
-        }
-        if (string.Equals(
-                active.CombatIntent,
-                TrainingCombatIntents.TransitSelfDefense,
-                StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        return ManhattanDistance(
-                active.InitialTargetTile,
-                active.Target.TilePoint) > 2;
-    }
-
     private static void ObserveVolcanoCombatMovement(ActiveVolcanoCombat active)
     {
         var currentPosition = Game1.player.Position;
@@ -758,6 +723,7 @@ public sealed partial class ModEntry : Mod
             CombatTargetDefeated = true,
             CombatMethod = "melee",
             CombatTerminalState = "defeat",
+            CombatIntent = active.CombatIntent,
             ChangedFacts = new[]
             {
                 new SimulatedFactChange { Path = "volcano.monsters[" + active.TargetRuntimeIdentity + "].present", Before = "true", After = "false" },
@@ -807,6 +773,7 @@ public sealed partial class ModEntry : Mod
         result.CombatTargetDefeated = active.Target.Health <= 0;
         result.CombatMethod = "melee";
         result.CombatTerminalState = active.Target.Health <= 0 ? "defeat" : "blocked";
+        result.CombatIntent = active.CombatIntent;
         active.Pending.Completion.SetResult(result);
     }
 

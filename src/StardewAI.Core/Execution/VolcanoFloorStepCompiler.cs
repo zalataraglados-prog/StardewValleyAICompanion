@@ -115,17 +115,11 @@ namespace StardewAI.Core.Execution
         private static int CombatMovementBudget(
             VolcanoFloorStepPlan plan)
         {
-            return plan.CombatIntent switch
-            {
-                StardewAI.Contracts.Training.TrainingCombatIntents
-                    .TransitSelfDefense => 16,
-                StardewAI.Contracts.Training.TrainingCombatIntents
-                    .TransitRouteClearance => Math.Clamp(
-                        plan.EstimatedMovementTiles + 16,
-                        16,
-                        128),
-                _ => 512
-            };
+            return StardewAI.Contracts.Training
+                .TrainingCombatIntentRules.BoundMovementBudget(
+                    plan.CombatIntent,
+                    plan.EstimatedMovementTiles,
+                    512);
         }
 
         private static void Add(

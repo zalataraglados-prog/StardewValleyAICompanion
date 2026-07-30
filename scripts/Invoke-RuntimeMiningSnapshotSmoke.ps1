@@ -13,6 +13,7 @@ param(
     [switch] $BreakOneContainer,
     [switch] $ForceBreakableContainerFixture,
     [switch] $CombatOneMonster,
+    [switch] $VerifyTransitCombatDisengagement,
     [switch] $ManualCombatMovement,
     [switch] $MiningCalibrationLoadout,
     [switch] $ResetSkullKeyFixture,
@@ -430,6 +431,93 @@ try {
         $snapshot = $afterContainerSnapshot
     }
 
+    $transitCombatResult = $null
+    $transitCombatTarget = $null
+    $transitCombatTargetRemained = $null
+    if ($VerifyTransitCombatDisengagement) {
+        $fixtureRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-mining-snapshot-smoke"
+            queue_item_id = "runtime-mining-snapshot-smoke.setup-transit-combat"
+            before_state_hash = $snapshot.state_hash
+            option_id = "debug.setup_mining_combat_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_name = "mummy_chain"
+        }
+        $fixtureResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $fixtureRequest -TimeoutSeconds 60
+        Write-JsonFile (Join-Path $runDirectory "setup-transit-combat-result.json") $fixtureResult
+        if ($fixtureResult.status -ne "applied" -or $fixtureResult.primitive_verification_status -ne "verified") {
+            throw "Transit-combat fixture setup failed: status=$($fixtureResult.status); reasons=$(@($fixtureResult.block_reasons) -join ',')"
+        }
+
+        $snapshot = Wait-MiningSnapshot -Url $miningSnapshotUrl -ExpectedMineLevel $MineLevel -TimeoutSeconds 30
+        $transitCombatTarget = @($snapshot.state.mining.monsters.value | Where-Object {
+            [string]$_.runtime_identity -eq [string]$fixtureResult.combat_target_runtime_identity
+        }) | Select-Object -First 1
+        if ($null -eq $transitCombatTarget) {
+            throw "Transit-combat fixture target was absent from the fresh transparent snapshot."
+        }
+        $playerTile = $snapshot.state.mining.tiles.value.player_tile
+        $targetDistance = [Math]::Abs([int]$transitCombatTarget.tile_x - [int]$playerTile.tile_x) +
+            [Math]::Abs([int]$transitCombatTarget.tile_y - [int]$playerTile.tile_y)
+        if ($targetDistance -le 4) {
+            throw "Transit-combat fixture target must begin outside the four-tile self-defense window."
+        }
+        $transitCombatWeaponSlot = [int]$snapshot.state.mining.player_resources.value.selected_slot_index
+        $transitCombatWeapon = @($snapshot.state.mining.player_resources.value.weapon_slots | Where-Object {
+            [int]$_.slot_index -eq $transitCombatWeaponSlot -and -not [bool]$_.is_scythe
+        }) | Select-Object -First 1
+        if ($null -eq $transitCombatWeapon) {
+            throw "Transit-combat fixture did not expose its selected native melee weapon."
+        }
+        $transitRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-mining-snapshot-smoke"
+            queue_item_id = "runtime-mining-snapshot-smoke.transit-self-defense"
+            before_state_hash = $snapshot.state_hash
+            option_id = "executor.combat_monster"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = [int]$transitCombatTarget.tile_x
+            target_tile_y = [int]$transitCombatTarget.tile_y
+            target_runtime_identity = [string]$transitCombatTarget.runtime_identity
+            target_runtime_type = [string]$transitCombatTarget.runtime_type
+            target_name = [string]$transitCombatTarget.name
+            max_attacks = 64
+            max_movement_tiles = 16
+            combat_weapon_slot_index = $transitCombatWeaponSlot
+            combat_terminal_state = "defeat"
+            combat_intent = "transit_self_defense"
+            required_weapon_enchantment_runtime_type = ""
+        }
+        $transitCombatResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $transitRequest -TimeoutSeconds 60
+        Write-JsonFile (Join-Path $runDirectory "transit-combat-result.json") $transitCombatResult
+        if ($transitCombatResult.status -ne "blocked" -or
+            $transitCombatResult.primitive_verification_status -ne "blocked" -or
+            "combat_disengaged_transit_target" -notin @($transitCombatResult.block_reasons) -or
+            [bool]$transitCombatResult.combat_target_defeated -or
+            [string]$transitCombatResult.combat_intent -ne "transit_self_defense") {
+            throw "Transit self-defense did not disengage with typed feedback: status=$($transitCombatResult.status); reasons=$(@($transitCombatResult.block_reasons) -join ',')"
+        }
+        $afterTransitSnapshot = Wait-MiningSnapshot -Url $miningSnapshotUrl -ExpectedMineLevel $MineLevel -TimeoutSeconds 30
+        $transitCombatTargetRemained = $null -ne (@($afterTransitSnapshot.state.mining.monsters.value | Where-Object {
+            [string]$_.runtime_identity -eq [string]$transitCombatTarget.runtime_identity
+        }) | Select-Object -First 1)
+        if (-not $transitCombatTargetRemained) {
+            throw "Transit self-defense incorrectly removed its nonessential target."
+        }
+        $snapshot = $afterTransitSnapshot
+    }
+
     $combatResult = $null
     $combatTarget = $null
     $combatTargetRemoved = $null
@@ -475,12 +563,16 @@ try {
             max_attacks = 64
             max_movement_tiles = 512
             combat_weapon_slot_index = [int]$combatProjection.slot_index
+            combat_intent = "target_defeat"
             required_weapon_enchantment_runtime_type = [string]$combatTarget.melee_damage_semantics.required_weapon_enchantment_runtime_type
         }
         # The executor's hard combat ceiling is 120 seconds; keep transport timeout later so its typed failure is retained.
         $combatResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $combatRequest -TimeoutSeconds 150
         Write-JsonFile (Join-Path $runDirectory "combat-monster-result.json") $combatResult
-        if ($combatResult.status -ne "applied" -or $combatResult.primitive_verification_status -ne "verified" -or -not $combatResult.combat_target_defeated) {
+        if ($combatResult.status -ne "applied" -or
+            $combatResult.primitive_verification_status -ne "verified" -or
+            -not $combatResult.combat_target_defeated -or
+            [string]$combatResult.combat_intent -ne "target_defeat") {
             throw "Native combat lifecycle failed: status=$($combatResult.status); reasons=$(@($combatResult.block_reasons) -join ',')"
         }
         if ([int]$combatResult.combat_attack_count -le 0 -or [int]$combatResult.combat_hit_count -le 0) {
@@ -546,6 +638,11 @@ try {
         break_container_observed_effect = if ($null -ne $containerResult) { [string]$containerResult.observed_effect } else { "" }
         break_container_removed = $containerRemoved
         combat_one_monster_requested = [bool]$CombatOneMonster
+        transit_combat_disengagement_requested = [bool]$VerifyTransitCombatDisengagement
+        transit_combat_status = if ($null -ne $transitCombatResult) { [string]$transitCombatResult.status } else { "not_requested" }
+        transit_combat_intent = if ($null -ne $transitCombatResult) { [string]$transitCombatResult.combat_intent } else { "" }
+        transit_combat_attack_count = if ($null -ne $transitCombatResult) { [int]$transitCombatResult.combat_attack_count } else { $null }
+        transit_combat_target_remained = $transitCombatTargetRemained
         combat_target_identity = if ($null -ne $combatTarget) { [string]$combatTarget.runtime_identity } else { "" }
         combat_target_type = if ($null -ne $combatTarget) { [string]$combatTarget.runtime_type } else { "" }
         combat_target_name = if ($null -ne $combatTarget) { [string]$combatTarget.name } else { "" }

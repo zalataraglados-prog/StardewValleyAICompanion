@@ -253,6 +253,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("combat_target_defeated")]
         public bool? CombatTargetDefeated { get; set; }
 
+        [JsonPropertyName("combat_intent")]
+        public string CombatIntent { get; set; } = string.Empty;
+
         [JsonPropertyName("recovery_food_slot_index")]
         public int? RecoveryFoodSlotIndex { get; set; }
 

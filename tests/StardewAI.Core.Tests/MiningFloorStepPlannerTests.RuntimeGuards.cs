@@ -123,6 +123,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("healthRecoveredOnConsumption()", loadoutSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.health =", loadoutSource, StringComparison.Ordinal);
         Assert.Contains("[switch] $MiningCalibrationLoadout", smoke, StringComparison.Ordinal);
+        Assert.Contains("[switch] $VerifyTransitCombatDisengagement", smoke, StringComparison.Ordinal);
+        Assert.Contains("combat_disengaged_transit_target", smoke, StringComparison.Ordinal);
+        Assert.Contains("transit_combat_target_remained", smoke, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_MINING_CALIBRATION_LOADOUT", smoke, StringComparison.Ordinal);
         Assert.Contains("-MiningCalibrationLoadout", loop, StringComparison.Ordinal);
     }
@@ -180,6 +183,9 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("RuntimeHelpers.GetHashCode(monster)", combatSource, StringComparison.Ordinal);
         Assert.Contains("CombatTargetHealthSequence", combatSource, StringComparison.Ordinal);
         Assert.Contains("CombatPlayerHealthSequence", combatSource, StringComparison.Ordinal);
+        Assert.Contains("combat_disengaged_transit_target", combatSource, StringComparison.Ordinal);
+        Assert.Contains("ShouldDisengageCombatIntent(", combatSource, StringComparison.Ordinal);
+        Assert.Contains("slingshot_disengaged_transit_target", source, StringComparison.Ordinal);
         Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
         Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
         Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);

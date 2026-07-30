@@ -186,11 +186,11 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "ShouldDisengageVolcanoTransitCombat(active)",
+            "ShouldDisengageCombatIntent(",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "TrainingCombatIntents.TransitSelfDefense",
+            "TryResolveCombatIntent(request, out var combatIntent)",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

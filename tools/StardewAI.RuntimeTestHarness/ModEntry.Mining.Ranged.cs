@@ -34,7 +34,19 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
             return;
         }
-        const string requested = "target_monster.defeated=true;native_input=full_charge_slingshot";
+        if (!TryResolveCombatIntent(request, out var combatIntent))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "shoot_monster",
+                "target_monster.defeated=true;native_input=full_charge_slingshot",
+                "combat_intent=" + request.CombatIntent,
+                "slingshot_combat_intent_unsupported"));
+            return;
+        }
+        var requested =
+            "target_monster.defeated=true;native_input=full_charge_slingshot;combat_intent=" +
+            combatIntent;
         if (Game1.currentLocation is not MineShaft mine ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeIdentity) ||
             string.IsNullOrWhiteSpace(request.TargetRuntimeType) ||
@@ -124,6 +136,7 @@ public sealed partial class ModEntry : Mod
             ammo.Stack,
             Game1.player.CurrentToolIndex,
             Math.Clamp(request.MaxAttacks, 1, 256),
+            combatIntent,
             requested);
         SlingshotAimPatch.ActiveSlingshot = slingshot;
         SlingshotAimPatch.AimWorldPixel = targets[0].GetBoundingBox().Center;
@@ -162,6 +175,16 @@ public sealed partial class ModEntry : Mod
                 return;
             }
             CompleteShootMonster(active);
+            return;
+        }
+        if (ShouldDisengageCombatIntent(
+                active.CombatIntent,
+                active.InitialTargetTile,
+                active.Target))
+        {
+            CompleteShootMonsterBlocked(
+                active,
+                "slingshot_disengaged_transit_target");
             return;
         }
         if (!HasClearProjectilePath(active.Mine, Game1.player.TilePoint, active.Target.TilePoint))
@@ -269,8 +292,11 @@ public sealed partial class ModEntry : Mod
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[] { "native_full_charge_slingshot_defeated_target", "ammo_consumption_observed" },
             RequestedEffect = active.RequestedEffect,
-            ObservedEffect = "target_health=" + active.Target.Health + ";ammo_stack=" + ammoAfter,
+            ObservedEffect = "target_health=" + active.Target.Health +
+                ";ammo_stack=" + ammoAfter +
+                ";combat_intent=" + active.CombatIntent,
             CombatMethod = "slingshot",
+            CombatIntent = active.CombatIntent,
             CombatConsumableQualifiedItemId = active.AmmoQualifiedItemId,
             CombatConsumableCountBefore = active.AmmoCountBefore,
             CombatConsumableCountAfter = ammoAfter,
@@ -305,8 +331,15 @@ public sealed partial class ModEntry : Mod
             Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         }
         activeShootMonster = null;
-        active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request, "shoot_monster", active.RequestedEffect,
-            "target_health=" + active.Target.Health, reason));
+        var result = BlockedWithPrimitive(
+            active.Pending.Request,
+            "shoot_monster",
+            active.RequestedEffect,
+            "target_health=" + active.Target.Health +
+                ";combat_intent=" + active.CombatIntent,
+            reason);
+        result.CombatIntent = active.CombatIntent;
+        active.Pending.Completion.SetResult(result);
     }
 
     private static bool HasClearProjectilePath(GameLocation location, Point start, Point target)
