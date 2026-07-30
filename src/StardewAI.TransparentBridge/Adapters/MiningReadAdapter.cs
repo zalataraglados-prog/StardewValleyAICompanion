@@ -109,6 +109,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             golden_scythe_altars = ActionTiles(buildings, "GoldenScythe"),
             ladders = IndexedTiles(buildings, 173, "native_mineshaft_ladder_tile"),
             shafts = ShaftTiles(buildings, mine, Game1.player),
+            staircase_placement = ReadStaircasePlacement(mine, loadedMap),
             tile_beneath_ladder = Tile(mine.tileBeneathLadder),
             tile_beneath_elevator = Tile(mine.tileBeneathElevator),
             collision_context = CollisionContext(mine, loadedMap),

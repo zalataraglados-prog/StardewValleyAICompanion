@@ -1,0 +1,51 @@
+namespace StardewAI.RuntimeTestHarness;
+
+public sealed partial class ModEntry
+{
+    private static readonly HashSet<string> RuntimeDebugOptionIds =
+        new(StringComparer.Ordinal)
+        {
+            "debug.advance_time_to",
+            "debug.enter_ready_incubator_house",
+            "debug.prepare_incubator_sleep",
+            "debug.setup_animal_product_target",
+            "debug.setup_book_fixture",
+            "debug.setup_breakable_container",
+            "debug.setup_clear_obstacle",
+            "debug.setup_collection_task_fixture",
+            "debug.setup_crab_pot_target",
+            "debug.setup_debris_target",
+            "debug.setup_farm_resource_clump",
+            "debug.setup_fish_frenzy",
+            "debug.setup_fish_pond",
+            "debug.setup_fish_pond_output",
+            "debug.setup_fish_pond_request",
+            "debug.setup_forage_source_fixture",
+            "debug.setup_giant_crop_target",
+            "debug.setup_green_rain_resource_clump",
+            "debug.setup_harvest_crop_target",
+            "debug.setup_idle_machine_target",
+            "debug.setup_incubator_hatch_naming",
+            "debug.setup_machine_input_target",
+            "debug.setup_machine_lifecycle_target",
+            "debug.setup_machine_output_target",
+            "debug.setup_machine_placement_target",
+            "debug.setup_material_inventory_graph",
+            "debug.setup_mine_fishing_floor",
+            "debug.setup_mining_combat_fixture",
+            "debug.setup_mining_floor",
+            "debug.setup_mining_resource_clump",
+            "debug.setup_pan_ore_spot",
+            "debug.setup_plant_seed_target",
+            "debug.setup_quarry_mine",
+            "debug.setup_quest_monster_drop_fixture",
+            "debug.setup_shipping_target",
+            "debug.setup_skull_cavern_shaft",
+            "debug.setup_storage_crafting_target",
+            "debug.setup_storage_placement_target",
+            "debug.setup_till_soil_target",
+            "debug.setup_volcano_floor",
+            "debug.setup_watering_target",
+            "debug.visible_walk"
+        };
+}

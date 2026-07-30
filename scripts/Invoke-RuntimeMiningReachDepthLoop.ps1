@@ -10,6 +10,7 @@ param(
     [string] $RunId = ("runtime-mining-reach-depth-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-mining-reach-depth",
     [switch] $AcquireSkullKey,
+    [switch] $AllowStaircaseConsumption,
     [switch] $VisibleGame,
     [switch] $KeepProcessesRunning
 )
@@ -125,6 +126,11 @@ $recoverableTransitCombatReasons = @(
 $objectiveReached = $false
 $terminalExitVerified = $false
 $skullKeyTransitionObserved = $false
+$resourcePreservationPolicy = if ($AllowStaircaseConsumption) {
+    "allow_staircase_consumption"
+} else {
+    "preserve_staircases"
+}
 
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
@@ -154,6 +160,7 @@ try {
         -RunId $bootstrapRunId `
         -OutputDirectory $bootstrapOutputDirectory `
         -MiningCalibrationLoadout `
+        -MiningStaircaseLoadout:$AllowStaircaseConsumption `
         -ResetSkullKeyFixture:$AcquireSkullKey `
         -VisibleGame:$VisibleGame `
         -KeepGameRunning | Out-Null
@@ -222,7 +229,7 @@ try {
             "--action-parameter", "latest_exit_time=$LatestExitTime",
             "--action-parameter", "minimum_reserve_health=$MinimumReserveHealth",
             "--action-parameter", "minimum_reserve_energy=$MinimumReserveEnergy",
-            "--action-parameter", "resource_preservation_policy=preserve_staircases",
+            "--action-parameter", "resource_preservation_policy=$resourcePreservationPolicy",
             "--max-queue-item-attempts", "1"
         )
         & dotnet @arguments | Set-Content -LiteralPath (Join-Path $runDirectory ("loop-step-" + $step.ToString("D4") + ".json")) -Encoding utf8

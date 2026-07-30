@@ -70,6 +70,7 @@ namespace StardewAI.Core.Execution
                 ["executor.combat_monster"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.shoot_monster"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.place_bomb"] = (action, _) => CompileMiningNativePrimitiveStep(action),
+                ["executor.place_staircase"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.consume_food"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.descend_ladder"] = (action, _) => CompileMiningNativePrimitiveStep(action),
                 ["executor.descend_shaft"] = (action, _) => CompileMiningNativePrimitiveStep(action),

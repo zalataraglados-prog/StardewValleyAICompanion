@@ -81,12 +81,17 @@ checked against the current registry, implementation, and local 1.6.15 decompile
   be represented by broad `interact`. Farm-cave selection is bound to the exact
   Demetrius event rather than save creation. These remain confirmation/host-policy
   gated until their native Before/After and next-day verifiers exist.
-- **#82 functional items and recovery: accepted as typed effect families.** Warp
-  totems/scepter, registered teleporters, weather/resource/machine-time effects,
-  staircases, Tent Kits, Spa recovery, and multiplayer bed recovery require separate
-  closed unions and verifiers. A universal `use_item` remains prohibited. Final
-  registration waits for generated decompile coverage of every native item/action
-  branch so the issue list cannot become an omission-prone handwritten catalog.
+- **#82 functional items and recovery: accepted as typed effect families; Staircase
+  slice closed.** `executor.place_staircase` now uses exact `(BC)71` inventory rows,
+  the decompiled `MineShaft` floor gate, and the exact direct-tile subset of native
+  recursive placement. It is selected only under explicit
+  `allow_staircase_consumption`; the default remains `preserve_staircases`. Native
+  right-click placement is verified by one-item consumption and live tile `173`,
+  then a fresh snapshot reuses `executor.descend_ladder`. Warp totems/scepter,
+  registered teleporters, weather/resource/machine-time effects, Tent Kits, Spa
+  recovery, and multiplayer bed recovery remain separate typed slices. A universal
+  `use_item` remains prohibited, and generated decompile coverage remains required
+  so the issue list cannot become an omission-prone handwritten catalog.
 - **#2 tracking issue: governance principles accepted, fixed counts rejected as
   current truth.** Its `31 + 56 = 87` registry statement describes an older PR audit
   baseline. Current generated capability, quest-stage, evidence, and training-admission

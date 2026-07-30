@@ -20,6 +20,7 @@ namespace StardewAI.Core.Execution
         public const string CombatMonster = "combat_monster";
         public const string ShootMonster = "shoot_monster";
         public const string PlaceBomb = "place_bomb";
+        public const string PlaceStaircase = "place_staircase";
         public const string PickupDebris = "pickup_debris";
         public const string ConsumeFood = "consume_food";
         public const string MoveToGoldenScytheAltar = "move_to_golden_scythe_altar";
@@ -39,6 +40,19 @@ namespace StardewAI.Core.Execution
         public const string SlayNamedMonster = "slay_named_monster";
         public const string AcquireGoldenScythe = "acquire_golden_scythe";
         public const string AcquireSkullKey = "acquire_skull_key";
+    }
+
+    public static class MiningResourcePreservationPolicies
+    {
+        public const string PreserveStaircases = "preserve_staircases";
+        public const string AllowStaircaseConsumption =
+            "allow_staircase_consumption";
+
+        public static bool IsSupported(string value)
+        {
+            return value is PreserveStaircases or
+                AllowStaircaseConsumption;
+        }
     }
 
     public sealed class MiningFloorObjective
@@ -62,6 +76,9 @@ namespace StardewAI.Core.Execution
         public int? MinimumReserveEnergy { get; set; }
 
         public int? TargetDepth { get; set; }
+
+        public string ResourcePreservationPolicy { get; set; } =
+            MiningResourcePreservationPolicies.PreserveStaircases;
     }
 
     public sealed class MiningPathTile
@@ -167,6 +184,15 @@ namespace StardewAI.Core.Execution
         public int? ExpectedBombObjectHits { get; set; }
 
         public int? ExpectedBombMonsterHits { get; set; }
+
+        public int? StaircaseSlotIndex { get; set; }
+
+        public string StaircaseQualifiedItemId { get; set; } =
+            string.Empty;
+
+        public int? StaircaseCountBefore { get; set; }
+
+        public int? StaircaseCountAfter { get; set; }
 
         public double? ExpectedCombatAttacks { get; set; }
 

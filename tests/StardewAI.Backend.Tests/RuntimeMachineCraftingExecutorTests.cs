@@ -1,3 +1,5 @@
+using StardewAI.Contracts.Capabilities;
+
 namespace StardewAI.Backend.Tests;
 
 public sealed class RuntimeMachineCraftingExecutorTests
@@ -52,11 +54,14 @@ public sealed class RuntimeMachineCraftingExecutorTests
             "request.OptionId == \"executor.craft_storage_item\"",
             executor);
         Assert.Contains(
-            "request.OptionId != \"executor.craft_storage_item\"",
+            "RuntimeTestHarnessDispatchCatalog.IsSupported",
             whitelist);
-        Assert.Contains(
-            "request.OptionId != \"executor.craft_machine_item\"",
-            whitelist);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_storage_item"));
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_machine_item"));
     }
 
     [Fact]

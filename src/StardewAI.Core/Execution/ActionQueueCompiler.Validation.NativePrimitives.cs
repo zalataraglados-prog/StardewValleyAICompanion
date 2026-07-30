@@ -55,6 +55,24 @@ namespace StardewAI.Core.Execution
                     RequireText(action, reasons, "bomb_qualified_item_id");
                     break;
 
+                case "executor.place_staircase":
+                    RequireTile(action, reasons);
+                    RequireInt(action, reasons, "stand_tile_x");
+                    RequireInt(action, reasons, "stand_tile_y");
+                    RequireInt(action, reasons, "slot_index");
+                    RequireText(action, reasons, "qualified_item_id");
+                    RequireInt(action, reasons, "inventory_item_total_before");
+                    RequireInt(action, reasons, "inventory_item_total_after");
+                    if (!string.Equals(
+                            ReadParameter(action, "qualified_item_id"),
+                            "(BC)71",
+                            StringComparison.Ordinal))
+                    {
+                        reasons.Add(
+                            "staircase_qualified_item_id_must_equal_(BC)71");
+                    }
+                    break;
+
                 case "executor.consume_food":
                     RequireInt(action, reasons, "slot_index");
                     RequireText(action, reasons, "qualified_item_id");

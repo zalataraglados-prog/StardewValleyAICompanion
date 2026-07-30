@@ -52,8 +52,8 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 is_ore_or_resource_node = breakableStone,
                 mining_node_kind = breakableStone ? "breakable_stone_or_resource_node" : "none",
                 is_container = container,
-                is_placed_staircase = qualifiedId == "(O)71",
-                tool_requirement = breakableStone ? "pickaxe" : container ? "heavy_hitter" : qualifiedId == "(O)71" ? "none_staircase" : "unknown_or_interact",
+                is_placed_staircase = qualifiedId == "(BC)71",
+                tool_requirement = breakableStone ? "pickaxe" : container ? "heavy_hitter" : qualifiedId == "(BC)71" ? "none_staircase" : "unknown_or_interact",
                 health_or_hits_remaining = remainingHealth,
                 best_pickaxe_damage_per_hit = breakableStone ? pickaxeDamage : 0,
                 best_pickaxe_hits_remaining = breakableStone && remainingHealth.HasValue && pickaxeDamage > 0

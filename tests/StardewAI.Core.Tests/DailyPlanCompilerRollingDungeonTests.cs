@@ -64,6 +64,7 @@ public sealed class DailyPlanCompilerRollingDungeonTests
     [InlineData("combat_monster", "executor.combat_monster")]
     [InlineData("shoot_monster", "executor.shoot_monster")]
     [InlineData("place_bomb", "executor.place_bomb")]
+    [InlineData("place_staircase", "executor.place_staircase")]
     [InlineData("consume_food", "executor.consume_food")]
     [InlineData("descend_ladder", "executor.descend_ladder")]
     [InlineData("descend_shaft", "executor.descend_shaft")]

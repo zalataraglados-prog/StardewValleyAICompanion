@@ -129,6 +129,7 @@ namespace StardewAI.Core.Execution
                 "combat_monster" => "executor.combat_monster",
                 "shoot_monster" => "executor.shoot_monster",
                 "place_bomb" => "executor.place_bomb",
+                "place_staircase" => "executor.place_staircase",
                 "consume_food" => "executor.consume_food",
                 "descend_ladder" => "executor.descend_ladder",
                 "descend_shaft" => "executor.descend_shaft",

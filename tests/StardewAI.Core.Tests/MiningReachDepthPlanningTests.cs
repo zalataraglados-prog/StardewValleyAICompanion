@@ -145,6 +145,35 @@ public sealed class MiningReachDepthPlanningTests
     }
 
     [Fact]
+    public void CompilerRejectsUnknownStaircasePreservationPolicy()
+    {
+        var snapshot = MiningSnapshot(
+            currentDepth: 40,
+            targetFamily: "ordinary_mines");
+        var request = Request(snapshot.StateHash);
+        request.Actions[0].Parameters = new[]
+        {
+            Parameter("target_depth", "45"),
+            Parameter(
+                "target_location_family",
+                "ordinary_mines"),
+            Parameter(
+                "resource_preservation_policy",
+                "consume_any_functional_item")
+        };
+
+        var queue = new ActionQueueCompiler().Compile(
+            request,
+            snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "unsupported_resource_preservation_policy:" +
+                "consume_any_functional_item",
+            queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
     public void AvailabilityFailsClosedForNestedUnavailableMiningFacts()
     {
         var snapshot = MiningSnapshot(currentDepth: 40, targetFamily: "ordinary_mines", collisionStatus: "unavailable");

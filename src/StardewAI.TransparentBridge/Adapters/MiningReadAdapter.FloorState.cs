@@ -167,7 +167,13 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             bomb_slots = player.Items.Select((item, index) => item is StardewValley.Object bomb && BombRadius(bomb.QualifiedItemId) > 0
                 ? BombSlot(index, bomb, player)
                 : null).Where(item => item is not null).ToArray(),
-            staircase_count = CountItem(player, "(O)71"),
+            staircase_count = CountItem(player, "(BC)71"),
+            staircase_slots = player.Items.Select((item, index) =>
+                    item?.QualifiedItemId == "(BC)71"
+                        ? Slot(index, item)
+                        : null)
+                .Where(item => item is not null)
+                .ToArray(),
             food_slots = player.Items.Select((item, index) => item is StardewValley.Object obj && obj.Edibility > 0 ? FoodSlot(index, obj) : null).Where(item => item is not null).ToArray(),
             buffs = new
             {

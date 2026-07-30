@@ -269,7 +269,7 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("AreAdjacent(active.Stand, active.Target)", bombSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.FacingDirection != placementDirection", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.GetGrabTile()", bombSource, StringComparison.Ordinal);
-        Assert.Contains("BombPlacementCursorPatch.ScreenPixel", bombSource, StringComparison.Ordinal);
+        Assert.Contains("PlacementCursorPatch.ScreenPixel", bombSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.setMousePosition", bombSource, StringComparison.Ordinal);
         Assert.Contains("TickBombPathMovement", bombSource, StringComparison.Ordinal);
         Assert.Contains("bomb_escape_finished_inside_damage_square", bombSource, StringComparison.Ordinal);
@@ -440,7 +440,7 @@ public sealed partial class MiningFloorStepPlannerTests
     {
         var registry = new StardewAI.Core.OptionRegistry.OptionRegistry();
 
-        foreach (var optionId in new[] { "executor.mine_stone", "executor.break_container", "executor.combat_monster", "executor.shoot_monster", "executor.place_bomb", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
+        foreach (var optionId in new[] { "executor.mine_stone", "executor.break_container", "executor.combat_monster", "executor.shoot_monster", "executor.place_bomb", "executor.place_staircase", "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft", "executor.exit_mine" })
         {
             var option = registry.GetRequired(optionId);
             Assert.Equal(CompilerResponsibilities.FullActionExpansion, option.CompilerResponsibility);
@@ -451,11 +451,59 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.combat_monster").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.shoot_monster").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.place_bomb").BehaviorCategory);
+        Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.place_staircase").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.break_container").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.consume_food").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_ladder").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Mechanical, registry.GetRequired("executor.descend_shaft").BehaviorCategory);
         Assert.Equal(OptionBehaviorCategories.Recovery, registry.GetRequired("executor.exit_mine").BehaviorCategory);
+    }
+
+    [Fact]
+    public void StaircaseClosureUsesExactBigCraftableAndNativeInputOnly()
+    {
+        var bridge = MiningReadAdapterSources.All;
+        var runtime = RuntimeHarnessSources.All;
+        var start = runtime.IndexOf(
+            "private void StartPlaceStaircase",
+            StringComparison.Ordinal);
+        var end = runtime.IndexOf(
+            "private static string StaircaseObservedEffect",
+            start,
+            StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var staircaseSource = runtime[start..end];
+
+        Assert.Contains("CountItem(Game1.player, \"(BC)71\")", bridge, StringComparison.Ordinal);
+        Assert.Contains("MineShaft.shouldCreateLadderOnThisLevel", bridge, StringComparison.Ordinal);
+        Assert.Contains("exact_native_direct_tile_subset_no_recursive_relocation", bridge, StringComparison.Ordinal);
+        Assert.DoesNotContain("CountItem(Game1.player, \"(O)71\")", bridge, StringComparison.Ordinal);
+
+        Assert.Contains("TryApplySmapiRightButtonOverride", staircaseSource, StringComparison.Ordinal);
+        Assert.Contains("PlacementCursorPatch.ScreenPixel", staircaseSource, StringComparison.Ordinal);
+        Assert.Contains("active.MaxMovementTiles", staircaseSource, StringComparison.Ordinal);
+        Assert.Contains("staircase_native_placement_not_observed", staircaseSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("createLadder", staircaseSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("recursiveTryToCreateLadderDown", staircaseSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine(", staircaseSource, StringComparison.Ordinal);
+
+        var root = FindRepositoryRoot();
+        var loop = File.ReadAllText(Path.Combine(
+            root,
+            "scripts",
+            "Invoke-RuntimeMiningReachDepthLoop.ps1"));
+        Assert.Contains(
+            "[switch] $AllowStaircaseConsumption",
+            loop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resource_preservation_policy=",
+            loop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "allow_staircase_consumption",
+            loop,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -555,6 +603,7 @@ public sealed partial class MiningFloorStepPlannerTests
         string ladders = "[]",
         string shafts = "[]",
         string exits = "[]",
+        string staircasePlacement = "{}",
         string goldenScytheAltars = "[]",
         string objects = "[]",
         string monsters = "[]",
@@ -585,7 +634,7 @@ public sealed partial class MiningFloorStepPlannerTests
           },
           "mining": {
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"static_blocked_rows":STATICROWS,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"staircase_placement":STAIRCASE_PLACEMENT,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"static_blocked_rows":STATICROWS,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "resource_clumps": {"status":"available","value":RESOURCE_CLUMPS},
             "monsters": {"status":"available","value":MONSTERS},
@@ -598,6 +647,7 @@ public sealed partial class MiningFloorStepPlannerTests
             .Replace("LADDERS", ladders, StringComparison.Ordinal)
             .Replace("SHAFTS", shafts, StringComparison.Ordinal)
             .Replace("EXITS", exits, StringComparison.Ordinal)
+            .Replace("STAIRCASE_PLACEMENT", staircasePlacement, StringComparison.Ordinal)
             .Replace("GOLDEN_SCYTHE_ALTARS", goldenScytheAltars, StringComparison.Ordinal)
             .Replace("SKULL_KEY_REWARD_CHESTS", skullKeyRewardChests, StringComparison.Ordinal)
             .Replace("WIDTH", width.ToString(), StringComparison.Ordinal)

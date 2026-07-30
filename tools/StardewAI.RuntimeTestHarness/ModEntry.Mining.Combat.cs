@@ -195,6 +195,7 @@ public sealed partial class ModEntry : Mod
             activeResourceClump?.CombatInterrupted == true ||
             activeBreakContainer?.CombatInterrupted == true ||
             activePickupDebris?.CombatInterrupted == true ||
+            activePlaceStaircase?.CombatInterrupted == true ||
             activeDescendLadder?.CombatInterrupted == true ||
             activeDescendShaft?.CombatInterrupted == true ||
             activeExitMine?.CombatInterrupted == true;

@@ -174,6 +174,16 @@ namespace StardewAI.Core.Execution
             var currentDepth = currentMine.HasValue ? ReadInt(currentMine.Value, "mine_level") : 0;
             var currentFamily = currentMine.HasValue ? ReadString(currentMine.Value, "mine_kind") : string.Empty;
             reasons.AddRange(MiningReachDepthCandidateBuilder.ValidateTarget(currentDepth, currentFamily, targetDepth, ReadParameter(action, "target_location_family")));
+            var resourcePreservationPolicy =
+                ReadParameter(action, "resource_preservation_policy") ??
+                MiningResourcePreservationPolicies.PreserveStaircases;
+            if (!MiningResourcePreservationPolicies.IsSupported(
+                    resourcePreservationPolicy))
+            {
+                reasons.Add(
+                    "unsupported_resource_preservation_policy:" +
+                    resourcePreservationPolicy);
+            }
 
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
@@ -181,7 +191,8 @@ namespace StardewAI.Core.Execution
                 MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
                 MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
                 LatestExitTime = ReadIntParameter(action, "latest_exit_time"),
-                TargetDepth = targetDepth
+                TargetDepth = targetDepth,
+                ResourcePreservationPolicy = resourcePreservationPolicy
             });
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))

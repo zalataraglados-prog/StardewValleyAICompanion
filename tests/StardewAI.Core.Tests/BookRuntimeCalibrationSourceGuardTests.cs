@@ -1,3 +1,5 @@
+using StardewAI.Contracts.Capabilities;
+
 namespace StardewAI.Core.Tests;
 
 public sealed class BookRuntimeCalibrationSourceGuardTests
@@ -15,9 +17,12 @@ public sealed class BookRuntimeCalibrationSourceGuardTests
             "ModEntry.cs");
 
         Assert.Contains(
-            "request.OptionId != \"executor.read_book\"",
+            "RuntimeTestHarnessDispatchCatalog.IsSupported",
             validation,
             StringComparison.Ordinal);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.read_book"));
         Assert.Contains(
             "pending.Request.OptionId == \"executor.read_book\"",
             dispatch,

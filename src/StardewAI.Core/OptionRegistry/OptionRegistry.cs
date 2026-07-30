@@ -438,6 +438,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement consumes the exact bomb", "WASD escape reaches the verified tile before detonation", "natural explosion changes the predicted cluster" },
                 new[] { "block_missing_bomb", "block_unverified_fuse_escape", "block_protected_object_in_blast", "block_direct_explosion" }));
 
+            Register(Option("executor.place_staircase", "mining", "Place one transparent staircase on a native-legal MineShaft tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "mining.current_mine", "mining.tiles", "mining.monsters", "mining.player_resources", "player.inventory", "menus.active_menu" },
+                new[] { "native placement consumes the exact (BC)71 stack", "the projected direct tile becomes a live ladder", "fresh-snapshot replanning reuses executor.descend_ladder" },
+                new[] { "block_missing_staircase", "block_native_floor_rule", "block_unknown_or_recursive_relocated_tile", "block_unsafe_interaction_window", "block_direct_ladder_creation" }));
+
             Register(Option("executor.consume_food", "recovery", "Consume one transparent healing food",
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,
@@ -867,7 +875,7 @@ namespace StardewAI.Core.OptionRegistry
         private void ValidateRegistryCompleteness()
         {
             const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 64;
+            const int expectedPrimitiveCount = 65;
             var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
             var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
             if (options.Count != OptionGovernanceCatalog.Count ||

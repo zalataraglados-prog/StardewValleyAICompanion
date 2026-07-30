@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -67,7 +68,9 @@ public sealed class RuntimeCatchFishExecutorTests
     public void RuntimeCatchFishBranchIsFailClosedAndDoesNotUseForbiddenCatchMutation()
     {
         var source = RuntimeHarnessSources.All;
-        Assert.Contains("request.OptionId != \"executor.catch_fish\"", source);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.catch_fish"));
         Assert.Contains("StartCatchFish(pending);", source);
         Assert.Contains("ValidateCatchFishStart", source);
         Assert.Contains("ValidateCatchFishContinuity", source);

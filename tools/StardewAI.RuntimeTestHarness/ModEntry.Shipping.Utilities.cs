@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Training;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -547,107 +548,9 @@ public sealed partial class ModEntry : Mod
             reasons.Add("world_not_ready");
         }
 
-        if (request.OptionId != "farm.maintain_crops" &&
-            request.OptionId != "debug.visible_walk" &&
-            request.OptionId != "executor.move_to_tile" &&
-            request.OptionId != "executor.traverse_connector" &&
-            request.OptionId != "executor.face_direction" &&
-            request.OptionId != "executor.wait_ticks" &&
-            request.OptionId != "executor.clear_obstacle" &&
-            request.OptionId != "executor.mine_stone" &&
-            request.OptionId != "executor.break_resource_clump" &&
-            request.OptionId != "executor.break_farm_resource_clump" &&
-            request.OptionId != "executor.break_current_location_resource_clump" &&
-            request.OptionId != "executor.cool_volcano_lava" &&
-            request.OptionId != "executor.break_volcano_stone" &&
-            request.OptionId != "executor.break_volcano_container" &&
-            request.OptionId != "executor.combat_volcano_monster" &&
-            request.OptionId != "executor.break_container" &&
-            request.OptionId != "executor.combat_monster" &&
-            request.OptionId != "executor.shoot_monster" &&
-            request.OptionId != "executor.place_bomb" &&
-            request.OptionId != "executor.consume_food" &&
-            request.OptionId != "executor.descend_ladder" &&
-            request.OptionId != "executor.descend_shaft" &&
-            request.OptionId != "executor.exit_mine" &&
-            request.OptionId != "executor.till_soil" &&
-            request.OptionId != "debug.advance_time_to" &&
-            request.OptionId != "debug.setup_watering_target" &&
-            request.OptionId != "debug.setup_till_soil_target" &&
-            request.OptionId != "debug.setup_fish_frenzy" &&
-            request.OptionId != "debug.setup_fish_pond" &&
-            request.OptionId != "debug.setup_fish_pond_output" &&
-            request.OptionId != "debug.setup_fish_pond_request" &&
-            request.OptionId != "debug.setup_mine_fishing_floor" &&
-            request.OptionId != "debug.setup_mining_floor" &&
-            request.OptionId != "debug.setup_skull_cavern_shaft" &&
-            request.OptionId != "debug.setup_quarry_mine" &&
-            request.OptionId != "debug.setup_volcano_floor" &&
-            request.OptionId != "debug.setup_breakable_container" &&
-            request.OptionId != "debug.setup_mining_combat_fixture" &&
-            request.OptionId != "debug.setup_quest_monster_drop_fixture" &&
-            request.OptionId != "debug.setup_collection_task_fixture" &&
-            request.OptionId != "debug.setup_green_rain_resource_clump" &&
-            request.OptionId != "debug.setup_farm_resource_clump" &&
-            request.OptionId != "debug.setup_mining_resource_clump" &&
-            request.OptionId != "debug.setup_forage_source_fixture" &&
-            request.OptionId != "debug.setup_clear_obstacle" &&
-            request.OptionId != "debug.setup_plant_seed_target" &&
-            request.OptionId != "debug.setup_harvest_crop_target" &&
-            request.OptionId != "debug.setup_giant_crop_target" &&
-            request.OptionId != "debug.setup_debris_target" &&
-            request.OptionId != "debug.setup_book_fixture" &&
-            request.OptionId != "debug.setup_machine_output_target" &&
-            request.OptionId != "debug.setup_material_inventory_graph" &&
-            request.OptionId != "debug.setup_crab_pot_target" &&
-            request.OptionId != "debug.setup_animal_product_target" &&
-            request.OptionId != "debug.setup_pan_ore_spot" &&
-            request.OptionId != "debug.setup_machine_input_target" &&
-            request.OptionId != "debug.setup_incubator_hatch_naming" &&
-            request.OptionId != "debug.prepare_incubator_sleep" &&
-            request.OptionId != "debug.enter_ready_incubator_house" &&
-            request.OptionId != "debug.setup_idle_machine_target" &&
-            request.OptionId != "debug.setup_machine_placement_target" &&
-            request.OptionId != "debug.setup_storage_placement_target" &&
-            request.OptionId != "debug.setup_storage_crafting_target" &&
-            request.OptionId != "debug.setup_machine_lifecycle_target" &&
-            request.OptionId != "debug.setup_shipping_target" &&
-            request.OptionId != "executor.select_safe_item_slot" &&
-            request.OptionId != "executor.close_menu" &&
-            request.OptionId != "executor.interact" &&
-            request.OptionId != "executor.buy_shop_item" &&
-            request.OptionId != "executor.sell_shop_item" &&
-            request.OptionId != "executor.plant_seed" &&
-            request.OptionId != "executor.harvest_crop" &&
-            request.OptionId != "executor.harvest_giant_crop" &&
-            request.OptionId != "executor.pickup_debris" &&
-            request.OptionId != "executor.collect_spawned_object" &&
-            request.OptionId != "executor.harvest_ginger" &&
-            request.OptionId != "executor.harvest_bush" &&
-            request.OptionId != "executor.collect_crab_pot" &&
-            request.OptionId != "executor.collect_animal_product" &&
-            request.OptionId != "executor.pet_interact" &&
-            request.OptionId != "executor.fill_pet_bowl" &&
-            request.OptionId != "executor.pan_ore_spot" &&
-            request.OptionId != "executor.collect_fish_pond_output" &&
-            request.OptionId != "executor.complete_fish_pond_request" &&
-            request.OptionId != "executor.claim_mine_reward_chest" &&
-            request.OptionId != "executor.collect_machine_output" &&
-            request.OptionId != "executor.load_machine_input" &&
-            request.OptionId != "executor.name_hatched_animal" &&
-            request.OptionId != "executor.craft_machine_item" &&
-            request.OptionId != "executor.craft_storage_item" &&
-            request.OptionId != "executor.place_machine" &&
-            request.OptionId != "executor.remove_machine" &&
-            request.OptionId != "executor.place_storage" &&
-            request.OptionId != "executor.read_book" &&
-            request.OptionId != "executor.catch_fish" &&
-            request.OptionId != "executor.choose_dialogue_response" &&
-            request.OptionId != "executor.social_interact" &&
-            request.OptionId != "executor.quest_npc_interact" &&
-            request.OptionId != "executor.quest_drop_box_donate" &&
-            request.OptionId != "executor.sleep" &&
-            request.OptionId != "executor.ship_inventory_item_to_bin")
+        if (!RuntimeTestHarnessDispatchCatalog.IsSupported(
+                request.OptionId) &&
+            !RuntimeDebugOptionIds.Contains(request.OptionId))
         {
             reasons.Add("unsupported_option_id");
         }

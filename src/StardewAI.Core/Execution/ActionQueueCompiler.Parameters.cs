@@ -265,7 +265,13 @@ namespace StardewAI.Core.Execution
                 MinimumReserveHealth = ReadIntParameter(action, "minimum_reserve_health") ?? 0,
                 MinimumReserveEnergy = ReadIntParameter(action, "minimum_reserve_energy"),
                 LatestExitTime = ReadIntParameter(action, "latest_exit_time"),
-                TargetDepth = ReadIntParameter(action, "target_depth")
+                TargetDepth = ReadIntParameter(action, "target_depth"),
+                ResourcePreservationPolicy =
+                    ReadParameter(
+                        action,
+                        "resource_preservation_policy") ??
+                    MiningResourcePreservationPolicies
+                        .PreserveStaircases
             };
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, objective);
             parameters.AddRange(MiningFloorStepCompiler.BuildExecutionParameters(floorStep));

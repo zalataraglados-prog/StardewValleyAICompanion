@@ -37,6 +37,13 @@ namespace StardewAI.Core.OptionRegistry
             var latestExitTime = ReadIntParameter(parameters, "latest_exit_time");
             var minReserveHealth = ReadIntParameter(parameters, "minimum_reserve_health");
             var minReserveEnergy = ReadIntParameter(parameters, "minimum_reserve_energy");
+            var resourcePreservationPolicy =
+                ReadParameter(parameters, "resource_preservation_policy");
+            if (string.IsNullOrWhiteSpace(resourcePreservationPolicy))
+            {
+                resourcePreservationPolicy =
+                    MiningResourcePreservationPolicies.PreserveStaircases;
+            }
             var currentMine = ReadStateFieldValue(snapshot, "mining", "current_mine");
             var resources = ReadStateFieldValue(snapshot, "mining", "player_resources");
             if (!currentMine.HasValue || !resources.HasValue)
@@ -48,6 +55,13 @@ namespace StardewAI.Core.OptionRegistry
             var currentFamily = ReadString(currentMine.Value, "mine_kind");
             var deepestMineLevel = ReadIntOptional(resources.Value, "deepest_mine_level");
             var blocks = ValidateTarget(currentDepth, currentFamily, targetDepth, targetFamily).ToList();
+            if (!MiningResourcePreservationPolicies.IsSupported(
+                    resourcePreservationPolicy))
+            {
+                blocks.Add(
+                    "unsupported_resource_preservation_policy:" +
+                    resourcePreservationPolicy);
+            }
             var elevatorStart = ElevatorStartFor(currentDepth, targetDepth, currentFamily, deepestMineLevel);
             var floorStep = new MiningFloorStepPlanner().Plan(snapshot, new MiningFloorObjective
             {
@@ -55,7 +69,8 @@ namespace StardewAI.Core.OptionRegistry
                 MinimumReserveHealth = minReserveHealth ?? 0,
                 MinimumReserveEnergy = minReserveEnergy,
                 LatestExitTime = latestExitTime,
-                TargetDepth = targetDepth
+                TargetDepth = targetDepth,
+                ResourcePreservationPolicy = resourcePreservationPolicy
             });
             var executionOptionId = MiningFloorStepCompiler.ExecutionOptionId(floorStep);
             if (!string.Equals(floorStep.Status, "ready", StringComparison.Ordinal))
@@ -94,6 +109,9 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("latest_exit_time", latestExitTime?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_health", minReserveHealth?.ToString() ?? string.Empty),
                         Parameter("minimum_reserve_energy", minReserveEnergy?.ToString() ?? string.Empty),
+                        Parameter(
+                            "resource_preservation_policy",
+                            resourcePreservationPolicy),
                         Parameter("estimate_status", "rolling_horizon_current_floor_step"),
                         Parameter("required_executor_profile", "mining_perfect_executor"),
                         Parameter("runtime_boundary", available ? "current_floor_step_executable" : floorStep.Reason)

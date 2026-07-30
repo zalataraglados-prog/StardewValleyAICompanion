@@ -21,6 +21,7 @@ namespace StardewAI.Core.Training
                 "executor.combat_monster" => "combat_monster",
                 "executor.shoot_monster" => "shoot_monster",
                 "executor.place_bomb" => "place_bomb",
+                "executor.place_staircase" => "place_staircase",
                 "executor.pickup_debris" => "pickup_debris",
                 "executor.consume_food" => "consume_food",
                 "executor.descend_ladder" => "descend_ladder",

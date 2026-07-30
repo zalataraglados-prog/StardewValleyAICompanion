@@ -254,6 +254,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.combat_monster", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.shoot_monster", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.place_bomb", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
+                P("executor.place_staircase", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.consume_food", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.descend_ladder", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.descend_shaft", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),

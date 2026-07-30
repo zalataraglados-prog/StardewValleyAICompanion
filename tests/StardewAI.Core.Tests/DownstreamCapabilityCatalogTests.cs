@@ -42,18 +42,80 @@ public sealed class DownstreamCapabilityCatalogTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.cs"));
-        var dispatched = Regex.Matches(
+        var dispatchMatches = Regex.Matches(
                 source,
                 "pending\\.Request\\.OptionId == \"(?<id>[^\"]+)\"",
                 RegexOptions.CultureInvariant)
             .Select(match => match.Groups["id"].Value)
             .Where(optionId => !optionId.StartsWith("debug.", StringComparison.Ordinal))
             .Where(optionId => optionId != "debug.visible_walk")
+            .ToArray();
+        Assert.Equal(
+            dispatchMatches.Length,
+            dispatchMatches.Distinct(StringComparer.Ordinal).Count());
+        var dispatched = dispatchMatches
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(
             RuntimeTestHarnessDispatchCatalog.OptionIds.OrderBy(value => value, StringComparer.Ordinal),
             dispatched.OrderBy(value => value, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void RuntimeDebugAllowlistMatchesDebugDispatchBranches()
+    {
+        var root = FindRepositoryRoot();
+        var dispatchSource = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs"));
+        var allowlistSource = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.SupportedOptions.cs"));
+        var dispatched = Regex.Matches(
+                dispatchSource,
+                "\"(?<id>debug\\.[^\"]+)\"",
+                RegexOptions.CultureInvariant)
+            .Select(match => match.Groups["id"].Value)
+            .ToArray();
+        var allowed = Regex.Matches(
+                allowlistSource,
+                "\"(?<id>debug\\.[^\"]+)\"",
+                RegexOptions.CultureInvariant)
+            .Select(match => match.Groups["id"].Value)
+            .ToArray();
+
+        Assert.Equal(
+            dispatched.Length,
+            dispatched.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            allowed.Length,
+            allowed.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            dispatched.OrderBy(value => value, StringComparer.Ordinal),
+            allowed.OrderBy(value => value, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void RuntimeValidationUsesCapabilityCatalogInsteadOfExecutorIdList()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Shipping.Utilities.cs"));
+
+        Assert.Contains(
+            "RuntimeTestHarnessDispatchCatalog.IsSupported",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "request.OptionId != \"executor.",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -97,11 +159,16 @@ public sealed class DownstreamCapabilityCatalogTests
             "StardewAI.Core",
             "Training",
             "DailyPlanCompiler.Dispatch.cs"));
-        var dispatched = Regex.Matches(
+        var dispatchMatches = Regex.Matches(
                 source,
                 "candidate\\.Kind == \"(?<kind>[^\"]+)\"",
                 RegexOptions.CultureInvariant)
             .Select(match => match.Groups["kind"].Value)
+            .ToArray();
+        Assert.Equal(
+            dispatchMatches.Length,
+            dispatchMatches.Distinct(StringComparer.Ordinal).Count());
+        var dispatched = dispatchMatches
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(

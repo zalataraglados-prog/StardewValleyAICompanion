@@ -199,7 +199,7 @@ public sealed partial class ModEntry : Mod
                 CompletePlaceBombBlocked(active, reason);
                 return;
             }
-            BombPlacementCursorPatch.Clear();
+            PlacementCursorPatch.Clear();
             var stackAfter = BombStackAt(active.BombSlotIndex, active.BombQualifiedItemId);
             if (stackAfter >= active.BombStackBefore)
             {
@@ -280,10 +280,10 @@ public sealed partial class ModEntry : Mod
             return false;
         }
 
-        BombPlacementCursorPatch.ScreenPixel = new Point(
+        PlacementCursorPatch.ScreenPixel = new Point(
             active.Target.X * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.X,
             active.Target.Y * Game1.tileSize + Game1.tileSize / 2 - Game1.viewport.Y);
-        BombPlacementCursorPatch.Active = true;
+        PlacementCursorPatch.Active = true;
         reason = string.Empty;
         return true;
     }
@@ -409,7 +409,7 @@ public sealed partial class ModEntry : Mod
     private void CompletePlaceBomb(ActivePlaceBomb active)
     {
         TryApplySmapiRightButtonOverride(pressed: false, out _);
-        BombPlacementCursorPatch.Clear();
+        PlacementCursorPatch.Clear();
         StopAllMovement();
         if (!Game1.player.UsingTool)
         {
@@ -498,7 +498,7 @@ public sealed partial class ModEntry : Mod
     private void CompletePlaceBombBlocked(ActivePlaceBomb active, string reason)
     {
         TryApplySmapiRightButtonOverride(pressed: false, out _);
-        BombPlacementCursorPatch.Clear();
+        PlacementCursorPatch.Clear();
         StopAllMovement();
         if (!Game1.player.UsingTool)
         {

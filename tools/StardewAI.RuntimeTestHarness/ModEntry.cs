@@ -56,6 +56,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCombatMonster? activeCombatMonster;
     private ActiveShootMonster? activeShootMonster;
     private ActivePlaceBomb? activePlaceBomb;
+    private ActivePlaceStaircase? activePlaceStaircase;
     private ActiveConsumeFood? activeConsumeFood;
     private ActivePickupDebris? activePickupDebris;
     private ActiveSpawnedObjectPickup? activeSpawnedObjectPickup;
@@ -109,10 +110,10 @@ public sealed partial class ModEntry : Mod
             prefix: new HarmonyMethod(typeof(SlingshotAimPatch), nameof(SlingshotAimPatch.Prefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseX), Type.EmptyTypes),
-            prefix: new HarmonyMethod(typeof(BombPlacementCursorPatch), nameof(BombPlacementCursorPatch.GetOldMouseXPrefix)));
+            prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseXPrefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), Type.EmptyTypes),
-            prefix: new HarmonyMethod(typeof(BombPlacementCursorPatch), nameof(BombPlacementCursorPatch.GetOldMouseYPrefix)));
+            prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseYPrefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
             prefix: new HarmonyMethod(typeof(CrabPotCaughtFishPatch), nameof(CrabPotCaughtFishPatch.Prefix)));
@@ -404,6 +405,7 @@ public sealed partial class ModEntry : Mod
         TickCrabPotCollect();
         TickShootMonster();
         TickPlaceBomb();
+        TickPlaceStaircase();
         TickDescendLadder();
         TickDescendShaft();
         TickExitMine();
@@ -516,6 +518,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.place_bomb")
             {
                 StartPlaceBomb(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.place_staircase")
+            {
+                StartPlaceStaircase(pending);
                 return;
             }
 
@@ -1234,6 +1242,7 @@ public sealed partial class ModEntry : Mod
             activeCombatMonster is not null ||
             activeShootMonster is not null ||
             activePlaceBomb is not null ||
+            activePlaceStaircase is not null ||
             activeConsumeFood is not null ||
             activePickupDebris is not null ||
             activeSpawnedObjectPickup is not null ||
@@ -1354,7 +1363,7 @@ internal static class SlingshotAimPatch
     }
 }
 
-internal static class BombPlacementCursorPatch
+internal static class PlacementCursorPatch
 {
     public static bool Active { get; set; }
 

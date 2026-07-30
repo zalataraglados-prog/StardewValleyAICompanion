@@ -1,3 +1,5 @@
+using StardewAI.Contracts.Capabilities;
+
 namespace StardewAI.Backend.Tests;
 
 public sealed class RuntimeMineRewardChestExecutorTests
@@ -36,8 +38,11 @@ public sealed class RuntimeMineRewardChestExecutorTests
             "executionRequest.NativeGainExperienceCallAmount = nativeGainExperienceCallAmount;",
             transport);
         Assert.Contains(
-            "request.OptionId != \"executor.claim_mine_reward_chest\"",
+            "RuntimeTestHarnessDispatchCatalog.IsSupported",
             whitelist);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.claim_mine_reward_chest"));
         Assert.Contains(
             "request.NativeGainExperienceCallAmount != 25 + mine.mineLevel",
             executor);

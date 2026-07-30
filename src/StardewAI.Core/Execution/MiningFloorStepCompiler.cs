@@ -21,6 +21,7 @@ namespace StardewAI.Core.Execution
                 MiningFloorStepKinds.CombatMonster => "executor.combat_monster",
                 MiningFloorStepKinds.ShootMonster => "executor.shoot_monster",
                 MiningFloorStepKinds.PlaceBomb => "executor.place_bomb",
+                MiningFloorStepKinds.PlaceStaircase => "executor.place_staircase",
                 MiningFloorStepKinds.PickupDebris => "executor.pickup_debris",
                 MiningFloorStepKinds.ConsumeFood => "executor.consume_food",
                 MiningFloorStepKinds.DescendLadder => "executor.descend_ladder",
@@ -165,6 +166,19 @@ namespace StardewAI.Core.Execution
             Add(parameters, "escape_tile_y", plan.EscapeTileY);
             Add(parameters, "expected_bomb_object_hits", plan.ExpectedBombObjectHits);
             Add(parameters, "expected_bomb_monster_hits", plan.ExpectedBombMonsterHits);
+            Add(parameters, "slot_index", plan.StaircaseSlotIndex);
+            Add(
+                parameters,
+                "qualified_item_id",
+                plan.StaircaseQualifiedItemId);
+            Add(
+                parameters,
+                "inventory_item_total_before",
+                plan.StaircaseCountBefore);
+            Add(
+                parameters,
+                "inventory_item_total_after",
+                plan.StaircaseCountAfter);
             Add(parameters, "expected_combat_attacks", plan.ExpectedCombatAttacks);
             Add(parameters, "expected_combat_duration_ms", plan.ExpectedCombatDurationMs);
             Add(parameters, "estimated_target_cost_ms", plan.EstimatedTargetCostMs);

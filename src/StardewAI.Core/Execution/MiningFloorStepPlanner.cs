@@ -446,6 +446,43 @@ namespace StardewAI.Core.Execution
                 return ladderPlan;
             }
 
+            if (hasResources &&
+                string.Equals(
+                    objective.ResourcePreservationPolicy,
+                    MiningResourcePreservationPolicies
+                        .AllowStaircaseConsumption,
+                    StringComparison.Ordinal))
+            {
+                var staircaseThreat = SelectImmediateThreat(
+                    monsters,
+                    search,
+                    grid,
+                    start,
+                    objective.ThreatRadiusTiles,
+                    bombFinisherAvailable,
+                    movementTileDurationMs);
+                if (staircaseThreat is not null)
+                {
+                    staircaseThreat.Reason =
+                        "staircase_placement_interrupted_by_immediate_monster_threat";
+                    staircaseThreat.SafetyWindowStatus =
+                        "blocked_by_immediate_monster_threat";
+                    staircaseThreat.RestoreSlotIndex = restoreSlot;
+                    return staircaseThreat;
+                }
+
+                var staircasePlan = SelectStaircasePlacement(
+                    tiles,
+                    resources,
+                    search,
+                    grid,
+                    restoreSlot);
+                if (staircasePlan is not null)
+                {
+                    return staircasePlan;
+                }
+            }
+
             if (hasResources)
             {
                 var bombPlan = SelectBombCluster(objects, monsters, resources, search, grid, start, movementTileDurationMs);

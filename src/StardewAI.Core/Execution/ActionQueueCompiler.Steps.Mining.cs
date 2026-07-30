@@ -34,6 +34,7 @@ namespace StardewAI.Core.Execution
                 "executor.combat_monster" => ("combat_monster", "transparent_monster_reaches_native_terminal_state"),
                 "executor.shoot_monster" => ("shoot_monster", "transparent_monster_reaches_native_terminal_state_by_projectile"),
                 "executor.place_bomb" => ("place_bomb", "native_bomb_explodes_and_player_reaches_verified_escape_tile"),
+                "executor.place_staircase" => ("place_staircase", "native_staircase_consumption_creates_one_exact_live_ladder"),
                 "executor.consume_food" => ("consume_food", "native_food_use_consumes_one_item_and_applies_observed_recovery"),
                 "executor.descend_ladder" => ("descend_ladder", "native_ladder_interaction_changes_mine_level_by_one"),
                 "executor.descend_shaft" => ("descend_shaft", "native_shaft_dialogue_changes_mine_level_and_health_by_verified_deltas"),

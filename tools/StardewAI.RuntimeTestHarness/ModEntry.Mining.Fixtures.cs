@@ -54,6 +54,11 @@ public sealed partial class ModEntry : Mod
         var calibrationLoadout = Environment.GetEnvironmentVariable("STARDEWAI_MINING_CALIBRATION_LOADOUT") == "1"
             ? EnsureMiningCalibrationLoadout()
             : MiningCalibrationLoadoutFacts.Disabled;
+        if (Environment.GetEnvironmentVariable(
+                "STARDEWAI_MINING_STAIRCASE_LOADOUT") == "1")
+        {
+            EnsureMiningStaircaseLoadout();
+        }
         activeMineSetup = new ActiveMineSetup(
             pending,
             request.MineLevel.Value,
@@ -62,6 +67,25 @@ public sealed partial class ModEntry : Mod
             calibrationLoadout,
             createForcedShaft: false);
         Game1.enterMine(request.MineLevel.Value);
+    }
+
+    private static void EnsureMiningStaircaseLoadout()
+    {
+        EnsureFixtureInventoryCapacity(Game1.player);
+        var existing = Game1.player.Items
+            .OfType<StardewValley.Object>()
+            .FirstOrDefault(item =>
+                item.QualifiedItemId == "(BC)71");
+        if (existing is not null)
+        {
+            existing.Stack = Math.Max(existing.Stack, 8);
+            return;
+        }
+
+        var staircase =
+            ItemRegistry.Create<StardewValley.Object>("(BC)71");
+        staircase.Stack = 8;
+        InstallFixtureItem(Game1.player, staircase);
     }
 
     private void StartSetupSkullCavernShaft(PendingExecution pending)

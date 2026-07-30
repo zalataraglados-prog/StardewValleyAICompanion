@@ -7,10 +7,10 @@ public sealed class RuntimeMaterialInventoryGraphSmokeSourceGuardTests
     {
         var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
         var fixture = RuntimeHarnessSources.File("ModEntry.MaterialInventoryGraph.cs");
-        var validation = RuntimeHarnessSources.File("ModEntry.Shipping.Utilities.cs");
+        var allowlist = RuntimeHarnessSources.File("ModEntry.SupportedOptions.cs");
 
         Assert.Contains("debug.setup_material_inventory_graph", dispatch, StringComparison.Ordinal);
-        Assert.Contains("debug.setup_material_inventory_graph", validation, StringComparison.Ordinal);
+        Assert.Contains("debug.setup_material_inventory_graph", allowlist, StringComparison.Ordinal);
         Assert.Contains("FarmerTeam.GlobalInventoryId_JunimoChest", fixture, StringComparison.Ordinal);
         Assert.Equal(2, Count(fixture, "CreateOwnedChest(junimo"));
         Assert.Contains("new Workbench(workbenchTile)", fixture, StringComparison.Ordinal);
