@@ -74,15 +74,7 @@ public sealed partial class ModEntry : Mod
     private ActiveDescendShaft? activeDescendShaft;
     private ActiveExitMine? activeExitMine;
     private bool manualAutoCombatEnabled;
-    private bool manualAutoCombatInputHeld;
-    private Monster? manualAutoCombatTarget;
-    private int manualAutoCombatTargetHealth;
-    private int manualAutoCombatAttackCount;
-    private int manualAutoCombatHitCount;
-    private int? manualAutoCombatRestoreSlotIndex;
-    private Point? manualAutoCombatClearanceTarget;
-    private bool manualAutoCombatClearanceButtonHeld;
-    private int manualAutoCombatClearanceSwings;
+    private int? deferredCombatRestoreSlotIndex;
     private ActiveEmergencyCombatFood? activeEmergencyCombatFood;
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveMaterialTransfer? activeMaterialTransfer;
@@ -394,6 +386,7 @@ public sealed partial class ModEntry : Mod
         TickMineSetup();
         TickQuarrySetup();
         TickVolcanoSetup();
+        TickDeferredCombatRestore();
         TickNativeTool();
         TickMineStone();
         TickResourceClump();

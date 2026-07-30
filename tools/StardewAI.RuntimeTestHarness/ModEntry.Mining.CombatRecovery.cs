@@ -60,8 +60,6 @@ public sealed partial class ModEntry : Mod
             return false;
         }
 
-        ReleaseManualAutoCombatInput();
-        RestoreManualAutoCombatTool();
         StopAllMovement();
         activeEmergencyCombatFood = new ActiveEmergencyCombatFood(
             location,
@@ -149,7 +147,6 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        ReleaseManualAutoCombatInput();
         StopAllMovement();
         switch (active.Stage)
         {

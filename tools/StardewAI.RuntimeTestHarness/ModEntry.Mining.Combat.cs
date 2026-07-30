@@ -132,6 +132,7 @@ public sealed partial class ModEntry : Mod
             Math.Clamp(request.MaxAttacks, 1, 256),
             Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512),
             string.Equals(Environment.GetEnvironmentVariable("STARDEWAI_COMBAT_MANUAL_MOVEMENT"), "1", StringComparison.Ordinal),
+            request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
             terminalState,
             combatIntent,
             requested);
@@ -198,58 +199,31 @@ public sealed partial class ModEntry : Mod
             activeDescendShaft?.CombatInterrupted == true ||
             activeExitMine?.CombatInterrupted == true;
         var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
-        if (!enabled || activeCombatMonster is not null || activeShootMonster is not null || activePlaceBomb is not null ||
+        if (!enabled ||
+            activeCombatMonster is not null ||
+            activeShootMonster is not null ||
+            activePlaceBomb is not null ||
             !Context.IsWorldReady || Game1.currentLocation is not MineShaft mine)
         {
-            ReleaseManualAutoCombatInput();
-            ResetManualAutoCombatClearance();
-            RestoreManualAutoCombatTool();
-            manualAutoCombatTarget = null;
             return;
         }
 
-        if (manualAutoCombatClearanceTarget.HasValue)
-        {
-            TickManualAutoCombatClearance(mine);
-            return;
-        }
-
-        if (manualAutoCombatInputHeld)
-        {
-            ReleaseManualAutoCombatInput();
-            return;
-        }
-
-        var target = manualAutoCombatTarget is { Health: > 0 } lockedTarget &&
-            mine.characters.Contains(lockedTarget) &&
-            (manualAutoCombatEnabled || ManhattanDistance(Game1.player.TilePoint, lockedTarget.TilePoint) <= 4)
-                ? lockedTarget
-                : mine.characters.OfType<Monster>()
-                    .Where(monster => monster.Health > 0)
-                    .Where(monster => manualAutoCombatEnabled || ManhattanDistance(Game1.player.TilePoint, monster.TilePoint) <= 3)
-                    .OrderBy(monster => Vector2.DistanceSquared(
-                        Game1.player.GetBoundingBox().Center.ToVector2(),
-                        monster.GetBoundingBox().Center.ToVector2()))
-                    .FirstOrDefault();
+        var maximumDistance = manualAutoCombatEnabled
+            ? TrainingCombatIntentRules.ImmediateThreatDistance
+            : TrainingCombatIntentRules.ImmediateThreatDistance - 1;
+        var target = mine.characters.OfType<Monster>()
+            .Where(monster => monster.Health > 0)
+            .Where(monster =>
+                ManhattanDistance(
+                    Game1.player.TilePoint,
+                    monster.TilePoint) <= maximumDistance)
+            .OrderBy(monster => Vector2.DistanceSquared(
+                Game1.player.GetBoundingBox().Center.ToVector2(),
+                monster.GetBoundingBox().Center.ToVector2()))
+            .FirstOrDefault();
         if (target is null)
         {
-            StopAllMovement();
-            RestoreManualAutoCombatTool();
-            manualAutoCombatTarget = null;
             return;
-        }
-
-        if (!ReferenceEquals(target, manualAutoCombatTarget))
-        {
-            manualAutoCombatTarget = target;
-            manualAutoCombatTargetHealth = target.Health;
-            Monitor.Log($"Manual auto-combat target: {target.Name} [{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(target):X8}], health={target.Health}.", LogLevel.Info);
-        }
-        else if (target.Health < manualAutoCombatTargetHealth)
-        {
-            manualAutoCombatHitCount++;
-            Monitor.Log($"Manual auto-combat hit {manualAutoCombatHitCount}: {target.Name} health {manualAutoCombatTargetHealth}->{target.Health}.", LogLevel.Info);
-            manualAutoCombatTargetHealth = target.Health;
         }
 
         if (executorCombatInterrupt &&
@@ -258,210 +232,93 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        TryStartReactiveMineCombat(
+            mine,
+            target,
+            manualMovement: manualAutoCombatEnabled,
+            trigger: executorCombatInterrupt
+                ? "parent_action_immediate_threat"
+                : "manual_movement_immediate_threat");
+    }
+
+    private bool TryStartReactiveMineCombat(
+        MineShaft mine,
+        Monster target,
+        bool manualMovement,
+        string trigger)
+    {
         var weapon = BestCombatWeapon(target);
         if (weapon is null)
-        {
-            RestoreManualAutoCombatTool();
-            return;
-        }
-        if (!IsMonsterWithinCombatReach(target, weapon))
-        {
-            RestoreManualAutoCombatTool();
-            if (executorCombatInterrupt && !manualAutoCombatEnabled)
-            {
-                MoveTowardCombatTarget(mine, target);
-            }
-            return;
-        }
-        if (target.isInvincible() || Game1.player.UsingTool)
-        {
-            return;
-        }
-
-        StopAllMovement();
-        var targetCenter = target.GetBoundingBox().Center;
-        manualAutoCombatRestoreSlotIndex ??= Game1.player.CurrentToolIndex;
-        SelectTool(weapon);
-        Game1.player.faceDirection(DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection));
-        if (!TryApplySmapiButtonOverride(
-                HeavyHitterInputButton(weapon),
-                pressed: true,
-                out var reason))
-        {
-            Monitor.Log($"Manual auto-combat input failed: {reason}.", LogLevel.Error);
-            manualAutoCombatEnabled = false;
-            return;
-        }
-
-        manualAutoCombatInputHeld = true;
-        manualAutoCombatAttackCount++;
-        Monitor.Log($"Manual auto-combat attack {manualAutoCombatAttackCount}: {target.Name} health={target.Health}.", LogLevel.Info);
-    }
-
-    private void MoveTowardCombatTarget(MineShaft mine, Monster target)
-    {
-        if (AreAdjacent(Game1.player.TilePoint, target.TilePoint))
-        {
-            StartMoving(DirectionToPixel(
-                Game1.player.GetBoundingBox().Center,
-                target.GetBoundingBox().Center,
-                Game1.player.FacingDirection));
-            MovePlayerForTick();
-            return;
-        }
-
-        var path = BuildAdjacentToolPath(mine, target.TilePoint, 512, out _, avoidSoftObstacles: true);
-        if (path is null)
-        {
-            return;
-        }
-
-        var nextIndex = path.FindIndex(tile => tile != Game1.player.TilePoint);
-        if (nextIndex < 0)
-        {
-            return;
-        }
-
-        var next = path[nextIndex];
-        if (!IsTileWalkable(mine, next) || IsTileOccupiedByCharacter(mine, next))
-        {
-            if (!IsTileOccupiedByCharacter(mine, next))
-            {
-                BeginManualAutoCombatClearance(mine, next);
-            }
-            return;
-        }
-
-        StartMoving(DirectionTo(Game1.player.TilePoint, next));
-        MovePlayerForTick();
-    }
-
-    private bool BeginManualAutoCombatClearance(
-        MineShaft mine,
-        Point tile)
-    {
-        var tool = SelectClearanceTool(mine, tile);
-        if (tool is null || !AreAdjacent(Game1.player.TilePoint, tile))
         {
             return false;
         }
 
-        StopAllMovement();
-        manualAutoCombatRestoreSlotIndex ??=
-            Game1.player.CurrentToolIndex;
-        manualAutoCombatClearanceTarget = tile;
-        manualAutoCombatClearanceSwings = 0;
+        var runtimeIdentity =
+            System.Runtime.CompilerServices.RuntimeHelpers
+                .GetHashCode(target)
+                .ToString("X8");
+        var restoreSlotIndex = Game1.player.CurrentToolIndex;
+        var request = new TrainingExecutionRequest
+        {
+            RunId = "internal-reactive-combat",
+            QueueId = "internal-reactive-combat",
+            QueueItemId =
+                "internal-reactive-combat-" + Game1.ticks,
+            BeforeStateHash = "internal-reactive-combat",
+            OptionId = "executor.combat_monster",
+            RequestNonce = Guid.NewGuid().ToString("N"),
+            CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TargetTileX = target.TilePoint.X,
+            TargetTileY = target.TilePoint.Y,
+            TargetRuntimeIdentity = runtimeIdentity,
+            TargetRuntimeType =
+                target.GetType().FullName ?? target.GetType().Name,
+            TargetName = target.Name,
+            MaxAttacks = 256,
+            MaxMovementTiles =
+                TrainingCombatIntentRules.SelfDefenseMovementBudget,
+            CombatWeaponSlotIndex =
+                Game1.player.Items.IndexOf(weapon),
+            CombatMethod = "melee",
+            CombatTerminalState = "defeat",
+            CombatIntent =
+                TrainingCombatIntents.TransitSelfDefense,
+            RestoreSlotIndex = restoreSlotIndex
+        };
+        var pending = new PendingExecution(request);
+        activeCombatMonster = new ActiveCombatMonster(
+            pending,
+            mine.NameOrUniqueName,
+            target,
+            weapon,
+            request.MaxAttacks,
+            request.MaxMovementTiles.Value,
+            manualMovement,
+            restoreSlotIndex,
+            request.CombatTerminalState,
+            request.CombatIntent,
+            "reactive_trigger=" + trigger +
+                ";target_monster.threat_window=clear;" +
+                "native_input=Farmer.FireTool");
         Monitor.Log(
-            $"Manual auto-combat clearance: {ObstacleLabel(mine, tile)} " +
-                $"at {tile.X},{tile.Y} with {tool.GetType().Name}.",
+            $"Reactive combat lock: {target.Name} [{runtimeIdentity}], " +
+                $"health={target.Health}, manual_movement={manualMovement}, " +
+                $"trigger={trigger}.",
             LogLevel.Info);
         return true;
     }
 
-    private void TickManualAutoCombatClearance(MineShaft mine)
+    private void TickDeferredCombatRestore()
     {
-        if (!manualAutoCombatClearanceTarget.HasValue)
+        if (!deferredCombatRestoreSlotIndex.HasValue ||
+            activeCombatMonster is not null ||
+            Game1.player.UsingTool)
         {
             return;
         }
 
-        var target = manualAutoCombatClearanceTarget.Value;
-        if (manualAutoCombatClearanceButtonHeld)
-        {
-            TryApplySmapiButtonOverride(
-                SButton.C,
-                pressed: false,
-                out _);
-            manualAutoCombatClearanceButtonHeld = false;
-            return;
-        }
-
-        if (string.Equals(
-                ObstacleLabel(mine, target),
-                "clear",
-                StringComparison.Ordinal))
-        {
-            ResetManualAutoCombatClearance();
-            return;
-        }
-
-        if (!AreAdjacent(Game1.player.TilePoint, target))
-        {
-            ResetManualAutoCombatClearance();
-            return;
-        }
-
-        var tool = SelectClearanceTool(mine, target);
-        if (tool is null ||
-            Game1.player.Stamina <= 0f ||
-            manualAutoCombatClearanceSwings >= 64)
-        {
-            ResetManualAutoCombatClearance();
-            return;
-        }
-        if (Game1.player.UsingTool)
-        {
-            return;
-        }
-
-        SelectTool(tool);
-        Game1.player.faceDirection(
-            DirectionTo(Game1.player.TilePoint, target));
-        Game1.player.lastClick = new Vector2(
-            target.X * Game1.tileSize,
-            target.Y * Game1.tileSize);
-        if (!TryApplySmapiButtonOverride(
-                SButton.C,
-                pressed: true,
-                out var inputReason))
-        {
-            Monitor.Log(
-                "Manual auto-combat clearance input failed: " +
-                    inputReason +
-                    ".",
-                LogLevel.Error);
-            ResetManualAutoCombatClearance();
-            return;
-        }
-
-        manualAutoCombatClearanceButtonHeld = true;
-        manualAutoCombatClearanceSwings++;
-    }
-
-    private void ResetManualAutoCombatClearance()
-    {
-        if (manualAutoCombatClearanceButtonHeld)
-        {
-            TryApplySmapiButtonOverride(
-                SButton.C,
-                pressed: false,
-                out _);
-        }
-        manualAutoCombatClearanceTarget = null;
-        manualAutoCombatClearanceButtonHeld = false;
-        manualAutoCombatClearanceSwings = 0;
-    }
-
-    private void ReleaseManualAutoCombatInput()
-    {
-        if (!manualAutoCombatInputHeld)
-        {
-            return;
-        }
-
-        TryApplySmapiButtonOverride(SButton.MouseLeft, pressed: false, out _);
-        manualAutoCombatInputHeld = false;
-    }
-
-    private void RestoreManualAutoCombatTool()
-    {
-        if (!manualAutoCombatRestoreSlotIndex.HasValue || Game1.player.UsingTool)
-        {
-            return;
-        }
-
-        Game1.player.CurrentToolIndex = manualAutoCombatRestoreSlotIndex.Value;
-        manualAutoCombatRestoreSlotIndex = null;
+        RestoreSlot(deferredCombatRestoreSlotIndex.Value);
+        deferredCombatRestoreSlotIndex = null;
     }
 
     private void TickCombatMonsterCore(ActiveCombatMonster active)
@@ -669,6 +526,7 @@ public sealed partial class ModEntry : Mod
 
         var targetCenter = active.Target.GetBoundingBox().Center;
         var attackDirection = DirectionToPixel(Game1.player.GetBoundingBox().Center, targetCenter, Game1.player.FacingDirection);
+        StopAllMovement();
         if (active.Target.isInvincible())
         {
             return;
@@ -947,6 +805,8 @@ public sealed partial class ModEntry : Mod
             out _);
         StopAllMovement();
         activeCombatMonster = null;
+        deferredCombatRestoreSlotIndex =
+            active.RestoreSlotIndex;
         RecordCombatHealth(active);
         var request = active.Pending.Request;
         var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
@@ -1023,6 +883,8 @@ public sealed partial class ModEntry : Mod
             Game1.player.completelyStopAnimatingOrDoingAction();
         }
         activeCombatMonster = null;
+        deferredCombatRestoreSlotIndex =
+            active.RestoreSlotIndex;
         RecordCombatHealth(active);
         var result = BlockedWithPrimitive(active.Pending.Request, "combat_monster", active.RequestedEffect, CombatObservedEffect(active), reason);
         result.ToolQualifiedItemId = active.Weapon.QualifiedItemId;

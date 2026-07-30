@@ -36,7 +36,8 @@ public sealed partial class MiningFloorStepPlannerTests
             tickMineStoneSource,
             StringComparison.Ordinal);
         Assert.Contains("activeMineStone?.CombatInterrupted == true", source, StringComparison.Ordinal);
-        Assert.Contains("RestoreManualAutoCombatTool()", source, StringComparison.Ordinal);
+        Assert.Contains("TickDeferredCombatRestore()", source, StringComparison.Ordinal);
+        Assert.Contains("TryStartReactiveMineCombat(", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".DoFunction(", mineStoneSource, StringComparison.Ordinal);
         Assert.DoesNotContain("objects.Remove", mineStoneSource, StringComparison.Ordinal);
 
@@ -186,16 +187,20 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("combat_disengaged_transit_target", combatSource, StringComparison.Ordinal);
         Assert.Contains("ShouldDisengageCombatIntent(", combatSource, StringComparison.Ordinal);
         Assert.Contains("slingshot_disengaged_transit_target", source, StringComparison.Ordinal);
-        Assert.Contains("executorCombatInterrupt && !manualAutoCombatEnabled", combatSource, StringComparison.Ordinal);
-        Assert.Contains("MoveTowardCombatTarget(mine, target)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("TryStartReactiveMineCombat(", combatSource, StringComparison.Ordinal);
+        Assert.Contains("TrainingCombatIntents.TransitSelfDefense", combatSource, StringComparison.Ordinal);
+        Assert.Contains("activeCombatMonster = new ActiveCombatMonster(", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("private void MoveTowardCombatTarget", combatSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("private void TickManualAutoCombatClearance", combatSource, StringComparison.Ordinal);
         Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
-        Assert.Contains("target.GetBoundingBox().Center", combatSource, StringComparison.Ordinal);
-        Assert.Contains("BuildAdjacentToolPath(mine, target.TilePoint, 512, out _, avoidSoftObstacles: true)", combatSource, StringComparison.Ordinal);
+        Assert.Contains("active.Target.GetBoundingBox().Center", combatSource, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(mine, targetTile", combatSource, StringComparison.Ordinal);
         Assert.Contains(".OrderBy(weapon => CombatExpectedHitCount(weapon, target))", combatSource, StringComparison.Ordinal);
         Assert.Contains("private static int CombatExpectedHitCount", combatSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.maxHealth * 3 / 4", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.UsingTool", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.FarmerSprite.PauseForSingleAnimation", source, StringComparison.Ordinal);
+        Assert.Contains("StopAllMovement();", combatSource, StringComparison.Ordinal);
         Assert.Contains("ResolveCombatWeapon(target, request.CombatWeaponSlotIndex", combatSource, StringComparison.Ordinal);
         Assert.Contains("weapon.enchantments.Any", combatSource, StringComparison.Ordinal);
         Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
@@ -366,7 +371,7 @@ public sealed partial class MiningFloorStepPlannerTests
             combatTickSource,
             StringComparison.Ordinal);
         Assert.Contains(
-            "BeginManualAutoCombatClearance(mine, next)",
+            "BeginCombatClearance(active, mine, next)",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -374,7 +379,11 @@ public sealed partial class MiningFloorStepPlannerTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "manualAutoCombatClearanceSwings >= 64",
+            "active.ClearanceSwings >= 64",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "BeginManualAutoCombatClearance",
             source,
             StringComparison.Ordinal);
     }
@@ -558,12 +567,15 @@ public sealed partial class MiningFloorStepPlannerTests
         bool hasSkullKey = false,
         int? mineLevel = null,
         string[]? rows = null,
+        string[]? staticRows = null,
         string resources = "{\"health\":100,\"max_health\":100,\"energy\":220,\"current_time\":1200,\"selected_slot_index\":4,\"inventory_capacity\":{\"empty_slots\":12},\"food_slots\":[]}",
         string mineKind = "ordinary_mines",
         MiningFloorObjective? objective = null)
     {
         rows ??= new[] { "111111", "100001", "100001", "100001", "111111" };
+        staticRows ??= rows;
         var rowsJson = JsonSerializer.Serialize(rows);
+        var staticRowsJson = JsonSerializer.Serialize(staticRows);
         var width = rows[0].Length;
         var height = rows.Length;
         var json = """
@@ -573,7 +585,7 @@ public sealed partial class MiningFloorStepPlannerTests
           },
           "mining": {
             "current_mine": {"status":"available","value":{"mine_level":MINE_LEVEL,"mine_kind":"MINE_KIND"}},
-            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"blocked_rows":ROWS}}},
+            "tiles": {"status":"available","value":{"player_tile":{"tile_x":1,"tile_y":2},"ladders":LADDERS,"shafts":SHAFTS,"exits":EXITS,"golden_scythe_altars":GOLDEN_SCYTHE_ALTARS,"collision_context":{"status":"available","encoding":"row_major_strings_1_blocked_0_passable","width":WIDTH,"height":HEIGHT,"static_blocked_rows":STATICROWS,"blocked_rows":ROWS}}},
             "objects": {"status":"available","value":OBJECTS},
             "resource_clumps": {"status":"available","value":RESOURCE_CLUMPS},
             "monsters": {"status":"available","value":MONSTERS},
@@ -590,6 +602,7 @@ public sealed partial class MiningFloorStepPlannerTests
             .Replace("SKULL_KEY_REWARD_CHESTS", skullKeyRewardChests, StringComparison.Ordinal)
             .Replace("WIDTH", width.ToString(), StringComparison.Ordinal)
             .Replace("HEIGHT", height.ToString(), StringComparison.Ordinal)
+            .Replace("STATICROWS", staticRowsJson, StringComparison.Ordinal)
             .Replace("ROWS", rowsJson, StringComparison.Ordinal)
             .Replace("OBJECTS", objects, StringComparison.Ordinal)
             .Replace("RESOURCE_CLUMPS", resourceClumps, StringComparison.Ordinal)

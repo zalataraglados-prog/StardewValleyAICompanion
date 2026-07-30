@@ -207,6 +207,7 @@ public sealed partial class ModEntry : Mod
             int maxAttacks,
             int maxMovementTiles,
             bool manualMovement,
+            int restoreSlotIndex,
             string terminalState,
             string combatIntent,
             string requestedEffect)
@@ -223,6 +224,7 @@ public sealed partial class ModEntry : Mod
             MaxAttacks = maxAttacks;
             MaxMovementTiles = maxMovementTiles;
             ManualMovement = manualMovement;
+            RestoreSlotIndex = restoreSlotIndex;
             TerminalState = terminalState;
             CombatIntent = combatIntent;
             RequestedEffect = requestedEffect;
@@ -249,6 +251,7 @@ public sealed partial class ModEntry : Mod
         public int MaxAttacks { get; }
         public int MaxMovementTiles { get; }
         public bool ManualMovement { get; }
+        public int RestoreSlotIndex { get; }
         public string TerminalState { get; }
         public string CombatIntent { get; }
         public Point InitialTargetTile { get; }
