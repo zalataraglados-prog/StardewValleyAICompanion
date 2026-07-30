@@ -25,6 +25,81 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
+    private bool TryStartReactiveVolcanoCombat(
+        VolcanoDungeon volcano,
+        string trigger)
+    {
+        if (activeVolcanoCombat is not null)
+        {
+            return true;
+        }
+
+        var target = NearestImmediateVolcanoThreat(volcano);
+        if (target is null)
+        {
+            return false;
+        }
+
+        var weapon = BestCombatWeapon(target);
+        if (weapon is null)
+        {
+            return false;
+        }
+
+        var runtimeIdentity =
+            System.Runtime.CompilerServices.RuntimeHelpers
+                .GetHashCode(target)
+                .ToString("X8");
+        var restoreSlotIndex = Game1.player.CurrentToolIndex;
+        var request = new TrainingExecutionRequest
+        {
+            RunId = "internal-reactive-volcano-combat",
+            QueueId = "internal-reactive-volcano-combat",
+            QueueItemId =
+                "internal-reactive-volcano-combat-" + Game1.ticks,
+            BeforeStateHash = "internal-reactive-volcano-combat",
+            OptionId = "executor.combat_volcano_monster",
+            RequestNonce = Guid.NewGuid().ToString("N"),
+            CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
+            TargetTileX = target.TilePoint.X,
+            TargetTileY = target.TilePoint.Y,
+            TargetRuntimeIdentity = runtimeIdentity,
+            TargetRuntimeType =
+                target.GetType().FullName ?? target.GetType().Name,
+            TargetName = target.Name,
+            MaxAttacks = 256,
+            MaxMovementTiles =
+                TrainingCombatIntentRules.SelfDefenseMovementBudget,
+            CombatWeaponSlotIndex =
+                Game1.player.Items.IndexOf(weapon),
+            CombatMethod = "melee",
+            CombatTerminalState = "defeat",
+            CombatIntent =
+                TrainingCombatIntents.TransitSelfDefense,
+            RestoreSlotIndex = restoreSlotIndex
+        };
+        var pending = new PendingExecution(request);
+        activeVolcanoCombat = new ActiveVolcanoCombat(
+            pending,
+            volcano,
+            target,
+            weapon,
+            request.CombatWeaponSlotIndex.Value,
+            restoreSlotIndex,
+            request.MaxAttacks,
+            request.MaxMovementTiles.Value,
+            request.CombatIntent,
+            "reactive_trigger=" + trigger +
+                ";target_monster.threat_window=clear;" +
+                "native_input=melee");
+        Monitor.Log(
+            $"Reactive Volcano combat lock: {target.Name} " +
+                $"[{runtimeIdentity}], health={target.Health}, " +
+                $"trigger={trigger}.",
+            LogLevel.Info);
+        return true;
+    }
+
     private void StartVolcanoCombat(PendingExecution pending)
     {
         var request = pending.Request;
@@ -154,6 +229,34 @@ public sealed partial class ModEntry : Mod
         }
     }
 
+    private void TickVolcanoAutoCombat()
+    {
+        if (activeVolcanoCombat is not null ||
+            activeEmergencyCombatFood is not null ||
+            !pendingExecutions.IsEmpty ||
+            HasActiveExecutorOperation() ||
+            !Context.IsWorldReady ||
+            Game1.currentLocation is not VolcanoDungeon volcano ||
+            Game1.activeClickableMenu is not null ||
+            Game1.eventUp)
+        {
+            return;
+        }
+
+        if (NearestImmediateVolcanoThreat(volcano) is null)
+        {
+            return;
+        }
+        if (TryStartEmergencyCombatFood(volcano))
+        {
+            return;
+        }
+
+        TryStartReactiveVolcanoCombat(
+            volcano,
+            "hostile_location_idle_guard");
+    }
+
     private void TickVolcanoCombatCore(ActiveVolcanoCombat active)
     {
         active.ElapsedTicks++;
@@ -216,6 +319,10 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (TickVolcanoCombatLootSweep(active, volcano))
+            {
+                return;
+            }
             CompleteVolcanoCombat(active);
             return;
         }
@@ -426,6 +533,159 @@ public sealed partial class ModEntry : Mod
         active.AttackCount++;
         active.LastNoProgressReason =
             "attack_input_issued";
+    }
+
+    private bool TickVolcanoCombatLootSweep(
+        ActiveVolcanoCombat active,
+        VolcanoDungeon volcano)
+    {
+        var liveChunks = volcano.debris
+            .Where(debris => !active.DebrisBefore.Contains(debris))
+            .SelectMany(debris => debris.Chunks.Select(chunk => new
+            {
+                Debris = debris,
+                Chunk = chunk,
+                Tile = DebrisChunkTile(chunk)
+            }))
+            .ToArray();
+        active.LootObservedChunks = Math.Max(
+            active.LootObservedChunks,
+            active.LootCollectedChunks + liveChunks.Length);
+
+        if (active.LootChunk is not null &&
+            !liveChunks.Any(candidate =>
+                ReferenceEquals(candidate.Chunk, active.LootChunk)))
+        {
+            active.LootCollectedChunks++;
+            active.LootDebris = null;
+            active.LootChunk = null;
+            active.LootPath.Clear();
+            active.LootPathIndex = 0;
+            active.LootWaitTicks = 0;
+            active.LootPathFailures = 0;
+        }
+
+        if (liveChunks.Length == 0)
+        {
+            StopAllMovement();
+            active.LootNoCandidateTicks++;
+            active.LastNoProgressReason =
+                "waiting_for_combat_drop_settle";
+            return active.LootNoCandidateTicks <= 30;
+        }
+        active.LootNoCandidateTicks = 0;
+
+        if (active.LootChunk is null)
+        {
+            var nearest = liveChunks
+                .OrderBy(candidate => ManhattanDistance(
+                    Game1.player.TilePoint,
+                    candidate.Tile))
+                .First();
+            active.LootDebris = nearest.Debris;
+            active.LootChunk = nearest.Chunk;
+            active.LootPath.Clear();
+            active.LootPathIndex = 0;
+            active.LootPathFailures = 0;
+            active.LootWaitTicks = 0;
+        }
+
+        var target = DebrisChunkTile(active.LootChunk);
+        if (ManhattanDistance(Game1.player.TilePoint, target) <= 1)
+        {
+            StopAllMovement();
+            active.LootWaitTicks++;
+            active.LastNoProgressReason =
+                "waiting_for_native_combat_drop_collection";
+            if (active.LootWaitTicks > 180)
+            {
+                CompleteVolcanoCombatBlocked(
+                    active,
+                    "volcano_combat_drop_not_collected_inventory_or_magnet_blocked");
+            }
+            return true;
+        }
+
+        if (active.LootPathIndex >= active.LootPath.Count ||
+            active.LootPathTarget != target)
+        {
+            var path = IsTileWalkable(volcano, target) &&
+                !IsTileOccupiedByCharacter(volcano, target)
+                    ? TryBuildTilePath(
+                        volcano,
+                        Game1.player.TilePoint,
+                        target,
+                        256,
+                        out var pathReason,
+                        avoidSoftObstacles: true)
+                    : BuildAdjacentToolPath(
+                        volcano,
+                        target,
+                        256,
+                        out pathReason,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false);
+            if (path is null)
+            {
+                active.LootPathFailures++;
+                active.LastNoProgressReason =
+                    "combat_drop_path_unavailable:" + pathReason;
+                if (active.LootPathFailures > 60)
+                {
+                    CompleteVolcanoCombatBlocked(
+                        active,
+                        "volcano_combat_drop_path_unavailable:" +
+                            pathReason);
+                }
+                return true;
+            }
+
+            active.LootPath = path;
+            active.LootPathIndex = 0;
+            active.LootPathTarget = target;
+            active.LootPathFailures = 0;
+        }
+
+        if (active.LootPathIndex >= active.LootPath.Count)
+        {
+            return true;
+        }
+        var next = active.LootPath[active.LootPathIndex];
+        if (Game1.player.TilePoint == next)
+        {
+            active.LootPathIndex++;
+            return true;
+        }
+        if (!IsTileWalkable(volcano, next) ||
+            IsTileOccupiedByCharacter(volcano, next))
+        {
+            active.LootPath.Clear();
+            active.LootPathIndex = 0;
+            return true;
+        }
+
+        var moved = Vector2.DistanceSquared(
+            active.LastLootPosition,
+            Game1.player.Position) >= 0.01f;
+        active.LastLootPosition = Game1.player.Position;
+        StartMoving(DirectionTo(Game1.player.TilePoint, next));
+        MovePlayerForTick();
+        active.LastNoProgressReason =
+            "moving_to_combat_drop";
+        if (Game1.player.TilePoint == next)
+        {
+            active.LootPathIndex++;
+        }
+        active.LootStuckTicks = moved
+            ? 0
+            : active.LootStuckTicks + 1;
+        if (active.LootStuckTicks > 45)
+        {
+            active.LootPath.Clear();
+            active.LootPathIndex = 0;
+            active.LootStuckTicks = 0;
+        }
+        return true;
     }
 
     private bool TickVolcanoCombatDefeatDialogue(ActiveVolcanoCombat active)
@@ -688,6 +948,13 @@ public sealed partial class ModEntry : Mod
         RecordVolcanoCombatHealth(active);
         var request = active.Pending.Request;
         var damageTaken = Math.Max(0, active.PlayerHealthBefore - Game1.player.health);
+        Monitor.Log(
+            $"Volcano combat complete: {active.TargetName} " +
+                $"[{active.TargetRuntimeIdentity}], attacks={active.AttackCount}, " +
+                $"hits={active.HitCount}, damage_taken={damageTaken}, " +
+                $"loot_chunks={active.LootCollectedChunks}/" +
+                $"{active.LootObservedChunks}.",
+            LogLevel.Info);
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -708,8 +975,8 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "combat_volcano_monster",
             PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = damageTaken == 0
-                ? new[] { "native_melee_defeated_volcano_target", "player_health_unchanged" }
-                : new[] { "native_melee_defeated_volcano_target", "player_damage_observed=" + damageTaken },
+                ? new[] { "native_melee_defeated_volcano_target", "player_health_unchanged", "combat_drops_collected_by_native_proximity" }
+                : new[] { "native_melee_defeated_volcano_target", "player_damage_observed=" + damageTaken, "combat_drops_collected_by_native_proximity" },
             RequestedEffect = active.RequestedEffect,
             ObservedEffect = VolcanoCombatObservedEffect(active),
             CombatTargetRuntimeType = active.TargetRuntimeType,
@@ -791,5 +1058,7 @@ public sealed partial class ModEntry : Mod
             ";player_health=" + Game1.player.health +
             ";combat_intent=" + active.CombatIntent +
             ";attacks=" + active.AttackCount +
-            ";hits=" + active.HitCount;
+            ";hits=" + active.HitCount +
+            ";loot_observed_chunks=" + active.LootObservedChunks +
+            ";loot_collected_chunks=" + active.LootCollectedChunks;
     }}

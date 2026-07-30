@@ -78,7 +78,11 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "normal_world_during_executor_actions;world_paused_only_while_external_orchestrator_idle",
+            "[switch] $FreezeClockWhileExecutorIdle",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuous_world_during_actions_snapshots_and_external_orchestration",
             source,
             StringComparison.Ordinal);
 
@@ -188,6 +192,34 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "TryStartEmergencyCombatFood(volcano)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryStartReactiveVolcanoCombat(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "internal-reactive-volcano-combat",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "private void TickVolcanoAutoCombat()",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"hostile_location_idle_guard\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TickVolcanoCombatLootSweep(active, volcano)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "!active.DebrisBefore.Contains(debris)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "combat_drops_collected_by_native_proximity",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -303,6 +335,14 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             "!monsterByTile.ContainsKey(next)",
             planner,
             StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "return immediateThreat;",
+            planner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "BuildRouteMonsterPlan(",
+            planner,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -327,6 +367,10 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "connectorCommitReady",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (ReplanTileMove(move, avoidSoftObstacles: true))",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

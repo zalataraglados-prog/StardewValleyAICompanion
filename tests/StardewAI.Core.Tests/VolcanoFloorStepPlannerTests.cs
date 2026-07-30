@@ -314,7 +314,7 @@ public sealed class VolcanoFloorStepPlannerTests
     }
 
     [Fact]
-    public void PlannerInterceptsNearbyGliderOnPlayerSideOfConnector()
+    public void PlannerLeavesNearbyGliderToReactiveConnectorExecutor()
     {
         var snapshot = Snapshot("""
         {
@@ -365,19 +365,9 @@ public sealed class VolcanoFloorStepPlannerTests
         var step = new VolcanoFloorStepPlanner().Plan(snapshot);
 
         Assert.Equal(
-            VolcanoFloorStepKinds.CombatMonster,
+            VolcanoFloorStepKinds.TraverseForwardConnector,
             step.StepKind);
-        Assert.Equal("A2", step.TargetRuntimeIdentity);
-        Assert.Equal(
-            TrainingCombatIntents.TransitSelfDefense,
-            step.CombatIntent);
-        var parameters =
-            VolcanoFloorStepCompiler.BuildExecutionParameters(step);
-        Assert.Contains(
-            parameters,
-            parameter =>
-                parameter.Name == "max_movement_tiles" &&
-                parameter.Value == "16");
+        Assert.Equal(5, step.TargetTileX);
     }
 
     [Fact]
@@ -443,10 +433,10 @@ public sealed class VolcanoFloorStepPlannerTests
 
         var step = new VolcanoFloorStepPlanner().Plan(snapshot);
 
+        Assert.Equal(VolcanoFloorStepKinds.Blocked, step.StepKind);
         Assert.Equal(
-            VolcanoFloorStepKinds.CombatMonster,
-            step.StepKind);
-        Assert.Equal("FLOATING", step.TargetRuntimeIdentity);
+            "volcano_forward_route_unresolved_from_loaded_state",
+            step.Reason);
     }
 
     [Fact]
@@ -516,7 +506,7 @@ public sealed class VolcanoFloorStepPlannerTests
     }
 
     [Fact]
-    public void PlannerClearsReachableMonsterBlockingDynamicObstacleRoute()
+    public void PlannerLeavesRouteMonsterToReactiveObstacleExecutor()
     {
         var snapshot = Snapshot("""
         {
@@ -586,28 +576,14 @@ public sealed class VolcanoFloorStepPlannerTests
         var step = new VolcanoFloorStepPlanner().Plan(snapshot);
 
         Assert.Equal(
-            VolcanoFloorStepKinds.CombatMonster,
+            VolcanoFloorStepKinds.BreakStone,
             step.StepKind);
-        Assert.Equal("BLOCKER", step.TargetRuntimeIdentity);
-        Assert.Equal(4, step.StandTileX);
+        Assert.Equal(7, step.TargetTileX);
+        Assert.Equal(6, step.StandTileX);
         Assert.Equal(1, step.StandTileY);
-        Assert.Equal(
-            TrainingCombatIntents.TransitRouteClearance,
-            step.CombatIntent);
 
         var parameters =
             VolcanoFloorStepCompiler.BuildExecutionParameters(step);
-        Assert.Contains(
-            parameters,
-            parameter =>
-                parameter.Name == "combat_intent" &&
-                parameter.Value ==
-                    TrainingCombatIntents.TransitRouteClearance);
-        Assert.Contains(
-            parameters,
-            parameter =>
-                parameter.Name == "max_movement_tiles" &&
-                int.Parse(parameter.Value) < 512);
         Assert.Contains(
             parameters,
             parameter =>
@@ -617,11 +593,11 @@ public sealed class VolcanoFloorStepPlannerTests
             parameters,
             parameter =>
                 parameter.Name == "blocked_route_cell_x" &&
-                parameter.Value == "5");
+                parameter.Value == "7");
     }
 
     [Fact]
-    public void PlannerChoosesRouteBlockerOverCloserSideMonster()
+    public void PlannerLeavesRouteAndSideMonstersToReactiveTraversal()
     {
         var snapshot = Snapshot("""
         {
@@ -692,12 +668,10 @@ public sealed class VolcanoFloorStepPlannerTests
 
         var step = new VolcanoFloorStepPlanner().Plan(snapshot);
 
-        Assert.Equal(VolcanoFloorStepKinds.CombatMonster, step.StepKind);
-        Assert.Equal("BLOCKER", step.TargetRuntimeIdentity);
-        Assert.Equal(6, step.BlockedRouteCellX);
         Assert.Equal(
-            "exact_weighted_route_cell_identity",
-            step.BlockerAttributionStatus);
+            VolcanoFloorStepKinds.TraverseForwardConnector,
+            step.StepKind);
+        Assert.Equal(8, step.TargetTileX);
     }
 
     [Fact]

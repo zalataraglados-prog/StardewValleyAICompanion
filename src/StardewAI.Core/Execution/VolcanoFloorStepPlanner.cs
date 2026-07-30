@@ -149,20 +149,6 @@ namespace StardewAI.Core.Execution
             var immediateSearch = Search(
                 immediateGrid,
                 immediateStart);
-            var immediateThreat = SelectNearestMonster(
-                monsters,
-                resources,
-                immediateSearch,
-                immediateStart,
-                connectors,
-                TrainingCombatIntents.TransitSelfDefense,
-                maximumGroundDistanceFromPlayer: 3,
-                maximumGliderDistanceFromPlayer: 3);
-            if (immediateThreat is not null)
-            {
-                return immediateThreat;
-            }
-
             var openingGate = SelectOpeningDwarfGate(gates);
             if (openingGate is not null)
             {
@@ -195,7 +181,7 @@ namespace StardewAI.Core.Execution
                         immediateGrid);
                     if (dynamicRouteBlocker is not null)
                     {
-                        return dynamicRouteBlocker;
+                        return routeProgress;
                     }
                     return Blocked(
                         "volcano_route_blocker_unattributed");
@@ -690,15 +676,6 @@ namespace StardewAI.Core.Execution
                 var stand = route.Path[index - 1];
                 var pathToStand = route.Path.Take(index).ToArray();
                 var key = (tile.X, tile.Y);
-                if (monsterByTile.TryGetValue(key, out var monster))
-                {
-                    return BuildRouteMonsterPlan(
-                        monster,
-                        resources,
-                        stand,
-                        pathToStand,
-                        route.Goal);
-                }
                 if (obstacleByTile.TryGetValue(key, out var obstacle))
                 {
                     return BuildRouteObstaclePlan(
@@ -871,67 +848,6 @@ namespace StardewAI.Core.Execution
                     ReadInt(obstacle, "tile_x"),
                 BlockedRouteCellY =
                     ReadInt(obstacle, "tile_y"),
-                BlockerAttributionStatus =
-                    "exact_weighted_route_cell_identity",
-                ExpectedConnectivityGain = 1,
-                Path = path
-            };
-        }
-
-        private static VolcanoFloorStepPlan BuildRouteMonsterPlan(
-            JsonElement monster,
-            JsonElement resources,
-            VolcanoPathTile stand,
-            VolcanoPathTile[] path,
-            RouteGoal routeGoal)
-        {
-            var supported = ReadBool(
-                monster,
-                "melee_executor_supported");
-            var weaponSlot = ReadBestSlot(
-                resources,
-                "weapon_slots",
-                "maximum_damage",
-                rejectScythe: true);
-            return new VolcanoFloorStepPlan
-            {
-                Status = supported && weaponSlot.HasValue
-                    ? "ready"
-                    : "blocked",
-                StepKind = VolcanoFloorStepKinds.CombatMonster,
-                Reason = !supported
-                    ? ReadString(
-                        monster,
-                        "melee_executor_block_reason")
-                    : weaponSlot.HasValue
-                        ? "forward_route_native_melee_target"
-                        : "volcano_combat_melee_weapon_unavailable",
-                TargetTileX = ReadInt(monster, "tile_x"),
-                TargetTileY = ReadInt(monster, "tile_y"),
-                StandTileX = stand.X,
-                StandTileY = stand.Y,
-                EstimatedMovementTiles = Math.Max(0, path.Length - 1),
-                TargetRuntimeIdentity =
-                    ReadString(monster, "runtime_identity"),
-                TargetRuntimeType =
-                    ReadString(monster, "runtime_type"),
-                TargetName = ReadString(monster, "name"),
-                CombatWeaponSlotIndex = weaponSlot,
-                CombatIntent =
-                    TrainingCombatIntents.TransitRouteClearance,
-                RouteObjectiveId =
-                    routeGoal.Kind ==
-                        RouteGoalKinds.Connector
-                        ? "volcano_forward_connector"
-                        : "volcano_dwarf_switch",
-                RouteTargetTileX = routeGoal.X,
-                RouteTargetTileY = routeGoal.Y,
-                RouteTargetStandTileX = stand.X,
-                RouteTargetStandTileY = stand.Y,
-                BlockedRouteCellX =
-                    ReadInt(monster, "tile_x"),
-                BlockedRouteCellY =
-                    ReadInt(monster, "tile_y"),
                 BlockerAttributionStatus =
                     "exact_weighted_route_cell_identity",
                 ExpectedConnectivityGain = 1,

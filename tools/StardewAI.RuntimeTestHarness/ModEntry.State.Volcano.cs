@@ -190,6 +190,8 @@ public sealed partial class ModEntry : Mod
             LastProgressTargetPosition = target.Position;
             TargetHealthSequence.Add(target.Health);
             PlayerHealthSequence.Add(Game1.player.health);
+            DebrisBefore = volcano.debris.ToHashSet();
+            LastLootPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -237,6 +239,19 @@ public sealed partial class ModEntry : Mod
         public int ClearanceSwings { get; set; }
         public List<int> TargetHealthSequence { get; } = new();
         public List<int> PlayerHealthSequence { get; } = new();
+        public HashSet<Debris> DebrisBefore { get; }
+        public Debris? LootDebris { get; set; }
+        public Chunk? LootChunk { get; set; }
+        public List<Point> LootPath { get; set; } = new();
+        public int LootPathIndex { get; set; }
+        public Point LootPathTarget { get; set; } = new(-1, -1);
+        public int LootPathFailures { get; set; }
+        public int LootWaitTicks { get; set; }
+        public int LootNoCandidateTicks { get; set; }
+        public int LootObservedChunks { get; set; }
+        public int LootCollectedChunks { get; set; }
+        public Vector2 LastLootPosition { get; set; }
+        public int LootStuckTicks { get; set; }
     }
 
 }

@@ -213,6 +213,12 @@ public sealed partial class ModEntry : Mod
         }
 
         var move = activeTileMove;
+        if (activeVolcanoCombat is not null &&
+            Game1.currentLocation is VolcanoDungeon)
+        {
+            return;
+        }
+
         if (!Context.IsWorldReady || Game1.currentLocation is null)
         {
             CompleteBlockedMove(move, "world_not_ready_during_movement");
@@ -261,9 +267,14 @@ public sealed partial class ModEntry : Mod
             Game1.currentLocation is VolcanoDungeon volcano &&
             ImmediateVolcanoThreat(volcano))
         {
-            CompleteBlockedMove(
-                move,
-                "volcano_movement_unsafe_monster_window");
+            if (!TryStartReactiveVolcanoCombat(
+                    volcano,
+                    "movement_immediate_threat"))
+            {
+                CompleteBlockedMove(
+                    move,
+                    "volcano_movement_unsafe_monster_window");
+            }
             return;
         }
 
@@ -427,6 +438,12 @@ public sealed partial class ModEntry : Mod
 
         if (!AreAdjacent(currentTile, nextTile))
         {
+            if (ReplanTileMove(move, avoidSoftObstacles: true))
+            {
+                StopAllMovement();
+                move.CurrentDirection = null;
+                return;
+            }
             CompleteBlockedMove(move, "movement_path_desynchronized");
             return;
         }

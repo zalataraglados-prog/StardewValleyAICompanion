@@ -199,7 +199,15 @@ public sealed partial class ModEntry : Mod
             activeDescendLadder?.CombatInterrupted == true ||
             activeDescendShaft?.CombatInterrupted == true ||
             activeExitMine?.CombatInterrupted == true;
-        var enabled = manualAutoCombatEnabled || executorCombatInterrupt;
+        var hostileLocationIdleGuard =
+            !executorCombatInterrupt &&
+            pendingExecutions.IsEmpty &&
+            !HasActiveExecutorOperation() &&
+            Context.IsWorldReady &&
+            Game1.currentLocation is MineShaft;
+        var enabled = manualAutoCombatEnabled ||
+            executorCombatInterrupt ||
+            hostileLocationIdleGuard;
         if (!enabled ||
             activeCombatMonster is not null ||
             activeShootMonster is not null ||
@@ -239,7 +247,9 @@ public sealed partial class ModEntry : Mod
             manualMovement: manualAutoCombatEnabled,
             trigger: executorCombatInterrupt
                 ? "parent_action_immediate_threat"
-                : "manual_movement_immediate_threat");
+                : hostileLocationIdleGuard
+                    ? "hostile_location_idle_guard"
+                    : "manual_movement_immediate_threat");
     }
 
     private bool TryStartReactiveMineCombat(

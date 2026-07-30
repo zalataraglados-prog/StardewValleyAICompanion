@@ -394,6 +394,7 @@ public sealed partial class ModEntry : Mod
         TickVolcanoCoolLava();
         TickVolcanoObstacle();
         TickVolcanoCombat();
+        TickVolcanoAutoCombat();
         TickBreakContainer();
         TickEmergencyCombatFood();
         TickCombatMonster();

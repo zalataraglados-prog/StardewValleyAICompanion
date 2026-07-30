@@ -158,6 +158,11 @@ public sealed partial class ModEntry : Mod
 
     private void TickVolcanoCoolLavaCore(ActiveVolcanoCoolLava active)
     {
+        if (activeVolcanoCombat is not null)
+        {
+            return;
+        }
+
         active.ElapsedTicks++;
         if (!Context.IsWorldReady ||
             Game1.currentLocation is not VolcanoDungeon volcano ||
@@ -196,7 +201,14 @@ public sealed partial class ModEntry : Mod
 
         if (!active.BeginIssued && ImmediateVolcanoThreat(volcano))
         {
-            CompleteVolcanoCoolLavaBlocked(active, "volcano_cooling_unsafe_monster_window");
+            if (!TryStartReactiveVolcanoCombat(
+                    volcano,
+                    "cool_lava_immediate_threat"))
+            {
+                CompleteVolcanoCoolLavaBlocked(
+                    active,
+                    "volcano_cooling_unsafe_monster_window");
+            }
             return;
         }
 
@@ -276,24 +288,37 @@ public sealed partial class ModEntry : Mod
         }
     }
 
-    private static bool ImmediateVolcanoThreat(VolcanoDungeon volcano)
+    private static Monster? NearestImmediateVolcanoThreat(
+        VolcanoDungeon volcano)
     {
-        return volcano.characters.OfType<Monster>().Any(monster =>
-            monster.Health > 0 &&
-            Math.Abs(
-                monster.TilePoint.X -
-                Game1.player.TilePoint.X) +
-                Math.Abs(
-                    monster.TilePoint.Y -
-                    Game1.player.TilePoint.Y) <= 3 &&
-            (monster.isGlider.Value ||
-                BuildAdjacentToolPath(
-                    volcano,
+        return volcano.characters
+            .OfType<Monster>()
+            .Where(monster =>
+                monster.Health > 0 &&
+                monster is not Spiker &&
+                monster.GetType().Assembly ==
+                    typeof(Monster).Assembly &&
+                ManhattanDistance(
                     monster.TilePoint,
-                    3,
-                    out _,
-                    avoidSoftObstacles: true,
-                    allowRemovableObstacles: false) is not null));
+                    Game1.player.TilePoint) <= 3 &&
+                (monster.isGlider.Value ||
+                    BuildAdjacentToolPath(
+                        volcano,
+                        monster.TilePoint,
+                        3,
+                        out _,
+                        avoidSoftObstacles: true,
+                        allowRemovableObstacles: false) is not null))
+            .OrderBy(monster => Vector2.DistanceSquared(
+                monster.GetBoundingBox().Center.ToVector2(),
+                Game1.player.GetBoundingBox().Center.ToVector2()))
+            .FirstOrDefault();
+    }
+
+    private static bool ImmediateVolcanoThreat(
+        VolcanoDungeon volcano)
+    {
+        return NearestImmediateVolcanoThreat(volcano) is not null;
     }
 
     private void CompleteVolcanoCoolLava(ActiveVolcanoCoolLava active)

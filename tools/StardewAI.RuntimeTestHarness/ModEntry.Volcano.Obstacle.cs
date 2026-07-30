@@ -140,6 +140,11 @@ public sealed partial class ModEntry : Mod
 
     private void TickVolcanoObstacleCore(ActiveVolcanoObstacle active)
     {
+        if (activeVolcanoCombat is not null)
+        {
+            return;
+        }
+
         active.ElapsedTicks++;
         if (!Context.IsWorldReady ||
             Game1.currentLocation is not VolcanoDungeon volcano ||
@@ -174,7 +179,14 @@ public sealed partial class ModEntry : Mod
 
         if ((active.IsStone || !active.HeavyHitterAction!.ButtonHeld) && ImmediateVolcanoThreat(volcano))
         {
-            CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_unsafe_monster_window");
+            if (!TryStartReactiveVolcanoCombat(
+                    volcano,
+                    "obstacle_immediate_threat"))
+            {
+                CompleteVolcanoObstacleBlocked(
+                    active,
+                    "volcano_obstacle_unsafe_monster_window");
+            }
             return;
         }
 

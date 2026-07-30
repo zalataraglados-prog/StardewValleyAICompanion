@@ -8,6 +8,7 @@ param(
     [string] $RunId = ("runtime-volcano-reach-caldera-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-volcano-reach-caldera",
     [switch] $VisibleGame,
+    [switch] $FreezeClockWhileExecutorIdle,
     [switch] $KeepProcessesRunning
 )
 
@@ -229,7 +230,8 @@ try {
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_VOLCANO_CALIBRATION_LOADOUT = "1"
-    $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE = "true"
+    $env:STARDEWAI_FREEZE_CLOCK_WHILE_EXECUTOR_IDLE =
+        $FreezeClockWhileExecutorIdle.ToString().ToLowerInvariant()
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:SMAPI_MODS_PATH = $smokeModsPath
@@ -436,7 +438,12 @@ try {
             "StardewAI.TransparentBridge",
             "StardewAI.RuntimeTestHarness"
         )
-        clock_policy = "normal_world_during_executor_actions;world_paused_only_while_external_orchestrator_idle"
+        clock_policy = if ($FreezeClockWhileExecutorIdle) {
+            "normal_world_during_executor_actions;world_paused_while_external_orchestrator_idle"
+        }
+        else {
+            "continuous_world_during_actions_snapshots_and_external_orchestration"
+        }
         game_process_id = $gameProcess.Id
         backend_process_id = $backendProcess.Id
         steps = @($stepSummaryArray)
