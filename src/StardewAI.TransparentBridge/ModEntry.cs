@@ -688,8 +688,6 @@ public sealed class ModEntry : Mod
         if (profile is "volcano")
         {
             domains.Add("volcano");
-            domains.Add("current_location");
-            domains.Add("locations");
         }
 
         return domains;

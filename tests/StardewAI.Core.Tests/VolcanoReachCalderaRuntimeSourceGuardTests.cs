@@ -131,6 +131,27 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             "!group.Key.ForceRefresh",
             bridge,
             StringComparison.Ordinal);
+        var volcanoProfileStart = bridge.IndexOf(
+            "if (profile is \"volcano\")",
+            StringComparison.Ordinal);
+        var volcanoProfileEnd = bridge.IndexOf(
+            "return domains;",
+            volcanoProfileStart,
+            StringComparison.Ordinal);
+        var volcanoProfile = bridge[
+            volcanoProfileStart..volcanoProfileEnd];
+        Assert.Contains(
+            "domains.Add(\"volcano\");",
+            volcanoProfile,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "domains.Add(\"current_location\");",
+            volcanoProfile,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "domains.Add(\"locations\");",
+            volcanoProfile,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -302,6 +323,14 @@ public sealed class VolcanoReachCalderaRuntimeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "volcano_movement_unsafe_monster_window",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "connectorCommitReady",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ManhattanDistance(",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

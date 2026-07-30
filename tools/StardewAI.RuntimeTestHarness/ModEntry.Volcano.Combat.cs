@@ -751,7 +751,12 @@ public sealed partial class ModEntry : Mod
             active.DefeatDialogueButtonHeld = false;
         }
         StopAllMovement();
-        if (ReferenceEquals(Game1.player.CurrentTool, active.Weapon))
+        if (ReferenceEquals(
+                Game1.player.CurrentTool,
+                active.Weapon) &&
+            (Game1.player.UsingTool ||
+                !Game1.player.CanMove ||
+                Game1.player.FarmerSprite.PauseForSingleAnimation))
         {
             Game1.player.completelyStopAnimatingOrDoingAction();
         }

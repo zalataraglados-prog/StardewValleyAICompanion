@@ -412,10 +412,6 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
             var staticRow = new char[width];
             for (var x = 0; x < width; x++)
             {
-                var blocked = volcano.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
-                    volcano.farmers.Any(farmer => farmer != Game1.player && farmer.TilePoint.X == x && farmer.TilePoint.Y == y);
-                row[x] = blocked ? '1' : '0';
-
                 var mapPassable = volcano.isTilePassable(
                     new xTile.Dimensions.Location(x, y),
                     Game1.viewport);
@@ -429,6 +425,17 @@ public sealed class VolcanoReadAdapter : ReadAdapterBase
                     new Vector2(x, y),
                     out var isCooled) &&
                     isCooled;
+                var blocked = !cooled &&
+                    (volcano.IsTileBlockedBy(
+                        new Vector2(x, y),
+                        collisionMask,
+                        CollisionMask.None,
+                        useFarmerTile: true) ||
+                    volcano.farmers.Any(farmer =>
+                        farmer != Game1.player &&
+                        farmer.TilePoint.X == x &&
+                        farmer.TilePoint.Y == y));
+                row[x] = blocked ? '1' : '0';
                 staticRow[x] = cooled ||
                     mapPassable && !isLava
                     ? '0'

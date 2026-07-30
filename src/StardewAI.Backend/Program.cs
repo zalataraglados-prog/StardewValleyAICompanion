@@ -951,8 +951,6 @@ public static class SnapshotValidator
         "time",
         "player",
         "options",
-        "current_location",
-        "locations",
         "menus",
         "transport",
         "volcano"

@@ -236,7 +236,21 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if ((string.Equals(
+        var connectorCommitReady =
+            move.AllowsLocationChange &&
+            string.Equals(
+                move.Pending.Request.OptionId,
+                "executor.traverse_connector",
+                StringComparison.Ordinal) &&
+            (ManhattanDistance(
+                    Game1.player.TilePoint,
+                    move.TargetTile) <= 1 ||
+                move.ConnectorActionTile.HasValue &&
+                ManhattanDistance(
+                    Game1.player.TilePoint,
+                    move.ConnectorActionTile.Value) <= 1);
+        if (!connectorCommitReady &&
+            (string.Equals(
                  move.Pending.Request.OptionId,
                  "executor.move_to_tile",
                  StringComparison.Ordinal) ||

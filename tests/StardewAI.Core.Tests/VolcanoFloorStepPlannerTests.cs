@@ -752,6 +752,60 @@ public sealed class VolcanoFloorStepPlannerTests
     }
 
     [Fact]
+    public void PlannerTreatsVerifiedCooledLavaAsDynamicallyPassable()
+    {
+        var snapshot = Snapshot("""
+        {
+          "volcano": {
+            "current_level": {"status":"available","value":{"level":0}},
+            "tiles": {"status":"available","value":{
+              "player_tile":{"tile_x":1,"tile_y":1},
+              "collision_context":{
+                "status":"available",
+                "static_blocked_rows":[
+                  "111111",
+                  "100001",
+                  "111111"
+                ],
+                "blocked_rows":[
+                  "111111",
+                  "101001",
+                  "111111"
+                ]
+              },
+              "cooled_lava_tiles":[{"tile_x":2,"tile_y":1}],
+              "coolable_uncooled_tiles":[]
+            }},
+            "connectors": {"status":"available","value":{
+              "forward_warps":[{
+                "tile_x":4,
+                "tile_y":1,
+                "target_location":"VolcanoDungeon1",
+                "target_tile_x":0,
+                "target_tile_y":1
+              }]
+            }},
+            "gates": {"status":"available","value":[]},
+            "objects": {"status":"available","value":[]},
+            "monsters": {"status":"available","value":[]},
+            "player_resources": {"status":"available","value":{
+              "pickaxe_slots":[],
+              "heavy_hitter_slots":[],
+              "weapon_slots":[]
+            }}
+          }
+        }
+        """);
+
+        var step = new VolcanoFloorStepPlanner().Plan(snapshot);
+
+        Assert.Equal(
+            VolcanoFloorStepKinds.TraverseForwardConnector,
+            step.StepKind);
+        Assert.Equal(4, step.TargetTileX);
+    }
+
+    [Fact]
     public void PlannerUsesDynamicAlternateRouteInsteadOfClearingMonster()
     {
         var snapshot = Snapshot("""

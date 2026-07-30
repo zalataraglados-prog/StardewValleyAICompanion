@@ -176,6 +176,14 @@ public sealed partial class ModEntry : Mod
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (volcano.cooledLavaTiles.ContainsKey(targetVector))
         {
+            StopAllMovement();
+            if (Game1.player.UsingTool ||
+                !Game1.player.CanMove ||
+                Game1.player.FarmerSprite.PauseForSingleAnimation)
+            {
+                return;
+            }
+
             CompleteVolcanoCoolLava(active);
             return;
         }

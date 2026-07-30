@@ -141,6 +141,7 @@ namespace StardewAI.Core.Execution
                 : start;
             var immediateGrid = CloneGrid(
                 hasDynamicCollision ? dynamicGrid : grid);
+            MarkCooledLavaPassable(immediateGrid, tiles);
             BlockConnectorTiles(
                 immediateGrid,
                 connectors,
@@ -225,6 +226,29 @@ namespace StardewAI.Core.Execution
         private static bool[][] CloneGrid(bool[][] source)
         {
             return source.Select(row => row.ToArray()).ToArray();
+        }
+
+        private static void MarkCooledLavaPassable(
+            bool[][] grid,
+            JsonElement tiles)
+        {
+            if (!tiles.TryGetProperty(
+                    "cooled_lava_tiles",
+                    out var cooledTiles) ||
+                cooledTiles.ValueKind != JsonValueKind.Array)
+            {
+                return;
+            }
+
+            foreach (var tile in cooledTiles.EnumerateArray())
+            {
+                var x = ReadInt(tile, "tile_x");
+                var y = ReadInt(tile, "tile_y");
+                if (InBounds(grid, x, y))
+                {
+                    grid[y][x] = false;
+                }
+            }
         }
 
         private static void BlockConnectorTiles(
