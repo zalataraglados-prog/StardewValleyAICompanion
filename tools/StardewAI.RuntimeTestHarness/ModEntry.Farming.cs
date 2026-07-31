@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -309,11 +310,16 @@ public sealed partial class ModEntry : Mod
 
         if (tool.ElapsedTicks > tool.MaxTicks)
         {
-            CompleteNativeToolBlocked(tool, tool.BeginIssued ? "tool_timeout" : "movement_timeout");
+            var reason = tool.Lifecycle.Phase == NativeToolActionPhase.Ready
+                ? "movement_timeout"
+                : "tool_timeout";
+            WriteExecutorDiagnosticDump(reason);
+            CompleteNativeToolBlocked(tool, reason);
             return;
         }
 
-        if (!tool.BeginIssued && !AreAdjacent(Game1.player.TilePoint, tool.Target))
+        if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            !AreAdjacent(Game1.player.TilePoint, tool.Target))
         {
             if (tool.PathIndex >= tool.Path.Count)
             {
@@ -364,7 +370,7 @@ public sealed partial class ModEntry : Mod
         }
 
         StopAllMovement();
-        if (!tool.BeginIssued)
+        if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready)
         {
             var recheck = tool.PrimitiveKind switch
             {
@@ -379,27 +385,34 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
-            SelectTool(tool.Tool);
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, tool.Target));
-            Game1.player.lastClick = new Vector2(tool.Target.X * Game1.tileSize, tool.Target.Y * Game1.tileSize);
-            Game1.player.BeginUsingTool();
-            tool.BeginIssued = true;
-            return;
         }
 
-        if (!tool.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
+        var decision = tool.Lifecycle.Advance(ObserveNativeToolAction());
+        switch (decision.Command)
         {
-            Game1.player.EndUsingTool();
-            tool.ReleaseIssued = true;
-            return;
-        }
+            case NativeToolActionCommand.Press:
+                SelectTool(tool.Tool);
+                Game1.player.faceDirection(
+                    DirectionTo(Game1.player.TilePoint, tool.Target));
+                Game1.player.lastClick = new Vector2(
+                    tool.Target.X * Game1.tileSize,
+                    tool.Target.Y * Game1.tileSize);
+                Game1.player.BeginUsingTool();
+                return;
 
-        if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
-        {
-            return;
-        }
+            case NativeToolActionCommand.Release:
+                Game1.player.EndUsingTool();
+                return;
 
-        CompleteNativeTool(tool);
+            case NativeToolActionCommand.CycleCompleted:
+                CompleteNativeTool(tool);
+                return;
+
+            case NativeToolActionCommand.Block:
+                WriteExecutorDiagnosticDump(decision.Reason);
+                CompleteNativeToolBlocked(tool, decision.Reason);
+                return;
+        }
     }
 
     private void CompleteNativeToolBlocked(ActiveNativeTool tool, string reason, string[]? reasons = null)
@@ -412,7 +425,8 @@ public sealed partial class ModEntry : Mod
     private void CleanupBlockedNativeToolLifecycle(ActiveNativeTool tool)
     {
         StopAllMovement();
-        if (!tool.BeginIssued || !ReferenceEquals(Game1.player.CurrentTool, tool.Tool))
+        if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready ||
+            !ReferenceEquals(Game1.player.CurrentTool, tool.Tool))
         {
             return;
         }

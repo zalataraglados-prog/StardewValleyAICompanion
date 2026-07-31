@@ -38,6 +38,9 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
         Assert.Contains(": after == \"clear\";", source, StringComparison.Ordinal);
         Assert.Contains("targetTerrainFeatureAfter == expectedTerrainFeatureAfter", source, StringComparison.Ordinal);
         Assert.Contains("ClearanceOutputDeltaMatches(", source, StringComparison.Ordinal);
+        Assert.Contains("active.Lifecycle.Advance(ObserveNativeToolAction())", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ApplyClearanceTool", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("performToolAction(", source, StringComparison.Ordinal);
     }
 
     [Fact]

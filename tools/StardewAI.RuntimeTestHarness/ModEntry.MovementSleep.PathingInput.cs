@@ -192,12 +192,21 @@ public sealed partial class ModEntry : Mod
     {
         Game1.player.forceCanMove();
         Game1.player.faceDirection(direction);
-        executorMovementDirection = direction;
+        if (!executorMovementLease.Acquire(
+                "runtime_executor",
+                direction,
+                executorInputTick,
+                out var reason))
+        {
+            WriteExecutorDiagnosticDump(
+                "movement_lease_acquire_failed:" + reason);
+            throw new InvalidOperationException(reason);
+        }
     }
 
-    private void StopAllMovement()
+    private void StopAllMovement(string reason = "operation_terminal")
     {
-        executorMovementDirection = null;
+        executorMovementLease.ForceRelease(reason, executorInputTick);
         ApplyExecutorMovementInput(out _);
     }
 
@@ -212,7 +221,10 @@ public sealed partial class ModEntry : Mod
         var buttons = new[] { SButton.W, SButton.D, SButton.S, SButton.A };
         for (var direction = 0; direction < buttons.Length; direction++)
         {
-            if (!TryApplySmapiButtonOverride(buttons[direction], executorMovementDirection == direction, out reason))
+            if (!TryApplySmapiButtonOverride(
+                    buttons[direction],
+                    executorMovementLease.Direction == direction,
+                    out reason))
             {
                 return false;
             }

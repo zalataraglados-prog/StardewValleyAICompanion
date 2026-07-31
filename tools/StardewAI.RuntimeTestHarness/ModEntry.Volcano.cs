@@ -214,46 +214,17 @@ public sealed partial class ModEntry : Mod
 
         if (!active.BeginIssued && !AreAdjacent(Game1.player.TilePoint, active.Target))
         {
-            if (active.PathIndex >= active.Path.Count)
+            if (!TryAdvanceExecutorPath(
+                    volcano,
+                    active.Path,
+                    active.PathCursor,
+                    out var pathReason))
             {
-                CompleteVolcanoCoolLavaBlocked(active, "volcano_cooling_path_exhausted_before_adjacent");
-                return;
-            }
-
-            var next = active.Path[active.PathIndex];
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-                active.StuckTicks = 0;
-                return;
-            }
-
-            if (!IsTileWalkable(volcano, next) || IsTileOccupiedByCharacter(volcano, next))
-            {
-                CompleteVolcanoCoolLavaBlocked(active, "volcano_cooling_dynamic_path_blocked");
-                return;
-            }
-
-            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
-            active.LastPosition = Game1.player.Position;
-            StartMoving(DirectionTo(Game1.player.TilePoint, next));
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-            }
-
-            if (!movedSinceLastTick)
-            {
-                active.StuckTicks++;
-                if (active.StuckTicks > 45)
-                {
-                    CompleteVolcanoCoolLavaBlocked(active, "volcano_cooling_movement_stuck");
-                }
-            }
-            else
-            {
-                active.StuckTicks = 0;
+                WriteExecutorDiagnosticDump(
+                    "volcano_cooling_" + pathReason);
+                CompleteVolcanoCoolLavaBlocked(
+                    active,
+                    "volcano_cooling_" + pathReason);
             }
             return;
         }

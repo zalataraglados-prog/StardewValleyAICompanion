@@ -96,3 +96,59 @@
 3. 先跑现有测试取得基线，不运行游戏；
 4. 完成诊断和底座代码后，再确认用户是否允许可见游戏测试；
 5. 稳定且验证过的切片及时提交，不拉成长分支。
+
+## 7. 2026-07-31 实施结果
+
+工程切片已经完成：
+
+- 新增 `MovementLease`，普通移动持续持有单一方向，转向在同一输入更新内切换；
+- 新增 `NativeToolActionLifecycle`，同时支持“可蓄力工具显式释放”和“非蓄力工具原生自行结束”两种合法生命周期，但都要求先观察到原生动作开始；
+- 新增容量 600 帧的 `ExecutorDiagnosticRingBuffer`，正常运行不逐 tick 落盘，异常触发才输出最近窗口；
+- 通用清障改为异步跨 tick 原生工具动作，删除生产路径中的直接对象/地形移除；
+- 农场原生工具和火山石头改用同一生命周期；
+- 火山石头即使目标对象先消失，也要等原生动画与移动锁结束后才完成；
+- 转弯中心逻辑修正为：旧方向仍在实际移动时才继续对齐；若旧方向被碰撞锁住，则原子切到规划方向。
+
+验证证据：
+
+- 全量静态测试：Backend `102/102`，Core `1430/1430`；
+- 通用清障真实运行：草/镰刀、树枝/斧头、藏宝点/锄头均通过，经验、掉落 multiset、地形和统计增量与透明投影一致；
+- 火山 level 9 后台回归：`11/11` 步、全部 fresh snapshot、全部 state hash 改变并进入 Caldera；
+- 失败复现 `executor-lifecycle-volcano-l9-20260731` 精确暴露旧方向锁死，修复后 `executor-lifecycle-volcano-l9-fixed-20260731` 通过；
+- 第一次解锁可见回归在石头动作开始前外层超时，第二次在熔岩冷却路径转弯时卡住；两次都按失败保留证据，没有放宽成功条件；
+- 根因是火山冷却/清障仍各自复制简化路径推进逻辑，没有继承普通移动的转弯中心修复；两者现已改用共享 `ExecutorPathCursor`/`TryAdvanceExecutorPath`；
+- 外层火山清障超时现在也触发容量 600 帧的异常诊断；
+- 最终可见回归 `executor-lifecycle-volcano-visible-l9-path-owner-20260731` 通过：`14/14` 步进入 Caldera，4 次石头清障、3 次移动、3 次熔岩冷却、3 次等待、1 次出口穿越，全部 after snapshot fresh 且 state hash 改变。
+
+## 8. GitHub #85/#86 审计结论
+
+### #85 RuntimeTestHarness 状态所有权
+
+事实判断正确：文件 partial 化没有改变根 `ModEntry` 持有大量 active state、调度和清理责任。P0 应解释为“立即停止继续扩大根对象责任”，而不是一次性迁移全部 Handler；整仓重写会同时扰动现有真实运行证据。
+
+采纳方式：
+
+1. 本轮已把输入租约、原生动作生命周期和诊断缓冲抽为独立、可单测的 owner；
+2. 后续每处理一个权威字典纵向切片，就把该领域 active state 与 cleanup 迁给对应 Handler；
+3. `ModEntry` 最终只保留 SMAPI lifecycle、调度和 Handler 注册；
+4. 从现在起禁止向 `ModEntry` 新增领域 active state；新增领域必须先有独立 Handler owner；
+5. 禁止建立第二执行循环，旧路径必须在同一切片中删除并由证据守卫防回退。
+
+### #86 TrainingExecutionRequest v2
+
+事实判断正确，而且严重程度高于先前估计：当前 `TrainingExecutionRequest` 分散在 8 个 partial 声明文件中，共有 304 个 public instance 属性；大量互斥领域字段在类型上可以任意组合。P0 应解释为“冻结 flat DTO 扩张并建立 v2 强类型入口”，而不是一次性迁移全部 304 个字段；后者会同时改动 compiler、runtime、verifier 与历史证据，回归面不可控。
+
+采纳方式：
+
+1. 立即冻结向 v1 flat DTO 新增字段；现有 v1 保留只读兼容窗口和历史证据；
+2. 先定义版本化 payload envelope、option-to-payload 判别器及错误组合拒绝测试；
+3. 按 `TransferItem -> PlaceObject -> Craft -> Quest` 逐族迁移，编译器、Handler 和 verifier 同步切换；
+4. 每族完成后停止向 flat DTO 增加该族字段，最终才删除 v1 写入；
+5. 该迁移不得阻塞已经明确的共享执行底座可见验收。
+
+## 9. 紧接任务
+
+1. `executor.shared_native_input_lifecycle.v1` 已满足退出条件，不再回到局部输入补丁循环；
+2. 从权威字典差异矩阵选择最高优先级未闭环动作族，按五门加原生可见符合性完成下一纵向切片；
+3. #85 从现在起禁止新增根状态，并随纵向切片渐进迁移 Handler；所有需要沿路径接近目标的领域动作必须复用共享路径推进器；
+4. #86 立即冻结 v1 字段增长，另开 v2 envelope 兼容切片，不把 304 字段大迁移插入当前动作开发中间。

@@ -449,13 +449,17 @@ public sealed partial class ModEntry : Mod
         }
 
         var direction = DirectionTo(currentTile, nextTile);
+        var movedSinceLastTick =
+            Vector2.DistanceSquared(
+                move.LastPosition,
+                Game1.player.Position) >= 0.01f;
         if (move.CurrentDirection.HasValue &&
             move.CurrentDirection.Value != direction &&
+            movedSinceLastTick &&
             !HasReachedTurnCenter(currentTile, move.CurrentDirection.Value))
         {
             direction = move.CurrentDirection.Value;
         }
-        var movedSinceLastTick = Vector2.DistanceSquared(move.LastPosition, Game1.player.Position) >= 0.01f;
         move.LastPosition = Game1.player.Position;
         StartMovingIfNeeded(move, direction);
         MovePlayerForTick();

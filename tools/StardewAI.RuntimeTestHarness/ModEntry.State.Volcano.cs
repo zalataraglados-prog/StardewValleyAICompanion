@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -52,7 +53,6 @@ public sealed partial class ModEntry : Mod
             MaxMovementTiles = maxMovementTiles;
             RequestedEffect = requestedEffect;
             MaxTicks = Math.Max(360, maxMovementTiles * 90 + 360);
-            LastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -69,9 +69,7 @@ public sealed partial class ModEntry : Mod
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }
-        public int PathIndex { get; set; }
-        public int StuckTicks { get; set; }
-        public Vector2 LastPosition { get; set; }
+        public ExecutorPathCursor PathCursor { get; } = new();
         public bool BeginIssued { get; set; }
         public bool ReleaseIssued { get; set; }
         public int CompletionWaitTicks { get; set; }
@@ -114,7 +112,6 @@ public sealed partial class ModEntry : Mod
             RequestedEffect = requestedEffect;
             DebrisCountBefore = volcano.debris.Count;
             MaxTicks = Math.Max(360, maxMovementTiles * 90 + maxSwings * 240);
-            LastPosition = Game1.player.Position;
             if (isStone)
             {
                 ObservedHealth.Add(healthBefore);
@@ -141,13 +138,10 @@ public sealed partial class ModEntry : Mod
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }
-        public int PathIndex { get; set; }
-        public int StuckTicks { get; set; }
-        public Vector2 LastPosition { get; set; }
+        public ExecutorPathCursor PathCursor { get; } = new();
         public int SwingCount { get; set; }
         public int EffectiveSwingCount => HeavyHitterAction?.SwingCount ?? SwingCount;
-        public bool BeginIssued { get; set; }
-        public bool ReleaseIssued { get; set; }
+        public NativeToolActionLifecycle Lifecycle { get; } = new();
         public List<int> ObservedHealth { get; } = new();
         public IReadOnlyList<int> EffectiveObservedHealth => HeavyHitterAction?.ObservedHealth ?? ObservedHealth;
     }

@@ -29,4 +29,7 @@ public sealed class HarnessConfig
     public bool DisableMovementTimeouts { get; set; }
 
     public bool FreezeClockWhileExecutorIdle { get; set; }
+
+    public string DiagnosticOutputPath { get; set; } =
+        @"E:\StardewValleyAICompanion-runtime\diagnostics";
 }

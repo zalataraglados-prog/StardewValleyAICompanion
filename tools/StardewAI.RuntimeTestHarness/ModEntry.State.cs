@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -150,8 +151,7 @@ public sealed partial class ModEntry : Mod
         public int MaxMovementTicks { get; }
         public int MaxTicks { get; }
         public Vector2 LastPosition { get; set; }
-        public bool BeginIssued { get; set; }
-        public bool ReleaseIssued { get; set; }
+        public NativeToolActionLifecycle Lifecycle { get; } = new();
     }
 
     private sealed class ActiveCatchFish

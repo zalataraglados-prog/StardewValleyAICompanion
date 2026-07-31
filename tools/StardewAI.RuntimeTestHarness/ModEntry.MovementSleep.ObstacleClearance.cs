@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -48,62 +49,25 @@ public sealed partial class ModEntry : Mod
 
     private bool TryClearRemovableObstacle(GameLocation location, Point tile, ActiveTileMove move)
     {
-        if (!CanClearRouteObstacles(location))
-        {
-            return false;
-        }
-
-        var key = new Vector2(tile.X, tile.Y);
-        var before = ObstacleLabel(location, tile);
-        var tool = SelectClearanceTool(location, tile);
-        if (tool is null)
-        {
-            return false;
-        }
-
-        var staminaBefore = Game1.player.Stamina;
-        Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, tile));
-        ApplyClearanceTool(location, tile, tool);
-
-        if (Game1.activeClickableMenu is DialogueBox)
-        {
-            Game1.exitActiveMenu();
-            return false;
-        }
-
-        if (!IsTileWalkable(location, tile) && location.objects.ContainsKey(key))
-        {
-            return false;
-        }
-
-        move.Pending.MovementClearanceActions++;
-        move.Pending.MovementExtraTicks += ClearanceTickCost(tool);
-        move.Pending.ChangedFacts.Add(new SimulatedFactChange
-        {
-            Path = "movement.clearance[" + tile.X + "," + tile.Y + "]",
-            Before = before,
-            After = ObstacleLabel(location, tile)
-        });
-        move.Pending.ChangedFacts.Add(new SimulatedFactChange
-        {
-            Path = "player.energy",
-            Before = staminaBefore.ToString("0.###"),
-            After = Game1.player.Stamina.ToString("0.###")
-        });
-        return true;
+        // Route repair is compiled as an explicit clear_obstacle primitive.
+        // Movement must never mutate a blocker synchronously between native ticks.
+        return false;
     }
 
-    private TrainingExecutionResult ExecuteClearObstacle(TrainingExecutionRequest request)
+    private void StartClearObstacle(PendingExecution pending)
     {
+        var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
         {
-            return Blocked(request, reasons.ToArray());
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
         }
 
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", "current_location.obstacle=clear", ClearObstacleObservedEffect(null), "clear_obstacle_target_tile_required");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", "current_location.obstacle=clear", ClearObstacleObservedEffect(null), "clear_obstacle_target_tile_required"));
+            return;
         }
 
         var location = Game1.currentLocation;
@@ -111,12 +75,14 @@ public sealed partial class ModEntry : Mod
         var requested = "current_location.obstacle[" + target.X + "," + target.Y + "]=clear";
         if (!CanClearRouteObstacles(location) && !IsExplicitPortableSkillClearanceObject(location, target))
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_location_not_whitelisted");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_location_not_whitelisted"));
+            return;
         }
 
         if (ManhattanDistance(Game1.player.TilePoint, target) > 1)
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_target_not_adjacent");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_target_not_adjacent"));
+            return;
         }
         var targetIsArtifactSpot = location.objects.TryGetValue(target.ToVector2(), out var targetObject) &&
             targetObject.QualifiedItemId is "(O)590" or "(O)SeedSpot";
@@ -125,14 +91,16 @@ public sealed partial class ModEntry : Mod
             var artifactRequestReason = ValidateArtifactSpotExecutionRequest(request);
             if (artifactRequestReason is not null)
             {
-                return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), artifactRequestReason);
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), artifactRequestReason));
+                return;
             }
         }
         if (location.objects.TryGetValue(target.ToVector2(), out var seedSpot) &&
             seedSpot.QualifiedItemId == "(O)SeedSpot" &&
             Game1.player.stats.Get("ArtifactSpotsDug") >= int.MaxValue)
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "blocked_artifact_spot_stat_projection_overflow");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "blocked_artifact_spot_stat_projection_overflow"));
+            return;
         }
 
         var projectedTool = SelectClearanceTool(location, target);
@@ -145,23 +113,27 @@ public sealed partial class ModEntry : Mod
                 Game1.player.Items[request.ToolSlotIndex.Value] is not Tool requestedTool ||
                 !CanToolClearTarget(location, target, requestedTool))
             {
-                return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_tool_slot_drifted");
+                pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_tool_slot_drifted"));
+                return;
             }
             tool = requestedTool;
         }
         if (tool is null)
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_no_matching_tool_or_obstacle");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_no_matching_tool_or_obstacle"));
+            return;
         }
         if (!string.IsNullOrWhiteSpace(request.RequiredToolKind) &&
             !string.Equals(request.RequiredToolKind, ClearanceToolKind(tool), StringComparison.Ordinal))
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_required_tool_kind_drifted");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_required_tool_kind_drifted"));
+            return;
         }
         var projectedStateDrift = ClearanceProjectedStateDriftReason(request);
         if (projectedStateDrift is not null)
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), projectedStateDrift);
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), projectedStateDrift));
+            return;
         }
         var expectedOutputItems = TryParseClearanceOutputItems(request.ClearOutputItemsJson, out var parsedOutputItems)
             ? parsedOutputItems
@@ -169,20 +141,17 @@ public sealed partial class ModEntry : Mod
         if (!string.IsNullOrWhiteSpace(request.ClearOutputProjectionStatus) &&
             (!string.Equals(request.ClearOutputProjectionStatus, "exact", StringComparison.Ordinal) || expectedOutputItems is null))
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_projection_invalid");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_projection_invalid"));
+            return;
         }
         Dictionary<ClearanceOutputItemKey, int>? outputItemMultisetBefore = null;
         if (expectedOutputItems is not null &&
             !TryReadClearanceDebrisItemMultiset(location, out outputItemMultisetBefore))
         {
-            return BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_before_unreadable");
-        }
-        if (request.ToolSlotIndex.HasValue)
-        {
-            Game1.player.CurrentToolIndex = request.ToolSlotIndex.Value;
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_before_unreadable"));
+            return;
         }
 
-        var started = DateTimeOffset.UtcNow.ToString("O");
         var before = ObstacleLabel(location, target);
         var staminaBefore = Game1.player.Stamina;
         var beforeForagingExperience = Game1.player.experiencePoints[Farmer.foragingSkill];
@@ -197,26 +166,179 @@ public sealed partial class ModEntry : Mod
         var artifactSpotsDugBefore = Game1.player.stats.Get("ArtifactSpotsDug");
         var defenseBookMailBefore = Game1.player.mailReceived.Contains("DefenseBookDropped");
         var targetTerrainFeatureBefore = ClearanceTerrainFeatureLabel(location, target);
-        var swings = Math.Clamp(request.MaxCrops, 1, 64);
-        var observedLabels = new List<string> { before };
-        for (var swing = 0; swing < swings; swing++)
+        activeClearObstacle = new ActiveClearObstacle(
+            pending,
+            location,
+            target,
+            tool,
+            toolSlotBefore,
+            targetIsArtifactSpot,
+            expectedOutputItems,
+            outputItemMultisetBefore,
+            before,
+            staminaBefore,
+            beforeForagingExperience,
+            expectedForagingExperience,
+            outputProjection,
+            primaryOutputCountBefore,
+            bonusOutputCountBefore,
+            artifactSpotsDugBefore,
+            defenseBookMailBefore,
+            targetTerrainFeatureBefore,
+            Math.Clamp(request.MaxCrops, 1, 64));
+    }
+
+    private void TickClearObstacle()
+    {
+        if (activeClearObstacle is null)
         {
-            if (ObstacleLabel(location, target) == "clear")
-            {
-                break;
-            }
-
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, target));
-            ApplyClearanceTool(location, target, tool);
-            if (Game1.activeClickableMenu is DialogueBox)
-            {
-                Game1.exitActiveMenu();
-                break;
-            }
-
-            observedLabels.Add(ObstacleLabel(location, target));
+            return;
         }
 
+        var active = activeClearObstacle;
+        try
+        {
+            TickClearObstacleCore(active);
+        }
+        catch (Exception ex)
+        {
+            WriteExecutorDiagnosticDump(
+                "clear_obstacle_exception:" + ex.GetType().Name);
+            CompleteClearObstacle(
+                active,
+                "clear_obstacle_execution_exception:" + ex.GetType().Name);
+        }
+    }
+
+    private void TickClearObstacleCore(ActiveClearObstacle active)
+    {
+        active.ElapsedTicks++;
+        if (!Context.IsWorldReady ||
+            !ReferenceEquals(Game1.currentLocation, active.Location))
+        {
+            CompleteClearObstacle(
+                active,
+                "clear_obstacle_location_changed_or_world_unavailable");
+            return;
+        }
+
+        if (active.ElapsedTicks > active.MaxTicks)
+        {
+            WriteExecutorDiagnosticDump("clear_obstacle_timeout");
+            CompleteClearObstacle(active, "clear_obstacle_timeout");
+            return;
+        }
+
+        var currentLabel = ObstacleLabel(active.Location, active.Target);
+        var targetCleared = active.TargetIsArtifactSpot
+            ? !active.Location.objects.ContainsKey(active.Target.ToVector2())
+            : currentLabel == "clear";
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready)
+        {
+            if (targetCleared)
+            {
+                CompleteClearObstacle(
+                    active,
+                    active.SwingCount > 0
+                        ? null
+                        : "clear_obstacle_target_changed_before_native_action");
+                return;
+            }
+
+            if (active.SwingCount >= active.MaxSwings)
+            {
+                CompleteClearObstacle(
+                    active,
+                    "clear_obstacle_swing_budget_exceeded");
+                return;
+            }
+
+            if (Game1.player.Stamina <= 0f)
+            {
+                CompleteClearObstacle(
+                    active,
+                    "clear_obstacle_energy_exhausted");
+                return;
+            }
+        }
+
+        var decision = active.Lifecycle.Advance(ObserveNativeToolAction());
+        switch (decision.Command)
+        {
+            case NativeToolActionCommand.Press:
+                SelectTool(active.Tool);
+                Game1.player.faceDirection(
+                    DirectionTo(Game1.player.TilePoint, active.Target));
+                Game1.player.lastClick = new Vector2(
+                    active.Target.X * Game1.tileSize,
+                    active.Target.Y * Game1.tileSize);
+                Game1.player.BeginUsingTool();
+                return;
+
+            case NativeToolActionCommand.Release:
+                Game1.player.EndUsingTool();
+                return;
+
+            case NativeToolActionCommand.CycleCompleted:
+                active.SwingCount++;
+                active.ObservedLabels.Add(currentLabel);
+                active.Lifecycle.Reset();
+                if (active.TargetIsArtifactSpot
+                        ? !active.Location.objects.ContainsKey(
+                            active.Target.ToVector2())
+                        : ObstacleLabel(
+                            active.Location,
+                            active.Target) == "clear")
+                {
+                    CompleteClearObstacle(active, null);
+                }
+                return;
+
+            case NativeToolActionCommand.Block:
+                WriteExecutorDiagnosticDump(decision.Reason);
+                CompleteClearObstacle(active, decision.Reason);
+                return;
+        }
+    }
+
+    private void CompleteClearObstacle(
+        ActiveClearObstacle active,
+        string? forcedBlockReason)
+    {
+        StopAllMovement(
+            forcedBlockReason is null
+                ? "clear_obstacle_completed"
+                : forcedBlockReason);
+        if (forcedBlockReason is not null &&
+            active.Lifecycle.Phase != NativeToolActionPhase.Ready &&
+            ReferenceEquals(Game1.player.CurrentTool, active.Tool))
+        {
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+
+        activeClearObstacle = null;
+        var request = active.Pending.Request;
+        var location = active.Location;
+        var target = active.Target;
+        var tool = active.Tool;
+        var toolSlotBefore = active.ToolSlotBefore;
+        var targetIsArtifactSpot = active.TargetIsArtifactSpot;
+        var expectedOutputItems = active.ExpectedOutputItems;
+        var outputItemMultisetBefore = active.OutputItemMultisetBefore;
+        var before = active.Before;
+        var staminaBefore = active.StaminaBefore;
+        var beforeForagingExperience = active.BeforeForagingExperience;
+        var expectedForagingExperience = active.ExpectedForagingExperience;
+        var outputProjection = active.OutputProjection;
+        var primaryOutputCountBefore = active.PrimaryOutputCountBefore;
+        var bonusOutputCountBefore = active.BonusOutputCountBefore;
+        var artifactSpotsDugBefore = active.ArtifactSpotsDugBefore;
+        var defenseBookMailBefore = active.DefenseBookMailBefore;
+        var targetTerrainFeatureBefore = active.TargetTerrainFeatureBefore;
+        var observedLabels = active.ObservedLabels;
+        var started = active.StartedAt;
+        var requested = "current_location.obstacle[" +
+            target.X + "," + target.Y + "]=clear";
         var after = ObstacleLabel(location, target);
         var foragingExperienceAfter = Game1.player.experiencePoints[Farmer.foragingSkill];
         var foragingExperienceDelta = foragingExperienceAfter - beforeForagingExperience;
@@ -259,16 +381,18 @@ public sealed partial class ModEntry : Mod
         var targetClearanceCompleted = targetIsArtifactSpot
             ? !location.objects.ContainsKey(target.ToVector2())
             : after == "clear";
-        var verified = targetClearanceCompleted &&
+        var verified = forcedBlockReason is null &&
+            targetClearanceCompleted &&
             (!expectedForagingExperience.HasValue || foragingExperienceDelta == expectedForagingExperience.Value) &&
             projectedOutputMatched;
-        var verificationFailureReason = !targetClearanceCompleted
+        var verificationFailureReason = forcedBlockReason ??
+            (!targetClearanceCompleted
             ? "target_obstacle_still_present"
             : expectedForagingExperience.HasValue && foragingExperienceDelta != expectedForagingExperience.Value
                 ? "projected_foraging_experience_mismatch"
                 : !outputItemMultisetAfterReadable
                     ? "clear_obstacle_output_multiset_after_unreadable"
-                    : "projected_clear_output_mismatch";
+                    : "projected_clear_output_mismatch");
         var changedFacts = new List<SimulatedFactChange>
         {
             new SimulatedFactChange
@@ -398,7 +522,7 @@ public sealed partial class ModEntry : Mod
                 After = Game1.player.CurrentToolIndex.ToString(CultureInfo.InvariantCulture)
             });
         }
-        return new TrainingExecutionResult
+        active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -409,6 +533,10 @@ public sealed partial class ModEntry : Mod
             FeedbackAvailable = true,
             EnergyBefore = staminaBefore,
             EnergyAfter = Game1.player.Stamina,
+            ToolQualifiedItemId = tool.QualifiedItemId,
+            ToolUpgradeLevel = tool.UpgradeLevel,
+            ToolUseCount = active.SwingCount,
+            ActualTicks = active.ElapsedTicks,
             StartedAt = started,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "clear_obstacle",
@@ -431,33 +559,7 @@ public sealed partial class ModEntry : Mod
                 ";defense_book_mail_after=" + defenseBookMailAfter.ToString().ToLowerInvariant(),
             BlockReasons = verified ? Array.Empty<string>() : new[] { verificationFailureReason },
             ChangedFacts = changedFacts.ToArray()
-        };
-    }
-
-    private static void ApplyClearanceTool(GameLocation location, Point target, Tool tool)
-    {
-        var tile = new Vector2(target.X, target.Y);
-        if (location.objects.TryGetValue(tile, out var targetObject) && targetObject.IsWeeds())
-        {
-            if (targetObject.performToolAction(tool))
-            {
-                location.objects.Remove(tile);
-            }
-
-            return;
-        }
-
-        if (location.terrainFeatures.TryGetValue(tile, out var feature))
-        {
-            if (feature.performToolAction(tool, 0, tile))
-            {
-                location.terrainFeatures.Remove(tile);
-            }
-
-            return;
-        }
-
-        tool.DoFunction(location, target.X * Game1.tileSize, target.Y * Game1.tileSize, 0, Game1.player);
+        });
     }
 
     private static string ClearObstacleObservedEffect(Point? target)

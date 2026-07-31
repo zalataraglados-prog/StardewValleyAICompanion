@@ -14,7 +14,8 @@ public sealed class NativeToolSourceGuardTests
         Assert.Contains("Game1.player.BeginUsingTool()", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.EndUsingTool()", source, StringComparison.Ordinal);
         Assert.Equal(2, source.Split("CleanupBlockedNativeToolLifecycle(tool);", StringSplitOptions.None).Length - 1);
-        Assert.Contains("if (!tool.BeginIssued || !ReferenceEquals(Game1.player.CurrentTool, tool.Tool))", source, StringComparison.Ordinal);
+        Assert.Contains("tool.Lifecycle.Phase == NativeToolActionPhase.Ready", source, StringComparison.Ordinal);
+        Assert.Contains("tool.Lifecycle.Advance(ObserveNativeToolAction())", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.completelyStopAnimatingOrDoingAction();", source, StringComparison.Ordinal);
         Assert.Contains("\"water_crop\"", source, StringComparison.Ordinal);
         Assert.Contains("\"till_soil\"", source, StringComparison.Ordinal);

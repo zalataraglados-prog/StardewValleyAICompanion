@@ -35,8 +35,9 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteBlockedMove(ActiveTileMove move, string reason)
     {
+        WriteExecutorDiagnosticDump(reason);
         ReleaseMovementIncidentalDialogueButton(move);
-        StopAllMovement();
+        StopAllMovement(reason);
         activeTileMove = null;
         move.Pending.Completion.SetResult(BlockedWithPrimitive(
             move.Pending.Request,

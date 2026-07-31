@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -41,12 +42,17 @@ public sealed partial class ModEntry : Mod
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
-    private int? executorMovementDirection;
+    private readonly MovementLease executorMovementLease = new();
+    private readonly ExecutorDiagnosticRingBuffer executorDiagnosticFrames =
+        new(600);
+    private long executorInputTick;
+    private long lastExecutorDiagnosticDumpTick = -600;
     private ActiveMineFishingSetup? activeMineFishingSetup;
     private ActiveMineSetup? activeMineSetup;
     private ActiveQuarrySetup? activeQuarrySetup;
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeTool? activeNativeTool;
+    private ActiveClearObstacle? activeClearObstacle;
     private ActiveMineStone? activeMineStone;
     private ActiveResourceClump? activeResourceClump;
     private ActiveVolcanoCoolLava? activeVolcanoCoolLava;
@@ -241,6 +247,13 @@ public sealed partial class ModEntry : Mod
             config.FreezeClockWhileExecutorIdle =
                 freezeClockWhileIdleEnabled;
         }
+
+        var diagnosticOutputPath = Environment.GetEnvironmentVariable(
+            "STARDEWAI_EXECUTOR_DIAGNOSTIC_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(diagnosticOutputPath))
+        {
+            config.DiagnosticOutputPath = diagnosticOutputPath;
+        }
     }
 
     private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -389,6 +402,7 @@ public sealed partial class ModEntry : Mod
         TickVolcanoSetup();
         TickDeferredCombatRestore();
         TickNativeTool();
+        TickClearObstacle();
         TickMineStone();
         TickResourceClump();
         TickVolcanoCoolLava();
@@ -426,6 +440,7 @@ public sealed partial class ModEntry : Mod
         TickFarmhouseUpgrade();
         TickPanOreSpot();
         TickFishPondService();
+        CaptureExecutorDiagnosticFrame("update_ticked");
 
         if (HasActiveExecutorOperation())
         {
@@ -461,7 +476,7 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.clear_obstacle")
             {
-                pending.Completion.SetResult(ExecuteClearObstacle(pending.Request));
+                StartClearObstacle(pending);
                 return;
             }
 
@@ -1133,6 +1148,7 @@ public sealed partial class ModEntry : Mod
     {
         try
         {
+            executorInputTick++;
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&
@@ -1156,9 +1172,14 @@ public sealed partial class ModEntry : Mod
 
             if (!ApplyExecutorMovementInput(out var movementInputReason))
             {
-                executorMovementDirection = null;
+                executorMovementLease.ForceRelease(
+                    "movement_input_dispatch_failed",
+                    executorInputTick);
+                WriteExecutorDiagnosticDump(
+                    "movement_input_dispatch_failed:" + movementInputReason);
                 Monitor.Log($"Movement input dispatch failed: {movementInputReason}.", LogLevel.Error);
             }
+            CaptureExecutorDiagnosticFrame("update_ticking");
             if (activeCatchFish is not null && !ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason))
             {
                 CompleteBlockedCatchFish(activeCatchFish, castInputReason);
@@ -1234,6 +1255,7 @@ public sealed partial class ModEntry : Mod
             activeQuarrySetup is not null ||
             activeVolcanoSetup is not null ||
             activeNativeTool is not null ||
+            activeClearObstacle is not null ||
             activeMineStone is not null ||
             activeResourceClump is not null ||
             activeVolcanoCoolLava is not null ||

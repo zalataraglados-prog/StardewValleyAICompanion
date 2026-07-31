@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -155,6 +156,7 @@ public sealed partial class ModEntry : Mod
         }
         if (active.ElapsedTicks > active.MaxTicks)
         {
+            WriteExecutorDiagnosticDump("volcano_obstacle_timeout");
             CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_timeout");
             return;
         }
@@ -162,7 +164,12 @@ public sealed partial class ModEntry : Mod
         var targetVector = active.Target.ToVector2();
         if (!volcano.objects.TryGetValue(targetVector, out var current))
         {
-            if (!active.IsStone)
+            if (active.IsStone)
+            {
+                TickRemovedVolcanoStone(active);
+                return;
+            }
+            else
             {
                 active.HeavyHitterAction!.RecordRemoval();
             }
@@ -192,49 +199,25 @@ public sealed partial class ModEntry : Mod
 
         if (!AreAdjacent(Game1.player.TilePoint, active.Target))
         {
-            if (active.PathIndex >= active.Path.Count)
+            if (!TryAdvanceExecutorPath(
+                    volcano,
+                    active.Path,
+                    active.PathCursor,
+                    out var pathReason))
             {
-                CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_path_exhausted_before_adjacent");
-                return;
-            }
-            var next = active.Path[active.PathIndex];
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-                active.StuckTicks = 0;
-                return;
-            }
-            if (!IsTileWalkable(volcano, next) || IsTileOccupiedByCharacter(volcano, next))
-            {
-                CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_dynamic_path_blocked");
-                return;
-            }
-
-            var movedSinceLastTick = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
-            active.LastPosition = Game1.player.Position;
-            StartMoving(DirectionTo(Game1.player.TilePoint, next));
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-            }
-            if (!movedSinceLastTick)
-            {
-                active.StuckTicks++;
-                if (active.StuckTicks > 45)
-                {
-                    CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_movement_stuck");
-                }
-            }
-            else
-            {
-                active.StuckTicks = 0;
+                WriteExecutorDiagnosticDump(
+                    "volcano_obstacle_" + pathReason);
+                CompleteVolcanoObstacleBlocked(
+                    active,
+                    "volcano_obstacle_" + pathReason);
             }
             return;
         }
 
         StopAllMovement();
-        if (active.IsStone && active.SwingCount >= active.MaxSwings)
+        if (active.IsStone &&
+            active.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            active.SwingCount >= active.MaxSwings)
         {
             CompleteVolcanoObstacleBlocked(active, "volcano_obstacle_swing_budget_exceeded");
             return;
@@ -247,27 +230,37 @@ public sealed partial class ModEntry : Mod
 
         if (active.IsStone)
         {
-            if (!active.BeginIssued)
+            var decision = active.Lifecycle.Advance(
+                ObserveNativeToolAction());
+            switch (decision.Command)
             {
-                Game1.player.CurrentToolIndex = active.ToolSlotIndex;
-                Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-                Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize);
-                Game1.player.BeginUsingTool();
-                active.BeginIssued = true;
-                active.SwingCount++;
-                return;
+                case NativeToolActionCommand.Press:
+                    Game1.player.CurrentToolIndex = active.ToolSlotIndex;
+                    Game1.player.faceDirection(
+                        DirectionTo(
+                            Game1.player.TilePoint,
+                            active.Target));
+                    Game1.player.lastClick = new Vector2(
+                        active.Target.X * Game1.tileSize,
+                        active.Target.Y * Game1.tileSize);
+                    Game1.player.BeginUsingTool();
+                    return;
+
+                case NativeToolActionCommand.Release:
+                    Game1.player.EndUsingTool();
+                    return;
+
+                case NativeToolActionCommand.CycleCompleted:
+                    RecordVolcanoObstacleSwing(active, current);
+                    return;
+
+                case NativeToolActionCommand.Block:
+                    WriteExecutorDiagnosticDump(decision.Reason);
+                    CompleteVolcanoObstacleBlocked(
+                        active,
+                        "volcano_obstacle_" + decision.Reason);
+                    return;
             }
-            if (!active.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
-            {
-                Game1.player.EndUsingTool();
-                active.ReleaseIssued = true;
-                return;
-            }
-            if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
-            {
-                return;
-            }
-            RecordVolcanoObstacleSwing(active, current);
             return;
         }
 
@@ -283,13 +276,57 @@ public sealed partial class ModEntry : Mod
 
     private static void RecordVolcanoObstacleSwing(ActiveVolcanoObstacle active, StardewValley.Object current)
     {
+        active.SwingCount++;
         var health = current.MinutesUntilReady;
         if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != health)
         {
             active.ObservedHealth.Add(health);
         }
-        active.BeginIssued = false;
-        active.ReleaseIssued = false;
+        active.Lifecycle.Reset();
+    }
+
+    private void TickRemovedVolcanoStone(ActiveVolcanoObstacle active)
+    {
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready)
+        {
+            if (active.SwingCount > 0)
+            {
+                CompleteVolcanoObstacle(active);
+            }
+            else
+            {
+                CompleteVolcanoObstacleBlocked(
+                    active,
+                    "volcano_obstacle_target_removed_before_native_action");
+            }
+            return;
+        }
+
+        var decision = active.Lifecycle.Advance(
+            ObserveNativeToolAction());
+        switch (decision.Command)
+        {
+            case NativeToolActionCommand.Release:
+                Game1.player.EndUsingTool();
+                return;
+
+            case NativeToolActionCommand.CycleCompleted:
+                active.SwingCount++;
+                if (active.ObservedHealth.Count == 0 ||
+                    active.ObservedHealth[^1] != 0)
+                {
+                    active.ObservedHealth.Add(0);
+                }
+                CompleteVolcanoObstacle(active);
+                return;
+
+            case NativeToolActionCommand.Block:
+                WriteExecutorDiagnosticDump(decision.Reason);
+                CompleteVolcanoObstacleBlocked(
+                    active,
+                    "volcano_obstacle_" + decision.Reason);
+                return;
+        }
     }
 
     private void CompleteVolcanoObstacle(ActiveVolcanoObstacle active)
@@ -360,7 +397,8 @@ public sealed partial class ModEntry : Mod
             ReleaseNativeHeavyHitterAction(active.HeavyHitterAction);
         }
         StopAllMovement();
-        if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Tool))
+        if (active.Lifecycle.Phase != NativeToolActionPhase.Ready &&
+            ReferenceEquals(Game1.player.CurrentTool, active.Tool))
         {
             Game1.player.completelyStopAnimatingOrDoingAction();
         }
