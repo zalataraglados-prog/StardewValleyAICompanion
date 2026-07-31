@@ -468,6 +468,10 @@ namespace StardewAI.Contracts.Capabilities
 
         public static IReadOnlyList<OptionCapabilityDeclaration> All => Options;
         public static IReadOnlyList<DailyCandidateCapabilityDeclaration> DailyCandidates => Candidates;
+        public static IReadOnlyCollection<string> RegisteredIds { get; } =
+            new ReadOnlyCollection<string>(RegisteredOptionIds
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray());
 
         public static IReadOnlyCollection<string> TrainingAllowlist => EligibleTrainingOptionIds;
 

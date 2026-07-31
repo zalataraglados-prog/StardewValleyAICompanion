@@ -1,5 +1,39 @@
 # StardewAI 完全体完成路线图
 
+## 计划权威与当前执行顺序（2026-07-31 修正）
+
+本文件是唯一的人类可读总计划。`docs/CURRENT_WORK_CN.md` 只记录当前切片；
+`action-progress-dashboard.json`、`action-implementation-reconciliation.json` 和
+`native-action-surface-inventory.json` 是机器生成状态。旧 handoff、测试报告和 GitHub
+issue 只保留历史或验收信息，不得覆盖这四个事实源。
+
+当前必须先完成动作全集对账，再继续逐动作纵向闭环：
+
+1. 从锁定的 1.6.15 反编译源枚举工具、物品使用、地图交互、菜单、事件、任务、节日、
+   小游戏、多人和可选内容的原生动作表面；
+2. 将原生表面归并为稳定的语义动作全集，未实现项也必须注册为显式 blocked，冻结
+   `registered/total` 的真实分母；
+3. 将全部现有 Candidate、Compiler、Harness/Product Executor、Verifier 和 E3 证据
+   归属到一个语义动作及一个主执行引擎，禁止孤儿代码和第二套机械执行循环；
+4. 之后才按优先级逐项完成
+   `read -> candidate -> compile -> product runtime -> before/after verifier -> E3 -> training record`。
+
+Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionRequest.v2`）均为
+触及领域时的渐进迁移，不是动作注册和执行器开发的前置项目。不得因架构整理暂停动作
+覆盖主线；相同机械机制第二次出现时检查复用边界，第三次出现前必须抽取共享引擎。
+
+动作数字只允许由机器看板生成。历史文档中的 89、95、96、190 或 210 不得再单独作为
+完成度口径：96 是 2026-07-31 的现有注册数，不是全游戏动作总数。
+
+当前阶段退出条件：
+
+- 锁定反编译版本的原生动作表面零未分类；
+- 语义动作全集分母冻结，所有动作均已注册（允许显式 blocked）；
+- 每个注册动作恰好归属一个主执行引擎，编译和运行 ID 零孤儿；
+- 看板同时报告 `registered/total`、`five_gate_closed/total`、
+  `product_executable/total` 和 `E3/total`，不再混用不同阶段数字；
+- 完成以上条件前，不开始正式训练，也不以 Harness 成功宣称 Product Executor 完成。
+
 ## 目标架构
 
 最终目标是一个星露谷 AI 陪玩系统：透明读取全游戏状态，小模型只输出高层目标和策略方向，动作编译器负责机械展开、路径/时间/资源校验，执行器在训练单人或未来联机陪玩角色上执行，不抢玩家键鼠。

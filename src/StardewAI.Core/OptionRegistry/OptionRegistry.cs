@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 
 namespace StardewAI.Core.OptionRegistry
@@ -874,19 +875,19 @@ namespace StardewAI.Core.OptionRegistry
 
         private void ValidateRegistryCompleteness()
         {
-            const int expectedHighLevelCount = 31;
-            const int expectedPrimitiveCount = 65;
-            var highLevelCount = options.Keys.Count(id => !id.StartsWith("executor.", StringComparison.Ordinal));
-            var primitiveCount = options.Keys.Count(id => id.StartsWith("executor.", StringComparison.Ordinal));
+            var registeredIds = options.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+            var capabilityIds = OptionCapabilityRegistrySource.RegisteredIds
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
             if (options.Count != OptionGovernanceCatalog.Count ||
-                highLevelCount != expectedHighLevelCount ||
-                primitiveCount != expectedPrimitiveCount)
+                !registeredIds.SequenceEqual(capabilityIds, StringComparer.Ordinal))
             {
                 throw new InvalidOperationException(
                     "Option registry baseline mismatch: " +
                     $"registry={options.Count};governance={OptionGovernanceCatalog.Count};" +
-                    $"high_level={highLevelCount}/{expectedHighLevelCount};" +
-                    $"executor_primitive={primitiveCount}/{expectedPrimitiveCount}.");
+                    $"capability={capabilityIds.Length};" +
+                    $"missing_from_registry={string.Join(",", capabilityIds.Except(registeredIds, StringComparer.Ordinal))};" +
+                    $"missing_from_capability={string.Join(",", registeredIds.Except(capabilityIds, StringComparer.Ordinal))}.");
             }
         }
 

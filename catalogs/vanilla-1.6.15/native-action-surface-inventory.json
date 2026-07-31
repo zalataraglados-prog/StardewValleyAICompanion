@@ -1,0 +1,2967 @@
+{
+  "schema_version": "stardewai.native_action_surface_inventory.v1",
+  "authority": "locked Stardew Valley 1.6.15 decompile; source inventory is not the semantic action denominator",
+  "source_status": "native_decompile_scanned",
+  "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
+  "surface_count": 308,
+  "mapped_count": 35,
+  "generic_interaction_only_count": 49,
+  "unclassified_count": 224,
+  "surfaces": [
+    {
+      "surfaceId": "native.bc9575a370b2e42f",
+      "family": "item_use",
+      "runtimeType": "Object",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4d4bd64cf05966be",
+      "family": "item_use",
+      "runtimeType": "Object",
+      "member": "placementAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e56b514725eed9a5",
+      "family": "location_interaction",
+      "runtimeType": "AdventureGuild",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/AdventureGuild.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.baa0f2f72eac42fb",
+      "family": "location_interaction",
+      "runtimeType": "Beach",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Beach.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.506c43efb757ed0b",
+      "family": "location_interaction",
+      "runtimeType": "BeachNightMarket",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/BeachNightMarket.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.9b20021b21d6d5d5",
+      "family": "location_interaction",
+      "runtimeType": "BoatTunnel",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/BoatTunnel.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.b6e055d984d757b7",
+      "family": "location_interaction",
+      "runtimeType": "BusStop",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/BusStop.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.97467ee3a43eb880",
+      "family": "location_interaction",
+      "runtimeType": "Cabin",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Cabin.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.25b5f60077495778",
+      "family": "location_interaction",
+      "runtimeType": "Caldera",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Caldera.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.a6ca02f3a29609fb",
+      "family": "location_interaction",
+      "runtimeType": "CommunityCenter",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/CommunityCenter.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.76c1b1405cb4257b",
+      "family": "location_interaction",
+      "runtimeType": "CommunityCenter",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/CommunityCenter.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.3ef2a7dad937833b",
+      "family": "location_interaction",
+      "runtimeType": "Desert",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Desert.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.eaf10ba0e4fe12b9",
+      "family": "location_interaction",
+      "runtimeType": "DesertFestival",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/DesertFestival.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.1d6464f69a712fb6",
+      "family": "location_interaction",
+      "runtimeType": "DesertFestival",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/DesertFestival.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.d687afd63572f5b0",
+      "family": "location_interaction",
+      "runtimeType": "FarmHouse",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/FarmHouse.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.3b4375b0d10748a5",
+      "family": "location_interaction",
+      "runtimeType": "FishShop",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/FishShop.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.3b1362df96e8dbf8",
+      "family": "location_interaction",
+      "runtimeType": "Forest",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Forest.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.7f712613703ca3bf",
+      "family": "location_interaction",
+      "runtimeType": "Forest",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Forest.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.f350ebd35fea9daa",
+      "family": "location_interaction",
+      "runtimeType": "GameLocation",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/GameLocation.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.dce735ec88c58e20",
+      "family": "location_interaction",
+      "runtimeType": "GameLocation",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/GameLocation.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.dc0a1a06bc8201ac",
+      "family": "location_interaction",
+      "runtimeType": "IslandEast",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandEast.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.2f0de83b766a4b84",
+      "family": "location_interaction",
+      "runtimeType": "IslandFarmCave",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFarmCave.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.132234f6d59d6dc9",
+      "family": "location_interaction",
+      "runtimeType": "IslandFarmHouse",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFarmHouse.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.248e3e69bf8ead07",
+      "family": "location_interaction",
+      "runtimeType": "IslandFieldOffice",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFieldOffice.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.1f84a476ad354291",
+      "family": "location_interaction",
+      "runtimeType": "IslandHut",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandHut.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.a2ebb65bd4890ed8",
+      "family": "location_interaction",
+      "runtimeType": "IslandLocation",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandLocation.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.97a9e332cc748ffe",
+      "family": "location_interaction",
+      "runtimeType": "IslandNorth",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandNorth.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.264ade9ede4d6148",
+      "family": "location_interaction",
+      "runtimeType": "IslandSecret",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSecret.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.d7cb92c7c07fb29c",
+      "family": "location_interaction",
+      "runtimeType": "IslandSecret",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSecret.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.9e394f057a538467",
+      "family": "location_interaction",
+      "runtimeType": "IslandSouth",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouth.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.a9d89b9155584de4",
+      "family": "location_interaction",
+      "runtimeType": "IslandSouth",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouth.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.9d80bf1959aeccea",
+      "family": "location_interaction",
+      "runtimeType": "IslandSouthEastCave",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouthEastCave.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.c3d72feb27a3f7f8",
+      "family": "location_interaction",
+      "runtimeType": "IslandWest",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWest.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.88592042cc66c997",
+      "family": "location_interaction",
+      "runtimeType": "IslandWest",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWest.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.671e917fffdfa850",
+      "family": "location_interaction",
+      "runtimeType": "IslandWestCave1",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWestCave1.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.cbd2046dcae00925",
+      "family": "location_interaction",
+      "runtimeType": "JojaMart",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/JojaMart.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.8a955d9b16937ce8",
+      "family": "location_interaction",
+      "runtimeType": "LibraryMuseum",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/LibraryMuseum.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.a8d14ade8d4ff025",
+      "family": "location_interaction",
+      "runtimeType": "LibraryMuseum",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/LibraryMuseum.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.ea24c58714ae023e",
+      "family": "location_interaction",
+      "runtimeType": "ManorHouse",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/ManorHouse.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.c1b7c52e84b654bf",
+      "family": "location_interaction",
+      "runtimeType": "MermaidHouse",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/MermaidHouse.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.f726374d1431231e",
+      "family": "location_interaction",
+      "runtimeType": "MineShaft",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/MineShaft.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.fb18db3b537a39ee",
+      "family": "location_interaction",
+      "runtimeType": "Mountain",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Mountain.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.ad91516c3c7b8cc1",
+      "family": "location_interaction",
+      "runtimeType": "MovieTheater",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/MovieTheater.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.2afeeee7433a0af9",
+      "family": "location_interaction",
+      "runtimeType": "MovieTheater",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/MovieTheater.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.0321feb41d69a291",
+      "family": "location_interaction",
+      "runtimeType": "Railroad",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Railroad.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.aa5bb01efd2b2c46",
+      "family": "location_interaction",
+      "runtimeType": "Sewer",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Sewer.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.5011d24c0f4d2321",
+      "family": "location_interaction",
+      "runtimeType": "Submarine",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Submarine.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.1f53467cc4e7901f",
+      "family": "location_interaction",
+      "runtimeType": "Town",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Town.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.ac804f5f8f8c5410",
+      "family": "location_interaction",
+      "runtimeType": "VolcanoDungeon",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/VolcanoDungeon.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.4f06511b94715ebd",
+      "family": "location_interaction",
+      "runtimeType": "Woods",
+      "member": "checkAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Woods.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.0f726b6e874033fa",
+      "family": "location_interaction",
+      "runtimeType": "Woods",
+      "member": "performAction",
+      "relativeSourcePath": "StardewValley/StardewValley/Locations/Woods.cs",
+      "mappedOptionIds": [
+        "executor.interact"
+      ],
+      "semanticCoverageStatus": "generic_interaction_only"
+    },
+    {
+      "surfaceId": "native.66a08dfd6a656d92",
+      "family": "menu",
+      "runtimeType": "AboutMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AboutMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.774f59c34640a8c3",
+      "family": "menu",
+      "runtimeType": "AdvancedGameOptions",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AdvancedGameOptions.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ccf59674f9884c74",
+      "family": "menu",
+      "runtimeType": "AdvancedGameOptions",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AdvancedGameOptions.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9173664c2543aeac",
+      "family": "menu",
+      "runtimeType": "AnimalPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f75bac8add6a57da",
+      "family": "menu",
+      "runtimeType": "AnimalQueryMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2fc09d37465a2565",
+      "family": "menu",
+      "runtimeType": "AnimalQueryMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.fb26441146efae01",
+      "family": "menu",
+      "runtimeType": "AnimalQueryMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b74cc53f4b006f32",
+      "family": "menu",
+      "runtimeType": "AnimationPreviewTool",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimationPreviewTool.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.3d197960ac35b3cc",
+      "family": "menu",
+      "runtimeType": "AnimationPreviewTool",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimationPreviewTool.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2a551b15f42be91b",
+      "family": "menu",
+      "runtimeType": "Billboard",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/Billboard.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ab9cd2d9ccc8b125",
+      "family": "menu",
+      "runtimeType": "Billboard",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/Billboard.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ee5cdd2fc9b2ef42",
+      "family": "menu",
+      "runtimeType": "BobberBar",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/BobberBar.cs",
+      "mappedOptionIds": [
+        "executor.catch_fish"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.a31fac35a08ad0e9",
+      "family": "menu",
+      "runtimeType": "BobberBar",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/BobberBar.cs",
+      "mappedOptionIds": [
+        "executor.catch_fish"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.01a2c69bf8006124",
+      "family": "menu",
+      "runtimeType": "BuildingPaintMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingPaintMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.10975612c7f4bc4e",
+      "family": "menu",
+      "runtimeType": "BuildingPaintMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingPaintMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.dff32fa297473e72",
+      "family": "menu",
+      "runtimeType": "BuildingSkinMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingSkinMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8b2955ffe66ea229",
+      "family": "menu",
+      "runtimeType": "CarpenterMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CarpenterMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8d79c4cd6c345d18",
+      "family": "menu",
+      "runtimeType": "CarpenterMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CarpenterMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ad30a2f071149ff6",
+      "family": "menu",
+      "runtimeType": "CharacterCustomization",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CharacterCustomization.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1bbf997017639b4e",
+      "family": "menu",
+      "runtimeType": "CharacterCustomization",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CharacterCustomization.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a6ed69adc92007d6",
+      "family": "menu",
+      "runtimeType": "ChatBox",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ChatBox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7ac8f98521436a6c",
+      "family": "menu",
+      "runtimeType": "ChatBox",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ChatBox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9f799d6092855461",
+      "family": "menu",
+      "runtimeType": "ChooseFromIconsMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ChooseFromIconsMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2117c5444ff765ab",
+      "family": "menu",
+      "runtimeType": "ChooseFromListMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ChooseFromListMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.badbc0d542ee9a69",
+      "family": "menu",
+      "runtimeType": "CollectionsPage",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.bb28a05fef016d4d",
+      "family": "menu",
+      "runtimeType": "CollectionsPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c6a8005e67cfd0de",
+      "family": "menu",
+      "runtimeType": "CollectionsPage",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8dccad7118caacb6",
+      "family": "menu",
+      "runtimeType": "ConfirmationDialog",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ConfirmationDialog.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ed61d1b1088e492e",
+      "family": "menu",
+      "runtimeType": "ConfirmationDialog",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ConfirmationDialog.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0922aacdd3f73dc6",
+      "family": "menu",
+      "runtimeType": "CoopMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CoopMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.45f730e1de9c5b6d",
+      "family": "menu",
+      "runtimeType": "CraftingPage",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CraftingPage.cs",
+      "mappedOptionIds": [
+        "executor.craft_machine_item",
+        "executor.craft_storage_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.fcf5043e185b9646",
+      "family": "menu",
+      "runtimeType": "CraftingPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CraftingPage.cs",
+      "mappedOptionIds": [
+        "executor.craft_machine_item",
+        "executor.craft_storage_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.efc97133e3e3b8a3",
+      "family": "menu",
+      "runtimeType": "CraftingPage",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/CraftingPage.cs",
+      "mappedOptionIds": [
+        "executor.craft_machine_item",
+        "executor.craft_storage_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.a96a4e5e672588c4",
+      "family": "menu",
+      "runtimeType": "DayTimeMoneyBox",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DayTimeMoneyBox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.62ad6258c821b761",
+      "family": "menu",
+      "runtimeType": "DayTimeMoneyBox",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DayTimeMoneyBox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a5686490cb20eb3b",
+      "family": "menu",
+      "runtimeType": "DialogueBox",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DialogueBox.cs",
+      "mappedOptionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.08f96628fda63a12",
+      "family": "menu",
+      "runtimeType": "DialogueBox",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DialogueBox.cs",
+      "mappedOptionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.55bab3053d5547c5",
+      "family": "menu",
+      "runtimeType": "DialogueBox",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DialogueBox.cs",
+      "mappedOptionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.5f37f13d134acf41",
+      "family": "menu",
+      "runtimeType": "DigitEntryMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DigitEntryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f5c15fbe9f97d9ee",
+      "family": "menu",
+      "runtimeType": "DiscreteColorPicker",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DiscreteColorPicker.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b6361d030668cba2",
+      "family": "menu",
+      "runtimeType": "DyeMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c237e309a236507c",
+      "family": "menu",
+      "runtimeType": "DyeMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.dd3957700a36b544",
+      "family": "menu",
+      "runtimeType": "DyeMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1bec31708b67a954",
+      "family": "menu",
+      "runtimeType": "EmoteMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c20972979e6dabe1",
+      "family": "menu",
+      "runtimeType": "EmoteMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.65c99a1814c64a03",
+      "family": "menu",
+      "runtimeType": "EmoteSelector",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteSelector.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a25559676b9c7991",
+      "family": "menu",
+      "runtimeType": "ExitPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ExitPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.dfcdb613d6a2b46d",
+      "family": "menu",
+      "runtimeType": "FarmersBox",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/FarmersBox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7608a9e83bbb5fa1",
+      "family": "menu",
+      "runtimeType": "FarmhandMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/FarmhandMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cbf426a24a5fa797",
+      "family": "menu",
+      "runtimeType": "FieldOfficeMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/FieldOfficeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.673dba7fd653a719",
+      "family": "menu",
+      "runtimeType": "ForgeMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.894c8c1230a7b80d",
+      "family": "menu",
+      "runtimeType": "ForgeMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a77bea38e9165154",
+      "family": "menu",
+      "runtimeType": "ForgeMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.aa5280046cd816cf",
+      "family": "menu",
+      "runtimeType": "GameMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.792561f9d9e29804",
+      "family": "menu",
+      "runtimeType": "GameMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7030f7b77652077c",
+      "family": "menu",
+      "runtimeType": "GameMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.25b40fd19e72f1b7",
+      "family": "menu",
+      "runtimeType": "GeodeMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/GeodeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.173b50f06df43968",
+      "family": "menu",
+      "runtimeType": "GeodeMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/GeodeMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9662f618c980232a",
+      "family": "menu",
+      "runtimeType": "IClickableMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e50a0aad625f40de",
+      "family": "menu",
+      "runtimeType": "IClickableMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f7aaa97e10ecd78e",
+      "family": "menu",
+      "runtimeType": "IClickableMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8fc2af0f9b1e7f52",
+      "family": "menu",
+      "runtimeType": "InventoryMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.5768d115febfde62",
+      "family": "menu",
+      "runtimeType": "InventoryPage",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f5a96bf53de23235",
+      "family": "menu",
+      "runtimeType": "InventoryPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.677b1b7a948dc097",
+      "family": "menu",
+      "runtimeType": "InventoryPage",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d511f3f8f5b813b2",
+      "family": "menu",
+      "runtimeType": "ItemGrabMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.607dc80fc2fa11a2",
+      "family": "menu",
+      "runtimeType": "ItemGrabMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9373bb4fc6fbc560",
+      "family": "menu",
+      "runtimeType": "ItemGrabMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e5b4ac6bfa0e6cad",
+      "family": "menu",
+      "runtimeType": "ItemListMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemListMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.fdb08d46d5dcb803",
+      "family": "menu",
+      "runtimeType": "JojaCDMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/JojaCDMenu.cs",
+      "mappedOptionIds": [
+        "executor.purchase_joja_project"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.e49bb0a015dca992",
+      "family": "menu",
+      "runtimeType": "JunimoNoteMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/JunimoNoteMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_community_center_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.68a17ed8b7253dcb",
+      "family": "menu",
+      "runtimeType": "JunimoNoteMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/JunimoNoteMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_community_center_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.c30155c9bd597e91",
+      "family": "menu",
+      "runtimeType": "JunimoNoteMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/JunimoNoteMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_community_center_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.1f683bb67a20c1da",
+      "family": "menu",
+      "runtimeType": "LanguageSelectionMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LanguageSelectionMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9978f99e7ae87265",
+      "family": "menu",
+      "runtimeType": "LetterViewerMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0d2c33bf0622a387",
+      "family": "menu",
+      "runtimeType": "LetterViewerMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2683733bb9406d1f",
+      "family": "menu",
+      "runtimeType": "LetterViewerMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4f20de23c3ca155d",
+      "family": "menu",
+      "runtimeType": "LevelUpMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LevelUpMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b18675dc2ded34e9",
+      "family": "menu",
+      "runtimeType": "LevelUpMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LevelUpMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.18771a2487c721c9",
+      "family": "menu",
+      "runtimeType": "LoadGameMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LoadGameMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d782396b161d4e73",
+      "family": "menu",
+      "runtimeType": "LocalCoopJoinMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/LocalCoopJoinMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.49c3d99230249fa8",
+      "family": "menu",
+      "runtimeType": "MapPage",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MapPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ae5eebbb9937edcc",
+      "family": "menu",
+      "runtimeType": "MapPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MapPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2bdb003c1facfea2",
+      "family": "menu",
+      "runtimeType": "MasteryTrackerMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MasteryTrackerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.559d923ce778cfca",
+      "family": "menu",
+      "runtimeType": "MasteryTrackerMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MasteryTrackerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f20fc01a435b6626",
+      "family": "menu",
+      "runtimeType": "MenuWithInventory",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MenuWithInventory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.fe0320e1317619e9",
+      "family": "menu",
+      "runtimeType": "MenuWithInventory",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MenuWithInventory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6d92987d73c63017",
+      "family": "menu",
+      "runtimeType": "MineElevatorMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MineElevatorMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7405933e5f7c9167",
+      "family": "menu",
+      "runtimeType": "MuseumMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MuseumMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_museum_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.a1a6dad33cb54693",
+      "family": "menu",
+      "runtimeType": "MuseumMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MuseumMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_museum_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.da762c8325fbd4ad",
+      "family": "menu",
+      "runtimeType": "MuseumMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/MuseumMenu.cs",
+      "mappedOptionIds": [
+        "executor.donate_museum_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.8b68396a094dcc4c",
+      "family": "menu",
+      "runtimeType": "NamingMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/NamingMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.31c42b5fe970b0ef",
+      "family": "menu",
+      "runtimeType": "NamingMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/NamingMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.90381b513450ffac",
+      "family": "menu",
+      "runtimeType": "NumberSelectionMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.afef4cf919909f0b",
+      "family": "menu",
+      "runtimeType": "NumberSelectionMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.5a63806a887db65f",
+      "family": "menu",
+      "runtimeType": "NumberSelectionMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a421b22ba399bfe1",
+      "family": "menu",
+      "runtimeType": "OptionsButton",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsButton.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.aabec02968834c5a",
+      "family": "menu",
+      "runtimeType": "OptionsCheckbox",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsCheckbox.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0c7828316c18af04",
+      "family": "menu",
+      "runtimeType": "OptionsDropDown",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsDropDown.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.52082cf759a96863",
+      "family": "menu",
+      "runtimeType": "OptionsDropDown",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsDropDown.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e988f2ae9608b913",
+      "family": "menu",
+      "runtimeType": "OptionsElement",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsElement.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.259ed041c2b7a12f",
+      "family": "menu",
+      "runtimeType": "OptionsElement",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsElement.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6184c67f26a9d146",
+      "family": "menu",
+      "runtimeType": "OptionsInputListener",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsInputListener.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.318e86eec1f07e32",
+      "family": "menu",
+      "runtimeType": "OptionsInputListener",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsInputListener.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6aa7c576839d38c5",
+      "family": "menu",
+      "runtimeType": "OptionsPage",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.19ad10026d2c2dd0",
+      "family": "menu",
+      "runtimeType": "OptionsPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cff658a94fda6415",
+      "family": "menu",
+      "runtimeType": "OptionsPlusMinus",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinus.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f245c08e50ad006c",
+      "family": "menu",
+      "runtimeType": "OptionsPlusMinus",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinus.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7bbdb70b425f2401",
+      "family": "menu",
+      "runtimeType": "OptionsPlusMinusButton",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinusButton.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.56ba69839256d5d1",
+      "family": "menu",
+      "runtimeType": "OptionsSlider",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsSlider.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6d5d7d33f6399a6c",
+      "family": "menu",
+      "runtimeType": "OptionsSlider",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsSlider.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.64a4bc375e7f23a1",
+      "family": "menu",
+      "runtimeType": "OptionsTextEntry",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsTextEntry.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a44ae9c07609b893",
+      "family": "menu",
+      "runtimeType": "PondQueryMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.866fda4c362999ac",
+      "family": "menu",
+      "runtimeType": "PondQueryMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4c50e1776e35331b",
+      "family": "menu",
+      "runtimeType": "PondQueryMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ccd488018fa5d284",
+      "family": "menu",
+      "runtimeType": "PowersTab",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PowersTab.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4c1b872166d84447",
+      "family": "menu",
+      "runtimeType": "PrizeTicketMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PrizeTicketMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2c6d7d6cc57f3d49",
+      "family": "menu",
+      "runtimeType": "ProfileMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9da6f3ff19d7cf30",
+      "family": "menu",
+      "runtimeType": "ProfileMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4e2ba7acd27cb1c9",
+      "family": "menu",
+      "runtimeType": "ProfileMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0bba0199e2ed34e8",
+      "family": "menu",
+      "runtimeType": "PurchaseAnimalsMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PurchaseAnimalsMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.960a343f69b1ec55",
+      "family": "menu",
+      "runtimeType": "PurchaseAnimalsMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/PurchaseAnimalsMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b8fa3f7bfbcecfaa",
+      "family": "menu",
+      "runtimeType": "QuestContainerMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestContainerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a1d8bcf01d86a080",
+      "family": "menu",
+      "runtimeType": "QuestContainerMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestContainerMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8eca5a5c0ef9b3ce",
+      "family": "menu",
+      "runtimeType": "QuestLog",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestLog.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.50f820b1457f6ad0",
+      "family": "menu",
+      "runtimeType": "QuestLog",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestLog.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.10dbcfce4865c088",
+      "family": "menu",
+      "runtimeType": "ReadyCheckDialog",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ReadyCheckDialog.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f7b7e5a6c13d3f95",
+      "family": "menu",
+      "runtimeType": "RenovateMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/RenovateMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6e1e501974185e04",
+      "family": "menu",
+      "runtimeType": "RenovateMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/RenovateMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ad8e6b30067f3f64",
+      "family": "menu",
+      "runtimeType": "ShippingMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ShippingMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a04565afc5b4bed4",
+      "family": "menu",
+      "runtimeType": "ShippingMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ShippingMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2d6c06dafd7cdde4",
+      "family": "menu",
+      "runtimeType": "ShopMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ShopMenu.cs",
+      "mappedOptionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.76c9258764c63cef",
+      "family": "menu",
+      "runtimeType": "ShopMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ShopMenu.cs",
+      "mappedOptionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.1f75a7747b0bf29f",
+      "family": "menu",
+      "runtimeType": "ShopMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/ShopMenu.cs",
+      "mappedOptionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.8d085b5cc81afc80",
+      "family": "menu",
+      "runtimeType": "SkillsPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/SkillsPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.6bad0df32d938209",
+      "family": "menu",
+      "runtimeType": "SocialPage",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/SocialPage.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.57f1f28ebb32b998",
+      "family": "menu",
+      "runtimeType": "SpecialOrdersBoard",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/SpecialOrdersBoard.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9e70531d49f642b4",
+      "family": "menu",
+      "runtimeType": "SpecialOrdersBoard",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/SpecialOrdersBoard.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c61c08154f5a7de9",
+      "family": "menu",
+      "runtimeType": "StorageContainer",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/StorageContainer.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1530c4fe54617477",
+      "family": "menu",
+      "runtimeType": "StorageContainer",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/StorageContainer.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4d8aacc2f7b9568f",
+      "family": "menu",
+      "runtimeType": "StrengthGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/StrengthGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8380ac5ea34faf14",
+      "family": "menu",
+      "runtimeType": "TailorRecipeListTool",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TailorRecipeListTool.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.159f5b59361d058d",
+      "family": "menu",
+      "runtimeType": "TailorRecipeListTool",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TailorRecipeListTool.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.183515b6aaf9658d",
+      "family": "menu",
+      "runtimeType": "TailoringMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.79970910ce276001",
+      "family": "menu",
+      "runtimeType": "TailoringMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4fa2f59176db0e2f",
+      "family": "menu",
+      "runtimeType": "TailoringMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c8296dd0432eb199",
+      "family": "menu",
+      "runtimeType": "TextEntryMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TextEntryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b0fd2fb3794ea351",
+      "family": "menu",
+      "runtimeType": "TextEntryMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TextEntryMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.499be5534d136477",
+      "family": "menu",
+      "runtimeType": "TitleMenu",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.745641e50b85df7a",
+      "family": "menu",
+      "runtimeType": "TitleMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ac97b51585da6bb1",
+      "family": "menu",
+      "runtimeType": "TitleMenu",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0e75f5d41796a7ba",
+      "family": "menu",
+      "runtimeType": "TitleTextInputMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleTextInputMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.90902c5120d09dc3",
+      "family": "menu",
+      "runtimeType": "TooManyFarmsMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TooManyFarmsMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1639fa7f48d51ff6",
+      "family": "menu",
+      "runtimeType": "Toolbar",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/Toolbar.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e625432e155f4d1a",
+      "family": "menu",
+      "runtimeType": "Toolbar",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/Toolbar.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f056b4233144d34d",
+      "family": "menu",
+      "runtimeType": "TutorialMenu",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/TutorialMenu.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.61282bf8f90cf3a5",
+      "family": "menu",
+      "runtimeType": "WheelSpinGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/WheelSpinGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4dfc009b27d03ce6",
+      "family": "menu",
+      "runtimeType": "WheelSpinGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Menus/WheelSpinGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1d621af8724d80f6",
+      "family": "minigame",
+      "runtimeType": "AbigailGame",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.35b7cc648510e072",
+      "family": "minigame",
+      "runtimeType": "AbigailGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8cfb2c5f99d66f28",
+      "family": "minigame",
+      "runtimeType": "AbigailGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d303c510d6250981",
+      "family": "minigame",
+      "runtimeType": "AbigailGame",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0a7feaa7ea17ea55",
+      "family": "minigame",
+      "runtimeType": "BoatJourney",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d1f7284c8b4cb5ef",
+      "family": "minigame",
+      "runtimeType": "BoatJourney",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b2ca8e9dac11336a",
+      "family": "minigame",
+      "runtimeType": "BoatJourney",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0b0c4b3e537cb617",
+      "family": "minigame",
+      "runtimeType": "BoatJourney",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cd148f6b83e8cb16",
+      "family": "minigame",
+      "runtimeType": "CalicoJack",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8bc2150c038c7576",
+      "family": "minigame",
+      "runtimeType": "CalicoJack",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.95fca99987b31510",
+      "family": "minigame",
+      "runtimeType": "CalicoJack",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.83da3fbce25fb786",
+      "family": "minigame",
+      "runtimeType": "CalicoJack",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cd183aeee3963923",
+      "family": "minigame",
+      "runtimeType": "CraneGame",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0042d887dd8b8e7e",
+      "family": "minigame",
+      "runtimeType": "CraneGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.40d32f8185b21f43",
+      "family": "minigame",
+      "runtimeType": "CraneGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b01910a7bd92c4bb",
+      "family": "minigame",
+      "runtimeType": "CraneGame",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1ba66f5369ae7c3c",
+      "family": "minigame",
+      "runtimeType": "Darts",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8ad5a52eccd38cc3",
+      "family": "minigame",
+      "runtimeType": "Darts",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.015e7873bcf27474",
+      "family": "minigame",
+      "runtimeType": "Darts",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.87306b326500cf8e",
+      "family": "minigame",
+      "runtimeType": "Darts",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7010eac780be9525",
+      "family": "minigame",
+      "runtimeType": "FantasyBoardGame",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.69c1fbd150ca52a1",
+      "family": "minigame",
+      "runtimeType": "FantasyBoardGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cccb8ad7a2c9a155",
+      "family": "minigame",
+      "runtimeType": "FantasyBoardGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ccb9c4a9ca833a08",
+      "family": "minigame",
+      "runtimeType": "FantasyBoardGame",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cd28c01b3a08cd86",
+      "family": "minigame",
+      "runtimeType": "FishingGame",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2642c9aa98660156",
+      "family": "minigame",
+      "runtimeType": "FishingGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8cb964faf9e17b58",
+      "family": "minigame",
+      "runtimeType": "FishingGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.29d79fb5259ea060",
+      "family": "minigame",
+      "runtimeType": "FishingGame",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d048a94e746cbfed",
+      "family": "minigame",
+      "runtimeType": "GrandpaStory",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.dc1ed115b3d44aaa",
+      "family": "minigame",
+      "runtimeType": "GrandpaStory",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4ab68168622961d0",
+      "family": "minigame",
+      "runtimeType": "GrandpaStory",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8bca2425d0f64f4e",
+      "family": "minigame",
+      "runtimeType": "GrandpaStory",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.59355d333ebdc90e",
+      "family": "minigame",
+      "runtimeType": "HaleyCowPictures",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.986deaa64819be42",
+      "family": "minigame",
+      "runtimeType": "HaleyCowPictures",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.175f48b77337a956",
+      "family": "minigame",
+      "runtimeType": "HaleyCowPictures",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.3803a7ee5febd908",
+      "family": "minigame",
+      "runtimeType": "HaleyCowPictures",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f045f2ea81bef7a7",
+      "family": "minigame",
+      "runtimeType": "Intro",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.360b212621f0423e",
+      "family": "minigame",
+      "runtimeType": "Intro",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b8e9aeb809964c90",
+      "family": "minigame",
+      "runtimeType": "Intro",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8ebaec369a0af7f9",
+      "family": "minigame",
+      "runtimeType": "Intro",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4086d49c0f8e0f73",
+      "family": "minigame",
+      "runtimeType": "MaruComet",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.8b893ca1109bd2e9",
+      "family": "minigame",
+      "runtimeType": "MaruComet",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.178ff31fa636f39f",
+      "family": "minigame",
+      "runtimeType": "MaruComet",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.996ef7d55234ec80",
+      "family": "minigame",
+      "runtimeType": "MaruComet",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.33df49cfe2b9da03",
+      "family": "minigame",
+      "runtimeType": "MineCart",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.bc141200adaa4162",
+      "family": "minigame",
+      "runtimeType": "MineCart",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a1f55af03dfe9884",
+      "family": "minigame",
+      "runtimeType": "MineCart",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d8ccd2341f6107f7",
+      "family": "minigame",
+      "runtimeType": "MineCart",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a7b21e607b60a94b",
+      "family": "minigame",
+      "runtimeType": "PlaneFlyBy",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.29eade1eba76fd02",
+      "family": "minigame",
+      "runtimeType": "PlaneFlyBy",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.b2a36a851f3e3a01",
+      "family": "minigame",
+      "runtimeType": "PlaneFlyBy",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.f32f21c53a4ce379",
+      "family": "minigame",
+      "runtimeType": "PlaneFlyBy",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e28132a0f269ea6d",
+      "family": "minigame",
+      "runtimeType": "RobotBlastoff",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1140d10c8037a1df",
+      "family": "minigame",
+      "runtimeType": "RobotBlastoff",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.dbd1e165e2b1cb42",
+      "family": "minigame",
+      "runtimeType": "RobotBlastoff",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d40002e0203c9ce9",
+      "family": "minigame",
+      "runtimeType": "RobotBlastoff",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.0e3abd884dae7733",
+      "family": "minigame",
+      "runtimeType": "Slots",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.4c1ec72b6f5ad865",
+      "family": "minigame",
+      "runtimeType": "Slots",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.e09d10e75a53f12e",
+      "family": "minigame",
+      "runtimeType": "Slots",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.9550d82b1e4ca7ff",
+      "family": "minigame",
+      "runtimeType": "Slots",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.cc3d6886269a792a",
+      "family": "minigame",
+      "runtimeType": "TargetGame",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.57fc1300e57038bb",
+      "family": "minigame",
+      "runtimeType": "TargetGame",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.550a49622aee993d",
+      "family": "minigame",
+      "runtimeType": "TargetGame",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.07b86c0fa345a35c",
+      "family": "minigame",
+      "runtimeType": "TargetGame",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.89a9e35ce72c84c2",
+      "family": "minigame",
+      "runtimeType": "TelescopeScene",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.56fe71e2b6801d56",
+      "family": "minigame",
+      "runtimeType": "TelescopeScene",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.06894d3c2afc6bd4",
+      "family": "minigame",
+      "runtimeType": "TelescopeScene",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.5fa739cea50b8a73",
+      "family": "minigame",
+      "runtimeType": "TelescopeScene",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.d04453c827cba67e",
+      "family": "minigame",
+      "runtimeType": "Test",
+      "member": "IMinigame",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.2e9ac0e97076ada2",
+      "family": "minigame",
+      "runtimeType": "Test",
+      "member": "receiveKeyPress",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.259523a58393ccac",
+      "family": "minigame",
+      "runtimeType": "Test",
+      "member": "receiveLeftClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.12420fb6c53990ac",
+      "family": "minigame",
+      "runtimeType": "Test",
+      "member": "receiveRightClick",
+      "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.49bfaa7554f1996e",
+      "family": "terrain_feature",
+      "runtimeType": "Bush",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Bush.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.ef2bac0c548c3119",
+      "family": "terrain_feature",
+      "runtimeType": "FruitTree",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/FruitTree.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.84dea516839ee0de",
+      "family": "terrain_feature",
+      "runtimeType": "HoeDirt",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/HoeDirt.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.046c117fb5c47c13",
+      "family": "terrain_feature",
+      "runtimeType": "ResourceClump",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/ResourceClump.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.c8801b28fee8d913",
+      "family": "terrain_feature",
+      "runtimeType": "Tent",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Tent.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.aebbc4d1c9687c24",
+      "family": "terrain_feature",
+      "runtimeType": "TerrainFeature",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/TerrainFeature.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.1581d8195e295b51",
+      "family": "terrain_feature",
+      "runtimeType": "Tree",
+      "member": "performUseAction",
+      "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Tree.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7a27c598a1811b0f",
+      "family": "tool",
+      "runtimeType": "Axe",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Axe.cs",
+      "mappedOptionIds": [
+        "executor.break_farm_resource_clump",
+        "executor.clear_obstacle"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.25a519319ec3de0a",
+      "family": "tool",
+      "runtimeType": "Axe",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Axe.cs",
+      "mappedOptionIds": [
+        "executor.break_farm_resource_clump",
+        "executor.clear_obstacle"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.84b408e5f436af72",
+      "family": "tool",
+      "runtimeType": "FishingRod",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/FishingRod.cs",
+      "mappedOptionIds": [
+        "executor.catch_fish"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.e31f353435475669",
+      "family": "tool",
+      "runtimeType": "FishingRod",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/FishingRod.cs",
+      "mappedOptionIds": [
+        "executor.catch_fish"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.59d8e812d0a556f6",
+      "family": "tool",
+      "runtimeType": "Hoe",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Hoe.cs",
+      "mappedOptionIds": [
+        "executor.harvest_ginger",
+        "executor.till_soil"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.3719246e1ebe7a45",
+      "family": "tool",
+      "runtimeType": "Lantern",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Lantern.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.a1566378bf21d299",
+      "family": "tool",
+      "runtimeType": "MilkPail",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/MilkPail.cs",
+      "mappedOptionIds": [
+        "executor.collect_animal_product"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.d0ae781fcde0cc99",
+      "family": "tool",
+      "runtimeType": "MilkPail",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/MilkPail.cs",
+      "mappedOptionIds": [
+        "executor.collect_animal_product"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.002cedfc82f135d8",
+      "family": "tool",
+      "runtimeType": "Pan",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Pan.cs",
+      "mappedOptionIds": [
+        "executor.pan_ore_spot"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.f0d7cb243f37942c",
+      "family": "tool",
+      "runtimeType": "Pan",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Pan.cs",
+      "mappedOptionIds": [
+        "executor.pan_ore_spot"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.204ab8b298b5f788",
+      "family": "tool",
+      "runtimeType": "Pickaxe",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Pickaxe.cs",
+      "mappedOptionIds": [
+        "executor.clear_obstacle",
+        "executor.mine_stone",
+        "executor.remove_machine"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.2b3e7dc18b98b5b2",
+      "family": "tool",
+      "runtimeType": "Pickaxe",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Pickaxe.cs",
+      "mappedOptionIds": [
+        "executor.clear_obstacle",
+        "executor.mine_stone",
+        "executor.remove_machine"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.23fda9c649de7ffc",
+      "family": "tool",
+      "runtimeType": "Raft",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Raft.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.988abc24622299cc",
+      "family": "tool",
+      "runtimeType": "Shears",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Shears.cs",
+      "mappedOptionIds": [
+        "executor.collect_animal_product"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.488b1239b8a8cd74",
+      "family": "tool",
+      "runtimeType": "Shears",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Shears.cs",
+      "mappedOptionIds": [
+        "executor.collect_animal_product"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.31289524eec1cf3f",
+      "family": "tool",
+      "runtimeType": "Slingshot",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Slingshot.cs",
+      "mappedOptionIds": [
+        "executor.shoot_monster"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.ad5f43e0da8d05a9",
+      "family": "tool",
+      "runtimeType": "Slingshot",
+      "member": "beginUsing",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Slingshot.cs",
+      "mappedOptionIds": [
+        "executor.shoot_monster"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.31eedec8f84ecfc5",
+      "family": "tool",
+      "runtimeType": "Slingshot",
+      "member": "onRelease",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Slingshot.cs",
+      "mappedOptionIds": [
+        "executor.shoot_monster"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    },
+    {
+      "surfaceId": "native.00c9f3cb6232c3ae",
+      "family": "tool",
+      "runtimeType": "Wand",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/Wand.cs",
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "unclassified"
+    },
+    {
+      "surfaceId": "native.7e2a02ad3d9e2b06",
+      "family": "tool",
+      "runtimeType": "WateringCan",
+      "member": "DoFunction",
+      "relativeSourcePath": "StardewValley/StardewValley/Tools/WateringCan.cs",
+      "mappedOptionIds": [
+        "executor.cool_volcano_lava",
+        "executor.fill_pet_bowl",
+        "farm.maintain_crops"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option"
+    }
+  ]
+}

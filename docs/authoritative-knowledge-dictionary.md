@@ -79,9 +79,11 @@ Contextual unavailability is not accepted as runtime proof for that scene. Each 
 field still needs a scene-specific snapshot before its executor can be accepted. Missing,
 error, invalid, or provenance-free required fields block the dictionary build.
 
-`option-governance-matrix.json` separately records the `option_spec.v2` governance contract
-for all 95 registered options. The current registry is 2 goal templates, 29 composite
-options, and 64 executor primitives. Risk, irreversibility, confirmation, host, ownership,
+`option-governance-matrix.json` separately records the `option_spec.v2` governance contract.
+The locked artifact's historical 95-option count is not the whole-game semantic action
+denominator. The live source contains 96 registered options as of 2026-07-31; generated
+reconciliation output, rather than this prose, owns the current count. Risk,
+irreversibility, confirmation, host, ownership,
 adapter, compiler/verifier binding, evidence status, autonomous-candidate policy, training
 eligibility, and product status are explicit for every entry. Unknown policies, duplicate
 IDs, missing bindings, and irreversible actions without confirmation fail registry
@@ -102,15 +104,16 @@ enabled; `product_executor_supported` is the separate product claim. Harness dis
 product integration, runtime evidence, and training eligibility cannot promote one another.
 
 The 89-of-89 live field join above is the last recorded snapshot-schema join, not a current
-95-option completeness claim. Regenerate the join after each required-field change before
+whole-game action completeness claim. Regenerate the join after each required-field change before
 promoting another option through the read gate.
 
 ## Action omission boundary
 
 The authoritative dictionary cannot, by itself, prove that every playable action is
 implemented. Runtime content and decompiled types establish what exists; executable
-coverage additionally requires a typed candidate, compiler binding, runtime terminal, and
-verified output delta.
+coverage additionally requires the generated native action surface inventory, a frozen
+semantic action denominator, a typed candidate, compiler binding, product runtime terminal,
+and verified output delta.
 
 `quest-action-coverage-matrix.json` closes the enumeration side of that boundary for native
 quests. The knowledge compiler scans the 1.6.15 `Quest` and `OrderObjective` subclasses and

@@ -147,6 +147,132 @@ internal static class Program
                     ? null
                     : row.RequiredStateFactors.Select(snapshotCoverage.GetRequired).ToArray()
             }).ToArray();
+
+            var nativeActionSurfaces = new NativeActionSurfaceCatalogBuilder().Build(decompileRoot);
+            var unclassifiedNativeSurfaces = nativeActionSurfaces.Surfaces
+                .Where(row => row.SemanticCoverageStatus != "mapped_to_registered_option")
+                .ToArray();
+            if (nativeActionSurfaces.SourceStatus != "native_decompile_scanned")
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_action_surface_source_not_scanned",
+                    "native-action-surface-inventory",
+                    nativeActionSurfaces.SourceStatus));
+            }
+            else if (unclassifiedNativeSurfaces.Length > 0)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_action_surfaces_not_semantically_classified",
+                    "native-action-surface-inventory",
+                    $"unclassified_or_generic={unclassifiedNativeSurfaces.Length};total={nativeActionSurfaces.Surfaces.Count}"));
+            }
+
+            Write(outputRoot, "native-action-surface-inventory.json", new
+            {
+                schema_version = "stardewai.native_action_surface_inventory.v1",
+                authority = "locked Stardew Valley 1.6.15 decompile; source inventory is not the semantic action denominator",
+                source_status = nativeActionSurfaces.SourceStatus,
+                decompile_root = nativeActionSurfaces.DecompileRoot,
+                surface_count = nativeActionSurfaces.Surfaces.Count,
+                mapped_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "mapped_to_registered_option"),
+                generic_interaction_only_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "generic_interaction_only"),
+                unclassified_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "unclassified"),
+                surfaces = nativeActionSurfaces.Surfaces
+            });
+
+            var implementationRows = optionRows.Select(row =>
+            {
+                var binding = OptionImplementationCatalog.GetRequired(row.OptionId);
+                return new
+                {
+                    row.OptionId,
+                    row.Domain,
+                    binding.PrimaryEngineId,
+                    binding.AdapterId,
+                    binding.CandidateBinding,
+                    binding.CompilerBinding,
+                    binding.RuntimeBinding,
+                    binding.VerifierBinding,
+                    binding.EvidenceBinding,
+                    row.RegistrationStatus,
+                    row.ReadStatus,
+                    row.CandidateStatus,
+                    row.CompilerStatus,
+                    row.ProductExecutorSupported,
+                    row.RuntimeStatus,
+                    row.ReadTrainingGate,
+                    row.CandidateTrainingGate,
+                    row.CompilerTrainingGate,
+                    row.RuntimeTrainingGate,
+                    row.OutputTrainingGate
+                };
+            }).ToArray();
+            var registeredIds = optionRows.Select(row => row.OptionId).ToHashSet(StringComparer.Ordinal);
+            var orphanCompilerIds = ActionQueueCompiler.StepCompilerOptionIds
+                .Concat(ActionQueueCompiler.ParameterCompilerOptionIds)
+                .Where(id => !registeredIds.Contains(id))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+            var orphanRuntimeIds = RuntimeTestHarnessDispatchCatalog.OptionIds
+                .Concat(ProductExecutorCapabilityCatalog.OptionIds)
+                .Where(id => !registeredIds.Contains(id))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+            Write(outputRoot, "action-implementation-reconciliation.json", new
+            {
+                schema_version = "stardewai.action_implementation_reconciliation.v1",
+                authority_policy = "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
+                registered_option_count = implementationRows.Length,
+                primary_engine_count = implementationRows
+                    .Select(row => row.PrimaryEngineId)
+                    .Distinct(StringComparer.Ordinal)
+                    .Count(),
+                orphan_compiler_count = orphanCompilerIds.Length,
+                orphan_compiler_ids = orphanCompilerIds,
+                orphan_runtime_count = orphanRuntimeIds.Length,
+                orphan_runtime_ids = orphanRuntimeIds,
+                engines = implementationRows
+                    .GroupBy(row => row.PrimaryEngineId, StringComparer.Ordinal)
+                    .OrderBy(group => group.Key, StringComparer.Ordinal)
+                    .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal),
+                options = implementationRows
+            });
+
+            var fiveGateClosedCount = optionRows.Count(row =>
+                row.ReadTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                row.CandidateTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                row.CompilerTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                row.RuntimeTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                row.OutputTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified);
+            Write(outputRoot, "action-progress-dashboard.json", new
+            {
+                schema_version = "stardewai.action_progress_dashboard.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                semantic_denominator_status = unclassifiedNativeSurfaces.Length == 0
+                    ? "native_surfaces_classified_semantic_denominator_pending_freeze"
+                    : "not_frozen_native_surfaces_unclassified",
+                registered_option_count = optionRows.Length,
+                high_level_option_count = optionRows.Count(row =>
+                    !row.OptionId.StartsWith("executor.", StringComparison.Ordinal)),
+                primitive_option_count = optionRows.Count(row =>
+                    row.OptionId.StartsWith("executor.", StringComparison.Ordinal)),
+                native_surface_count = nativeActionSurfaces.Surfaces.Count,
+                native_surface_unclassified_or_generic_count = unclassifiedNativeSurfaces.Length,
+                compiler_bound_count = implementationRows.Count(row => row.CompilerBinding != "unbound"),
+                harness_dispatch_count = optionRows.Count(row => row.HarnessDispatchSupported),
+                product_executor_count = optionRows.Count(row => row.ProductExecutorSupported),
+                five_gate_evidence_closed_count = fiveGateClosedCount,
+                training_allowlist_count = OptionCapabilityRegistrySource.TrainingAllowlist.Count,
+                warning = "Registered count is not the whole-game denominator. Native surfaces are source evidence, not semantic actions."
+            });
+
             Write(outputRoot, "option-field-matrix.json", new
             {
                 schema_version = "stardewai.option_field_matrix.v2",
