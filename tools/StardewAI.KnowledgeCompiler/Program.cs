@@ -149,8 +149,30 @@ internal static class Program
             }).ToArray();
 
             var nativeActionSurfaces = new NativeActionSurfaceCatalogBuilder().Build(decompileRoot);
-            var unclassifiedNativeSurfaces = nativeActionSurfaces.Surfaces
-                .Where(row => row.SemanticCoverageStatus != "mapped_to_registered_option")
+            var blockingNativeSurfaces = nativeActionSurfaces.Surfaces
+                .Where(row => row.SemanticCoverageStatus is
+                    "semantic_action_missing_registration" or
+                    "requires_branch_decompilation" or
+                    "unclassified")
+                .ToArray();
+            var missingSemanticActionIds = nativeActionSurfaces.Surfaces
+                .Where(row => row.SemanticCoverageStatus == "semantic_action_missing_registration")
+                .SelectMany(row => row.MappedOptionIds)
+                .Where(id => !OptionCapabilityRegistrySource.TryGet(id, out _))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+            var cataloguedBlockedActionIds = nativeActionSurfaces.Surfaces
+                .Where(row => row.SemanticCoverageStatus == "mapped_to_catalogued_blocked_action")
+                .SelectMany(row => row.MappedOptionIds)
+                .Where(id => PendingSemanticActionCatalog.TryGet(id, out _))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+            var pendingCatalogWithoutSurface = PendingSemanticActionCatalog.All
+                .Select(row => row.ActionId)
+                .Except(cataloguedBlockedActionIds, StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
                 .ToArray();
             if (nativeActionSurfaces.SourceStatus != "native_decompile_scanned")
             {
@@ -160,13 +182,21 @@ internal static class Program
                     "native-action-surface-inventory",
                     nativeActionSurfaces.SourceStatus));
             }
-            else if (unclassifiedNativeSurfaces.Length > 0)
+            else if (blockingNativeSurfaces.Length > 0)
             {
                 issues.Add(new(
                     "blocking",
-                    "native_action_surfaces_not_semantically_classified",
+                    "native_action_surfaces_not_semantically_closed",
                     "native-action-surface-inventory",
-                    $"unclassified_or_generic={unclassifiedNativeSurfaces.Length};total={nativeActionSurfaces.Surfaces.Count}"));
+                    $"blocking={blockingNativeSurfaces.Length};missing_actions={missingSemanticActionIds.Length};total={nativeActionSurfaces.Surfaces.Count}"));
+            }
+            if (pendingCatalogWithoutSurface.Length > 0)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "pending_semantic_action_without_native_surface",
+                    "semantic-action-catalog",
+                    string.Join(",", pendingCatalogWithoutSurface)));
             }
 
             Write(outputRoot, "native-action-surface-inventory.json", new
@@ -178,11 +208,59 @@ internal static class Program
                 surface_count = nativeActionSurfaces.Surfaces.Count,
                 mapped_count = nativeActionSurfaces.Surfaces.Count(row =>
                     row.SemanticCoverageStatus == "mapped_to_registered_option"),
-                generic_interaction_only_count = nativeActionSurfaces.Surfaces.Count(row =>
-                    row.SemanticCoverageStatus == "generic_interaction_only"),
+                catalogued_blocked_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "mapped_to_catalogued_blocked_action"),
+                catalogued_blocked_action_count = cataloguedBlockedActionIds.Length,
+                catalogued_blocked_action_ids = cataloguedBlockedActionIds,
+                missing_registration_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "semantic_action_missing_registration"),
+                missing_semantic_action_count = missingSemanticActionIds.Length,
+                missing_semantic_action_ids = missingSemanticActionIds,
+                classified_non_semantic_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "classified_non_semantic_surface"),
+                branch_decompilation_required_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "requires_branch_decompilation"),
                 unclassified_count = nativeActionSurfaces.Surfaces.Count(row =>
                     row.SemanticCoverageStatus == "unclassified"),
                 surfaces = nativeActionSurfaces.Surfaces
+            });
+
+            var semanticActionRows = optionRows.Select(row =>
+            {
+                var ownership = OptionImplementationCatalog.GetRequired(row.OptionId);
+                return new
+                {
+                    action_id = row.OptionId,
+                    domain = row.Domain,
+                    semantic_kind = row.SemanticKind.ToString(),
+                    primary_engine_id = ownership.PrimaryEngineId,
+                    catalog_status = "registered_option_spec",
+                    block_reason = string.Empty,
+                    native_runtime_types = Array.Empty<string>()
+                };
+            }).Concat(PendingSemanticActionCatalog.All.Select(row => new
+            {
+                action_id = row.ActionId,
+                domain = row.Domain,
+                semantic_kind = row.SemanticKind,
+                primary_engine_id = row.PrimaryEngineId,
+                catalog_status = row.CatalogStatus,
+                block_reason = row.BlockReason,
+                native_runtime_types = row.NativeRuntimeTypes
+            })).OrderBy(row => row.action_id, StringComparer.Ordinal).ToArray();
+            Write(outputRoot, "semantic-action-catalog.json", new
+            {
+                schema_version = "stardewai.semantic_action_catalog.v1",
+                denominator_status = blockingNativeSurfaces.Length == 0
+                    ? "provisional_native_surface_denominator_closed"
+                    : "provisional_native_surface_denominator_open",
+                action_count = semanticActionRows.Length,
+                registered_option_spec_count = optionRows.Length,
+                catalogued_blocked_count = PendingSemanticActionCatalog.All.Count,
+                uncatalogued_native_action_count = missingSemanticActionIds.Length,
+                pending_catalog_without_surface_count = pendingCatalogWithoutSurface.Length,
+                pending_catalog_without_surface_ids = pendingCatalogWithoutSurface,
+                actions = semanticActionRows
             });
 
             var implementationRows = optionRows.Select(row =>
@@ -255,16 +333,19 @@ internal static class Program
             {
                 schema_version = "stardewai.action_progress_dashboard.v1",
                 generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
-                semantic_denominator_status = unclassifiedNativeSurfaces.Length == 0
+                semantic_denominator_status = blockingNativeSurfaces.Length == 0
                     ? "native_surfaces_classified_semantic_denominator_pending_freeze"
-                    : "not_frozen_native_surfaces_unclassified",
+                    : "not_frozen_native_surfaces_or_registrations_pending",
                 registered_option_count = optionRows.Length,
+                semantic_action_catalog_count = semanticActionRows.Length,
+                catalogued_blocked_action_count = PendingSemanticActionCatalog.All.Count,
                 high_level_option_count = optionRows.Count(row =>
                     !row.OptionId.StartsWith("executor.", StringComparison.Ordinal)),
                 primitive_option_count = optionRows.Count(row =>
                     row.OptionId.StartsWith("executor.", StringComparison.Ordinal)),
                 native_surface_count = nativeActionSurfaces.Surfaces.Count,
-                native_surface_unclassified_or_generic_count = unclassifiedNativeSurfaces.Length,
+                native_surface_blocking_count = blockingNativeSurfaces.Length,
+                missing_semantic_action_registration_count = missingSemanticActionIds.Length,
                 compiler_bound_count = implementationRows.Count(row => row.CompilerBinding != "unbound"),
                 harness_dispatch_count = optionRows.Count(row => row.HarnessDispatchSupported),
                 product_executor_count = optionRows.Count(row => row.ProductExecutorSupported),

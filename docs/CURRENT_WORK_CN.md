@@ -19,14 +19,16 @@
 
 ## 当前任务
 
-使用锁定的 Stardew Valley 1.6.15 反编译源补齐原生动作表面扫描，将
-`unclassified` 和 `generic_interaction_only` 逐项归并为语义动作；缺少下游实现的动作
-仍要注册，但状态必须是 blocked，不能用通用 `executor.interact` 冒充完整覆盖。
+使用锁定的 Stardew Valley 1.6.15 反编译源展开剩余 51 个宽入口中的方法分支、地图
+Action/TouchAction 和数据驱动物品类型。新发现的语义动作立即登记为
+`catalogued_blocked`；不能用通用 `executor.interact` 冒充完整覆盖。
 
-当前生成基线位于 `catalogs/vanilla-1.6.15/`：共发现 308 个原生输入表面，其中
-35 个已映射到具体注册动作，49 个仅落到通用交互，224 个未分类。现有 96 个动作归属
-10 个主引擎，编译器孤儿 0、运行 ID 孤儿 0；Product Executor 仍为 0，五门证据闭环
-仍为 1。后续不得把这些数字解释为全游戏完成度。
+当前生成基线位于 `catalogs/vanilla-1.6.15/`：共发现 308 个原生输入表面，表面级
+未分类已经为 0。语义动作目录现有 138 项，其中 96 项已有 `OptionSpec`，42 项已按
+反编译类型登记为 `catalogued_blocked`，确认存在但尚未登记的动作数为 0。仍有 49 个
+地点交互入口和 2 个通用 `Object` 使用入口需要展开方法与数据分支，因此总分母尚未
+冻结。现有代码的编译器孤儿 0、运行 ID 孤儿 0；Product Executor 仍为 0，五门证据
+闭环仍为 1。后续不得把这些数字解释为全游戏完成度。
 
 ## 退出条件
 

@@ -30,6 +30,7 @@ $compilerExitCode = $LASTEXITCODE
 
 $files = @(
     "native-action-surface-inventory.json",
+    "semantic-action-catalog.json",
     "action-implementation-reconciliation.json",
     "action-progress-dashboard.json"
 )

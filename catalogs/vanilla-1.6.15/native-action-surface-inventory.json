@@ -4,9 +4,59 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 308,
-  "mapped_count": 35,
-  "generic_interaction_only_count": 49,
-  "unclassified_count": 224,
+  "mapped_count": 38,
+  "catalogued_blocked_surface_count": 131,
+  "catalogued_blocked_action_count": 42,
+  "catalogued_blocked_action_ids": [
+    "animals.manage_animal",
+    "animals.purchase",
+    "buildings.change_skin",
+    "buildings.construct",
+    "buildings.paint",
+    "crafting.forge_item",
+    "executor.toggle_lantern",
+    "executor.use_raft",
+    "executor.use_return_scepter",
+    "festival.play_fishing_game",
+    "festival.play_slingshot_game",
+    "festival.play_strength_game",
+    "festival.spin_wheel",
+    "fishing.manage_fish_pond",
+    "foraging.harvest_fruit_tree",
+    "foraging.harvest_tree_product",
+    "housing.renovate",
+    "inventory.transfer_item",
+    "island.field_office_donate",
+    "mail.process_letter",
+    "minigame.play_calico_jack",
+    "minigame.play_crane_game",
+    "minigame.play_darts",
+    "minigame.play_junimo_kart",
+    "minigame.play_prairie_king",
+    "minigame.play_slots",
+    "mining.use_elevator",
+    "multiplayer.send_chat",
+    "player.customize",
+    "processing.crack_geode",
+    "quest.accept_daily",
+    "quest.accept_special_order",
+    "quest.cancel",
+    "quest.claim_reward",
+    "recovery.sleep_in_tent",
+    "rewards.claim_prize_ticket",
+    "skills.choose_profession",
+    "skills.claim_mastery",
+    "social.emote",
+    "story.advance_event_minigame",
+    "tailoring.dye_item",
+    "tailoring.sew_item"
+  ],
+  "missing_registration_surface_count": 0,
+  "missing_semantic_action_count": 0,
+  "missing_semantic_action_ids": [],
+  "classified_non_semantic_surface_count": 88,
+  "branch_decompilation_required_count": 51,
+  "unclassified_count": 0,
   "surfaces": [
     {
       "surfaceId": "native.bc9575a370b2e42f",
@@ -15,7 +65,9 @@
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.4d4bd64cf05966be",
@@ -24,7 +76,9 @@
       "member": "placementAction",
       "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.e56b514725eed9a5",
@@ -32,10 +86,10 @@
       "runtimeType": "AdventureGuild",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/AdventureGuild.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.baa0f2f72eac42fb",
@@ -43,10 +97,10 @@
       "runtimeType": "Beach",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Beach.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.506c43efb757ed0b",
@@ -54,10 +108,10 @@
       "runtimeType": "BeachNightMarket",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/BeachNightMarket.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.9b20021b21d6d5d5",
@@ -65,10 +119,10 @@
       "runtimeType": "BoatTunnel",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/BoatTunnel.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.b6e055d984d757b7",
@@ -76,10 +130,10 @@
       "runtimeType": "BusStop",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/BusStop.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.97467ee3a43eb880",
@@ -87,10 +141,10 @@
       "runtimeType": "Cabin",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Cabin.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.25b5f60077495778",
@@ -98,10 +152,10 @@
       "runtimeType": "Caldera",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Caldera.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.a6ca02f3a29609fb",
@@ -109,10 +163,10 @@
       "runtimeType": "CommunityCenter",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/CommunityCenter.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.76c1b1405cb4257b",
@@ -120,10 +174,10 @@
       "runtimeType": "CommunityCenter",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/CommunityCenter.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.3ef2a7dad937833b",
@@ -131,10 +185,10 @@
       "runtimeType": "Desert",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Desert.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.eaf10ba0e4fe12b9",
@@ -142,10 +196,10 @@
       "runtimeType": "DesertFestival",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/DesertFestival.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.1d6464f69a712fb6",
@@ -153,10 +207,10 @@
       "runtimeType": "DesertFestival",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/DesertFestival.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.d687afd63572f5b0",
@@ -164,10 +218,10 @@
       "runtimeType": "FarmHouse",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/FarmHouse.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.3b4375b0d10748a5",
@@ -175,10 +229,10 @@
       "runtimeType": "FishShop",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/FishShop.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.3b1362df96e8dbf8",
@@ -186,10 +240,10 @@
       "runtimeType": "Forest",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Forest.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.7f712613703ca3bf",
@@ -197,10 +251,10 @@
       "runtimeType": "Forest",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Forest.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.f350ebd35fea9daa",
@@ -208,10 +262,10 @@
       "runtimeType": "GameLocation",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/GameLocation.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.dce735ec88c58e20",
@@ -219,10 +273,10 @@
       "runtimeType": "GameLocation",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/GameLocation.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.dc0a1a06bc8201ac",
@@ -230,10 +284,10 @@
       "runtimeType": "IslandEast",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandEast.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.2f0de83b766a4b84",
@@ -241,10 +295,10 @@
       "runtimeType": "IslandFarmCave",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFarmCave.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.132234f6d59d6dc9",
@@ -252,10 +306,10 @@
       "runtimeType": "IslandFarmHouse",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFarmHouse.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.248e3e69bf8ead07",
@@ -263,10 +317,10 @@
       "runtimeType": "IslandFieldOffice",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandFieldOffice.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.1f84a476ad354291",
@@ -274,10 +328,10 @@
       "runtimeType": "IslandHut",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandHut.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.a2ebb65bd4890ed8",
@@ -285,10 +339,10 @@
       "runtimeType": "IslandLocation",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandLocation.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.97a9e332cc748ffe",
@@ -296,10 +350,10 @@
       "runtimeType": "IslandNorth",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandNorth.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.264ade9ede4d6148",
@@ -307,10 +361,10 @@
       "runtimeType": "IslandSecret",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSecret.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.d7cb92c7c07fb29c",
@@ -318,10 +372,10 @@
       "runtimeType": "IslandSecret",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSecret.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.9e394f057a538467",
@@ -329,10 +383,10 @@
       "runtimeType": "IslandSouth",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouth.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.a9d89b9155584de4",
@@ -340,10 +394,10 @@
       "runtimeType": "IslandSouth",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouth.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.9d80bf1959aeccea",
@@ -351,10 +405,10 @@
       "runtimeType": "IslandSouthEastCave",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandSouthEastCave.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.c3d72feb27a3f7f8",
@@ -362,10 +416,10 @@
       "runtimeType": "IslandWest",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWest.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.88592042cc66c997",
@@ -373,10 +427,10 @@
       "runtimeType": "IslandWest",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWest.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.671e917fffdfa850",
@@ -384,10 +438,10 @@
       "runtimeType": "IslandWestCave1",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/IslandWestCave1.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.cbd2046dcae00925",
@@ -395,10 +449,10 @@
       "runtimeType": "JojaMart",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/JojaMart.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.8a955d9b16937ce8",
@@ -406,10 +460,10 @@
       "runtimeType": "LibraryMuseum",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/LibraryMuseum.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.a8d14ade8d4ff025",
@@ -417,10 +471,10 @@
       "runtimeType": "LibraryMuseum",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/LibraryMuseum.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.ea24c58714ae023e",
@@ -428,10 +482,10 @@
       "runtimeType": "ManorHouse",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/ManorHouse.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.c1b7c52e84b654bf",
@@ -439,10 +493,10 @@
       "runtimeType": "MermaidHouse",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/MermaidHouse.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.f726374d1431231e",
@@ -450,10 +504,10 @@
       "runtimeType": "MineShaft",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/MineShaft.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.fb18db3b537a39ee",
@@ -461,10 +515,10 @@
       "runtimeType": "Mountain",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Mountain.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.ad91516c3c7b8cc1",
@@ -472,10 +526,10 @@
       "runtimeType": "MovieTheater",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/MovieTheater.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.2afeeee7433a0af9",
@@ -483,10 +537,10 @@
       "runtimeType": "MovieTheater",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/MovieTheater.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.0321feb41d69a291",
@@ -494,10 +548,10 @@
       "runtimeType": "Railroad",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Railroad.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.aa5bb01efd2b2c46",
@@ -505,10 +559,10 @@
       "runtimeType": "Sewer",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Sewer.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.5011d24c0f4d2321",
@@ -516,10 +570,10 @@
       "runtimeType": "Submarine",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Submarine.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.1f53467cc4e7901f",
@@ -527,10 +581,10 @@
       "runtimeType": "Town",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Town.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.ac804f5f8f8c5410",
@@ -538,10 +592,10 @@
       "runtimeType": "VolcanoDungeon",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/VolcanoDungeon.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.4f06511b94715ebd",
@@ -549,10 +603,10 @@
       "runtimeType": "Woods",
       "member": "checkAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Woods.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.0f726b6e874033fa",
@@ -560,10 +614,10 @@
       "runtimeType": "Woods",
       "member": "performAction",
       "relativeSourcePath": "StardewValley/StardewValley/Locations/Woods.cs",
-      "mappedOptionIds": [
-        "executor.interact"
-      ],
-      "semanticCoverageStatus": "generic_interaction_only"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "requires_branch_decompilation",
+      "scopeDisposition": "source_branch_required",
+      "evidenceBasis": "method entry is too broad; native branches and data-driven item identities must be enumerated"
     },
     {
       "surfaceId": "native.66a08dfd6a656d92",
@@ -572,7 +626,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AboutMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.774f59c34640a8c3",
@@ -581,7 +637,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AdvancedGameOptions.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.ccf59674f9884c74",
@@ -590,7 +648,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AdvancedGameOptions.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.9173664c2543aeac",
@@ -599,7 +659,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.f75bac8add6a57da",
@@ -607,8 +669,12 @@
       "runtimeType": "AnimalQueryMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "animals.manage_animal"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.2fc09d37465a2565",
@@ -616,8 +682,12 @@
       "runtimeType": "AnimalQueryMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "animals.manage_animal"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.fb26441146efae01",
@@ -625,8 +695,12 @@
       "runtimeType": "AnimalQueryMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimalQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "animals.manage_animal"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b74cc53f4b006f32",
@@ -635,7 +709,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimationPreviewTool.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.3d197960ac35b3cc",
@@ -644,7 +720,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/AnimationPreviewTool.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.2a551b15f42be91b",
@@ -652,8 +730,12 @@
       "runtimeType": "Billboard",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/Billboard.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.accept_daily"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ab9cd2d9ccc8b125",
@@ -661,8 +743,12 @@
       "runtimeType": "Billboard",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/Billboard.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.accept_daily"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ee5cdd2fc9b2ef42",
@@ -673,7 +759,9 @@
       "mappedOptionIds": [
         "executor.catch_fish"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a31fac35a08ad0e9",
@@ -684,7 +772,9 @@
       "mappedOptionIds": [
         "executor.catch_fish"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.01a2c69bf8006124",
@@ -692,8 +782,12 @@
       "runtimeType": "BuildingPaintMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingPaintMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "buildings.paint"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.10975612c7f4bc4e",
@@ -701,8 +795,12 @@
       "runtimeType": "BuildingPaintMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingPaintMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "buildings.paint"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.dff32fa297473e72",
@@ -710,8 +808,12 @@
       "runtimeType": "BuildingSkinMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/BuildingSkinMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "buildings.change_skin"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8b2955ffe66ea229",
@@ -719,8 +821,12 @@
       "runtimeType": "CarpenterMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CarpenterMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "buildings.construct"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8d79c4cd6c345d18",
@@ -728,8 +834,12 @@
       "runtimeType": "CarpenterMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CarpenterMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "buildings.construct"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ad30a2f071149ff6",
@@ -737,8 +847,12 @@
       "runtimeType": "CharacterCustomization",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CharacterCustomization.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "player.customize"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1bbf997017639b4e",
@@ -746,8 +860,12 @@
       "runtimeType": "CharacterCustomization",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CharacterCustomization.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "player.customize"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a6ed69adc92007d6",
@@ -755,8 +873,12 @@
       "runtimeType": "ChatBox",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ChatBox.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "multiplayer.send_chat"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.7ac8f98521436a6c",
@@ -764,8 +886,12 @@
       "runtimeType": "ChatBox",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ChatBox.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "multiplayer.send_chat"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.9f799d6092855461",
@@ -774,7 +900,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ChooseFromIconsMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.2117c5444ff765ab",
@@ -783,7 +911,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ChooseFromListMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.badbc0d542ee9a69",
@@ -792,7 +922,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.bb28a05fef016d4d",
@@ -801,7 +933,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.c6a8005e67cfd0de",
@@ -810,7 +944,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CollectionsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.8dccad7118caacb6",
@@ -819,7 +955,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ConfirmationDialog.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.ed61d1b1088e492e",
@@ -828,7 +966,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ConfirmationDialog.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.0922aacdd3f73dc6",
@@ -837,7 +977,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/CoopMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "product_bootstrap_scope",
+      "evidenceBasis": "decompiled type belongs to save or multiplayer actor bootstrap, not in-save policy"
     },
     {
       "surfaceId": "native.45f730e1de9c5b6d",
@@ -849,7 +991,9 @@
         "executor.craft_machine_item",
         "executor.craft_storage_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.fcf5043e185b9646",
@@ -861,7 +1005,9 @@
         "executor.craft_machine_item",
         "executor.craft_storage_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.efc97133e3e3b8a3",
@@ -873,7 +1019,9 @@
         "executor.craft_machine_item",
         "executor.craft_storage_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a96a4e5e672588c4",
@@ -882,7 +1030,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DayTimeMoneyBox.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.62ad6258c821b761",
@@ -891,7 +1041,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DayTimeMoneyBox.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.a5686490cb20eb3b",
@@ -902,7 +1054,9 @@
       "mappedOptionIds": [
         "executor.choose_dialogue_response"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.08f96628fda63a12",
@@ -913,7 +1067,9 @@
       "mappedOptionIds": [
         "executor.choose_dialogue_response"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.55bab3053d5547c5",
@@ -924,7 +1080,9 @@
       "mappedOptionIds": [
         "executor.choose_dialogue_response"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.5f37f13d134acf41",
@@ -933,7 +1091,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DigitEntryMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.f5c15fbe9f97d9ee",
@@ -942,7 +1102,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DiscreteColorPicker.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.b6361d030668cba2",
@@ -950,8 +1112,12 @@
       "runtimeType": "DyeMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.dye_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c237e309a236507c",
@@ -959,8 +1125,12 @@
       "runtimeType": "DyeMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.dye_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.dd3957700a36b544",
@@ -968,8 +1138,12 @@
       "runtimeType": "DyeMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/DyeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.dye_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1bec31708b67a954",
@@ -977,8 +1151,12 @@
       "runtimeType": "EmoteMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "social.emote"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c20972979e6dabe1",
@@ -986,8 +1164,12 @@
       "runtimeType": "EmoteMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "social.emote"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.65c99a1814c64a03",
@@ -995,8 +1177,12 @@
       "runtimeType": "EmoteSelector",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/EmoteSelector.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "social.emote"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a25559676b9c7991",
@@ -1005,7 +1191,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ExitPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.dfcdb613d6a2b46d",
@@ -1014,7 +1202,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/FarmersBox.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.7608a9e83bbb5fa1",
@@ -1023,7 +1213,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/FarmhandMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "product_bootstrap_scope",
+      "evidenceBasis": "decompiled type belongs to save or multiplayer actor bootstrap, not in-save policy"
     },
     {
       "surfaceId": "native.cbf426a24a5fa797",
@@ -1031,8 +1223,12 @@
       "runtimeType": "FieldOfficeMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/FieldOfficeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "island.field_office_donate"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.673dba7fd653a719",
@@ -1040,8 +1236,12 @@
       "runtimeType": "ForgeMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "crafting.forge_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.894c8c1230a7b80d",
@@ -1049,8 +1249,12 @@
       "runtimeType": "ForgeMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "crafting.forge_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a77bea38e9165154",
@@ -1058,8 +1262,12 @@
       "runtimeType": "ForgeMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ForgeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "crafting.forge_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.aa5280046cd816cf",
@@ -1068,7 +1276,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.792561f9d9e29804",
@@ -1077,7 +1287,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.7030f7b77652077c",
@@ -1086,7 +1298,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/GameMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.25b40fd19e72f1b7",
@@ -1094,8 +1308,12 @@
       "runtimeType": "GeodeMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/GeodeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "processing.crack_geode"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.173b50f06df43968",
@@ -1103,8 +1321,12 @@
       "runtimeType": "GeodeMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/GeodeMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "processing.crack_geode"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.9662f618c980232a",
@@ -1113,7 +1335,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.e50a0aad625f40de",
@@ -1122,7 +1346,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.f7aaa97e10ecd78e",
@@ -1131,7 +1357,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/IClickableMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.8fc2af0f9b1e7f52",
@@ -1140,7 +1368,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.5768d115febfde62",
@@ -1149,7 +1379,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.f5a96bf53de23235",
@@ -1158,7 +1390,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.677b1b7a948dc097",
@@ -1167,7 +1401,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/InventoryPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.d511f3f8f5b813b2",
@@ -1175,8 +1411,12 @@
       "runtimeType": "ItemGrabMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "inventory.transfer_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.607dc80fc2fa11a2",
@@ -1184,8 +1424,12 @@
       "runtimeType": "ItemGrabMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "inventory.transfer_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.9373bb4fc6fbc560",
@@ -1193,8 +1437,12 @@
       "runtimeType": "ItemGrabMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemGrabMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "inventory.transfer_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.e5b4ac6bfa0e6cad",
@@ -1203,7 +1451,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ItemListMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.fdb08d46d5dcb803",
@@ -1214,7 +1464,9 @@
       "mappedOptionIds": [
         "executor.purchase_joja_project"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.e49bb0a015dca992",
@@ -1225,7 +1477,9 @@
       "mappedOptionIds": [
         "executor.donate_community_center_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.68a17ed8b7253dcb",
@@ -1236,7 +1490,9 @@
       "mappedOptionIds": [
         "executor.donate_community_center_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c30155c9bd597e91",
@@ -1247,7 +1503,9 @@
       "mappedOptionIds": [
         "executor.donate_community_center_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1f683bb67a20c1da",
@@ -1256,7 +1514,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LanguageSelectionMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.9978f99e7ae87265",
@@ -1264,8 +1524,12 @@
       "runtimeType": "LetterViewerMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "mail.process_letter"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.0d2c33bf0622a387",
@@ -1273,8 +1537,12 @@
       "runtimeType": "LetterViewerMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "mail.process_letter"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.2683733bb9406d1f",
@@ -1282,8 +1550,12 @@
       "runtimeType": "LetterViewerMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LetterViewerMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "mail.process_letter"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4f20de23c3ca155d",
@@ -1291,8 +1563,12 @@
       "runtimeType": "LevelUpMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LevelUpMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "skills.choose_profession"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b18675dc2ded34e9",
@@ -1300,8 +1576,12 @@
       "runtimeType": "LevelUpMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LevelUpMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "skills.choose_profession"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.18771a2487c721c9",
@@ -1310,7 +1590,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LoadGameMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.d782396b161d4e73",
@@ -1319,7 +1601,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/LocalCoopJoinMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "product_bootstrap_scope",
+      "evidenceBasis": "decompiled type belongs to save or multiplayer actor bootstrap, not in-save policy"
     },
     {
       "surfaceId": "native.49c3d99230249fa8",
@@ -1328,7 +1612,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MapPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.ae5eebbb9937edcc",
@@ -1337,7 +1623,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MapPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.2bdb003c1facfea2",
@@ -1345,8 +1633,12 @@
       "runtimeType": "MasteryTrackerMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MasteryTrackerMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "skills.claim_mastery"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.559d923ce778cfca",
@@ -1354,8 +1646,12 @@
       "runtimeType": "MasteryTrackerMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MasteryTrackerMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "skills.claim_mastery"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.f20fc01a435b6626",
@@ -1364,7 +1660,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MenuWithInventory.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.fe0320e1317619e9",
@@ -1373,7 +1671,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MenuWithInventory.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.6d92987d73c63017",
@@ -1381,8 +1681,12 @@
       "runtimeType": "MineElevatorMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/MineElevatorMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "mining.use_elevator"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.7405933e5f7c9167",
@@ -1393,7 +1697,9 @@
       "mappedOptionIds": [
         "executor.donate_museum_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a1a6dad33cb54693",
@@ -1404,7 +1710,9 @@
       "mappedOptionIds": [
         "executor.donate_museum_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.da762c8325fbd4ad",
@@ -1415,7 +1723,9 @@
       "mappedOptionIds": [
         "executor.donate_museum_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8b68396a094dcc4c",
@@ -1424,7 +1734,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/NamingMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.31c42b5fe970b0ef",
@@ -1433,7 +1745,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/NamingMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.90381b513450ffac",
@@ -1442,7 +1756,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.afef4cf919909f0b",
@@ -1451,7 +1767,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.5a63806a887db65f",
@@ -1460,7 +1778,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/NumberSelectionMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.a421b22ba399bfe1",
@@ -1469,7 +1789,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsButton.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.aabec02968834c5a",
@@ -1478,7 +1800,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsCheckbox.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.0c7828316c18af04",
@@ -1487,7 +1811,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsDropDown.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.52082cf759a96863",
@@ -1496,7 +1822,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsDropDown.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.e988f2ae9608b913",
@@ -1505,7 +1833,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsElement.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.259ed041c2b7a12f",
@@ -1514,7 +1844,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsElement.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.6184c67f26a9d146",
@@ -1523,7 +1855,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsInputListener.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.318e86eec1f07e32",
@@ -1532,7 +1866,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsInputListener.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.6aa7c576839d38c5",
@@ -1541,7 +1877,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.19ad10026d2c2dd0",
@@ -1550,7 +1888,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.cff658a94fda6415",
@@ -1559,7 +1899,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinus.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.f245c08e50ad006c",
@@ -1568,7 +1910,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinus.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.7bbdb70b425f2401",
@@ -1577,7 +1921,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsPlusMinusButton.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.56ba69839256d5d1",
@@ -1586,7 +1932,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsSlider.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.6d5d7d33f6399a6c",
@@ -1595,7 +1943,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsSlider.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.64a4bc375e7f23a1",
@@ -1604,7 +1954,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/OptionsTextEntry.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.a44ae9c07609b893",
@@ -1612,8 +1964,12 @@
       "runtimeType": "PondQueryMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "fishing.manage_fish_pond"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.866fda4c362999ac",
@@ -1621,8 +1977,12 @@
       "runtimeType": "PondQueryMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "fishing.manage_fish_pond"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4c50e1776e35331b",
@@ -1630,8 +1990,12 @@
       "runtimeType": "PondQueryMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PondQueryMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "fishing.manage_fish_pond"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ccd488018fa5d284",
@@ -1640,7 +2004,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PowersTab.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.4c1b872166d84447",
@@ -1648,8 +2014,12 @@
       "runtimeType": "PrizeTicketMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PrizeTicketMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "rewards.claim_prize_ticket"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.2c6d7d6cc57f3d49",
@@ -1658,7 +2028,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.9da6f3ff19d7cf30",
@@ -1667,7 +2039,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.4e2ba7acd27cb1c9",
@@ -1676,7 +2050,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ProfileMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.0bba0199e2ed34e8",
@@ -1684,8 +2060,12 @@
       "runtimeType": "PurchaseAnimalsMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PurchaseAnimalsMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "animals.purchase"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.960a343f69b1ec55",
@@ -1693,8 +2073,12 @@
       "runtimeType": "PurchaseAnimalsMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/PurchaseAnimalsMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "animals.purchase"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b8fa3f7bfbcecfaa",
@@ -1703,7 +2087,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestContainerMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.a1d8bcf01d86a080",
@@ -1712,7 +2098,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestContainerMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.8eca5a5c0ef9b3ce",
@@ -1720,8 +2108,13 @@
       "runtimeType": "QuestLog",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestLog.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.cancel",
+        "quest.claim_reward"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.50f820b1457f6ad0",
@@ -1729,8 +2122,13 @@
       "runtimeType": "QuestLog",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/QuestLog.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.cancel",
+        "quest.claim_reward"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.10dbcfce4865c088",
@@ -1739,7 +2137,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ReadyCheckDialog.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.f7b7e5a6c13d3f95",
@@ -1747,8 +2147,12 @@
       "runtimeType": "RenovateMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/RenovateMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "housing.renovate"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.6e1e501974185e04",
@@ -1756,8 +2160,12 @@
       "runtimeType": "RenovateMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/RenovateMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "housing.renovate"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ad8e6b30067f3f64",
@@ -1766,7 +2174,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ShippingMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.a04565afc5b4bed4",
@@ -1775,7 +2185,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/ShippingMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.2d6c06dafd7cdde4",
@@ -1787,7 +2199,9 @@
         "executor.buy_shop_item",
         "executor.sell_shop_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.76c9258764c63cef",
@@ -1799,7 +2213,9 @@
         "executor.buy_shop_item",
         "executor.sell_shop_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1f75a7747b0bf29f",
@@ -1811,7 +2227,9 @@
         "executor.buy_shop_item",
         "executor.sell_shop_item"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8d085b5cc81afc80",
@@ -1820,7 +2238,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/SkillsPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.6bad0df32d938209",
@@ -1829,7 +2249,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/SocialPage.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.57f1f28ebb32b998",
@@ -1837,8 +2259,12 @@
       "runtimeType": "SpecialOrdersBoard",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/SpecialOrdersBoard.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.accept_special_order"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.9e70531d49f642b4",
@@ -1846,8 +2272,12 @@
       "runtimeType": "SpecialOrdersBoard",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/SpecialOrdersBoard.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "quest.accept_special_order"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c61c08154f5a7de9",
@@ -1855,8 +2285,12 @@
       "runtimeType": "StorageContainer",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/StorageContainer.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "inventory.transfer_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1530c4fe54617477",
@@ -1864,8 +2298,12 @@
       "runtimeType": "StorageContainer",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/StorageContainer.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "inventory.transfer_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4d8aacc2f7b9568f",
@@ -1873,8 +2311,12 @@
       "runtimeType": "StrengthGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/StrengthGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_strength_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8380ac5ea34faf14",
@@ -1883,7 +2325,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TailorRecipeListTool.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.159f5b59361d058d",
@@ -1892,7 +2336,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TailorRecipeListTool.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.183515b6aaf9658d",
@@ -1900,8 +2346,12 @@
       "runtimeType": "TailoringMenu",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.sew_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.79970910ce276001",
@@ -1909,8 +2359,12 @@
       "runtimeType": "TailoringMenu",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.sew_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4fa2f59176db0e2f",
@@ -1918,8 +2372,12 @@
       "runtimeType": "TailoringMenu",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TailoringMenu.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "tailoring.sew_item"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c8296dd0432eb199",
@@ -1928,7 +2386,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TextEntryMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.b0fd2fb3794ea351",
@@ -1937,7 +2397,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TextEntryMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.499be5534d136477",
@@ -1946,7 +2408,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.745641e50b85df7a",
@@ -1955,7 +2419,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.ac97b51585da6bb1",
@@ -1964,7 +2430,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.0e75f5d41796a7ba",
@@ -1973,7 +2441,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TitleTextInputMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.90902c5120d09dc3",
@@ -1982,7 +2452,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TooManyFarmsMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "outside_in_save_actor_scope",
+      "evidenceBasis": "decompiled type belongs to title, load, language, or client configuration flow"
     },
     {
       "surfaceId": "native.1639fa7f48d51ff6",
@@ -1991,7 +2463,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/Toolbar.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.e625432e155f4d1a",
@@ -2000,7 +2474,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/Toolbar.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "parent_action_component",
+      "evidenceBasis": "decompiled input handler delegates or binds parameters for its owning semantic action"
     },
     {
       "surfaceId": "native.f056b4233144d34d",
@@ -2009,7 +2485,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/TutorialMenu.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "observation_or_navigation_only",
+      "evidenceBasis": "decompiled handler changes view, page, selection, or closes display without a gameplay commitment"
     },
     {
       "surfaceId": "native.61282bf8f90cf3a5",
@@ -2017,8 +2495,12 @@
       "runtimeType": "WheelSpinGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/WheelSpinGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.spin_wheel"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4dfc009b27d03ce6",
@@ -2026,8 +2508,12 @@
       "runtimeType": "WheelSpinGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Menus/WheelSpinGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.spin_wheel"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1d621af8724d80f6",
@@ -2035,8 +2521,12 @@
       "runtimeType": "AbigailGame",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.35b7cc648510e072",
@@ -2044,8 +2534,12 @@
       "runtimeType": "AbigailGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8cfb2c5f99d66f28",
@@ -2053,8 +2547,12 @@
       "runtimeType": "AbigailGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d303c510d6250981",
@@ -2062,8 +2560,12 @@
       "runtimeType": "AbigailGame",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/AbigailGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.0a7feaa7ea17ea55",
@@ -2071,8 +2573,12 @@
       "runtimeType": "BoatJourney",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d1f7284c8b4cb5ef",
@@ -2080,8 +2586,12 @@
       "runtimeType": "BoatJourney",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b2ca8e9dac11336a",
@@ -2089,8 +2599,12 @@
       "runtimeType": "BoatJourney",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.0b0c4b3e537cb617",
@@ -2098,8 +2612,12 @@
       "runtimeType": "BoatJourney",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/BoatJourney.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.cd148f6b83e8cb16",
@@ -2107,8 +2625,12 @@
       "runtimeType": "CalicoJack",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_calico_jack"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8bc2150c038c7576",
@@ -2116,8 +2638,12 @@
       "runtimeType": "CalicoJack",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_calico_jack"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.95fca99987b31510",
@@ -2125,8 +2651,12 @@
       "runtimeType": "CalicoJack",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_calico_jack"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.83da3fbce25fb786",
@@ -2134,8 +2664,12 @@
       "runtimeType": "CalicoJack",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CalicoJack.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_calico_jack"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.cd183aeee3963923",
@@ -2143,8 +2677,12 @@
       "runtimeType": "CraneGame",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_crane_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.0042d887dd8b8e7e",
@@ -2152,8 +2690,12 @@
       "runtimeType": "CraneGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_crane_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.40d32f8185b21f43",
@@ -2161,8 +2703,12 @@
       "runtimeType": "CraneGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_crane_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b01910a7bd92c4bb",
@@ -2170,8 +2716,12 @@
       "runtimeType": "CraneGame",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/CraneGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_crane_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1ba66f5369ae7c3c",
@@ -2179,8 +2729,12 @@
       "runtimeType": "Darts",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_darts"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8ad5a52eccd38cc3",
@@ -2188,8 +2742,12 @@
       "runtimeType": "Darts",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_darts"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.015e7873bcf27474",
@@ -2197,8 +2755,12 @@
       "runtimeType": "Darts",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_darts"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.87306b326500cf8e",
@@ -2206,8 +2768,12 @@
       "runtimeType": "Darts",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Darts.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_darts"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.7010eac780be9525",
@@ -2215,8 +2781,12 @@
       "runtimeType": "FantasyBoardGame",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.69c1fbd150ca52a1",
@@ -2224,8 +2794,12 @@
       "runtimeType": "FantasyBoardGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.cccb8ad7a2c9a155",
@@ -2233,8 +2807,12 @@
       "runtimeType": "FantasyBoardGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ccb9c4a9ca833a08",
@@ -2242,8 +2820,12 @@
       "runtimeType": "FantasyBoardGame",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FantasyBoardGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.cd28c01b3a08cd86",
@@ -2251,8 +2833,12 @@
       "runtimeType": "FishingGame",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_fishing_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.2642c9aa98660156",
@@ -2260,8 +2846,12 @@
       "runtimeType": "FishingGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_fishing_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8cb964faf9e17b58",
@@ -2269,8 +2859,12 @@
       "runtimeType": "FishingGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_fishing_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.29d79fb5259ea060",
@@ -2278,8 +2872,12 @@
       "runtimeType": "FishingGame",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/FishingGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_fishing_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d048a94e746cbfed",
@@ -2287,8 +2885,12 @@
       "runtimeType": "GrandpaStory",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.dc1ed115b3d44aaa",
@@ -2296,8 +2898,12 @@
       "runtimeType": "GrandpaStory",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4ab68168622961d0",
@@ -2305,8 +2911,12 @@
       "runtimeType": "GrandpaStory",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8bca2425d0f64f4e",
@@ -2314,8 +2924,12 @@
       "runtimeType": "GrandpaStory",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/GrandpaStory.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.59355d333ebdc90e",
@@ -2323,8 +2937,12 @@
       "runtimeType": "HaleyCowPictures",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.986deaa64819be42",
@@ -2332,8 +2950,12 @@
       "runtimeType": "HaleyCowPictures",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.175f48b77337a956",
@@ -2341,8 +2963,12 @@
       "runtimeType": "HaleyCowPictures",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.3803a7ee5febd908",
@@ -2350,8 +2976,12 @@
       "runtimeType": "HaleyCowPictures",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/HaleyCowPictures.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.f045f2ea81bef7a7",
@@ -2359,8 +2989,12 @@
       "runtimeType": "Intro",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.360b212621f0423e",
@@ -2368,8 +3002,12 @@
       "runtimeType": "Intro",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b8e9aeb809964c90",
@@ -2377,8 +3015,12 @@
       "runtimeType": "Intro",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8ebaec369a0af7f9",
@@ -2386,8 +3028,12 @@
       "runtimeType": "Intro",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Intro.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4086d49c0f8e0f73",
@@ -2395,8 +3041,12 @@
       "runtimeType": "MaruComet",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.8b893ca1109bd2e9",
@@ -2404,8 +3054,12 @@
       "runtimeType": "MaruComet",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.178ff31fa636f39f",
@@ -2413,8 +3067,12 @@
       "runtimeType": "MaruComet",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.996ef7d55234ec80",
@@ -2422,8 +3080,12 @@
       "runtimeType": "MaruComet",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MaruComet.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.33df49cfe2b9da03",
@@ -2431,8 +3093,12 @@
       "runtimeType": "MineCart",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_junimo_kart"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.bc141200adaa4162",
@@ -2440,8 +3106,12 @@
       "runtimeType": "MineCart",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_junimo_kart"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a1f55af03dfe9884",
@@ -2449,8 +3119,12 @@
       "runtimeType": "MineCart",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_junimo_kart"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d8ccd2341f6107f7",
@@ -2458,8 +3132,12 @@
       "runtimeType": "MineCart",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/MineCart.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_junimo_kart"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a7b21e607b60a94b",
@@ -2467,8 +3145,12 @@
       "runtimeType": "PlaneFlyBy",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.29eade1eba76fd02",
@@ -2476,8 +3158,12 @@
       "runtimeType": "PlaneFlyBy",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.b2a36a851f3e3a01",
@@ -2485,8 +3171,12 @@
       "runtimeType": "PlaneFlyBy",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.f32f21c53a4ce379",
@@ -2494,8 +3184,12 @@
       "runtimeType": "PlaneFlyBy",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/PlaneFlyBy.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.e28132a0f269ea6d",
@@ -2503,8 +3197,12 @@
       "runtimeType": "RobotBlastoff",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.1140d10c8037a1df",
@@ -2512,8 +3210,12 @@
       "runtimeType": "RobotBlastoff",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.dbd1e165e2b1cb42",
@@ -2521,8 +3223,12 @@
       "runtimeType": "RobotBlastoff",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d40002e0203c9ce9",
@@ -2530,8 +3236,12 @@
       "runtimeType": "RobotBlastoff",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/RobotBlastoff.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.0e3abd884dae7733",
@@ -2539,8 +3249,12 @@
       "runtimeType": "Slots",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_slots"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.4c1ec72b6f5ad865",
@@ -2548,8 +3262,12 @@
       "runtimeType": "Slots",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_slots"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.e09d10e75a53f12e",
@@ -2557,8 +3275,12 @@
       "runtimeType": "Slots",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_slots"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.9550d82b1e4ca7ff",
@@ -2566,8 +3288,12 @@
       "runtimeType": "Slots",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Slots.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "minigame.play_slots"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.cc3d6886269a792a",
@@ -2575,8 +3301,12 @@
       "runtimeType": "TargetGame",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_slingshot_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.57fc1300e57038bb",
@@ -2584,8 +3314,12 @@
       "runtimeType": "TargetGame",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_slingshot_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.550a49622aee993d",
@@ -2593,8 +3327,12 @@
       "runtimeType": "TargetGame",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_slingshot_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.07b86c0fa345a35c",
@@ -2602,8 +3340,12 @@
       "runtimeType": "TargetGame",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TargetGame.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "festival.play_slingshot_game"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.89a9e35ce72c84c2",
@@ -2611,8 +3353,12 @@
       "runtimeType": "TelescopeScene",
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.56fe71e2b6801d56",
@@ -2620,8 +3366,12 @@
       "runtimeType": "TelescopeScene",
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.06894d3c2afc6bd4",
@@ -2629,8 +3379,12 @@
       "runtimeType": "TelescopeScene",
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.5fa739cea50b8a73",
@@ -2638,8 +3392,12 @@
       "runtimeType": "TelescopeScene",
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/TelescopeScene.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "story.advance_event_minigame"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d04453c827cba67e",
@@ -2648,7 +3406,9 @@
       "member": "IMinigame",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.2e9ac0e97076ada2",
@@ -2657,7 +3417,9 @@
       "member": "receiveKeyPress",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.259523a58393ccac",
@@ -2666,7 +3428,9 @@
       "member": "receiveLeftClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.12420fb6c53990ac",
@@ -2675,7 +3439,9 @@
       "member": "receiveRightClick",
       "relativeSourcePath": "StardewValley/StardewValley/Minigames/Test.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "debug_only",
+      "evidenceBasis": "decompiled runtime type is an internal preview or test surface"
     },
     {
       "surfaceId": "native.49bfaa7554f1996e",
@@ -2683,8 +3449,12 @@
       "runtimeType": "Bush",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Bush.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.harvest_bush"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ef2bac0c548c3119",
@@ -2692,8 +3462,13 @@
       "runtimeType": "FruitTree",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/FruitTree.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.clear_obstacle",
+        "foraging.harvest_fruit_tree"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.84dea516839ee0de",
@@ -2701,8 +3476,14 @@
       "runtimeType": "HoeDirt",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/HoeDirt.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.harvest_crop",
+        "executor.plant_seed",
+        "farm.maintain_crops"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.046c117fb5c47c13",
@@ -2710,8 +3491,12 @@
       "runtimeType": "ResourceClump",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/ResourceClump.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.break_current_location_resource_clump"
+      ],
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.c8801b28fee8d913",
@@ -2719,8 +3504,12 @@
       "runtimeType": "Tent",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Tent.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "recovery.sleep_in_tent"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.aebbc4d1c9687c24",
@@ -2729,7 +3518,9 @@
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/TerrainFeature.cs",
       "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "abstract_parent_surface",
+      "evidenceBasis": "base terrain feature input is specialized by concrete native runtime types"
     },
     {
       "surfaceId": "native.1581d8195e295b51",
@@ -2737,8 +3528,13 @@
       "runtimeType": "Tree",
       "member": "performUseAction",
       "relativeSourcePath": "StardewValley/StardewValley/TerrainFeatures/Tree.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.clear_obstacle",
+        "foraging.harvest_tree_product"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.7a27c598a1811b0f",
@@ -2750,7 +3546,9 @@
         "executor.break_farm_resource_clump",
         "executor.clear_obstacle"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.25a519319ec3de0a",
@@ -2762,7 +3560,9 @@
         "executor.break_farm_resource_clump",
         "executor.clear_obstacle"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.84b408e5f436af72",
@@ -2773,7 +3573,9 @@
       "mappedOptionIds": [
         "executor.catch_fish"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.e31f353435475669",
@@ -2784,7 +3586,9 @@
       "mappedOptionIds": [
         "executor.catch_fish"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.59d8e812d0a556f6",
@@ -2796,7 +3600,9 @@
         "executor.harvest_ginger",
         "executor.till_soil"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.3719246e1ebe7a45",
@@ -2804,8 +3610,12 @@
       "runtimeType": "Lantern",
       "member": "DoFunction",
       "relativeSourcePath": "StardewValley/StardewValley/Tools/Lantern.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.toggle_lantern"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.a1566378bf21d299",
@@ -2816,7 +3626,9 @@
       "mappedOptionIds": [
         "executor.collect_animal_product"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.d0ae781fcde0cc99",
@@ -2827,7 +3639,9 @@
       "mappedOptionIds": [
         "executor.collect_animal_product"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.002cedfc82f135d8",
@@ -2838,7 +3652,9 @@
       "mappedOptionIds": [
         "executor.pan_ore_spot"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.f0d7cb243f37942c",
@@ -2849,7 +3665,9 @@
       "mappedOptionIds": [
         "executor.pan_ore_spot"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.204ab8b298b5f788",
@@ -2862,7 +3680,9 @@
         "executor.mine_stone",
         "executor.remove_machine"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.2b3e7dc18b98b5b2",
@@ -2875,7 +3695,9 @@
         "executor.mine_stone",
         "executor.remove_machine"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.23fda9c649de7ffc",
@@ -2883,8 +3705,12 @@
       "runtimeType": "Raft",
       "member": "DoFunction",
       "relativeSourcePath": "StardewValley/StardewValley/Tools/Raft.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.use_raft"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.988abc24622299cc",
@@ -2895,7 +3721,9 @@
       "mappedOptionIds": [
         "executor.collect_animal_product"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.488b1239b8a8cd74",
@@ -2906,7 +3734,9 @@
       "mappedOptionIds": [
         "executor.collect_animal_product"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.31289524eec1cf3f",
@@ -2917,7 +3747,9 @@
       "mappedOptionIds": [
         "executor.shoot_monster"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.ad5f43e0da8d05a9",
@@ -2928,7 +3760,9 @@
       "mappedOptionIds": [
         "executor.shoot_monster"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.31eedec8f84ecfc5",
@@ -2939,7 +3773,9 @@
       "mappedOptionIds": [
         "executor.shoot_monster"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.00c9f3cb6232c3ae",
@@ -2947,8 +3783,12 @@
       "runtimeType": "Wand",
       "member": "DoFunction",
       "relativeSourcePath": "StardewValley/StardewValley/Tools/Wand.cs",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "unclassified"
+      "mappedOptionIds": [
+        "executor.use_return_scepter"
+      ],
+      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     },
     {
       "surfaceId": "native.7e2a02ad3d9e2b06",
@@ -2961,7 +3801,9 @@
         "executor.fill_pet_bowl",
         "farm.maintain_crops"
       ],
-      "semanticCoverageStatus": "mapped_to_registered_option"
+      "semanticCoverageStatus": "mapped_to_registered_option",
+      "scopeDisposition": "target_actor_action",
+      "evidenceBasis": "decompiled runtime type and native input member"
     }
   ]
 }

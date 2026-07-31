@@ -94,9 +94,52 @@ public sealed class OptionImplementationCatalogTests
 
         Assert.Equal("native_decompile_scanned", root.GetProperty("source_status").GetString());
         Assert.True(root.GetProperty("surface_count").GetInt32() >= 50);
-        Assert.True(
-            root.GetProperty("generic_interaction_only_count").GetInt32() +
-            root.GetProperty("unclassified_count").GetInt32() > 0);
+        Assert.True(root.GetProperty("branch_decompilation_required_count").GetInt32() > 0);
+        Assert.Equal(
+            PendingSemanticActionCatalog.All.Count,
+            root.GetProperty("catalogued_blocked_action_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("missing_semantic_action_count").GetInt32());
+    }
+
+    [Fact]
+    public void Pending_semantic_actions_are_unique_blocked_and_source_attributed()
+    {
+        Assert.Equal(
+            PendingSemanticActionCatalog.All.Count,
+            PendingSemanticActionCatalog.All
+                .Select(row => row.ActionId)
+                .Distinct(StringComparer.Ordinal)
+                .Count());
+        Assert.All(PendingSemanticActionCatalog.All, row =>
+        {
+            Assert.Equal("catalogued_blocked", row.CatalogStatus);
+            Assert.Equal("option_spec_not_declared", row.BlockReason);
+            Assert.NotEmpty(row.NativeRuntimeTypes);
+            Assert.False(OptionCapabilityRegistrySource.TryGet(row.ActionId, out _));
+            Assert.False(string.IsNullOrWhiteSpace(row.PrimaryEngineId));
+        });
+    }
+
+    [Fact]
+    public void Committed_semantic_catalog_joins_option_specs_and_blocked_actions_without_gaps()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "semantic-action-catalog.json")));
+        var root = document.RootElement;
+        var expected = OptionCapabilityRegistrySource.RegisteredIds
+            .Concat(PendingSemanticActionCatalog.All.Select(row => row.ActionId))
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        var actual = root.GetProperty("actions")
+            .EnumerateArray()
+            .Select(row => row.GetProperty("action_id").GetString()!)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expected, actual);
+        Assert.Equal(expected.Length, root.GetProperty("action_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("uncatalogued_native_action_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("pending_catalog_without_surface_count").GetInt32());
     }
 
     private static string FindRepositoryFile(params string[] parts)
