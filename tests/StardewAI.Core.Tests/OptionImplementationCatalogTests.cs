@@ -96,9 +96,53 @@ public sealed class OptionImplementationCatalogTests
         Assert.True(root.GetProperty("surface_count").GetInt32() >= 50);
         Assert.True(root.GetProperty("branch_decompilation_required_count").GetInt32() > 0);
         Assert.Equal(
+            root.GetProperty("branch_decompilation_required_count").GetInt32(),
+            root.GetProperty("branch_inventory_generated_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("branch_inventory_missing_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("unclassified_count").GetInt32());
+        Assert.Equal(
             PendingSemanticActionCatalog.All.Count,
             root.GetProperty("catalogued_blocked_action_count").GetInt32());
         Assert.Equal(0, root.GetProperty("missing_semantic_action_count").GetInt32());
+
+        var gameLocationPerformActionOverloads = root.GetProperty("surfaces")
+            .EnumerateArray()
+            .Where(row =>
+                row.GetProperty("runtimeType").GetString() == "GameLocation" &&
+                row.GetProperty("member").GetString() == "performAction")
+            .Select(row => row.GetProperty("signature").GetString())
+            .ToArray();
+        Assert.Equal(2, gameLocationPerformActionOverloads.Length);
+        Assert.Equal(
+            gameLocationPerformActionOverloads.Length,
+            gameLocationPerformActionOverloads.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void Native_branch_and_runtime_map_interaction_catalogs_are_semantically_closed()
+    {
+        using var branchDocument = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "native-action-branch-inventory.json")));
+        var branches = branchDocument.RootElement;
+        Assert.Equal("native_branch_syntax_scanned", branches.GetProperty("source_status").GetString());
+        Assert.True(branches.GetProperty("branch_count").GetInt32() > 0);
+        Assert.Equal(0, branches.GetProperty("missing_surface_count").GetInt32());
+        Assert.Equal(0, branches.GetProperty("semantic_review_required_count").GetInt32());
+        Assert.Equal(0, branches.GetProperty("missing_registration_branch_count").GetInt32());
+        Assert.Equal(
+            branches.GetProperty("broad_surface_count").GetInt32(),
+            branches.GetProperty("covered_surface_count").GetInt32());
+
+        using var mapDocument = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "native-map-interaction-coverage.json")));
+        var maps = mapDocument.RootElement;
+        Assert.True(maps.GetProperty("interaction_token_count").GetInt32() > 0);
+        Assert.True(maps.GetProperty("occurrence_count").GetInt32() > 0);
+        Assert.Equal(0, maps.GetProperty("semantic_review_required_count").GetInt32());
+        Assert.Equal(
+            maps.GetProperty("interaction_token_count").GetInt32(),
+            maps.GetProperty("mapped_token_count").GetInt32() +
+            maps.GetProperty("classified_non_semantic_token_count").GetInt32());
     }
 
     [Fact]
@@ -138,6 +182,9 @@ public sealed class OptionImplementationCatalogTests
 
         Assert.Equal(expected, actual);
         Assert.Equal(expected.Length, root.GetProperty("action_count").GetInt32());
+        Assert.Equal(
+            "provisional_native_surface_denominator_closed",
+            root.GetProperty("denominator_status").GetString());
         Assert.Equal(0, root.GetProperty("uncatalogued_native_action_count").GetInt32());
         Assert.Equal(0, root.GetProperty("pending_catalog_without_surface_count").GetInt32());
     }

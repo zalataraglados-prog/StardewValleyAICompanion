@@ -4,8 +4,9 @@
 
 ## 当前阶段
 
-动作全集对账与分母冻结。当前 96 个注册项只是已有代码基线，不是全游戏动作全集。
-正式训练保持阻塞。
+锁定 Stardew Valley 1.6.15 的动作全集对账已经完成当前源扫描切片，正在做分母治理冻结并
+转入逐动作纵向闭环。当前 96 个注册项是可复用的已有实现基线，不是被废弃的旧代码；
+新增 69 个显式 blocked 项用于记录已证实但尚未实现的能力。正式训练保持阻塞。
 
 ## 已完成
 
@@ -14,33 +15,44 @@
 - 每个现有动作已归属唯一主执行引擎；
 - KnowledgeCompiler 开始生成：
   - `native-action-surface-inventory.json`
+  - `native-action-branch-inventory.json`
+  - `native-map-interaction-coverage.json`
+  - `semantic-action-catalog.json`
   - `action-implementation-reconciliation.json`
   - `action-progress-dashboard.json`
+- 原生方法扫描已改为 Roslyn 语法解析，方法重载按完整签名独立建档；
+- 60 个宽入口已展开为 428 条带源码行号和哈希的分支证据；
+- 1,102 个有效地图交互实例已归并为 150 个 Action/TouchAction token，并逐项连接
+  到原生处理分支。
 
 ## 当前任务
 
-使用锁定的 Stardew Valley 1.6.15 反编译源展开剩余 51 个宽入口中的方法分支、地图
-Action/TouchAction 和数据驱动物品类型。新发现的语义动作立即登记为
-`catalogued_blocked`；不能用通用 `executor.interact` 冒充完整覆盖。
+当前生成基线位于 `catalogs/vanilla-1.6.15/`：
 
-当前生成基线位于 `catalogs/vanilla-1.6.15/`：共发现 308 个原生输入表面，表面级
-未分类已经为 0。语义动作目录现有 138 项，其中 96 项已有 `OptionSpec`，42 项已按
-反编译类型登记为 `catalogued_blocked`，确认存在但尚未登记的动作数为 0。仍有 49 个
-地点交互入口和 2 个通用 `Object` 使用入口需要展开方法与数据分支，因此总分母尚未
-冻结。现有代码的编译器孤儿 0、运行 ID 孤儿 0；Product Executor 仍为 0，五门证据
-闭环仍为 1。后续不得把这些数字解释为全游戏完成度。
+- 320 个原生输入表面，表面级未分类 0；
+- 60 个宽入口全部生成分支目录，428 条分支中待语义审查 0、缺注册 0；
+- 150 个地图交互 token 中 142 个映射到语义动作，8 个经原生分支证实为无玩家语义、
+  失效/遗留静态 token，待审查 0；
+- 语义动作目录共 165 项：96 项已有 `OptionSpec`，69 项为
+  `catalogued_blocked`，确认存在但尚未登记的动作数为 0。
+
+机器状态为 `provisional_native_surface_denominator_closed`：当前锁定扫描范围已经
+闭合，但还需通过确定性重生成和治理冻结，不能把“已登记”解释为“已实现”。现有代码
+的编译器孤儿 0、运行 ID 孤儿 0；Product Executor 仍为 0，五门证据闭环仍为 1。
 
 ## 退出条件
 
 - 原生动作表面未分类数为 0；
-- 全游戏语义动作分母冻结；
-- 所有语义动作已注册；
+- 宽入口分支和有效地图交互 token 未审查数为 0；
+- 锁定扫描范围的语义动作分母可确定性重生成并完成治理冻结；
+- 所有已证实语义动作均已注册，未实现项必须保持显式 blocked；
 - 所有现有代码零孤儿，每个动作只有一个主执行引擎；
 - 固定口径看板可重复生成。
 
 ## 紧接任务
 
-对账退出后，按看板选择首个缺口：完整 `transfer_item` 语义动作与容器适配器闭环。
+完成确定性重生成和分母冻结后，按看板选择首个缺口：完整 `inventory.transfer_item`
+语义动作与容器适配器闭环。
 每个后续动作必须复用已登记主引擎，并完成透明读取、候选、编译、Product 原生执行、
 前后验证、E3 和训练记录。#85/#86 只在该动作触及对应旧结构时顺带迁移。
 

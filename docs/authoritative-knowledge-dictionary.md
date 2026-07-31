@@ -272,8 +272,28 @@ closes that boundary.
 
 ## Downstream capability join
 
-`downstream-capability-matrix.json` joins all 89 registered options to the executable
-downstream surfaces:
+The locked 1.6.15 native action denominator is now represented by three generated evidence
+layers:
+
+- `native-action-surface-inventory.json` identifies 320 native input surfaces by full method
+  signature, source span, and body hash, including overloaded methods as distinct surfaces;
+- `native-action-branch-inventory.json` expands all 60 broad surfaces into 428 source-backed
+  branches, with zero missing surfaces, semantic-review branches, or missing registrations;
+- `native-map-interaction-coverage.json` joins 1,102 effective runtime-projected map
+  interactions into 150 Action/TouchAction tokens. 142 tokens map to native branches and
+  semantic actions; eight are source-proven no-player-semantic, inactive, or legacy static
+  tokens.
+
+The semantic catalog contains 165 actions: 96 existing `OptionSpec` implementations and 69
+explicit `catalogued_blocked` capabilities. This is a provisional source-denominator closure,
+not an end-to-end execution claim. Existing action code remains the implementation baseline;
+the blocked entries prevent known native capabilities from disappearing while their
+read/candidate/compile/product-runtime/verifier/E3 gates are completed.
+
+The earlier `downstream-capability-matrix.json` audit joined the then-registered 89-option
+baseline to executable downstream surfaces. The current registered count is 96 and is
+governed by `action-implementation-reconciliation.json`; the figures below describe that
+earlier downstream audit until the matrix is regenerated:
 
 - 61 full-action options have explicit action-step compilers;
 - 59 runtime option IDs have explicit production dispatcher branches;

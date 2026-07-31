@@ -1,0 +1,2966 @@
+{
+  "schema_version": "stardewai.native_map_interaction_coverage.v1",
+  "authority": "runtime-projected effective Action/TouchAction properties joined to locked native 1.6.15 branch evidence",
+  "interaction_token_count": 150,
+  "occurrence_count": 1102,
+  "mapped_token_count": 142,
+  "classified_non_semantic_token_count": 8,
+  "semantic_review_required_count": 0,
+  "interactions": [
+    {
+      "propertyName": "Action",
+      "actionToken": "\u0027The",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/SebastianRoom:Buildings[11,7]=\u0027The Solarion Chronicles\u0027 books 1-13"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native tile/Event dispatchers have no exact \u0027\u0027The\u0027 branch and return false; static map property is legacy or inactive metadata"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "AdventureShop",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/AdventureGuild:Buildings[5,12]=AdventureShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.c0b01143d6dca2c4"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "AnimalShop",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/AnimalShop:Buildings[12,15]=AnimalShop",
+        "Maps/AnimalShop:Buildings[13,15]=AnimalShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f9ba714cd9879023"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Arcade_Minecart",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Saloon:Buildings[35,17]=Arcade_Minecart"
+      ],
+      "sourceBranchIds": [
+        "native_branch.564a969c862931db"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact",
+        "minigame.play_junimo_kart"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Arcade_Prairie",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Saloon:Buildings[33,17]=Arcade_Prairie"
+      ],
+      "sourceBranchIds": [
+        "native_branch.3b3161b7d387c48e"
+      ],
+      "mappedActionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "BananaShrine",
+      "occurrenceCount": 6,
+      "exampleMapTiles": [
+        "Maps/Island_E:Buildings[15,26]=BananaShrine",
+        "Maps/Island_E:Buildings[16,26]=BananaShrine",
+        "Maps/Island_E:Buildings[17,26]=BananaShrine",
+        "Maps/Island_Secret:Buildings[60,35]=BananaShrine",
+        "Maps/Island_Secret:Buildings[61,35]=BananaShrine",
+        "Maps/Island_Secret:Buildings[62,35]=BananaShrine"
+      ],
+      "sourceBranchIds": [
+        "native_branch.39d811dbcb613ae5",
+        "native_branch.f3db2cae9b4b97b9"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Billboard",
+      "occurrenceCount": 18,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Christmas2:Buildings[42,56]=Billboard 3",
+        "Maps/Town-Christmas:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Christmas:Buildings[42,56]=Billboard 3",
+        "Maps/Town-EggFestival2:Buildings[41,56]=Billboard 1",
+        "Maps/Town-EggFestival2:Buildings[42,56]=Billboard 3",
+        "Maps/Town-EggFestival:Buildings[41,56]=Billboard 1",
+        "Maps/Town-EggFestival:Buildings[42,56]=Billboard 3",
+        "Maps/Town-Fair2:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Fair2:Buildings[42,56]=Billboard 3",
+        "Maps/Town-Fair:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Fair:Buildings[42,56]=Billboard 3",
+        "Maps/Town-Halloween2:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Halloween2:Buildings[42,56]=Billboard 3",
+        "Maps/Town-Halloween:Buildings[41,56]=Billboard 1",
+        "Maps/Town-Halloween:Buildings[42,56]=Billboard 3"
+      ],
+      "sourceBranchIds": [
+        "native_branch.745db5411f79d824"
+      ],
+      "mappedActionIds": [
+        "quest.accept_daily"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Blacksmith",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Blacksmith:Buildings[3,14]=Blacksmith"
+      ],
+      "sourceBranchIds": [
+        "native_branch.18be2bd6faaab5ab"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "BoatTicket",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/BoatTunnel:Buildings[4,9]=BoatTicket"
+      ],
+      "sourceBranchIds": [
+        "native_branch.39d461c0cd3bc1de"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Bobbers",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/FishShop:Buildings[10,4]=Bobbers"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8f18e08cb7862543"
+      ],
+      "mappedActionIds": [
+        "player.choose_bobber"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Bookseller",
+      "occurrenceCount": 18,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[109,26]=Bookseller",
+        "Maps/Town-Christmas2:Buildings[110,26]=Bookseller",
+        "Maps/Town-Christmas:Buildings[109,26]=Bookseller",
+        "Maps/Town-Christmas:Buildings[110,26]=Bookseller",
+        "Maps/Town-EggFestival2:Buildings[109,26]=Bookseller",
+        "Maps/Town-EggFestival2:Buildings[110,26]=Bookseller",
+        "Maps/Town-EggFestival:Buildings[109,26]=Bookseller",
+        "Maps/Town-EggFestival:Buildings[110,26]=Bookseller",
+        "Maps/Town-Fair2:Buildings[109,26]=Bookseller",
+        "Maps/Town-Fair2:Buildings[110,26]=Bookseller",
+        "Maps/Town-Fair:Buildings[109,26]=Bookseller",
+        "Maps/Town-Fair:Buildings[110,26]=Bookseller",
+        "Maps/Town-Halloween2:Buildings[109,26]=Bookseller",
+        "Maps/Town-Halloween2:Buildings[110,26]=Bookseller",
+        "Maps/Town-Halloween:Buildings[109,26]=Bookseller",
+        "Maps/Town-Halloween:Buildings[110,26]=Bookseller"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8ff4337bf7143601"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.choose_dialogue_response",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "BrokenBeachBridge",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Beach-NightMarket:Buildings[58,13]=BrokenBeachBridge",
+        "Maps/Beach:Buildings[58,13]=BrokenBeachBridge"
+      ],
+      "sourceBranchIds": [
+        "native_branch.4c010fdfa3ab4d8e"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_coordinate_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "Maps/Beach token is intercepted by Beach.checkAction tile index 284 before base GameLocation.performAction"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Buy",
+      "occurrenceCount": 6,
+      "exampleMapTiles": [
+        "Maps/FishShop:Buildings[4,5]=Buy Fish",
+        "Maps/FishShop:Buildings[5,5]=Buy Fish",
+        "Maps/FishShop:Buildings[6,5]=Buy Fish",
+        "Maps/SandyHouse:Buildings[2,6]=Buy SandyShop",
+        "Maps/SeedShop:Buildings[4,18]=Buy General",
+        "Maps/SeedShop:Buildings[5,18]=Buy General"
+      ],
+      "sourceBranchIds": [
+        "native_branch.251a55d60ae6b49e"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "BuyBackpack",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/SeedShop:Buildings[7,18]=BuyBackpack"
+      ],
+      "sourceBranchIds": [
+        "native_branch.441ae4d43376645d"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "BuyQiCoins",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[12,4]=BuyQiCoins"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1649b2e58badf651"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Carpenter",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ScienceHouse:Buildings[8,19]=Carpenter"
+      ],
+      "sourceBranchIds": [
+        "native_branch.31a13be64c8ce376"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ClubCards",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[23,10]=ClubCards 1000",
+        "Maps/Club:Buildings[24,10]=ClubCards 1000",
+        "Maps/Club:Buildings[3,10]=ClubCards 100",
+        "Maps/Club:Buildings[3,7]=ClubCards"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f0f4f16306df304c"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "minigame.play_calico_jack"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ClubComputer",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[3,4]=ClubComputer",
+        "Maps/Club:Buildings[4,4]=ClubComputer"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1f3c2ee4d2e985bf"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ClubSeller",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[16,4]=ClubSeller"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2b28891332f84eba"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ClubShop",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[25,3]=ClubShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a6ae52bc816545a1"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ClubSlots",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Club:Buildings[11,10]=ClubSlots",
+        "Maps/Club:Buildings[11,8]=ClubSlots",
+        "Maps/Club:Buildings[13,8]=ClubSlots",
+        "Maps/Club:Buildings[15,8]=ClubSlots"
+      ],
+      "sourceBranchIds": [
+        "native_branch.bcf554497c6356d4"
+      ],
+      "mappedActionIds": [
+        "minigame.play_slots"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ColaMachine",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Saloon:Buildings[37,17]=ColaMachine",
+        "Maps/Saloon:Buildings[38,17]=ColaMachine"
+      ],
+      "sourceBranchIds": [
+        "native_branch.28efbd1166f9f4da"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Concessions",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/MovieTheater:Buildings[6,6]=Concessions",
+        "Maps/MovieTheater:Buildings[7,6]=Concessions",
+        "Maps/MovieTheater:Buildings[8,6]=Concessions"
+      ],
+      "sourceBranchIds": [
+        "native_branch.74fc75e1f801775e"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ConditionalDoor",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/AdventureGuild:Buildings[1,9]=ConditionalDoor PLAYER_STAT Current monstersKilled 1000"
+      ],
+      "sourceBranchIds": [
+        "native_branch.3225630bcd282eeb"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "CraneGame",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/MovieTheater:Buildings[1,8]=CraneGame",
+        "Maps/MovieTheater:Buildings[2,8]=CraneGame"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b5fa9d0510d0994b"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Crib",
+      "occurrenceCount": 9,
+      "exampleMapTiles": [
+        "Maps/FarmHouse2:Buildings[30,15]=Crib",
+        "Maps/FarmHouse2:Buildings[31,15]=Crib",
+        "Maps/FarmHouse2:Buildings[32,15]=Crib",
+        "Maps/FarmHouse2_marriage:Buildings[30,15]=Crib",
+        "Maps/FarmHouse2_marriage:Buildings[31,15]=Crib",
+        "Maps/FarmHouse2_marriage:Buildings[32,15]=Crib",
+        "Maps/FarmHouse_Crib_1:Buildings[0,3]=Crib",
+        "Maps/FarmHouse_Crib_1:Buildings[1,3]=Crib",
+        "Maps/FarmHouse_Crib_1:Buildings[2,3]=Crib"
+      ],
+      "sourceBranchIds": [
+        "native_branch.14cdc2d8f9e43b18"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "executor.social_interact",
+        "housing.renovate"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Crystal",
+      "occurrenceCount": 5,
+      "exampleMapTiles": [
+        "Maps/IslandWestCave1:Buildings[3,4]=Crystal 1",
+        "Maps/IslandWestCave1:Buildings[4,6]=Crystal 2",
+        "Maps/IslandWestCave1:Buildings[6,7]=Crystal 3",
+        "Maps/IslandWestCave1:Buildings[8,6]=Crystal 4",
+        "Maps/IslandWestCave1:Buildings[9,4]=Crystal 5"
+      ],
+      "sourceBranchIds": [
+        "native_branch.9a5fd9a459be831c"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "CrystalCaveActivate",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/IslandWestCave1:Buildings[6,2]=CrystalCaveActivate"
+      ],
+      "sourceBranchIds": [
+        "native_branch.9a5fd9a459be831c"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertCactusMan",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[28,66]=DesertCactusMan",
+        "Maps/Desert-Festival:Buildings[29,66]=DesertCactusMan"
+      ],
+      "sourceBranchIds": [
+        "native_branch.629bf51c6a51e549"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertEggShop",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[37,13]=DesertEggShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1805e4dce2d4d75f"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.interact",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertFestivalMineExplanation",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[9,6]=DesertFestivalMineExplanation"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2733f10b7817b8f7"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertFishingBoard",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[14,14]=DesertFishingBoard",
+        "Maps/Desert-Festival:Buildings[15,14]=DesertFishingBoard"
+      ],
+      "sourceBranchIds": [
+        "native_branch.83d2e8c4e363ba17"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertFood",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[8,23]=DesertFood"
+      ],
+      "sourceBranchIds": [
+        "native_branch.053ccba87e11c5fb"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertGil",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[21,8]=DesertGil"
+      ],
+      "sourceBranchIds": [
+        "native_branch.ea911530bfa7e690"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertMarlon",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[19,7]=DesertMarlon"
+      ],
+      "sourceBranchIds": [
+        "native_branch.38bea06348def826"
+      ],
+      "mappedActionIds": [
+        "quest.accept_special_order"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertRacerMan",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[44,39]=DesertRacerMan"
+      ],
+      "sourceBranchIds": [
+        "native_branch.6eb41d2835a19862"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertScholar",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[44,7]=DesertScholar"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1ecbaa0e79c7d6de"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertShadyGuy",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[1,50]=DesertShadyGuy",
+        "Maps/Desert-Festival:Buildings[2,50]=DesertShadyGuy"
+      ],
+      "sourceBranchIds": [
+        "native_branch.d78288c4bcfa9fb1"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DesertVendor",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[15,41]=DesertVendor",
+        "Maps/Desert-Festival:Buildings[26,41]=DesertVendor"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f0b8552c942425ab"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DivorceBook",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[3,5]=DivorceBook"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f6b4f33655e13a9c"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DogStatue",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Sewer:Buildings[7,20]=DogStatue",
+        "Maps/Sewer:Buildings[8,20]=DogStatue"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8d67061a596eba16"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Door",
+      "occurrenceCount": 31,
+      "exampleMapTiles": [
+        "Maps/AnimalShop:Buildings[15,12]=Door Marnie",
+        "Maps/AnimalShop:Buildings[21,13]=Door Shane",
+        "Maps/AnimalShop:Buildings[6,12]=Door Jas",
+        "Maps/Blacksmith:Buildings[4,9]=Door Clint",
+        "Maps/HaleyHouse:Buildings[16,12]=Door Emily",
+        "Maps/HaleyHouse:Buildings[5,13]=Door Haley",
+        "Maps/Hospital:Buildings[10,13]=Door",
+        "Maps/Hospital:Buildings[10,5]=Door Harvey",
+        "Maps/Hospital:Buildings[5,13]=Door",
+        "Maps/Hospital:Buildings[5,9]=Door",
+        "Maps/Hospital:Buildings[9,5]=Door Harvey",
+        "Maps/JoshHouse:Buildings[10,9]=Door Alex",
+        "Maps/JoshHouse:Buildings[5,9]=Door Evelyn George",
+        "Maps/ManorHouse:Buildings[16,9]=Door Lewis",
+        "Maps/Saloon:Buildings[11,9]=Door",
+        "Maps/Saloon:Buildings[20,9]=Door Gus"
+      ],
+      "sourceBranchIds": [
+        "native_branch.0275f7eeb1585912",
+        "native_branch.872d5011c48616a6"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DropBox",
+      "occurrenceCount": 18,
+      "exampleMapTiles": [
+        "Maps/ArchaeologyHouse:Buildings[6,9]=DropBox GuntherBox",
+        "Maps/Beach-Jellies2:Buildings[37,33]=DropBox WillyBarrel",
+        "Maps/Beach-Jellies:Buildings[37,33]=DropBox WillyBarrel",
+        "Maps/Beach-Luau2:Buildings[37,33]=DropBox WillyBarrel",
+        "Maps/Beach-Luau:Buildings[37,33]=DropBox WillyBarrel",
+        "Maps/Beach-NightMarket:Buildings[36,32]=DropBox WillyBarrel",
+        "Maps/Beach:Buildings[37,33]=DropBox WillyBarrel",
+        "Maps/JoshHouse:Buildings[3,16]=DropBox EvelynKitchen",
+        "Maps/QiNutRoom:Buildings[1,4]=DropBox QiChallengeBox",
+        "Maps/Railroad:Buildings[28,36]=DropBox Dumpster",
+        "Maps/Railroad:Buildings[29,36]=DropBox Dumpster",
+        "Maps/Saloon:Buildings[18,16]=DropBox GusFridge",
+        "Maps/ScienceHouse:Buildings[10,19]=DropBox RobinWood",
+        "Maps/ScienceHouse:Buildings[11,19]=DropBox RobinWood",
+        "Maps/SeedShop:Buildings[18,28]=DropBox PierreBox",
+        "Maps/SeedShop:Buildings[19,28]=DropBox PierreBox"
+      ],
+      "sourceBranchIds": [
+        "native_branch.d145699e0144dc11"
+      ],
+      "mappedActionIds": [
+        "executor.quest_drop_box_donate"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DwarfGrave",
+      "occurrenceCount": 8,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-Christmas:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-EggFestival2:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-EggFestival:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-Fair:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-Halloween2:Buildings[51,86]=DwarfGrave",
+        "Maps/Town-Halloween:Buildings[51,86]=DwarfGrave",
+        "Maps/Town:Buildings[51,86]=DwarfGrave"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f213f2acb6974ef4"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "DyePot",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/HaleyHouse:Buildings[17,24]=DyePot",
+        "Maps/HaleyHouse:Buildings[17,25]=DyePot"
+      ],
+      "sourceBranchIds": [
+        "native_branch.ec8ce4aaa37511d3"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "tailoring.dye_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ElliottBook",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ElliottHouse:Buildings[14,7]=ElliottBook"
+      ],
+      "sourceBranchIds": [
+        "native_branch.641797070a760d83"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ElliottPiano",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/ElliottHouse:Buildings[10,4]=ElliottPiano 4",
+        "Maps/ElliottHouse:Buildings[7,4]=ElliottPiano 1",
+        "Maps/ElliottHouse:Buildings[8,4]=ElliottPiano 2",
+        "Maps/ElliottHouse:Buildings[9,4]=ElliottPiano 3"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b567cf2c3729fb1c"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "EmilyRoomObject",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/HaleyHouse:Buildings[14,4]=EmilyRoomObject"
+      ],
+      "sourceBranchIds": [
+        "native_branch.ca05f2c322e57dc3"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Emote",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ElliottHouse:Back[13,4]=Emote Elliott 8"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native tile/Event dispatchers have no exact \u0027Emote\u0027 branch and return false; static map property is legacy or inactive metadata"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "EnterSewer",
+      "occurrenceCount": 36,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[34,95]=EnterSewer",
+        "Maps/Town-Christmas2:Buildings[34,96]=EnterSewer",
+        "Maps/Town-Christmas2:Buildings[35,95]=EnterSewer",
+        "Maps/Town-Christmas2:Buildings[35,96]=EnterSewer",
+        "Maps/Town-Christmas:Buildings[34,95]=EnterSewer",
+        "Maps/Town-Christmas:Buildings[34,96]=EnterSewer",
+        "Maps/Town-Christmas:Buildings[35,95]=EnterSewer",
+        "Maps/Town-Christmas:Buildings[35,96]=EnterSewer",
+        "Maps/Town-EggFestival2:Buildings[34,95]=EnterSewer",
+        "Maps/Town-EggFestival2:Buildings[34,96]=EnterSewer",
+        "Maps/Town-EggFestival2:Buildings[35,95]=EnterSewer",
+        "Maps/Town-EggFestival2:Buildings[35,96]=EnterSewer",
+        "Maps/Town-EggFestival:Buildings[34,95]=EnterSewer",
+        "Maps/Town-EggFestival:Buildings[34,96]=EnterSewer",
+        "Maps/Town-EggFestival:Buildings[35,95]=EnterSewer",
+        "Maps/Town-EggFestival:Buildings[35,96]=EnterSewer"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a10a4e551fad5f9b"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "EvilShrineCenter",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WitchHut:Buildings[7,5]=EvilShrineCenter"
+      ],
+      "sourceBranchIds": [
+        "native_branch.860a6588f56d373f"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "EvilShrineLeft",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WitchHut:Buildings[2,6]=EvilShrineLeft"
+      ],
+      "sourceBranchIds": [
+        "native_branch.fa50e1db2cfe0067"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "EvilShrineRight",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WitchHut:Buildings[12,6]=EvilShrineRight"
+      ],
+      "sourceBranchIds": [
+        "native_branch.d9a0f96f4ea8c51c"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "FarmObelisk",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/Island_W_Obelisk:Buildings[0,7]=FarmObelisk",
+        "Maps/Island_W_Obelisk:Buildings[1,7]=FarmObelisk",
+        "Maps/Island_W_Obelisk:Buildings[2,7]=FarmObelisk"
+      ],
+      "sourceBranchIds": [
+        "native_branch.87a35363a5991d80"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location",
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "FieldOfficeDesk",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Island_FieldOffice:Buildings[7,7]=FieldOfficeDesk",
+        "Maps/Island_FieldOffice:Buildings[8,7]=FieldOfficeDesk"
+      ],
+      "sourceBranchIds": [
+        "native_branch.87442db306a2f1c0",
+        "native_branch.dd6ed2722c9428c2"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "island.field_office_donate"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "FieldOfficeSurvey",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Island_FieldOffice:Buildings[4,3]=FieldOfficeSurvey",
+        "Maps/Island_FieldOffice:Buildings[5,3]=FieldOfficeSurvey"
+      ],
+      "sourceBranchIds": [
+        "native_branch.87442db306a2f1c0"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "island.field_office_donate"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "FishingDerbySign",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Forest_FishingDerbySign:Buildings[0,2]=FishingDerbySign",
+        "Maps/Forest_FishingDerbySign:Buildings[1,2]=FishingDerbySign"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8d19a98e88ee24fc"
+      ],
+      "mappedActionIds": [
+        "mail.process_letter"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "FixRaccoonStump",
+      "occurrenceCount": 6,
+      "exampleMapTiles": [
+        "Maps/Forest-IceFestival2:Buildings[56,6]=FixRaccoonStump",
+        "Maps/Forest-IceFestival:Buildings[56,6]=FixRaccoonStump",
+        "Maps/Forest:Buildings[29,6]=FixRaccoonStump",
+        "Maps/Forest:Buildings[42,2]=FixRaccoonStump",
+        "Maps/Forest:Buildings[56,6]=FixRaccoonStump",
+        "Maps/Forest_RaccoonStump:Buildings[3,4]=FixRaccoonStump"
+      ],
+      "sourceBranchIds": [
+        "native_branch.445ef874329aeb6f"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ForestPylon",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/WizardHouseBasement:Buildings[16,4]=ForestPylon",
+        "Maps/WizardHouseBasement:Buildings[17,4]=ForestPylon"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8ef2da68c48ba92c"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "quest.advance",
+        "story.advance_event"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Garbage",
+      "occurrenceCount": 63,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[33,8]=Garbage DesertFestival",
+        "Maps/Town-Christmas2:Buildings[108,91]=Garbage Museum",
+        "Maps/Town-Christmas2:Buildings[110,56]=Garbage JojaMart",
+        "Maps/Town-Christmas2:Buildings[13,86]=Garbage JodiAndKent",
+        "Maps/Town-Christmas2:Buildings[19,89]=Garbage EmilyAndHaley",
+        "Maps/Town-Christmas2:Buildings[47,70]=Garbage Saloon",
+        "Maps/Town-Christmas2:Buildings[52,63]=Garbage Evelyn",
+        "Maps/Town-Christmas2:Buildings[56,85]=Garbage Mayor",
+        "Maps/Town-Christmas2:Buildings[97,80]=Garbage Blacksmith",
+        "Maps/Town-Christmas:Buildings[108,91]=Garbage Museum",
+        "Maps/Town-Christmas:Buildings[110,56]=Garbage JojaMart",
+        "Maps/Town-Christmas:Buildings[13,86]=Garbage JodiAndKent",
+        "Maps/Town-Christmas:Buildings[19,89]=Garbage EmilyAndHaley",
+        "Maps/Town-Christmas:Buildings[47,70]=Garbage Saloon",
+        "Maps/Town-Christmas:Buildings[52,63]=Garbage Evelyn",
+        "Maps/Town-Christmas:Buildings[56,85]=Garbage Mayor"
+      ],
+      "sourceBranchIds": [
+        "native_branch.22e70c5e28c2e904"
+      ],
+      "mappedActionIds": [
+        "foraging.rummage_garbage"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "General",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Town-Fair:Buildings[45,56]=General Store Open 9:00 AM to 6:00 PM Closed Wednesdays]"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native tile/Event dispatchers have no exact \u0027General\u0027 branch and return false; static map property is legacy or inactive metadata"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "GoldenScythe",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Mines/77377:Buildings[29,6]=GoldenScythe",
+        "Maps/Mines/77377:Buildings[30,6]=GoldenScythe"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f602f5de3ec25d06"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "mining.acquire_golden_scythe"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Gourmand",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Island_FarmCave:Buildings[4,4]=Gourmand",
+        "Maps/Island_FarmCave:Buildings[5,4]=Gourmand"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f50f9226a7e46c2e"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "GrandpaMasteryNote",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[10,9]=GrandpaMasteryNote"
+      ],
+      "sourceBranchIds": [
+        "native_branch.72a4447a28d32733"
+      ],
+      "mappedActionIds": [
+        "mail.process_letter"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Gunther",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ArchaeologyHouse:Buildings[3,9]=Gunther"
+      ],
+      "sourceBranchIds": [
+        "native_branch.4bd2a46ae7ab1921"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "HMTGF",
+      "occurrenceCount": 9,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[100,66]=HMTGF",
+        "Maps/Town-Christmas:Buildings[100,66]=HMTGF",
+        "Maps/Town-EggFestival2:Buildings[100,66]=HMTGF",
+        "Maps/Town-EggFestival:Buildings[100,66]=HMTGF",
+        "Maps/Town-Fair2:Buildings[100,66]=HMTGF",
+        "Maps/Town-Fair:Buildings[100,66]=HMTGF",
+        "Maps/Town-Halloween2:Buildings[100,66]=HMTGF",
+        "Maps/Town-Halloween:Buildings[100,66]=HMTGF",
+        "Maps/Town:Buildings[100,66]=HMTGF"
+      ],
+      "sourceBranchIds": [
+        "native_branch.68d269998d987c2c"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "HospitalShop",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/Hospital:Buildings[5,16]=HospitalShop",
+        "Maps/Hospital:Buildings[6,16]=HospitalShop",
+        "Maps/Hospital:Buildings[7,16]=HospitalShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.e8b149d64493df0c"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "IceCreamStand",
+      "occurrenceCount": 9,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-Christmas:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-EggFestival2:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-EggFestival:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-Fair2:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-Fair:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-Halloween2:Buildings[88,92]=IceCreamStand",
+        "Maps/Town-Halloween:Buildings[88,92]=IceCreamStand",
+        "Maps/Town:Buildings[88,92]=IceCreamStand"
+      ],
+      "sourceBranchIds": [
+        "native_branch.5dd5b0f0ebbf48c7"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "JoinJoja",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/JojaMart:Buildings[21,25]=JoinJoja"
+      ],
+      "sourceBranchIds": [
+        "native_branch.60a7447a34602b86"
+      ],
+      "mappedActionIds": [
+        "executor.purchase_joja_membership",
+        "executor.purchase_joja_project"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "JojaShop",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/JojaMart:Buildings[10,24]=JojaShop",
+        "Maps/JojaMart:Buildings[10,25]=JojaShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.21fbc251629bbe8b"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Jukebox",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Saloon:Buildings[1,17]=Jukebox",
+        "Maps/Saloon:Buildings[2,17]=Jukebox"
+      ],
+      "sourceBranchIds": [
+        "native_branch.154d9e2b3f75331c"
+      ],
+      "mappedActionIds": [
+        "player.choose_jukebox_track"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "LedgerBook",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[2,5]=LedgerBook"
+      ],
+      "sourceBranchIds": [
+        "native_branch.c99a643c5e9fbd49"
+      ],
+      "mappedActionIds": [
+        "multiplayer.manage_wallet"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "LeoParrot",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/LeoTreeHouse:Buildings[1,5]=LeoParrot"
+      ],
+      "sourceBranchIds": [
+        "native_branch.83f6e6f03f4877ec"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Letter",
+      "occurrenceCount": 7,
+      "exampleMapTiles": [
+        "Maps/Blacksmith:Buildings[1,6]=Letter \u0022Blacksmith.4\u0022",
+        "Maps/HaleyHouse:Buildings[22,15]=Letter \u0022HaleyHouse.17\u0022",
+        "Maps/JoshHouse:Buildings[2,4]=Letter \u0022JoshHouse.1\u0022",
+        "Maps/ManorHouse:Buildings[18,9]=Letter \u0022ManorHouse.3\u0022",
+        "Maps/SamHouse:Buildings[20,4]=Letter \u0022SamHouse.3\u0022",
+        "Maps/SamHouse:Buildings[9,14]=Letter \u0022SamHouse.10\u0022",
+        "Maps/SeedShop:Buildings[40,8]=Letter \u0022SeedShop.9\u0022"
+      ],
+      "sourceBranchIds": [
+        "native_branch.90508aadfb292795"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "LockedDoorWarp",
+      "occurrenceCount": 154,
+      "exampleMapTiles": [
+        "Maps/Beach-Jellies2:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach-Jellies2:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Beach-Jellies:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach-Jellies:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Beach-Luau2:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach-Luau2:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Beach-Luau:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach-Luau:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Beach-NightMarket:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach-NightMarket:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Beach-NightMarket:Buildings[5,34]=LockedDoorWarp 14 15 Submarine 1700 2300",
+        "Maps/Beach-NightMarket:Buildings[58,31]=LockedDoorWarp 4 10 MermaidHouse 1700 2430",
+        "Maps/Beach:Buildings[30,33]=LockedDoorWarp 5 9 FishShop 900 1700",
+        "Maps/Beach:Buildings[49,10]=LockedDoorWarp 3 9 ElliottHouse 1000 1800 Elliott 500",
+        "Maps/Desert-Festival:Buildings[6,51]=LockedDoorWarp 4 9 SandyHouse 900 2350",
+        "Maps/Desert:Buildings[6,51]=LockedDoorWarp 4 9 SandyHouse 900 2350"
+      ],
+      "sourceBranchIds": [
+        "native_branch.01e386683c0ba8ab"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "LostAndFound",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[4,5]=LostAndFound"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2112ddd9cb89bf74"
+      ],
+      "mappedActionIds": [
+        "inventory.transfer_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "LuauSoup",
+      "occurrenceCount": 6,
+      "exampleMapTiles": [
+        "Maps/Beach-Luau2:Buildings[24,11]=LuauSoup",
+        "Maps/Beach-Luau2:Buildings[25,11]=LuauSoup",
+        "Maps/Beach-Luau2:Buildings[25,12]=LuauSoup",
+        "Maps/Beach-Luau:Buildings[35,12]=LuauSoup",
+        "Maps/Beach-Luau:Buildings[36,12]=LuauSoup",
+        "Maps/Beach-Luau:Buildings[36,13]=LuauSoup"
+      ],
+      "sourceBranchIds": [
+        "native_branch.23261fb65263b929"
+      ],
+      "mappedActionIds": [
+        "inventory.transfer_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MagicInk",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WitchHut:Buildings[4,11]=MagicInk"
+      ],
+      "sourceBranchIds": [
+        "native_branch.73ca07f60843f3fe"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Combat",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[3,6]=MasteryCave_Combat"
+      ],
+      "sourceBranchIds": [
+        "native_branch.686f3e1fd5f74822"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Farming",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[7,5]=MasteryCave_Farming"
+      ],
+      "sourceBranchIds": [
+        "native_branch.6a4f9cb713abfda6"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Fishing",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[9,5]=MasteryCave_Fishing"
+      ],
+      "sourceBranchIds": [
+        "native_branch.5f7af313411b4104"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Foraging",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[5,5]=MasteryCave_Foraging"
+      ],
+      "sourceBranchIds": [
+        "native_branch.d84627206c3d09aa"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Mining",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[11,6]=MasteryCave_Mining"
+      ],
+      "sourceBranchIds": [
+        "native_branch.988fe744514f8d04"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryCave_Pedestal",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/MasteryCave:Buildings[7,8]=MasteryCave_Pedestal"
+      ],
+      "sourceBranchIds": [
+        "native_branch.087b96bf718efc1c"
+      ],
+      "mappedActionIds": [
+        "skills.claim_mastery"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MasteryRoom",
+      "occurrenceCount": 6,
+      "exampleMapTiles": [
+        "Maps/Forest-IceFestival2:Buildings[101,71]=MasteryRoom",
+        "Maps/Forest-IceFestival2:Buildings[101,72]=MasteryRoom",
+        "Maps/Forest-IceFestival:Buildings[101,71]=MasteryRoom",
+        "Maps/Forest-IceFestival:Buildings[101,72]=MasteryRoom",
+        "Maps/Forest:Buildings[101,71]=MasteryRoom",
+        "Maps/Forest:Buildings[101,72]=MasteryRoom"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2027d2fa42a4f372"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MayorFridge",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[9,4]=MayorFridge"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a3fde7b9749f1f67"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Message",
+      "occurrenceCount": 346,
+      "exampleMapTiles": [
+        "Maps/AnimalShop:Buildings[16,4]=Message \u0022AnimalShop.6\u0022",
+        "Maps/AnimalShop:Buildings[17,4]=Message \u0022AnimalShop.7\u0022",
+        "Maps/AnimalShop:Buildings[2,4]=Message \u0022AnimalShop.1\u0022",
+        "Maps/AnimalShop:Buildings[21,6]=Message \u0022AnimalShop.13\u0022",
+        "Maps/AnimalShop:Buildings[22,5]=Message \u0022AnimalShop.10\u0022",
+        "Maps/AnimalShop:Buildings[24,14]=Message \u0022AnimalShop.18\u0022",
+        "Maps/AnimalShop:Buildings[24,4]=Message \u0022AnimalShop.8\u0022",
+        "Maps/AnimalShop:Buildings[25,14]=Message \u0022AnimalShop.19\u0022",
+        "Maps/AnimalShop:Buildings[28,5]=Message \u0022AnimalShop.11\u0022",
+        "Maps/AnimalShop:Buildings[3,4]=Message \u0022AnimalShop.2\u0022",
+        "Maps/AnimalShop:Buildings[30,13]=Message \u0022AnimalShop.17\u0022",
+        "Maps/AnimalShop:Buildings[4,9]=Message \u0022AnimalShop.16\u0022",
+        "Maps/AnimalShop:Buildings[5,4]=Message \u0022AnimalShop.3\u0022",
+        "Maps/AnimalShop:Buildings[5,7]=Message \u0022AnimalShop.14\u0022",
+        "Maps/AnimalShop:Buildings[6,4]=Message \u0022AnimalShop.4\u0022",
+        "Maps/AnimalShop:Buildings[7,4]=Message \u0022AnimalShop.5\u0022"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1e63012c8225031d",
+        "native_branch.f8cc723179a457e9"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Mine",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Mine:Buildings[23,9]=Mine",
+        "Maps/Mine:Buildings[67,9]=Mine 77377"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8453132e74b1095f"
+      ],
+      "mappedActionIds": [
+        "executor.descend_ladder",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MineElevator",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Mine:Buildings[17,3]=MineElevator"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1d36b0d204b94869"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "mining.use_elevator"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MinecartTransport",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Mine:Buildings[11,10]=MinecartTransport Default Mines",
+        "Maps/Mine:Buildings[12,10]=MinecartTransport Default Mines"
+      ],
+      "sourceBranchIds": [
+        "native_branch.15adc59ba994ab5d"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "MonsterGrave",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Backwoods_GraveSite:Buildings[34,7]=MonsterGrave"
+      ],
+      "sourceBranchIds": [
+        "native_branch.cfb4f0fda047c0ad"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "NPCMessage",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/AnimalShop:Buildings[29,14]=NPCMessage Marnie \u0022Strings\\\\StringsFromMaps:AnimalShop.20/Strings\\\\StringsFromMaps:AnimalShop.21\u0022",
+        "Maps/JoshHouse:Buildings[16,4]=NPCMessage Alex \u0022Data\\ExtraDialogue:JoshHouse_Alex_Trash/Strings\\Locations:JoshHouse_Alex_Trash\u0022",
+        "Maps/SamHouse:Buildings[16,12]=NPCMessage Sam \u0022Data\\ExtraDialogue:SamHouse_Sam_Trash/Strings\\Locations:SamHouse_Sam_Trash\u0022",
+        "Maps/SeedShop:Buildings[11,4]=NPCMessage Abigail \u0022Data\\ExtraDialogue:SeedShop_Abigail_Drawers/Strings\\Locations:SeedShop_Abigail_Drawers\u0022"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f80709ade1ee1d23"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "None",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/BusStop:Buildings[17,11]=None"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native dispatcher has an exact no-op branch with no gameplay commitment"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Notes",
+      "occurrenceCount": 25,
+      "exampleMapTiles": [
+        "Maps/ArchaeologyHouse:AlwaysFront[9,10]=Notes 3",
+        "Maps/ArchaeologyHouse:AlwaysFront[9,11]=Notes 2",
+        "Maps/ArchaeologyHouse:AlwaysFront[9,9]=Notes 18",
+        "Maps/ArchaeologyHouse:Buildings[10,4]=Notes 5",
+        "Maps/ArchaeologyHouse:Buildings[11,4]=Notes 6",
+        "Maps/ArchaeologyHouse:Buildings[11,8]=Notes 15",
+        "Maps/ArchaeologyHouse:Buildings[12,4]=Notes 7",
+        "Maps/ArchaeologyHouse:Buildings[12,8]=Notes 16",
+        "Maps/ArchaeologyHouse:Buildings[13,4]=Notes 8",
+        "Maps/ArchaeologyHouse:Buildings[13,8]=Notes 17",
+        "Maps/ArchaeologyHouse:Buildings[15,4]=Notes 9",
+        "Maps/ArchaeologyHouse:Buildings[16,4]=Notes 10",
+        "Maps/ArchaeologyHouse:Buildings[17,4]=Notes 11",
+        "Maps/ArchaeologyHouse:Buildings[19,4]=Notes 12",
+        "Maps/ArchaeologyHouse:Buildings[20,4]=Notes 13",
+        "Maps/ArchaeologyHouse:Buildings[21,4]=Notes 14"
+      ],
+      "sourceBranchIds": [
+        "native_branch.4c95d30029402fd1"
+      ],
+      "mappedActionIds": [
+        "executor.read_secret_note"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Parrot",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Island_Hut:Buildings[7,6]=Parrot"
+      ],
+      "sourceBranchIds": [
+        "native_branch.de7d2be92fcf19bb"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "PrizeMachine",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[1,5]=PrizeMachine"
+      ],
+      "sourceBranchIds": [
+        "native_branch.279ccf7a19a304a0"
+      ],
+      "mappedActionIds": [
+        "rewards.claim_prize_ticket"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "QiChallengeBoard",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/QiNutRoom:Buildings[2,3]=QiChallengeBoard",
+        "Maps/QiNutRoom:Buildings[3,3]=QiChallengeBoard"
+      ],
+      "sourceBranchIds": [
+        "native_branch.125b98177bd04530"
+      ],
+      "mappedActionIds": [
+        "quest.accept_special_order"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "QiGemShop",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/QiNutRoom:Buildings[11,3]=QiGemShop"
+      ],
+      "sourceBranchIds": [
+        "native_branch.e12d6645c38d8219"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "RailroadBox",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Railroad:Buildings[45,40]=RailroadBox"
+      ],
+      "sourceBranchIds": [
+        "native_branch.fc0d680cf44173e1"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Rearrange",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/ArchaeologyHouse:Buildings[2,9]=Rearrange"
+      ],
+      "sourceBranchIds": [
+        "native_branch.4bd2a46ae7ab1921"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "ResortSign",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Island_Resort:Buildings[14,7]=ResortSign"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2596a8023ce15a5f"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Saloon",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/Saloon:Buildings[10,19]=Saloon",
+        "Maps/Saloon:Buildings[11,19]=Saloon",
+        "Maps/Saloon:Buildings[14,19]=Saloon"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b941289d3b021bc6"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "SandDragon",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert:Buildings[10,36]=SandDragon",
+        "Maps/Desert:Buildings[9,36]=SandDragon"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2bff0fbc4a393324"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Shop",
+      "occurrenceCount": 27,
+      "exampleMapTiles": [
+        "Maps/Beach-Jellies2:Buildings[26,6]=Shop Festival_DanceOfTheMoonlightJellies_Pierre",
+        "Maps/Beach-Jellies2:Buildings[27,6]=Shop Festival_DanceOfTheMoonlightJellies_Pierre",
+        "Maps/Beach-Jellies:Buildings[10,6]=Shop Festival_DanceOfTheMoonlightJellies_Pierre",
+        "Maps/Beach-Jellies:Buildings[11,6]=Shop Festival_DanceOfTheMoonlightJellies_Pierre",
+        "Maps/Beach-Luau2:Buildings[13,6]=Shop Festival_Luau_Pierre",
+        "Maps/Beach-Luau2:Buildings[14,6]=Shop Festival_Luau_Pierre",
+        "Maps/Beach-Luau:Buildings[43,7]=Shop Festival_Luau_Pierre",
+        "Maps/Forest-FlowerFestival2:Buildings[28,37]=Shop Festival_FlowerDance_Pierre",
+        "Maps/Forest-FlowerFestival2:Buildings[29,37]=Shop Festival_FlowerDance_Pierre",
+        "Maps/Forest-FlowerFestival:Buildings[28,37]=Shop Festival_FlowerDance_Pierre",
+        "Maps/Forest-FlowerFestival:Buildings[29,37]=Shop Festival_FlowerDance_Pierre",
+        "Maps/Forest-IceFestival2:Buildings[62,26]=Shop Festival_FestivalOfIce_TravelingMerchant",
+        "Maps/Forest-IceFestival2:Buildings[63,26]=Shop Festival_FestivalOfIce_TravelingMerchant",
+        "Maps/Forest-IceFestival:Buildings[55,31]=Shop Festival_FestivalOfIce_TravelingMerchant",
+        "Maps/Forest-IceFestival:Buildings[56,31]=Shop Festival_FestivalOfIce_TravelingMerchant",
+        "Maps/Town-Christmas2:Buildings[16,53]=Shop Festival_FeastOfTheWinterStar_Pierre"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1a76a7fd7ab7a411"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.interact",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "SkullDoor",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/SkullCave:Buildings[3,3]=SkullDoor"
+      ],
+      "sourceBranchIds": [
+        "native_branch.72a3c6374129fc9c"
+      ],
+      "mappedActionIds": [
+        "executor.descend_ladder",
+        "executor.interact",
+        "exploration.visit_location",
+        "mining.obtain_skull_key"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "SpecialWaterDroppable",
+      "occurrenceCount": 5,
+      "exampleMapTiles": [
+        "Maps/Caldera:Buildings[28,28]=SpecialWaterDroppable",
+        "Maps/Mines/20:Buildings[27,12]=SpecialWaterDroppable",
+        "Maps/Mines/20:Buildings[27,13]=SpecialWaterDroppable",
+        "Maps/Mines/20:Buildings[27,14]=SpecialWaterDroppable",
+        "Maps/Mines/20:Buildings[27,15]=SpecialWaterDroppable"
+      ],
+      "sourceBranchIds": [
+        "native_branch.ba4ca5148df1351b"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "SquidFestBooth",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Beach_SquidFest:Buildings[3,4]=SquidFestBooth",
+        "Maps/Beach_SquidFest:Buildings[4,4]=SquidFestBooth",
+        "Maps/Beach_SquidFest:Buildings[5,4]=SquidFestBooth",
+        "Maps/Beach_SquidFest:Buildings[6,4]=SquidFestBooth"
+      ],
+      "sourceBranchIds": [
+        "native_branch.838bc9254bae85e0"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Starpoint",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/ManorHouse:Buildings[23,9]=Starpoint 2",
+        "Maps/Saloon:Buildings[28,7]=Starpoint 3",
+        "Maps/SamHouse:Buildings[12,21]=Starpoint 4"
+      ],
+      "sourceBranchIds": [
+        "native_branch.3fe0e5031b467872"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "SummitBoulder",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Railroad:Buildings[24,35]=SummitBoulder",
+        "Maps/Railroad:Buildings[25,35]=SummitBoulder"
+      ],
+      "sourceBranchIds": [
+        "native_branch.7189ce8a094b975f"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Tailoring",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/HaleyHouse:Buildings[12,23]=Tailoring",
+        "Maps/HaleyHouse:Buildings[13,23]=Tailoring"
+      ],
+      "sourceBranchIds": [
+        "native_branch.bf98ff2d09db8aa8"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "tailoring.sew_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Theater_BoxOffice",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Town-Theater:Buildings[98,51]=Theater_BoxOffice",
+        "Maps/Town-TheaterCC:Buildings[55,20]=Theater_BoxOffice"
+      ],
+      "sourceBranchIds": [
+        "native_branch.0f5607691308d4f8"
+      ],
+      "mappedActionIds": [
+        "executor.buy_shop_item",
+        "executor.interact",
+        "executor.sell_shop_item"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Theater_Doors",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/MovieTheater:Buildings[13,3]=Theater_Doors",
+        "Maps/MovieTheater:Buildings[14,3]=Theater_Doors"
+      ],
+      "sourceBranchIds": [
+        "native_branch.3e7fda6fc3642f0c"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "social.watch_movie"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Theater_Entrance",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Town-Theater:Buildings[95,50]=Theater_Entrance",
+        "Maps/Town-Theater:Buildings[96,50]=Theater_Entrance",
+        "Maps/Town-TheaterCC:Buildings[52,19]=Theater_Entrance",
+        "Maps/Town-TheaterCC:Buildings[53,19]=Theater_Entrance"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b7e81f0e13543a73"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response",
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Theater_Poster",
+      "occurrenceCount": 5,
+      "exampleMapTiles": [
+        "Maps/MovieTheater:Buildings[17,6]=Theater_Poster",
+        "Maps/Town-Theater:Buildings[91,50]=Theater_Poster",
+        "Maps/Town-Theater:Buildings[92,50]=Theater_Poster",
+        "Maps/Town-TheaterCC:Buildings[48,19]=Theater_Poster",
+        "Maps/Town-TheaterCC:Buildings[49,19]=Theater_Poster"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2b66018fde92b70e"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Theater_PosterComingSoon",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Town-Theater:Buildings[93,50]=Theater_PosterComingSoon",
+        "Maps/Town-Theater:Buildings[94,50]=Theater_PosterComingSoon",
+        "Maps/Town-TheaterCC:Buildings[50,19]=Theater_PosterComingSoon",
+        "Maps/Town-TheaterCC:Buildings[51,19]=Theater_PosterComingSoon"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f3b8a0ccd1fb83f4"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "TownMailbox",
+      "occurrenceCount": 25,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[49,63]=TownMailbox 2",
+        "Maps/Town-Christmas2:Buildings[8,88]=TownMailbox 1",
+        "Maps/Town-Christmas2:Buildings[94,92]=TownMailbox 3",
+        "Maps/Town-Christmas:Buildings[49,63]=TownMailbox 2",
+        "Maps/Town-Christmas:Buildings[8,88]=TownMailbox 1",
+        "Maps/Town-Christmas:Buildings[94,92]=TownMailbox 3",
+        "Maps/Town-EggFestival2:Buildings[49,63]=TownMailbox 2",
+        "Maps/Town-EggFestival2:Buildings[8,88]=TownMailbox 1",
+        "Maps/Town-EggFestival2:Buildings[94,92]=TownMailbox 3",
+        "Maps/Town-EggFestival:Buildings[49,63]=TownMailbox 2",
+        "Maps/Town-EggFestival:Buildings[8,88]=TownMailbox 1",
+        "Maps/Town-EggFestival:Buildings[94,92]=TownMailbox 3",
+        "Maps/Town-Fair2:Buildings[49,63]=TownMailbox 2",
+        "Maps/Town-Fair2:Buildings[8,88]=TownMailbox 1",
+        "Maps/Town-Fair2:Buildings[94,92]=TownMailbox 3",
+        "Maps/Town-Fair:Buildings[94,92]=TownMailbox 3"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native tile/Event dispatchers have no exact \u0027TownMailbox\u0027 branch and return false; static map property is legacy or inactive metadata"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "TroutDerbyBooth",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Forest_FishingDerby:Buildings[6,4]=TroutDerbyBooth",
+        "Maps/Forest_FishingDerby:Buildings[7,4]=TroutDerbyBooth",
+        "Maps/Forest_FishingDerby:Buildings[8,4]=TroutDerbyBooth",
+        "Maps/Forest_FishingDerby:Buildings[9,4]=TroutDerbyBooth"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1935944dbcfef6d4"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "TunnelSafe",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Tunnel:Buildings[17,5]=TunnelSafe",
+        "Maps/Tunnel:Buildings[17,6]=TunnelSafe"
+      ],
+      "sourceBranchIds": [
+        "native_branch.93a0b11a4a116710"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Warp",
+      "occurrenceCount": 5,
+      "exampleMapTiles": [
+        "Maps/Island_House_Restored:Buildings[3,6]=Warp 14 17 IslandFarmHouse",
+        "Maps/LewisBasement:Buildings[4,3]=Warp 22 9 ManorHouse ",
+        "Maps/Railroad:Buildings[10,56]=Warp 5 9 BathHouse_Entry",
+        "Maps/WitchSwamp:Buildings[20,20]=Warp 7 15 WitchHut",
+        "Maps/WizardHouseBasement:Buildings[4,3]=Warp 4 5 WizardHouse "
+      ],
+      "sourceBranchIds": [
+        "native_branch.abc4ff8f96750644"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WarpBoatTunnel",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/FishShop:Buildings[4,3]=WarpBoatTunnel"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a3cd7124de52bced"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WarpCommunityCenter",
+      "occurrenceCount": 18,
+      "exampleMapTiles": [
+        "Maps/Town-Christmas2:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Christmas2:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-Christmas:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Christmas:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-EggFestival2:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-EggFestival2:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-EggFestival:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-EggFestival:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-Fair2:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Fair2:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-Fair:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Fair:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-Halloween2:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Halloween2:Buildings[53,19]=WarpCommunityCenter",
+        "Maps/Town-Halloween:Buildings[52,19]=WarpCommunityCenter",
+        "Maps/Town-Halloween:Buildings[53,19]=WarpCommunityCenter"
+      ],
+      "sourceBranchIds": [
+        "native_branch.5344da394dbd5644"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WarpMensLocker",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/BathHouse_Entry:Buildings[7,3]=WarpMensLocker 3 27 BathHouse_MensLocker"
+      ],
+      "sourceBranchIds": [
+        "native_branch.1c98c64625e8ad02"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WarpWomensLocker",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/BathHouse_Entry:Buildings[2,3]=WarpWomensLocker 13 27 BathHouse_WomensLocker"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b4cdab82f1cbbc67"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Warp_Sunroom_Door",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/SeedShop:Buildings[32,3]=Warp_Sunroom_Door"
+      ],
+      "sourceBranchIds": [
+        "native_branch.93104c03af9d4993"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WitchCaveBlock",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Railroad:Buildings[54,35]=WitchCaveBlock"
+      ],
+      "sourceBranchIds": [
+        "native_branch.cae6cb3f238dd9c5"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_coordinate_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "Maps/Railroad token tile is intercepted by Railroad.checkAction tile index 287 before base GameLocation.performAction"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WizardBook",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WizardHouse:Buildings[2,13]=WizardBook"
+      ],
+      "sourceBranchIds": [
+        "native_branch.128c34416422c019"
+      ],
+      "mappedActionIds": [
+        "buildings.construct"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WizardHatch",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WizardHouse:Buildings[4,4]=WizardHatch"
+      ],
+      "sourceBranchIds": [
+        "native_branch.9bb507565521b0d8"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "WizardShrine",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/WizardHouseBasement:Buildings[12,4]=WizardShrine"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a52a6a6c58cbc57f"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "Yoba",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/SeedShop:Buildings[36,17]=Yoba",
+        "Maps/SeedShop:Buildings[37,17]=Yoba",
+        "Maps/SeedShop:Buildings[38,17]=Yoba"
+      ],
+      "sourceBranchIds": [
+        "native_branch.8e4572f8c99e1f25"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "kitchen",
+      "occurrenceCount": 20,
+      "exampleMapTiles": [
+        "Maps/FarmHouse1:Buildings[2,4]=kitchen",
+        "Maps/FarmHouse1:Buildings[3,4]=kitchen",
+        "Maps/FarmHouse1:Buildings[4,4]=kitchen",
+        "Maps/FarmHouse1:Buildings[5,4]=kitchen",
+        "Maps/FarmHouse1_marriage:Buildings[2,4]=kitchen",
+        "Maps/FarmHouse1_marriage:Buildings[3,4]=kitchen",
+        "Maps/FarmHouse1_marriage:Buildings[4,4]=kitchen",
+        "Maps/FarmHouse1_marriage:Buildings[5,4]=kitchen",
+        "Maps/FarmHouse2:Buildings[19,23]=kitchen",
+        "Maps/FarmHouse2:Buildings[20,23]=kitchen",
+        "Maps/FarmHouse2:Buildings[21,23]=kitchen",
+        "Maps/FarmHouse2:Buildings[22,23]=kitchen",
+        "Maps/FarmHouse2:Buildings[23,23]=kitchen",
+        "Maps/FarmHouse2_marriage:Buildings[19,23]=kitchen",
+        "Maps/FarmHouse2_marriage:Buildings[20,23]=kitchen",
+        "Maps/FarmHouse2_marriage:Buildings[21,23]=kitchen"
+      ],
+      "sourceBranchIds": [
+        "native_branch.b1d58a066e514831"
+      ],
+      "mappedActionIds": [
+        "crafting.cook_recipe"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "none",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Buildings[36,5]=none",
+        "Maps/SkullCave:Buildings[12,4]=none",
+        "Maps/SkullCaveAltar:Buildings[2,3]=none",
+        "Maps/Town-Halloween2:Buildings[61,13]=none"
+      ],
+      "sourceBranchIds": [
+        "native_branch.055a2dc322a19529"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "Action",
+      "actionToken": "playSound",
+      "occurrenceCount": 5,
+      "exampleMapTiles": [
+        "Maps/SamHouse:Buildings[15,17]=playSound drumkit0",
+        "Maps/SamHouse:Buildings[16,17]=playSound drumkit1",
+        "Maps/SamHouse:Buildings[18,17]=playSound toyPiano",
+        "Maps/SamHouse:Buildings[19,17]=playSound crystal",
+        "Maps/SebastianRoom:Buildings[8,5]=playSound mouseClick"
+      ],
+      "sourceBranchIds": [
+        "native_branch.ca2f61a362013096"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "ChangeIntoSwimsuit",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/BathHouse_MensLocker:Back[15,19]=ChangeIntoSwimsuit",
+        "Maps/BathHouse_WomensLocker:Back[2,17]=ChangeIntoSwimsuit"
+      ],
+      "sourceBranchIds": [
+        "native_branch.eda4cae01f9eeb1e"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "ChangeOutOfSwimsuit",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/BathHouse_MensLocker:Back[15,18]=ChangeOutOfSwimsuit",
+        "Maps/BathHouse_WomensLocker:Back[2,16]=ChangeOutOfSwimsuit"
+      ],
+      "sourceBranchIds": [
+        "native_branch.0aab7f7a6febfcba"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "ConditionalDoor",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/AdventureGuild:Back[1,9]=ConditionalDoor PLAYER_STAT Current monstersKilled 1000"
+      ],
+      "sourceBranchIds": [
+        "native_branch.caaee4a9432a8149"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "DesertBus",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Back[18,27]=DesertBus",
+        "Maps/Desert:Back[18,27]=DesertBus"
+      ],
+      "sourceBranchIds": [
+        "native_branch.d615f0549f7f7a3f"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "DesertMakeover",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Back[26,51]=DesertMakeover"
+      ],
+      "sourceBranchIds": [
+        "native_branch.2174ba5ecc136e79",
+        "native_branch.d29dbaa1bb7ec214"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "player.customize",
+        "story.advance_event"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "FaceDirection",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/ElliottHouse:Back[12,4]=FaceDirection Elliott 1",
+        "Maps/ElliottHouse:Back[7,4]=FaceDirection Elliott 2"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native touch branch only changes an NPC orientation as a map-authored side effect"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "LeaveIsland",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Island_S:Back[19,43]=LeaveIsland"
+      ],
+      "sourceBranchIds": [
+        "native_branch.4482fe504b328662"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "MagicWarp",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/WitchHut:Back[11,11]=MagicWarp WizardHouseBasement 2 5",
+        "Maps/WitchSwamp:Back[20,42]=MagicWarp WitchWarpCave 4 5",
+        "Maps/WitchWarpCave:Back[4,5]=MagicWarp WitchSwamp 20 42",
+        "Maps/WizardHouseBasement:Back[2,5]=MagicWarp WitchHut 11 11 henchmanGone"
+      ],
+      "sourceBranchIds": [
+        "native_branch.a2db4ab88f2551bf"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "MagicalSeal",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Sewer:Back[3,19]=MagicalSeal"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f69abf00f5ee1bbc"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "MakeoverBox",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Back[26,50]=MakeoverBox"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native touch dispatcher has no exact \u0027MakeoverBox\u0027 branch and falls through without a gameplay commitment"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "MensLocker",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/BathHouse_Pool:Back[20,2]=MensLocker",
+        "Maps/BathHouse_Pool:Back[21,2]=MensLocker",
+        "Maps/BathHouse_Pool:Back[22,2]=MensLocker"
+      ],
+      "sourceBranchIds": [
+        "native_branch.81864d15fc00f268"
+      ],
+      "mappedActionIds": [
+        "executor.interact"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "PoolEntrance",
+      "occurrenceCount": 4,
+      "exampleMapTiles": [
+        "Maps/BathHouse_Pool:Back[20,27]=PoolEntrance",
+        "Maps/BathHouse_Pool:Back[21,9]=PoolEntrance",
+        "Maps/BathHouse_Pool:Back[6,9]=PoolEntrance",
+        "Maps/BathHouse_Pool:Back[7,27]=PoolEntrance"
+      ],
+      "sourceBranchIds": [
+        "native_branch.cae03cb0b7885cf2"
+      ],
+      "mappedActionIds": [
+        "story.advance_event"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "Sleep",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/IslandFarmHouse:Back[22,8]=Sleep"
+      ],
+      "sourceBranchIds": [
+        "native_branch.7d6f4239fa11b9fe"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "Sleep2",
+      "occurrenceCount": 1,
+      "exampleMapTiles": [
+        "Maps/IslandFarmHouse:Back[23,8]=Sleep2"
+      ],
+      "sourceBranchIds": [],
+      "mappedActionIds": [],
+      "sourceBindingStatus": "classified_native_noop_static_token",
+      "semanticCoverageStatus": "classified_non_semantic",
+      "evidenceBasis": "locked native touch dispatcher has no exact \u0027Sleep2\u0027 branch and falls through without a gameplay commitment"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "Theater_Exit",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/MovieTheater:Back[13,16]=Theater_Exit 95 51",
+        "Maps/MovieTheater:Back[14,16]=Theater_Exit 96 51"
+      ],
+      "sourceBranchIds": [
+        "native_branch.359c88341e75011a",
+        "native_branch.a2b968e1599d39d5"
+      ],
+      "mappedActionIds": [
+        "executor.choose_dialogue_response"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "Warp",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/FarmHouse_Cellar:Back[19,35]=Warp Cellar 3 2",
+        "Maps/FarmHouse_Cellar:Back[20,35]=Warp Cellar 4 2"
+      ],
+      "sourceBranchIds": [
+        "native_branch.59a4190f894f19e2"
+      ],
+      "mappedActionIds": [
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "WomensLocker",
+      "occurrenceCount": 3,
+      "exampleMapTiles": [
+        "Maps/BathHouse_Pool:Back[5,2]=WomensLocker",
+        "Maps/BathHouse_Pool:Back[6,2]=WomensLocker",
+        "Maps/BathHouse_Pool:Back[7,2]=WomensLocker"
+      ],
+      "sourceBranchIds": [
+        "native_branch.3ece6fda7e53373c"
+      ],
+      "mappedActionIds": [
+        "executor.interact",
+        "exploration.visit_location"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    },
+    {
+      "propertyName": "TouchAction",
+      "actionToken": "legendarySword",
+      "occurrenceCount": 2,
+      "exampleMapTiles": [
+        "Maps/Desert-Festival:Back[37,11]=legendarySword",
+        "Maps/Desert:Back[37,11]=legendarySword"
+      ],
+      "sourceBranchIds": [
+        "native_branch.f7f8eb5d70f01865"
+      ],
+      "mappedActionIds": [
+        "quest.advance"
+      ],
+      "sourceBindingStatus": "matched_native_branch",
+      "semanticCoverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "effective runtime-projected map property joined by exact first action token to locked native branch string evidence"
+    }
+  ]
+}

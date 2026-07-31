@@ -29,6 +29,21 @@ internal static class Program
             var issues = validator.Validate(manifest).ToList();
             var coverage = validator.BuildCoverage(manifest);
             var runtimeSemanticSummary = validator.LoadRuntimeSemantics(manifest);
+            using var payloads = new DisposablePayloadMap(validator.LoadPayloads(manifest));
+            var mapTopology = new MapTopologyIndexBuilder().Build(payloads.Items);
+            foreach (var issue in mapTopology.Issues.Where(row => row.Severity == "blocking"))
+                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
+            Write(outputRoot, "map-topology-index.json", new
+            {
+                schema_version = "stardewai.map_topology_index.v1",
+                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                authority = "runtime-projected xTile maps interpreted with exact Linux 1.6.15 GameLocation.updateWarps, doesTileHaveProperty, and isTilePassable rules",
+                semantic_limit = "Static base-map topology excludes dynamic buildings, furniture, placed objects, characters, events, map mutations, and location-specific collision overrides.",
+                summary = mapTopology.Summary,
+                issues = mapTopology.Issues,
+                non_map_assets = mapTopology.NonMapAssets,
+                maps = mapTopology.Maps
+            });
 
             Write(outputRoot, "asset-coverage.json", new
             {
@@ -149,15 +164,36 @@ internal static class Program
             }).ToArray();
 
             var nativeActionSurfaces = new NativeActionSurfaceCatalogBuilder().Build(decompileRoot);
+            var nativeActionBranches = new NativeActionBranchCatalogBuilder().Build(
+                decompileRoot,
+                nativeActionSurfaces);
+            var nativeMapInteractions = new NativeMapInteractionCoverageBuilder().Build(
+                mapTopology,
+                nativeActionBranches);
+            var branchCoveredSurfaceIds = nativeActionBranches.Branches
+                .Select(row => row.SurfaceId)
+                .ToHashSet(StringComparer.Ordinal);
             var blockingNativeSurfaces = nativeActionSurfaces.Surfaces
                 .Where(row => row.SemanticCoverageStatus is
                     "semantic_action_missing_registration" or
-                    "requires_branch_decompilation" or
-                    "unclassified")
+                    "unclassified" ||
+                    row.SemanticCoverageStatus == "requires_branch_decompilation" &&
+                    !branchCoveredSurfaceIds.Contains(row.SurfaceId))
+                .ToArray();
+            var blockingNativeBranches = nativeActionBranches.Branches
+                .Where(row => row.CoverageStatus is
+                    "semantic_action_missing_registration" or
+                    "requires_semantic_review")
+                .ToArray();
+            var blockingNativeMapInteractions = nativeMapInteractions.Interactions
+                .Where(row => row.SemanticCoverageStatus == "requires_semantic_review")
                 .ToArray();
             var missingSemanticActionIds = nativeActionSurfaces.Surfaces
                 .Where(row => row.SemanticCoverageStatus == "semantic_action_missing_registration")
                 .SelectMany(row => row.MappedOptionIds)
+                .Concat(nativeActionBranches.Branches
+                    .Where(row => row.CoverageStatus == "semantic_action_missing_registration")
+                    .SelectMany(row => row.MappedActionIds))
                 .Where(id => !OptionCapabilityRegistrySource.TryGet(id, out _))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(id => id, StringComparer.Ordinal)
@@ -165,6 +201,9 @@ internal static class Program
             var cataloguedBlockedActionIds = nativeActionSurfaces.Surfaces
                 .Where(row => row.SemanticCoverageStatus == "mapped_to_catalogued_blocked_action")
                 .SelectMany(row => row.MappedOptionIds)
+                .Concat(nativeActionBranches.Branches
+                    .Where(row => row.CoverageStatus == "mapped_to_semantic_action")
+                    .SelectMany(row => row.MappedActionIds))
                 .Where(id => PendingSemanticActionCatalog.TryGet(id, out _))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(id => id, StringComparer.Ordinal)
@@ -189,6 +228,30 @@ internal static class Program
                     "native_action_surfaces_not_semantically_closed",
                     "native-action-surface-inventory",
                     $"blocking={blockingNativeSurfaces.Length};missing_actions={missingSemanticActionIds.Length};total={nativeActionSurfaces.Surfaces.Count}"));
+            }
+            if (nativeActionBranches.SourceStatus != "native_branch_syntax_scanned")
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_action_branch_source_not_scanned",
+                    "native-action-branch-inventory",
+                    $"{nativeActionBranches.SourceStatus};missing_surfaces={nativeActionBranches.MissingSurfaceIds.Count}"));
+            }
+            else if (blockingNativeBranches.Length > 0)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_action_branches_not_semantically_closed",
+                    "native-action-branch-inventory",
+                    $"blocking={blockingNativeBranches.Length};missing_actions={missingSemanticActionIds.Length};total={nativeActionBranches.Branches.Count}"));
+            }
+            if (blockingNativeMapInteractions.Length > 0)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_map_interactions_not_semantically_closed",
+                    "native-map-interaction-coverage",
+                    $"blocking={blockingNativeMapInteractions.Length};total={nativeMapInteractions.Interactions.Count}"));
             }
             if (pendingCatalogWithoutSurface.Length > 0)
             {
@@ -220,9 +283,49 @@ internal static class Program
                     row.SemanticCoverageStatus == "classified_non_semantic_surface"),
                 branch_decompilation_required_count = nativeActionSurfaces.Surfaces.Count(row =>
                     row.SemanticCoverageStatus == "requires_branch_decompilation"),
+                branch_inventory_generated_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "requires_branch_decompilation" &&
+                    branchCoveredSurfaceIds.Contains(row.SurfaceId)),
+                branch_inventory_missing_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "requires_branch_decompilation" &&
+                    !branchCoveredSurfaceIds.Contains(row.SurfaceId)),
                 unclassified_count = nativeActionSurfaces.Surfaces.Count(row =>
                     row.SemanticCoverageStatus == "unclassified"),
                 surfaces = nativeActionSurfaces.Surfaces
+            });
+            Write(outputRoot, "native-action-branch-inventory.json", new
+            {
+                schema_version = "stardewai.native_action_branch_inventory.v1",
+                authority = "locked Stardew Valley 1.6.15 decompile parsed as C# syntax; branch evidence is not an implementation claim",
+                source_status = nativeActionBranches.SourceStatus,
+                broad_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "requires_branch_decompilation"),
+                covered_surface_count = branchCoveredSurfaceIds.Count,
+                missing_surface_count = nativeActionBranches.MissingSurfaceIds.Count,
+                missing_surface_ids = nativeActionBranches.MissingSurfaceIds,
+                branch_count = nativeActionBranches.Branches.Count,
+                mapped_branch_count = nativeActionBranches.Branches.Count(row =>
+                    row.CoverageStatus == "mapped_to_semantic_action"),
+                classified_non_semantic_branch_count = nativeActionBranches.Branches.Count(row =>
+                    row.CoverageStatus == "classified_non_semantic_branch"),
+                semantic_review_required_count = nativeActionBranches.Branches.Count(row =>
+                    row.CoverageStatus == "requires_semantic_review"),
+                missing_registration_branch_count = nativeActionBranches.Branches.Count(row =>
+                    row.CoverageStatus == "semantic_action_missing_registration"),
+                branches = nativeActionBranches.Branches
+            });
+            Write(outputRoot, "native-map-interaction-coverage.json", new
+            {
+                schema_version = "stardewai.native_map_interaction_coverage.v1",
+                authority = "runtime-projected effective Action/TouchAction properties joined to locked native 1.6.15 branch evidence",
+                interaction_token_count = nativeMapInteractions.Interactions.Count,
+                occurrence_count = nativeMapInteractions.Interactions.Sum(row => row.OccurrenceCount),
+                mapped_token_count = nativeMapInteractions.Interactions.Count(row =>
+                    row.SemanticCoverageStatus == "mapped_to_semantic_action"),
+                classified_non_semantic_token_count = nativeMapInteractions.Interactions.Count(row =>
+                    row.SemanticCoverageStatus == "classified_non_semantic"),
+                semantic_review_required_count = blockingNativeMapInteractions.Length,
+                interactions = nativeMapInteractions.Interactions
             });
 
             var semanticActionRows = optionRows.Select(row =>
@@ -251,7 +354,9 @@ internal static class Program
             Write(outputRoot, "semantic-action-catalog.json", new
             {
                 schema_version = "stardewai.semantic_action_catalog.v1",
-                denominator_status = blockingNativeSurfaces.Length == 0
+                denominator_status = blockingNativeSurfaces.Length == 0 &&
+                    blockingNativeBranches.Length == 0 &&
+                    blockingNativeMapInteractions.Length == 0
                     ? "provisional_native_surface_denominator_closed"
                     : "provisional_native_surface_denominator_open",
                 action_count = semanticActionRows.Length,
@@ -333,7 +438,9 @@ internal static class Program
             {
                 schema_version = "stardewai.action_progress_dashboard.v1",
                 generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
-                semantic_denominator_status = blockingNativeSurfaces.Length == 0
+                semantic_denominator_status = blockingNativeSurfaces.Length == 0 &&
+                    blockingNativeBranches.Length == 0 &&
+                    blockingNativeMapInteractions.Length == 0
                     ? "native_surfaces_classified_semantic_denominator_pending_freeze"
                     : "not_frozen_native_surfaces_or_registrations_pending",
                 registered_option_count = optionRows.Length,
@@ -345,6 +452,10 @@ internal static class Program
                     row.OptionId.StartsWith("executor.", StringComparison.Ordinal)),
                 native_surface_count = nativeActionSurfaces.Surfaces.Count,
                 native_surface_blocking_count = blockingNativeSurfaces.Length,
+                native_branch_count = nativeActionBranches.Branches.Count,
+                native_branch_blocking_count = blockingNativeBranches.Length,
+                native_map_interaction_token_count = nativeMapInteractions.Interactions.Count,
+                native_map_interaction_blocking_count = blockingNativeMapInteractions.Length,
                 missing_semantic_action_registration_count = missingSemanticActionIds.Length,
                 compiler_bound_count = implementationRows.Count(row => row.CompilerBinding != "unbound"),
                 harness_dispatch_count = optionRows.Count(row => row.HarnessDispatchSupported),
@@ -607,7 +718,6 @@ internal static class Program
                 daily_candidate_kinds = dailyCandidateRows
             });
 
-            using var payloads = new DisposablePayloadMap(validator.LoadPayloads(manifest));
             var graph = new RuntimeDependencyGraphBuilder().Build(payloads.Items);
             Write(outputRoot, "runtime-dependency-graph.json", graph);
             var runtimeSemanticsPath = Path.Combine(exportRoot, manifest.RuntimeSemanticsFile!);
@@ -629,20 +739,6 @@ internal static class Program
                 trigger_actions = progressionDependencies.TriggerActions,
                 events = progressionDependencies.Events,
                 conditions = progressionDependencies.Conditions
-            });
-            var mapTopology = new MapTopologyIndexBuilder().Build(payloads.Items);
-            foreach (var issue in mapTopology.Issues.Where(row => row.Severity == "blocking"))
-                issues.Add(new("blocking", issue.Code, issue.Subject, issue.Detail));
-            Write(outputRoot, "map-topology-index.json", new
-            {
-                schema_version = "stardewai.map_topology_index.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
-                authority = "runtime-projected xTile maps interpreted with exact Linux 1.6.15 GameLocation.updateWarps, doesTileHaveProperty, and isTilePassable rules",
-                semantic_limit = "Static base-map topology excludes dynamic buildings, furniture, placed objects, characters, events, map mutations, and location-specific collision overrides.",
-                summary = mapTopology.Summary,
-                issues = mapTopology.Issues,
-                non_map_assets = mapTopology.NonMapAssets,
-                maps = mapTopology.Maps
             });
             var accessConstraints = new AccessConstraintIndexBuilder().Build(
                 payloads.Items,

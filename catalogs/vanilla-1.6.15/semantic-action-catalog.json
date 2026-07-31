@@ -1,9 +1,9 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
-  "denominator_status": "provisional_native_surface_denominator_open",
-  "action_count": 138,
+  "denominator_status": "provisional_native_surface_denominator_closed",
+  "action_count": 165,
   "registered_option_spec_count": 96,
-  "catalogued_blocked_count": 42,
+  "catalogued_blocked_count": 69,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -73,6 +73,17 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "crafting.cook_recipe",
+      "domain": "crafting",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.crafting_processing",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "GameLocation"
+      ]
+    },
+    {
       "action_id": "crafting.forge_item",
       "domain": "crafting",
       "semantic_kind": "composite",
@@ -109,6 +120,28 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.apply_fertilizer",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.tool_harvest",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.apply_tree_treatment",
+      "domain": "foraging",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.tool_harvest",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
     },
     {
       "action_id": "executor.break_container",
@@ -507,6 +540,61 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.place_cookout_kit",
+      "domain": "crafting",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.place_crab_pot",
+      "domain": "fishing",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.place_fence",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.place_flooring",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.place_furniture",
+      "domain": "housing",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
       "action_id": "executor.place_machine",
       "domain": "farm",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -514,6 +602,17 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.place_sign",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
     },
     {
       "action_id": "executor.place_staircase",
@@ -532,6 +631,28 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.place_tent",
+      "domain": "recovery",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.plant_grass",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.placement_layout",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
     },
     {
       "action_id": "executor.plant_seed",
@@ -595,6 +716,17 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.read_secret_note",
+      "domain": "inventory",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
     },
     {
       "action_id": "executor.remove_machine",
@@ -698,6 +830,39 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.use_firework",
+      "domain": "inventory",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.use_horse_flute",
+      "domain": "movement",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.movement_navigation",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.use_monster_musk",
+      "domain": "combat",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
       "action_id": "executor.use_raft",
       "domain": "movement",
       "semantic_kind": "primitive",
@@ -709,6 +874,17 @@
       ]
     },
     {
+      "action_id": "executor.use_rain_totem",
+      "domain": "farming",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
       "action_id": "executor.use_return_scepter",
       "domain": "movement",
       "semantic_kind": "primitive",
@@ -717,6 +893,28 @@
       "block_reason": "option_spec_not_declared",
       "native_runtime_types": [
         "Wand"
+      ]
+    },
+    {
+      "action_id": "executor.use_treasure_totem",
+      "domain": "foraging",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.tool_harvest",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
+      ]
+    },
+    {
+      "action_id": "executor.use_warp_totem",
+      "domain": "movement",
+      "semantic_kind": "primitive",
+      "primary_engine_id": "engine.movement_navigation",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Object"
       ]
     },
     {
@@ -772,6 +970,17 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "festival.manage_grange_display",
+      "domain": "festival",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Event"
+      ]
     },
     {
       "action_id": "festival.play_fishing_game",
@@ -923,6 +1132,17 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "foraging.rummage_garbage",
+      "domain": "foraging",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "GameLocation"
+      ]
+    },
+    {
       "action_id": "housing.advance_farmhouse",
       "domain": "housing",
       "semantic_kind": "CompositeOptionSpec",
@@ -1061,6 +1281,17 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "mining.activate_calico_statue",
+      "domain": "mining",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "MineShaft"
+      ]
+    },
+    {
       "action_id": "mining.claim_reward_chests",
       "domain": "mining",
       "semantic_kind": "CompositeOptionSpec",
@@ -1099,6 +1330,17 @@
       ]
     },
     {
+      "action_id": "multiplayer.manage_wallet",
+      "domain": "multiplayer",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "ManorHouse"
+      ]
+    },
+    {
       "action_id": "multiplayer.send_chat",
       "domain": "multiplayer",
       "semantic_kind": "composite",
@@ -1117,6 +1359,28 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "player.choose_bobber",
+      "domain": "player",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "GameLocation"
+      ]
+    },
+    {
+      "action_id": "player.choose_jukebox_track",
+      "domain": "player",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "GameLocation"
+      ]
     },
     {
       "action_id": "player.customize",
@@ -1214,6 +1478,17 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "rewards.claim_adventure_guild_reward",
+      "domain": "rewards",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "AdventureGuild"
+      ]
+    },
+    {
       "action_id": "rewards.claim_prize_ticket",
       "domain": "rewards",
       "semantic_kind": "composite",
@@ -1284,6 +1559,29 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
+    },
+    {
+      "action_id": "social.watch_movie",
+      "domain": "social",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "MovieTheater"
+      ]
+    },
+    {
+      "action_id": "story.advance_event",
+      "domain": "story",
+      "semantic_kind": "composite",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "catalogued_blocked",
+      "block_reason": "option_spec_not_declared",
+      "native_runtime_types": [
+        "Event",
+        "GameLocation"
+      ]
     },
     {
       "action_id": "story.advance_event_minigame",

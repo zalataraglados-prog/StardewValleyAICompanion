@@ -3,9 +3,10 @@
 ## 计划权威与当前执行顺序（2026-07-31 修正）
 
 本文件是唯一的人类可读总计划。`docs/CURRENT_WORK_CN.md` 只记录当前切片；
-`action-progress-dashboard.json`、`action-implementation-reconciliation.json` 和
-`native-action-surface-inventory.json` 是机器生成状态。旧 handoff、测试报告和 GitHub
-issue 只保留历史或验收信息，不得覆盖这四个事实源。
+`action-progress-dashboard.json`、`action-implementation-reconciliation.json`、
+`native-action-surface-inventory.json`、`native-action-branch-inventory.json`、
+`native-map-interaction-coverage.json` 和 `semantic-action-catalog.json` 是机器生成
+状态。旧 handoff、测试报告和 GitHub issue 只保留历史或验收信息，不得覆盖这些事实源。
 
 当前必须先完成动作全集对账，再继续逐动作纵向闭环：
 
@@ -28,11 +29,20 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 当前阶段退出条件：
 
 - 锁定反编译版本的原生动作表面零未分类；
+- 所有宽入口均有按完整方法签名生成的分支证据，缺失和待语义审查均为零；
+- 所有有效地图 Action/TouchAction token 均映射到证实的原生分支和语义动作，或有
+  原生默认返回证据证明它是失效/遗留 token；
 - 语义动作全集分母冻结，所有动作均已注册（允许显式 blocked）；
 - 每个注册动作恰好归属一个主执行引擎，编译和运行 ID 零孤儿；
 - 看板同时报告 `registered/total`、`five_gate_closed/total`、
   `product_executable/total` 和 `E3/total`，不再混用不同阶段数字；
 - 完成以上条件前，不开始正式训练，也不以 Harness 成功宣称 Product Executor 完成。
+
+当前锁定扫描切片的机器基线为：320 个原生输入表面、60 个宽入口、428 条分支证据、
+150 个地图交互 token、165 个语义动作（96 个已有 `OptionSpec`，69 个显式 blocked）。
+源表面、分支、地图 token 和语义注册均为零未分类/零缺注册，状态为
+`provisional_native_surface_denominator_closed`。这表示此前实现没有作废，而是获得
+了可审计分母；它不表示 165 个动作已经具备 Product Executor 或五门证据。
 
 ## 目标架构
 

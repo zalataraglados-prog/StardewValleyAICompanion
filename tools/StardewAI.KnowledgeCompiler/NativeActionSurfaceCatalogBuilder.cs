@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using StardewAI.Contracts.Capabilities;
 
 namespace StardewAI.KnowledgeCompiler;
@@ -10,7 +9,11 @@ internal sealed record NativeActionSurface(
     string Family,
     string RuntimeType,
     string Member,
+    string Signature,
     string RelativeSourcePath,
+    int StartLine,
+    int EndLine,
+    string BodySha256,
     string[] MappedOptionIds,
     string SemanticCoverageStatus,
     string ScopeDisposition,
@@ -24,26 +27,12 @@ internal sealed class NativeActionSurfaceCatalog
         Array.Empty<NativeActionSurface>();
 }
 
-internal sealed partial class NativeActionSurfaceCatalogBuilder
+internal sealed class NativeActionSurfaceCatalogBuilder
 {
     private sealed record SurfaceClassification(
         string[] OptionIds,
         string ScopeDisposition,
         string EvidenceBasis);
-
-    private static readonly string[] PlayerEntryMembers =
-    {
-        "checkAction",
-        "performAction",
-        "DoFunction",
-        "beginUsing",
-        "onRelease",
-        "performUseAction",
-        "placementAction",
-        "receiveLeftClick",
-        "receiveRightClick",
-        "receiveKeyPress"
-    };
 
     public NativeActionSurfaceCatalog Build(string? decompileRoot)
     {
@@ -60,51 +49,49 @@ internal sealed partial class NativeActionSurfaceCatalogBuilder
             };
         }
 
+        var sourceIndex = DecompiledActionSourceIndex.Build(root);
         var rows = new List<NativeActionSurface>();
-        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        foreach (var method in sourceIndex.Methods)
         {
-            var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-            if (!IsActionBearingPath(relative))
-                continue;
+            var family = ResolveFamily(method.RelativeSourcePath, method.Member);
+            var classification = ClassifySurface(family, method.RuntimeType, method.Member);
+            rows.Add(new NativeActionSurface(
+                SurfaceId(method.RelativeSourcePath, method.Signature),
+                family,
+                method.RuntimeType,
+                method.Member,
+                method.Signature,
+                method.RelativeSourcePath,
+                method.StartLine,
+                method.EndLine,
+                method.BodySha256,
+                classification.OptionIds,
+                ResolveCoverage(classification),
+                classification.ScopeDisposition,
+                classification.EvidenceBasis));
+        }
 
-            var source = File.ReadAllText(path);
-            var runtimeType = Path.GetFileNameWithoutExtension(path);
-            foreach (Match match in PlayerEntryMethodRegex().Matches(source))
-            {
-                var member = match.Groups["member"].Value;
-                var family = ResolveFamily(relative, member);
-                var classification = ClassifySurface(family, runtimeType, member);
-                rows.Add(new NativeActionSurface(
-                    SurfaceId(relative, member),
-                    family,
-                    runtimeType,
-                    member,
-                    relative,
-                    classification.OptionIds,
-                    ResolveCoverage(classification),
-                    classification.ScopeDisposition,
-                    classification.EvidenceBasis));
-            }
-
-            if (ImplementsMinigameRegex().IsMatch(source))
-            {
-                var classification = ClassifySurface("minigame", runtimeType, "IMinigame");
-                rows.Add(new NativeActionSurface(
-                    SurfaceId(relative, "IMinigame"),
-                    "minigame",
-                    runtimeType,
-                    "IMinigame",
-                    relative,
-                    classification.OptionIds,
-                    ResolveCoverage(classification),
-                    classification.ScopeDisposition,
-                    classification.EvidenceBasis));
-            }
+        foreach (var type in sourceIndex.MinigameTypes)
+        {
+            var classification = ClassifySurface("minigame", type.RuntimeType, "IMinigame");
+            const string signature = "type declaration : IMinigame";
+            rows.Add(new NativeActionSurface(
+                SurfaceId(type.RelativeSourcePath, signature),
+                "minigame",
+                type.RuntimeType,
+                "IMinigame",
+                signature,
+                type.RelativeSourcePath,
+                type.StartLine,
+                type.EndLine,
+                string.Empty,
+                classification.OptionIds,
+                ResolveCoverage(classification),
+                classification.ScopeDisposition,
+                classification.EvidenceBasis));
         }
 
         var surfaces = rows
-            .GroupBy(row => row.SurfaceId, StringComparer.Ordinal)
-            .Select(group => group.First())
             .OrderBy(row => row.Family, StringComparer.Ordinal)
             .ThenBy(row => row.RuntimeType, StringComparer.Ordinal)
             .ThenBy(row => row.Member, StringComparer.Ordinal)
@@ -113,8 +100,13 @@ internal sealed partial class NativeActionSurfaceCatalogBuilder
         var discoveredFamilies = surfaces
             .Select(row => row.Family)
             .ToHashSet(StringComparer.Ordinal);
+        var hasUniqueSurfaceIds = surfaces
+            .Select(row => row.SurfaceId)
+            .Distinct(StringComparer.Ordinal)
+            .Count() == surfaces.Length;
         var scanComplete = surfaces.Length >= 50 &&
-            requiredFamilies.All(discoveredFamilies.Contains);
+            requiredFamilies.All(discoveredFamilies.Contains) &&
+            hasUniqueSurfaceIds;
 
         return new NativeActionSurfaceCatalog
         {
@@ -124,18 +116,6 @@ internal sealed partial class NativeActionSurfaceCatalogBuilder
             DecompileRoot = root,
             Surfaces = surfaces
         };
-    }
-
-    private static bool IsActionBearingPath(string relative)
-    {
-        return relative.Contains("/Tools/", StringComparison.Ordinal) ||
-            relative.Contains("/Menus/", StringComparison.Ordinal) ||
-            relative.Contains("/Minigames/", StringComparison.Ordinal) ||
-            relative.Contains("/Locations/", StringComparison.Ordinal) ||
-            relative.Contains("/TerrainFeatures/", StringComparison.Ordinal) ||
-            relative.EndsWith("/GameLocation.cs", StringComparison.Ordinal) ||
-            relative.EndsWith("/Object.cs", StringComparison.Ordinal) ||
-            relative.EndsWith("/Item.cs", StringComparison.Ordinal);
     }
 
     private static string ResolveFamily(string relative, string member)
@@ -295,12 +275,12 @@ internal sealed partial class NativeActionSurfaceCatalogBuilder
                 "decompiled runtime type is an internal preview or test surface");
         }
 
-        if (runtimeType == "TerrainFeature")
+        if (runtimeType is "TerrainFeature" or "IMinigame")
         {
             return new SurfaceClassification(
                 Array.Empty<string>(),
                 "abstract_parent_surface",
-                "base terrain feature input is specialized by concrete native runtime types");
+                "abstract native input contract is specialized by concrete runtime types");
         }
 
         return new SurfaceClassification(
@@ -334,17 +314,9 @@ internal sealed partial class NativeActionSurfaceCatalogBuilder
         };
     }
 
-    private static string SurfaceId(string relative, string member)
+    private static string SurfaceId(string relative, string signature)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(relative + "#" + member));
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(relative + "#" + signature));
         return "native." + Convert.ToHexString(bytes.AsSpan(0, 8)).ToLowerInvariant();
     }
-
-    [GeneratedRegex(
-        @"\b(?:public|protected|internal)\s+(?:(?:override|virtual|static|sealed|new)\s+)*(?:[\w<>,?.\[\]]+\s+)+(?<member>checkAction|performAction|DoFunction|beginUsing|onRelease|performUseAction|placementAction|receiveLeftClick|receiveRightClick|receiveKeyPress)\s*\(",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex PlayerEntryMethodRegex();
-
-    [GeneratedRegex(@":\s*[^{\r\n]*\bIMinigame\b", RegexOptions.CultureInvariant)]
-    private static partial Regex ImplementsMinigameRegex();
 }
