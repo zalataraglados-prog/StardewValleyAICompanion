@@ -148,7 +148,9 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     public void TrainingAllowlistRequiresRuntimeEvidenceTests()
     {
         Assert.NotEmpty(OptionCapabilityRegistrySource.TrainingAllowlist);
-        Assert.Equal(new[] { "mining.reach_depth" }, OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.Equal(
+            new[] { "inventory.transfer_item", "mining.reach_depth" },
+            OptionCapabilityRegistrySource.TrainingAllowlist);
 
         Assert.All(OptionCapabilityRegistrySource.TrainingAllowlist, optionId =>
         {
@@ -164,7 +166,9 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.NotEmpty(declaration.OutputEvidenceIds);
             Assert.Empty(declaration.TrainingExclusionReasons);
             Assert.Equal(
-                "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                optionId == "inventory.transfer_item"
+                    ? "explicit_bidirectional_player_normal_chest_transfer"
+                    : "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                 declaration.TrainingEvidenceScope);
         });
 

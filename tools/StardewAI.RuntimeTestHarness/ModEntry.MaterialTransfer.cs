@@ -5,8 +5,6 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Objects;
-using TileLocation = xTile.Dimensions.Location;
-using TileRectangle = xTile.Dimensions.Rectangle;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -221,24 +219,23 @@ public sealed partial class ModEntry
         {
             StopAllMovement();
             Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-            if (!TryApplySmapiRightButtonOverride(true, out var pressReason))
+            if (!TryApplySmapiButtonOverride(SButton.X, pressed: true, out var pressReason))
             {
                 CompleteMaterialTransferBlocked(active, "material_transfer_open_press_failed:" + pressReason);
                 return;
             }
+            active.Stage = MaterialTransferStage.ReleaseOpenInput;
+            active.StageStartedAt = active.ElapsedTicks;
+            return;
+        }
 
-            var handled = active.Location.checkAction(
-                new TileLocation(active.Target.X, active.Target.Y),
-                new TileRectangle(
-                    Game1.viewport.X,
-                    Game1.viewport.Y,
-                    Game1.viewport.Width,
-                    Game1.viewport.Height),
-                Game1.player);
-            TryApplySmapiRightButtonOverride(false, out _);
-            if (!handled)
+        if (active.Stage == MaterialTransferStage.ReleaseOpenInput)
+        {
+            if (!TryApplySmapiButtonOverride(SButton.X, pressed: false, out var releaseReason))
             {
-                CompleteMaterialTransferBlocked(active, "material_transfer_native_open_not_handled");
+                CompleteMaterialTransferBlocked(
+                    active,
+                    "material_transfer_open_release_failed:" + releaseReason);
                 return;
             }
             active.Stage = MaterialTransferStage.WaitForMenu;
@@ -415,7 +412,7 @@ public sealed partial class ModEntry
     private void CompleteMaterialTransfer(ActiveMaterialTransfer active)
     {
         StopAllMovement();
-        TryApplySmapiRightButtonOverride(false, out _);
+        TryApplySmapiButtonOverride(SButton.X, pressed: false, out _);
         var intent = active.Pending.Request.MaterialTransferIntent!;
         var source = active.SourceIsPlayer
             ? Game1.player.Items
@@ -442,7 +439,7 @@ public sealed partial class ModEntry
         params string[] reasons)
     {
         StopAllMovement();
-        TryApplySmapiRightButtonOverride(false, out _);
+        TryApplySmapiButtonOverride(SButton.X, pressed: false, out _);
         if (Game1.activeClickableMenu is ItemGrabMenu menu &&
             ReferenceEquals(menu.sourceItem, active.Chest) &&
             menu.readyToClose())
@@ -612,6 +609,7 @@ public sealed partial class ModEntry
     {
         Move,
         Open,
+        ReleaseOpenInput,
         WaitForMenu,
         Transfer,
         CloseMenu,

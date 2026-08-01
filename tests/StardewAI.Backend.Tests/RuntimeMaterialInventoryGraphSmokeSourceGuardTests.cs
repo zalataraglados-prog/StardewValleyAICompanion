@@ -11,6 +11,8 @@ public sealed class RuntimeMaterialInventoryGraphSmokeSourceGuardTests
 
         Assert.Contains("debug.setup_material_inventory_graph", dispatch, StringComparison.Ordinal);
         Assert.Contains("debug.setup_material_inventory_graph", allowlist, StringComparison.Ordinal);
+        Assert.Contains("debug.setup_material_transfer_target", dispatch, StringComparison.Ordinal);
+        Assert.Contains("debug.setup_material_transfer_target", allowlist, StringComparison.Ordinal);
         Assert.Contains("FarmerTeam.GlobalInventoryId_JunimoChest", fixture, StringComparison.Ordinal);
         Assert.Equal(2, Count(fixture, "CreateOwnedChest(junimo"));
         Assert.Contains("new Workbench(workbenchTile)", fixture, StringComparison.Ordinal);
@@ -19,6 +21,9 @@ public sealed class RuntimeMaterialInventoryGraphSmokeSourceGuardTests
         Assert.Contains("autoGrabber.heldObject.Value = autoGrabberChest", fixture, StringComparison.Ordinal);
         Assert.Contains("CreateFixtureMachine(readyMachineTile, ready: true)", fixture, StringComparison.Ordinal);
         Assert.Contains("CreateFixtureMachine(processingMachineTile, ready: false)", fixture, StringComparison.Ordinal);
+        Assert.Contains("FindMaterialTransferFixtureTarget", fixture, StringComparison.Ordinal);
+        Assert.Contains("probe.canBePlacedHere(", fixture, StringComparison.Ordinal);
+        Assert.Contains("new Point(target.X, target.Y + 1)", fixture, StringComparison.Ordinal);
     }
 
     [Fact]

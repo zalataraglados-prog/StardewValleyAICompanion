@@ -733,6 +733,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_material_transfer_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupMaterialTransferTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_input_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineInputTarget(pending.Request));

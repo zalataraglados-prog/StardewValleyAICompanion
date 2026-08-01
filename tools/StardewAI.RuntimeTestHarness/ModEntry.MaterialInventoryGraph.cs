@@ -8,6 +8,138 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private TrainingExecutionResult ExecuteSetupMaterialTransferTarget(
+        TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        var farm = Game1.getFarm();
+        var requested = request.TargetTileX is >= 0 && request.TargetTileY is >= 0
+            ? new Point(request.TargetTileX.Value, request.TargetTileY.Value)
+            : (Point?)null;
+        var target = requested ?? FindMaterialTransferFixtureTarget(farm);
+        if (!target.HasValue)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_material_transfer_target",
+                "ordinary_owned_chest=ready",
+                "target=unavailable",
+                "material_transfer_fixture_target_unavailable");
+        }
+
+        var tile = target.Value.ToVector2();
+        farm.objects.Remove(tile);
+        var chest = CreateFixtureChest(tile, "130", "(O)388", 11);
+        farm.objects[tile] = chest;
+        var stand = FindMaterialTransferFixtureStand(farm, target.Value);
+        var moved = stand.HasValue;
+        var moveReason = moved
+            ? string.Empty
+            : "fixture_no_collision_safe_adjacent_tile";
+        if (stand.HasValue)
+        {
+            Game1.currentLocation = farm;
+            Game1.player.currentLocation = farm;
+            Game1.player.Position = stand.Value.ToVector2() * Game1.tileSize;
+            Game1.player.faceDirection(DirectionTo(stand.Value, target.Value));
+        }
+        var verified = moved &&
+            farm.objects.TryGetValue(tile, out var value) &&
+            ReferenceEquals(value, chest) &&
+            chest.GetType() == typeof(Chest) &&
+            chest.playerChest.Value &&
+            chest.SpecialChestType == Chest.SpecialChestTypes.None &&
+            chest.owner.Value == Game1.player.UniqueMultiplayerID &&
+            chest.Items.Count == 1 &&
+            chest.Items[0].QualifiedItemId == "(O)388" &&
+            chest.Items[0].Quality == 4 &&
+            chest.Items[0].Stack == 11;
+        var observed = "target=" + TileText(tile) +
+            ";stand=" + (stand.HasValue ? TileText(stand.Value.ToVector2()) : "unavailable") +
+            ";move_reason=" + moveReason;
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_material_transfer_target",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "isolated_runtime_ordinary_owned_chest_ready" }
+                : new[] { "isolated_runtime_material_transfer_fixture_incomplete", moveReason },
+            RequestedEffect = "ordinary_owned_chest=ready",
+            ObservedEffect = observed,
+            BlockReasons = verified
+                ? Array.Empty<string>()
+                : new[] { "material_transfer_fixture_not_verified", moveReason },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange
+                    {
+                        Path = "farm.material_inventory_graph.fixture_transfer_target",
+                        Before = "unknown",
+                        After = observed
+                    }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private static Point? FindMaterialTransferFixtureTarget(GameLocation farm)
+    {
+        var width = farm.Map.Layers[0].LayerWidth;
+        var height = farm.Map.Layers[0].LayerHeight;
+        var player = Game1.player.TilePoint;
+        var probe = new Chest(playerChest: true, Vector2.Zero, "130")
+        {
+            Location = farm
+        };
+        return Enumerable.Range(2, Math.Max(0, width - 16))
+            .SelectMany(x => Enumerable.Range(2, Math.Max(0, height - 4))
+                .Select(y => new Point(x, y)))
+            .Where(target => IsTileWalkable(farm, target))
+            .Where(target => probe.canBePlacedHere(
+                farm,
+                target.ToVector2(),
+                ~(CollisionMask.Characters | CollisionMask.Farmers)))
+            .Where(target => FindMaterialTransferFixtureStand(farm, target).HasValue)
+            .OrderBy(target => ManhattanDistance(player, target))
+            .ThenBy(target => target.Y)
+            .ThenBy(target => target.X)
+            .Cast<Point?>()
+            .FirstOrDefault();
+    }
+
+    private static Point? FindMaterialTransferFixtureStand(
+        GameLocation farm,
+        Point target)
+    {
+        return new[]
+            {
+                new Point(target.X, target.Y + 1),
+                new Point(target.X, target.Y - 1),
+                new Point(target.X + 1, target.Y),
+                new Point(target.X - 1, target.Y)
+            }
+            .Where(stand =>
+                IsTileOnMap(farm, stand) &&
+                IsTileWalkable(farm, stand))
+            .Cast<Point?>()
+            .FirstOrDefault();
+    }
+
     private TrainingExecutionResult ExecuteSetupMaterialInventoryGraph(TrainingExecutionRequest request)
     {
         var reasons = ValidateExecutionRequest(request);

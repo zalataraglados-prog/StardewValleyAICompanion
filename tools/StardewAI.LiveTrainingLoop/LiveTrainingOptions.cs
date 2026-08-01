@@ -52,6 +52,7 @@ public sealed class LiveTrainingOptions
     public int MinFreeSpaceMb { get; set; } = 8192;
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
+    public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterSocialObjectiveComplete { get; set; }
@@ -298,6 +299,21 @@ public sealed class LiveTrainingOptions
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .ToArray();
             }
+            else if (current == "--daily-plan-candidate-parameter" && i + 1 < args.Length)
+            {
+                var pair = args[++i];
+                var separator = pair.IndexOf('=');
+                if (separator <= 0)
+                {
+                    throw new ArgumentException(
+                        "--daily-plan-candidate-parameter must be formatted as name=value.");
+                }
+                options.DailyPlanCandidateParameters.Add(new SmallModelActionParameter
+                {
+                    Name = pair[..separator],
+                    Value = pair[(separator + 1)..]
+                });
+            }
             else if (current == "--daily-plan-candidate-kind" &&
                 i + 1 < args.Length)
             {
@@ -329,6 +345,14 @@ public sealed class LiveTrainingOptions
         if (!ExecutionTargetProfiles.IsSupported(options.TargetExecutionMode))
         {
             throw new ArgumentException("Unsupported --target-execution-mode: " + options.TargetExecutionMode);
+        }
+
+        if (options.DailyPlanCandidateParameters.Count > 0 &&
+            options.DailyPlanCandidateOptionIds.Length != 1)
+        {
+            throw new ArgumentException(
+                "Explicit daily-plan candidate parameters require exactly one " +
+                "--daily-plan-candidate-options value.");
         }
 
         return options;

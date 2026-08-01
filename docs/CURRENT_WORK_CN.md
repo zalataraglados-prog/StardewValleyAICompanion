@@ -41,7 +41,7 @@
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件
 核对。不能把“已登记”解释为“已实现”：现有代码的编译器孤儿 0、运行 ID 孤儿 0；
-Product Executor 仍为 0，五门证据闭环仍为 1。
+Product Executor 仍为 0，五门证据闭环与训练准入均为 2。
 
 ## 退出条件
 
@@ -54,11 +54,16 @@ Product Executor 仍为 0，五门证据闭环仍为 1。
 
 ## 紧接任务
 
-首个缺口 `inventory.transfer_item` 已完成静态纵向链：强类型明确意图、透明库存图投影、
-上游候选、路径站位、日计划展开和 `executor.transfer_material` 原语复用均已接通；缺意图、
-重复字段、锁箱、身份/数量漂移和容量不足均失败关闭。下一步是隔离运行中分别验收“玩家
-到箱子”和“箱子到玩家”，补齐 before/after、E3 与训练记录，再处理 Product Executor
-边界；这些门关闭前不能把该动作标记为完整闭环，也不能开始正式训练。
+首个缺口 `inventory.transfer_item` 已完成纵向闭环：强类型明确意图、透明库存图投影、
+上游候选、路径站位、日计划展开和既有 `executor.transfer_material` 原语复用均已接通。
+EVD-192 在 E 盘隔离存档中验证了“箱子到玩家”和“玩家到箱子”两个方向，均经原生
+`Chest`/`ItemGrabMenu`、逐单位右键、互斥锁释放、before/after 数量差分和训练记录；往返后
+箱子数量恢复，过期源栈投影在菜单打开前失败关闭且零点击。该项五门证据已登记，可进入其
+明确意图范围内的训练；Product Executor 仍未集成，不得把 Harness 闭环称为产品陪玩闭环。
+刷新对账产物时，KnowledgeCompiler 明确报告 `player.storage_crafting` 与
+`player.storage_placement` 两个 required state factor 尚未接入快照 schema。下一步先补齐这两个
+透明性 join 并把 blocking issue count 恢复为 0，再回到冻结差异矩阵选择下一个
+`registered_gap` 做同样纵向闭环；不得绕过字段缺口继续扩大训练准入。
 
 ## 禁止事项
 

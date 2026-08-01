@@ -57,14 +57,28 @@ static partial class Program
         string stateHash,
         JsonObject? objectiveContinuation)
     {
+        var explicitCandidates =
+            objectiveContinuation is null &&
+            options.DailyPlanCandidateParameters.Count > 0
+                ? new object[]
+                {
+                    new
+                    {
+                        option_id = options.DailyPlanCandidateOptionIds[0],
+                        parameters = options.DailyPlanCandidateParameters
+                    }
+                }
+                : Array.Empty<object>();
         var rankRequest = JsonSerializer.Serialize(new
         {
             goal_id = options.Goal,
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
-            candidate_option_ids = objectiveContinuation is null ? options.DailyPlanCandidateOptionIds : Array.Empty<string>(),
+            candidate_option_ids = objectiveContinuation is null && explicitCandidates.Length == 0
+                ? options.DailyPlanCandidateOptionIds
+                : Array.Empty<string>(),
             candidates = objectiveContinuation is null
-                ? Array.Empty<object>()
+                ? explicitCandidates
                 : new object[]
                 {
                     new

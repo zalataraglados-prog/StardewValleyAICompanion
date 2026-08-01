@@ -363,6 +363,9 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, TrainingEvidence>(
                 new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
                 {
+                    ["inventory.transfer_item"] = VerifiedEvidence(
+                        "explicit_bidirectional_player_normal_chest_transfer",
+                        "EVD-192"),
                     ["mining.reach_depth"] = VerifiedEvidence(
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                         "EVD-095")

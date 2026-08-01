@@ -31,6 +31,7 @@ public sealed partial class ModEntry
             "debug.setup_machine_output_target",
             "debug.setup_machine_placement_target",
             "debug.setup_material_inventory_graph",
+            "debug.setup_material_transfer_target",
             "debug.setup_mine_fishing_floor",
             "debug.setup_mining_combat_fixture",
             "debug.setup_mining_floor",
