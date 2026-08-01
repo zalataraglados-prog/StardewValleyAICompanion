@@ -377,10 +377,12 @@ namespace StardewAI.Contracts.Capabilities
                         runtimeEvidenceIds: new[] { "EVD-195" },
                         outputEvidenceIds: new[] { "EVD-195" }),
                     ["social.gift_npc"] = BoundedEvidence(
-                        "current_loaded_npc_gift_read_candidate_compile;remote_and_single_item_runtime_pending",
+                        "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                         readEvidenceIds: new[] { "EVD-076" },
                         candidateEvidenceIds: new[] { "EVD-076", "EVD-104" },
-                        compilerEvidenceIds: new[] { "EVD-076", "EVD-104" }),
+                        compilerEvidenceIds: new[] { "EVD-076", "EVD-104", "EVD-196" },
+                        runtimeEvidenceIds: new[] { "EVD-196" },
+                        outputEvidenceIds: new[] { "EVD-196" }),
                     ["social.talk_npc"] = VerifiedEvidence(
                         "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                         "EVD-076",

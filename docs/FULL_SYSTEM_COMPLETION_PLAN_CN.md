@@ -199,13 +199,13 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 1. `capability_registry.v2` 独立记录五门、证据 ID、证据范围和类型化排除原因；
 2. 空 allowlist 会使注册表初始化失败；
-3. 当前准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-192 明确意图范围内的 `inventory.transfer_item`，以及 EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`；
+3. 当前准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
 4. 执行器原语和校准型高层 option 不进入策略训练；
 5. 字典副本与锁文件只能证明语义来源和版本，不能代替原生可见执行证据。
 
 2026-07-31 已完成 D1 的首个工程切片：“持续移动 + 通用清障/农场工具/火山石头共享原生工具周期 + 共享转向路径游标 + 600 帧异常环形诊断”。通用清障生产路径不再直接 `performToolAction` 或移除对象；第一次后台回归以 11/11 步进入 Caldera。解锁后的可见回归先后暴露“火山领域复制的简化路径推进器未继承转弯中心修复”和“外层超时未触发诊断”两个缺口；收敛火山冷却/清障到共享路径推进器并补齐异常落盘后，最终可见 level 9 回归以 14/14 步进入 Caldera，其中含 4 次石头清障、3 次移动、3 次熔岩冷却、3 次等待和 1 次出口穿越，全部 after snapshot fresh 且 state hash 改变。
 
-2026-08-01 首个分母冻结后的切片 `inventory.transfer_item` 已完成强类型明确意图、透明库存图投影、候选、路径站位、日计划和既有 `executor.transfer_material` 机械原语复用；没有新增第二套箱子运行时。EVD-192 在隐藏、静音的 E 盘隔离存档中完成双向原生运行：`Chest.ShowMenu -> ItemGrabMenu.receiveRightClick -> Chest.grabItemFromChest/grabItemFromInventory` 两支均通过，菜单与互斥锁生命周期、逐单位数量、before/after 快照、episode 和 dataset 均闭合，往返恢复初值；过期源栈投影在输入前失败关闭。该高层项五门证据已登记，但 Product Executor 仍为未集成，不能据此声称产品陪玩闭环。随后完成 current live snapshot schema 工作流：旧快照稳定复现 `player.storage_crafting` 和 `player.storage_placement` 两个缺失，新实时快照覆盖 94/94 required factors（77 可读、17 场景性不可用、0 阻塞），完整 KnowledgeCompiler 达到 585/585 exports、blocking 0。复核又确认 `recovery.stabilize_day` 的全部当前候选编译链和普通社交原生 Harness 执行器早已存在；旧“先补 recovery、再做社交执行器”的表述作废，禁止复制第二套。EVD-076/EVD-105 现将 `social.talk_npc` 的窄范围五门证据回填；EVD-195 又闭合 `recovery.stabilize_day` 的跨图回家、原生睡眠和新日输出，但该高层动作仍按策略保持校准专用。当前真实运行缺口只剩远端送礼与单件礼物归零。闭合该证据后才重建策略轨迹、接入 C# 结构化排序器和长期完整 rollout；短训只能做基础设施烟测，不得替代正式全量训练。
+2026-08-01 首个分母冻结后的切片 `inventory.transfer_item` 已完成强类型明确意图、透明库存图投影、候选、路径站位、日计划和既有 `executor.transfer_material` 机械原语复用；没有新增第二套箱子运行时。EVD-192 在隐藏、静音的 E 盘隔离存档中完成双向原生运行：`Chest.ShowMenu -> ItemGrabMenu.receiveRightClick -> Chest.grabItemFromChest/grabItemFromInventory` 两支均通过，菜单与互斥锁生命周期、逐单位数量、before/after 快照、episode 和 dataset 均闭合，往返恢复初值；过期源栈投影在输入前失败关闭。该高层项五门证据已登记，但 Product Executor 仍为未集成，不能据此声称产品陪玩闭环。随后完成 current live snapshot schema 工作流：旧快照稳定复现 `player.storage_crafting` 和 `player.storage_placement` 两个缺失，新实时快照覆盖 94/94 required factors（77 可读、17 场景性不可用、0 阻塞），完整 KnowledgeCompiler 达到 585/585 exports、blocking 0。复核又确认 `recovery.stabilize_day` 的全部当前候选编译链和普通社交原生 Harness 执行器早已存在；旧“先补 recovery、再做社交执行器”的表述作废，禁止复制第二套。EVD-076/EVD-105 现将 `social.talk_npc` 的窄范围五门证据回填；EVD-195 又闭合 `recovery.stabilize_day` 的跨图回家、原生睡眠和新日输出，但该高层动作仍按策略保持校准专用。EVD-196 随后复用同一社交链闭合当前已加载原版 NPC 的滚动远端追踪和普通单件礼物 `1 -> null`，训练准入增至 4 项。下一步重建仅含准入候选的策略轨迹、接入 C# 结构化排序器并开始长期完整 rollout；短训只能做基础设施烟测，不得替代正式全量训练。
 
 架构防扩张门同步生效：`ModEntry` 不再新增领域 active state，新领域必须由独立 Handler 持有状态与 cleanup；含 304 个 public instance 属性、横跨 8 个 partial 声明文件的 `TrainingExecutionRequest.v1` 停止新增字段。v2 采用强类型 payload envelope，并按领域逐族兼容迁移，禁止一次性重写现有 compiler/runtime/verifier 链。
 

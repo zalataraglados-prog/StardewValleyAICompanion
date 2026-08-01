@@ -12,7 +12,7 @@
 
 短训只允许用于验证数据管线、显存、检查点和推理接口，不能作为训练成果汇报。
 
-2026-08-01 进展：`capability_registry.v2` 已实现五门证据、证据 ID、范围和类型化排除原因，空 allowlist 会使注册表初始化失败。当前准入项为 `mining.reach_depth`、`inventory.transfer_item` 和 `social.talk_npc`，每项都仅限其登记的 EVD 范围；这不是任意深度、任意库存或全社交完成声明。EVD-195 已闭合 `recovery.stabilize_day` 的滚动跨图回家和原生终端睡眠运行/输出门，但该项按策略仍是校准型高层动作，不进入训练白名单。`social.gift_npc` 仍等待远端送礼与单件礼物栈归零的运行/输出证据。下一步仍是按生成清单补真实证据缺口，不能据此启动正式训练。
+2026-08-01 进展：`capability_registry.v2` 已实现五门证据、证据 ID、范围和类型化排除原因，空 allowlist 会使注册表初始化失败。当前准入项为 `mining.reach_depth`、`inventory.transfer_item`、`social.talk_npc` 和 `social.gift_npc`，每项都仅限其登记的 EVD 范围；这不是任意深度、任意库存或全社交完成声明。EVD-195 已闭合 `recovery.stabilize_day` 的滚动跨图回家和原生终端睡眠运行/输出门，但该项按策略仍是校准型高层动作，不进入训练白名单。EVD-196 已闭合当前已加载原版 NPC 的滚动远端送礼和普通单件礼物栈归零。下一步是重建只含准入候选的正式策略轨迹并接入 C# 结构化排序器；在真实模型提供器、长期 rollout 和其余正式准入条件闭合前仍不能启动正式全量训练。
 
 ## 2. “正式全量训练”的定义
 

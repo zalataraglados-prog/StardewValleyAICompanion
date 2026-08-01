@@ -300,4 +300,38 @@ public sealed partial class NativeSocialRuntimeSmokeSourceGuardTests
         Assert.Contains("candidateGiftUpdatesNormal", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ProductionGiftPursuitUsesExistingRollingSocialChain()
+    {
+        var source = SocialSmokeSource;
+
+        Assert.Contains("[switch] $ProductionGiftPursuitOnly", source, StringComparison.Ordinal);
+        Assert.Contains("--daily-plan-candidate-options \"social.gift_npc\"", source, StringComparison.Ordinal);
+        Assert.Contains("Verify-ProductionSocialPursuitArtifacts", source, StringComparison.Ordinal);
+        Assert.Contains("-ExpectedContinuationOption \"social.gift_npc\"", source, StringComparison.Ordinal);
+        Assert.Contains("-RequireSingleItemGiftConsumed", source, StringComparison.Ordinal);
+        Assert.Contains("Production social pursuit did not verify any connector traversal", source, StringComparison.Ordinal);
+        Assert.Contains("Production gift pursuit expected stack_before=1", source, StringComparison.Ordinal);
+        Assert.Contains("Production gift pursuit expected stack_after=null", source, StringComparison.Ordinal);
+        Assert.Contains("same_objective_multi_connector_single_item_gift_pursuit", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SingleGiftFixtureIsDebugOnlyAndDoesNotMutateNpcOutcome()
+    {
+        var runtimeSource = RuntimeHarnessSources.All;
+        var fixtureSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Social.Fixtures.cs"));
+
+        Assert.Contains("debug.setup_single_gift_item", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("ExecuteSetupSingleGiftItem", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("ItemRegistry.Create(request.QualifiedItemId, 1)", fixtureSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("changeFriendship", fixtureSource, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GiftsToday", fixtureSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("GiftsThisWeek", fixtureSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("receiveGift(", fixtureSource, StringComparison.Ordinal);
+    }
+
 }

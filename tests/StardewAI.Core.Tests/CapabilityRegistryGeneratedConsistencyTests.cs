@@ -149,7 +149,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     {
         Assert.NotEmpty(OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.Equal(
-            new[] { "inventory.transfer_item", "mining.reach_depth", "social.talk_npc" },
+            new[] { "inventory.transfer_item", "mining.reach_depth", "social.gift_npc", "social.talk_npc" },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
         Assert.All(OptionCapabilityRegistrySource.TrainingAllowlist, optionId =>
@@ -169,6 +169,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                 _ => throw new InvalidOperationException("Unexpected training option: " + optionId)
             };
@@ -188,26 +189,21 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
-    public void ExistingGiftChainRemainsBlockedAtItsUnprovenRuntimeBoundaryTests()
+    public void ExistingGiftChainClosesItsBoundedRuntimeBoundaryWithoutPromotingRecoveryTests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("social.gift_npc");
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
-        Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.RuntimeTrainingGate);
-        Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.OutputTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.RuntimeTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.OutputTrainingGate);
         Assert.NotEmpty(declaration.ReadEvidenceIds);
         Assert.NotEmpty(declaration.CandidateEvidenceIds);
         Assert.NotEmpty(declaration.CompilerEvidenceIds);
-        Assert.Empty(declaration.RuntimeEvidenceIds);
-        Assert.Empty(declaration.OutputEvidenceIds);
-        Assert.Contains(
-            TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
-            declaration.TrainingExclusionReasons);
-        Assert.Contains(
-            TrainingAdmissionExclusionReason.OutputEvidenceMissing,
-            declaration.TrainingExclusionReasons);
-        Assert.DoesNotContain("social.gift_npc", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.NotEmpty(declaration.RuntimeEvidenceIds);
+        Assert.NotEmpty(declaration.OutputEvidenceIds);
+        Assert.Empty(declaration.TrainingExclusionReasons);
+        Assert.Contains("social.gift_npc", OptionCapabilityRegistrySource.TrainingAllowlist);
 
         var recovery = OptionCapabilityRegistrySource.GetRequired("recovery.stabilize_day");
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, recovery.RuntimeTrainingGate);

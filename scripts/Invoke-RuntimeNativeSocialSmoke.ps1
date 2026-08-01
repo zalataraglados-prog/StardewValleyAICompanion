@@ -8,10 +8,15 @@ param(
     [int] $StartupTimeoutSeconds = 120,
     [switch] $ProductionRouteOnly,
     [switch] $ProductionPursuitOnly,
+    [switch] $ProductionGiftPursuitOnly,
     [switch] $KeepGameRunning
 )
 
 $ErrorActionPreference = "Stop"
+
+if (@($ProductionRouteOnly, $ProductionPursuitOnly, $ProductionGiftPursuitOnly).Where({ $_ }).Count -gt 1) {
+    throw "ProductionRouteOnly, ProductionPursuitOnly, and ProductionGiftPursuitOnly are mutually exclusive."
+}
 
 function Write-JsonFile {
     param(
@@ -1001,7 +1006,9 @@ function Verify-ProductionSocialPursuitArtifacts {
     param(
         [Parameter(Mandatory = $true)] [string] $LoopRoot,
         [Parameter(Mandatory = $true)] [string] $RunId,
-        [Parameter(Mandatory = $true)] [string] $RunDirectory
+        [Parameter(Mandatory = $true)] [string] $RunDirectory,
+        [string] $ExpectedContinuationOption = "social.talk_npc",
+        [switch] $RequireSingleItemGiftConsumed
     )
 
     $runRoot = Join-Path $LoopRoot (Join-Path "runs" $RunId)
@@ -1030,12 +1037,17 @@ function Verify-ProductionSocialPursuitArtifacts {
     $routeApplied = 0
     $waitApplied = 0
     $socialApplied = 0
+    $verifiedSocialResult = $null
     foreach ($rankingFile in $rankingFiles) {
         $ranking = Get-Content -LiteralPath $rankingFile.FullName -Raw | ConvertFrom-Json
         if ($ranking.social_continuation_filter.active -eq $true) {
             $objectiveNpc = [string]$ranking.social_continuation_filter.objective.npc_name
+            $objectiveOption = [string]$ranking.social_continuation_filter.objective.option_id
             if ([string]::IsNullOrWhiteSpace($lockedNpc)) { $lockedNpc = $objectiveNpc }
             if ($objectiveNpc -ne $lockedNpc) { throw "Social pursuit switched NPC from '$lockedNpc' to '$objectiveNpc'" }
+            if ($objectiveOption -ne $ExpectedContinuationOption) {
+                throw "Social pursuit switched option from '$ExpectedContinuationOption' to '$objectiveOption'"
+            }
             if ([int]$ranking.social_continuation_filter.selected_candidate_count -ne 1) {
                 throw "Social continuation filter did not select exactly one candidate in $($rankingFile.Name)"
             }
@@ -1049,11 +1061,35 @@ function Verify-ProductionSocialPursuitArtifacts {
             $optionId = [string]$step.option_id
             if ($optionId -eq "executor.traverse_connector") { $routeApplied++ }
             elseif ($optionId -eq "executor.wait_ticks") { $waitApplied++ }
-            elseif ($optionId -eq "executor.social_interact") { $socialApplied++ }
+            elseif ($optionId -eq "executor.social_interact") {
+                $socialApplied++
+                $verifiedSocialResult = $step
+            }
         }
     }
     if ($routeApplied -lt 1) { throw "Production social pursuit did not verify any connector traversal" }
     if ($socialApplied -ne 1) { throw "Production social pursuit expected one verified social interaction, found $socialApplied" }
+
+    if ($RequireSingleItemGiftConsumed) {
+        if ($null -eq $verifiedSocialResult) {
+            throw "Production gift pursuit is missing its verified social result"
+        }
+        if ($verifiedSocialResult.social_action_kind -ne "gift") {
+            throw "Production gift pursuit ended with action '$($verifiedSocialResult.social_action_kind)' instead of gift"
+        }
+        if ($verifiedSocialResult.social_gift_stack_before -ne 1) {
+            throw "Production gift pursuit expected stack_before=1, got $($verifiedSocialResult.social_gift_stack_before)"
+        }
+        if ($null -ne $verifiedSocialResult.social_gift_stack_after) {
+            throw "Production gift pursuit expected stack_after=null, got $($verifiedSocialResult.social_gift_stack_after)"
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$verifiedSocialResult.social_gift_item_id_before)) {
+            throw "Production gift pursuit did not record the consumed item identity"
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$verifiedSocialResult.social_gift_item_id_after)) {
+            throw "Production gift pursuit retained an item identity after consuming the only item"
+        }
+    }
 
     $finalSnapshot = Get-Content -LiteralPath $afterFiles[-1].FullName -Raw | ConvertFrom-Json
     Copy-Item -LiteralPath $reportPath -Destination (Join-Path $RunDirectory "production-pursuit-report.json") -Force
@@ -1064,6 +1100,10 @@ function Verify-ProductionSocialPursuitArtifacts {
         RouteStepsApplied = $routeApplied
         WaitStepsApplied = $waitApplied
         SocialInteractionsApplied = $socialApplied
+        SocialActionKind = if ($null -eq $verifiedSocialResult) { "" } else { [string]$verifiedSocialResult.social_action_kind }
+        GiftItemIdBefore = if ($null -eq $verifiedSocialResult) { "" } else { [string]$verifiedSocialResult.social_gift_item_id_before }
+        GiftStackBefore = if ($null -eq $verifiedSocialResult) { $null } else { $verifiedSocialResult.social_gift_stack_before }
+        GiftStackAfter = if ($null -eq $verifiedSocialResult) { $null } else { $verifiedSocialResult.social_gift_stack_after }
         Iterations = [int]$report.attempts_started
         FinalLocation = Get-SnapshotString $finalSnapshot "player" "location_id"
         FinalSnapshot = $finalSnapshot
@@ -1348,9 +1388,10 @@ $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
 $routeCandidateLoopRoot = Join-Path $runDirectory "production-route-loop"
 $talkLoopRoot = Join-Path $runDirectory "talk-loop"
 $giftLoopRoot = Join-Path $runDirectory "gift-loop"
+$trainingOutputDirectory = Join-Path $runDirectory "training-output"
 $backendStdout = Join-Path $runDirectory "backend.stdout.log"
 $backendStderr = Join-Path $runDirectory "backend.stderr.log"
-New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
+New-Item -ItemType Directory -Force -Path $trainingOutputDirectory | Out-Null
 
 $bridgePort = 8765
 $executorPort = 8767
@@ -1378,6 +1419,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_TRAINING_OUTPUT_DIR = $env:STARDEWAI_TRAINING_OUTPUT_DIR
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
     ASPNETCORE_URLS = $env:ASPNETCORE_URLS
@@ -1391,6 +1433,7 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = $trainingOutputDirectory
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:ASPNETCORE_URLS = $backendUrl
@@ -1415,7 +1458,31 @@ try {
     $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle Hidden -PassThru
     $executorHealth = Wait-JsonHealth -Url "$executorUrl/health" -TimeoutSeconds 30
     Start-Sleep -Seconds 20
-    Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
+    $worldSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
+    if ($ProductionGiftPursuitOnly) {
+        $fixtureRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.single-gift"
+            before_state_hash = $worldSnapshot.state_hash
+            option_id = "debug.setup_single_gift_item"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            slot_index = 11
+            qualified_item_id = "(O)388"
+        }
+        $fixtureResult = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body $fixtureRequest -TimeoutSeconds 60
+        Write-JsonFile (Join-Path $runDirectory "single-gift-fixture-request.json") $fixtureRequest
+        Write-JsonFile (Join-Path $runDirectory "single-gift-fixture-result.json") $fixtureResult
+        if ($fixtureResult.status -ne "applied" -or $fixtureResult.primitive_verification_status -ne "verified") {
+            throw "Single-gift isolated fixture was not applied/verified: $($fixtureResult.block_reasons -join ',')"
+        }
+        $worldSnapshot = Wait-WorldSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+    }
     $rawBeforeSnapshot = Invoke-RawJsonGet -Url $snapshotUrl
     $before = $rawBeforeSnapshot | ConvertFrom-Json
     Set-Content -LiteralPath (Join-Path $runDirectory "raw-snapshot-before.json") -Value $rawBeforeSnapshot -Encoding utf8
@@ -1438,6 +1505,57 @@ try {
 
     $ingestResult = Invoke-RawJsonPostStrict -Url "$backendUrl/api/v1/snapshots" -Json $rawBeforeSnapshot -ErrorArtifactPath (Join-Path $runDirectory "snapshot-ingest-error.json")
     Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ingested.json") $ingestResult
+
+    if ($ProductionGiftPursuitOnly) {
+        dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
+            --root $routeCandidateLoopRoot `
+            --backend-url $backendUrl `
+            --bridge-snapshot-url $snapshotUrl `
+            --executor-url $executorUrl `
+            --no-manifest `
+            --run-id $RunId `
+            --save-isolation-path $savesPath `
+            --max-attempts 64 `
+            --sleep-ms 0 `
+            --skip-training `
+            --use-daily-plan `
+            --daily-plan-max-candidates 1 `
+            --daily-plan-candidate-options "social.gift_npc" `
+            --after-snapshot-wait-ms 1000 `
+            --continue-after-blocked-queue-items `
+            --stop-after-social-objective-complete
+        if ($LASTEXITCODE -ne 0) { throw "Production gift pursuit LiveTrainingLoop returned exit code $LASTEXITCODE" }
+
+        $giftPursuitEvidence = Verify-ProductionSocialPursuitArtifacts `
+            -LoopRoot $routeCandidateLoopRoot `
+            -RunId $RunId `
+            -RunDirectory $runDirectory `
+            -ExpectedContinuationOption "social.gift_npc" `
+            -RequireSingleItemGiftConsumed
+        Write-JsonFile (Join-Path $runDirectory "production-gift-pursuit-verification.json") $giftPursuitEvidence
+        $giftPursuitSummary = [ordered]@{
+            status = "passed"
+            run_id = $RunId
+            save_slot = $SaveSlot
+            production_gift_pursuit_verified = $giftPursuitEvidence.Verified
+            npc_name = $giftPursuitEvidence.NpcName
+            connector_steps_applied = $giftPursuitEvidence.RouteStepsApplied
+            wait_steps_applied = $giftPursuitEvidence.WaitStepsApplied
+            social_interactions_applied = $giftPursuitEvidence.SocialInteractionsApplied
+            social_action_kind = $giftPursuitEvidence.SocialActionKind
+            gift_item_id_before = $giftPursuitEvidence.GiftItemIdBefore
+            gift_stack_before = $giftPursuitEvidence.GiftStackBefore
+            gift_stack_after = $giftPursuitEvidence.GiftStackAfter
+            iterations = $giftPursuitEvidence.Iterations
+            final_location = $giftPursuitEvidence.FinalLocation
+            future_schedule_projection = "not_used"
+            scope = "same_objective_multi_connector_single_item_gift_pursuit"
+            artifacts_dir = $runDirectory
+        }
+        Write-JsonFile (Join-Path $runDirectory "summary.json") $giftPursuitSummary
+        $giftPursuitSummary | ConvertTo-Json -Depth 32
+        return
+    }
 
     $rankProbeRequest = [ordered]@{
         dataset_path = "$(Join-Path $talkLoopRoot "datasets\live-training-feature-rows.jsonl")"

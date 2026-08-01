@@ -739,6 +739,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_single_gift_item")
+            {
+                pending.Completion.SetResult(ExecuteSetupSingleGiftItem(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_input_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineInputTarget(pending.Request));

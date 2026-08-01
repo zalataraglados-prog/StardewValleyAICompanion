@@ -41,6 +41,7 @@ public sealed partial class ModEntry
             "debug.setup_quarry_mine",
             "debug.setup_quest_monster_drop_fixture",
             "debug.setup_shipping_target",
+            "debug.setup_single_gift_item",
             "debug.setup_skull_cavern_shaft",
             "debug.setup_storage_crafting_target",
             "debug.setup_storage_placement_target",
