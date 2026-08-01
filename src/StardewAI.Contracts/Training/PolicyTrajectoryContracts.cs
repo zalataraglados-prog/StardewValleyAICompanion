@@ -5,6 +5,11 @@ using StardewAI.Contracts.Execution;
 
 namespace StardewAI.Contracts.Training;
 
+public static class PolicyTrajectoryVersionPins
+{
+    public const string KnowledgeDictionary = "game-1.6.15-20260723T093543Z-linux-v24";
+}
+
 public sealed class PolicyDecisionTrajectoryEnvelope
 {
     [JsonPropertyName("schema_version")]
@@ -184,14 +189,26 @@ public sealed class PolicyTrajectoryReturns
     [JsonPropertyName("day")]
     public double? Day { get; set; }
 
+    [JsonPropertyName("day_status")]
+    public string DayStatus { get; set; } = "pending";
+
     [JsonPropertyName("season")]
     public double? Season { get; set; }
+
+    [JsonPropertyName("season_status")]
+    public string SeasonStatus { get; set; } = "pending";
 
     [JsonPropertyName("year")]
     public double? Year { get; set; }
 
+    [JsonPropertyName("year_status")]
+    public string YearStatus { get; set; } = "pending";
+
     [JsonPropertyName("grandpa_21")]
     public double? Grandpa21 { get; set; }
+
+    [JsonPropertyName("grandpa_21_status")]
+    public string Grandpa21Status { get; set; } = "pending";
 
     [JsonPropertyName("long_horizon_status")]
     public string LongHorizonStatus { get; set; } = "pending";

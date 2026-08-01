@@ -193,6 +193,7 @@ for (var attemptOrdinal = 1;
                 : null;
             socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
+            var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress
                 ? new PolicyTrajectoryAppendBatchResult()
                 : AppendPolicyDecisionTrajectories(options, iteration, execution, realAppend);
@@ -200,7 +201,7 @@ for (var attemptOrdinal = 1;
             if (!executionNoProgress.NoProgress)
             {
                 verifiedActions++;
-                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
+                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " horizon_observations=" + horizonObservations + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
                 var train = await TrainIfNeededAsync(http, options, iteration);
                 if (train.TrainingReport is not null)
                 {

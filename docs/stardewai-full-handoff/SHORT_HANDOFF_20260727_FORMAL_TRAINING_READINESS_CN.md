@@ -25,7 +25,8 @@
 - 当前 allowlist 已增至 4 项：`mining.reach_depth`、`inventory.transfer_item`、`social.talk_npc`、`social.gift_npc`，均只在各自 EVD 登记范围内成立。
 - `policy_decision_trajectory.v1` 已接入 LiveTrainingLoop；初始排序和两类滚动重规划均绑定自身模型计划、完整排序、编译队列和源状态哈希。
 - 动作后重规划只标记下一动作；源哈希漂移、缺失候选、未准入选择、非 verified/fresh 结果和同一决策的重复原语不写策略轨迹。
-- 当前直接下一步是数据清洗、按存档/日的确定性切分、数据集哈希清单和长期回报回填，然后才进入 C# 结构化排序器与检查点往返。
+- EVD-200 已完成数据清洗、按存档/日的确定性切分、数据集哈希清单和观测型长期回报回填；标准 E 盘路径尚无真实输入，不能宣称已有正式数据集。
+- 当前直接下一步是 C# 结构化排序器与检查点往返，同时继续扩大五门准入覆盖；详见 `SHORT_HANDOFF_20260801_POLICY_DATASET_CN.md`。
 - 现有 baseline 仍只是聚合烟测器，正式全量训练仍未准入。
 
 退出后依次完成：真实缺口闭合、正式轨迹重建、C# 结构化排序器、

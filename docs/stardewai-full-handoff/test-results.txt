@@ -1,3 +1,16 @@
+2026-08-01 formal policy dataset governance
+
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+- Core full regression PASS: 1481/1481.
+- Backend full regression PASS: 103/103.
+- Focused policy dataset, effective-decision contract and live horizon integration PASS: 13/13.
+- Deterministic cleaning, conflict rejection, save-day split, SHA-256 manifests,
+  immutable version locks and observed-only return backfill are covered.
+- Live year-three boundary writes day/season/year and Grandpa-21 observations once;
+  unavailable Grandpa scores do not create terminal labels.
+- The standard E-drive production inputs do not exist yet, so no formal dataset was
+  fabricated and no game process was started.
+
 2026-08-01 effective policy decision trajectory binding
 
 - Release solution build PASS: 0 errors, 5 pre-existing warnings.

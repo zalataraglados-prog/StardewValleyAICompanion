@@ -205,12 +205,7 @@ static partial class Program
     private static double ReadFieldDouble(JsonObject snapshot, string section, string name)
     {
         var value = snapshot["state"]?[section]?[name]?["value"];
-        if (value is null)
-        {
-            return 0;
-        }
-
-        return value.GetValueKind() == JsonValueKind.Number ? value.GetValue<double>() : 0;
+        return TryReadJsonNumber(value, out var number) ? number : 0;
     }
 
     private static string ReadFieldString(JsonObject snapshot, string section, string name)
@@ -227,7 +222,7 @@ static partial class Program
     private static double ReadNestedFieldDouble(JsonObject snapshot, string section, string field, string property)
     {
         var value = snapshot["state"]?[section]?[field]?["value"]?[property];
-        return value is not null && value.GetValueKind() == JsonValueKind.Number ? value.GetValue<double>() : 0;
+        return TryReadJsonNumber(value, out var number) ? number : 0;
     }
 
     private static string ReadNestedFieldString(JsonObject snapshot, string section, string field, string property)
@@ -251,7 +246,36 @@ static partial class Program
     private static double ReadFirstNestedArrayDouble(JsonObject snapshot, string section, string field, string arrayProperty, string valueProperty)
     {
         var value = snapshot["state"]?[section]?[field]?["value"]?[arrayProperty]?.AsArray().FirstOrDefault()?[valueProperty];
-        return value is not null && value.GetValueKind() == JsonValueKind.Number ? value.GetValue<double>() : 0;
+        return TryReadJsonNumber(value, out var number) ? number : 0;
+    }
+
+    private static bool TryReadJsonNumber(JsonNode? value, out double number)
+    {
+        number = 0;
+        if (value is not JsonValue jsonValue || value.GetValueKind() != JsonValueKind.Number)
+            return false;
+        if (jsonValue.TryGetValue<double>(out number))
+            return true;
+        if (jsonValue.TryGetValue<int>(out var intValue))
+        {
+            number = intValue;
+            return true;
+        }
+        if (jsonValue.TryGetValue<long>(out var longValue))
+        {
+            number = longValue;
+            return true;
+        }
+        if (jsonValue.TryGetValue<decimal>(out var decimalValue))
+        {
+            number = (double)decimalValue;
+            return true;
+        }
+        return double.TryParse(
+            value.ToJsonString(),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out number);
     }
 
     private static int CountCropsNeedingWater(JsonObject snapshot)
