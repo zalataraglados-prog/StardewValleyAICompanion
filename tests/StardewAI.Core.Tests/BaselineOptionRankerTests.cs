@@ -6,7 +6,7 @@ namespace StardewAI.Core.Tests
     public sealed class BaselineOptionRankerTests
     {
         [Fact]
-        public void RankUsesRegisteredOptionsWhenCandidatesAreEmpty()
+        public void RankUsesOnlyEvidenceAdmittedOptionsWhenCandidatesAreEmpty()
         {
             var report = new BaselineTrainingReport
             {
@@ -25,9 +25,43 @@ namespace StardewAI.Core.Tests
 
             var prediction = new BaselineOptionRanker().Rank(report, Array.Empty<string>());
 
+            Assert.Equal(4, prediction.RankedOptions.Length);
             Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "farm.maintain_crops");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "social.gift_npc" && item.Evidence == "unseen_option");
-            Assert.True(prediction.RankedOptions.Length >= 4);
+        }
+
+        [Fact]
+        public void RankFiltersExplicitCandidatesThroughTheSameAdmissionSource()
+        {
+            var prediction = new BaselineOptionRanker().Rank(
+                new BaselineTrainingReport(),
+                new[] { "recovery.stabilize_day", "social.gift_npc", "social.gift_npc" });
+
+            var option = Assert.Single(prediction.RankedOptions);
+            Assert.Equal("social.gift_npc", option.OptionId);
+        }
+
+        [Fact]
+        public void RankFailsClosedWhenEveryExplicitCandidateIsNotAdmitted()
+        {
+            var report = new BaselineTrainingReport
+            {
+                OptionScores = new[]
+                {
+                    new BaselineOptionScore
+                    {
+                        OptionId = "recovery.stabilize_day",
+                        ExampleCount = 10,
+                        AverageTotalReward = 10
+                    }
+                }
+            };
+
+            var prediction = new BaselineOptionRanker().Rank(
+                report,
+                new[] { "recovery.stabilize_day" });
+
+            Assert.Empty(prediction.RankedOptions);
         }
     }
 }

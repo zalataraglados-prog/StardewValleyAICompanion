@@ -74,6 +74,13 @@ EVD-192 在 E 盘隔离存档中验证了“箱子到玩家”和“玩家到箱
 物品或全部社交完成。下一切片按既定路线重建准入策略轨迹并接入 C# 结构化排序器，不重做候选、
 编译器或社交执行器。
 
+正式轨迹阶段的第一道硬闸已完成：`PolicyTrainingAdmissionFilter` 直接消费生成式训练 allowlist，
+校准行与未准入行分开计数；非校准行必须且只能包含一个准入模型 option。旧
+`BaselineFeatureRowTrainer` 不再接受 `strategy.grandpa_progress` 等未准入样本，默认和显式排序
+请求也不能输出 allowlist 外 option；显式候选过滤为空时直接返回空，不再回退到报告内容。
+该基线仍只是聚合烟测，不是正式模型。紧接任务是建立强类型 `policy trajectory` schema/writer，
+把决策时全部候选、排除原因、预算、最终选择、执行结果和长期回报按存档/游戏日绑定。
+
 ## 禁止事项
 
 - 不把 97 当作总动作数；

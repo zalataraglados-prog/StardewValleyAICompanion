@@ -178,6 +178,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("excluded_calibration_row_count")]
         public int ExcludedCalibrationRowCount { get; set; }
 
+        [JsonPropertyName("excluded_admission_row_count")]
+        public int ExcludedAdmissionRowCount { get; set; }
+
+        [JsonPropertyName("excluded_option_ids")]
+        public string[] ExcludedOptionIds { get; set; } = Array.Empty<string>();
+
+        [JsonPropertyName("training_allowlist")]
+        public string[] TrainingAllowlist { get; set; } = Array.Empty<string>();
+
         [JsonPropertyName("excluded_reasons")]
         public string[] ExcludedReasons { get; set; } = Array.Empty<string>();
 
@@ -212,7 +221,7 @@ namespace StardewAI.Contracts.Training
         public string Trainer { get; set; } = "StardewAI.Core.Training.BaselineFeatureRowTrainer";
 
         [JsonPropertyName("policy")]
-        public string Policy { get; set; } = "Baseline trainer only aggregates feature-row labels by option id; it is a smoke-test trainer, not a learned policy model.";
+        public string Policy { get; set; } = "Baseline trainer aggregates only single-option, evidence-admitted policy rows; calibration and non-admitted rows remain separately excluded. It is a smoke-test trainer, not a learned policy model.";
     }
 
     public sealed class BaselinePredictionRequest

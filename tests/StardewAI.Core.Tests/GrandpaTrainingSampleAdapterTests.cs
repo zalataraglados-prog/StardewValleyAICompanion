@@ -131,11 +131,11 @@ public sealed class GrandpaTrainingSampleAdapterTests
         new JsonlTrainingDatasetWriter().AppendMany(datasetPath, rows);
         var reportOut = new BaselineFeatureRowTrainer().Train(datasetPath);
 
-        Assert.Equal(1, reportOut.IncludedRowCount);
+        Assert.Equal(0, reportOut.IncludedRowCount);
         Assert.Equal(0, reportOut.ExcludedCalibrationRowCount);
-        var score = Assert.Single(reportOut.OptionScores);
-        Assert.Equal("strategy.grandpa_progress", score.OptionId);
-        Assert.Equal(1, score.ExampleCount);
+        Assert.Equal(1, reportOut.ExcludedAdmissionRowCount);
+        Assert.Equal(new[] { "strategy.grandpa_progress" }, reportOut.ExcludedOptionIds);
+        Assert.Empty(reportOut.OptionScores);
     }
 
     [Fact]

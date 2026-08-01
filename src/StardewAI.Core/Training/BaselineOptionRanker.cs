@@ -1,26 +1,24 @@
 using System;
 using System.Linq;
-using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
-using StardewAI.Core.OptionRegistry;
 
 namespace StardewAI.Core.Training
 {
     public sealed class BaselineOptionRanker
     {
-        private readonly OptionRegistry.OptionRegistry optionRegistry;
+        private readonly PolicyTrainingAdmissionFilter admissionFilter;
         private readonly BaselinePolicyPredictor predictor;
 
         public BaselineOptionRanker()
-            : this(new OptionRegistry.OptionRegistry(), new BaselinePolicyPredictor())
+            : this(new PolicyTrainingAdmissionFilter(), new BaselinePolicyPredictor())
         {
         }
 
         public BaselineOptionRanker(
-            OptionRegistry.OptionRegistry optionRegistry,
+            PolicyTrainingAdmissionFilter admissionFilter,
             BaselinePolicyPredictor predictor)
         {
-            this.optionRegistry = optionRegistry;
+            this.admissionFilter = admissionFilter;
             this.predictor = predictor;
         }
 
@@ -29,12 +27,12 @@ namespace StardewAI.Core.Training
             string[] candidateOptionIds)
         {
             var candidates = candidateOptionIds.Length > 0
-                ? candidateOptionIds
-                : optionRegistry.All
-                    .Where(option => option.TrainingRole != TrainingRoles.ExecutorCalibration)
-                    .Select(option => option.OptionId)
-                    .OrderBy(optionId => optionId, StringComparer.Ordinal)
-                    .ToArray();
+                ? admissionFilter.FilterOptionIds(candidateOptionIds)
+                : admissionFilter.Allowlist.ToArray();
+            if (candidateOptionIds.Length > 0 && candidates.Length == 0)
+            {
+                return new PolicyPredictionEnvelope();
+            }
 
             return predictor.Predict(report, candidates);
         }

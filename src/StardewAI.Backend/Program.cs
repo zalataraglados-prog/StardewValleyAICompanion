@@ -48,6 +48,7 @@ builder.Services.AddSingleton<TrainingEpisodeRewardCalculator>();
 builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 builder.Services.AddSingleton<TrainingFeatureRowExporter>();
 builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
+builder.Services.AddSingleton<PolicyTrainingAdmissionFilter>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 builder.Services.AddSingleton<BaselinePolicyPredictor>();
 builder.Services.AddSingleton<BaselineOptionRanker>();
@@ -589,7 +590,7 @@ app.MapGet("/api/v1/training/session/ready-probe", (HttpRequest request, StateSt
     return Results.Ok(probe.Check(store.LatestSnapshot(), store.LatestSnapshot() is not null, manifestPath));
 });
 
-app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselinePolicyPredictor predictor) =>
+app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest request, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker) =>
 {
     var report = request.TrainingReport;
     if (report is null)
@@ -598,7 +599,7 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
         report = trainer.Train(datasetPath);
     }
 
-    return Results.Ok(predictor.Predict(report, request.CandidateOptionIds));
+    return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
 });
 
 app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository) =>

@@ -6,7 +6,7 @@ namespace StardewAI.Core.Tests
     public sealed class TrainingDatasetPipelineTests
     {
         [Fact]
-        public void WriterAppendsJsonlAndBaselineTrainerExcludesCalibrationRowsFromPolicyScores()
+        public void WriterAndBaselineTrainerSeparateCalibrationAndAdmissionExclusions()
         {
             var datasetPath = Path.Combine(Path.GetTempPath(), "stardewai-tests", Guid.NewGuid().ToString("N"), "rows.jsonl");
             var writer = new JsonlTrainingDatasetWriter();
@@ -14,6 +14,7 @@ namespace StardewAI.Core.Tests
             var first = writer.Append(datasetPath, Row("row.one", "episode.one", "farm.maintain_crops", 0.09, false, true));
             var second = writer.Append(datasetPath, Row("row.two", "episode.two", "farm.maintain_crops", 0.05, true, true));
             writer.Append(datasetPath, Row("row.three", "episode.three", "economy.buy_supplies", 0.20, false, false));
+            writer.Append(datasetPath, Row("row.four", "episode.four", "social.gift_npc", 0.30, false, false));
 
             Assert.Equal(1, first.RowCount);
             Assert.Equal(2, second.RowCount);
@@ -22,14 +23,21 @@ namespace StardewAI.Core.Tests
             var report = new BaselineFeatureRowTrainer().Train(datasetPath);
 
             Assert.Equal("baseline_training_report.v1", report.SchemaVersion);
-            Assert.Equal(3, report.RowCount);
+            Assert.Equal(4, report.RowCount);
             Assert.Equal(1, report.IncludedRowCount);
             Assert.Equal(2, report.ExcludedCalibrationRowCount);
+            Assert.Equal(1, report.ExcludedAdmissionRowCount);
+            Assert.Equal(new[] { "economy.buy_supplies" }, report.ExcludedOptionIds);
+            Assert.Equal(
+                new[] { "inventory.transfer_item", "mining.reach_depth", "social.gift_npc", "social.talk_npc" },
+                report.TrainingAllowlist);
+            Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);
+            Assert.Contains(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, report.ExcludedReasons);
             var score = Assert.Single(report.OptionScores);
-            Assert.Equal("economy.buy_supplies", score.OptionId);
+            Assert.Equal("social.gift_npc", score.OptionId);
             Assert.Equal(1, score.ExampleCount);
-            Assert.Equal(0.20, score.AverageGoalProgressDelta);
-            Assert.Equal(0.20, score.AverageTotalReward);
+            Assert.Equal(0.30, score.AverageGoalProgressDelta);
+            Assert.Equal(0.30, score.AverageTotalReward);
             Assert.Equal(0, score.HardBlockRate);
         }
 
