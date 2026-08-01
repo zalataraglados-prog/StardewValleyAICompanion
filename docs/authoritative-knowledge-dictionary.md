@@ -99,7 +99,12 @@ baseline deliberately declares zero product executors. It generates
 gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. The current allowlist
 contains `mining.reach_depth`, restricted to the candidate-bound ordinary-mine rolling scope
 proven by EVD-095, and the explicit player/ordinary-owned-chest scope of
-`inventory.transfer_item` proven by EVD-192; neither evidence scope implies broader completion. The legacy `executor_enabled`
+`inventory.transfer_item` proven by EVD-192. It also contains `social.talk_npc` only for the
+EVD-076/EVD-105 scope: a current loaded vanilla NPC reached on the same map or through rolling
+resolved connectors, followed by safe ordinary dialogue closure. None of these scopes implies
+broader completion. `recovery.stabilize_day` and `social.gift_npc` retain verified
+read/candidate/compile evidence but remain excluded until their broad runtime/output gaps close.
+The legacy `executor_enabled`
 availability field means only that the internal compiler/Harness or candidate chain is
 enabled; `product_executor_supported` is the separate product claim. Harness dispatch,
 product integration, runtime evidence, and training eligibility cannot promote one another.

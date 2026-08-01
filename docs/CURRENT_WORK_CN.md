@@ -41,7 +41,7 @@
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件
 核对。不能把“已登记”解释为“已实现”：现有代码的编译器孤儿 0、运行 ID 孤儿 0；
-Product Executor 仍为 0，五门证据闭环与训练准入均为 2。
+Product Executor 仍为 0；本轮证据回填后，五门证据闭环与训练准入均为 3。
 
 ## 退出条件
 
@@ -64,8 +64,12 @@ EVD-192 在 E 盘隔离存档中验证了“箱子到玩家”和“玩家到箱
 94 项 required state factor 中 2 项缺失，当前实时快照为 77 项带完整来源可读、17 项场景性
 不可用、0 项阻塞。新安装器会先校验全部 required factors、哈希与版本，再原子更新外部权威
 字典的 current 指针；完整 KnowledgeCompiler 已以该指针达到 585/585 exports、blocking 0。
-下一主线固定为 `recovery.stabilize_day`：补齐其全部候选到日计划、队列、原生运行与输出记录
-的纵向闭环，完成后再进入社交原生执行器。
+复核确认 `recovery.stabilize_day` 的全部当前候选到日计划/队列编译链早已完成，普通社交对话和
+送礼的原生 Harness 执行器也已由 EVD-076/EVD-105 证明，不得重复实现第二套。当前按证据边界
+回填：`social.talk_npc` 在“当前已加载原版 NPC、同图或透明滚动路线、安全关闭普通对话”范围
+内通过五门；`recovery.stabilize_day` 与 `social.gift_npc` 仅登记 read/candidate/compile，分别等待
+跨图回家运行证据，以及远端送礼与单件归零运行证据。下一实现切片是上述两个真实运行缺口，
+不是重做候选、编译器或社交执行器。
 
 ## 禁止事项
 

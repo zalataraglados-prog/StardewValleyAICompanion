@@ -368,7 +368,21 @@ namespace StardewAI.Contracts.Capabilities
                         "EVD-192"),
                     ["mining.reach_depth"] = VerifiedEvidence(
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
-                        "EVD-095")
+                        "EVD-095"),
+                    ["recovery.stabilize_day"] = BoundedEvidence(
+                        "all_current_recovery_candidates_static_chain;cross_map_return_runtime_pending",
+                        readEvidenceIds: new[] { "EVD-045", "EVD-046" },
+                        candidateEvidenceIds: new[] { "EVD-044", "EVD-050" },
+                        compilerEvidenceIds: new[] { "EVD-050" }),
+                    ["social.gift_npc"] = BoundedEvidence(
+                        "current_loaded_npc_gift_read_candidate_compile;remote_and_single_item_runtime_pending",
+                        readEvidenceIds: new[] { "EVD-076" },
+                        candidateEvidenceIds: new[] { "EVD-076", "EVD-104" },
+                        compilerEvidenceIds: new[] { "EVD-076", "EVD-104" }),
+                    ["social.talk_npc"] = VerifiedEvidence(
+                        "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
+                        "EVD-076",
+                        "EVD-105")
                 });
 
         private static readonly IReadOnlyList<OptionCapabilityDeclaration> Options = BuildOptions();
@@ -633,15 +647,40 @@ namespace StardewAI.Contracts.Capabilities
                 throw new InvalidOperationException("Verified training evidence requires at least one evidence ID.");
             }
 
+            return BoundedEvidence(scope, ids, ids, ids, ids, ids);
+        }
+
+        private static TrainingEvidence BoundedEvidence(
+            string scope,
+            string[]? readEvidenceIds = null,
+            string[]? candidateEvidenceIds = null,
+            string[]? compilerEvidenceIds = null,
+            string[]? runtimeEvidenceIds = null,
+            string[]? outputEvidenceIds = null)
+        {
+            if (string.IsNullOrWhiteSpace(scope))
+            {
+                throw new InvalidOperationException("Bounded evidence requires a nonempty scope.");
+            }
+
             return new TrainingEvidence
             {
                 Scope = scope,
-                ReadEvidenceIds = ids,
-                CandidateEvidenceIds = ids,
-                CompilerEvidenceIds = ids,
-                RuntimeEvidenceIds = ids,
-                OutputEvidenceIds = ids
+                ReadEvidenceIds = NormalizeEvidenceIds(readEvidenceIds),
+                CandidateEvidenceIds = NormalizeEvidenceIds(candidateEvidenceIds),
+                CompilerEvidenceIds = NormalizeEvidenceIds(compilerEvidenceIds),
+                RuntimeEvidenceIds = NormalizeEvidenceIds(runtimeEvidenceIds),
+                OutputEvidenceIds = NormalizeEvidenceIds(outputEvidenceIds)
             };
+        }
+
+        private static string[] NormalizeEvidenceIds(IEnumerable<string>? evidenceIds)
+        {
+            return (evidenceIds ?? Array.Empty<string>())
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
         }
 
         private static TrainingEvidenceGateStatus Gate(string[] evidenceIds, bool declared)

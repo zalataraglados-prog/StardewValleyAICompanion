@@ -149,7 +149,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     {
         Assert.NotEmpty(OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.Equal(
-            new[] { "inventory.transfer_item", "mining.reach_depth" },
+            new[] { "inventory.transfer_item", "mining.reach_depth", "social.talk_npc" },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
         Assert.All(OptionCapabilityRegistrySource.TrainingAllowlist, optionId =>
@@ -165,11 +165,14 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.NotEmpty(declaration.RuntimeEvidenceIds);
             Assert.NotEmpty(declaration.OutputEvidenceIds);
             Assert.Empty(declaration.TrainingExclusionReasons);
-            Assert.Equal(
-                optionId == "inventory.transfer_item"
-                    ? "explicit_bidirectional_player_normal_chest_transfer"
-                    : "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
-                declaration.TrainingEvidenceScope);
+            var expectedScope = optionId switch
+            {
+                "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
+                "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
+                _ => throw new InvalidOperationException("Unexpected training option: " + optionId)
+            };
+            Assert.Equal(expectedScope, declaration.TrainingEvidenceScope);
         });
 
         Assert.False(TrainingEligibilityPolicy.IsEligible(
@@ -182,6 +185,43 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void ExistingRecoveryAndGiftChainsRemainBlockedAtTheirUnprovenRuntimeBoundaryTests()
+    {
+        foreach (var optionId in new[] { "recovery.stabilize_day", "social.gift_npc" })
+        {
+            var declaration = OptionCapabilityRegistrySource.GetRequired(optionId);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.RuntimeTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.OutputTrainingGate);
+            Assert.NotEmpty(declaration.ReadEvidenceIds);
+            Assert.NotEmpty(declaration.CandidateEvidenceIds);
+            Assert.NotEmpty(declaration.CompilerEvidenceIds);
+            Assert.Empty(declaration.RuntimeEvidenceIds);
+            Assert.Empty(declaration.OutputEvidenceIds);
+            Assert.Contains(
+                TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
+                declaration.TrainingExclusionReasons);
+            Assert.Contains(
+                TrainingAdmissionExclusionReason.OutputEvidenceMissing,
+                declaration.TrainingExclusionReasons);
+            Assert.DoesNotContain(optionId, OptionCapabilityRegistrySource.TrainingAllowlist);
+        }
+
+        Assert.Contains(
+            TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
+            OptionCapabilityRegistrySource
+                .GetRequired("recovery.stabilize_day")
+                .TrainingExclusionReasons);
+        Assert.DoesNotContain(
+            TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
+            OptionCapabilityRegistrySource
+                .GetRequired("social.gift_npc")
+                .TrainingExclusionReasons);
     }
 
     [Fact]

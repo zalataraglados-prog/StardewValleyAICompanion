@@ -12,7 +12,7 @@
 
 短训只允许用于验证数据管线、显存、检查点和推理接口，不能作为训练成果汇报。
 
-2026-07-28 进展：`capability_registry.v2` 已实现五门证据、证据 ID、范围和类型化排除原因，空 allowlist 会使注册表初始化失败。首个准入项是 `mining.reach_depth`，且仅限 EVD-095 已证明的候选绑定普通矿井滚动范围；这不是任意深度完成声明。下一步仍是回填其余已有证据，再依据生成清单补真实动作缺口，不能据此启动正式训练。
+2026-08-01 进展：`capability_registry.v2` 已实现五门证据、证据 ID、范围和类型化排除原因，空 allowlist 会使注册表初始化失败。当前准入项为 `mining.reach_depth`、`inventory.transfer_item` 和 `social.talk_npc`，每项都仅限其登记的 EVD 范围；这不是任意深度、任意库存或全社交完成声明。`recovery.stabilize_day` 与 `social.gift_npc` 已回填 read/candidate/compile 证据，但分别等待跨图回家，以及远端送礼/单件归零的运行与输出证据。下一步仍是按生成清单补真实证据缺口，不能据此启动正式训练。
 
 ## 2. “正式全量训练”的定义
 
