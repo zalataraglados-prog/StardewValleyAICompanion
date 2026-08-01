@@ -4,9 +4,9 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 320,
-  "mapped_count": 38,
-  "catalogued_blocked_surface_count": 131,
-  "catalogued_blocked_action_count": 69,
+  "mapped_count": 43,
+  "catalogued_blocked_surface_count": 126,
+  "catalogued_blocked_action_count": 68,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
     "animals.purchase",
@@ -45,7 +45,6 @@
     "foraging.harvest_tree_product",
     "foraging.rummage_garbage",
     "housing.renovate",
-    "inventory.transfer_item",
     "island.field_office_donate",
     "mail.process_letter",
     "minigame.play_calico_jack",
@@ -2046,7 +2045,7 @@
       "mappedOptionIds": [
         "inventory.transfer_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -2063,7 +2062,7 @@
       "mappedOptionIds": [
         "inventory.transfer_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -2080,7 +2079,7 @@
       "mappedOptionIds": [
         "inventory.transfer_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3212,7 +3211,7 @@
       "mappedOptionIds": [
         "inventory.transfer_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3229,7 +3228,7 @@
       "mappedOptionIds": [
         "inventory.transfer_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

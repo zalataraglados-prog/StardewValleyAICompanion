@@ -217,6 +217,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("economy.buy_supplies", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("economy.sell_items", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("economy.ship_items", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
+                P("inventory.transfer_item", C, R1, None, NoConfirm, Actor, Inventory, Policy),
                 P("social.talk_npc", C, R5, Relationship, PolicyConfirm, Actor, ActorState, Policy),
                 P("social.gift_npc", C, R5, Relationship, PolicyConfirm, Actor, Mixed, Policy),
                 P("quest.advance", Goal, R2, Consume, PolicyConfirm, Actor, Mixed, Policy),

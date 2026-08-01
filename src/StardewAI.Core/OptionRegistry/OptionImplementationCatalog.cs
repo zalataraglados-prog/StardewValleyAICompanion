@@ -167,6 +167,8 @@ public static class OptionImplementationCatalog
 
     private static string ResolveEngine(string optionId)
     {
+        if (optionId == "inventory.transfer_item")
+            return ImplementationEngineIds.InventoryTransfer;
         if (!optionId.StartsWith("executor.", StringComparison.Ordinal))
             return ImplementationEngineIds.StrategyOrchestration;
         if (MovementOptions.Contains(optionId))
@@ -196,6 +198,8 @@ public static class OptionImplementationCatalog
     {
         if (optionId.StartsWith("executor.", StringComparison.Ordinal))
             return "not_applicable";
+        if (optionId == "inventory.transfer_item")
+            return "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator.MaterialTransfer";
         if (optionId == "quest.advance")
             return "StardewAI.Core.OptionRegistry.QuestCandidateBuilder";
         if (optionId == "strategy.grandpa_progress")

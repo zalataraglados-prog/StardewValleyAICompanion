@@ -234,7 +234,7 @@ namespace StardewAI.Contracts.Capabilities
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "farm.maintain_crops",
-            "executor.transfer_material");
+            "inventory.transfer_item", "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
             "farm.maintain_crops", "executor.move_to_tile", "executor.traverse_connector",
@@ -274,7 +274,7 @@ namespace StardewAI.Contracts.Capabilities
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.obtain_skull_key",
             "mining.claim_reward_chests", "mining.acquire_golden_scythe",
             "volcano.reach_caldera", "economy.buy_supplies", "economy.sell_items",
-            "exploration.visit_location");
+            "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
             "farm.maintain_crops", "farm.collect_animal_products", "farm.care_for_pets",
@@ -316,7 +316,7 @@ namespace StardewAI.Contracts.Capabilities
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "economy.buy_supplies",
-            "economy.sell_items", "economy.ship_items", "social.talk_npc", "social.gift_npc",
+            "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc",
             "quest.advance", "strategy.grandpa_progress", "exploration.visit_location",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -420,6 +420,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("quest_drop_box_donation"),
                 SupportedCandidate("quest_npc_interaction"),
                 SupportedCandidate("ship_inventory_item_to_bin"),
+                SupportedCandidate("transfer_inventory_item"),
                 SupportedCandidate("social_continuation_retry_wait"),
                 SupportedCandidate("social_gift_current"), SupportedCandidate("social_talk_current"),
                 SupportedCandidate("volcano_reach_caldera_plan_envelope"),

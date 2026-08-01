@@ -22,6 +22,7 @@ internal static class Program
             options.TryGetValue("game-assembly", out var gameAssembly);
             options.TryGetValue("game-data-assembly", out var gameDataAssembly);
             options.TryGetValue("decompile-root", out var decompileRoot);
+            options.TryGetValue("action-denominator-freeze", out var actionDenominatorFreezePath);
 
             Directory.CreateDirectory(outputRoot);
             var validator = new KnowledgeSourceValidator(exportRoot, contentRoot);
@@ -351,14 +352,55 @@ internal static class Program
                 block_reason = row.BlockReason,
                 native_runtime_types = row.NativeRuntimeTypes
             })).OrderBy(row => row.action_id, StringComparer.Ordinal).ToArray();
+            var nativeDenominatorSourceClosed = blockingNativeSurfaces.Length == 0 &&
+                blockingNativeBranches.Length == 0 &&
+                blockingNativeMapInteractions.Length == 0 &&
+                missingSemanticActionIds.Length == 0 &&
+                pendingCatalogWithoutSurface.Length == 0;
+            var denominatorFingerprint = ActionDenominatorFingerprintBuilder.Build(
+                manifest.GameVersion,
+                nativeActionSurfaces,
+                nativeActionBranches,
+                nativeMapInteractions,
+                semanticActionRows.Select(row => row.action_id));
+            var denominatorFreeze = ActionDenominatorFingerprintBuilder.VerifyApproval(
+                denominatorFingerprint,
+                actionDenominatorFreezePath);
+            if (!string.IsNullOrWhiteSpace(actionDenominatorFreezePath) &&
+                denominatorFreeze.Status != "frozen")
+            {
+                issues.Add(new(
+                    "blocking",
+                    "native_action_denominator_freeze_mismatch",
+                    "native-action-denominator-freeze",
+                    denominatorFreeze.Status + ";" +
+                    string.Join(",", denominatorFreeze.MismatchReasons)));
+            }
+            Write(outputRoot, "native-action-denominator-fingerprint.json", new
+            {
+                schema_version = "stardewai.native_action_denominator_fingerprint.v1",
+                authority = "canonical identity digest over locked native surfaces, branches, effective map tokens, and semantic action IDs",
+                game_version = denominatorFingerprint.GameVersion,
+                fingerprint_sha256 = denominatorFingerprint.Sha256,
+                surface_count = denominatorFingerprint.SurfaceCount,
+                branch_count = denominatorFingerprint.BranchCount,
+                map_token_count = denominatorFingerprint.MapTokenCount,
+                semantic_action_count = denominatorFingerprint.SemanticActionCount,
+                source_denominator_closed = nativeDenominatorSourceClosed,
+                freeze_status = denominatorFreeze.Status,
+                approval_path = denominatorFreeze.ApprovalPath,
+                mismatch_reasons = denominatorFreeze.MismatchReasons
+            });
             Write(outputRoot, "semantic-action-catalog.json", new
             {
                 schema_version = "stardewai.semantic_action_catalog.v1",
-                denominator_status = blockingNativeSurfaces.Length == 0 &&
-                    blockingNativeBranches.Length == 0 &&
-                    blockingNativeMapInteractions.Length == 0
-                    ? "provisional_native_surface_denominator_closed"
+                denominator_status = nativeDenominatorSourceClosed &&
+                    denominatorFreeze.Status == "frozen"
+                    ? "native_action_denominator_frozen"
+                    : nativeDenominatorSourceClosed
+                        ? "provisional_native_surface_denominator_closed"
                     : "provisional_native_surface_denominator_open",
+                denominator_fingerprint_sha256 = denominatorFingerprint.Sha256,
                 action_count = semanticActionRows.Length,
                 registered_option_spec_count = optionRows.Length,
                 catalogued_blocked_count = PendingSemanticActionCatalog.All.Count,
@@ -438,11 +480,13 @@ internal static class Program
             {
                 schema_version = "stardewai.action_progress_dashboard.v1",
                 generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
-                semantic_denominator_status = blockingNativeSurfaces.Length == 0 &&
-                    blockingNativeBranches.Length == 0 &&
-                    blockingNativeMapInteractions.Length == 0
-                    ? "native_surfaces_classified_semantic_denominator_pending_freeze"
+                semantic_denominator_status = nativeDenominatorSourceClosed &&
+                    denominatorFreeze.Status == "frozen"
+                    ? "native_action_denominator_frozen"
+                    : nativeDenominatorSourceClosed
+                        ? "native_surfaces_classified_semantic_denominator_pending_freeze"
                     : "not_frozen_native_surfaces_or_registrations_pending",
+                native_action_denominator_fingerprint_sha256 = denominatorFingerprint.Sha256,
                 registered_option_count = optionRows.Length,
                 semantic_action_catalog_count = semanticActionRows.Length,
                 catalogued_blocked_action_count = PendingSemanticActionCatalog.All.Count,

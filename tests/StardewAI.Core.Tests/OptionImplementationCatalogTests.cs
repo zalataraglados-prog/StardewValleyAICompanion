@@ -183,10 +183,30 @@ public sealed class OptionImplementationCatalogTests
         Assert.Equal(expected, actual);
         Assert.Equal(expected.Length, root.GetProperty("action_count").GetInt32());
         Assert.Equal(
-            "provisional_native_surface_denominator_closed",
+            "native_action_denominator_frozen",
             root.GetProperty("denominator_status").GetString());
         Assert.Equal(0, root.GetProperty("uncatalogued_native_action_count").GetInt32());
         Assert.Equal(0, root.GetProperty("pending_catalog_without_surface_count").GetInt32());
+    }
+
+    [Fact]
+    public void Committed_native_action_denominator_matches_independent_freeze_approval()
+    {
+        using var fingerprint = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "native-action-denominator-fingerprint.json")));
+        using var approval = JsonDocument.Parse(File.ReadAllText(FindRepositoryFile(
+            "catalogs", "vanilla-1.6.15", "native-action-denominator-freeze.json")));
+        var actual = fingerprint.RootElement;
+        var expected = approval.RootElement;
+
+        Assert.Equal("frozen", actual.GetProperty("freeze_status").GetString());
+        Assert.Equal(
+            expected.GetProperty("fingerprint_sha256").GetString(),
+            actual.GetProperty("fingerprint_sha256").GetString());
+        Assert.Equal(expected.GetProperty("surface_count").GetInt32(), actual.GetProperty("surface_count").GetInt32());
+        Assert.Equal(expected.GetProperty("branch_count").GetInt32(), actual.GetProperty("branch_count").GetInt32());
+        Assert.Equal(expected.GetProperty("map_token_count").GetInt32(), actual.GetProperty("map_token_count").GetInt32());
+        Assert.Equal(expected.GetProperty("semantic_action_count").GetInt32(), actual.GetProperty("semantic_action_count").GetInt32());
     }
 
     private static string FindRepositoryFile(params string[] parts)

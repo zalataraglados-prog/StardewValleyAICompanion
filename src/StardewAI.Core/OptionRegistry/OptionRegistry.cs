@@ -111,6 +111,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "shipping candidates previewed" },
                 new[] { "never_ship_protected_items", "block_no_completed_shipping_bin", "block_no_route_to_bin" }));
 
+            Register(Option("inventory.transfer_item", "inventory", "Transfer one exact item quantity between the player inventory and an ordinary placed chest",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "farm.material_inventory_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one explicit material-transfer intent is projected against the transparent inventory graph", "route and native executor.transfer_material handoff are produced" },
+                new[] { "block_missing_transfer_intent", "block_locked_or_unauthorized_chest", "block_inventory_identity_or_quantity_drift", "block_destination_capacity", "block_unverified_route", "block_non_native_inventory_mutation" }));
+
             Register(Option("social.talk_npc", "social", "Talk to NPC current-state plan",
                 OptionBehaviorCategories.SocialStrategic,
                 CompilerResponsibilities.PlanValidation,

@@ -100,6 +100,7 @@ namespace StardewAI.Core.Execution
                 ["social.talk_npc"] = BuildSocialParameters,
                 ["social.gift_npc"] = BuildSocialParameters,
                 ["farm.maintain_crops"] = BuildCropMaintenanceParameters,
+                ["inventory.transfer_item"] = BuildMaterialTransferParameters,
                 ["executor.transfer_material"] = BuildMaterialTransferParameters
             };
 

@@ -1,0 +1,10 @@
+{
+  "schema_version": "stardewai.native_action_denominator_freeze.v1",
+  "game_version": "1.6.15",
+  "fingerprint_sha256": "e3b02dfbc5909d54401e6d7edb55545b5015c5be40df0aa0ead4298af64d0298",
+  "surface_count": 320,
+  "branch_count": 428,
+  "map_token_count": 150,
+  "semantic_action_count": 165,
+  "approval_basis": "locked 1.6.15 decompile; zero surface, branch, map-token, or semantic-registration blockers"
+}

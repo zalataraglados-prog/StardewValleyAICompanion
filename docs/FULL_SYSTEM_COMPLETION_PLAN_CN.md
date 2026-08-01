@@ -1,6 +1,6 @@
 # StardewAI 完全体完成路线图
 
-## 计划权威与当前执行顺序（2026-07-31 修正）
+## 计划权威与当前执行顺序（2026-08-01 修正）
 
 本文件是唯一的人类可读总计划。`docs/CURRENT_WORK_CN.md` 只记录当前切片；
 `action-progress-dashboard.json`、`action-implementation-reconciliation.json`、
@@ -24,7 +24,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 覆盖主线；相同机械机制第二次出现时检查复用边界，第三次出现前必须抽取共享引擎。
 
 动作数字只允许由机器看板生成。历史文档中的 89、95、96、190 或 210 不得再单独作为
-完成度口径：96 是 2026-07-31 的现有注册数，不是全游戏动作总数。
+完成度口径；当前 97 是注册数，不是全游戏动作总数。
 
 当前阶段退出条件：
 
@@ -39,9 +39,10 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 - 完成以上条件前，不开始正式训练，也不以 Harness 成功宣称 Product Executor 完成。
 
 当前锁定扫描切片的机器基线为：320 个原生输入表面、60 个宽入口、428 条分支证据、
-150 个地图交互 token、165 个语义动作（96 个已有 `OptionSpec`，69 个显式 blocked）。
+150 个地图交互 token、165 个语义动作（97 个已有 `OptionSpec`，68 个显式 blocked）。
 源表面、分支、地图 token 和语义注册均为零未分类/零缺注册，状态为
-`provisional_native_surface_denominator_closed`。这表示此前实现没有作废，而是获得
+`native_action_denominator_frozen`。冻结指纹只包含原生身份、映射身份和语义 ID，不包含
+注册/覆盖进度；因此实现推进不会改变动作分母。这表示此前实现没有作废，而是获得
 了可审计分母；它不表示 165 个动作已经具备 Product Executor 或五门证据。
 
 ## 目标架构
@@ -204,7 +205,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 2026-07-31 已完成 D1 的首个工程切片：“持续移动 + 通用清障/农场工具/火山石头共享原生工具周期 + 共享转向路径游标 + 600 帧异常环形诊断”。通用清障生产路径不再直接 `performToolAction` 或移除对象；第一次后台回归以 11/11 步进入 Caldera。解锁后的可见回归先后暴露“火山领域复制的简化路径推进器未继承转弯中心修复”和“外层超时未触发诊断”两个缺口；收敛火山冷却/清障到共享路径推进器并补齐异常落盘后，最终可见 level 9 回归以 14/14 步进入 Caldera，其中含 4 次石头清障、3 次移动、3 次熔岩冷却、3 次等待和 1 次出口穿越，全部 after snapshot fresh 且 state hash 改变。
 
-可见 canary 已关闭，下一步回到权威字典差异矩阵，选择最高优先级未闭环动作族，逐个纵向切片完成透明读取、候选、编译、原生执行、验证和 E3 证据，并及时合并稳定切片。随后才重建策略轨迹、接入 C# 结构化排序器和长期完整 rollout。短训只能做基础设施烟测，不得替代正式全量训练。
+2026-08-01 首个分母冻结后的切片 `inventory.transfer_item` 已完成强类型明确意图、透明库存图投影、候选、路径站位、日计划和既有 `executor.transfer_material` 机械原语复用；没有新增第二套箱子运行时。当前仅通过离线编译与全解决方案测试，尚未取得该高层动作的 Product Executor、双向原生运行、before/after、E3 和训练记录证据。下一步先在隔离运行中分别验收玩家到箱子、箱子到玩家及失败关闭，再回到差异矩阵选择下一项。随后才重建策略轨迹、接入 C# 结构化排序器和长期完整 rollout；短训只能做基础设施烟测，不得替代正式全量训练。
 
 架构防扩张门同步生效：`ModEntry` 不再新增领域 active state，新领域必须由独立 Handler 持有状态与 cleanup；含 304 个 public instance 属性、横跨 8 个 partial 声明文件的 `TrainingExecutionRequest.v1` 停止新增字段。v2 采用强类型 payload envelope，并按领域逐族兼容迁移，禁止一次性重写现有 compiler/runtime/verifier 链。
 

@@ -47,6 +47,14 @@ namespace StardewAI.Core.OptionRegistry
 
         private static string[] EventCandidateGateBlockingReasons(string optionId, EventCandidate[] eventCandidates, bool hasBoundParameters)
         {
+            if (optionId == "inventory.transfer_item")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "material_transfer_intent_required",
+                    "no_available_material_transfer_candidate");
+            }
+
             if (optionId == "mining.reach_depth")
             {
                 return EventCandidateAvailabilityReasons(

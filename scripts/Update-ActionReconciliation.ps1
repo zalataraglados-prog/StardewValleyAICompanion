@@ -10,6 +10,7 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $outputRoot = Join-Path $projectRoot "artifacts\action-reconciliation-current"
 $catalogRoot = Join-Path $projectRoot "catalogs\vanilla-1.6.15"
 $compilerProject = Join-Path $projectRoot "tools\StardewAI.KnowledgeCompiler\StardewAI.KnowledgeCompiler.csproj"
+$denominatorFreeze = Join-Path $catalogRoot "native-action-denominator-freeze.json"
 $exportRoot = Join-Path $KnowledgeRoot "raw\game-1.6.15-20260723T093543Z"
 $snapshot = Join-Path $KnowledgeRoot "snapshots\live-full-snapshot-20260719.json"
 $runtimeRoot = Join-Path $KnowledgeRoot "runtime-binaries\linux-server-1.6.15-20260719"
@@ -19,16 +20,23 @@ if ($LASTEXITCODE -ne 0) {
     throw "KnowledgeCompiler build failed with exit code $LASTEXITCODE."
 }
 
-& dotnet run --project $compilerProject --no-build -- `
-    "--export-root" $exportRoot `
-    "--output" $outputRoot `
-    "--snapshot-schema" $snapshot `
-    "--game-assembly" (Join-Path $runtimeRoot "Stardew Valley.dll") `
-    "--game-data-assembly" (Join-Path $runtimeRoot "StardewValley.GameData.dll") `
-    "--decompile-root" $DecompileRoot
+$compilerArguments = @(
+    "--export-root", $exportRoot,
+    "--output", $outputRoot,
+    "--snapshot-schema", $snapshot,
+    "--game-assembly", (Join-Path $runtimeRoot "Stardew Valley.dll"),
+    "--game-data-assembly", (Join-Path $runtimeRoot "StardewValley.GameData.dll"),
+    "--decompile-root", $DecompileRoot
+)
+if (Test-Path -LiteralPath $denominatorFreeze -PathType Leaf) {
+    $compilerArguments += @("--action-denominator-freeze", $denominatorFreeze)
+}
+
+& dotnet run --project $compilerProject --no-build -- @compilerArguments
 $compilerExitCode = $LASTEXITCODE
 
 $files = @(
+    "native-action-denominator-fingerprint.json",
     "native-action-surface-inventory.json",
     "native-action-branch-inventory.json",
     "native-map-interaction-coverage.json",

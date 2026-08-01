@@ -219,6 +219,11 @@ namespace StardewAI.Core.Training
                 return ShipInventoryItemToBinSteps(candidate);
             }
 
+            if (candidate.Kind == "transfer_inventory_item")
+            {
+                return TransferInventoryItemSteps(candidate);
+            }
+
             if (candidate.Kind == "mining_reach_depth_plan_envelope" ||
                 candidate.Kind == "mining_slay_monsters_plan_envelope" ||
                 candidate.Kind == "mining_collect_quest_resource_plan_envelope" ||

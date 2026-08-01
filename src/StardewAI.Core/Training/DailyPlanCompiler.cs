@@ -377,18 +377,18 @@ namespace StardewAI.Core.Training
                 }
             }
 
-            var shipSlotIndex = ShipSlotReservationKey(candidate);
-            if (shipSlotIndex.HasValue)
+            var inventorySlotIndex = InventorySlotReservationKey(candidate);
+            if (inventorySlotIndex.HasValue)
             {
-                if (reservedInventorySlots.Contains(shipSlotIndex.Value))
+                if (reservedInventorySlots.Contains(inventorySlotIndex.Value))
                 {
                     reasons.Add("daily_plan_inventory_slot_already_reserved");
                 }
 
-                var shipQuantity = ShipQuantity(candidate);
-                if (shipQuantity.HasValue &&
-                    reservedInventorySlotQuantities.TryGetValue(shipSlotIndex.Value, out var reservedQty) &&
-                    reservedQty >= shipQuantity.Value)
+                var inventoryQuantity = InventorySlotReservationQuantity(candidate);
+                if (inventoryQuantity.HasValue &&
+                    reservedInventorySlotQuantities.TryGetValue(inventorySlotIndex.Value, out var reservedQty) &&
+                    reservedQty >= inventoryQuantity.Value)
                 {
                     reasons.Add("daily_plan_inventory_slot_quantity_already_reserved");
                 }
@@ -444,16 +444,16 @@ namespace StardewAI.Core.Training
                         : consumedItem.Amount;
             }
 
-            var shipSlotIndex = ShipSlotReservationKey(candidate);
-            if (shipSlotIndex.HasValue)
+            var inventorySlotIndex = InventorySlotReservationKey(candidate);
+            if (inventorySlotIndex.HasValue)
             {
-                reservedInventorySlots.Add(shipSlotIndex.Value);
-                var shipQuantity = ShipQuantity(candidate);
-                if (shipQuantity.HasValue)
+                reservedInventorySlots.Add(inventorySlotIndex.Value);
+                var inventoryQuantity = InventorySlotReservationQuantity(candidate);
+                if (inventoryQuantity.HasValue)
                 {
-                    reservedInventorySlotQuantities[shipSlotIndex.Value] = reservedInventorySlotQuantities.TryGetValue(shipSlotIndex.Value, out var current)
-                        ? current + shipQuantity.Value
-                        : shipQuantity.Value;
+                    reservedInventorySlotQuantities[inventorySlotIndex.Value] = reservedInventorySlotQuantities.TryGetValue(inventorySlotIndex.Value, out var current)
+                        ? current + inventoryQuantity.Value
+                        : inventoryQuantity.Value;
                 }
             }
 
@@ -520,9 +520,11 @@ namespace StardewAI.Core.Training
                 : string.Empty;
         }
 
-        private static int? ShipSlotReservationKey(PolicyEventCandidatePrediction candidate)
+        private static int? InventorySlotReservationKey(PolicyEventCandidatePrediction candidate)
         {
-            if (candidate.Kind != "ship_inventory_item_to_bin")
+            var playerInventoryTransfer = candidate.Kind == "transfer_inventory_item" &&
+                CandidateParameter(candidate, "source_node_id").StartsWith("player:", StringComparison.Ordinal);
+            if (candidate.Kind != "ship_inventory_item_to_bin" && !playerInventoryTransfer)
             {
                 return null;
             }
@@ -536,9 +538,11 @@ namespace StardewAI.Core.Training
             return int.TryParse(slotStr, out var slotIndex) ? slotIndex : null;
         }
 
-        private static int? ShipQuantity(PolicyEventCandidatePrediction candidate)
+        private static int? InventorySlotReservationQuantity(PolicyEventCandidatePrediction candidate)
         {
-            if (candidate.Kind != "ship_inventory_item_to_bin")
+            var playerInventoryTransfer = candidate.Kind == "transfer_inventory_item" &&
+                CandidateParameter(candidate, "source_node_id").StartsWith("player:", StringComparison.Ordinal);
+            if (candidate.Kind != "ship_inventory_item_to_bin" && !playerInventoryTransfer)
             {
                 return null;
             }
