@@ -12,7 +12,14 @@ internal sealed class SnapshotSchemaJoiner
 
     public SnapshotCoverageResult Join(string snapshotPath, IEnumerable<string> requiredFactors)
     {
-        using var document = JsonDocument.Parse(File.ReadAllBytes(snapshotPath));
+        var payload = File.ReadAllBytes(snapshotPath);
+        var json = payload.Length >= 3 &&
+            payload[0] == 0xEF &&
+            payload[1] == 0xBB &&
+            payload[2] == 0xBF
+                ? payload.AsMemory(3)
+                : payload.AsMemory();
+        using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
         if (!root.TryGetProperty("state", out var state) || state.ValueKind != JsonValueKind.Object)
             throw new InvalidDataException($"Snapshot has no object-valued state: {snapshotPath}");

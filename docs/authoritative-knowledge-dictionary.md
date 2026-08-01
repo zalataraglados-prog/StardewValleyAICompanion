@@ -66,11 +66,11 @@ remain runtime context instead of being guessed from layer occupancy.
 ## Transparent field join
 
 `StardewAI.KnowledgeCompiler --snapshot-schema` joins every distinct
-`OptionRegistry.RequiredStateFactors` path to an exact field envelope in a one-time full live
-snapshot. The current join covers 89 of 89 required fields:
+`OptionRegistry.RequiredStateFactors` path to an exact field envelope in the validated current
+full live snapshot pointer. The current join covers 94 of 94 required fields:
 
-- 71 readable with complete source and adapter provenance in the current farm context;
-- 18 schema-present but contextually unavailable because the host was not currently fishing,
+- 77 readable with complete source and adapter provenance in the current farm context;
+- 17 schema-present but contextually unavailable because the host was not currently fishing,
   in a mine, or in the volcano;
 - zero missing fields, adapter errors, invalid envelopes, or readable fields without
   provenance.
@@ -81,7 +81,7 @@ error, invalid, or provenance-free required fields block the dictionary build.
 
 `option-governance-matrix.json` separately records the `option_spec.v2` governance contract.
 The locked artifact's historical 95-option count is not the whole-game semantic action
-denominator. The live source contains 96 registered options as of 2026-07-31; generated
+denominator. The live source contains 97 registered options as of 2026-08-01; generated
 reconciliation output, rather than this prose, owns the current count. Risk,
 irreversibility, confirmation, host, ownership,
 adapter, compiler/verifier binding, evidence status, autonomous-candidate policy, training
@@ -96,16 +96,23 @@ product-executor projection, daily-candidate classification, bridge capability o
 knowledge matrices, and the training allowlist consume or validate that source. The current
 baseline deliberately declares zero product executors. It generates
 `training-admission-manifest.json` with independent read/candidate/compile/runtime/output
-gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. The first nonempty
-allowlist contains only `mining.reach_depth`, restricted to the candidate-bound ordinary-mine
-rolling scope proven by EVD-095; this does not claim arbitrary-depth completion. The legacy `executor_enabled`
+gates, evidence IDs, bounded evidence scope, and typed exclusion reasons. The current allowlist
+contains `mining.reach_depth`, restricted to the candidate-bound ordinary-mine rolling scope
+proven by EVD-095, and the explicit player/ordinary-owned-chest scope of
+`inventory.transfer_item` proven by EVD-192; neither evidence scope implies broader completion. The legacy `executor_enabled`
 availability field means only that the internal compiler/Harness or candidate chain is
 enabled; `product_executor_supported` is the separate product claim. Harness dispatch,
 product integration, runtime evidence, and training eligibility cannot promote one another.
 
-The 89-of-89 live field join above is the last recorded snapshot-schema join, not a current
-whole-game action completeness claim. Regenerate the join after each required-field change before
-promoting another option through the read gate.
+`scripts/Install-LiveSnapshotSchema.ps1` validates every current required factor, stages all
+replacement files, then updates `snapshots/current-live-full-snapshot.json`, metadata, and the
+checked-in hash lock; UTF-8 snapshots with or without BOM are accepted. Default reconciliation
+requires that current pointer and rejects a missing or hash-divergent lock instead of falling back
+to a dated sample. Failed candidate validation is retained separately and cannot replace the
+current validation report.
+The 94-of-94 join is a current required-field schema/provenance result, not a whole-game action
+completeness claim. Refresh and regenerate it after every required-field change before promoting
+another option through the read gate.
 
 ## Action omission boundary
 

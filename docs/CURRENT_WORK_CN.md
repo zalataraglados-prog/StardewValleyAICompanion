@@ -60,10 +60,12 @@ EVD-192 在 E 盘隔离存档中验证了“箱子到玩家”和“玩家到箱
 `Chest`/`ItemGrabMenu`、逐单位右键、互斥锁释放、before/after 数量差分和训练记录；往返后
 箱子数量恢复，过期源栈投影在菜单打开前失败关闭且零点击。该项五门证据已登记，可进入其
 明确意图范围内的训练；Product Executor 仍未集成，不得把 Harness 闭环称为产品陪玩闭环。
-刷新对账产物时，KnowledgeCompiler 明确报告 `player.storage_crafting` 与
-`player.storage_placement` 两个 required state factor 尚未接入快照 schema。下一步先补齐这两个
-透明性 join 并把 blocking issue count 恢复为 0，再回到冻结差异矩阵选择下一个
-`registered_gap` 做同样纵向闭环；不得绕过字段缺口继续扩大训练准入。
+`player.storage_crafting` 与 `player.storage_placement` 的透明性 join 已修复：旧快照稳定复现
+94 项 required state factor 中 2 项缺失，当前实时快照为 77 项带完整来源可读、17 项场景性
+不可用、0 项阻塞。新安装器会先校验全部 required factors、哈希与版本，再原子更新外部权威
+字典的 current 指针；完整 KnowledgeCompiler 已以该指针达到 585/585 exports、blocking 0。
+下一主线固定为 `recovery.stabilize_day`：补齐其全部候选到日计划、队列、原生运行与输出记录
+的纵向闭环，完成后再进入社交原生执行器。
 
 ## 禁止事项
 

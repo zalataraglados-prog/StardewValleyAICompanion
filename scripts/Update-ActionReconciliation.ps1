@@ -2,7 +2,8 @@
 param(
     [string]$KnowledgeRoot = "I:\StardewAI-KnowledgeArtifacts\game-1.6.15",
     [string]$DecompileRoot = "I:\StardewValleyAICompanion-decompile-linux-server-1.6.15",
-    [string]$GamePath = "E:\StardewValleyAICompanion-runtime\Stardew Valley"
+    [string]$GamePath = "E:\StardewValleyAICompanion-runtime\Stardew Valley",
+    [string]$SnapshotPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,7 +13,27 @@ $catalogRoot = Join-Path $projectRoot "catalogs\vanilla-1.6.15"
 $compilerProject = Join-Path $projectRoot "tools\StardewAI.KnowledgeCompiler\StardewAI.KnowledgeCompiler.csproj"
 $denominatorFreeze = Join-Path $catalogRoot "native-action-denominator-freeze.json"
 $exportRoot = Join-Path $KnowledgeRoot "raw\game-1.6.15-20260723T093543Z"
-$snapshot = Join-Path $KnowledgeRoot "snapshots\live-full-snapshot-20260719.json"
+$currentSnapshot = Join-Path $KnowledgeRoot "snapshots\current-live-full-snapshot.json"
+$explicitSnapshot = -not [string]::IsNullOrWhiteSpace($SnapshotPath)
+$snapshot = if ($explicitSnapshot) {
+    [System.IO.Path]::GetFullPath($SnapshotPath)
+} else {
+    $currentSnapshot
+}
+if (-not (Test-Path -LiteralPath $snapshot -PathType Leaf)) {
+    throw "Live full snapshot schema is missing: $snapshot"
+}
+if (-not $explicitSnapshot) {
+    $lockPath = Join-Path $projectRoot "knowledge-artifacts.lock.json"
+    $lock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+    if ($null -eq $lock.current_snapshot -or [int]$lock.current_snapshot.blocking_count -ne 0) {
+        throw "Current live snapshot has no zero-blocking checked-in lock entry: $lockPath"
+    }
+    $snapshotHash = (Get-FileHash -LiteralPath $snapshot -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($snapshotHash -ne [string]$lock.current_snapshot.sha256) {
+        throw "Current live snapshot hash differs from the checked-in lock: snapshot=$snapshot"
+    }
+}
 $runtimeRoot = Join-Path $KnowledgeRoot "runtime-binaries\linux-server-1.6.15-20260719"
 
 & dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
@@ -53,5 +74,6 @@ foreach ($file in $files) {
     Copy-Item -LiteralPath $source -Destination (Join-Path $catalogRoot $file) -Force
 }
 
+Write-Host "Action reconciliation used snapshot schema $snapshot."
 Write-Host "Action reconciliation refreshed at $catalogRoot (compiler exit $compilerExitCode)."
 exit $compilerExitCode

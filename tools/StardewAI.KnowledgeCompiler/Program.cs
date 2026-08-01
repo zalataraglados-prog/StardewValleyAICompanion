@@ -1,5 +1,8 @@
+using System.Globalization;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 using StardewAI.Core.Execution;
@@ -15,6 +18,11 @@ internal static class Program
         try
         {
             var options = Parse(args);
+            if (options.ContainsKey("validate-snapshot-schema-only"))
+                return ValidateSnapshotSchemaOnly(options);
+            if (options.ContainsKey("update-current-snapshot-lock"))
+                return UpdateCurrentSnapshotLock(options);
+
             var exportRoot = Required(options, "export-root");
             var outputRoot = Required(options, "output");
             options.TryGetValue("content-root", out var contentRoot);
@@ -96,8 +104,7 @@ internal static class Program
 
                 foreach (var field in snapshotCoverage.Fields)
                 {
-                    if (field.Coverage is "missing_from_snapshot_schema" or "not_a_field_envelope" or
-                        "readable_missing_provenance" or "adapter_error" or "invalid_status")
+                    if (SnapshotCoverageBlocksTraining(field.Coverage))
                     {
                         issues.Add(new("blocking", "required_state_factor_not_transparent", field.Path,
                             $"status={field.Status};coverage={field.Coverage};reason={field.Reason}"));
@@ -1134,6 +1141,89 @@ internal static class Program
         }
     }
 
+    private static int ValidateSnapshotSchemaOnly(
+        IReadOnlyDictionary<string, string> options)
+    {
+        var snapshotPath = Required(options, "validate-snapshot-schema-only");
+        var outputRoot = Required(options, "output");
+        Directory.CreateDirectory(outputRoot);
+
+        var registry = new OptionRegistry();
+        var requiredFactors = registry.All
+            .SelectMany(row => row.RequiredStateFactors)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+        var coverage = new SnapshotSchemaJoiner().Join(
+            snapshotPath,
+            requiredFactors);
+        var blocking = coverage.Fields
+            .Where(field => SnapshotCoverageBlocksTraining(field.Coverage))
+            .ToArray();
+        Write(outputRoot, "snapshot-schema-validation.json", new
+        {
+            schema_version = "stardewai.snapshot_schema_validation.v1",
+            generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+            snapshot_path = snapshotPath,
+            snapshot_sha256 = HashFile(snapshotPath),
+            coverage.SchemaVersion,
+            coverage.BridgeVersion,
+            coverage.GameVersion,
+            coverage.StateHash,
+            coverage.Completeness,
+            registered_option_count = registry.All.Count,
+            required_state_factor_count = requiredFactors.Length,
+            readable_with_provenance_count = coverage.Fields.Count(
+                field => field.Coverage == "readable_with_provenance"),
+            contextual_or_stale_count = coverage.Fields.Count(
+                field => field.Coverage is "contextually_unavailable" or "stale"),
+            blocking_count = blocking.Length,
+            blocking_fields = blocking,
+            fields = coverage.Fields
+        });
+        Console.WriteLine(
+            $"Snapshot schema validation: game={coverage.GameVersion}; " +
+            $"required={requiredFactors.Length}; blocking={blocking.Length}; " +
+            $"snapshot={snapshotPath}");
+        return blocking.Length == 0 ? 0 : 2;
+    }
+
+    private static bool SnapshotCoverageBlocksTraining(string coverage) =>
+        coverage is "missing_from_snapshot_schema" or
+            "not_a_field_envelope" or
+            "readable_missing_provenance" or
+            "adapter_error" or
+            "invalid_status";
+
+    private static int UpdateCurrentSnapshotLock(
+        IReadOnlyDictionary<string, string> options)
+    {
+        var lockPath = Required(options, "update-current-snapshot-lock");
+        var outputPath = Required(options, "output");
+        var root = JsonNode.Parse(File.ReadAllText(lockPath)) as JsonObject ??
+            throw new InvalidDataException($"Knowledge artifact lock is not a JSON object: {lockPath}");
+        if (root["schema_version"]?.GetValue<string>() != "stardewai.knowledge_artifact_lock.v1")
+            throw new InvalidDataException($"Unexpected knowledge artifact lock schema: {lockPath}");
+
+        root["current_snapshot"] = new JsonObject
+        {
+            ["relative_path"] = RequiredValue(options, "snapshot-relative-path"),
+            ["bytes"] = RequiredNonNegativeLong(options, "snapshot-bytes"),
+            ["sha256"] = RequiredSha256(options, "snapshot-sha256"),
+            ["metadata_relative_path"] = RequiredValue(options, "metadata-relative-path"),
+            ["metadata_bytes"] = RequiredNonNegativeLong(options, "metadata-bytes"),
+            ["metadata_sha256"] = RequiredSha256(options, "metadata-sha256"),
+            ["required_state_factor_count"] = RequiredNonNegativeLong(options, "required-count"),
+            ["readable_with_provenance_count"] = RequiredNonNegativeLong(options, "readable-count"),
+            ["contextual_or_stale_count"] = RequiredNonNegativeLong(options, "contextual-count"),
+            ["blocking_count"] = RequiredNonNegativeLong(options, "blocking-count")
+        };
+
+        var json = JsonSerializer.Serialize(root, JsonOptions.Write) + "\n";
+        File.WriteAllText(outputPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        return 0;
+    }
+
     private static Dictionary<string, string> Parse(string[] args)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1148,9 +1238,34 @@ internal static class Program
 
     private static string Required(IReadOnlyDictionary<string, string> options, string name)
     {
+        return Path.GetFullPath(RequiredValue(options, name));
+    }
+
+    private static string RequiredValue(IReadOnlyDictionary<string, string> options, string name)
+    {
         if (!options.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
             throw new ArgumentException($"Missing --{name}.");
-        return Path.GetFullPath(value);
+        return value;
+    }
+
+    private static long RequiredNonNegativeLong(
+        IReadOnlyDictionary<string, string> options,
+        string name)
+    {
+        var value = RequiredValue(options, name);
+        if (!long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) || parsed < 0)
+            throw new ArgumentException($"--{name} must be a non-negative integer, got '{value}'.");
+        return parsed;
+    }
+
+    private static string RequiredSha256(
+        IReadOnlyDictionary<string, string> options,
+        string name)
+    {
+        var value = RequiredValue(options, name).ToLowerInvariant();
+        if (value.Length != 64 || value.Any(character => !Uri.IsHexDigit(character)))
+            throw new ArgumentException($"--{name} must be a 64-character SHA-256 hex digest.");
+        return value;
     }
 
     private static void Write(string root, string file, object value)
