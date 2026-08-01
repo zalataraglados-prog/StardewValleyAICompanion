@@ -130,6 +130,8 @@ if (-not (Test-Path -LiteralPath $slotPath -PathType Container)) {
 
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
+$trainingOutputDirectory = Join-Path $runDirectory "training-output"
+New-Item -ItemType Directory -Force -Path $trainingOutputDirectory | Out-Null
 
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
@@ -140,6 +142,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_TRAINING_OUTPUT_DIR = $env:STARDEWAI_TRAINING_OUTPUT_DIR
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
 }
@@ -151,6 +154,7 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = $trainingOutputDirectory
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
 

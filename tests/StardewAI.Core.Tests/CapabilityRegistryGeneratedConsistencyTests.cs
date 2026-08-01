@@ -188,35 +188,43 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
-    public void ExistingRecoveryAndGiftChainsRemainBlockedAtTheirUnprovenRuntimeBoundaryTests()
+    public void ExistingGiftChainRemainsBlockedAtItsUnprovenRuntimeBoundaryTests()
     {
-        foreach (var optionId in new[] { "recovery.stabilize_day", "social.gift_npc" })
-        {
-            var declaration = OptionCapabilityRegistrySource.GetRequired(optionId);
-            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
-            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
-            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
-            Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.RuntimeTrainingGate);
-            Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.OutputTrainingGate);
-            Assert.NotEmpty(declaration.ReadEvidenceIds);
-            Assert.NotEmpty(declaration.CandidateEvidenceIds);
-            Assert.NotEmpty(declaration.CompilerEvidenceIds);
-            Assert.Empty(declaration.RuntimeEvidenceIds);
-            Assert.Empty(declaration.OutputEvidenceIds);
-            Assert.Contains(
-                TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
-                declaration.TrainingExclusionReasons);
-            Assert.Contains(
-                TrainingAdmissionExclusionReason.OutputEvidenceMissing,
-                declaration.TrainingExclusionReasons);
-            Assert.DoesNotContain(optionId, OptionCapabilityRegistrySource.TrainingAllowlist);
-        }
+        var declaration = OptionCapabilityRegistrySource.GetRequired("social.gift_npc");
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.RuntimeTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.Missing, declaration.OutputTrainingGate);
+        Assert.NotEmpty(declaration.ReadEvidenceIds);
+        Assert.NotEmpty(declaration.CandidateEvidenceIds);
+        Assert.NotEmpty(declaration.CompilerEvidenceIds);
+        Assert.Empty(declaration.RuntimeEvidenceIds);
+        Assert.Empty(declaration.OutputEvidenceIds);
+        Assert.Contains(
+            TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
+            declaration.TrainingExclusionReasons);
+        Assert.Contains(
+            TrainingAdmissionExclusionReason.OutputEvidenceMissing,
+            declaration.TrainingExclusionReasons);
+        Assert.DoesNotContain("social.gift_npc", OptionCapabilityRegistrySource.TrainingAllowlist);
+
+        var recovery = OptionCapabilityRegistrySource.GetRequired("recovery.stabilize_day");
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, recovery.RuntimeTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, recovery.OutputTrainingGate);
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, recovery.TrainingEligibility);
+        Assert.NotEmpty(recovery.RuntimeEvidenceIds);
+        Assert.NotEmpty(recovery.OutputEvidenceIds);
+        Assert.DoesNotContain(
+            TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
+            recovery.TrainingExclusionReasons);
+        Assert.DoesNotContain(
+            TrainingAdmissionExclusionReason.OutputEvidenceMissing,
+            recovery.TrainingExclusionReasons);
 
         Assert.Contains(
             TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
-            OptionCapabilityRegistrySource
-                .GetRequired("recovery.stabilize_day")
-                .TrainingExclusionReasons);
+            recovery.TrainingExclusionReasons);
         Assert.DoesNotContain(
             TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
             OptionCapabilityRegistrySource

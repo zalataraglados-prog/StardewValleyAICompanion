@@ -102,8 +102,10 @@ proven by EVD-095, and the explicit player/ordinary-owned-chest scope of
 `inventory.transfer_item` proven by EVD-192. It also contains `social.talk_npc` only for the
 EVD-076/EVD-105 scope: a current loaded vanilla NPC reached on the same map or through rolling
 resolved connectors, followed by safe ordinary dialogue closure. None of these scopes implies
-broader completion. `recovery.stabilize_day` and `social.gift_npc` retain verified
-read/candidate/compile evidence but remain excluded until their broad runtime/output gaps close.
+broader completion. `recovery.stabilize_day` has verified read/candidate/compile/runtime/output
+evidence through EVD-195, but remains excluded because it is a calibration-only high-level
+option. `social.gift_npc` retains verified read/candidate/compile evidence and remains excluded
+until its remote-pursuit and single-item-to-null runtime/output gaps close.
 The legacy `executor_enabled`
 availability field means only that the internal compiler/Harness or candidate chain is
 enabled; `product_executor_supported` is the separate product claim. Harness dispatch,

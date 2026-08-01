@@ -40,7 +40,7 @@ public sealed partial class ModEntry : Mod
             StartSeason = startSeason;
             StartMenuOpen = Game1.activeClickableMenu is not null;
             MaxTicks = Math.Max(600, path.Count * 90 + 600);
-            LastPosition = Game1.player.Position;
+            BedStepLastPosition = Game1.player.Position;
         }
 
         public PendingExecution Pending { get; }
@@ -55,10 +55,13 @@ public sealed partial class ModEntry : Mod
         public bool StartMenuOpen { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public SleepStage Stage { get; set; } = SleepStage.MoveToStand;
-        public int PathIndex { get; set; }
-        public int StuckTicks { get; set; }
-        public Vector2 LastPosition { get; set; }
+        public ExecutorPathCursor PathCursor { get; } = new();
+        public int BedStepStuckTicks { get; set; }
+        public Vector2 BedStepLastPosition { get; set; }
+        public bool SleepConfirmHeld { get; set; }
         public int PromptWaitTicks { get; set; }
+        public int ConfirmReadyWaitTicks { get; set; }
+        public int PromptCloseWaitTicks { get; set; }
         public int PostSleepWaitTicks { get; set; }
         public int ElapsedTicks { get; set; }
         public int MaxTicks { get; }
@@ -86,8 +89,10 @@ public sealed partial class ModEntry : Mod
     {
         MoveToStand,
         StepOntoSleepTouchTile,
-        TriggerPrompt,
-        ConfirmPrompt,
+        WaitForNativePrompt,
+        ConfirmPromptPress,
+        ConfirmPromptRelease,
+        WaitForPromptClose,
         WaitForNewDay,
         WaitForPostSleepStable
     }

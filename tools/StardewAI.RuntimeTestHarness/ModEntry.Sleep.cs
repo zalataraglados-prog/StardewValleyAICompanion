@@ -91,7 +91,7 @@ public sealed partial class ModEntry : Mod
         activeSleep = new ActiveSleep(pending, startTile, target.BedTile, target.StandTile, path, Game1.year, Game1.dayOfMonth, Game1.timeOfDay, Game1.currentSeason);
         if (resumesExistingPrompt)
         {
-            activeSleep.Stage = SleepStage.ConfirmPrompt;
+            activeSleep.Stage = SleepStage.ConfirmPromptPress;
         }
         Monitor.Log($"Started terminal sleep macro via stand tile {target.StandTile.X},{target.StandTile.Y} and bed touch tile {target.BedTile.X},{target.BedTile.Y}.", LogLevel.Info);
     }
@@ -120,8 +120,8 @@ public sealed partial class ModEntry : Mod
         if ((sleep.Stage == SleepStage.MoveToStand || sleep.Stage == SleepStage.StepOntoSleepTouchTile) && SleepPromptOpen())
         {
             StopAllMovement();
-            sleep.StuckTicks = 0;
-            sleep.Stage = SleepStage.ConfirmPrompt;
+            sleep.BedStepStuckTicks = 0;
+            sleep.Stage = SleepStage.ConfirmPromptPress;
         }
 
         if (sleep.Stage == SleepStage.MoveToStand)
@@ -144,59 +144,64 @@ public sealed partial class ModEntry : Mod
 
             if (Game1.player.TilePoint != sleep.BedTile)
             {
-                var movedSinceLastTick = Vector2.DistanceSquared(sleep.LastPosition, Game1.player.Position) >= 0.01f;
-                sleep.LastPosition = Game1.player.Position;
+                var movedSinceLastTick = Vector2.DistanceSquared(sleep.BedStepLastPosition, Game1.player.Position) >= 0.01f;
+                sleep.BedStepLastPosition = Game1.player.Position;
                 StartMoving(DirectionTo(Game1.player.TilePoint, sleep.BedTile));
                 MovePlayerForTick();
                 if (!movedSinceLastTick)
                 {
-                    sleep.StuckTicks++;
-                    if (sleep.StuckTicks > 45)
+                    sleep.BedStepStuckTicks++;
+                    if (sleep.BedStepStuckTicks > 45)
                     {
                         CompleteBlockedSleep(sleep, "sleep_bed_step_stuck_or_collision_blocked");
                     }
                     return;
                 }
 
-                sleep.StuckTicks = 0;
+                sleep.BedStepStuckTicks = 0;
                 return;
             }
 
             StopAllMovement();
-            sleep.Stage = SleepStage.TriggerPrompt;
-        }
-
-        if (sleep.Stage == SleepStage.TriggerPrompt)
-        {
-            var touchAction = Game1.currentLocation.doesTileHaveProperty(sleep.BedTile.X, sleep.BedTile.Y, "TouchAction", "Back");
-            if (!string.Equals(touchAction, "Sleep", StringComparison.Ordinal))
-            {
-                CompleteBlockedSleep(sleep, "sleep_touch_action_missing");
-                return;
-            }
-
-            Game1.currentLocation.performTouchAction("Sleep", new Vector2(sleep.BedTile.X, sleep.BedTile.Y));
-            sleep.Stage = SleepStage.ConfirmPrompt;
+            sleep.Stage = SleepStage.WaitForNativePrompt;
             return;
         }
 
-        if (sleep.Stage == SleepStage.ConfirmPrompt)
+        if (sleep.Stage == SleepStage.WaitForNativePrompt)
         {
-            if (!SleepPromptOpen())
+            if (SleepPromptOpen())
             {
-                sleep.PromptWaitTicks++;
-                if (sleep.PromptWaitTicks > 60)
+                sleep.Stage = SleepStage.ConfirmPromptPress;
+                return;
+            }
+
+            sleep.PromptWaitTicks++;
+            if (sleep.PromptWaitTicks > 60)
+            {
+                CompleteBlockedSleep(sleep, "sleep_prompt_not_open_after_native_bed_step");
+            }
+            return;
+        }
+
+        if (sleep.Stage == SleepStage.ConfirmPromptPress ||
+            sleep.Stage == SleepStage.ConfirmPromptRelease)
+        {
+            return;
+        }
+
+        if (sleep.Stage == SleepStage.WaitForPromptClose)
+        {
+            if (SleepPromptOpen())
+            {
+                sleep.PromptCloseWaitTicks++;
+                if (sleep.PromptCloseWaitTicks > 120)
                 {
-                    CompleteBlockedSleep(sleep, "sleep_prompt_not_open_after_touch_action");
+                    CompleteBlockedSleep(sleep, "sleep_prompt_not_closed_after_native_confirm");
                 }
                 return;
             }
 
-            Game1.currentLocation.answerDialogueAction("Sleep_Yes", new[] { "Sleep" });
-            Game1.activeClickableMenu = null;
-            Game1.dialogueUp = false;
             sleep.Stage = SleepStage.WaitForNewDay;
-            return;
         }
 
         if (sleep.Stage == SleepStage.WaitForNewDay)
@@ -253,58 +258,75 @@ public sealed partial class ModEntry : Mod
             return true;
         }
 
-        if (sleep.PathIndex >= sleep.Path.Count)
+        if (!TryAdvanceExecutorPath(
+                Game1.currentLocation,
+                sleep.Path,
+                sleep.PathCursor,
+                out var reason))
         {
-            CompleteBlockedSleep(sleep, "sleep_path_exhausted_before_stand_tile");
-            return false;
-        }
-
-        var currentTile = Game1.player.TilePoint;
-        var nextTile = sleep.Path[sleep.PathIndex];
-        if (currentTile == nextTile)
-        {
-            sleep.PathIndex++;
-            sleep.StuckTicks = 0;
-            StopAllMovement();
-            return false;
-        }
-
-        if (!AreAdjacent(currentTile, nextTile))
-        {
-            CompleteBlockedSleep(sleep, "sleep_path_desynchronized");
-            return false;
-        }
-
-        if (!IsTileWalkable(Game1.currentLocation, nextTile))
-        {
-            CompleteBlockedSleep(sleep, "sleep_path_blocked");
-            return false;
-        }
-
-        var movedSinceLastTick = Vector2.DistanceSquared(sleep.LastPosition, Game1.player.Position) >= 0.01f;
-        sleep.LastPosition = Game1.player.Position;
-        StartMoving(DirectionTo(currentTile, nextTile));
-        MovePlayerForTick();
-        if (Game1.player.TilePoint == nextTile)
-        {
-            sleep.PathIndex++;
-        }
-
-        if (!movedSinceLastTick)
-        {
-            sleep.StuckTicks++;
-        }
-        else
-        {
-            sleep.StuckTicks = 0;
-        }
-
-        if (sleep.StuckTicks > 45)
-        {
-            CompleteBlockedSleep(sleep, "sleep_movement_stuck_or_collision_blocked");
+            CompleteBlockedSleep(sleep, "sleep_" + reason);
         }
 
         return false;
+    }
+
+    private bool ApplySleepConfirmInput(ActiveSleep sleep)
+    {
+        if (sleep.Stage == SleepStage.ConfirmPromptPress)
+        {
+            if (Game1.activeClickableMenu is not DialogueBox prompt ||
+                !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal))
+            {
+                CompleteBlockedSleep(sleep, "sleep_prompt_closed_before_native_confirm");
+                return false;
+            }
+
+            if (prompt.transitioning || prompt.safetyTimer > 0)
+            {
+                sleep.ConfirmReadyWaitTicks++;
+                if (sleep.ConfirmReadyWaitTicks > 120)
+                {
+                    CompleteBlockedSleep(sleep, "sleep_prompt_never_ready_for_native_confirm");
+                    return false;
+                }
+                return true;
+            }
+
+            if (!TryApplySmapiButtonOverride(SButton.Y, pressed: true, out var pressReason))
+            {
+                CompleteBlockedSleep(sleep, "sleep_confirm_press_failed:" + pressReason);
+                return false;
+            }
+
+            sleep.SleepConfirmHeld = true;
+            sleep.Stage = SleepStage.ConfirmPromptRelease;
+            return true;
+        }
+
+        if (sleep.Stage == SleepStage.ConfirmPromptRelease)
+        {
+            if (!TryApplySmapiButtonOverride(SButton.Y, pressed: false, out var releaseReason))
+            {
+                CompleteBlockedSleep(sleep, "sleep_confirm_release_failed:" + releaseReason);
+                return false;
+            }
+
+            sleep.SleepConfirmHeld = false;
+            sleep.Stage = SleepStage.WaitForPromptClose;
+        }
+
+        return true;
+    }
+
+    private void ReleaseSleepConfirmInput(ActiveSleep sleep)
+    {
+        if (!sleep.SleepConfirmHeld)
+        {
+            return;
+        }
+
+        TryApplySmapiButtonOverride(SButton.Y, pressed: false, out _);
+        sleep.SleepConfirmHeld = false;
     }
 
     private void TickShipSummaryClosePhase(ActiveSleep sleep, ShippingMenu shippingMenu)
@@ -430,6 +452,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteSleep(ActiveSleep sleep, string verificationStatus, string[] verificationReasons)
     {
+        ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
         StopAllMovement();
         activeSleep = null;
@@ -438,6 +461,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteBlockedSleep(ActiveSleep sleep, string reason)
     {
+        ReleaseSleepConfirmInput(sleep);
         ReleaseSmapiLeftButtonOverride();
         StopAllMovement();
         activeSleep = null;

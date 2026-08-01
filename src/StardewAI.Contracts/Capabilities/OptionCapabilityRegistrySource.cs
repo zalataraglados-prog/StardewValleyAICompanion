@@ -370,10 +370,12 @@ namespace StardewAI.Contracts.Capabilities
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                         "EVD-095"),
                     ["recovery.stabilize_day"] = BoundedEvidence(
-                        "all_current_recovery_candidates_static_chain;cross_map_return_runtime_pending",
+                        "all_current_recovery_candidates_including_rolling_cross_map_return_and_terminal_native_sleep",
                         readEvidenceIds: new[] { "EVD-045", "EVD-046" },
                         candidateEvidenceIds: new[] { "EVD-044", "EVD-050" },
-                        compilerEvidenceIds: new[] { "EVD-050" }),
+                        compilerEvidenceIds: new[] { "EVD-050", "EVD-195" },
+                        runtimeEvidenceIds: new[] { "EVD-195" },
+                        outputEvidenceIds: new[] { "EVD-195" }),
                     ["social.gift_npc"] = BoundedEvidence(
                         "current_loaded_npc_gift_read_candidate_compile;remote_and_single_item_runtime_pending",
                         readEvidenceIds: new[] { "EVD-076" },
@@ -572,7 +574,13 @@ namespace StardewAI.Contracts.Capabilities
                         : OptionRuntimeStatus.RegisteredOnly,
                     TrainingEligibility = trainingEligible
                         ? OptionTrainingEligibility.Eligible
-                        : OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
+                        : readGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                          candidateGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                          compilerGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                          runtimeGate == TrainingEvidenceGateStatus.RuntimeVerified &&
+                          outputGate == TrainingEvidenceGateStatus.RuntimeVerified
+                            ? OptionTrainingEligibility.EvaluationOnly
+                            : OptionTrainingEligibility.BlockedPendingRuntimeEvidence,
                     AutonomousCandidateEnabled = AutonomousCandidateIds.Contains(id),
                     PlayerConfirmationRequired = PlayerConfirmationIds.Contains(id),
                     HostOnly = HostOnlyIds.Contains(id),

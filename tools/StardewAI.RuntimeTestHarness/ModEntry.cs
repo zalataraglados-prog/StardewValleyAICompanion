@@ -1215,6 +1215,14 @@ public sealed partial class ModEntry : Mod
                 }
             }
 
+            if (activeSleep is not null &&
+                (activeSleep.Stage == SleepStage.ConfirmPromptPress ||
+                 activeSleep.Stage == SleepStage.ConfirmPromptRelease) &&
+                !ApplySleepConfirmInput(activeSleep))
+            {
+                return;
+            }
+
             if (activeShippingSummaryClose is not null)
             {
                 ApplyShippingSummaryCloseInput(activeShippingSummaryClose);
@@ -1235,6 +1243,15 @@ public sealed partial class ModEntry : Mod
                 CleanupAndBlock(activeShipInventoryToBin, "ship_input_dispatch_exception:" + ex.GetType().Name);
             }
             var sleepObj = activeSleep;
+            if (sleepObj is not null &&
+                (sleepObj.Stage == SleepStage.ConfirmPromptPress ||
+                 sleepObj.Stage == SleepStage.ConfirmPromptRelease))
+            {
+                Monitor.Log($"Sleep confirmation input failed once and was blocked: {ex}", LogLevel.Error);
+                ReleaseSleepConfirmInput(sleepObj);
+                CompleteBlockedSleep(sleepObj, "sleep_confirm_input_dispatch_exception:" + ex.GetType().Name);
+                return;
+            }
             if (sleepObj is not null && sleepObj.Stage == SleepStage.WaitForPostSleepStable)
             {
                 Monitor.Log($"Ship summary input dispatch failed once and was blocked: {ex}", LogLevel.Error);
