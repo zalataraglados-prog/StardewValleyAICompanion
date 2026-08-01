@@ -41,7 +41,7 @@
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件
 核对。不能把“已登记”解释为“已实现”：现有代码的编译器孤儿 0、运行 ID 孤儿 0；
-Product Executor 仍为 0；EVD-196 回填后，五门证据闭环为 5，训练准入为 4。
+Product Executor 仍为 0；EVD-202 回填后，五门证据闭环为 6，训练准入为 5。
 
 ## 退出条件
 
@@ -93,6 +93,12 @@ SHA-256、特征/候选/能力/字典/编译器/执行器版本；推理只重�
 基础设施与合成契约验收，不是生产训练。直接下一步仍是按权威字典依赖顺序扩大五门准入范围，
 再用真实、verified/fresh 的长期 rollout 生成 v2 轨迹和闭合跨度标签；形成正式 manifest 后才运行
 `StardewAI.PolicyModel`。只有独立存档评测与第三年 21 分长跑通过后，才冻结“最强完美 AI”基线。
+
+EVD-202 没有新增第二套矿洞候选、编译器或执行器，而是把已有 EVD-106 运行证据登记到
+`mining.obtain_skull_key` 的五门：范围严格限定为普通矿井 119 -> 120 层、原生骷髅钥匙宝箱领取、
+`has_skull_key false -> true` 与原生退出。该目标现进入训练白名单；沙漠矿洞、采石场矿洞金镰刀和
+火山矿洞仍是独立族，未被本证据放行。当前五项准入为 `inventory.transfer_item`、
+`mining.obtain_skull_key`、`mining.reach_depth`、`social.gift_npc`、`social.talk_npc`。
 
 ## 禁止事项
 

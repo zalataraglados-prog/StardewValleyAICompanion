@@ -369,6 +369,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["mining.reach_depth"] = VerifiedEvidence(
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                         "EVD-095"),
+                    ["mining.obtain_skull_key"] = VerifiedEvidence(
+                        "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
+                        "EVD-106"),
                     ["recovery.stabilize_day"] = BoundedEvidence(
                         "all_current_recovery_candidates_including_rolling_cross_map_return_and_terminal_native_sleep",
                         readEvidenceIds: new[] { "EVD-045", "EVD-046" },

@@ -199,7 +199,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 1. `capability_registry.v2` 独立记录五门、证据 ID、证据范围和类型化排除原因；
 2. 空 allowlist 会使注册表初始化失败；
-3. 当前准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
+3. 当前准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-106 普通矿井 119 -> 120 层范围内的 `mining.obtain_skull_key`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
 4. 执行器原语和校准型高层 option 不进入策略训练；
 5. 字典副本与锁文件只能证明语义来源和版本，不能代替原生可见执行证据。
 
@@ -214,6 +214,12 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 单路径推理接入均已完成。该 V1 是透明、确定、可审计的行为克隆基线，不是最终最优策略声明；
 模型不能生成候选、绕过硬约束或直接控制执行器。标准 E 盘没有真实 v2 轨迹、闭合跨度、正式
 manifest 或生产 checkpoint，现阶段禁止把合成训练测试称为正式训练。
+
+2026-08-02 EVD-202 又将已有 EVD-106 的普通矿井 119 -> 120 层骷髅钥匙原生宝箱领取和退出证据
+登记到五门准入，未新建候选、编译器或运行时。当前五门闭环为 6，训练白名单为 5：
+`inventory.transfer_item`、`mining.obtain_skull_key`、`mining.reach_depth`、
+`social.gift_npc`、`social.talk_npc`。普通矿井、沙漠矿洞、采石场矿洞金镰刀和火山矿洞继续
+保持独立边界；一族证据不得为另一族放行。Product Executor 仍为 0，正式生产轨迹仍为空。
 
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计

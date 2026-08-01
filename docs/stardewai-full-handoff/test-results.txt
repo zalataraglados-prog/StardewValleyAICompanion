@@ -1,3 +1,18 @@
+2026-08-02 bounded skull-key training admission
+
+- Authoritative action reconciliation regenerated from the locked live snapshot:
+  585/585 exports, blocking 0.
+- Dashboard: 97 registered options, 165 semantic actions, 0 missing registrations,
+  6 five-gate-closed options, 5 training-allowlisted options, 0 Product Executors.
+- Focused capability/mining isolation regression PASS: 195/195.
+- Focused Backend training endpoint regression PASS: 1/1.
+- Core full regression PASS: 1486/1486.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+- No game process was launched. Runtime authority remains existing EVD-106; this
+  slice registered its bounded ordinary-mine floor-120 evidence and did not widen
+  Skull Cavern, Quarry Mine golden-scythe, or Volcano Dungeon coverage.
+
 2026-08-02 structured policy provider and checkpoint round-trip
 
 - Release solution build PASS: 0 errors, 5 pre-existing warnings.

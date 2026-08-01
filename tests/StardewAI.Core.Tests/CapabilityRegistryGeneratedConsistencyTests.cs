@@ -149,7 +149,11 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     {
         Assert.NotEmpty(OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.Equal(
-            new[] { "inventory.transfer_item", "mining.reach_depth", "social.gift_npc", "social.talk_npc" },
+            new[]
+            {
+                "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
+                "social.gift_npc", "social.talk_npc"
+            },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
         Assert.All(OptionCapabilityRegistrySource.TrainingAllowlist, optionId =>
@@ -168,6 +172,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             var expectedScope = optionId switch
             {
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
+                "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
@@ -186,6 +191,24 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void SkullKeyAdmissionIsBoundToOrdinaryMineFloor120AndEvd106Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("mining.obtain_skull_key");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(new[] { "EVD-106" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-106" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-106" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-106" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-106" }, declaration.OutputEvidenceIds);
+        Assert.Contains("ordinary_mines_floor_119_to_120", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("skull_cavern", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("golden_scythe", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.DoesNotContain("volcano.reach_caldera", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

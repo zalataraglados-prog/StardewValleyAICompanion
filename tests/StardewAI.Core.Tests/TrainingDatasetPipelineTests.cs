@@ -29,7 +29,11 @@ namespace StardewAI.Core.Tests
             Assert.Equal(1, report.ExcludedAdmissionRowCount);
             Assert.Equal(new[] { "economy.buy_supplies" }, report.ExcludedOptionIds);
             Assert.Equal(
-                new[] { "inventory.transfer_item", "mining.reach_depth", "social.gift_npc", "social.talk_npc" },
+                new[]
+                {
+                    "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
+                    "social.gift_npc", "social.talk_npc"
+                },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);
             Assert.Contains(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, report.ExcludedReasons);
