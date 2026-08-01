@@ -56,32 +56,7 @@ static partial class Program
                     "machine_output_distribution_outcome_kind")) &&
             execution["anvil_reforge_realized_utility"] is
                 not null;
-        var reward = string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal)
-            ? applied ? 0.05 : -0.05
-            : string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal)
-                ? applied ? 0.10 : -0.10
-            : string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
-              string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal)
-                ? applied ? 0.08 : -0.08
-            : string.Equals(optionId, "executor.break_resource_clump", StringComparison.Ordinal) ||
-              string.Equals(optionId, "executor.break_farm_resource_clump", StringComparison.Ordinal) ||
-              string.Equals(optionId, "executor.break_current_location_resource_clump", StringComparison.Ordinal)
-                ? applied ? 0.08 : -0.08
-            : string.Equals(optionId, "executor.collect_spawned_object", StringComparison.Ordinal)
-                ? applied ? 0.05 : -0.05
-            : string.Equals(optionId, "executor.harvest_ginger", StringComparison.Ordinal)
-                ? applied ? 0.06 : -0.06
-            : string.Equals(optionId, "executor.harvest_bush", StringComparison.Ordinal)
-                ? applied ? 0.06 : -0.06
-            : string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal)
-                ? applied ? 0.12 : -0.12
-            : string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) || string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal)
-                ? applied ? 0.02 : -0.02
-            : isAnvilReforgeSample && applied
-                ? ReadDouble(
-                    execution,
-                    "anvil_reforge_realized_utility_delta")
-            : 0;
+        var reward = CalculateExecutionReward(execution, optionId, applied);
         var episode = new PlanExecutionEpisodeEnvelope
         {
             EpisodeId = appendResult.EpisodeId,
@@ -184,6 +159,59 @@ static partial class Program
 
         var episodePath = Path.Combine(options.SnapshotDir, "plan-execution-episode-" + iteration.ToString("D4") + ".json");
         File.WriteAllText(episodePath, JsonSerializer.Serialize(episode, JsonOptions), Encoding.UTF8);
+    }
+
+    private static double CalculateExecutionReward(
+        JsonObject execution,
+        string optionId,
+        bool applied)
+    {
+        if (string.Equals(optionId, "executor.move_to_tile", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.collect_spawned_object", StringComparison.Ordinal))
+        {
+            return applied ? 0.05 : -0.05;
+        }
+
+        if (string.Equals(optionId, "executor.cool_volcano_lava", StringComparison.Ordinal))
+        {
+            return applied ? 0.10 : -0.10;
+        }
+
+        if (string.Equals(optionId, "executor.break_volcano_stone", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.break_volcano_container", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.break_resource_clump", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.break_farm_resource_clump", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.break_current_location_resource_clump", StringComparison.Ordinal))
+        {
+            return applied ? 0.08 : -0.08;
+        }
+
+        if (string.Equals(optionId, "executor.harvest_ginger", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.harvest_bush", StringComparison.Ordinal))
+        {
+            return applied ? 0.06 : -0.06;
+        }
+
+        if (string.Equals(optionId, "executor.combat_volcano_monster", StringComparison.Ordinal))
+        {
+            return applied ? 0.12 : -0.12;
+        }
+
+        if (string.Equals(optionId, "executor.face_direction", StringComparison.Ordinal) ||
+            string.Equals(optionId, "executor.wait_ticks", StringComparison.Ordinal))
+        {
+            return applied ? 0.02 : -0.02;
+        }
+
+        if (string.Equals(optionId, "executor.load_machine_input", StringComparison.Ordinal) &&
+            applied &&
+            !string.IsNullOrWhiteSpace(ReadString(execution, "machine_output_distribution_outcome_kind")) &&
+            execution["anvil_reforge_realized_utility"] is not null)
+        {
+            return ReadDouble(execution, "anvil_reforge_realized_utility_delta");
+        }
+
+        return 0;
     }
 
     private static T? ReadExecutionObject<T>(JsonObject execution, string property)

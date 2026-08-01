@@ -1,3 +1,15 @@
+2026-08-01 effective policy decision trajectory binding
+
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+- Core full regression PASS: 1471/1471.
+- Backend full regression PASS: 103/103.
+- Focused policy contract, effective-replan binding and JSONL integration PASS: 7/7.
+- Initial, dispatch-replanned and post-action-replanned artifacts retain the exact
+  effective model plan, complete ranking, compiled queue and source-state hash.
+- Source drift, missing candidate IDs, non-admitted selections, non-fresh results and
+  duplicate primitives do not produce policy labels.
+- No game process was started and no server deployment was changed.
+
 2026-07-24 material-ledger dispatch freshness gate
 
 - Release solution build PASS: 0 errors; only pre-existing warnings were emitted.

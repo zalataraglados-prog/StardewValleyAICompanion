@@ -20,6 +20,9 @@ static partial class Program
         JsonObject queue,
         string stateHash,
         string queueId,
+        string initialModelPlanPath,
+        string initialRankingPath,
+        string initialCompiledQueuePath,
         JsonObject? objectiveContinuation)
     {
         var queueItems = ExecutableQueueItems(queue);
@@ -50,6 +53,11 @@ static partial class Program
             : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions))?.AsObject();
         var objectiveContinuationKind = ReadString(activeObjectiveContinuation, "kind");
         var objectiveContinuationCompleted = false;
+        var effectiveDecisionArtifacts = new EffectiveDecisionArtifactTracker(
+            initialModelPlanPath,
+            initialRankingPath,
+            initialCompiledQueuePath,
+            stateHash);
 
         for (var itemIndex = 0; itemIndex < queueItems.Length && attemptedCount < options.MaxQueueItemAttempts; itemIndex++)
         {
@@ -128,6 +136,12 @@ static partial class Program
                     replan.Ranking.ToJsonString(JsonOptions),
                     Encoding.UTF8);
 
+                effectiveDecisionArtifacts.Replace(
+                    replanPlanPath,
+                    replanRankingPath,
+                    replanQueuePath,
+                    currentStateHash);
+
                 queue = replan.Queue;
                 queueId = ReadString(queue, "queue_id");
                 dispatchReadiness["replan_queue_id"] = queueId;
@@ -185,6 +199,7 @@ static partial class Program
             execution["effective_queue_item"] = JsonNode.Parse(item.ToJsonString(JsonOptions));
             execution["effective_before_state_hash"] = effectiveStateHash;
             execution["effective_before_snapshot_path"] = currentBeforeSnapshotPath;
+            effectiveDecisionArtifacts.Stamp(execution);
             execution["queue_continue_after_blocked"] = options.ContinueAfterBlockedQueueItems;
             execution["after_snapshot_path"] = afterPath;
             execution["execution_path"] = executionPath;
@@ -278,6 +293,11 @@ static partial class Program
                 execution["queue_replan_response_path"] = replanDailyPlanPath;
                 execution["queue_replan_queue_path"] = replanQueuePath;
                 execution["queue_replan_ranking_path"] = replanRankingPath;
+                effectiveDecisionArtifacts.Replace(
+                    replanPlanPath,
+                    replanRankingPath,
+                    replanQueuePath,
+                    currentStateHash);
                 itemIndex = -1;
             }
             else

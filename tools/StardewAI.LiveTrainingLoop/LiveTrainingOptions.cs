@@ -52,6 +52,7 @@ public sealed class LiveTrainingOptions
     public int MinFreeSpaceMb { get; set; } = 8192;
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
+    public string KnowledgeDictionaryVersion { get; set; } = "game-1.6.15-20260723T093543Z-linux-v24";
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
@@ -73,6 +74,7 @@ public sealed class LiveTrainingOptions
                 : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
     public string DatasetPath => Path.Combine(Root, "datasets", "live-training-feature-rows.jsonl");
+    public string PolicyTrajectoryDatasetPath => Path.Combine(Root, "datasets", "policy-decision-trajectories.jsonl");
     public string ProgressLogPath => Path.Combine(Root, "logs", "live-training-progress.log");
     public string ReadyProbeUrl => BackendUrl + "/api/v1/training/session/ready-probe?manifest_path=" + Uri.EscapeDataString(ManifestPath);
 
@@ -138,6 +140,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--goal" && i + 1 < args.Length)
             {
                 options.Goal = args[++i];
+            }
+            else if (current == "--knowledge-dictionary-version" && i + 1 < args.Length)
+            {
+                options.KnowledgeDictionaryVersion = args[++i];
             }
             else if (current == "--iterations" && i + 1 < args.Length && int.TryParse(args[++i], out var iterations))
             {

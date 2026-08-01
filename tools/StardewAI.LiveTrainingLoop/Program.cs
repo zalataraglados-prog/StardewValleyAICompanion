@@ -89,6 +89,7 @@ for (var attemptOrdinal = 1;
     }
 
     var modelPlanPath = string.Empty;
+    var rankingPath = string.Empty;
     JsonObject queue;
     if (options.UseDailyPlan)
     {
@@ -97,7 +98,7 @@ for (var attemptOrdinal = 1;
         await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
         var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
-        var rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
+        rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
         await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
         queue = dailyPlan.Queue;
     }
@@ -156,7 +157,7 @@ for (var attemptOrdinal = 1;
         }
 
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, activeObjectiveContinuation)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, modelPlanPath, rankingPath, queuePath, activeObjectiveContinuation)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
@@ -192,11 +193,14 @@ for (var attemptOrdinal = 1;
                 : null;
             socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
+            var policyAppend = executionNoProgress.NoProgress
+                ? new PolicyTrajectoryAppendBatchResult()
+                : AppendPolicyDecisionTrajectories(options, iteration, execution, realAppend);
             rowsAppended = realAppend.RowCount;
             if (!executionNoProgress.NoProgress)
             {
                 verifiedActions++;
-                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
+                AppendProgress(options, "append", iteration, lastStateHash, lastQueueId, "dataset_rows=" + rowsAppended + " policy_trajectories=" + policyAppend.AppendedCount + " policy_trajectory_skips=" + policyAppend.SkippedCount + " policy_trajectory_first_skip=" + policyAppend.FirstSkipReason + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " source=runtime_test_harness_executor");
                 var train = await TrainIfNeededAsync(http, options, iteration);
                 if (train.TrainingReport is not null)
                 {
