@@ -24,13 +24,15 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             "trajectory.one",
             "run.one",
             Context(),
+            Features(),
             Versions(),
             "hash.before",
             decision,
             "gift",
             Execution());
 
-        Assert.Equal("policy_decision_trajectory.v1", trajectory.SchemaVersion);
+        Assert.Equal(PolicyTrajectoryVersionPins.TrajectorySchema, trajectory.SchemaVersion);
+        Assert.Contains(trajectory.StateFeatures.Numeric, feature => feature.Name == "player.money" && feature.Value == 1000);
         Assert.Equal("save.one:2:winter:17", trajectory.Context.SplitKey);
         Assert.Equal(3, trajectory.Candidates.Length);
         Assert.Equal("gift", trajectory.Selection.CandidateId);
@@ -38,6 +40,11 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
         var selected = Assert.Single(trajectory.Candidates.Where(row => row.Selected));
         Assert.True(selected.AdmittedForPolicy);
         Assert.Equal(120, selected.EstimatedTicks);
+        Assert.Equal("SeedShop", selected.SourceCandidate.LocationId);
+        Assert.Equal("Pierre", selected.SourceCandidate.ShopId);
+        Assert.Equal(900, selected.SourceCandidate.EffectiveOpenTime);
+        Assert.Equal(1700, selected.SourceCandidate.ClosesAt);
+        Assert.Equal("goal_support=friendship;utility=0.2", selected.SourceCandidate.ExpectedEffect);
         var unavailable = Assert.Single(trajectory.Candidates.Where(row => row.CandidateId == "talk"));
         Assert.Contains("already_talked_today", unavailable.ExclusionReasons);
         var excluded = Assert.Single(trajectory.Candidates.Where(row => row.CandidateId == "buy"));
@@ -66,6 +73,7 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             "trajectory.bad",
             "run.one",
             Context(),
+            Features(),
             Versions(),
             "hash.before",
             decision,
@@ -82,6 +90,7 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             "trajectory.drift",
             "run.one",
             Context(),
+            Features(),
             Versions(),
             "hash.before",
             decision,
@@ -96,6 +105,7 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             "trajectory.write",
             "run.one",
             Context(),
+            Features(),
             Versions(),
             "hash.before",
             new AvailabilityAwarePolicyPredictionEnvelope
@@ -136,6 +146,17 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             Score = 1.0 / rank,
             ExpectedReward = 0.2,
             Available = available,
+            ShopId = "Pierre",
+            LocationId = "SeedShop",
+            TileX = 4,
+            TileY = 17,
+            AllowedNow = true,
+            AllowedToday = true,
+            EffectiveOpenTime = 900,
+            ClosesAt = 1700,
+            AvailabilityClass = "open_now",
+            TimelineStatus = "scheduled_now",
+            ExpectedEffect = "goal_support=friendship;utility=0.2",
             EstimatedTicks = ticks,
             EnergyCost = energy,
             BlockReasons = blockReasons ?? Array.Empty<string>(),
@@ -157,12 +178,29 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
 
     private static PolicyTrajectoryVersions Versions() => new()
     {
-        FeatureSchema = "policy_features.v1",
+        FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
         CandidateVocabulary = "capability_registry.v2",
         CapabilityRegistry = "capability_registry.v2",
         KnowledgeDictionary = "game-1.6.15-20260723T093543Z-linux-v24",
         Compiler = "action_queue.v1",
         Executor = "runtime_test_harness.v1"
+    };
+
+    private static FeatureVector Features() => new()
+    {
+        Numeric = new[]
+        {
+            new NumericFeature { Name = "game.time", Value = 1200 },
+            new NumericFeature { Name = "player.money", Value = 1000 }
+        },
+        Categorical = new[]
+        {
+            new CategoricalFeature { Name = "game.season", Value = "winter" }
+        },
+        Boolean = new[]
+        {
+            new BooleanFeature { Name = "planner_inputs.blocked", Value = false }
+        }
     };
 
     private static PlanExecutionEpisodeEnvelope Execution() => new()

@@ -203,8 +203,9 @@ Required work:
 - expose only evidence-eligible model-level candidates to policy data;
 - separate policy, mixed replay, and executor-calibration datasets;
 - remove stale-schema, simulated, duplicated, bugged, and no-op rows;
-- add a real C# model provider, checkpoint round-trip, dataset hash, and
-  evaluation manifest;
+- keep the completed C# V1 provider, checkpoint round-trip and dataset-hash
+  binding regression-clean; produce the still-missing production evaluation
+  manifest only from real independent-save rollout data;
 - validate the reported 9955HX / 32-GB / RTX 5070 Laptop 8-GB training node.
 
 Acceptance:

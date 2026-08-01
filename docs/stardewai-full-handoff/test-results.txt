@@ -1,3 +1,15 @@
+2026-08-02 structured policy provider and checkpoint round-trip
+
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+- Core full regression PASS: 1485/1485.
+- Backend full regression PASS: 104/104.
+- Focused structured policy, v2 trajectory and dataset tests PASS: 14/14.
+- Synthetic contract data proved deterministic train/save/load, state-conditioned
+  reranking, complete source-candidate preservation, admission containment, dataset
+  tamper rejection, stale checkpoint rejection and mandatory-checkpoint failure closure.
+- Standard E-drive production trajectory, horizon, manifest and checkpoint paths were
+  all absent. No production dataset/checkpoint was fabricated and no game was launched.
+
 2026-08-01 formal policy dataset governance
 
 - Release solution build PASS: 0 errors, 5 pre-existing warnings.

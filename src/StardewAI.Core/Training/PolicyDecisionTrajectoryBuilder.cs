@@ -25,6 +25,7 @@ public sealed class PolicyDecisionTrajectoryBuilder
         string trajectoryId,
         string runId,
         PolicyTrajectoryContext context,
+        FeatureVector stateFeatures,
         PolicyTrajectoryVersions versions,
         string sourceStateHash,
         AvailabilityAwarePolicyPredictionEnvelope decision,
@@ -36,6 +37,7 @@ public sealed class PolicyDecisionTrajectoryBuilder
         Require(runId, nameof(runId));
         Require(context.SaveId, "context.save_id");
         Require(context.Season, "context.season");
+        ValidateStateFeatures(stateFeatures);
         Require(sourceStateHash, nameof(sourceStateHash));
         ValidateVersions(versions);
         if (!string.Equals(sourceStateHash, execution.SourceStateHash, StringComparison.Ordinal))
@@ -82,6 +84,7 @@ public sealed class PolicyDecisionTrajectoryBuilder
             RunId = runId,
             SourceStateHash = sourceStateHash,
             Context = contextCopy,
+            StateFeatures = Copy(stateFeatures),
             Versions = versions,
             Candidates = candidates,
             Selection = new PolicyTrajectorySelection
@@ -124,6 +127,7 @@ public sealed class PolicyDecisionTrajectoryBuilder
 
         return new PolicyTrajectoryCandidate
         {
+            SourceCandidate = CloneCandidate(source),
             CandidateId = source.CandidateId,
             OptionId = source.OptionId,
             Kind = source.Kind,
@@ -154,9 +158,59 @@ public sealed class PolicyDecisionTrajectoryBuilder
         Require(versions.Executor, "versions.executor");
     }
 
+    private static void ValidateStateFeatures(FeatureVector features)
+    {
+        if (features is null ||
+            features.Numeric is null ||
+            features.Categorical is null ||
+            features.Boolean is null ||
+            features.Numeric.Length + features.Categorical.Length + features.Boolean.Length == 0)
+            throw new ArgumentException("Policy trajectory state features are required.", nameof(features));
+        if (features.Numeric.Any(feature =>
+                feature is null ||
+                string.IsNullOrWhiteSpace(feature.Name) ||
+                double.IsNaN(feature.Value) ||
+                double.IsInfinity(feature.Value)) ||
+            features.Categorical.Any(feature =>
+                feature is null ||
+                string.IsNullOrWhiteSpace(feature.Name) ||
+                string.IsNullOrWhiteSpace(feature.Value)) ||
+            features.Boolean.Any(feature => feature is null || string.IsNullOrWhiteSpace(feature.Name)))
+            throw new ArgumentException("Policy trajectory state features are invalid.", nameof(features));
+        var names = features.Numeric.Select(feature => feature.Name)
+            .Concat(features.Categorical.Select(feature => feature.Name))
+            .Concat(features.Boolean.Select(feature => feature.Name))
+            .ToArray();
+        if (names.Distinct(StringComparer.Ordinal).Count() != names.Length)
+            throw new ArgumentException("Policy trajectory state feature names must be unique.", nameof(features));
+    }
+
+    private static FeatureVector Copy(FeatureVector source) => new()
+    {
+        Numeric = source.Numeric
+            .OrderBy(feature => feature.Name, StringComparer.Ordinal)
+            .Select(feature => new NumericFeature { Name = feature.Name, Value = feature.Value })
+            .ToArray(),
+        Categorical = source.Categorical
+            .OrderBy(feature => feature.Name, StringComparer.Ordinal)
+            .Select(feature => new CategoricalFeature { Name = feature.Name, Value = feature.Value })
+            .ToArray(),
+        Boolean = source.Boolean
+            .OrderBy(feature => feature.Name, StringComparer.Ordinal)
+            .Select(feature => new BooleanFeature { Name = feature.Name, Value = feature.Value })
+            .ToArray()
+    };
+
+    private static PolicyEventCandidatePrediction CloneCandidate(PolicyEventCandidatePrediction source) =>
+        JsonSerializer.Deserialize<PolicyEventCandidatePrediction>(
+            JsonSerializer.Serialize(source, JsonOptions), JsonOptions)
+        ?? throw new InvalidOperationException("Policy source candidate clone failed.");
+
     private static void Require(string value, string name)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Required policy trajectory field is missing: " + name, name);
     }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }

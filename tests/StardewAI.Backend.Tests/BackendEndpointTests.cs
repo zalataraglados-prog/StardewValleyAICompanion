@@ -438,6 +438,22 @@ namespace StardewAI.Backend.Tests
         }
 
         [Fact]
+        public async Task RankOptionsFailsClosedWhenStructuredPolicyIsRequiredWithoutCheckpoint()
+        {
+            using var client = factory.CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "/api/v1/planner/baseline/rank-options",
+                new { require_structured_policy = true });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Contains(
+                "policy_checkpoint_path",
+                await response.Content.ReadAsStringAsync(),
+                StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task DailyPlanCompileEndpointReturnsSmallModelPlanFromRankedCandidates()
         {
             using var client = factory.CreateClient();

@@ -229,6 +229,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
 
+        [JsonPropertyName("execution_mode")]
+        public string ExecutionMode { get; set; } = "training_singleplayer";
+
         [JsonPropertyName("dataset_path")]
         public string? DatasetPath { get; set; }
 
@@ -246,6 +249,12 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("training_report")]
         public BaselineTrainingReport? TrainingReport { get; set; }
+
+        [JsonPropertyName("policy_checkpoint_path")]
+        public string? PolicyCheckpointPath { get; set; }
+
+        [JsonPropertyName("require_structured_policy")]
+        public bool RequireStructuredPolicy { get; set; }
     }
 
     public sealed class AvailabilityAwarePolicyPredictionEnvelope
@@ -303,6 +312,12 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("score")]
         public double Score { get; set; }
+
+        [JsonPropertyName("model_score")]
+        public double? ModelScore { get; set; }
+
+        [JsonPropertyName("policy_model_source")]
+        public string PolicyModelSource { get; set; } = string.Empty;
 
         [JsonPropertyName("expected_reward")]
         public double ExpectedReward { get; set; }

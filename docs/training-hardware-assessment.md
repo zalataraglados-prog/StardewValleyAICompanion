@@ -1,6 +1,6 @@
 # Training Hardware And Model Assessment
 
-Status date: 2026-07-27
+Status date: 2026-08-02
 
 The authoritative training-readiness sequence is documented in
 [`FORMAL_FULL_TRAINING_READINESS_CN.md`](FORMAL_FULL_TRAINING_READINESS_CN.md).
@@ -55,6 +55,13 @@ learner. ML.NET ranking trainers currently do not export to ONNX, so either:
 - persist and serve the native ML.NET checkpoint in the C# provider; or
 - select an exportable classification/regression formulation if a
   cross-runtime checkpoint is a hard requirement.
+
+Implementation update: the first equivalent V1 is now a deterministic,
+return-weighted pairwise linear ranker implemented entirely in C#. Synthetic
+contract tests cover train/save/load and inference equality without using the
+GPU. This closes the software checkpoint smoke, but not target-laptop hardware
+acceptance or production training: the standard production dataset and
+checkpoint paths are still empty.
 
 For optional V2 experiments, use 4-bit QLoRA, short sequences, batch size 1,
 gradient accumulation, and gradient checkpointing. The neural model receives a

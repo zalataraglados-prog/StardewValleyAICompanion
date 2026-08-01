@@ -13,7 +13,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
 
     public string? Validate(PolicyDecisionTrajectoryEnvelope row)
     {
-        if (!string.Equals(row.SchemaVersion, "policy_decision_trajectory.v1", StringComparison.Ordinal))
+        if (!string.Equals(row.SchemaVersion, PolicyTrajectoryVersionPins.TrajectorySchema, StringComparison.Ordinal))
             return "unsupported_schema";
         if (string.IsNullOrWhiteSpace(row.TrajectoryId) ||
             string.IsNullOrWhiteSpace(row.RunId) ||
@@ -21,17 +21,21 @@ internal sealed class PolicyTrajectoryDatasetValidator
             return "identity_missing";
         if (row.Context is null ||
             row.Versions is null ||
+            row.StateFeatures is null ||
             row.Selection is null ||
             row.Outcome is null ||
             row.Returns is null)
             return "envelope_section_missing";
         if (!ValidContext(row.Context))
             return "context_invalid";
+        if (!ValidStateFeatures(row.StateFeatures))
+            return "state_features_invalid";
         if (!ValidVersions(row.Versions))
             return "version_binding_missing";
         if (row.Candidates is null || row.Candidates.Length == 0)
             return "candidate_set_empty";
         if (row.Candidates.Any(candidate => candidate is null ||
+            candidate.SourceCandidate is null ||
             string.IsNullOrWhiteSpace(candidate.CandidateId) ||
             string.IsNullOrWhiteSpace(candidate.OptionId) ||
             candidate.Rank <= 0 ||
@@ -46,6 +50,8 @@ internal sealed class PolicyTrajectoryDatasetValidator
             return "candidate_rank_duplicate";
         if (!row.Candidates.Select(candidate => candidate.Rank).OrderBy(rank => rank).SequenceEqual(Enumerable.Range(1, row.Candidates.Length)))
             return "candidate_rank_not_contiguous";
+        if (row.Candidates.Any(candidate => !SourceCandidateMatches(candidate)))
+            return "source_candidate_binding_mismatch";
 
         foreach (var candidate in row.Candidates)
         {
@@ -120,7 +126,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
     }
 
     private static bool ValidVersions(PolicyTrajectoryVersions versions) =>
-        string.Equals(versions.FeatureSchema, "policy_features.v1", StringComparison.Ordinal) &&
+        string.Equals(versions.FeatureSchema, PolicyTrajectoryVersionPins.FeatureSchema, StringComparison.Ordinal) &&
         string.Equals(versions.CandidateVocabulary, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) &&
         string.Equals(versions.CapabilityRegistry, OptionCapabilityRegistrySource.SchemaVersion, StringComparison.Ordinal) &&
         !string.IsNullOrWhiteSpace(versions.KnowledgeDictionary) &&
@@ -137,4 +143,38 @@ internal sealed class PolicyTrajectoryDatasetValidator
     private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 
     private static bool NullableFinite(double? value) => !value.HasValue || Finite(value.Value);
+
+    private static bool ValidStateFeatures(FeatureVector features)
+    {
+        if (features.Numeric is null || features.Categorical is null || features.Boolean is null)
+            return false;
+        var names = features.Numeric.Select(feature => feature?.Name ?? string.Empty)
+            .Concat(features.Categorical.Select(feature => feature?.Name ?? string.Empty))
+            .Concat(features.Boolean.Select(feature => feature?.Name ?? string.Empty))
+            .ToArray();
+        return names.Length > 0 &&
+            names.All(name => !string.IsNullOrWhiteSpace(name)) &&
+            names.Distinct(StringComparer.Ordinal).Count() == names.Length &&
+            features.Numeric.All(feature => feature is not null && Finite(feature.Value)) &&
+            features.Categorical.All(feature => feature is not null && !string.IsNullOrWhiteSpace(feature.Value)) &&
+            features.Boolean.All(feature => feature is not null);
+    }
+
+    private static bool SourceCandidateMatches(PolicyTrajectoryCandidate candidate)
+    {
+        var source = candidate.SourceCandidate;
+        return string.Equals(source.CandidateId, candidate.CandidateId, StringComparison.Ordinal) &&
+            string.Equals(source.OptionId, candidate.OptionId, StringComparison.Ordinal) &&
+            string.Equals(source.Kind, candidate.Kind, StringComparison.Ordinal) &&
+            source.Rank == candidate.Rank &&
+            source.Score.Equals(candidate.Score) &&
+            source.ExpectedReward.Equals(candidate.ExpectedReward) &&
+            source.Available == candidate.Available &&
+            source.EstimatedTicks == candidate.EstimatedTicks &&
+            source.EnergyCost == candidate.EnergyCost &&
+            string.Equals(
+                JsonSerializer.Serialize(source.Parameters ?? Array.Empty<StardewAI.Contracts.Execution.SmallModelActionParameter>()),
+                JsonSerializer.Serialize(candidate.Parameters ?? Array.Empty<StardewAI.Contracts.Execution.SmallModelActionParameter>()),
+                StringComparison.Ordinal);
+    }
 }

@@ -72,6 +72,11 @@ static partial class Program
         var rankRequest = JsonSerializer.Serialize(new
         {
             goal_id = options.Goal,
+            execution_mode = options.TargetExecutionMode,
+            policy_checkpoint_path = string.IsNullOrWhiteSpace(options.PolicyCheckpointPath)
+                ? null
+                : Path.GetFullPath(options.PolicyCheckpointPath),
+            require_structured_policy = options.RequireStructuredPolicy,
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
             candidate_option_ids = objectiveContinuation is null && explicitCandidates.Length == 0

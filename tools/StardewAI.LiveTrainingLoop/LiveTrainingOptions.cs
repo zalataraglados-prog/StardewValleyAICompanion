@@ -53,6 +53,8 @@ public sealed class LiveTrainingOptions
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();
     public string KnowledgeDictionaryVersion { get; set; } = PolicyTrajectoryVersionPins.KnowledgeDictionary;
+    public string PolicyCheckpointPath { get; set; } = string.Empty;
+    public bool RequireStructuredPolicy { get; set; }
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
@@ -145,6 +147,14 @@ public sealed class LiveTrainingOptions
             else if (current == "--knowledge-dictionary-version" && i + 1 < args.Length)
             {
                 options.KnowledgeDictionaryVersion = args[++i];
+            }
+            else if (current == "--policy-checkpoint-path" && i + 1 < args.Length)
+            {
+                options.PolicyCheckpointPath = args[++i];
+            }
+            else if (current == "--require-structured-policy")
+            {
+                options.RequireStructuredPolicy = true;
             }
             else if (current == "--iterations" && i + 1 < args.Length && int.TryParse(args[++i], out var iterations))
             {
@@ -352,6 +362,12 @@ public sealed class LiveTrainingOptions
         if (!ExecutionTargetProfiles.IsSupported(options.TargetExecutionMode))
         {
             throw new ArgumentException("Unsupported --target-execution-mode: " + options.TargetExecutionMode);
+        }
+
+        if (options.RequireStructuredPolicy && string.IsNullOrWhiteSpace(options.PolicyCheckpointPath))
+        {
+            throw new ArgumentException(
+                "--require-structured-policy requires --policy-checkpoint-path.");
         }
 
         if (options.DailyPlanCandidateParameters.Count > 0 &&

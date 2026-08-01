@@ -1,6 +1,6 @@
 # StardewAI 当前工作
 
-更新时间：2026-08-01
+更新时间：2026-08-02
 
 ## 当前阶段
 
@@ -74,18 +74,25 @@ EVD-192 在 E 盘隔离存档中验证了“箱子到玩家”和“玩家到箱
 物品或全部社交完成。下一切片按既定路线重建准入策略轨迹并接入 C# 结构化排序器，不重做候选、
 编译器或社交执行器。
 
-正式轨迹阶段的第一道硬闸已完成：`PolicyTrainingAdmissionFilter` 直接消费生成式训练 allowlist，
-校准行与未准入行分开计数；非校准行必须且只能包含一个准入模型 option。旧
-`BaselineFeatureRowTrainer` 不再接受 `strategy.grandpa_progress` 等未准入样本，默认和显式排序
-请求也不能输出 allowlist 外 option；显式候选过滤为空时直接返回空，不再回退到报告内容。
-该基线仍只是聚合烟测，不是正式模型。紧接任务是建立强类型 `policy trajectory` schema/writer，
-把决策时全部候选、排除原因、预算、最终选择、执行结果和长期回报按存档/游戏日绑定。
+正式轨迹与数据治理硬闸已经完成：`PolicyTrainingAdmissionFilter` 直接消费生成式 allowlist，
+校准行与未准入行分开计数；每条 v2 轨迹绑定 effective ranking、完整源候选、版本化状态特征、
+编译队列、执行结果、fresh after-state 和观察型长回报。清洗器按存档/游戏日确定性切分，拒绝
+冲突标签并生成逐文件 SHA-256 manifest。旧 `BaselineFeatureRowTrainer` 仍只作聚合烟测；正式路径
+使用下节的 C# 结构化提供器。
 
-`policy_decision_trajectory.v1` 契约、构建器与 JSONL 写入器现已完成：完整候选集中的未准入项不会
-消失，而是作为带排除原因的负例保留；只有一个已准入且当前可用的候选可以成为选择标签。轨迹
-同时绑定版本、存档/日切分键、执行原语、实际 tick、fresh after-state 和长回报占位。构建器会拒绝
-决策/执行源哈希漂移。下一步把它接入 LiveTrainingLoop，但必须选用滚动重规划后真正对应最终执行
-的 effective ranking，不能把初始 ranking 与后续执行错误配对。
+## 2026-08-02 正式模型链状态
+
+EVD-201 已完成首个真实 C# 结构化策略提供器。轨迹 schema 升级为
+`policy_decision_trajectory.v2` / `policy_features.v2`，每条轨迹除版本化状态特征外，还保留
+完整源候选对象，商店、位置、物品、价格、开放时窗、排程、原因、参数与结构化效果字段不会在
+训练前丢失。训练器只对“已准入且当前可用”的候选建立成对比较，检查点绑定数据清单及三个分区
+SHA-256、特征/候选/能力/字典/编译器/执行器版本；推理只重排既有候选，不复制候选生成、日计划、
+编译器或执行器。`--require-structured-policy` 在检查点缺失时失败关闭。
+
+当前标准 E 盘生产轨迹、跨度观测、正式 manifest 和检查点四个路径均不存在。因此完成的是模型
+基础设施与合成契约验收，不是生产训练。直接下一步仍是按权威字典依赖顺序扩大五门准入范围，
+再用真实、verified/fresh 的长期 rollout 生成 v2 轨迹和闭合跨度标签；形成正式 manifest 后才运行
+`StardewAI.PolicyModel`。只有独立存档评测与第三年 21 分长跑通过后，才冻结“最强完美 AI”基线。
 
 ## 禁止事项
 

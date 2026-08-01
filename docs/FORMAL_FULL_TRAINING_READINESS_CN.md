@@ -238,3 +238,22 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 - [Hugging Face bitsandbytes 安装与平台支持](https://huggingface.co/docs/bitsandbytes/installation)
 - [Hugging Face Transformers 4-bit/QLoRA 说明](https://huggingface.co/docs/transformers/main/quantization/bitsandbytes)
 - [Qwen3 官方仓库](https://github.com/QwenLM/Qwen3)
+
+## 7. 2026-08-02 实现状态与下一门
+
+首个正式 C# 模型提供器已经实现为
+`return_weighted_pairwise_linear_ranker.v1`。它消费
+`policy_decision_trajectory.v2` / `policy_features.v2`，使用同一套投影代码完成采集和推理，
+保留完整源候选字段，并只在生成式 allowlist 内对当前可用候选排序。候选生成、上游排除、时间与
+资源许可、日计划、动作编译和原生执行仍是确定性权威。
+
+检查点 `structured_policy_checkpoint.v1` 必须绑定正式 manifest、cleaned/train/validation/test
+SHA-256、超参数、特征 schema、候选/能力词表、权威字典、编译器和执行器版本。训练器会重新校验
+每个分区的哈希、行数、确定性 split 与轨迹 schema；推理会拒绝过期或损坏的检查点。Backend 的
+结构化训练端点和现有 rank-options 单路径重排已接通；LiveTrainingLoop 可用
+`--policy-checkpoint-path` 和 `--require-structured-policy` 显式启用，缺失时不得静默回退。
+
+这仍未解除正式全量训练阻塞：标准 E 盘生产轨迹、跨度观测、manifest 和 checkpoint 均不存在，
+当前训练 allowlist 也只有四个有界范围。下一门是扩大五门准入并采集真实长期 v2 rollout，不是
+继续用合成数据调模型。形成正式 manifest 后执行 `StardewAI.PolicyModel`，再通过独立存档评测和
+第三年 21 分长跑；未通过前不得冻结完美策略或开始拟人适配。

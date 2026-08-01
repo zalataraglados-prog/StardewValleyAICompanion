@@ -126,7 +126,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         badRank.Candidates[1].Rank = 3;
         WriteLines(input, new[]
         {
-            "{\"schema_version\":\"policy_decision_trajectory.v1\",\"trajectory_id\":\"null-context\",\"run_id\":\"run\",\"source_state_hash\":\"hash\",\"context\":null}",
+            "{\"schema_version\":\"policy_decision_trajectory.v2\",\"trajectory_id\":\"null-context\",\"run_id\":\"run\",\"source_state_hash\":\"hash\",\"context\":null}",
             Serialize(badRank),
             Serialize(Row("valid", "valid-hash", 1, "spring", 2, 610, 0.2))
         });
@@ -190,6 +190,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
                 Day = day,
                 Time = time
             },
+            Features(time, season),
             Versions(),
             stateHash,
             new AvailabilityAwarePolicyPredictionEnvelope
@@ -237,12 +238,29 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
 
     private static PolicyTrajectoryVersions Versions() => new()
     {
-        FeatureSchema = "policy_features.v1",
+        FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
         CandidateVocabulary = "capability_registry.v2",
         CapabilityRegistry = "capability_registry.v2",
         KnowledgeDictionary = "game-1.6.15-test",
         Compiler = "action_queue.v1",
         Executor = "runtime_test_harness_executor.v1"
+    };
+
+    private static FeatureVector Features(int time, string season) => new()
+    {
+        Numeric = new[]
+        {
+            new NumericFeature { Name = "game.time", Value = time },
+            new NumericFeature { Name = "player.money", Value = 1000 }
+        },
+        Categorical = new[]
+        {
+            new CategoricalFeature { Name = "game.season", Value = season }
+        },
+        Boolean = new[]
+        {
+            new BooleanFeature { Name = "planner_inputs.blocked", Value = false }
+        }
     };
 
     private static PolicyHorizonObservationEnvelope Observation(

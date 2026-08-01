@@ -49,6 +49,10 @@ builder.Services.AddSingleton<TrainingEpisodeAdapter>();
 builder.Services.AddSingleton<TrainingFeatureRowExporter>();
 builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<PolicyTrainingAdmissionFilter>();
+builder.Services.AddSingleton<PolicyStateFeatureProjector>();
+builder.Services.AddSingleton<StructuredPolicyCheckpointStore>();
+builder.Services.AddSingleton<StructuredPolicyTrainer>();
+builder.Services.AddSingleton<StructuredPolicyRanker>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 builder.Services.AddSingleton<BaselinePolicyPredictor>();
 builder.Services.AddSingleton<BaselineOptionRanker>();
@@ -578,6 +582,23 @@ app.MapPost("/api/v1/training/baseline/train", (TrainingDatasetRequest? request,
     return Results.Ok(trainer.Train(datasetPath));
 });
 
+app.MapPost("/api/v1/training/structured/train", (
+    StructuredPolicyTrainingRequest request,
+    StructuredPolicyTrainer trainer) =>
+{
+    try
+    {
+        return Results.Ok(trainer.Train(
+            request.DatasetManifestPath,
+            request.CheckpointPath,
+            request.Hyperparameters));
+    }
+    catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)
+    {
+        return Results.BadRequest(new { detail = ex.Message });
+    }
+});
+
 app.MapPost("/api/v1/training/session/prepare", (TrainingLaunchRequest request, StardewTrainingSessionLauncher launcher) =>
     Results.Ok(launcher.Prepare(request)));
 
@@ -602,17 +623,28 @@ app.MapPost("/api/v1/training/baseline/predict", (BaselinePredictionRequest requ
     return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
 });
 
-app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository) =>
+app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest request, StateStore store, BaselineFeatureRowTrainer trainer, BaselineOptionRanker ranker, EventCandidateRanker eventCandidateRanker, CandidateOptionAvailabilityEvaluator availabilityEvaluator, GrandpaDailySubgoalResolver goalResolver, IStrategyCommitmentRepository commitmentRepository, WorldModelProjector worldModelProjector, PolicyStateFeatureProjector stateFeatureProjector, StructuredPolicyCheckpointStore checkpointStore, StructuredPolicyRanker structuredRanker) =>
 {
+    var useStructuredPolicy = !string.IsNullOrWhiteSpace(request.PolicyCheckpointPath);
+    if (request.RequireStructuredPolicy && !useStructuredPolicy)
+        return Results.BadRequest(new { detail = "A structured policy checkpoint is required but policy_checkpoint_path is missing." });
+
     var report = request.TrainingReport;
     if (report is null)
     {
-        var datasetPath = DatasetPathResolver.Resolve(request.DatasetPath);
-        report = trainer.Train(datasetPath);
+        if (useStructuredPolicy)
+            report = new BaselineTrainingReport();
+        else
+        {
+            var datasetPath = DatasetPathResolver.Resolve(request.DatasetPath);
+            report = trainer.Train(datasetPath);
+        }
     }
 
     if (string.IsNullOrWhiteSpace(request.StateHash))
     {
+        if (useStructuredPolicy)
+            return Results.BadRequest(new { detail = "Structured policy ranking requires state_hash." });
         return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
     }
 
@@ -657,11 +689,36 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
         rankedEventCandidates,
         detailedGoalResolution);
 
+    StructuredPolicyCheckpointEnvelope? checkpoint = null;
+    if (useStructuredPolicy)
+    {
+        try
+        {
+            checkpoint = checkpointStore.Load(request.PolicyCheckpointPath!);
+            var worldModel = worldModelProjector.Project(
+                snapshot,
+                effectiveGoalId,
+                string.IsNullOrWhiteSpace(request.ExecutionMode)
+                    ? "training_singleplayer"
+                    : request.ExecutionMode);
+            rankedEventCandidates = structuredRanker.Rank(
+                checkpoint,
+                stateFeatureProjector.Project(worldModel),
+                rankedEventCandidates);
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)
+        {
+            return Results.BadRequest(new { detail = ex.Message });
+        }
+    }
+
     return Results.Ok(new AvailabilityAwarePolicyPredictionEnvelope
     {
-        Prediction = rankedCandidates.Length == 0
-            ? new PolicyPredictionEnvelope()
-            : ranker.Rank(report, rankedCandidates),
+        Prediction = checkpoint is not null
+            ? structuredRanker.Summarize(checkpoint, rankedEventCandidates)
+            : rankedCandidates.Length == 0
+                ? new PolicyPredictionEnvelope()
+                : ranker.Rank(report, rankedCandidates),
         Availability = availability,
         RankedEventCandidates = rankedEventCandidates,
         GoalResolution = goalResolution

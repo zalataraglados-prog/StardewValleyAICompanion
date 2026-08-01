@@ -209,4 +209,15 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 架构防扩张门同步生效：`ModEntry` 不再新增领域 active state，新领域必须由独立 Handler 持有状态与 cleanup；含 304 个 public instance 属性、横跨 8 个 partial 声明文件的 `TrainingExecutionRequest.v1` 停止新增字段。v2 采用强类型 payload envelope，并按领域逐族兼容迁移，禁止一次性重写现有 compiler/runtime/verifier 链。
 
-直接执行任务见 [`SHORT_HANDOFF_20260801_POLICY_DATASET_CN.md`](stardewai-full-handoff/SHORT_HANDOFF_20260801_POLICY_DATASET_CN.md)。
+2026-08-02 EVD-201 已闭合第 7 步的首个可执行版本：C# 返回加权成对线性排序器、完整候选字段与
+状态特征投影、逐分区哈希/版本绑定检查点、原子保存/严格加载，以及 Backend/LiveTrainingLoop
+单路径推理接入均已完成。该 V1 是透明、确定、可审计的行为克隆基线，不是最终最优策略声明；
+模型不能生成候选、绕过硬约束或直接控制执行器。标准 E 盘没有真实 v2 轨迹、闭合跨度、正式
+manifest 或生产 checkpoint，现阶段禁止把合成训练测试称为正式训练。
+
+直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
+用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
+manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步
+冻结完美策略，第 11 步拟人化仍必须保持独立 profile/checkpoint。
+
+直接执行任务见 [`SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md`](stardewai-full-handoff/SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md)。

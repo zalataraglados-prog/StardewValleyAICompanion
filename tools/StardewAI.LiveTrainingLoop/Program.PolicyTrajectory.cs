@@ -2,8 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.Core.WorldModel;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -88,6 +90,14 @@ static partial class Program
 
                 var beforeSnapshot = JsonNode.Parse(File.ReadAllText(beforeSnapshotPath))?.AsObject()
                     ?? throw new InvalidOperationException("before snapshot is empty");
+                var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
+                    beforeSnapshot.ToJsonString(JsonOptions),
+                    JsonOptions) ?? throw new InvalidOperationException("before snapshot contract is empty");
+                var stateFeatures = new PolicyStateFeatureProjector().Project(
+                    new WorldModelProjector().Project(
+                        snapshotEnvelope,
+                        options.Goal,
+                        options.TargetExecutionMode));
                 var episodeId = appendResult.EpisodeId + ".policy." + iteration.ToString("D4") + "." + stepOrdinal.ToString("D4");
                 var executionEpisode = BuildPolicyExecutionEpisode(
                     appendResult,
@@ -99,9 +109,10 @@ static partial class Program
                     "trajectory." + policyRunId + "." + iteration.ToString("D4") + "." + stepOrdinal.ToString("D4"),
                     policyRunId,
                     BuildPolicyTrajectoryContext(beforeSnapshot),
+                    stateFeatures,
                     new PolicyTrajectoryVersions
                     {
-                        FeatureSchema = "policy_features.v1",
+                        FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
                         CandidateVocabulary = OptionCapabilityRegistrySource.SchemaVersion,
                         CapabilityRegistry = OptionCapabilityRegistrySource.SchemaVersion,
                         KnowledgeDictionary = options.KnowledgeDictionaryVersion,

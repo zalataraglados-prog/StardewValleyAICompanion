@@ -313,6 +313,7 @@ public sealed class PolicyTrajectoryDatasetBuilder
         {
             row.SourceStateHash,
             row.Context,
+            row.StateFeatures,
             row.Versions,
             row.Candidates,
             row.Selection,

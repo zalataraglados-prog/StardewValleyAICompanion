@@ -7,13 +7,15 @@ namespace StardewAI.Contracts.Training;
 
 public static class PolicyTrajectoryVersionPins
 {
+    public const string TrajectorySchema = "policy_decision_trajectory.v2";
+    public const string FeatureSchema = "policy_features.v2";
     public const string KnowledgeDictionary = "game-1.6.15-20260723T093543Z-linux-v24";
 }
 
 public sealed class PolicyDecisionTrajectoryEnvelope
 {
     [JsonPropertyName("schema_version")]
-    public string SchemaVersion { get; set; } = "policy_decision_trajectory.v1";
+    public string SchemaVersion { get; set; } = PolicyTrajectoryVersionPins.TrajectorySchema;
 
     [JsonPropertyName("trajectory_id")]
     public string TrajectoryId { get; set; } = string.Empty;
@@ -26,6 +28,9 @@ public sealed class PolicyDecisionTrajectoryEnvelope
 
     [JsonPropertyName("context")]
     public PolicyTrajectoryContext Context { get; set; } = new();
+
+    [JsonPropertyName("state_features")]
+    public FeatureVector StateFeatures { get; set; } = new();
 
     [JsonPropertyName("versions")]
     public PolicyTrajectoryVersions Versions { get; set; } = new();
@@ -93,6 +98,9 @@ public sealed class PolicyTrajectoryVersions
 
 public sealed class PolicyTrajectoryCandidate
 {
+    [JsonPropertyName("source_candidate")]
+    public PolicyEventCandidatePrediction SourceCandidate { get; set; } = new();
+
     [JsonPropertyName("candidate_id")]
     public string CandidateId { get; set; } = string.Empty;
 
