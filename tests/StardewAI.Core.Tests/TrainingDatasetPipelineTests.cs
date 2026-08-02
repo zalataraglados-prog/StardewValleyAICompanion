@@ -32,7 +32,7 @@ namespace StardewAI.Core.Tests
                 new[]
                 {
                     "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
-                    "social.gift_npc", "social.talk_npc"
+                    "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);

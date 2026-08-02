@@ -1,3 +1,20 @@
+2026-08-02 bounded Volcano-to-Caldera training admission
+
+- Existing EVD-190 artifact re-audited by aggregate only: PASS, 106 steps,
+  levels 0..9 -> Caldera, 82 applied/verified native actions, 24 safe replans,
+  82 dataset rows, zero non-fresh and zero unchanged after-states.
+- Existing EVD-191 artifact re-audited by aggregate only: PASS, 66 steps,
+  levels 7..9 -> Caldera, 27 verified actions, 39 safe disengagement/replans,
+  27 dataset rows, zero non-fresh and zero unchanged after-states.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  7 five-gate-closed options, 6 training-allowlisted options, 0 Product Executors.
+- Focused Volcano/capability/training regression PASS: Core 56/56, Backend 1/1.
+- Core full regression PASS: 1487/1487.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 7 pre-existing warnings.
+- No game process was launched and no new runtime chain was added.
+
 2026-08-02 bounded skull-key training admission
 
 - Authoritative action reconciliation regenerated from the locked live snapshot:

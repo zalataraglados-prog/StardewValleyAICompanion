@@ -152,7 +152,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             new[]
             {
                 "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
-                "social.gift_npc", "social.talk_npc"
+                "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -176,6 +176,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
+                "volcano.reach_caldera" => "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
                 _ => throw new InvalidOperationException("Unexpected training option: " + optionId)
             };
             Assert.Equal(expectedScope, declaration.TrainingEvidenceScope);
@@ -208,7 +209,27 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.DoesNotContain("skull_cavern", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("golden_scythe", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
-        Assert.DoesNotContain("volcano.reach_caldera", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
+    public void VolcanoAdmissionUsesItsOwnNativeRollingEvidenceAndRemainsMineFamilyIsolatedTests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("volcano.reach_caldera");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(new[] { "EVD-190", "EVD-191" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-190", "EVD-191" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-190", "EVD-191" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-190", "EVD-191" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-190", "EVD-191" }, declaration.OutputEvidenceIds);
+        Assert.Contains("volcano_generated_levels_0_to_9", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("typed_combat_intent_to_caldera", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("ordinary_mine", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("skull", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("golden_scythe", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("mining.obtain_skull_key", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

@@ -389,7 +389,11 @@ namespace StardewAI.Contracts.Capabilities
                     ["social.talk_npc"] = VerifiedEvidence(
                         "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                         "EVD-076",
-                        "EVD-105")
+                        "EVD-105"),
+                    ["volcano.reach_caldera"] = VerifiedEvidence(
+                        "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
+                        "EVD-190",
+                        "EVD-191")
                 });
 
         private static readonly IReadOnlyList<OptionCapabilityDeclaration> Options = BuildOptions();
