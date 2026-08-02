@@ -13,6 +13,7 @@ namespace StardewAI.Core.Training
             {
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
+                ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
                 ["skills.read_books"] = new[] { "read_inventory_book" }
             };
 
@@ -110,7 +111,10 @@ namespace StardewAI.Core.Training
                 return HarvestBushSteps(candidate);
             }
 
-            if (candidate.Kind == "claim_mine_reward_chest")
+            if (candidate.Kind == "claim_mine_reward_chest" &&
+                OptionCandidateCompilerKinds["mining.claim_reward_chests"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return ClaimMineRewardChestSteps(candidate);
             }

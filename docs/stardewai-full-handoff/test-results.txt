@@ -1,3 +1,22 @@
+2026-08-02 bounded loaded MineShaft reward-chest training admission
+
+- Existing EVD-122 artifact re-audited: PASS for floor-20 fixed reward,
+  floor-100 Stardrop, and two floor-320 forced random rewards through native open,
+  receipt, consumed marker, and chest cleanup; no game process was launched.
+- Registered the existing `claim_mine_reward_chest` DailyPlan expansion for
+  `mining.claim_reward_chests`. The direct ActionQueue compiler remains only
+  `executor.claim_mine_reward_chest`; no second executor was added.
+- `mining.acquire_golden_scythe` was separately re-audited. Its 59/59 runtime
+  evidence does not override explicit-user-confirmation policy, so it remains out
+  of policy training admission.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  80 compiler-bound, 11 five-gate-closed, 10 training-allowlisted, 0 Product Executors.
+- Focused reward-chest/capability/training regression PASS: Core 35/35.
+- Core full regression PASS: 1491/1491.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 bounded vanilla bush-harvest training admission
 
 - Existing EVD-120 matrix re-audited: PASS for standard berry, Botanist berry,

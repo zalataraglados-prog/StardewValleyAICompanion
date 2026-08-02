@@ -152,7 +152,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             new[]
             {
                 "foraging.harvest_bushes", "foraging.harvest_ginger", "inventory.transfer_item",
-                "mining.obtain_skull_key", "mining.reach_depth",
+                "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
@@ -175,6 +175,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "foraging.harvest_bushes" => "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
                 "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
+                "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                 "skills.read_books" => "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
@@ -196,6 +197,30 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void MineRewardChestAdmissionRequiresLoadedVanillaMatrixAndEvd122Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("mining.claim_reward_chests");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("mining.claim_reward_chests"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("mining.claim_reward_chests"));
+        Assert.Equal(new[] { "EVD-122" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-122" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-122" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-122" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-122" }, declaration.OutputEvidenceIds);
+        Assert.Contains("loaded_vanilla_mineshaft_exact_reward_chests", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("fixed_stardrop_forced_random", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("receipt_and_cleanup_matrix", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("skull_key", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("golden_scythe", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.claim_mine_reward_chest", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

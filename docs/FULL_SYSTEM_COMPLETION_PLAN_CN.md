@@ -242,6 +242,12 @@ Product Executor 仍为 0。
 以及已领取金核桃和摇动冷却的上游排除。自定义 Bush、town bush 特殊交互和其他采集族不在准入内。
 当前 compiler-bound 为 79、五门闭环为 10、训练白名单为 9，Product Executor 仍为 0。
 
+2026-08-02 EVD-207 登记 `mining.claim_reward_chests` 的已加载原版 MineShaft 精确奖励箱范围，
+复用唯一 `claim_mine_reward_chest -> executor.claim_mine_reward_chest` 链。EVD-122 覆盖固定奖励、
+星之果实和强制随机奖励的原生领取与清箱；骷髅钥匙特殊箱、金镰刀祭坛和未知箱体不在范围内。
+金镰刀虽已有 59/59 运行证据，仍因显式玩家确认策略保持训练排除。当前 compiler-bound 为 80、
+五门闭环为 11、训练白名单为 10，Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步
