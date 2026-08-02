@@ -199,7 +199,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 1. `capability_registry.v2` 独立记录五门、证据 ID、证据范围和类型化排除原因；
 2. 空 allowlist 会使注册表初始化失败；
-3. 当前准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-106 普通矿井 119 -> 120 层范围内的 `mining.obtain_skull_key`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
+3. 该阶段准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-106 普通矿井 119 -> 120 层范围内的 `mining.obtain_skull_key`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
 4. 执行器原语和校准型高层 option 不进入策略训练；
 5. 字典副本与锁文件只能证明语义来源和版本，不能代替原生可见执行证据。
 
@@ -231,6 +231,11 @@ manifest 或生产 checkpoint，现阶段禁止把合成训练测试称为正式
 而不是伪造高层 ActionQueue 直接编译器；唯一执行路径仍是 `read_inventory_book ->
 executor.read_book -> wait_ticks`。当前 compiler-bound 为 77、五门闭环为 8、训练白名单为 7，
 Product Executor 仍为 0。
+
+2026-08-02 EVD-205 又登记 `foraging.harvest_ginger` 的原版当前地图精确姜收获范围。它复用唯一
+`harvest_ginger -> executor.harvest_ginger` 链；EVD-119 覆盖干燥普通锄、雨天 Efficient 且背包满后
+落为 debris，以及体力不足上游排除。自定义 Hoe/Crop/HoeDirt、任意采集和灌木不在该准入范围。
+当前 compiler-bound 为 78、五门闭环为 9、训练白名单为 8，Product Executor 仍为 0。
 
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计

@@ -11,6 +11,7 @@ namespace StardewAI.Core.Training
         private static readonly IReadOnlyDictionary<string, string[]> OptionCandidateCompilerKinds =
             new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
+                ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["skills.read_books"] = new[] { "read_inventory_book" }
             };
 
@@ -92,7 +93,10 @@ namespace StardewAI.Core.Training
                 return CollectSpawnedObjectSteps(candidate);
             }
 
-            if (candidate.Kind == "harvest_ginger")
+            if (candidate.Kind == "harvest_ginger" &&
+                OptionCandidateCompilerKinds["foraging.harvest_ginger"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return HarvestGingerSteps(candidate);
             }

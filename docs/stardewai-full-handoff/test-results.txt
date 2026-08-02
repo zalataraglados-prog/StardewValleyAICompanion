@@ -1,3 +1,19 @@
+2026-08-02 bounded vanilla ginger-harvest training admission
+
+- Existing EVD-119 matrix re-audited: PASS for dry standard Hoe, rainy Efficient
+  Hoe with full inventory and debris delivery, and insufficient-energy upstream
+  exclusion; no game process was launched.
+- Registered the existing `harvest_ginger` DailyPlan expansion for
+  `foraging.harvest_ginger`. The direct ActionQueue compiler remains only
+  `executor.harvest_ginger`; no second executor was added.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  78 compiler-bound, 9 five-gate-closed, 8 training-allowlisted, 0 Product Executors.
+- Focused ginger/capability/training regression PASS: Core 33/33.
+- Core full regression PASS: 1489/1489.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 all-vanilla-book-branches training admission
 
 - Existing EVD-124 matrix re-audited: PASS, seven applied/verified cases covering
@@ -11,7 +27,7 @@
 - Focused book/capability/training regression PASS: Core 22/22, Backend 1/1.
 - Core full regression PASS: 1488/1488.
 - Backend full regression PASS: 104/104.
-- Release solution build PASS: 0 errors, 7 pre-existing warnings.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings in the current rebuild.
 - One shared-build-server run timed out before results; its sole leftover dotnet
   process was stopped. A first governance run then correctly exposed the missing
   DailyPlan compiler registration; the fix passed focused and full reruns with

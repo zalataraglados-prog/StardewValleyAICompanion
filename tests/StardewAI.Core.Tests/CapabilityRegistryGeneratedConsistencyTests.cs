@@ -151,7 +151,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
-                "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
+                "foraging.harvest_ginger", "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
@@ -171,6 +171,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Empty(declaration.TrainingExclusionReasons);
             var expectedScope = optionId switch
             {
+                "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
@@ -193,6 +194,27 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void GingerAdmissionRequiresExactVanillaCurrentLocationMatrixAndEvd119Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.harvest_ginger");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("foraging.harvest_ginger"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("foraging.harvest_ginger"));
+        Assert.Equal(new[] { "EVD-119" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-119" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-119" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-119" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-119" }, declaration.OutputEvidenceIds);
+        Assert.Contains("vanilla_current_location_exact_ginger", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("rain_efficient_full_inventory_debris", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("energy_xp_matrix", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.harvest_ginger", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]
