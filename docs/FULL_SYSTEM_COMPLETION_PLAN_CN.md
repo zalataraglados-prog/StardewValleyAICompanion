@@ -226,6 +226,12 @@ manifest 或生产 checkpoint，现阶段禁止把合成训练测试称为正式
 它没有复制矿井系统，也不把火山证据外推给普通矿井、沙漠矿洞或采石场矿洞。模型输出仍止于
 高层目标，逐帧动作保持确定性。当前五门闭环为 7、训练白名单为 6、Product Executor 仍为 0。
 
+2026-08-02 EVD-204 登记 `skills.read_books` 的全六类原版基础分支。治理修正让
+`OptionImplementationCatalog` 与 `OptionGovernanceCatalog` 共同识别既有 DailyPlan option 展开，
+而不是伪造高层 ActionQueue 直接编译器；唯一执行路径仍是 `read_inventory_book ->
+executor.read_book -> wait_ticks`。当前 compiler-bound 为 77、五门闭环为 8、训练白名单为 7，
+Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步

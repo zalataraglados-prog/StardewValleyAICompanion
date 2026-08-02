@@ -41,7 +41,7 @@
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件
 核对。不能把“已登记”解释为“已实现”：现有代码的编译器孤儿 0、运行 ID 孤儿 0；
-Product Executor 仍为 0；EVD-203 回填后，五门证据闭环为 7，训练准入为 6。
+Product Executor 仍为 0；EVD-204 回填后，五门证据闭环为 8，训练准入为 7。
 
 ## 退出条件
 
@@ -107,6 +107,13 @@ EVD-203 随后独立登记 `volcano.reach_caldera`：EVD-190 的火山 0..9 -> C
 完成。普通矿井、沙漠矿洞、采石场矿洞金镰刀与火山矿洞证据继续互不借用。当前六项准入为
 `inventory.transfer_item`、`mining.obtain_skull_key`、`mining.reach_depth`、`social.gift_npc`、
 `social.talk_npc`、`volcano.reach_caldera`。
+
+EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作队列直接编译器，漏记了现有
+`DailyPlanCompiler` 的 `read_inventory_book -> executor.read_book -> wait_ticks` 展开，因此错误显示
+`compiler=unbound`；现已用同一治理入口登记日计划 option compiler，没有新增读书执行器。EVD-124
+七用例矩阵覆盖六类原版基础书籍分支，全部 applied/verified。当前 compiler-bound 为 77，五门闭环
+为 8，训练准入为 7；新增准入项是 `skills.read_books`。自定义 `performUseAction`、畸形模组标签和
+原版证据范围外分支继续失败关闭。
 
 ## 禁止事项
 

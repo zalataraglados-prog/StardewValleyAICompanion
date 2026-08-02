@@ -215,7 +215,8 @@ public static class OptionImplementationCatalog
 
     private static string ResolveCompilerBinding(string optionId)
     {
-        var step = Execution.ActionQueueCompiler.HasStepCompiler(optionId);
+        var step = Execution.ActionQueueCompiler.HasStepCompiler(optionId) ||
+            Training.DailyPlanCompiler.HasOptionCompiler(optionId);
         var parameter = Execution.ActionQueueCompiler.HasParameterCompiler(optionId);
         return step && parameter
             ? "step+parameter"

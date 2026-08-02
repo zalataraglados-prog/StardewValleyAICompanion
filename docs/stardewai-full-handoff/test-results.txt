@@ -1,3 +1,25 @@
+2026-08-02 all-vanilla-book-branches training admission
+
+- Existing EVD-124 matrix re-audited: PASS, seven applied/verified cases covering
+  all six vanilla base book branch families; no game process was launched.
+- Corrected false `skills.read_books compiler=unbound` governance by registering
+  the existing DailyPlan option expansion. The direct ActionQueue compiler remains
+  only `executor.read_book`; no second executor was added.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  77 compiler-bound, 8 five-gate-closed, 7 training-allowlisted, 0 Product Executors.
+- Focused book/capability/training regression PASS: Core 22/22, Backend 1/1.
+- Core full regression PASS: 1488/1488.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 7 pre-existing warnings.
+- One shared-build-server run timed out before results; its sole leftover dotnet
+  process was stopped. A first governance run then correctly exposed the missing
+  DailyPlan compiler registration; the fix passed focused and full reruns with
+  shared build servers disabled.
+- A registry-backed dispatch refactor initially hid the literal candidate branch
+  from the source-derived downstream catalog test. The final dispatch keeps that
+  auditable literal and also requires registry membership; the final full rerun passed.
+
 2026-08-02 bounded Volcano-to-Caldera training admission
 
 - Existing EVD-190 artifact re-audited by aggregate only: PASS, 106 steps,

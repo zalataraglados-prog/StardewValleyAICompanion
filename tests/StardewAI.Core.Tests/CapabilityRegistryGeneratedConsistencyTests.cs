@@ -152,7 +152,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             new[]
             {
                 "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
-                "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -174,6 +174,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                "skills.read_books" => "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                 "volcano.reach_caldera" => "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
@@ -230,6 +231,25 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.DoesNotContain("golden_scythe", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.Contains("mining.obtain_skull_key", OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
+    public void BookAdmissionRequiresAllVanillaBaseBranchesAndEvd124Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("skills.read_books");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("skills.read_books"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("skills.read_books"));
+        Assert.Equal(new[] { "EVD-124" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-124" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-124" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-124" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-124" }, declaration.OutputEvidenceIds);
+        Assert.Contains("all_six_vanilla_base_book_branch_families", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("exact_projection_native_use", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
     }
 
     [Fact]

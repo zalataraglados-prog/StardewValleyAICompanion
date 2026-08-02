@@ -8,6 +8,20 @@ namespace StardewAI.Core.Training
 {
     public sealed partial class DailyPlanCompiler
     {
+        private static readonly IReadOnlyDictionary<string, string[]> OptionCandidateCompilerKinds =
+            new Dictionary<string, string[]>(StringComparer.Ordinal)
+            {
+                ["skills.read_books"] = new[] { "read_inventory_book" }
+            };
+
+        public static IReadOnlyCollection<string> OptionCompilerIds =>
+            OptionCandidateCompilerKinds.Keys.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+
+        public static bool HasOptionCompiler(string optionId)
+        {
+            return OptionCandidateCompilerKinds.ContainsKey(optionId);
+        }
+
         private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate)
         {
             if (candidate.Kind == "interact_endpoint")
@@ -172,7 +186,10 @@ namespace StardewAI.Core.Training
                 return PlaceStorageItemSteps(candidate);
             }
 
-            if (candidate.Kind == "read_inventory_book")
+            if (candidate.Kind == "read_inventory_book" &&
+                OptionCandidateCompilerKinds["skills.read_books"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return ReadInventoryBookSteps(candidate);
             }

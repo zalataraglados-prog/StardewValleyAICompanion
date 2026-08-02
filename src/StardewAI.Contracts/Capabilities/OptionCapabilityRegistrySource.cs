@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -390,6 +390,9 @@ namespace StardewAI.Contracts.Capabilities
                         "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                         "EVD-076",
                         "EVD-105"),
+                    ["skills.read_books"] = VerifiedEvidence(
+                        "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
+                        "EVD-124"),
                     ["volcano.reach_caldera"] = VerifiedEvidence(
                         "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
                         "EVD-190",

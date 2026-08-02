@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.OptionRegistry
 {
@@ -374,7 +375,8 @@ namespace StardewAI.Core.OptionRegistry
             string optionId,
             CapabilityCompilerStatus declaredStatus)
         {
-            var hasStep = ActionQueueCompiler.HasStepCompiler(optionId);
+            var hasStep = ActionQueueCompiler.HasStepCompiler(optionId) ||
+                DailyPlanCompiler.HasOptionCompiler(optionId);
             var hasParameter = ActionQueueCompiler.HasParameterCompiler(optionId);
             var actualStatus = hasStep && hasParameter
                 ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared
