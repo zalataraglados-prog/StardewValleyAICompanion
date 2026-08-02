@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "foraging.harvest_ginger", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "foraging.harvest_bushes", "foraging.harvest_ginger", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -369,6 +369,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["foraging.harvest_ginger"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
                         "EVD-119"),
+                    ["foraging.harvest_bushes"] = VerifiedEvidence(
+                        "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
+                        "EVD-120"),
                     ["mining.reach_depth"] = VerifiedEvidence(
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
                         "EVD-095"),

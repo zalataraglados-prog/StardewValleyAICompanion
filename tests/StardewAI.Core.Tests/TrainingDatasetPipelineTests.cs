@@ -31,7 +31,8 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
-                    "foraging.harvest_ginger", "inventory.transfer_item", "mining.obtain_skull_key", "mining.reach_depth",
+                    "foraging.harvest_bushes", "foraging.harvest_ginger", "inventory.transfer_item",
+                    "mining.obtain_skull_key", "mining.reach_depth",
                     "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);

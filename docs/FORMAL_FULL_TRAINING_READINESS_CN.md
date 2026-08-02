@@ -29,7 +29,12 @@ checkpoint 仍不存在，因此正式全量训练仍然阻塞。
 2026-08-02 EVD-205 当前增量：`foraging.harvest_ginger` 已绑定 EVD-119 的原版当前地图精确姜收获
 矩阵，复用唯一 `harvest_ginger -> executor.harvest_ginger` 链。覆盖干燥普通锄、雨天 Efficient 且
 背包满后的 debris 输出，以及体力不足上游排除；自定义 Hoe/Crop/HoeDirt 和其他采集族不在准入内。
-当前训练 allowlist 为八个有界范围，正式生产轨迹、manifest、checkpoint 与 Product Executor 仍不存在。
+该切片完成时训练 allowlist 为八个有界范围，正式生产轨迹、manifest、checkpoint 与 Product Executor 仍不存在。
+
+2026-08-02 EVD-206 当前增量：`foraging.harvest_bushes` 已绑定 EVD-120 的原版当前地图精确 Bush
+六用例矩阵，复用唯一 `harvest_bush -> executor.harvest_bush` 链。普通浆果、Botanist 浆果、茶叶和
+金核桃原生成功，已领取金核桃与摇动冷却在上游排除；自定义 Bush 和 town bush 不在准入内。
+当前训练 allowlist 为九个有界范围，正式全量训练的其他阻塞不变。
 
 ## 2. “正式全量训练”的定义
 
@@ -199,7 +204,7 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 10. 冻结“最强完美 AI”基线；
 11. 再开发声音、节奏、失误容忍和玩家适应性，不得提前污染完美基线。
 
-当前第 1、3、6、7 步的数据治理与结构化模型基础设施已经闭合，第 2、4、5 步仍按证据范围持续推进；现有八项 allowlist 不能代表全量目标覆盖。直接下一步是继续按权威字典扩大第 4 步准入项。只有真实长期 rollout 产生轨迹和闭合跨度观测后，才运行第 6 步工具形成可供检查点引用的正式数据清单；不得用合成测试数据冒充正式训练集。
+当前第 1、3、6、7 步的数据治理与结构化模型基础设施已经闭合，第 2、4、5 步仍按证据范围持续推进；现有九项 allowlist 不能代表全量目标覆盖。直接下一步是继续按权威字典扩大第 4 步准入项。只有真实长期 rollout 产生轨迹和闭合跨度观测后，才运行第 6 步工具形成可供检查点引用的正式数据清单；不得用合成测试数据冒充正式训练集。
 
 ## 5. 新训练笔记本与模型路线
 
@@ -271,6 +276,6 @@ SHA-256、超参数、特征 schema、候选/能力词表、权威字典、编�
 `--policy-checkpoint-path` 和 `--require-structured-policy` 显式启用，缺失时不得静默回退。
 
 这仍未解除正式全量训练阻塞：标准 E 盘生产轨迹、跨度观测、manifest 和 checkpoint 均不存在，
-当前训练 allowlist 也只有八个有界范围。下一门是扩大五门准入并采集真实长期 v2 rollout，不是
+当前训练 allowlist 也只有九个有界范围。下一门是扩大五门准入并采集真实长期 v2 rollout，不是
 继续用合成数据调模型。形成正式 manifest 后执行 `StardewAI.PolicyModel`，再通过独立存档评测和
 第三年 21 分长跑；未通过前不得冻结完美策略或开始拟人适配。

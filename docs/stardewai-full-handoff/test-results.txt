@@ -1,3 +1,19 @@
+2026-08-02 bounded vanilla bush-harvest training admission
+
+- Existing EVD-120 matrix re-audited: PASS for standard berry, Botanist berry,
+  tea leaf, golden walnut, already-collected walnut upstream exclusion, and
+  active shake-cooldown upstream exclusion; no game process was launched.
+- Registered the existing `harvest_bush` DailyPlan expansion for
+  `foraging.harvest_bushes`. The direct ActionQueue compiler remains only
+  `executor.harvest_bush`; no second executor was added.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  79 compiler-bound, 10 five-gate-closed, 9 training-allowlisted, 0 Product Executors.
+- Focused bush/capability/training regression PASS: Core 34/34.
+- Core full regression PASS: 1490/1490.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 bounded vanilla ginger-harvest training admission
 
 - Existing EVD-119 matrix re-audited: PASS for dry standard Hoe, rainy Efficient

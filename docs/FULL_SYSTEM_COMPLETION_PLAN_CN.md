@@ -237,6 +237,11 @@ Product Executor 仍为 0。
 落为 debris，以及体力不足上游排除。自定义 Hoe/Crop/HoeDirt、任意采集和灌木不在该准入范围。
 当前 compiler-bound 为 78、五门闭环为 9、训练白名单为 8，Product Executor 仍为 0。
 
+2026-08-02 EVD-206 登记 `foraging.harvest_bushes` 的原版当前地图精确 Bush 范围。它复用唯一
+`harvest_bush -> executor.harvest_bush` 链；EVD-120 覆盖普通浆果、Botanist 浆果、茶叶、金核桃，
+以及已领取金核桃和摇动冷却的上游排除。自定义 Bush、town bush 特殊交互和其他采集族不在准入内。
+当前 compiler-bound 为 79、五门闭环为 10、训练白名单为 9，Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步
