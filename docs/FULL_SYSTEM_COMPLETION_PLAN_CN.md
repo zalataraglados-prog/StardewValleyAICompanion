@@ -252,7 +252,13 @@ Product Executor 仍为 0。
 `pan_ore_spot -> executor.pan_ore_spot` 链。隔离运行验证铜盘与钢盘的原生工具周期、实时奖励多集、
 收货统计、TimesPanned、采矿/采集 XP 及矿点消费/重生观察；奖励继续由当前 Pan 和实时 RNG 输入
 精确投影，不使用固定表。当前 compiler-bound 为 81、五门闭环为 12、训练白名单为 11，
-Product Executor 仍为 0。
+ Product Executor 仍为 0。
+
+2026-08-02 EVD-209 登记 `fishing.collect_crab_pots` 的当前地图已就绪原版基础 `CrabPot` 精确收取范围，
+复用唯一 `collect_crab_pot -> executor.collect_crab_pot` 链。锁定版反编译和既有隔离制品共同覆盖
+实时产物、Book of Crabbing 确定性翻倍、背包入账、Fishing XP、`caughtFish` 统计及 bait/ready/tile-index
+复位。未就绪、背包拒收、投影不完整和自定义子类均失败关闭；放置与补饵不属于本目标。当前
+compiler-bound 为 82、五门闭环为 13、训练白名单为 12，Product Executor 仍为 0。
 
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计

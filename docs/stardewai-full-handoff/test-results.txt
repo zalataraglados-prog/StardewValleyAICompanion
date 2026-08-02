@@ -1,3 +1,22 @@
+2026-08-02 bounded vanilla ready CrabPot collection training admission
+
+- Locked 1.6.15 `CrabPot.checkForAction`, the exact-base transparent projection,
+  candidate/compiler/runtime chain, and existing hidden artifact were re-audited;
+  no game process was launched.
+- Existing artifact `runtime-crab-pot-smoke-20260718-032324` PASS: exact held
+  output and inventory unit-state receipt, Fishing XP, `caughtFish` arguments,
+  bait removal, ready reset and tile-index reset all verified.
+- Registered the existing `collect_crab_pot` DailyPlan expansion for
+  `fishing.collect_crab_pots`. The direct ActionQueue compiler remains only
+  `executor.collect_crab_pot`; no second executor was added.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  82 compiler-bound, 13 five-gate-closed, 12 training-allowlisted, 0 Product Executors.
+- Focused crab-pot/capability/training regression PASS: Core 34/34.
+- Core full regression PASS: 1493/1493.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 bounded native panning training admission
 
 - Existing native panning artifact re-audited: PASS for copper and steel Pan

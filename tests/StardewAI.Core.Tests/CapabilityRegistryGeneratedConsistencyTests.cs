@@ -151,7 +151,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
-                "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                "fishing.collect_crab_pots", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
@@ -173,6 +173,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Empty(declaration.TrainingExclusionReasons);
             var expectedScope = optionId switch
             {
+                "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "foraging.harvest_bushes" => "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
                 "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
                 "foraging.pan_ore_spot" => "vanilla_current_location_exact_active_ore_spot_live_pan_reward_projection_copper_steel_lifecycle_receipt_xp_times_panned_and_respawn_observation",
@@ -199,6 +200,28 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void CrabPotAdmissionRequiresExactBaseNativeLifecycleAndEvd209Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("fishing.collect_crab_pots");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("fishing.collect_crab_pots"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("fishing.collect_crab_pots"));
+        Assert.Equal(new[] { "EVD-209" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-209" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-209" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-209" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-209" }, declaration.OutputEvidenceIds);
+        Assert.Contains("vanilla_current_location_exact_ready_base_crab_pot", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("book_double_inventory_receipt_fishing_xp_caught_fish", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("bait_and_ready_reset", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.collect_crab_pot", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

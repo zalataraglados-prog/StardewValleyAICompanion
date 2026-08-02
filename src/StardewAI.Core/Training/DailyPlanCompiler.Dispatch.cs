@@ -11,6 +11,7 @@ namespace StardewAI.Core.Training
         private static readonly IReadOnlyDictionary<string, string[]> OptionCandidateCompilerKinds =
             new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
+                ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
@@ -120,7 +121,10 @@ namespace StardewAI.Core.Training
                 return ClaimMineRewardChestSteps(candidate);
             }
 
-            if (candidate.Kind == "collect_crab_pot")
+            if (candidate.Kind == "collect_crab_pot" &&
+                OptionCandidateCompilerKinds["fishing.collect_crab_pots"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return CollectCrabPotSteps(candidate);
             }
