@@ -1,3 +1,20 @@
+2026-08-02 bounded native panning training admission
+
+- Existing native panning artifact re-audited: PASS for copper and steel Pan
+  lifecycles. Both consumed the active ore point and verified exact live reward
+  multiset, receipt stats, TimesPanned, Mining XP, Foraging XP, and post-use ore
+  point observation; no game process was launched.
+- Registered the existing `pan_ore_spot` DailyPlan expansion for
+  `foraging.pan_ore_spot`. The direct ActionQueue compiler remains only
+  `executor.pan_ore_spot`; no second executor was added.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  81 compiler-bound, 12 five-gate-closed, 11 training-allowlisted, 0 Product Executors.
+- Focused panning/capability/training regression PASS: Core 33/33.
+- Core full regression PASS: 1492/1492.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 bounded loaded MineShaft reward-chest training admission
 
 - Existing EVD-122 artifact re-audited: PASS for floor-20 fixed reward,

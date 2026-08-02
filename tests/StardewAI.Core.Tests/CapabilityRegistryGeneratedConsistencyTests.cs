@@ -151,7 +151,8 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
-                "foraging.harvest_bushes", "foraging.harvest_ginger", "inventory.transfer_item",
+                "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
@@ -174,6 +175,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "foraging.harvest_bushes" => "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
                 "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
+                "foraging.pan_ore_spot" => "vanilla_current_location_exact_active_ore_spot_live_pan_reward_projection_copper_steel_lifecycle_receipt_xp_times_panned_and_respawn_observation",
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
                 "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
@@ -197,6 +199,28 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void PanningAdmissionRequiresExactLiveProjectionAndEvd208Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.pan_ore_spot");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("foraging.pan_ore_spot"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("foraging.pan_ore_spot"));
+        Assert.Equal(new[] { "EVD-208" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-208" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-208" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-208" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-208" }, declaration.OutputEvidenceIds);
+        Assert.Contains("vanilla_current_location_exact_active_ore_spot", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("live_pan_reward_projection_copper_steel_lifecycle", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("receipt_xp_times_panned_and_respawn_observation", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("fixed_reward_table", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.pan_ore_spot", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

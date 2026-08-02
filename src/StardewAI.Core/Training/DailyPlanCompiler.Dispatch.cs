@@ -13,6 +13,7 @@ namespace StardewAI.Core.Training
             {
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
+                ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
                 ["skills.read_books"] = new[] { "read_inventory_book" }
             };
@@ -153,7 +154,10 @@ namespace StardewAI.Core.Training
             {
                 return FarmhouseUpgradeSteps(candidate);
             }
-            if (candidate.Kind == "pan_ore_spot")
+            if (candidate.Kind == "pan_ore_spot" &&
+                OptionCandidateCompilerKinds["foraging.pan_ore_spot"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return PanOreSpotSteps(candidate);
             }
