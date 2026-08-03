@@ -31,6 +31,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "machine queue and learned machine recipes inspected", "machine service or native crafting action steps produced" },
                 new[] { "never_sell_protected_items", "block_unavailable_required_state" }));
 
+            Register(Option("farm.collect_machine_outputs", "farm", "Collect one transparent ready machine output",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "farm.machines", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact current-location ready machine output selected", "native machine collection lifecycle handed to the mechanical executor" },
+                new[] { "block_incubator_completion", "block_unready_machine_output", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
+
             Register(Option("farm.collect_animal_products", "farm", "Collect one transparent ready animal product",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

@@ -81,6 +81,40 @@ public sealed class MachineFamilyMainlineTests
     }
 
     [Fact]
+    public void MachineOutputOptionExposesOnlyTheExistingReadyOutputChain()
+    {
+        var family = (MachineFamily)Families
+            .Single(row => ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var snapshot = Snapshot(FamilySnapshot(family));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "farm.collect_machine_outputs" });
+        var option = Assert.Single(availability.Options);
+
+        Assert.NotEmpty(option.EventCandidates);
+        Assert.All(option.EventCandidates, candidate =>
+            Assert.Equal("collect_machine_output_tile", candidate.Kind));
+        var candidate = Assert.Single(option.EventCandidates.Where(row => row.Available));
+        Assert.Equal("machine-output:Farm:64,15:(O)346", candidate.CandidateId);
+
+        var ranked = Assert.Single(new EventCandidateRanker()
+            .Rank(new BaselineTrainingReport(), availability));
+        var plan = new DailyPlanCompiler().Compile([ranked], snapshot.StateHash);
+        Assert.Equal(
+            new[] { "move_to_tile", "collect_machine_output" },
+            plan.Steps.Select(step => step.Kind).ToArray());
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Contains(queue.Items, item =>
+            item.OptionId == "executor.collect_machine_output");
+        Assert.DoesNotContain(queue.Items, item =>
+            item.OptionId == "executor.load_machine_input" ||
+            item.OptionId == "executor.craft_machine_item" ||
+            item.OptionId == "executor.place_machine" ||
+            item.OptionId == "executor.remove_machine");
+    }
+
+    [Fact]
     public void SupportedMachineLoadInheritsExactPositiveIntent()
     {
         var family = (MachineFamily)Families

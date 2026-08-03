@@ -1,3 +1,18 @@
+2026-08-04 bounded ready machine-output training admission
+
+- Added `farm.collect_machine_outputs` as an output-only semantic view over the
+  existing machine candidate, DailyPlan, ActionQueue and native executor chain.
+- `farm.process_machines` remains calibration-only; loading, crafting, placement,
+  relocation, storage and incubator branches were not admitted.
+- Existing hidden/silent native artifact
+  `runtime-machine-output-smoke-20260729-234047` remains PASS 4/4 for exact
+  inventory receipt, machine clear, structured skill XP and Mastery XP.
+- Focused admission/governance regressions PASS 53/53.
+- Full Core PASS 1502/1502; Backend PASS 104/104; full solution Release build
+  completed with 0 errors and 5 pre-existing warnings.
+- Authoritative reconciliation: exports 585/585, blocking 0; registered 98,
+  semantic 166, compiler-bound 86, five-gate 17, allowlist 16, Product Executor 0.
+
 2026-08-03 bounded vanilla Green Rain ResourceClump training admission
 
 - Locked 1.6.15 decompile confirms indexes 44 and 46 share the exact

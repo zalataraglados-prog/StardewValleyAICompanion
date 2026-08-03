@@ -11,11 +11,11 @@ public sealed class OptionRegistryGovernanceTests
     {
         var options = new StardewAI.Core.OptionRegistry.OptionRegistry().All;
 
-        Assert.Equal(97, options.Count);
-        Assert.Equal(32, options.Count(row => !row.OptionId.StartsWith("executor.", StringComparison.Ordinal)));
+        Assert.Equal(98, options.Count);
+        Assert.Equal(33, options.Count(row => !row.OptionId.StartsWith("executor.", StringComparison.Ordinal)));
         Assert.Equal(65, options.Count(row => row.OptionId.StartsWith("executor.", StringComparison.Ordinal)));
         Assert.Equal(2, options.Count(row => row.SemanticKind == OptionSemanticKind.GoalTemplate));
-        Assert.Equal(30, options.Count(row => row.SemanticKind == OptionSemanticKind.CompositeOptionSpec));
+        Assert.Equal(31, options.Count(row => row.SemanticKind == OptionSemanticKind.CompositeOptionSpec));
         Assert.Equal(65, options.Count(row => row.SemanticKind == OptionSemanticKind.PrimitiveOptionSpec));
     }
 

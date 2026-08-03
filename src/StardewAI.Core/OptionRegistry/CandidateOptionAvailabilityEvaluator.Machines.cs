@@ -33,6 +33,18 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
+        private EventCandidate[] MachineOutputCollectionCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            return MachineServiceCandidates(snapshot, commitmentLedger)
+                .Where(candidate => string.Equals(
+                    candidate.Kind,
+                    "collect_machine_output_tile",
+                    StringComparison.Ordinal))
+                .ToArray();
+        }
+
         private EventCandidate[] MachineServiceCandidates(
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)

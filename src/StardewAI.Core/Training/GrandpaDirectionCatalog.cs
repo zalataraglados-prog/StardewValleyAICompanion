@@ -61,6 +61,7 @@ namespace StardewAI.Core.Training
                 new[]
                 {
                     "farm.maintain_crops",
+                    "farm.collect_machine_outputs",
                     "farm.process_machines",
                     "skills.read_books",
                     "farm.collect_animal_products",

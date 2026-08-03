@@ -281,6 +281,15 @@ Product Executor 仍为 0。
 订单证据继续证明原生收取进度。秘密纸条只携带可知身份与概率并在执行后观测，不伪造确定结果。
 当前 compiler-bound 为 85、五门闭环为 16、训练白名单为 15，Product Executor 仍为 0。
 
+2026-08-04 EVD-213 登记 `farm.collect_machine_outputs` 的当前加载地图精确已完成原版非孵化器
+机器产物收取范围。它只过滤并复用既有 `MachineServiceCandidates -> collect_machine_output_tile ->
+collect_machine_output -> executor.collect_machine_output` 单链，没有新增第二套候选、编译器或执行器。
+背包入账、机器清空、结构化技能经验和精通经验已有隐藏隔离原生矩阵；远端路径头、孵化器、投料、
+制作、摆放、搬迁和存储不在本准入范围。`farm.process_machines` 因广义需求、保留量和时间价值策略
+尚未全闭合，继续保持校准专用。EVD-180 的任务绑定是编译证据，不在本次冒充任务附着运行证据。
+当前 registered 为 98、semantic 为 166、compiler-bound 为 86、五门闭环为 17、训练白名单为 16，
+Product Executor 仍为 0；权威分母重新冻结后 blocking 为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步

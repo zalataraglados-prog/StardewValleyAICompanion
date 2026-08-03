@@ -11,6 +11,7 @@ namespace StardewAI.Core.Training
         private static readonly IReadOnlyDictionary<string, string[]> OptionCandidateCompilerKinds =
             new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
+                ["farm.collect_machine_outputs"] = new[] { "collect_machine_output_tile" },
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
@@ -175,7 +176,10 @@ namespace StardewAI.Core.Training
                 return PanOreSpotSteps(candidate);
             }
 
-            if (candidate.Kind == "collect_machine_output_tile")
+            if (candidate.Kind == "collect_machine_output_tile" &&
+                OptionCandidateCompilerKinds["farm.collect_machine_outputs"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return CollectMachineOutputSteps(candidate);
             }

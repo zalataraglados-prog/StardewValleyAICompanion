@@ -159,6 +159,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_animal_product_candidates");
             }
 
+            if (optionId == "farm.collect_machine_outputs")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_machine_output_candidates",
+                    "no_available_machine_output_candidates");
+            }
+
             if (optionId == "farm.care_for_pets")
             {
                 return EventCandidateAvailabilityReasons(
@@ -280,6 +288,11 @@ namespace StardewAI.Core.OptionRegistry
             if (string.Equals(optionId, "farm.process_machines", StringComparison.Ordinal))
             {
                 return MachineProcessingCandidates(snapshot, commitmentLedger);
+            }
+
+            if (string.Equals(optionId, "farm.collect_machine_outputs", StringComparison.Ordinal))
+            {
+                return MachineOutputCollectionCandidates(snapshot, commitmentLedger);
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)
