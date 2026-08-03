@@ -260,6 +260,13 @@ Product Executor 仍为 0。
 复位。未就绪、背包拒收、投影不完整和自定义子类均失败关闭；放置与补饵不属于本目标。当前
 compiler-bound 为 82、五门闭环为 13、训练白名单为 12，Product Executor 仍为 0。
 
+2026-08-03 EVD-210 登记 `fishing.service_fish_ponds` 的已完成原版基础 `FishPond` 双分支范围，
+复用唯一 `collect_fish_pond_output` / `complete_fish_pond_request` 到对应 executor 的链。原生制品验证
+产物入账与价格派生 Fishing XP，以及逐件提交请求物品、人口上限/解锁门槛/刷新计时和请求 XP。
+产物分支保持原生优先；请求分支仍要求策略授权，不等于绕过显式用户确认。未完工/自定义鱼塘、
+投影漂移、背包或工具栏不足、sign/cracker 截获均失败关闭。当前 compiler-bound 为 83、五门闭环
+为 14、训练白名单为 13，Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步

@@ -12,6 +12,7 @@ namespace StardewAI.Core.Training
             new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
+                ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
@@ -129,7 +130,10 @@ namespace StardewAI.Core.Training
                 return CollectCrabPotSteps(candidate);
             }
 
-            if (candidate.Kind == "collect_fish_pond_output" || candidate.Kind == "complete_fish_pond_request")
+            if ((candidate.Kind == "collect_fish_pond_output" || candidate.Kind == "complete_fish_pond_request") &&
+                OptionCandidateCompilerKinds["fishing.service_fish_ponds"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return FishPondSteps(candidate);
             }

@@ -1,3 +1,25 @@
+2026-08-03 bounded vanilla FishPond dual-branch training admission
+
+- Locked 1.6.15 `FishPond.doAction`/`ResolveNeeds`, the exact-base transparent
+  projection, both candidate/compiler/runtime branches, and the latest hidden
+  artifact were re-audited; no game process was launched.
+- Existing artifact `runtime-fish-pond-smoke-20260718-142221` PASS: native output
+  collection verified exact unit-state inventory receipt and Fishing XP; native
+  request completion verified item consumption, needed-count reset, population
+  gate/max-occupant advancement, completion state and Fishing XP.
+- Registered both existing DailyPlan expansions for `fishing.service_fish_ponds`.
+  Direct ActionQueue compilation remains only on `executor.collect_fish_pond_output`
+  and `executor.complete_fish_pond_request`; no second executor was added.
+- Population requests retain policy authorization. This does not bypass explicit
+  user-confirmation governance or any candidate/compiler/runtime resource check.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  83 compiler-bound, 14 five-gate-closed, 13 training-allowlisted, 0 Product Executors.
+- Focused fish-pond/capability/training regression PASS: Core 36/36.
+- Core full regression PASS: 1494/1494.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-02 bounded vanilla ready CrabPot collection training admission
 
 - Locked 1.6.15 `CrabPot.checkForAction`, the exact-base transparent projection,
