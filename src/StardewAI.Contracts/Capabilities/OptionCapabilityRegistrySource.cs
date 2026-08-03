@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -372,6 +372,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["foraging.collect_spawned_objects"] = VerifiedEvidence(
                         "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
                         "EVD-211"),
+                    ["foraging.clear_green_rain_bushes"] = VerifiedEvidence(
+                        "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
+                        "EVD-212"),
                     ["inventory.transfer_item"] = VerifiedEvidence(
                         "explicit_bidirectional_player_normal_chest_transfer",
                         "EVD-192"),

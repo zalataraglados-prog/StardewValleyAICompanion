@@ -274,6 +274,13 @@ compiler-bound 为 82、五门闭环为 13、训练白名单为 12，Product Exe
 自定义子类和错误身份继续失败关闭。当前 compiler-bound 为 84、五门闭环为 15、训练白名单为 14，
 Product Executor 仍为 0。
 
+2026-08-03 EVD-212 登记 `foraging.clear_green_rain_bushes` 的当前加载地图精确原版基础
+`ResourceClump` 索引 44/46 范围，复用唯一
+`clear_green_rain_resource_clump -> executor.break_current_location_resource_clump` 链。两种索引均通过
+隐藏隔离原生斧头验证，精确匹配日/存档/锚点 RNG 核心掉落和 `+15` 采集经验；既有普通任务与特别
+订单证据继续证明原生收取进度。秘密纸条只携带可知身份与概率并在执行后观测，不伪造确定结果。
+当前 compiler-bound 为 85、五门闭环为 16、训练白名单为 15，Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步

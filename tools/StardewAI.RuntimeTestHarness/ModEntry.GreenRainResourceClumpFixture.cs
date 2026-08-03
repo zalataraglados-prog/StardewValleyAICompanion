@@ -17,19 +17,24 @@ public sealed partial class ModEntry
             return Blocked(request, reasons.ToArray());
         }
 
-        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        if (!request.TargetTileX.HasValue ||
+            !request.TargetTileY.HasValue ||
+            request.ResourceClumpParentSheetIndex is not (
+                ResourceClump.greenRainBush1Index or
+                ResourceClump.greenRainBush2Index))
         {
             return BlockedWithPrimitive(
                 request,
                 "debug_setup_green_rain_resource_clump",
                 "current_location.resource_clumps[target].clear_kind=green_rain_bush",
-                "target_tile=missing",
-                "target_tile_required");
+                "target_or_parent_sheet_index=invalid",
+                "green_rain_resource_clump_fixture_typed_target_required");
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
         var farm = Game1.getFarm();
         var anchor = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var parentSheetIndex = request.ResourceClumpParentSheetIndex.Value;
         var bounds = new Rectangle(
             anchor.X * Game1.tileSize,
             anchor.Y * Game1.tileSize,
@@ -68,7 +73,7 @@ public sealed partial class ModEntry
 
         var before = GreenRainResourceClumpObservedEffect(farm, anchor);
         var clump = new ResourceClump(
-            ResourceClump.greenRainBush1Index,
+            parentSheetIndex,
             2,
             2,
             new Vector2(anchor.X, anchor.Y),

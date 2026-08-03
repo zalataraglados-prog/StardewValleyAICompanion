@@ -34,6 +34,8 @@ public sealed class TaskAcquisitionRuntimeCalibrationSourceGuardTests
 
         Assert.Contains("new ResourceClump(", fixture, StringComparison.Ordinal);
         Assert.Contains("ResourceClump.greenRainBush1Index", fixture, StringComparison.Ordinal);
+        Assert.Contains("ResourceClump.greenRainBush2Index", fixture, StringComparison.Ordinal);
+        Assert.Contains("request.ResourceClumpParentSheetIndex", fixture, StringComparison.Ordinal);
         Assert.DoesNotContain("addItemToInventory", fixture, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(
             "option_id = \"executor.break_current_location_resource_clump\"",
@@ -41,6 +43,10 @@ public sealed class TaskAcquisitionRuntimeCalibrationSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "expected_core_output_items_json",
+            smoke,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "resource_clump_parent_sheet_index = $ResourceClumpParentSheetIndex",
             smoke,
             StringComparison.Ordinal);
         Assert.Contains(

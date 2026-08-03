@@ -7,6 +7,8 @@ param(
     [int] $StartupTimeoutSeconds = 120,
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
+    [ValidateSet(44, 46)]
+    [int] $ResourceClumpParentSheetIndex = 44,
     [ValidateSet("none", "ordinary_quest", "special_order")]
     [string] $TaskFamily = "none",
     [string] $TaskId = "stardewai.runtime.green-rain-resource-clump-source",
@@ -232,6 +234,7 @@ try {
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
+        resource_clump_parent_sheet_index = $ResourceClumpParentSheetIndex
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest -TimeoutSeconds 120
     Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
@@ -396,13 +399,14 @@ try {
             $breakResult.status -eq "applied" -and
             $breakResult.primitive_verification_status -eq "verified" -and
             $null -eq $afterClump -and
-            ($TaskFamily -ne "none" -or $afterDebrisCount -gt $beforeDebrisCount) -and
+            [string]$breakResult.observed_effect -match ";core_output_delta=.+;possible_secret_note_id=" -and
             ($TaskFamily -eq "none" -or $taskProgressAfterReceipt -ge 1)
         ) { "passed" } else { "failed" }
         run_id = $RunId
         save_slot = $SaveSlot
         saves_path = $savesPath
         target_tile = "$TargetTileX,$TargetTileY"
+        resource_clump_parent_sheet_index = [int]$beforeClump.parent_sheet_index
         guaranteed_output_qualified_item_id = $qualifiedOutputId
         task_family = $TaskFamily
         task_setup_status = if ($null -eq $taskSetupResult) { "not_requested" } else { $taskSetupResult.status }
@@ -417,6 +421,7 @@ try {
         break_reasons = @($breakResult.primitive_verification_reasons)
         break_block_reasons = @($breakResult.block_reasons)
         resource_clump_present_after = $null -ne $afterClump
+        exact_core_output_verified = [string]$breakResult.observed_effect -match ";core_output_delta=.+;possible_secret_note_id="
         debris_count_before = $beforeDebrisCount
         debris_count_after = $afterDebrisCount
         debris_count_increased = $afterDebrisCount -gt $beforeDebrisCount

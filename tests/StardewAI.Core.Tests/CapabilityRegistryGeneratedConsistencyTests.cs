@@ -151,7 +151,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
-                "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
@@ -175,6 +175,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
+                "foraging.clear_green_rain_bushes" => "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
                 "foraging.collect_spawned_objects" => "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
                 "foraging.harvest_bushes" => "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
                 "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
@@ -202,6 +203,26 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void GreenRainResourceClumpAdmissionRequiresExactNativeMatrixAndEvd212Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.clear_green_rain_bushes");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("foraging.clear_green_rain_bushes"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("foraging.clear_green_rain_bushes"));
+        Assert.Equal(new[] { "EVD-212" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-212" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-212" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-212" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-212" }, declaration.OutputEvidenceIds);
+        Assert.Contains("indexes_44_46", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("bounded_secret_note", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.break_current_location_resource_clump", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

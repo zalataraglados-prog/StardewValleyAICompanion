@@ -1,3 +1,25 @@
+2026-08-03 bounded vanilla Green Rain ResourceClump training admission
+
+- Locked 1.6.15 decompile confirms indexes 44 and 46 share the exact
+  `IsGreenRainBush()` destroy branch, seeded core outputs and Foraging XP 15.
+- Hidden/silent isolated runtime PASS for both parent indexes:
+  `runtime-green-rain-index44-admission-v2-20260803` and
+  `runtime-green-rain-index46-admission-v2-20260803`.
+- Both runs used native Axe input, removed the exact 2x2 clump, matched the
+  exact Moss/Fiber/optional Mossy Seed core multiset and verified +15 XP.
+- The first index-46 smoke exposed a stale post-frame Debris assertion. Native
+  auto-pickup had already consumed the Debris after the executor verified its
+  completion-frame multiset. The smoke was corrected and the index rerun passed.
+- Existing ordinary/special-order EVD-187 runs remain authoritative for native
+  task receipt and both advanced 0/1 to 1/1.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  85 compiler-bound, 16 five-gate-closed, 15 training-allowlisted, 0 Product Executors.
+- Focused Green Rain/capability/training regression PASS: Core 38/38.
+- Core full regression PASS: 1500/1500.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-03 bounded vanilla spawned-object collection training admission
 
 - Locked 1.6.15 `GameLocation.checkAction` and `OnHarvestedForage`, the exact-base

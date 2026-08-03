@@ -13,6 +13,7 @@ namespace StardewAI.Core.Training
             {
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
+                ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
                 ["foraging.collect_spawned_objects"] = new[] { "collect_spawned_object" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
@@ -232,7 +233,10 @@ namespace StardewAI.Core.Training
                 return ClearFarmResourceClumpSteps(candidate);
             }
 
-            if (candidate.Kind == "clear_green_rain_resource_clump")
+            if (candidate.Kind == "clear_green_rain_resource_clump" &&
+                OptionCandidateCompilerKinds["foraging.clear_green_rain_bushes"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return ClearGreenRainResourceClumpSteps(candidate);
             }
