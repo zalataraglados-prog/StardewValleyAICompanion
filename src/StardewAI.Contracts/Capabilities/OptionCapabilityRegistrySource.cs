@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -369,6 +369,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["fishing.service_fish_ponds"] = VerifiedEvidence(
                         "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
                         "EVD-210"),
+                    ["foraging.collect_spawned_objects"] = VerifiedEvidence(
+                        "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
+                        "EVD-211"),
                     ["inventory.transfer_item"] = VerifiedEvidence(
                         "explicit_bidirectional_player_normal_chest_transfer",
                         "EVD-192"),

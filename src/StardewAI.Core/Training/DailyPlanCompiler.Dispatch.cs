@@ -13,6 +13,7 @@ namespace StardewAI.Core.Training
             {
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
+                ["foraging.collect_spawned_objects"] = new[] { "collect_spawned_object" },
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
@@ -93,7 +94,10 @@ namespace StardewAI.Core.Training
                 return PickupDebrisItemSteps(candidate);
             }
 
-            if (candidate.Kind == "collect_spawned_object")
+            if (candidate.Kind == "collect_spawned_object" &&
+                OptionCandidateCompilerKinds["foraging.collect_spawned_objects"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return CollectSpawnedObjectSteps(candidate);
             }

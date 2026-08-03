@@ -58,6 +58,12 @@ Fishing XP、`caughtFish` 统计以及 bait/ready/tile-index 复位均纳入读�
 不同于会阻断训练准入的 `ExplicitUserConfirmationRequired`；运行时约束没有放宽。当前训练 allowlist
 为十三个有界范围。
 
+2026-08-03 EVD-211 当前增量：`foraging.collect_spawned_objects` 已绑定当前加载地图中精确原版基础
+`StardewValley.Object` 的原生拾取链。隔离运行矩阵覆盖普通、Botanist、确定性 Gatherer 双倍、特殊
+`724519` 和动物屋内部五类，并逐项核验数量、品质、Foraging/Farming XP。训练请求现完整运输这些
+上游投影，运行层不再用自行重算掩盖字段断点。Lewis 地下室 `(O)789` 还有生成 Bat 和音画状态副作用，
+在透明建模前于读层和运行层失败关闭。当前训练 allowlist 为十四个有界范围。
+
 ## 2. “正式全量训练”的定义
 
 正式全量训练只训练模型应当决定的内容：

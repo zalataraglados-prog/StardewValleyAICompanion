@@ -1,3 +1,21 @@
+2026-08-03 bounded vanilla spawned-object collection training admission
+
+- Locked 1.6.15 `GameLocation.checkAction` and `OnHarvestedForage`, the exact-base
+  projection, existing candidate/compiler/runtime chain and request transport were audited.
+- Hidden/silent isolated runtime PASS 5/5:
+  `artifacts/runtime-spawned-object-smoke/runtime-spawned-object-smoke-20260803-145000/summary.json`.
+- Verified ordinary quantity 1/quality 2/Foraging +7; Botanist quality 4/+7;
+  deterministic Gatherer quantity 2/+14; special `724519` Foraging +2/Farming +3;
+  AnimalHouse Farming +5. All cases used native `checkAction` and exact output checks.
+- Lewis basement `(O)789` fails closed because its Bat/audio side effects are not yet projected.
+- Authoritative reconciliation regenerated: 585/585 exports, blocking 0.
+- Dashboard: 97 registered, 165 semantic actions, 0 missing registrations,
+  84 compiler-bound, 15 five-gate-closed, 14 training-allowlisted, 0 Product Executors.
+- Focused spawned-object/capability/training regression PASS: Core 26/26.
+- Core full regression PASS: 1499/1499.
+- Backend full regression PASS: 104/104.
+- Release solution build PASS: 0 errors, 5 pre-existing warnings.
+
 2026-08-03 bounded vanilla FishPond dual-branch training admission
 
 - Locked 1.6.15 `FishPond.doAction`/`ResolveNeeds`, the exact-base transparent

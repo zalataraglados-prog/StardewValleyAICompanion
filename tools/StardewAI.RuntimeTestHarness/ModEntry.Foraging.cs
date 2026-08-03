@@ -23,7 +23,10 @@ public sealed partial class ModEntry
         }
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
-            string.IsNullOrWhiteSpace(request.QualifiedItemId))
+            string.IsNullOrWhiteSpace(request.QualifiedItemId) ||
+            !request.ExpectedOutputQuality.HasValue ||
+            !request.ExpectedForagingExperienceDelta.HasValue ||
+            !request.ExpectedFarmingExperienceDelta.HasValue)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", "request=missing_typed_fields", "collect_spawned_object_typed_target_fields_required"));
             return;
@@ -62,6 +65,12 @@ public sealed partial class ModEntry
             string.IsNullOrWhiteSpace(item.Type) || item.Stack != 1)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", SpawnedObjectObservedEffect(location, target), "collect_spawned_object_identity_or_type_unsupported"));
+            return;
+        }
+        if (string.Equals(location.NameOrUniqueName, "LewisBasement", StringComparison.Ordinal) &&
+            string.Equals(item.ItemId, "789", StringComparison.Ordinal))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", SpawnedObjectObservedEffect(location, target), "collect_spawned_object_unprojected_lewis_basement_789_side_effect"));
             return;
         }
         if (item.questItem.Value && !string.IsNullOrWhiteSpace(item.questId.Value) && item.questId.Value != "0" && !Game1.player.hasQuest(item.questId.Value))
@@ -112,6 +121,13 @@ public sealed partial class ModEntry
         if (gathererDuplicate)
         {
             expectedForagingExperience += 7;
+        }
+        if (request.ExpectedOutputQuality != expectedQuality ||
+            request.ExpectedForagingExperienceDelta != expectedForagingExperience ||
+            request.ExpectedFarmingExperienceDelta != expectedFarmingExperience)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_spawned_object", "current_location.objects[target].present=false", SpawnedObjectObservedEffect(location, target), "collect_spawned_object_output_projection_drifted"));
+            return;
         }
 
         var maxMovementTiles = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);

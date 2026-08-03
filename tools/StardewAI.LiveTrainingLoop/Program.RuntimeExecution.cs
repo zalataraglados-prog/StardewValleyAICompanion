@@ -425,6 +425,7 @@ static partial class Program
         var expectedForagingExperienceBefore = ReadQueueParameterInt(item, "expected_foraging_experience_before");
         var expectedForagingExperienceDelta = ReadQueueParameterInt(item, "expected_foraging_experience_delta");
         var expectedForagingExperienceAfter = ReadQueueParameterInt(item, "expected_foraging_experience_after");
+        var expectedFarmingExperienceDelta = ReadQueueParameterInt(item, "expected_farming_experience_delta");
         var postUseOrePanPointStatus = ReadQueueParameterString(item, "post_use_ore_pan_point_status");
         var postUseRespawnAttempts = ReadQueueParameterInt(item, "post_use_respawn_attempts");
         var clearOutputProjectionStatus = ReadQueueParameterString(item, "clear_output_projection_status");
@@ -756,6 +757,7 @@ static partial class Program
         executionRequest.ExpectedForagingExperienceBefore = expectedForagingExperienceBefore;
         executionRequest.ExpectedForagingExperienceDelta = expectedForagingExperienceDelta;
         executionRequest.ExpectedForagingExperienceAfter = expectedForagingExperienceAfter;
+        executionRequest.ExpectedFarmingExperienceDelta = expectedFarmingExperienceDelta;
         executionRequest.PostUseOrePanPointStatus = postUseOrePanPointStatus;
         executionRequest.PostUseRespawnAttempts = postUseRespawnAttempts;
         executionRequest.ClearOutputProjectionStatus = clearOutputProjectionStatus;

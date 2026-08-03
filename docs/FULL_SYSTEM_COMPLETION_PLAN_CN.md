@@ -267,6 +267,13 @@ compiler-bound 为 82、五门闭环为 13、训练白名单为 12，Product Exe
 投影漂移、背包或工具栏不足、sign/cracker 截获均失败关闭。当前 compiler-bound 为 83、五门闭环
 为 14、训练白名单为 13，Product Executor 仍为 0。
 
+2026-08-03 EVD-211 登记 `foraging.collect_spawned_objects` 的当前地图精确原版基础拾取范围，复用唯一
+`collect_spawned_object -> executor.collect_spawned_object` 链。五类隐藏隔离矩阵已验证普通、Botanist、
+确定性 Gatherer 双倍、特殊 `724519` 与动物屋内部的原生数量、品质和双技能经验。质量与两类经验值
+现在从透明候选完整运输到运行请求并在执行前重绑；Lewis 地下室 `(O)789` 的额外 Bat/音画副作用、
+自定义子类和错误身份继续失败关闭。当前 compiler-bound 为 84、五门闭环为 15、训练白名单为 14，
+Product Executor 仍为 0。
+
 直接执行顺序调整为：继续第 2/4/5 步，按权威字典依赖树扩大五门准入并补原生运行证据；随后
 用真实长期 rollout 采集 `policy_decision_trajectory.v2`，闭合日/季/年/爷爷 21 分标签，生成并审计
 manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三年 21 分长跑。通过后才进入第 10 步

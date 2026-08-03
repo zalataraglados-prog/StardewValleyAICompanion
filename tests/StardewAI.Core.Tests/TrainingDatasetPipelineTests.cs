@@ -31,7 +31,7 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
-                    "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                    "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                     "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"

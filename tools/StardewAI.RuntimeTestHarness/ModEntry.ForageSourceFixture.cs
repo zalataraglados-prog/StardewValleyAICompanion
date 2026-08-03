@@ -30,6 +30,7 @@ public sealed partial class ModEntry
         {
             "bush" => ExecuteSetupBushSourceFixture(request),
             "ginger" => ExecuteSetupGingerSourceFixture(request),
+            "spawned_object" => ExecuteSetupSpawnedObjectFixture(request),
             _ => BlockedWithPrimitive(
                 request,
                 "debug_setup_forage_source_fixture",

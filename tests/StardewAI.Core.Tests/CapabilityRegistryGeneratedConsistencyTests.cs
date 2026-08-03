@@ -151,7 +151,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
-                "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
@@ -175,6 +175,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
+                "foraging.collect_spawned_objects" => "vanilla_current_location_exact_base_spawned_object_ordinary_botanist_deterministic_gatherer_special_724519_and_farm_interior_native_pickup_matrix",
                 "foraging.harvest_bushes" => "vanilla_current_location_exact_bush_berry_standard_botanist_tea_leaf_golden_walnut_collected_walnut_and_cooldown_matrix",
                 "foraging.harvest_ginger" => "vanilla_current_location_exact_ginger_dry_standard_rain_efficient_full_inventory_debris_energy_xp_matrix",
                 "foraging.pan_ore_spot" => "vanilla_current_location_exact_active_ore_spot_live_pan_reward_projection_copper_steel_lifecycle_receipt_xp_times_panned_and_respawn_observation",
@@ -201,6 +202,26 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void SpawnedObjectAdmissionRequiresExactNativeMatrixAndEvd211Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.collect_spawned_objects");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("foraging.collect_spawned_objects"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("foraging.collect_spawned_objects"));
+        Assert.Equal(new[] { "EVD-211" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-211" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-211" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-211" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-211" }, declaration.OutputEvidenceIds);
+        Assert.Contains("ordinary_botanist_deterministic_gatherer", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("special_724519_and_farm_interior", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("executor.collect_spawned_object", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

@@ -32,6 +32,11 @@ public sealed partial class CurrentLocationReadAdapter
         {
             return SpawnedObjectHarvestProjection.Blocked("blocked_spawned_object_stack_semantics_unsupported");
         }
+        if (string.Equals(location.NameOrUniqueName, "LewisBasement", StringComparison.Ordinal) &&
+            string.Equals(item.ItemId, "789", StringComparison.Ordinal))
+        {
+            return SpawnedObjectHarvestProjection.Blocked("blocked_unprojected_lewis_basement_789_side_effect");
+        }
         if (item.questItem.Value &&
             !string.IsNullOrWhiteSpace(item.questId.Value) &&
             item.questId.Value != "0" &&
