@@ -369,6 +369,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["farm.load_supported_machine_input"] = VerifiedEvidence(
                         "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
                         "EVD-214"),
+                    ["farm.establish_supported_machine_capacity"] = VerifiedEvidence(
+                        "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows",
+                        "EVD-215"),
                     ["fishing.collect_crab_pots"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                         "EVD-209"),

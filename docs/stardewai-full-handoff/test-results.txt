@@ -1,4 +1,27 @@
-2026-08-04 supported machine-capacity lifecycle orchestration (runtime admission pending)
+2026-08-04 EVD-215 supported machine-capacity lifecycle runtime admission
+
+- Hidden/silent E-drive isolated run
+  `runtime-supported-machine-capacity-20260804-120211` PASS.
+- The same `farm.establish_supported_machine_capacity` option drove three fresh
+  rolling decisions: native Keg craft, planner-selected exact `Farm:61,15`
+  placement, and Wheat load through the existing supported-input executor.
+- The persisted intent advanced `craft_selected -> placement_bound -> completed`
+  and completed only after exact-target processing was observed.
+- Three feature rows landed for the existing craft/place/load executors.
+- The first run exposed a real transparent/runtime ingredient-contract drift:
+  runtime rebinding omitted `unit_sale_price` and `total_sale_value`. The executor
+  now recomputes the same fields as the bridge before exact comparison.
+- Focused admission regression: Core 29/29; Backend 36/36.
+- Full regression: Core 1510/1510; Backend 108/108. Full Release solution
+  build PASS with 0 errors and 5 pre-existing warnings.
+- Authoritative reconciliation: 585/585 exports, blocking 0; registered 100,
+  semantic 168, compiler-bound 88, five-gate 19, allowlist 18,
+  Product Executor 0; frozen denominator fingerprint unchanged.
+- Task/collection machine demand, remote lifecycle placement, stochastic or
+  additional-consumption inputs, broad `farm.process_machines`, production
+  rollout data, and formal full training remain outside this evidence.
+
+2026-08-04 supported machine-capacity lifecycle orchestration (superseded by EVD-215 above)
 
 - Registered `farm.establish_supported_machine_capacity` as a rolling semantic
   over the existing native craft, placement, and supported-input chains.

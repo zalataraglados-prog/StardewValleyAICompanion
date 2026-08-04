@@ -309,7 +309,7 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 附加耗材、任务/收集需求及完整制作-摆放-投料生命周期仍未因此准入。下一切片必须继续从这些边界中
 选择一个可完整闭合的高层语义，不能把 EVD-214 外推为机器模块全部完成。
 
-## 2026-08-04 受支持机器容量生命周期编排（EVD-215 待运行）
+## 2026-08-04 受支持机器容量生命周期编排（EVD-215 已闭合）
 
 新增 `farm.establish_supported_machine_capacity`，把已有机器支持意图推进成严格的滚动状态机：无活动
 意图时只选择一个 `goal.economy.earn_money` 下证据完整、当前有界正净收益的制作候选；
@@ -321,8 +321,9 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 `craft_machine_item -> executor.craft_machine_item`、
 `place_machine_item -> executor.place_machine` 和
 `load_machine_input_tile -> executor.load_machine_input` 三条原生链，账本绑定与派发校验仍由既有组件负责。
-分阶段候选/排名/计划/队列测试已经通过，且非赚钱目标不能排名该生命周期。当前权威对账为
-100 registered / 168 semantic / 88 compiler-bound / 18 five-gate / 17 allowlist / 0 Product Executor，
-585/585 exports，blocking 0。该新语义仍未进入训练白名单；退出条件是隐藏隔离运行从制作开始，经新
-语义跨快照完成摆放、首次投料、处理开始、意图完成和训练行落盘。任务/收集需求机器处理继续是其后
-独立切片，不能借本状态机放行。
+隐藏静默隔离运行 `runtime-supported-machine-capacity-20260804-120211` 已由同一高层语义跨三次新快照
+完成 Keg 原生制作、规划器选择并绑定 `Farm:61,15`、Wheat 原生投料、处理开始、精确意图完成和三条
+训练行落盘。运行还发现并修复了透明桥与执行器原料重算之间缺少售价字段的契约漂移。当前权威对账为
+100 registered / 168 semantic / 88 compiler-bound / 19 five-gate / 18 allowlist / 0 Product Executor，
+585/585 exports，blocking 0，冻结分母指纹不变。EVD-215 只放行上述当前地图、有界正收益、确定性零附加
+耗材生命周期；任务/收集需求机器处理仍是下一独立切片，不能借本状态机放行。

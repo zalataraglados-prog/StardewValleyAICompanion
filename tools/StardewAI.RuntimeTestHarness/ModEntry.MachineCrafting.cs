@@ -586,7 +586,15 @@ public sealed partial class ModEntry
                 var amount = Math.Min(required, remaining[slot]);
                 remaining[slot] -= amount;
                 required -= amount;
-                consumed.Add(new { slot_index = slot, qualified_item_id = item.QualifiedItemId, amount });
+                var unitSalePrice = Math.Max(0, item.salePrice());
+                consumed.Add(new
+                {
+                    slot_index = slot,
+                    qualified_item_id = item.QualifiedItemId,
+                    amount,
+                    unit_sale_price = unitSalePrice,
+                    total_sale_value = (long)unitSalePrice * amount
+                });
                 consumedById[item.QualifiedItemId] = consumedById.TryGetValue(item.QualifiedItemId, out var old) ? old + amount : amount;
             }
             rows.Add(new

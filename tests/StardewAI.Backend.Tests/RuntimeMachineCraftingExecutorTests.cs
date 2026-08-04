@@ -15,6 +15,10 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.Contains("page.receiveLeftClick(pair.Key.bounds.Center.X", executor);
         Assert.Contains("page.receiveLeftClick(target.X, target.Y", executor);
         Assert.Contains("ProjectNativePersonalCraftIngredients", executor);
+        Assert.Contains("unit_sale_price = unitSalePrice", executor);
+        Assert.Contains(
+            "total_sale_value = (long)unitSalePrice * amount",
+            executor);
         Assert.Contains("exact_ingredient_and_output_multiset_verified", executor);
         Assert.Contains("native_recipe_count_increment_verified", executor);
         Assert.DoesNotContain("consumeIngredients(", executor);

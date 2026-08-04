@@ -152,6 +152,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             new[]
             {
                 "farm.collect_machine_outputs",
+                "farm.establish_supported_machine_capacity",
                 "farm.load_supported_machine_input",
                 "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
@@ -176,6 +177,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             var expectedScope = optionId switch
             {
                 "farm.collect_machine_outputs" => "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
+                "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows",
                 "farm.load_supported_machine_input" => "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
@@ -266,7 +268,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
-    public void SupportedMachineCapacityLifecycleStaysOutOfTrainingUntilRollingRuntimeProof()
+    public void SupportedMachineCapacityLifecycleAdmissionRequiresRollingNativeEvd215()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired(
             "farm.establish_supported_machine_capacity");
@@ -277,15 +279,21 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             declaration.CompilerStatus);
         Assert.True(DailyPlanCompiler.HasOptionCompiler(
             "farm.establish_supported_machine_capacity"));
-        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(new[] { "EVD-215" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-215" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-215" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-215" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-215" }, declaration.OutputEvidenceIds);
         Assert.Contains(
-            TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
-            declaration.TrainingExclusionReasons);
+            "craft_exact_placement_binding_deterministic_input_load",
+            declaration.TrainingEvidenceScope,
+            StringComparison.Ordinal);
         Assert.Contains(
-            TrainingAdmissionExclusionReason.OutputEvidenceMissing,
-            declaration.TrainingExclusionReasons);
-        Assert.DoesNotContain(
             "farm.establish_supported_machine_capacity",
+            OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.DoesNotContain(
+            "farm.process_machines",
             OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
