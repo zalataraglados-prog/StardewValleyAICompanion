@@ -25,6 +25,17 @@ public sealed partial class TrainingExecutionRequest
     public string MachineOutputDistributionOutcomeKind { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("predicted_output_qualified_item_id")]
+    public string PredictedOutputQualifiedItemId { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("predicted_output_context_tags_json")]
+    public string PredictedOutputContextTagsJson { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("predicted_output_additional_consumed_item_count")]
+    public int? PredictedOutputAdditionalConsumedItemCount { get; set; }
+
     [JsonPropertyName("fixture_machine_harvest_use_native_config")]
     public bool FixtureMachineHarvestUseNativeConfig { get; set; }
 

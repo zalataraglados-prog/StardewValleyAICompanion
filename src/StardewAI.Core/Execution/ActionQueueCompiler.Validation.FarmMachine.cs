@@ -806,6 +806,22 @@ namespace StardewAI.Core.Execution
             }
 
             var reasons = new List<string>();
+            var taskMachineSource = string.Equals(
+                ReadParameter(action, "quest_acquisition_source_step"),
+                "true",
+                StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(
+                    ReadParameter(action, "quest_candidate_id"));
+            if (taskMachineSource &&
+                commitmentLedger?.MaterialReservations.Any(reservation =>
+                    string.Equals(
+                        reservation.Status,
+                        StardewAI.Contracts.Strategy.StrategyCommitmentStatuses.Active,
+                        StringComparison.Ordinal)) == true)
+            {
+                reasons.Add(
+                    "task_machine_input_active_material_reservations_require_projection");
+            }
             var targetX = ReadIntParameter(action, "target_tile_x");
             var targetY = ReadIntParameter(action, "target_tile_y");
             var inputSlot = ReadIntParameter(action, "input_slot_index");

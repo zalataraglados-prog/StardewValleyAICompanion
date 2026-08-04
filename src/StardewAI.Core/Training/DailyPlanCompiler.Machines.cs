@@ -154,6 +154,8 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_output_prediction_status");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_qualified_item_id");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_item_id");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_context_tags_json");
+            AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_additional_consumed_item_count");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_stack");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_sale_price");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_output_price_source");
@@ -230,6 +232,8 @@ namespace StardewAI.Core.Training
                         name,
                         CandidateParameter(candidate, name)));
             }
+            parameters.AddRange(candidate.Parameters.Where(parameter =>
+                parameter.Name.StartsWith("quest_", StringComparison.Ordinal)));
 
             steps.Add(new SmallModelPlanStep
             {

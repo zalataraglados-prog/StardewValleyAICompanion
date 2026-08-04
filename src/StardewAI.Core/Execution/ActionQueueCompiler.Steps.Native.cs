@@ -437,6 +437,8 @@ namespace StardewAI.Core.Execution
             expectedEffect += OptionalEffect(action, "input_stack_available");
             expectedEffect += OptionalEffect(action, "predicted_output_qualified_item_id");
             expectedEffect += OptionalEffect(action, "predicted_output_item_id");
+            expectedEffect += OptionalEffect(action, "predicted_output_context_tags_json");
+            expectedEffect += OptionalEffect(action, "predicted_output_additional_consumed_item_count");
             expectedEffect += OptionalEffect(action, "predicted_output_stack");
             expectedEffect += OptionalEffect(action, "predicted_output_sale_price");
             expectedEffect += OptionalEffect(action, "predicted_output_total_value");

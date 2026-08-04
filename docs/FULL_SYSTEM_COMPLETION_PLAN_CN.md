@@ -327,3 +327,16 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 100 registered / 168 semantic / 88 compiler-bound / 19 five-gate / 18 allowlist / 0 Product Executor，
 585/585 exports，blocking 0，冻结分母指纹不变。EVD-215 只放行上述当前地图、有界正收益、确定性零附加
 耗材生命周期；任务/收集需求机器处理仍是下一独立切片，不能借本状态机放行。
+
+## 2026-08-05 任务/收集需求机器处理（EVD-216 已闭合）
+
+新增 `farm.fulfill_machine_task_demand`，但只准入已有、当前地图、可达机器的一条确定性任务链。普通
+`ResourceCollectionQuest` 按精确物品身份匹配，特别订单 `CollectObjective` 按原生上下文标签语法匹配；
+投料必须来自实时原生探针、产物确定、附加耗材计数为零，且不存在尚未精确投影的活动材料保留。
+投料只是生产源步骤，任务进度不得增加；机器自然完成后，既有原生收取链才是入账步骤。
+
+隐藏静默隔离矩阵 `runtime-machine-task-demand-20260805-001630` 已让 Charcoal Kiln `(BC)114` 原生消耗
+Wood `(O)388` 并自然产出 Coal `(O)382`。普通任务和特别订单均在投料后保持 `0/1`，原生收取后变为
+`1/1`，没有直接写任务计数。该切片不新增第二套机器候选、编译器或执行器，也不放行广义
+`quest.advance` / `farm.process_machines`。为任务新制作或摆放机器、远程机器、随机产物、附加耗材、
+浣熊包需求和精确的任务优先材料保留仍是后续独立切片。

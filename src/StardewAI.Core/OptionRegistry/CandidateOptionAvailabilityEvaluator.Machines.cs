@@ -45,6 +45,53 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
+        private EventCandidate[] TaskMachineDemandCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            var activeReservations = commitmentLedger?.MaterialReservations
+                .Any(reservation => string.Equals(
+                    reservation.Status,
+                    StrategyCommitmentStatuses.Active,
+                    StringComparison.Ordinal)) == true;
+            var candidates = QuestCandidates(snapshot)
+                .Where(candidate => candidate.Kind is
+                    "collect_machine_output_tile" or
+                    "load_machine_input_tile")
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "quest_acquisition_target_step"),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(
+                        ReadParameter(
+                            candidate.Parameters,
+                            "quest_acquisition_source_step"),
+                        "true",
+                        StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (!activeReservations)
+            {
+                return candidates;
+            }
+
+            foreach (var candidate in candidates.Where(candidate =>
+                         candidate.Kind == "load_machine_input_tile"))
+            {
+                candidate.Available = false;
+                candidate.BlockReasons = candidate.BlockReasons
+                    .Concat(new[]
+                    {
+                        "task_machine_input_active_material_reservations_require_projection"
+                    })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+            return candidates;
+        }
+
         private EventCandidate[] SupportedMachineInputCandidates(
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)
@@ -628,6 +675,23 @@ namespace StardewAI.Core.OptionRegistry
                         {
                             Parameter("machine_location_id", machineLocation),
                             Parameter(
+                                "machine_output_prediction_status",
+                                prediction.Status),
+                            Parameter(
+                                "predicted_output_qualified_item_id",
+                                prediction.OutputQualifiedItemId),
+                            Parameter(
+                                "predicted_output_item_id",
+                                prediction.OutputItemId),
+                            Parameter(
+                                "predicted_output_context_tags_json",
+                                JsonSerializer.Serialize(
+                                    prediction.OutputContextTags)),
+                            Parameter(
+                                "predicted_output_additional_consumed_item_count",
+                                prediction.AdditionalConsumedItemCount
+                                    .ToString()),
+                            Parameter(
                                 "machine_special_prediction_model_id",
                                 incubatorPrediction?.ModelId ??
                                 predictionTrainingContract.ModelId),
@@ -1093,6 +1157,9 @@ namespace StardewAI.Core.OptionRegistry
 
             var outputQualifiedId = ReadString(outputItem, "qualified_item_id");
             var outputItemId = ReadString(outputItem, "item_id");
+            var outputContextTags = ReadStringArray(
+                predictedOutput,
+                "output_context_tags");
             var outputStack = ReadInt(
                 predictedOutput,
                 "stack");
@@ -1119,6 +1186,13 @@ namespace StardewAI.Core.OptionRegistry
             {
                 suffix += ";predicted_output_item_id=" + outputItemId;
             }
+            suffix += ";predicted_output_context_tags_json=" +
+                JsonSerializer.Serialize(outputContextTags) +
+                ";predicted_output_additional_consumed_item_count=" +
+                ReadInt(
+                    predictedOutput,
+                    "additional_consumed_item_count",
+                    -1);
 
             suffix += ";predicted_output_stack=" + Math.Max(1, outputStack) +
                 ";predicted_output_sale_price=" + outputSalePrice +
@@ -1296,7 +1370,14 @@ namespace StardewAI.Core.OptionRegistry
                         ? "distribution_identity_value_minus_transparent_input_and_additional_consumed_sale_price"
                         : "machine_native_probe_total_value_minus_transparent_input_and_additional_consumed_sale_price"
                     : "machine_native_probe_total_value_minus_transparent_input_sale_price",
-                suffix);
+                suffix,
+                outputQualifiedId,
+                outputItemId,
+                outputContextTags,
+                ReadInt(
+                    predictedOutput,
+                    "additional_consumed_item_count",
+                    -1));
         }
 
         private static MachineOutputPrediction PredictMachineOutputFromSummary(
@@ -1426,7 +1507,11 @@ namespace StardewAI.Core.OptionRegistry
                     additionalValue > 0
                         ? "predicted_output_total_value_minus_transparent_input_and_additional_consumed_sale_price"
                         : "predicted_output_total_value_minus_transparent_input_sale_price",
-                    suffix);
+                    suffix,
+                    outputQualifiedId,
+                    outputItemId,
+                    Array.Empty<string>(),
+                    -1);
             }
 
             return MachineOutputPrediction.Unavailable("machine_data_no_exact_required_item_match");
@@ -1587,11 +1672,22 @@ namespace StardewAI.Core.OptionRegistry
 
         private readonly struct MachineOutputPrediction
         {
-            public MachineOutputPrediction(string status, string valueBasis, string expectedEffectSuffix)
+            public MachineOutputPrediction(
+                string status,
+                string valueBasis,
+                string expectedEffectSuffix,
+                string outputQualifiedItemId,
+                string outputItemId,
+                string[] outputContextTags,
+                int additionalConsumedItemCount)
             {
                 Status = status;
                 ValueBasis = valueBasis;
                 ExpectedEffectSuffix = expectedEffectSuffix;
+                OutputQualifiedItemId = outputQualifiedItemId;
+                OutputItemId = outputItemId;
+                OutputContextTags = outputContextTags;
+                AdditionalConsumedItemCount = additionalConsumedItemCount;
             }
 
             public string Status { get; }
@@ -1600,9 +1696,24 @@ namespace StardewAI.Core.OptionRegistry
 
             public string ExpectedEffectSuffix { get; }
 
+            public string OutputQualifiedItemId { get; }
+
+            public string OutputItemId { get; }
+
+            public string[] OutputContextTags { get; }
+
+            public int AdditionalConsumedItemCount { get; }
+
             public static MachineOutputPrediction Unavailable(string status)
             {
-                return new MachineOutputPrediction(status, "transparent_input_sale_price_output_unknown", string.Empty);
+                return new MachineOutputPrediction(
+                    status,
+                    "transparent_input_sale_price_output_unknown",
+                    string.Empty,
+                    string.Empty,
+                    string.Empty,
+                    Array.Empty<string>(),
+                    -1);
             }
         }
 

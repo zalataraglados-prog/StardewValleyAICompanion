@@ -200,6 +200,17 @@ namespace StardewAI.Core.Execution
                         reasons.Add("quest_resource_monster_drop_source_drifted");
                     }
                 }
+                else if (action.OptionId == "executor.load_machine_input")
+                {
+                    if (!TaskMachineInputPredictedOutputMatches(
+                            action,
+                            snapshot,
+                            qualifiedRequired,
+                            Array.Empty<string>()))
+                    {
+                        reasons.Add("quest_resource_machine_input_source_drifted");
+                    }
+                }
                 else
                 {
                     reasons.Add("quest_resource_source_primitive_invalid");

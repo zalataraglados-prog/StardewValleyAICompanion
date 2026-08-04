@@ -183,6 +183,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_supported_machine_capacity_lifecycle_candidates");
             }
 
+            if (optionId == "farm.fulfill_machine_task_demand")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_machine_task_demand_candidates",
+                    "no_available_machine_task_demand_candidates");
+            }
+
             if (optionId == "farm.care_for_pets")
             {
                 return EventCandidateAvailabilityReasons(
@@ -319,6 +327,11 @@ namespace StardewAI.Core.OptionRegistry
             if (string.Equals(optionId, "farm.establish_supported_machine_capacity", StringComparison.Ordinal))
             {
                 return SupportedMachineCapacityLifecycleCandidates(snapshot, commitmentLedger);
+            }
+
+            if (string.Equals(optionId, "farm.fulfill_machine_task_demand", StringComparison.Ordinal))
+            {
+                return TaskMachineDemandCandidates(snapshot, commitmentLedger);
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)

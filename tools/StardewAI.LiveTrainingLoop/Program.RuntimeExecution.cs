@@ -581,6 +581,18 @@ static partial class Program
             ReadQueueParameterString(
                 item,
                 "machine_output_distribution_outcome_kind");
+        var predictedOutputQualifiedItemId =
+            ReadQueueParameterString(
+                item,
+                "predicted_output_qualified_item_id");
+        var predictedOutputContextTagsJson =
+            ReadQueueParameterString(
+                item,
+                "predicted_output_context_tags_json");
+        var predictedOutputAdditionalConsumedItemCount =
+            ReadQueueParameterInt(
+                item,
+                "predicted_output_additional_consumed_item_count");
         var anvilReforgeUtilityMetric =
             ReadQueueParameterString(
                 item,
@@ -962,6 +974,12 @@ static partial class Program
             machinePredictionTrainingKind;
         executionRequest.MachineOutputDistributionOutcomeKind =
             machineOutputDistributionOutcomeKind;
+        executionRequest.PredictedOutputQualifiedItemId =
+            predictedOutputQualifiedItemId;
+        executionRequest.PredictedOutputContextTagsJson =
+            predictedOutputContextTagsJson;
+        executionRequest.PredictedOutputAdditionalConsumedItemCount =
+            predictedOutputAdditionalConsumedItemCount;
         executionRequest.AnvilReforgeUtilityMetric =
             anvilReforgeUtilityMetric;
         executionRequest.AnvilReforgeCurrentUtility =

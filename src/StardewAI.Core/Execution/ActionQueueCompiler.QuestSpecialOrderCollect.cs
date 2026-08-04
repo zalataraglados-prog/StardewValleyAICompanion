@@ -24,6 +24,7 @@ namespace StardewAI.Core.Execution
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
                     "executor.catch_fish" or
+                    "executor.load_machine_input" or
                     "executor.combat_monster" or
                     "executor.shoot_monster") ||
                 !string.Equals(
@@ -74,6 +75,7 @@ namespace StardewAI.Core.Execution
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
                     "executor.catch_fish" or
+                    "executor.load_machine_input" or
                     "executor.combat_monster" or
                     "executor.shoot_monster" ||
                 action.OptionId == "executor.harvest_crop" &&
@@ -192,6 +194,14 @@ namespace StardewAI.Core.Execution
                     snapshot,
                     tagSets);
             }
+            if (action.OptionId == "executor.load_machine_input")
+            {
+                return TaskMachineInputPredictedOutputMatches(
+                    action,
+                    snapshot,
+                    string.Empty,
+                    tagSets);
+            }
             if (action.OptionId == "executor.harvest_bush")
             {
                 var features = ReadStateFieldValue(
@@ -268,6 +278,77 @@ namespace StardewAI.Core.Execution
                 QuestContextTagMatcher.Matches(
                     ReadQuestStringArray(ginger, "ginger_output_context_tags"),
                     tagSets);
+        }
+
+        private static bool TaskMachineInputPredictedOutputMatches(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            string requiredQualifiedItemId,
+            string[] acceptableContextTagSets)
+        {
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var slotIndex = ReadIntParameter(action, "input_slot_index");
+            var targetLocation = ReadParameter(action, "target_location");
+            if (!targetX.HasValue || !targetY.HasValue || !slotIndex.HasValue)
+            {
+                return false;
+            }
+
+            var machine = MachineAt(
+                snapshot,
+                targetLocation,
+                targetX.Value,
+                targetY.Value);
+            var input = machine.HasValue
+                ? MachineLoadableInputAt(machine.Value, slotIndex.Value)
+                : null;
+            if (!input.HasValue ||
+                !input.Value.TryGetProperty(
+                    "predicted_output",
+                    out var prediction) ||
+                prediction.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(prediction, "status"),
+                    "available",
+                    StringComparison.Ordinal) ||
+                ReadInt(prediction, "additional_consumed_item_count", -1) != 0 ||
+                !prediction.TryGetProperty("item", out var output) ||
+                output.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var outputQualifiedItemId = ReadString(
+                output,
+                "qualified_item_id");
+            var projectedTags = ReadQuestStringArray(
+                prediction,
+                "output_context_tags");
+            if (!string.Equals(
+                    ReadParameter(action, "predicted_output_qualified_item_id"),
+                    outputQualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(
+                    ReadParameter(action, "predicted_output_context_tags_json"),
+                    JsonSerializer.Serialize(projectedTags),
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "predicted_output_additional_consumed_item_count"),
+                    "0",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return !string.IsNullOrWhiteSpace(requiredQualifiedItemId)
+                ? string.Equals(
+                    outputQualifiedItemId,
+                    requiredQualifiedItemId,
+                    StringComparison.OrdinalIgnoreCase)
+                : QuestContextTagMatcher.Matches(
+                    projectedTags,
+                    acceptableContextTagSets);
         }
 
         private static SpecialOrderObjectiveProgressRef? ReadSpecialOrderCollectObjective(

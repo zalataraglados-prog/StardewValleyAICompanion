@@ -825,6 +825,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             base_minutes_until_ready = baseMinutesUntilReady,
             effective_minutes_until_ready = effectiveMinutesUntilReady,
             item = SummarizeItem(outputItem),
+            output_context_tags = outputItem.GetContextTags()
+                .OrderBy(tag => tag, StringComparer.Ordinal)
+                .ToArray(),
             sale_price = outputItem.salePrice(),
             stack = outputItem.Stack,
             quality = outputItem.Quality,

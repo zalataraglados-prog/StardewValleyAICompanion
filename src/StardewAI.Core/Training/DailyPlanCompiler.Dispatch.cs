@@ -14,6 +14,7 @@ namespace StardewAI.Core.Training
                 ["farm.collect_machine_outputs"] = new[] { "collect_machine_output_tile" },
                 ["farm.load_supported_machine_input"] = new[] { "load_machine_input_tile" },
                 ["farm.establish_supported_machine_capacity"] = new[] { "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
+                ["farm.fulfill_machine_task_demand"] = new[] { "load_machine_input_tile", "collect_machine_output_tile" },
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
@@ -179,17 +180,23 @@ namespace StardewAI.Core.Training
             }
 
             if (candidate.Kind == "collect_machine_output_tile" &&
-                OptionCandidateCompilerKinds["farm.collect_machine_outputs"].Contains(
+                (OptionCandidateCompilerKinds["farm.collect_machine_outputs"].Contains(
                     candidate.Kind,
-                    StringComparer.Ordinal))
+                    StringComparer.Ordinal) ||
+                 OptionCandidateCompilerKinds["farm.fulfill_machine_task_demand"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal)))
             {
                 return CollectMachineOutputSteps(candidate);
             }
 
             if (candidate.Kind == "load_machine_input_tile" &&
-                OptionCandidateCompilerKinds["farm.load_supported_machine_input"].Contains(
+                (OptionCandidateCompilerKinds["farm.load_supported_machine_input"].Contains(
                     candidate.Kind,
-                    StringComparer.Ordinal))
+                    StringComparer.Ordinal) ||
+                 OptionCandidateCompilerKinds["farm.fulfill_machine_task_demand"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal)))
             {
                 return LoadMachineInputSteps(candidate);
             }

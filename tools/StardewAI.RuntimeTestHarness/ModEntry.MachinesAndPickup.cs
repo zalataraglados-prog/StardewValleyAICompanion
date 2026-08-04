@@ -1172,6 +1172,76 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "load_machine_input", requested, beforeObserved, "load_machine_input_item_mismatch");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.QuestCandidateId))
+        {
+            if (string.IsNullOrWhiteSpace(
+                    request.PredictedOutputQualifiedItemId) ||
+                request.PredictedOutputAdditionalConsumedItemCount != 0)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "load_machine_input",
+                    requested,
+                    beforeObserved,
+                    "task_machine_input_prediction_contract_invalid");
+            }
+            string[] projectedTags;
+            string[] nativeTags;
+            try
+            {
+                projectedTags = JsonSerializer.Deserialize<string[]>(
+                    request.PredictedOutputContextTagsJson) ??
+                    Array.Empty<string>();
+                nativeTags = ItemRegistry
+                    .Create(request.PredictedOutputQualifiedItemId)
+                    .GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray();
+            }
+            catch
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "load_machine_input",
+                    requested,
+                    beforeObserved,
+                    "task_machine_input_output_context_tags_invalid");
+            }
+            if (!projectedTags.SequenceEqual(nativeTags))
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "load_machine_input",
+                    requested,
+                    beforeObserved,
+                    "task_machine_input_output_context_tags_drifted");
+            }
+            var resourceQuestReason = ValidateQuestResourceSourceTarget(
+                request,
+                new[] { request.PredictedOutputQualifiedItemId });
+            if (resourceQuestReason is not null)
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "load_machine_input",
+                    requested,
+                    beforeObserved,
+                    resourceQuestReason);
+            }
+            if (!ValidateSpecialOrderCollectSourceTarget(
+                    request,
+                    request.PredictedOutputQualifiedItemId,
+                    out var specialOrderReason))
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "load_machine_input",
+                    requested,
+                    beforeObserved,
+                    specialOrderReason);
+            }
+        }
+
         var tracksAnvilDistribution =
             string.Equals(
                 request.MachinePredictionTrainingKind,
@@ -1252,7 +1322,12 @@ public sealed partial class ModEntry : Mod
         var verified = acted &&
             machineStarted &&
             inventoryChanged &&
-            anvilFeedbackVerified;
+            anvilFeedbackVerified &&
+            (string.IsNullOrWhiteSpace(request.QuestCandidateId) ||
+             string.Equals(
+                machine.heldObject.Value?.QualifiedItemId,
+                request.PredictedOutputQualifiedItemId,
+                StringComparison.OrdinalIgnoreCase));
         var recordedAnvilFeedback =
             tracksAnvilDistribution &&
             anvilFeedbackVerified;
@@ -1262,7 +1337,7 @@ public sealed partial class ModEntry : Mod
               beforeAnvilFeedback.Utility
             : (double?)null;
 
-        return new TrainingExecutionResult
+        var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
             QueueId = request.QueueId,
@@ -1363,6 +1438,9 @@ public sealed partial class ModEntry : Mod
                 .ToArray()
                 : Array.Empty<SimulatedFactChange>()
         };
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        return result;
     }
 
     private static StardewValley.Object? MachineAt(GameLocation location, Point target)

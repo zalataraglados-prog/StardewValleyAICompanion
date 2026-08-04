@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -266,7 +266,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
-            "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity",
+            "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "farm.care_for_pets", "skills.read_books",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -277,7 +277,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
-            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.collect_animal_products", "farm.care_for_pets",
+            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets",
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -312,7 +312,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly string[] RegisteredOptionIds =
         {
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.collect_animal_products",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products",
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "economy.buy_supplies",
@@ -372,6 +372,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["farm.establish_supported_machine_capacity"] = VerifiedEvidence(
                         "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows",
                         "EVD-215"),
+                    ["farm.fulfill_machine_task_demand"] = VerifiedEvidence(
+                        "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
+                        "EVD-216"),
                     ["fishing.collect_crab_pots"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                         "EVD-209"),

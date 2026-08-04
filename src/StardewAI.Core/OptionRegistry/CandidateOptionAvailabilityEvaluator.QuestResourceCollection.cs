@@ -173,6 +173,24 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "true"),
                         Parameter("quest_acquisition_source_step", "false")
                     }));
+            var machineLoadSources = BoundedTaskMachineLoadCandidates(snapshot)
+                .Where(candidate => ItemIdentityMatches(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "predicted_output_item_id"),
+                    ReadParameter(
+                        candidate.Parameters,
+                        "predicted_output_qualified_item_id"),
+                    quest.RequiredItemId))
+                .Select(candidate => AttachQuest(
+                    candidate,
+                    quest,
+                    new[]
+                    {
+                        Parameter("quest_required_item_id", quest.RequiredItemId),
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true")
+                    }));
             var miningSteps = MiningResourceCollectionCandidateBuilder
                 .Build(snapshot, QualifyQuestObjectId(quest.RequiredItemId))
                 .Select(candidate => AttachQuest(candidate, quest));
@@ -186,6 +204,7 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(currentLocationClumpSourceSteps)
                 .Concat(fishingSourceSteps)
                 .Concat(machineReceipts)
+                .Concat(machineLoadSources)
                 .Concat(miningSteps)
                 .ToArray();
             return candidates.Length > 0
@@ -312,6 +331,22 @@ namespace StardewAI.Core.OptionRegistry
                         {
                             Parameter("quest_acquisition_target_step", "true"),
                             Parameter("quest_acquisition_source_step", "false"),
+                            Parameter(
+                                "quest_acceptable_context_tag_sets_json",
+                                JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                        })))
+                .Concat(BoundedTaskMachineLoadCandidates(snapshot)
+                    .Where(candidate => CandidateContextTagsMatch(
+                        candidate,
+                        "predicted_output_context_tags_json",
+                        fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(
+                        candidate,
+                        quest,
+                        new[]
+                        {
+                            Parameter("quest_acquisition_target_step", "false"),
+                            Parameter("quest_acquisition_source_step", "true"),
                             Parameter(
                                 "quest_acceptable_context_tag_sets_json",
                                 JsonSerializer.Serialize(fields.AcceptableContextTagSets))
@@ -465,6 +500,39 @@ namespace StardewAI.Core.OptionRegistry
                         quest,
                         "special_order_matching_collect_action_not_ready_in_current_projection")
                 };
+        }
+
+        private IEnumerable<EventCandidate> BoundedTaskMachineLoadCandidates(
+            SnapshotEnvelope snapshot)
+        {
+            return MachineServiceCandidates(snapshot, commitmentLedger: null)
+                .Where(candidate => string.Equals(
+                    candidate.Kind,
+                    "load_machine_input_tile",
+                    StringComparison.Ordinal))
+                .Where(candidate => candidate.Available)
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "machine_output_prediction_status"),
+                    "machine_native_probe_available",
+                    StringComparison.Ordinal))
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "machine_prediction_training_kind"),
+                    "exact",
+                    StringComparison.Ordinal))
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "predicted_output_additional_consumed_item_count"),
+                    "0",
+                    StringComparison.Ordinal))
+                .Where(candidate => !string.IsNullOrWhiteSpace(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "predicted_output_qualified_item_id")));
         }
 
         private static bool CandidateContextTagsMatch(

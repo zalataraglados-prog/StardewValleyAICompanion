@@ -1,9 +1,9 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "427d532fc7b66d32c1582b200da31e6b9d462b51b6b1c0f2fed7a77e97d55049",
-  "action_count": 168,
-  "registered_option_spec_count": 100,
+  "denominator_fingerprint_sha256": "e64842cb531e3e365cb749da8b8fbd6a24af064e87c149d42fbb46c739ce74a3",
+  "action_count": 169,
+  "registered_option_spec_count": 101,
   "catalogued_blocked_count": 68,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -965,6 +965,15 @@
     },
     {
       "action_id": "farm.establish_supported_machine_capacity",
+      "domain": "farm",
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "farm.fulfill_machine_task_demand",
       "domain": "farm",
       "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.strategy_orchestration",
