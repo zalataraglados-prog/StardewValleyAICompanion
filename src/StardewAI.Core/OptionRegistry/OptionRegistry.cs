@@ -39,6 +39,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact current-location ready machine output selected", "native machine collection lifecycle handed to the mechanical executor" },
                 new[] { "block_incubator_completion", "block_unready_machine_output", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("farm.load_supported_machine_input", "farm", "Load one committed positive-value machine input",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "farm.machines", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact placement-bound machine support intent continued", "one unreserved positive-net input handed to the native machine loader" },
+                new[] { "block_missing_machine_support_intent", "block_nonpositive_current_input", "block_reserved_input", "block_unverified_route", "block_prediction_or_ledger_drift" }));
+
             Register(Option("farm.collect_animal_products", "farm", "Collect one transparent ready animal product",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

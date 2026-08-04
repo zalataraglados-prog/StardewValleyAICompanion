@@ -32,6 +32,7 @@ namespace StardewAI.Core.Tests
                 new[]
                 {
                     "farm.collect_machine_outputs",
+                    "farm.load_supported_machine_input",
                     "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",

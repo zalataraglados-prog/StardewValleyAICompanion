@@ -817,6 +817,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             required_item_id = triggerRule?.RequiredItemId ?? string.Empty,
             required_tags = triggerRule?.RequiredTags?.ToArray() ?? Array.Empty<string>(),
             required_count = triggerRule?.RequiredCount ?? 0,
+            additional_consumed_item_count =
+                ReadCount(machineData, "AdditionalConsumedItems"),
             use_first_valid_output = outputRule.UseFirstValidOutput,
             rule_minutes_until_ready = ruleMinutesUntilReady,
             rule_days_until_ready = ruleDaysUntilReady,

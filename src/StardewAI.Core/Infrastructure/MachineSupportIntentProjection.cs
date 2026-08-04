@@ -145,16 +145,7 @@ internal static class MachineSupportIntentProjection
         JsonElement machine,
         JsonElement input)
     {
-        if (!machine.TryGetProperty(
-                "machine_data",
-                out var machineData) ||
-            machineData.ValueKind != JsonValueKind.Object ||
-            !TryReadInt(
-                machineData,
-                "additional_consumed_item_count",
-                out var additionalCount) ||
-            additionalCount != 0 ||
-            !TryReadInt(
+        if (!TryReadInt(
                 input,
                 "sale_price",
                 out var inputSalePrice) ||
@@ -174,19 +165,49 @@ internal static class MachineSupportIntentProjection
             return null;
         }
 
-        var requiredCount = TryReadInt(
+        var additionalCountKnown =
+            TryReadInt(
                 output,
-                "required_count",
-                out var projectedRequiredCount) &&
-            projectedRequiredCount > 0
-                ? projectedRequiredCount
-                : 1;
+                "additional_consumed_item_count",
+                out var additionalCount);
+        if (!additionalCountKnown &&
+            machine.TryGetProperty(
+                "machine_data",
+                out var machineData) &&
+            machineData.ValueKind == JsonValueKind.Object)
+        {
+            additionalCountKnown = TryReadInt(
+                machineData,
+                "additional_consumed_item_count",
+                out additionalCount);
+        }
+        if (!additionalCountKnown || additionalCount != 0)
+        {
+            return null;
+        }
+
+        var requiredCount = RequiredInputCount(input);
         var value =
             (long)outputSalePrice * outputStack -
             (long)inputSalePrice * requiredCount;
         return value is >= int.MinValue and <= int.MaxValue
             ? (int)value
             : null;
+    }
+
+    public static int RequiredInputCount(JsonElement input)
+    {
+        return input.TryGetProperty(
+                "predicted_output",
+                out var output) &&
+            output.ValueKind == JsonValueKind.Object &&
+            TryReadInt(
+                output,
+                "required_count",
+                out var projectedRequiredCount) &&
+            projectedRequiredCount > 0
+                ? projectedRequiredCount
+                : 1;
     }
 
     public static string ExpectedEffectSuffix(

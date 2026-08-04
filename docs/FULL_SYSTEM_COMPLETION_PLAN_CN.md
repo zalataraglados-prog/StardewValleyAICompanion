@@ -296,3 +296,15 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 冻结完美策略，第 11 步拟人化仍必须保持独立 profile/checkpoint。
 
 直接执行任务见 [`SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md`](stardewai-full-handoff/SHORT_HANDOFF_20260802_STRUCTURED_POLICY_CN.md)。
+## 2026-08-04 EVD-214 机器承诺投料切片
+
+新增 `farm.load_supported_machine_input`，但只覆盖当前地图、精确绑定到已摆放机器的有效支持意图、
+当前确定性正净值、零附加耗材、输入槽未被其他目标预留的单次投料。它过滤并复用既有
+`MachineServiceCandidates -> load_machine_input_tile -> load_machine_input -> executor.load_machine_input`
+单链，不新增第二套执行器。候选、计划、编译和派发都绑定支持账本与材料预留账本版本，漂移即阻塞。
+
+隐藏静默运行 `runtime-machine-daily-plan-smoke-20260804-104556` 已验证原生投料、处理开始、训练行写入和
+支持意图完成。权威对账为 99 registered / 167 semantic / 87 compiler-bound / 18 five-gate /
+17 allowlist / 0 Product Executor，585/585 exports，blocking 0。广义 `farm.process_machines`、随机输出、
+附加耗材、任务/收集需求及完整制作-摆放-投料生命周期仍未因此准入。下一切片必须继续从这些边界中
+选择一个可完整闭合的高层语义，不能把 EVD-214 外推为机器模块全部完成。

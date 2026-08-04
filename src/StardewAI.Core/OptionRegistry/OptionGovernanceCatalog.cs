@@ -209,6 +209,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("farm.maintain_crops", C, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("farm.process_machines", C, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("farm.collect_machine_outputs", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("farm.load_supported_machine_input", C, R2, Consume, PolicyConfirm, Actor, Inventory, Allowed),
                 P("farm.collect_animal_products", C, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("farm.care_for_pets", C, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("museum.donate_items", C, R4, Asset, ExplicitConfirm, Actor, World, Explicit),

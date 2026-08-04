@@ -3658,3 +3658,21 @@ Scope boundary:
 - Grass regression PASS: `artifacts\runtime-clear-obstacle-smoke\runtime-clear-grass-regression-20260729\summary.json`; non-artifact obstacles still require the tile to become fully clear.
 - Focused source guards 3/3; Core 1348/1348; Backend 95/95; full Release solution build 0 errors with five existing warnings.
 - Generous, defense-book-hit, Island/Desert override and zero-output ArtifactSpot variants remain runtime-pending; global-RNG secret-note outcomes remain fail closed.
+2026-08-04 bounded placement-bound machine-input training admission
+
+- Added `farm.load_supported_machine_input` as an input-only semantic view over
+  the existing machine candidate, DailyPlan, ActionQueue and native executor chain.
+- Exact active support intent, fresh positive deterministic net value, zero
+  additional consumption, unreserved exact slot quantity, route and ledger drift
+  are rebound before compile and dispatch; missing evidence fails closed.
+- Purpose-limited cached predictions now carry exact additional-consumed count;
+  full machine catalogs were not restored to the high-frequency snapshot path.
+- Hidden/silent isolated runtime PASS:
+  `runtime-machine-daily-plan-smoke-20260804-104556`; native Keg load verified,
+  processing started, one feature row was written and support intent completed.
+- The runtime test also exposed and fixed backend rejection of the existing
+  `training_machine` snapshot profile; exact-domain acceptance and omission tests pass.
+- Core full regression PASS: 1506/1506. Backend full regression PASS: 106/106.
+- Full solution Release build PASS: 0 errors, 5 pre-existing warnings.
+- Authoritative reconciliation: 585/585 exports, blocking 0; registered 99,
+  semantic 167, compiler-bound 87, five-gate 18, allowlist 17, Product Executor 0.

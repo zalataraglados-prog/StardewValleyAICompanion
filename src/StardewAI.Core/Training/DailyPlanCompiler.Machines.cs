@@ -210,6 +210,19 @@ namespace StardewAI.Core.Training
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_final_quality");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "predicted_aging_rate_per_day");
             AddParsedParameter(parameters, candidate.ExpectedEffect, "machine_input_probe_source");
+            foreach (var name in new[]
+            {
+                "machine_input_required_count",
+                "commitment_ledger_id",
+                "commitment_ledger_revision",
+                "material_reservation_guard_status",
+                "material_reservation_ledger_id",
+                "material_reservation_ledger_revision",
+                "material_reservation_ids_json"
+            })
+            {
+                AddParsedParameter(parameters, candidate.ExpectedEffect, name);
+            }
             foreach (var name in MachineSupportContinuationParameterNames)
             {
                 parameters.Add(

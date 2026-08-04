@@ -45,6 +45,24 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
+        private EventCandidate[] SupportedMachineInputCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            return MachineServiceCandidates(snapshot, commitmentLedger)
+                .Where(candidate => string.Equals(
+                    candidate.Kind,
+                    "load_machine_input_tile",
+                    StringComparison.Ordinal))
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "machine_support_continuation_status"),
+                    "active",
+                    StringComparison.Ordinal))
+                .ToArray();
+        }
+
         private EventCandidate[] MachineServiceCandidates(
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)
@@ -441,6 +459,17 @@ namespace StardewAI.Core.OptionRegistry
                                 .CurrentInputNetValue(
                                     machine,
                                     input));
+                    var reservationGuard = supportIntent is null ||
+                        commitmentLedger is null
+                            ? null
+                            : new MachineInputMaterialReservationGuard()
+                                .Evaluate(
+                                    snapshot,
+                                    commitmentLedger,
+                                    slotIndex,
+                                    qualifiedItemId,
+                                    MachineSupportIntentProjection
+                                        .RequiredInputCount(input));
                     if (supportIntent is not null &&
                         !string.Equals(
                             supportContinuation.Status,
@@ -449,6 +478,12 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         blockReasons.Add(
                             "machine_support_current_input_not_positive");
+                    }
+                    if (reservationGuard is not null &&
+                        !reservationGuard.Ready)
+                    {
+                        blockReasons.AddRange(
+                            reservationGuard.BlockingReasons);
                     }
                     return new EventCandidate
                     {
@@ -493,7 +528,11 @@ namespace StardewAI.Core.OptionRegistry
                                 ? string.Empty
                                 : MachineSupportIntentProjection
                                     .ExpectedEffectSuffix(
-                                        supportContinuation)),
+                                        supportContinuation) +
+                                  MachineInputReservationExpectedEffect(
+                                      reservationGuard!,
+                                      MachineSupportIntentProjection
+                                          .RequiredInputCount(input))),
                         ItemId = itemId,
                         QualifiedItemId = qualifiedItemId,
                         SlotIndex = slotIndex,
@@ -541,12 +580,45 @@ namespace StardewAI.Core.OptionRegistry
                                     SmallModelActionParameter>()
                                 : MachineSupportIntentProjection
                                     .Parameters(
-                                        supportContinuation))
+                                        supportContinuation)
+                                    .Concat(
+                                        MachineInputReservationParameters(
+                                            reservationGuard!,
+                                            MachineSupportIntentProjection
+                                                .RequiredInputCount(input))))
                         .ToArray()
                     };
                 })
                 .ToArray();
         }
+
+        private static string MachineInputReservationExpectedEffect(
+            MachineInputMaterialReservationGuardResult guard,
+            int requiredCount) =>
+            ";machine_input_required_count=" + requiredCount +
+            ";commitment_ledger_id=" + guard.LedgerId +
+            ";commitment_ledger_revision=" + guard.LedgerRevision +
+            ";material_reservation_guard_status=" + guard.Status +
+            ";material_reservation_ledger_id=" + guard.LedgerId +
+            ";material_reservation_ledger_revision=" + guard.LedgerRevision +
+            ";material_reservation_ids_json=" +
+            JsonSerializer.Serialize(guard.ReservationIds);
+
+        private static SmallModelActionParameter[]
+            MachineInputReservationParameters(
+                MachineInputMaterialReservationGuardResult guard,
+                int requiredCount) =>
+            [
+                Parameter("machine_input_required_count", requiredCount.ToString()),
+                Parameter("commitment_ledger_id", guard.LedgerId),
+                Parameter("commitment_ledger_revision", guard.LedgerRevision.ToString()),
+                Parameter("material_reservation_guard_status", guard.Status),
+                Parameter("material_reservation_ledger_id", guard.LedgerId),
+                Parameter("material_reservation_ledger_revision", guard.LedgerRevision.ToString()),
+                Parameter(
+                    "material_reservation_ids_json",
+                    JsonSerializer.Serialize(guard.ReservationIds))
+            ];
 
         private static string
             AnvilLoadoutExpectedEffect(

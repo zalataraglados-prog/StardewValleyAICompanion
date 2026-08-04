@@ -152,6 +152,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             new[]
             {
                 "farm.collect_machine_outputs",
+                "farm.load_supported_machine_input",
                 "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
@@ -175,6 +176,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             var expectedScope = optionId switch
             {
                 "farm.collect_machine_outputs" => "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
+                "farm.load_supported_machine_input" => "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
                 "foraging.clear_green_rain_bushes" => "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
@@ -226,6 +228,41 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Contains("structured_skill_and_mastery", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("executor.collect_machine_output", OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.DoesNotContain("farm.process_machines", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
+    public void SupportedMachineInputAdmissionRequiresBoundedNativeEvd214Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired(
+            "farm.load_supported_machine_input");
+
+        Assert.True(declaration.AutonomousCandidateEnabled);
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(
+            CapabilityCompilerStatus.StepCompilerDeclared,
+            declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler(
+            "farm.load_supported_machine_input"));
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(new[] { "EVD-214" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-214" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-214" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-214" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-214" }, declaration.OutputEvidenceIds);
+        Assert.Contains(
+            "exact_placement_bound_positive_deterministic",
+            declaration.TrainingEvidenceScope,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "no_additional_consumption_unreserved",
+            declaration.TrainingEvidenceScope,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "farm.load_supported_machine_input",
+            OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.DoesNotContain(
+            "farm.process_machines",
+            OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

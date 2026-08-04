@@ -992,6 +992,34 @@ namespace StardewAI.Core.Execution
                     reasons.Add(
                         "load_machine_input_support_intent_drifted");
                 }
+                if (supportIntent is not null && commitmentLedger is not null)
+                {
+                    var requiredCount = MachineSupportIntentProjection
+                        .RequiredInputCount(selectedInput.Value);
+                    var reservationGuard =
+                        new MachineInputMaterialReservationGuard()
+                            .Evaluate(
+                                snapshot,
+                                commitmentLedger,
+                                inputSlot!.Value,
+                                ReadString(
+                                    selectedInput.Value,
+                                    "qualified_item_id"),
+                                requiredCount);
+                    if (!reservationGuard.Ready)
+                    {
+                        reasons.AddRange(
+                            reservationGuard.BlockingReasons);
+                    }
+                    if (!MachineInputReservationMatches(
+                            action,
+                            reservationGuard,
+                            requiredCount))
+                    {
+                        reasons.Add(
+                            "load_machine_input_material_reservation_projection_drifted");
+                    }
+                }
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

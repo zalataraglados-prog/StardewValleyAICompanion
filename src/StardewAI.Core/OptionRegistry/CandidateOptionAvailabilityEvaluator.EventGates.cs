@@ -167,6 +167,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_machine_output_candidates");
             }
 
+            if (optionId == "farm.load_supported_machine_input")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_supported_machine_input_candidates",
+                    "no_available_supported_machine_input_candidates");
+            }
+
             if (optionId == "farm.care_for_pets")
             {
                 return EventCandidateAvailabilityReasons(
@@ -293,6 +301,11 @@ namespace StardewAI.Core.OptionRegistry
             if (string.Equals(optionId, "farm.collect_machine_outputs", StringComparison.Ordinal))
             {
                 return MachineOutputCollectionCandidates(snapshot, commitmentLedger);
+            }
+
+            if (string.Equals(optionId, "farm.load_supported_machine_input", StringComparison.Ordinal))
+            {
+                return SupportedMachineInputCandidates(snapshot, commitmentLedger);
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)

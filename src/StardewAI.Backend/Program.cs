@@ -1014,6 +1014,25 @@ public static class SnapshotValidator
         "volcano"
     };
 
+    private static readonly string[] TrainingMachineRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations",
+        "npcs",
+        "quests",
+        "world_progress",
+        "mods",
+        "modded_state"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
         CancellationToken cancellationToken = default,
@@ -1125,6 +1144,14 @@ public static class SnapshotValidator
         if (string.Equals(profile, "volcano", StringComparison.OrdinalIgnoreCase))
         {
             return VolcanoRequiredDomains;
+        }
+
+        if (string.Equals(
+                profile,
+                "training_machine",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return TrainingMachineRequiredDomains;
         }
 
         errors.Add("unsupported snapshot profile: " + profile);

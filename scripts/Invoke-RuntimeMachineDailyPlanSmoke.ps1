@@ -14,6 +14,7 @@ param(
     [int] $InputQuantity = 2,
     [string] $AdditionalItemsJson = "[]",
     [switch] $RequireAnvilDistributionFeedback,
+    [switch] $RequireMachineSupportIntent,
     [switch] $KeepGameRunning
 )
 
@@ -118,6 +119,84 @@ function Compute-StateHash($State) {
     }
 }
 
+function Get-StrategyLedgerIdentityKey {
+    param([string] $SaveId, [string] $PlayerId)
+    $identity = $SaveId + "`n" + $PlayerId
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($identity)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return -join ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") })
+    }
+    finally {
+        $sha.Dispose()
+    }
+}
+
+function Write-MachineSupportLedger {
+    param(
+        [string] $Root,
+        $Snapshot,
+        $Machine,
+        [string] $MachineItemId,
+        [string] $IntentId,
+        [string] $LocationId,
+        [int] $TargetTileX,
+        [int] $TargetTileY)
+
+    $saveId = [string]$Snapshot.save_id.value
+    $playerId = [string]$Snapshot.player_id.value
+    if ([string]::IsNullOrWhiteSpace($saveId) -or
+        [string]::IsNullOrWhiteSpace($playerId)) {
+        throw "Machine support ledger requires exact save and player identities."
+    }
+    $machineQualifiedId = [string]$Machine.qualified_item_id
+    if ([string]::IsNullOrWhiteSpace($machineQualifiedId)) {
+        throw "Machine support ledger requires the exact machine qualified item id."
+    }
+
+    $ledger = [ordered]@{
+        schema_version = "strategy_commitment_ledger.v1"
+        ledger_id = "strategy-ledger:$saveId`:$playerId"
+        save_id = $saveId
+        player_id = $playerId
+        revision = 1
+        updated_at = [DateTimeOffset]::UtcNow.ToString("O")
+        source_state_hash = [string]$Snapshot.state_hash
+        crop_planting_commitments = @()
+        material_reservations = @()
+        machine_relocation_intents = @()
+        machine_support_intents = @(
+            [ordered]@{
+                intent_id = $IntentId
+                revision = 1
+                status = "active"
+                stage = "placement_bound"
+                source_decision_id = "runtime-machine-support:$IntentId"
+                source_state_hash = [string]$Snapshot.state_hash
+                goal_id = "goal.economy.earn_money"
+                qualified_item_id = $machineQualifiedId
+                item_id = $MachineItemId
+                demand_class = "production_capacity_requirement"
+                support_kind = "machine_capacity_current_backlog"
+                evidence_status = "runtime_exact_placement_bound"
+                gross_benefit = 400
+                opportunity_cost = 60
+                net_benefit = 340
+                support_score = 0.034
+                required_additional_machine_count = 1
+                target_location_id = $LocationId
+                target_tile_x = $TargetTileX
+                target_tile_y = $TargetTileY
+                completion_reason = ""
+            })
+        history = @()
+    }
+    New-Item -ItemType Directory -Force -Path $Root | Out-Null
+    $identityKey = Get-StrategyLedgerIdentityKey -SaveId $saveId -PlayerId $playerId
+    Write-JsonFile (Join-Path $Root ($identityKey + ".json")) $ledger
+    return $ledger
+}
+
 function Find-MachineAtTile {
     param($Snapshot, [int] $X, [int] $Y)
     $machines = Read-FieldValue $Snapshot "farm" "machines"
@@ -192,6 +271,7 @@ if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
 $loopRoot = Join-Path $runDirectory "loop"
 $snapshotPath = Join-Path $runDirectory "full-machine-snapshot.json"
+$strategyLedgerRoot = Join-Path $runDirectory "strategy-commitments"
 $backendStdout = Join-Path $runDirectory "backend.stdout.log"
 $backendStderr = Join-Path $runDirectory "backend.stderr.log"
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
@@ -207,6 +287,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_STRATEGY_LEDGER_DIR = $env:STARDEWAI_STRATEGY_LEDGER_DIR
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
     ASPNETCORE_URLS = $env:ASPNETCORE_URLS
@@ -221,6 +302,7 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_STRATEGY_LEDGER_DIR = $strategyLedgerRoot
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:ASPNETCORE_URLS = $backendUrl
@@ -273,10 +355,46 @@ try {
         -Json $snapshotJson `
         -TimeoutSeconds 30 |
         Out-Null
+    $machine = Find-MachineAtTile `
+        -Snapshot $snapshot `
+        -X $TargetTileX `
+        -Y $TargetTileY
+    $supportIntentId = "machine-support:runtime:$RunId"
+    $seededSupportLedger = $null
+    $candidateOptionId = "farm.process_machines"
+    if ($RequireMachineSupportIntent) {
+        $seededSupportLedger = Write-MachineSupportLedger `
+            -Root $strategyLedgerRoot `
+            -Snapshot $snapshot `
+            -Machine $machine `
+            -MachineItemId $MachineItemId `
+            -IntentId $supportIntentId `
+            -LocationId $LocationId `
+            -TargetTileX $TargetTileX `
+            -TargetTileY $TargetTileY
+        Write-JsonFile `
+            (Join-Path $runDirectory "seeded-machine-support-ledger.json") `
+            $seededSupportLedger
+        $encodedStateHash = [uri]::EscapeDataString([string]$snapshot.state_hash)
+        $loadedSupportLedger = Invoke-JsonGet `
+            -Url "$backendUrl/api/v1/strategy/commitments/latest?stateHash=$encodedStateHash" `
+            -TimeoutSeconds 30
+        Write-JsonFile `
+            (Join-Path $runDirectory "loaded-machine-support-ledger.json") `
+            $loadedSupportLedger
+        $loadedSupportIntent = @($loadedSupportLedger.machine_support_intents) |
+            Where-Object { [string]$_.intent_id -eq $supportIntentId } |
+            Select-Object -First 1
+        if ($null -eq $loadedSupportIntent -or
+            [string]$loadedSupportIntent.status -ne "active") {
+            throw "Backend did not load the exact active machine support intent before candidate evaluation."
+        }
+        $candidateOptionId = "farm.load_supported_machine_input"
+    }
     $availabilityRequest = [ordered]@{
         state_hash = [string]$snapshot.state_hash
         candidate_option_ids =
-            @("farm.process_machines")
+            @($candidateOptionId)
         candidates = @()
         include_executor_calibration_options =
             $false
@@ -289,7 +407,7 @@ try {
         $availability.options |
         Where-Object {
             [string]$_.option_id -eq
-                "farm.process_machines"
+                $candidateOptionId
         } |
         ForEach-Object { $_.event_candidates } |
         Where-Object {
@@ -340,7 +458,7 @@ try {
         --sleep-ms 0 `
         --use-daily-plan `
         --daily-plan-max-candidates 1 `
-        --daily-plan-candidate-options "farm.process_machines" `
+        --daily-plan-candidate-options $candidateOptionId `
         --daily-plan-candidate-kind "load_machine_input_tile" `
         --daily-plan-candidate-id $targetCandidateId `
         --after-snapshot-wait-ms 1000 `
@@ -385,6 +503,19 @@ try {
         Write-JsonFile (Join-Path $runDirectory "queue-rejected.json") $queue
         throw "Machine daily-plan did not compile a load_machine_input item."
     }
+    if ($RequireMachineSupportIntent) {
+        $compiledIntentId = Read-QueueParameter `
+            -QueueItem $loadItem `
+            -Name "machine_support_intent_id"
+        $reservationStatus = Read-QueueParameter `
+            -QueueItem $loadItem `
+            -Name "material_reservation_guard_status"
+        if ($compiledIntentId -ne $supportIntentId -or
+            $reservationStatus -ne "ready_no_active_material_reservations") {
+            Write-JsonFile (Join-Path $runDirectory "queue-support-rejected.json") $queue
+            throw "Compiled load did not preserve the exact support intent and material reservation guard."
+        }
+    }
     $loadExecution = @($execution.step_results) | Where-Object {
         $_.queue_item_id -eq
             $loadItem.queue_item_id -and
@@ -400,6 +531,34 @@ try {
     Start-Sleep -Milliseconds 500
     $afterSnapshot =
         Invoke-JsonGet -Url $snapshotUrl -TimeoutSeconds 30
+    $afterSnapshotPath = Join-Path $runDirectory "after-machine-snapshot.json"
+    Write-JsonFile $afterSnapshotPath $afterSnapshot
+    $afterSnapshotJson = Get-Content -LiteralPath $afterSnapshotPath -Raw
+    Invoke-JsonPostRaw `
+        -Url "$backendUrl/api/v1/snapshots" `
+        -Json $afterSnapshotJson `
+        -TimeoutSeconds 30 |
+        Out-Null
+    $completedSupportIntent = $null
+    $completedSupportLedger = $null
+    if ($RequireMachineSupportIntent) {
+        $encodedStateHash = [uri]::EscapeDataString([string]$afterSnapshot.state_hash)
+        $completedSupportLedger = Invoke-JsonGet `
+            -Url "$backendUrl/api/v1/strategy/commitments/latest?stateHash=$encodedStateHash" `
+            -TimeoutSeconds 30
+        Write-JsonFile `
+            (Join-Path $runDirectory "completed-machine-support-ledger.json") `
+            $completedSupportLedger
+        $completedSupportIntent = @($completedSupportLedger.machine_support_intents) |
+            Where-Object { [string]$_.intent_id -eq $supportIntentId } |
+            Select-Object -First 1
+        if ($null -eq $completedSupportIntent -or
+            [string]$completedSupportIntent.status -ne "completed" -or
+            [string]$completedSupportIntent.completion_reason -ne
+                "exact_target_machine_processing_observed") {
+            throw "Machine support intent did not reconcile to exact-target processing completion."
+        }
+    }
     $additionalCountsAfter = [ordered]@{}
     foreach ($additionalItem in $additionalItems) {
         $additionalId =
@@ -443,6 +602,18 @@ try {
         qualified_item_id = $QualifiedItemId
         machine_item_id = $MachineItemId
         target_candidate_id = $targetCandidateId
+        candidate_option_id = $candidateOptionId
+        machine_support_intent_required =
+            [bool]$RequireMachineSupportIntent
+        machine_support_intent_id = if ($RequireMachineSupportIntent) {
+            $supportIntentId
+        } else { "" }
+        machine_support_intent_status = if ($null -ne $completedSupportIntent) {
+            [string]$completedSupportIntent.status
+        } else { "not_applicable" }
+        machine_support_completion_reason = if ($null -ne $completedSupportIntent) {
+            [string]$completedSupportIntent.completion_reason
+        } else { "not_applicable" }
         additional_items = $additionalItems
         additional_counts_before =
             $additionalCountsBefore

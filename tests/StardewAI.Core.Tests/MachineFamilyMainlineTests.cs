@@ -4,6 +4,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 
@@ -20,6 +21,27 @@ public sealed class MachineFamilyMainlineTests
         new object[] { new MachineFamily("Furnace", "(BC)13", "378", "(O)378", "334", "(O)334", 5, 60, 30) },
         new object[] { new MachineFamily("Charcoal Kiln", "(BC)114", "388", "(O)388", "382", "(O)382", 2, 15, 30) }
     };
+
+    [Fact]
+    public void PurposeLimitedPredictionCarriesAdditionalConsumptionForValueGate()
+    {
+        using var machine = JsonDocument.Parse(
+            """{"machine_data":{"status":"blocked","reason":"machine_profile_minimal_skips_machine_data"}}""");
+        using var completeInput = JsonDocument.Parse(
+            """{"sale_price":50,"predicted_output":{"sale_price":400,"stack":1,"required_count":1,"additional_consumed_item_count":0}}""");
+        using var incompleteInput = JsonDocument.Parse(
+            """{"sale_price":50,"predicted_output":{"sale_price":400,"stack":1,"required_count":1}}""");
+
+        Assert.Equal(
+            350,
+            MachineSupportIntentProjection.CurrentInputNetValue(
+                machine.RootElement,
+                completeInput.RootElement));
+        Assert.Null(
+            MachineSupportIntentProjection.CurrentInputNetValue(
+                machine.RootElement,
+                incompleteInput.RootElement));
+    }
 
     [Theory]
     [MemberData(nameof(Families))]
@@ -214,6 +236,103 @@ public sealed class MachineFamilyMainlineTests
     }
 
     [Fact]
+    public void SupportedMachineInputOptionRequiresIntentAndReusesLoadChain()
+    {
+        var family = (MachineFamily)Families
+            .Single(row => ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var snapshot = Snapshot(FamilySnapshot(family));
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+        var withoutIntent = evaluator.Evaluate(
+            snapshot,
+            new[] { "farm.load_supported_machine_input" });
+
+        Assert.Empty(Assert.Single(withoutIntent.Options).EventCandidates);
+
+        var ledger = MachineSupportLedger(family);
+        var availability = evaluator.Evaluate(
+            snapshot,
+            new[] { "farm.load_supported_machine_input" },
+            commitmentLedger: ledger);
+        var option = Assert.Single(availability.Options);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("load_machine_input_tile", candidate.Kind);
+        Assert.Equal("active", Parameter(
+            candidate.Parameters,
+            "machine_support_continuation_status"));
+        Assert.Equal("ready_no_active_material_reservations", Parameter(
+            candidate.Parameters,
+            "material_reservation_guard_status"));
+
+        var ranked = Assert.Single(new EventCandidateRanker()
+            .Rank(new BaselineTrainingReport(), availability));
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+        Assert.Equal(
+            new[] { "move_to_tile", "load_machine_input" },
+            plan.Steps.Select(step => step.Kind).ToArray());
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot, ledger);
+        Assert.Equal("pending", queue.Status);
+        var load = queue.Items.Single(item =>
+            item.OptionId == "executor.load_machine_input");
+        Assert.Equal("ready_no_active_material_reservations", Parameter(
+            load.NormalizedCommand.Parameters,
+            "material_reservation_guard_status"));
+        var dispatch = new ActionQueueDispatchReadinessService().Evaluate(
+            queue,
+            load,
+            ledger,
+            snapshot.StateHash);
+        Assert.True(dispatch.Ready, string.Join(";", dispatch.BlockingReasons));
+    }
+
+    [Fact]
+    public void SupportedMachineInputRejectsQuantityReservedForAnotherGoal()
+    {
+        var family = (MachineFamily)Families
+            .Single(row => ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var snapshot = Snapshot(MaterialGraphSnapshot(family));
+        var ledger = MachineSupportLedger(family);
+        ledger.MaterialReservations =
+        [
+            new MaterialReservation
+            {
+                ReservationId = "reserve:keg-input",
+                Revision = 1,
+                Status = StrategyCommitmentStatuses.Active,
+                NodeId = "player:123",
+                SlotIndex = 0,
+                QualifiedItemId = family.InputQualifiedId,
+                Quantity = 2,
+                Purpose = "another committed goal"
+            }
+        ];
+
+        var candidate = Assert.Single(
+            new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    snapshot,
+                    new[] { "farm.load_supported_machine_input" },
+                    commitmentLedger: ledger)
+                .Options[0]
+                .EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "machine_input_reserved_for_other_goal",
+            candidate.BlockReasons);
+        Assert.Equal("blocked", Parameter(
+            candidate.Parameters,
+            "material_reservation_guard_status"));
+        Assert.Equal("[\"reserve:keg-input\"]", Parameter(
+            candidate.Parameters,
+            "material_reservation_ids_json"));
+    }
+
+    [Fact]
     public void SupportedMachineLoadRejectsNonPositiveCurrentInput()
     {
         var family = (MachineFamily)Families
@@ -324,6 +443,25 @@ public sealed class MachineFamilyMainlineTests
             MachineRow(66, 15, family, ready: false, minutes: -1, held: false, loadable: true));
     }
 
+    private static string MaterialGraphSnapshot(MachineFamily family)
+    {
+        return FamilySnapshot(family).Replace(
+            "\"machines\": {\"value\"",
+            "\"material_inventory_graph\": {\"value\":{" +
+            "\"schema_version\":\"material_inventory_graph.v1\"," +
+            "\"status\":\"available\",\"player_id\":123," +
+            "\"inventory_nodes\":[{\"node_id\":\"player:123\"," +
+            "\"inventory_kind\":\"player\",\"supply_state\":\"available\"," +
+            "\"actor_use_authorized\":true,\"slots\":[{" +
+            "\"slot_index\":0,\"qualified_item_id\":\"" +
+            family.InputQualifiedId + "\",\"stack\":2}]}]}" +
+            ",\"status\":\"available\",\"source\":{" +
+            "\"kind\":\"game_object\",\"path\":\"test\"}," +
+            "\"adapter\":\"test\",\"read_at_tick\":1,\"confidence\":1}," +
+            "\"machines\": {\"value\"",
+            StringComparison.Ordinal);
+    }
+
     private static string BlockedFamilySnapshot(MachineFamily family)
     {
         return BaseSnapshot(
@@ -409,7 +547,7 @@ public sealed class MachineFamilyMainlineTests
     private static string LoadableInput(MachineFamily family)
     {
         return """
-        [{"slot_index":0,"item_id":"INPUT_ID","qualified_item_id":"INPUT_QID","stack":2,"quality":0,"sale_price":INPUT_PRICE,"predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"family_rule","required_item_id":"INPUT_QID","effective_minutes_until_ready":DURATION,"item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"quality":0,"sale_price":OUTPUT_PRICE},"sale_price":OUTPUT_PRICE,"stack":1,"quality":0},"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"}]
+        [{"slot_index":0,"item_id":"INPUT_ID","qualified_item_id":"INPUT_QID","stack":2,"quality":0,"sale_price":INPUT_PRICE,"predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"family_rule","required_item_id":"INPUT_QID","required_count":1,"additional_consumed_item_count":0,"effective_minutes_until_ready":DURATION,"item":{"item_id":"OUTPUT_ID","qualified_item_id":"OUTPUT_QID","stack":1,"quality":0,"sale_price":OUTPUT_PRICE},"sale_price":OUTPUT_PRICE,"stack":1,"quality":0},"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"}]
         """
         .Replace("INPUT_ID", family.InputItemId)
         .Replace("INPUT_QID", family.InputQualifiedId)

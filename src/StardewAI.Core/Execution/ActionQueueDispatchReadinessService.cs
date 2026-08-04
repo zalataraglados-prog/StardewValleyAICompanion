@@ -124,18 +124,6 @@ public sealed class ActionQueueDispatchReadinessService
             }
         }
 
-        if (string.Equals(
-                item.OptionId,
-                "executor.load_machine_input",
-                StringComparison.Ordinal))
-        {
-            result.BlockingReasons =
-                reasons.Distinct(StringComparer.Ordinal).ToArray();
-            result.Ready = result.BlockingReasons.Length == 0;
-            result.Status = result.Ready ? "ready" : "blocked";
-            return result;
-        }
-
         var guardStatus = Parameter(item, "material_reservation_guard_status");
         if (!string.Equals(guardStatus, "ready", StringComparison.Ordinal) &&
             !string.Equals(
