@@ -183,6 +183,66 @@ public sealed class MachinePlacementMainlineTests
     }
 
     [Fact]
+    public void SupportedMachineCapacityContinuesPlacementAndRetriesBoundTarget()
+    {
+        var snapshot = Snapshot();
+        var ledger = Ledger(revision: 3);
+        ledger.MachineSupportIntents =
+        [
+            new MachineSupportIntent
+            {
+                IntentId = "machine-support:money:keg",
+                Revision = 2,
+                Status = StrategyCommitmentStatuses.Active,
+                Stage = MachineSupportIntentStages.PlacementBound,
+                SourceDecisionId = "machine-place:keg",
+                SourceStateHash = snapshot.StateHash,
+                GoalId = "goal.economy.earn_money",
+                QualifiedItemId = "(BC)12",
+                ItemId = "12",
+                DemandClass = "production_capacity_requirement",
+                SupportKind = "machine_capacity_current_backlog",
+                EvidenceStatus = "complete",
+                GrossBenefit = 400,
+                OpportunityCost = 60,
+                NetBenefit = 340,
+                SupportScore = 0.034,
+                RequiredAdditionalMachineCount = 1,
+                TargetLocationId = "FarmHouse",
+                TargetTileX = 7,
+                TargetTileY = 5
+            }
+        ];
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.establish_supported_machine_capacity" },
+                commitmentLedger: ledger);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("place_machine_item", candidate.Kind);
+        Assert.Equal(7, candidate.TileX);
+        Assert.Equal(5, candidate.TileY);
+        Assert.Equal(
+            "machine-support:money:keg",
+            Parameter(candidate.Parameters, "machine_support_intent_id"));
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.economy.earn_money"));
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+
+        Assert.Equal(
+            new[] { "move_to_tile", "place_machine_item" },
+            plan.Steps.Select(step => step.Kind).ToArray());
+    }
+
+    [Fact]
     public void RemotePlacementEmitsOneConnectorWithPlacementContinuation()
     {
         var snapshot = Snapshot(includeRemoteLocation: true);

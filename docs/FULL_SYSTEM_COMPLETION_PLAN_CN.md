@@ -308,3 +308,21 @@ manifest；再运行 V1 全量训练、独立存档离线/在线评测和第三�
 17 allowlist / 0 Product Executor，585/585 exports，blocking 0。广义 `farm.process_machines`、随机输出、
 附加耗材、任务/收集需求及完整制作-摆放-投料生命周期仍未因此准入。下一切片必须继续从这些边界中
 选择一个可完整闭合的高层语义，不能把 EVD-214 外推为机器模块全部完成。
+
+## 2026-08-04 受支持机器容量生命周期编排（EVD-215 待运行）
+
+新增 `farm.establish_supported_machine_capacity`，把已有机器支持意图推进成严格的滚动状态机：无活动
+意图时只选择一个 `goal.economy.earn_money` 下证据完整、当前有界正净收益的制作候选；
+`craft_selected` 阶段只暴露绑定同一意图的既有 `place_machine_item`；`placement_bound` 阶段优先暴露
+同一精确机器的既有 `load_machine_input_tile`，若机器尚未实际出现则重放原精确目标的摆放候选。
+任意无效活动意图、目标不一致或证据漂移都失败关闭，且不会趁机创建第二个意图。
+
+这不是第二套机器实现。它只过滤并组合已有
+`craft_machine_item -> executor.craft_machine_item`、
+`place_machine_item -> executor.place_machine` 和
+`load_machine_input_tile -> executor.load_machine_input` 三条原生链，账本绑定与派发校验仍由既有组件负责。
+分阶段候选/排名/计划/队列测试已经通过，且非赚钱目标不能排名该生命周期。当前权威对账为
+100 registered / 168 semantic / 88 compiler-bound / 18 five-gate / 17 allowlist / 0 Product Executor，
+585/585 exports，blocking 0。该新语义仍未进入训练白名单；退出条件是隐藏隔离运行从制作开始，经新
+语义跨快照完成摆放、首次投料、处理开始、意图完成和训练行落盘。任务/收集需求机器处理继续是其后
+独立切片，不能借本状态机放行。

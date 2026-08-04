@@ -290,6 +290,48 @@ public sealed class MachineFamilyMainlineTests
     }
 
     [Fact]
+    public void SupportedMachineCapacityUsesExistingLoadChainAfterPlacement()
+    {
+        var family = (MachineFamily)Families
+            .Single(row => ((MachineFamily)row[0]).DisplayName == "Keg")[0];
+        var snapshot = Snapshot(FamilySnapshot(family));
+        var ledger = MachineSupportLedger(family);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.establish_supported_machine_capacity" },
+                commitmentLedger: ledger);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("load_machine_input_tile", candidate.Kind);
+        Assert.Equal(66, candidate.TileX);
+        Assert.Equal(15, candidate.TileY);
+        Assert.Equal(
+            "active",
+            Parameter(
+                candidate.Parameters,
+                "machine_support_continuation_status"));
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.economy.earn_money"));
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            ledger);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Contains(
+            queue.Items,
+            item => item.OptionId == "executor.load_machine_input");
+    }
+
+    [Fact]
     public void SupportedMachineInputRejectsQuantityReservedForAnotherGoal()
     {
         var family = (MachineFamily)Families

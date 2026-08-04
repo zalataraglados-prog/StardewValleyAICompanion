@@ -73,6 +73,17 @@ namespace StardewAI.Core.Training
                                 candidate.ExpectedEffect,
                                 goalId)
                             : null;
+                    if (string.Equals(
+                            option.OptionId,
+                            "farm.establish_supported_machine_capacity",
+                            StringComparison.Ordinal) &&
+                        !SupportedMachineCapacityMatchesGoal(
+                            candidate,
+                            goalSupport,
+                            goalId))
+                    {
+                        continue;
+                    }
                     var machineSupportIntentId =
                         goalSupport?.Status ==
                         "supported_bounded_positive_net_benefit"
@@ -559,6 +570,52 @@ namespace StardewAI.Core.Training
             return double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var result)
                 ? result
                 : null;
+        }
+
+        private static bool SupportedMachineCapacityMatchesGoal(
+            EventCandidate candidate,
+            ExplicitGoalSupportDemand? goalSupport,
+            string goalId)
+        {
+            if (!string.Equals(
+                    goalId,
+                    "goal.economy.earn_money",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (string.Equals(
+                    candidate.Kind,
+                    "craft_machine_item",
+                    StringComparison.Ordinal))
+            {
+                return string.Equals(
+                    goalSupport?.Status,
+                    "supported_bounded_positive_net_benefit",
+                    StringComparison.Ordinal);
+            }
+
+            return (string.Equals(
+                        candidate.Kind,
+                        "place_machine_item",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        candidate.Kind,
+                        "load_machine_input_tile",
+                        StringComparison.Ordinal)) &&
+                string.Equals(
+                    ParseValue(
+                        candidate.ExpectedEffect,
+                        "machine_support_continuation_status="),
+                    "active",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ParseValue(
+                        candidate.ExpectedEffect,
+                        "machine_support_goal_id="),
+                    goalId,
+                    StringComparison.Ordinal);
         }
 
         private static string ParseValue(string source, string prefix)

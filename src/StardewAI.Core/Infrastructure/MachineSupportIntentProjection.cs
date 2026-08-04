@@ -28,7 +28,7 @@ internal static class MachineSupportIntentProjection
         string currentLocationId)
     {
         return ledger?.MachineSupportIntents
-            .Where(Valid)
+            .Where(IsValid)
             .Where(row => string.Equals(
                 row.QualifiedItemId,
                 qualifiedItemId,
@@ -62,7 +62,7 @@ internal static class MachineSupportIntentProjection
         int tileY)
     {
         return ledger?.MachineSupportIntents
-            .Where(Valid)
+            .Where(IsValid)
             .Where(row =>
                 string.Equals(
                     row.Stage,
@@ -276,7 +276,7 @@ internal static class MachineSupportIntentProjection
                 continuation.Reason)
         ];
 
-    private static bool Valid(MachineSupportIntent row) =>
+    public static bool IsValid(MachineSupportIntent row) =>
         string.Equals(
             row.Status,
             StrategyCommitmentStatuses.Active,

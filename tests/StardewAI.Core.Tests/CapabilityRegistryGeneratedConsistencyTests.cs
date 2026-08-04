@@ -266,6 +266,30 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void SupportedMachineCapacityLifecycleStaysOutOfTrainingUntilRollingRuntimeProof()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired(
+            "farm.establish_supported_machine_capacity");
+
+        Assert.True(declaration.AutonomousCandidateEnabled);
+        Assert.Equal(
+            CapabilityCompilerStatus.StepCompilerDeclared,
+            declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler(
+            "farm.establish_supported_machine_capacity"));
+        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Contains(
+            TrainingAdmissionExclusionReason.RuntimeEvidenceMissing,
+            declaration.TrainingExclusionReasons);
+        Assert.Contains(
+            TrainingAdmissionExclusionReason.OutputEvidenceMissing,
+            declaration.TrainingExclusionReasons);
+        Assert.DoesNotContain(
+            "farm.establish_supported_machine_capacity",
+            OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
     public void GreenRainResourceClumpAdmissionRequiresExactNativeMatrixAndEvd212Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.clear_green_rain_bushes");

@@ -13,6 +13,7 @@ namespace StardewAI.Core.Training
             {
                 ["farm.collect_machine_outputs"] = new[] { "collect_machine_output_tile" },
                 ["farm.load_supported_machine_input"] = new[] { "load_machine_input_tile" },
+                ["farm.establish_supported_machine_capacity"] = new[] { "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },

@@ -14,6 +14,62 @@ namespace StardewAI.Core.Tests;
 public sealed partial class MachineCraftingMainlineTests
 {
     [Fact]
+    public void SupportedMachineCapacityStartsOnlyOnePositiveCraftStageForMoneyGoal()
+    {
+        var snapshot = Snapshot(
+            timesCrafted: 2,
+            ready: true,
+            potentialInputs: 2,
+            processMinutes: 4000);
+        var ledger = new StrategyCommitmentLedger
+        {
+            LedgerId = "ledger:machine-support"
+        };
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "farm.establish_supported_machine_capacity" },
+                commitmentLedger: ledger);
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("craft_machine_item", candidate.Kind);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "grandpa_max_score_year3"));
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.economy.earn_money"));
+        Assert.Equal(
+            "supported_bounded_positive_net_benefit",
+            Parameter(ranked.Parameters, "goal_support_status"));
+        Assert.False(string.IsNullOrWhiteSpace(Parameter(
+            ranked.Parameters,
+            "machine_support_intent_id")));
+
+        var plan = new DailyPlanCompiler().Compile(
+            [ranked],
+            snapshot.StateHash,
+            "goal.economy.earn_money");
+        var boundLedger = BindCraftSupportIntent(
+            plan,
+            snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            snapshot,
+            boundLedger);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(
+            "executor.craft_machine_item",
+            Assert.Single(queue.Items).OptionId);
+    }
+
+    [Fact]
     public void EarnMoneyGoalAddsOnlyBoundedPositiveMachineSupport()
     {
         var snapshot = Snapshot(

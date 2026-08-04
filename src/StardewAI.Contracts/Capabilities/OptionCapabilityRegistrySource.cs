@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -266,7 +266,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
-            "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input",
+            "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity",
             "farm.collect_animal_products", "farm.care_for_pets", "skills.read_books",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -277,7 +277,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
-            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.collect_animal_products", "farm.care_for_pets",
+            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.collect_animal_products", "farm.care_for_pets",
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -312,7 +312,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly string[] RegisteredOptionIds =
         {
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.collect_animal_products",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.collect_animal_products",
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "economy.buy_supplies",

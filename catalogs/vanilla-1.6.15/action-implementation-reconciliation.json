@@ -1,7 +1,7 @@
 {
   "schema_version": "stardewai.action_implementation_reconciliation.v1",
   "authority_policy": "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
-  "registered_option_count": 99,
+  "registered_option_count": 100,
   "primary_engine_count": 10,
   "orphan_compiler_count": 0,
   "orphan_compiler_ids": [],
@@ -16,7 +16,7 @@
     "engine.inventory_transfer": 4,
     "engine.movement_navigation": 3,
     "engine.recovery_timing": 3,
-    "engine.strategy_orchestration": 33,
+    "engine.strategy_orchestration": 34,
     "engine.tool_harvest": 15
   },
   "options": [
@@ -1625,6 +1625,28 @@
       "compilerTrainingGate": "RuntimeVerified",
       "runtimeTrainingGate": "RuntimeVerified",
       "outputTrainingGate": "RuntimeVerified"
+    },
+    {
+      "optionId": "farm.establish_supported_machine_capacity",
+      "domain": "farm",
+      "primaryEngineId": "engine.strategy_orchestration",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator",
+      "compilerBinding": "step",
+      "runtimeBinding": "internal_execution_pipeline",
+      "verifierBinding": "pending_runtime_postcondition",
+      "evidenceBinding": "pending",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "Declared",
+      "compilerStatus": "StepCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RegisteredOnly",
+      "readTrainingGate": "DeclaredOnly",
+      "candidateTrainingGate": "DeclaredOnly",
+      "compilerTrainingGate": "DeclaredOnly",
+      "runtimeTrainingGate": "Missing",
+      "outputTrainingGate": "Missing"
     },
     {
       "optionId": "farm.load_supported_machine_input",

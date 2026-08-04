@@ -1,3 +1,21 @@
+2026-08-04 supported machine-capacity lifecycle orchestration (runtime admission pending)
+
+- Registered `farm.establish_supported_machine_capacity` as a rolling semantic
+  over the existing native craft, placement, and supported-input chains.
+- No active intent selects at most one bounded positive-net craft for
+  `goal.economy.earn_money`; other goals produce no ranked lifecycle candidate.
+- `craft_selected` continues exact placement. `placement_bound` continues the
+  exact machine load, or retries the same target when placement did not land.
+- Focused machine/capability regression PASS 53/53 before the final added
+  governance assertion; targeted follow-up PASS 2/2.
+- Full Core PASS 1510/1510; Backend PASS 106/106.
+- Full solution Release build PASS: 0 errors, 5 pre-existing warnings.
+- Authoritative reconciliation: exports 585/585, blocking 0; registered 100,
+  semantic 168, compiler-bound 88, five-gate 18, allowlist 17, Product Executor 0.
+- The new lifecycle remains outside the training allowlist until one hidden
+  rolling runtime proves craft -> place -> first load -> processing observation,
+  intent completion, and training-row output under the new high-level option.
+
 2026-08-04 bounded ready machine-output training admission
 
 - Added `farm.collect_machine_outputs` as an output-only semantic view over the

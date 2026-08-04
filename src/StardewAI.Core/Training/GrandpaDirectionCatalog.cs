@@ -31,8 +31,8 @@ namespace StardewAI.Core.Training
         {
             CreateDirect("earn_money",
                 "grandpa.direct.earn_money",
-                new[] { "economy.sell_items", "economy.ship_items" },
-                new[] { "sell_shop_item", "ship_inventory_item_to_bin" },
+                new[] { "economy.sell_items", "economy.ship_items", "farm.establish_supported_machine_capacity" },
+                new[] { "sell_shop_item", "ship_inventory_item_to_bin", "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
                 "Cannot bind sell/ship candidates because required transparent sell/ship fields are unavailable."),
             CreateDirect("raise_friendships",
                 "grandpa.direct.raise_friendships",

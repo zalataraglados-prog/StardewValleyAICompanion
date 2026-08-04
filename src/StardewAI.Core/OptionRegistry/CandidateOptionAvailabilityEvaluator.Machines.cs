@@ -63,6 +63,89 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
+        private EventCandidate[] SupportedMachineCapacityLifecycleCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            var activeIntents = commitmentLedger?.MachineSupportIntents
+                .Where(intent => string.Equals(
+                    intent.Status,
+                    StrategyCommitmentStatuses.Active,
+                    StringComparison.Ordinal))
+                .OrderBy(intent => intent.IntentId, StringComparer.Ordinal)
+                .ToArray() ?? Array.Empty<MachineSupportIntent>();
+            if (activeIntents.Length == 0)
+            {
+                return MachineCraftingCandidates(snapshot, commitmentLedger)
+                    .Select(candidate => new
+                    {
+                        Candidate = candidate,
+                        Support = ExplicitGoalSupportProjection.Read(
+                            candidate.Kind,
+                            candidate.ExpectedEffect,
+                            "goal.economy.earn_money")
+                    })
+                    .Where(row => string.Equals(
+                        row.Support.Status,
+                        "supported_bounded_positive_net_benefit",
+                        StringComparison.Ordinal))
+                    .OrderByDescending(row => row.Candidate.Available)
+                    .ThenByDescending(row => row.Support.NetBenefit)
+                    .ThenBy(row => row.Candidate.CandidateId, StringComparer.Ordinal)
+                    .Take(1)
+                    .Select(row => row.Candidate)
+                    .ToArray();
+            }
+
+            var intent = activeIntents[0];
+            if (!MachineSupportIntentProjection.IsValid(intent))
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            EventCandidate[] ForIntent(IEnumerable<EventCandidate> candidates) =>
+                candidates
+                    .Where(candidate => string.Equals(
+                        ReadParameter(
+                            candidate.Parameters,
+                            "machine_support_intent_id"),
+                        intent.IntentId,
+                        StringComparison.Ordinal))
+                    .ToArray();
+
+            if (string.Equals(
+                    intent.Stage,
+                    MachineSupportIntentStages.PlacementBound,
+                    StringComparison.Ordinal))
+            {
+                var load = ForIntent(
+                    SupportedMachineInputCandidates(
+                        snapshot,
+                        commitmentLedger));
+                if (load.Length > 0)
+                {
+                    return load;
+                }
+            }
+
+            if (string.Equals(
+                    intent.Stage,
+                    MachineSupportIntentStages.CraftSelected,
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    intent.Stage,
+                    MachineSupportIntentStages.PlacementBound,
+                    StringComparison.Ordinal))
+            {
+                return ForIntent(
+                    MachinePlacementCandidates(
+                        snapshot,
+                        commitmentLedger));
+            }
+
+            return Array.Empty<EventCandidate>();
+        }
+
         private EventCandidate[] MachineServiceCandidates(
             SnapshotEnvelope snapshot,
             StrategyCommitmentLedger? commitmentLedger)
