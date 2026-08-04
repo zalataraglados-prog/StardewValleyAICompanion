@@ -67,7 +67,11 @@ namespace StardewAI.Core.Training
                                     goalId)
                             : AnvilReforgeStrategicDemand.Blocked;
                     var goalSupport = candidate.Kind ==
-                        "craft_machine_item"
+                            "craft_machine_item" ||
+                        candidate.Kind == "place_machine_item" &&
+                        candidate.ExpectedEffect.Contains(
+                            "machine_demand_class=priority_task_requirement",
+                            StringComparison.Ordinal)
                             ? ExplicitGoalSupportProjection.Read(
                                 candidate.Kind,
                                 candidate.ExpectedEffect,
@@ -85,8 +89,8 @@ namespace StardewAI.Core.Training
                         continue;
                     }
                     var machineSupportIntentId =
-                        goalSupport?.Status ==
-                        "supported_bounded_positive_net_benefit"
+                        ExplicitGoalSupportProjection.IsSupported(
+                            goalSupport)
                             ? "machine-support:" +
                               goalId + ":" +
                               candidate.CandidateId +
@@ -120,9 +124,15 @@ namespace StardewAI.Core.Training
                                         .SmallModelActionParameter>()
                                 : ExplicitGoalSupportProjection
                                     .Parameters(goalSupport))
-                        .Concat(
+                        .Where(parameter =>
                             string.IsNullOrWhiteSpace(
-                                machineSupportIntentId)
+                                machineSupportIntentId) ||
+                            !string.Equals(
+                                parameter.Name,
+                                "machine_support_intent_id",
+                                StringComparison.Ordinal))
+                        .Concat(string.IsNullOrWhiteSpace(
+                            machineSupportIntentId)
                                 ? Array.Empty<
                                     StardewAI.Contracts.Execution
                                         .SmallModelActionParameter>()
@@ -131,10 +141,8 @@ namespace StardewAI.Core.Training
                                     new StardewAI.Contracts.Execution
                                         .SmallModelActionParameter
                                     {
-                                        Name =
-                                            "machine_support_intent_id",
-                                        Value =
-                                            machineSupportIntentId
+                                        Name = "machine_support_intent_id",
+                                        Value = machineSupportIntentId
                                     }
                                 ])
                         .ToArray();
@@ -577,6 +585,30 @@ namespace StardewAI.Core.Training
             ExplicitGoalSupportDemand? goalSupport,
             string goalId)
         {
+            if (string.Equals(
+                    goalSupport?.Status,
+                    ExplicitGoalSupportProjection.TaskSupportStatus,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            var continuationDemandClass = ParseValue(
+                candidate.ExpectedEffect,
+                "machine_support_demand_class=");
+            if (string.Equals(
+                    continuationDemandClass,
+                    "priority_task_requirement",
+                    StringComparison.Ordinal))
+            {
+                return string.Equals(
+                    ParseValue(
+                        candidate.ExpectedEffect,
+                        "machine_support_continuation_status="),
+                    "active",
+                    StringComparison.Ordinal);
+            }
+
             if (!string.Equals(
                     goalId,
                     "goal.economy.earn_money",
@@ -592,7 +624,7 @@ namespace StardewAI.Core.Training
             {
                 return string.Equals(
                     goalSupport?.Status,
-                    "supported_bounded_positive_net_benefit",
+                    ExplicitGoalSupportProjection.EconomicSupportStatus,
                     StringComparison.Ordinal);
             }
 

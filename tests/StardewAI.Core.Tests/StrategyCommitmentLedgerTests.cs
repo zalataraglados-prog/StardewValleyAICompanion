@@ -337,6 +337,48 @@ public sealed class StrategyCommitmentLedgerTests
     }
 
     [Fact]
+    public void ExactCollectionTaskCanBindInitialInventoryMachinePlacement()
+    {
+        var snapshot = MachineSupportSnapshot(processing: false);
+        var result = new MachineSupportIntentLedgerService().Upsert(
+            null,
+            snapshot,
+            new MachineSupportIntentUpsertRequest
+            {
+                StateHash = snapshot.StateHash,
+                IntentId = "machine-support:task:keg",
+                Stage = MachineSupportIntentStages.PlacementBound,
+                SourceDecisionId = "machine-place:task:keg",
+                GoalId = "goal.grandpa_max_score_year3",
+                QualifiedItemId = "(BC)12",
+                ItemId = "12",
+                DemandClass = "priority_task_requirement",
+                SupportKind =
+                    "machine_capacity_active_collection_task",
+                EvidenceStatus =
+                    "[\"ordinary_quest:ResourceCollectionQuest:96\"]",
+                TaskSourcesJson =
+                    "[\"ordinary_quest:ResourceCollectionQuest:96\"]",
+                SupportScore = 0.12,
+                RequiredAdditionalMachineCount = 1,
+                TargetLocationId = "Farm",
+                TargetTileX = 7,
+                TargetTileY = 5
+            },
+            "2026-08-05T01:00:00Z");
+
+        Assert.True(result.Accepted, string.Join(";", result.Errors));
+        var intent = Assert.Single(result.Ledger!.MachineSupportIntents);
+        Assert.Equal(1, intent.Revision);
+        Assert.Equal(
+            MachineSupportIntentStages.PlacementBound,
+            intent.Stage);
+        Assert.Equal(
+            "[\"ordinary_quest:ResourceCollectionQuest:96\"]",
+            intent.TaskSourcesJson);
+    }
+
+    [Fact]
     public void CrossLocationRelocationRequiresTypedResolvedRouteAndBenefit()
     {
         var snapshot = CrossLocationMachineRelocationSnapshot();

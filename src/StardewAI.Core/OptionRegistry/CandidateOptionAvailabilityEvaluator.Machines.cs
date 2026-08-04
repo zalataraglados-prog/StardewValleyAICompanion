@@ -54,7 +54,7 @@ namespace StardewAI.Core.OptionRegistry
                     reservation.Status,
                     StrategyCommitmentStatuses.Active,
                     StringComparison.Ordinal)) == true;
-            var candidates = QuestCandidates(snapshot)
+            var candidates = QuestCandidates(snapshot, commitmentLedger)
                 .Where(candidate => candidate.Kind is
                     "collect_machine_output_tile" or
                     "load_machine_input_tile")
@@ -80,6 +80,22 @@ namespace StardewAI.Core.OptionRegistry
             foreach (var candidate in candidates.Where(candidate =>
                          candidate.Kind == "load_machine_input_tile"))
             {
+                var exactTaskReservationProjection = string.Equals(
+                        ReadParameter(
+                            candidate.Parameters,
+                            "machine_support_demand_class"),
+                        "priority_task_requirement",
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        ReadParameter(
+                            candidate.Parameters,
+                            "material_reservation_guard_status"),
+                        "ready",
+                        StringComparison.Ordinal);
+                if (exactTaskReservationProjection)
+                {
+                    continue;
+                }
                 candidate.Available = false;
                 candidate.BlockReasons = candidate.BlockReasons
                     .Concat(new[]
@@ -107,6 +123,12 @@ namespace StardewAI.Core.OptionRegistry
                         "machine_support_continuation_status"),
                     "active",
                     StringComparison.Ordinal))
+                .Where(candidate => !string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "machine_support_demand_class"),
+                    "priority_task_requirement",
+                    StringComparison.Ordinal))
                 .ToArray();
         }
 
@@ -123,6 +145,15 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray() ?? Array.Empty<MachineSupportIntent>();
             if (activeIntents.Length == 0)
             {
+                var taskCandidates =
+                    TaskMachineCapacityStartCandidates(
+                        snapshot,
+                        commitmentLedger);
+                if (taskCandidates.Length > 0)
+                {
+                    return taskCandidates;
+                }
+
                 return MachineCraftingCandidates(snapshot, commitmentLedger)
                     .Select(candidate => new
                     {
@@ -146,6 +177,13 @@ namespace StardewAI.Core.OptionRegistry
 
             var intent = activeIntents[0];
             if (!MachineSupportIntentProjection.IsValid(intent))
+            {
+                return Array.Empty<EventCandidate>();
+            }
+            if (!MachineSupportIntentProjection.TaskDemandMatchesSnapshot(
+                    snapshot,
+                    commitmentLedger,
+                    intent))
             {
                 return Array.Empty<EventCandidate>();
             }
@@ -192,6 +230,122 @@ namespace StardewAI.Core.OptionRegistry
 
             return Array.Empty<EventCandidate>();
         }
+
+        private EventCandidate[] TaskMachineCapacityStartCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
+        {
+            var taskRows = MachineCraftingCandidates(
+                    snapshot,
+                    commitmentLedger)
+                .Where(candidate => string.Equals(
+                    ReadParameter(
+                        candidate.Parameters,
+                        "machine_demand_class"),
+                    "priority_task_requirement",
+                    StringComparison.Ordinal))
+                .Where(candidate =>
+                    ExplicitGoalSupportProjection
+                        .HasExactCollectionTaskSources(
+                            candidate.ExpectedEffect))
+                .OrderBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .ToArray();
+            if (taskRows.Length == 0)
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            var placementRows = taskRows
+                .Where(candidate =>
+                    ReadMachineIntParameter(
+                        candidate.Parameters,
+                        "placed_same_machine_count") == 0 &&
+                    ReadMachineIntParameter(
+                        candidate.Parameters,
+                        "inventory_same_machine_count") > 0)
+                .SelectMany(task => MachinePlacementCandidates(
+                        snapshot,
+                        commitmentLedger)
+                    .Where(placement => string.Equals(
+                        placement.QualifiedItemId,
+                        task.QualifiedItemId,
+                        StringComparison.OrdinalIgnoreCase))
+                    .Select(placement => AttachTaskCapacityDemand(
+                        placement,
+                        task)))
+                .OrderByDescending(candidate => candidate.Available)
+                .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .ToArray();
+            if (placementRows.Length > 0)
+            {
+                return placementRows.Take(1).ToArray();
+            }
+
+            return taskRows
+                .Where(candidate =>
+                    ReadMachineIntParameter(
+                        candidate.Parameters,
+                        "required_additional_machine_count") > 0)
+                .OrderByDescending(candidate => candidate.Available)
+                .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .Take(1)
+                .ToArray();
+        }
+
+        private static EventCandidate AttachTaskCapacityDemand(
+            EventCandidate placement,
+            EventCandidate task)
+        {
+            var sources = ReadParameter(
+                task.Parameters,
+                "priority_task_sources_json");
+            placement.ExpectedEffect +=
+                ";machine_demand_class=priority_task_requirement" +
+                ";priority_task_required=true" +
+                ";priority_task_sources_json=" + sources +
+                ";material_reservation_request_priority=300" +
+                ";material_reservation_request_class=active_collection_task" +
+                ";machine_task_capacity_action_required=true";
+            placement.Parameters = SetParameters(
+                placement.Parameters,
+                Parameter(
+                    "machine_demand_class",
+                    "priority_task_requirement"),
+                Parameter("priority_task_required", "true"),
+                Parameter("priority_task_sources_json", sources),
+                Parameter(
+                    "material_reservation_request_priority",
+                    "300"),
+                Parameter(
+                    "material_reservation_request_class",
+                    "active_collection_task"),
+                Parameter(
+                    "machine_task_capacity_action_required",
+                    "true"));
+            return placement;
+        }
+
+        private static SmallModelActionParameter[] SetParameters(
+            SmallModelActionParameter[] source,
+            params SmallModelActionParameter[] updates)
+        {
+            var names = updates
+                .Select(parameter => parameter.Name)
+                .ToHashSet(StringComparer.Ordinal);
+            return source
+                .Where(parameter => !names.Contains(parameter.Name))
+                .Concat(updates)
+                .ToArray();
+        }
+
+        private static int ReadMachineIntParameter(
+            SmallModelActionParameter[] parameters,
+            string name) =>
+            int.TryParse(
+                ReadParameter(parameters, name),
+                out var value)
+                ? value
+                : 0;
 
         private EventCandidate[] MachineServiceCandidates(
             SnapshotEnvelope snapshot,

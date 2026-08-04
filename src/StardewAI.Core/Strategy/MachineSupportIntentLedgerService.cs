@@ -16,6 +16,10 @@ public sealed class MachineSupportIntentLedgerService
         "production_capacity_requirement";
     private const string SupportKind =
         "machine_capacity_current_backlog";
+    private const string TaskCapacityDemand =
+        "priority_task_requirement";
+    private const string TaskSupportKind =
+        "machine_capacity_active_collection_task";
 
     public StrategyCommitmentMutationResult Upsert(
         StrategyCommitmentLedger? current,
@@ -91,7 +95,7 @@ public sealed class MachineSupportIntentLedgerService
             : FromPlacementRequest(
                 request,
                 snapshot,
-                existing!);
+                existing);
         ledger.MachineSupportIntents = ledger.MachineSupportIntents
             .Where(row => !string.Equals(
                 row.IntentId,
@@ -173,31 +177,49 @@ public sealed class MachineSupportIntentLedgerService
         MachineSupportIntent? existing,
         ICollection<string> errors)
     {
-        if (!string.Equals(
+        var taskSupport = IsTaskSupport(request);
+        var economicSupport = string.Equals(
                 request.GoalId,
                 EarnMoneyGoal,
-                StringComparison.Ordinal) ||
-            !string.Equals(
+                StringComparison.Ordinal) &&
+            string.Equals(
                 request.DemandClass,
                 CapacityDemand,
-                StringComparison.Ordinal) ||
-            !string.Equals(
+                StringComparison.Ordinal) &&
+            string.Equals(
                 request.SupportKind,
                 SupportKind,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal);
+        if (!economicSupport && !taskSupport)
         {
             errors.Add("machine_support_rule_not_vetted");
         }
-        if (request.GrossBenefit <= 0 ||
-            request.OpportunityCost < 0 ||
-            request.NetBenefit <= 0 ||
-            (long)request.GrossBenefit -
-            request.OpportunityCost != request.NetBenefit ||
-            request.SupportScore is < 0.01 or > 0.12 ||
-            request.RequiredAdditionalMachineCount <= 0 ||
-            string.IsNullOrWhiteSpace(request.EvidenceStatus))
+        if (economicSupport &&
+            (request.GrossBenefit <= 0 ||
+             request.OpportunityCost < 0 ||
+             request.NetBenefit <= 0 ||
+             (long)request.GrossBenefit -
+             request.OpportunityCost != request.NetBenefit ||
+             request.SupportScore is < 0.01 or > 0.12 ||
+             request.RequiredAdditionalMachineCount <= 0 ||
+             string.IsNullOrWhiteSpace(request.EvidenceStatus)))
         {
             errors.Add("machine_support_value_contract_invalid");
+        }
+        if (taskSupport &&
+            (request.GrossBenefit != 0 ||
+             request.OpportunityCost != 0 ||
+             request.NetBenefit != 0 ||
+             request.SupportScore != 0.12 ||
+             request.RequiredAdditionalMachineCount != 1 ||
+             string.IsNullOrWhiteSpace(request.GoalId) ||
+             !string.Equals(
+                 request.EvidenceStatus,
+                 request.TaskSourcesJson,
+                 StringComparison.Ordinal) ||
+             !ExactCollectionTaskSources(request.TaskSourcesJson)))
+        {
+            errors.Add("machine_support_task_contract_invalid");
         }
         if (!string.IsNullOrWhiteSpace(request.TargetLocationId) ||
             request.TargetTileX.HasValue ||
@@ -233,23 +255,38 @@ public sealed class MachineSupportIntentLedgerService
         MachineSupportIntent? existing,
         ICollection<string> errors)
     {
-        if (existing is null ||
-            !string.Equals(
-                existing.Status,
-                StrategyCommitmentStatuses.Active,
-                StringComparison.Ordinal))
+        var initialTaskPlacement = existing is null &&
+            IsTaskSupport(request) &&
+            request.GrossBenefit == 0 &&
+            request.OpportunityCost == 0 &&
+            request.NetBenefit == 0 &&
+            request.SupportScore == 0.12 &&
+            request.RequiredAdditionalMachineCount == 1 &&
+            !string.IsNullOrWhiteSpace(request.GoalId) &&
+            string.Equals(
+                request.EvidenceStatus,
+                request.TaskSourcesJson,
+                StringComparison.Ordinal) &&
+            ExactCollectionTaskSources(request.TaskSourcesJson);
+        if (!initialTaskPlacement &&
+            (existing is null ||
+             !string.Equals(
+                 existing.Status,
+                 StrategyCommitmentStatuses.Active,
+                 StringComparison.Ordinal)))
         {
             errors.Add("machine_support_active_intent_required");
             return;
         }
-        if (!string.Equals(
+        if (existing is not null &&
+            (!string.Equals(
                 existing.QualifiedItemId,
                 request.QualifiedItemId,
                 StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(
                 existing.ItemId,
                 request.ItemId,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal)))
         {
             errors.Add("machine_support_machine_identity_drifted");
         }
@@ -287,6 +324,7 @@ public sealed class MachineSupportIntentLedgerService
             DemandClass = request.DemandClass,
             SupportKind = request.SupportKind,
             EvidenceStatus = request.EvidenceStatus,
+            TaskSourcesJson = request.TaskSourcesJson,
             GrossBenefit = request.GrossBenefit,
             OpportunityCost = request.OpportunityCost,
             NetBenefit = request.NetBenefit,
@@ -298,11 +336,15 @@ public sealed class MachineSupportIntentLedgerService
     private static MachineSupportIntent FromPlacementRequest(
         MachineSupportIntentUpsertRequest request,
         SnapshotEnvelope snapshot,
-        MachineSupportIntent existing)
+        MachineSupportIntent? existing)
     {
-        var next = StrategyCommitmentLedgerSupport.CloneMachineSupport(
-            existing);
-        next.Revision++;
+        var next = existing is null
+            ? FromCraftRequest(request, snapshot, null)
+            : StrategyCommitmentLedgerSupport.CloneMachineSupport(existing);
+        if (existing is not null)
+        {
+            next.Revision++;
+        }
         next.Stage = MachineSupportIntentStages.PlacementBound;
         next.SourceDecisionId = request.SourceDecisionId;
         next.SourceStateHash = snapshot.StateHash;
@@ -310,6 +352,45 @@ public sealed class MachineSupportIntentLedgerService
         next.TargetTileX = request.TargetTileX;
         next.TargetTileY = request.TargetTileY;
         return next;
+    }
+
+    private static bool IsTaskSupport(
+        MachineSupportIntentUpsertRequest request) =>
+        string.Equals(
+            request.DemandClass,
+            TaskCapacityDemand,
+            StringComparison.Ordinal) &&
+        string.Equals(
+            request.SupportKind,
+            TaskSupportKind,
+            StringComparison.Ordinal);
+
+    private static bool ExactCollectionTaskSources(string json)
+    {
+        try
+        {
+            var sources = JsonSerializer.Deserialize<string[]>(json) ??
+                Array.Empty<string>();
+            var canonical = sources
+                .Where(source => !string.IsNullOrWhiteSpace(source))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(source => source, StringComparer.Ordinal)
+                .ToArray();
+            return sources.Length > 0 &&
+                sources.Length == canonical.Length &&
+                sources.SequenceEqual(canonical, StringComparer.Ordinal) &&
+                sources.All(source =>
+                    source.StartsWith(
+                        "ordinary_quest:ResourceCollectionQuest:",
+                        StringComparison.Ordinal) ||
+                    source.StartsWith(
+                        "special_order:",
+                        StringComparison.Ordinal));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static MachineSupportIntent Completed(

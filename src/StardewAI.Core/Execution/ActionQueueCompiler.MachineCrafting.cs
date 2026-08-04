@@ -101,6 +101,12 @@ namespace StardewAI.Core.Execution
                     Lower(demand.BuildWindowOpen) +
                     ";required_additional_machine_count=" +
                     demand.RequiredAdditionalMachineCount +
+                    ";priority_task_sources_json=" +
+                    JsonSerializer.Serialize(demand.PriorityTaskSources) +
+                    ";material_reservation_request_priority=" +
+                    demand.Priority +
+                    ";material_reservation_request_class=" +
+                    MachineMaterialReservationRequestClass(demand) +
                     ";machine_economic_value_status=" +
                     demand.EconomicValueStatus +
                     ";machine_capacity_deficit_processing_net_value=" +
@@ -166,6 +172,13 @@ namespace StardewAI.Core.Execution
                 ReadIntParameter(action, "machine_demand_priority") != demand.Priority ||
                 !string.Equals(ReadParameter(action, "priority_task_required"), Lower(demand.PriorityTaskRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "priority_task_sources_json"), JsonSerializer.Serialize(demand.PriorityTaskSources), StringComparison.Ordinal) ||
+                ReadIntParameter(action, "material_reservation_request_priority") != demand.Priority ||
+                !string.Equals(
+                    ReadParameter(
+                        action,
+                        "material_reservation_request_class"),
+                    MachineMaterialReservationRequestClass(demand),
+                    StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "production_capacity_required"), Lower(demand.ProductionCapacityRequired), StringComparison.Ordinal) ||
                 !string.Equals(ReadParameter(action, "machine_economic_value_status"), demand.EconomicValueStatus, StringComparison.Ordinal) ||
                 ReadIntParameter(action, "machine_backlog_processing_net_value") != demand.BacklogProcessingNetValue ||
@@ -282,8 +295,8 @@ namespace StardewAI.Core.Execution
             var intentId = ReadParameter(
                 action,
                 "machine_support_intent_id");
-            if (expectedSupport.Status !=
-                "supported_bounded_positive_net_benefit")
+            if (!ExplicitGoalSupportProjection.IsSupported(
+                    expectedSupport))
             {
                 return string.IsNullOrWhiteSpace(intentId);
             }
@@ -343,6 +356,11 @@ namespace StardewAI.Core.Execution
                     intent.EvidenceStatus,
                     expectedSupport.EvidenceStatus,
                     StringComparison.Ordinal) &&
+                string.Equals(
+                    intent.TaskSourcesJson,
+                    JsonSerializer.Serialize(
+                        demand.PriorityTaskSources),
+                    StringComparison.Ordinal) &&
                 intent.GrossBenefit ==
                     expectedSupport.GrossBenefit &&
                 intent.OpportunityCost ==
@@ -355,6 +373,16 @@ namespace StardewAI.Core.Execution
                 intent.RequiredAdditionalMachineCount ==
                     demand.RequiredAdditionalMachineCount;
         }
+
+        private static string MachineMaterialReservationRequestClass(
+            MachineDemandProjection demand) =>
+            demand.PriorityTaskRequired
+                ? "active_collection_task"
+                : demand.ProductionCapacityRequired
+                    ? "production_capacity"
+                    : demand.CollectionPathRequired
+                        ? "collection_completion"
+                        : "none";
 
         private static JsonElement? MachineCraftingRow(SnapshotEnvelope snapshot, string? recipeName)
         {

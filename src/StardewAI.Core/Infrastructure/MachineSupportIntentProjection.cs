@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Infrastructure;
 
@@ -15,6 +17,7 @@ internal sealed record MachineSupportContinuation(
     string IntentStage,
     string SourceStateHash,
     string GoalId,
+    string DemandClass,
     int OriginalNetBenefit,
     int CurrentInputNetBenefit,
     double Score,
@@ -95,10 +98,16 @@ internal static class MachineSupportIntentProjection
                 intent.Stage,
                 intent.SourceStateHash,
                 intent.GoalId,
+                intent.DemandClass,
                 intent.NetBenefit,
                 0,
                 intent.SupportScore,
-                "continue_committed_positive_machine_capacity");
+                string.Equals(
+                    intent.DemandClass,
+                    "priority_task_requirement",
+                    StringComparison.Ordinal)
+                        ? "continue_committed_task_machine_capacity"
+                        : "continue_committed_positive_machine_capacity");
     }
 
     public static MachineSupportContinuation Load(
@@ -108,6 +117,26 @@ internal static class MachineSupportIntentProjection
         if (intent is null)
         {
             return None("load_machine_input");
+        }
+
+        if (string.Equals(
+                intent.DemandClass,
+                "priority_task_requirement",
+                StringComparison.Ordinal))
+        {
+            return new(
+                "active",
+                "load_task_supported_machine",
+                intent.IntentId,
+                intent.Revision,
+                intent.Stage,
+                intent.SourceStateHash,
+                intent.GoalId,
+                intent.DemandClass,
+                0,
+                currentInputNetBenefit ?? 0,
+                intent.SupportScore,
+                "exact_task_binding_owns_input_value_tradeoff");
         }
 
         if (!currentInputNetBenefit.HasValue ||
@@ -121,6 +150,7 @@ internal static class MachineSupportIntentProjection
                 intent.Stage,
                 intent.SourceStateHash,
                 intent.GoalId,
+                intent.DemandClass,
                 intent.NetBenefit,
                 currentInputNetBenefit ?? 0,
                 0,
@@ -135,6 +165,7 @@ internal static class MachineSupportIntentProjection
             intent.Stage,
             intent.SourceStateHash,
             intent.GoalId,
+            intent.DemandClass,
             intent.NetBenefit,
             currentInputNetBenefit.Value,
             intent.SupportScore,
@@ -226,6 +257,8 @@ internal static class MachineSupportIntentProjection
         continuation.SourceStateHash +
         ";machine_support_goal_id=" +
         continuation.GoalId +
+        ";machine_support_demand_class=" +
+        continuation.DemandClass +
         ";machine_support_original_net_benefit=" +
         continuation.OriginalNetBenefit +
         ";machine_support_current_input_net_benefit=" +
@@ -261,6 +294,9 @@ internal static class MachineSupportIntentProjection
                 "machine_support_goal_id",
                 continuation.GoalId),
             Parameter(
+                "machine_support_demand_class",
+                continuation.DemandClass),
+            Parameter(
                 "machine_support_original_net_benefit",
                 continuation.OriginalNetBenefit.ToString(
                     CultureInfo.InvariantCulture)),
@@ -281,6 +317,57 @@ internal static class MachineSupportIntentProjection
             row.Status,
             StrategyCommitmentStatuses.Active,
             StringComparison.Ordinal) &&
+        (EconomicIntentIsValid(row) || TaskIntentIsValid(row));
+
+    public static bool TaskDemandMatchesSnapshot(
+        SnapshotEnvelope snapshot,
+        StrategyCommitmentLedger? ledger,
+        MachineSupportIntent intent)
+    {
+        if (!TaskIntentIsValid(intent))
+        {
+            return true;
+        }
+
+        var context = ReadStateFieldValue(
+            snapshot,
+            "player",
+            "machine_crafting");
+        if (!context.HasValue ||
+            context.Value.ValueKind != JsonValueKind.Object ||
+            !context.Value.TryGetProperty("rows", out var rows) ||
+            rows.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var recipes = rows.EnumerateArray().Where(row =>
+            row.ValueKind == JsonValueKind.Object &&
+            string.Equals(
+                ReadString(row, "output_qualified_item_id"),
+                intent.QualifiedItemId,
+                StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (recipes.Length != 1)
+        {
+            return false;
+        }
+
+        var current = MachineDemandProjectionEvaluator.Evaluate(
+            snapshot,
+            recipes[0],
+            ledger);
+        return string.Equals(
+                current.DemandClass,
+                "priority_task_requirement",
+                StringComparison.Ordinal) &&
+            string.Equals(
+                JsonSerializer.Serialize(current.PriorityTaskSources),
+                intent.TaskSourcesJson,
+                StringComparison.Ordinal);
+    }
+
+    private static bool EconomicIntentIsValid(
+        MachineSupportIntent row) =>
         string.Equals(
             row.GoalId,
             "goal.economy.earn_money",
@@ -300,11 +387,62 @@ internal static class MachineSupportIntentProjection
             row.NetBenefit &&
         row.SupportScore is >= 0.01 and <= 0.12;
 
+    private static bool TaskIntentIsValid(MachineSupportIntent row)
+    {
+        if (!string.Equals(
+                row.DemandClass,
+                "priority_task_requirement",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                row.SupportKind,
+                "machine_capacity_active_collection_task",
+                StringComparison.Ordinal) ||
+            row.GrossBenefit != 0 ||
+            row.OpportunityCost != 0 ||
+            row.NetBenefit != 0 ||
+            row.SupportScore != 0.12 ||
+            row.RequiredAdditionalMachineCount != 1 ||
+            string.IsNullOrWhiteSpace(row.GoalId) ||
+            !string.Equals(
+                row.EvidenceStatus,
+                row.TaskSourcesJson,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        try
+        {
+            var sources = JsonSerializer.Deserialize<string[]>(
+                row.TaskSourcesJson) ?? Array.Empty<string>();
+            var canonical = sources
+                .Where(source => !string.IsNullOrWhiteSpace(source))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(source => source, StringComparer.Ordinal)
+                .ToArray();
+            return sources.Length > 0 &&
+                sources.Length == canonical.Length &&
+                sources.SequenceEqual(canonical, StringComparer.Ordinal) &&
+                sources.All(source =>
+                    source.StartsWith(
+                        "ordinary_quest:ResourceCollectionQuest:",
+                        StringComparison.Ordinal) ||
+                    source.StartsWith(
+                        "special_order:",
+                        StringComparison.Ordinal));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     private static MachineSupportContinuation None(string kind) => new(
         "not_applicable",
         kind,
         string.Empty,
         0,
+        string.Empty,
         string.Empty,
         string.Empty,
         string.Empty,

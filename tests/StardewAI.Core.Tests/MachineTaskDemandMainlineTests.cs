@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 
@@ -114,6 +115,64 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void TaskSupportIntentAllowsUnrelatedReservationAfterExactProjection()
+    {
+        var snapshot = MachineTaskSnapshot(specialOrder: false);
+        var ledger = TaskSupportLedger(snapshot, conflicting: false);
+        Assert.True(MachineSupportIntentProjection.IsValid(
+            Assert.Single(ledger.MachineSupportIntents)));
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                ["farm.fulfill_machine_task_demand"],
+                true,
+                ledger)
+            .Options);
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.True(
+            candidate.Available,
+            CandidateDiagnostics(candidate.BlockReasons, candidate));
+        Assert.Equal(
+            "ready",
+            candidate.Parameters.Single(parameter =>
+                parameter.Name ==
+                "material_reservation_guard_status").Value);
+    }
+
+    [Fact]
+    public void TaskSupportIntentStillBlocksConflictingExactInputReservation()
+    {
+        var snapshot = MachineTaskSnapshot(specialOrder: false);
+        var ledger = TaskSupportLedger(snapshot, conflicting: true);
+        Assert.True(MachineSupportIntentProjection.IsValid(
+            Assert.Single(ledger.MachineSupportIntents)));
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                ["farm.fulfill_machine_task_demand"],
+                true,
+                ledger)
+            .Options);
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.False(option.Available);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "machine_input_reserved_for_other_goal",
+            candidate.BlockReasons);
+    }
+
+    private static string CandidateDiagnostics(
+        IEnumerable<string> reasons,
+        StardewAI.Contracts.Options.EventCandidate candidate) =>
+        string.Join(";", reasons) + " | " +
+        string.Join(
+            ";",
+            candidate.Parameters.Select(parameter =>
+                parameter.Name + "=" + parameter.Value));
+
+    [Fact]
     public void ReadyTaskMachineOutputUsesExistingReceiptChain()
     {
         var snapshot = ResourceCollectionSnapshot(MachineCollectionDomainState());
@@ -139,6 +198,56 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             new StardewAI.Contracts.Training.BaselineTrainingReport(),
             availability),
         stateHash);
+
+    private static StrategyCommitmentLedger TaskSupportLedger(
+        StardewAI.Contracts.State.SnapshotEnvelope snapshot,
+        bool conflicting) => new()
+        {
+            LedgerId = "ledger:task-machine",
+            Revision = 4,
+            MaterialReservations =
+            [
+                new MaterialReservation
+                {
+                    ReservationId = conflicting
+                        ? "reserved:wheat"
+                        : "reserved:wood",
+                    Status = StrategyCommitmentStatuses.Active,
+                    NodeId = "player:123",
+                    SlotIndex = conflicting ? 0 : 1,
+                    QualifiedItemId = conflicting
+                        ? "(O)262"
+                        : "(O)388",
+                    Quantity = conflicting ? 2 : 1
+                }
+            ],
+            MachineSupportIntents =
+            [
+                new MachineSupportIntent
+                {
+                    IntentId = "machine-support:task:keg",
+                    Revision = 1,
+                    Status = StrategyCommitmentStatuses.Active,
+                    Stage = MachineSupportIntentStages.PlacementBound,
+                    SourceStateHash = snapshot.StateHash,
+                    GoalId = "goal.grandpa_max_score_year3",
+                    QualifiedItemId = "(BC)12",
+                    ItemId = "12",
+                    DemandClass = "priority_task_requirement",
+                    SupportKind =
+                        "machine_capacity_active_collection_task",
+                    EvidenceStatus =
+                        "[\"ordinary_quest:ResourceCollectionQuest:96\"]",
+                    TaskSourcesJson =
+                        "[\"ordinary_quest:ResourceCollectionQuest:96\"]",
+                    SupportScore = 0.12,
+                    RequiredAdditionalMachineCount = 1,
+                    TargetLocationId = "Farm",
+                    TargetTileX = 20,
+                    TargetTileY = 20
+                }
+            ]
+        };
 
     private static StardewAI.Contracts.State.SnapshotEnvelope MachineTaskSnapshot(
         bool specialOrder,
@@ -170,7 +279,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "machine_data":{"status":"available","has_output":true,"additional_consumed_item_count":ADDITIONAL_COUNT,"output_rule_count":1},
                 "held_item":null,
                 "loadable_inputs":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2,"quality":0,"sale_price":25,"predicted_output":{"status":"available","training_eligibility_status":"exact_current_snapshot_probe_supported","source":"MachineDataUtility.GetOutputItem(probe:true)","matched_rule_id":"keg_wheat","required_item_id":"(O)262","required_count":1,"additional_consumed_item_count":ADDITIONAL_COUNT,"effective_minutes_until_ready":2250,"output_context_tags":["artisan_good","id_o_346"],"item":{"item_id":"346","qualified_item_id":"(O)346","stack":1,"quality":0,"sale_price":200,"context_tags":["artisan_good","id_o_346"]},"sale_price":200,"stack":1,"quality":0},"probe_source":"Object.performObjectDropInAction(probe:true)","load_executor_status":"covered_for_runtime_load"}]
-              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+              }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+              "material_inventory_graph":{"value":{"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","supply_state":"available","actor_use_authorized":true,"slots":[{"slot_index":0,"item_id":"262","qualified_item_id":"(O)262","stack":2},{"slot_index":1,"item_id":"388","qualified_item_id":"(O)388","stack":10}]}]},"status":"available"}},
               "quests":{QUEST_STATE,"completed_special_orders":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},"accepted_special_order_types":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},"mail_received":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "time":{"time":{"value":1200,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "menus":{"active_menu":{"value":{"is_open":false},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},

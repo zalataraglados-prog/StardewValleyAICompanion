@@ -178,7 +178,12 @@ namespace StardewAI.Core.OptionRegistry
                     ";commitment_ledger_revision=" + demand.CommitmentLedgerRevision +
                     ";material_reservation_guard_status=" + reservationGuard.Status +
                     ";material_reservation_ledger_revision=" + reservationGuard.LedgerRevision +
+                    ";material_reservation_request_priority=" + demand.Priority +
+                    ";material_reservation_request_class=" +
+                    MaterialReservationRequestClass(demand) +
                     ";priority_task_required=" + demand.PriorityTaskRequired.ToString().ToLowerInvariant() +
+                    ";priority_task_sources_json=" +
+                    JsonSerializer.Serialize(demand.PriorityTaskSources) +
                     ";production_capacity_required=" + demand.ProductionCapacityRequired.ToString().ToLowerInvariant() +
                     ";machine_economic_value_status=" +
                     demand.EconomicValueStatus +
@@ -270,10 +275,26 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("material_reservation_ledger_id", reservationGuard.LedgerId),
                     Parameter("material_reservation_ledger_revision", reservationGuard.LedgerRevision.ToString()),
                     Parameter("material_reservation_ids_json", JsonSerializer.Serialize(reservationGuard.ReservationIds)),
+                    Parameter(
+                        "material_reservation_request_priority",
+                        demand.Priority.ToString()),
+                    Parameter(
+                        "material_reservation_request_class",
+                        MaterialReservationRequestClass(demand)),
                     Parameter("collection_path_required", demand.CollectionPathRequired.ToString().ToLowerInvariant()),
                     Parameter("collection_path_source", demand.CollectionPathSource)
                 }
             };
         }
+
+        private static string MaterialReservationRequestClass(
+            MachineDemandProjection demand) =>
+            demand.PriorityTaskRequired
+                ? "active_collection_task"
+                : demand.ProductionCapacityRequired
+                    ? "production_capacity"
+                    : demand.CollectionPathRequired
+                        ? "collection_completion"
+                        : "none";
     }
 }

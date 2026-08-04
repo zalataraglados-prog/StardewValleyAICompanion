@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -348,7 +349,9 @@ namespace StardewAI.Core.OptionRegistry
             return string.Empty;
         }
 
-        private EventCandidate[] QuestCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] QuestCandidates(
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             var activeQuests = ReadStateFieldValue(snapshot, "quests", "active_quests");
             var specialOrders = ReadStateFieldValue(snapshot, "quests", "special_orders");
@@ -369,7 +372,8 @@ namespace StardewAI.Core.OptionRegistry
                 questRefs,
                 orderRefs,
                 ordinaryCandidates,
-                specialOrderCandidates);
+                specialOrderCandidates,
+                commitmentLedger);
         }
 
         private static string ClearableTerrainFeatureKind(string type)

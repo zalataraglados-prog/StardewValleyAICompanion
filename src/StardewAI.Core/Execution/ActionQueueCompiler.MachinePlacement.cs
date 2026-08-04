@@ -257,6 +257,16 @@ namespace StardewAI.Core.Execution
             var supportContinuation =
                 MachineSupportIntentProjection.Placement(
                     supportIntent);
+            if (supportIntent is not null &&
+                !MachineSupportIntentProjection
+                    .TaskDemandMatchesSnapshot(
+                        snapshot,
+                        commitmentLedger,
+                        supportIntent))
+            {
+                reasons.Add(
+                    "place_machine_task_support_demand_drifted");
+            }
             if ((supportIntent is not null ||
                  !string.IsNullOrWhiteSpace(ReadParameter(
                      action,

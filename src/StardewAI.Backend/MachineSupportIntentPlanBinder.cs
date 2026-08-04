@@ -68,10 +68,8 @@ public static class MachineSupportIntentPlanBinder
                 "craft_machine_item",
                 StringComparison.Ordinal))
         {
-            return string.Equals(
-                       Parameter(step, "goal_support_status"),
-                       "supported_bounded_positive_net_benefit",
-                       StringComparison.Ordinal) &&
+            return SupportedStatus(
+                       Parameter(step, "goal_support_status")) &&
                    !string.IsNullOrWhiteSpace(
                        Parameter(
                            step,
@@ -83,7 +81,15 @@ public static class MachineSupportIntentPlanBinder
                    "place_machine_item",
                    StringComparison.Ordinal) &&
                !string.IsNullOrWhiteSpace(
-                   Parameter(step, "machine_support_intent_id"));
+                   Parameter(step, "machine_support_intent_id")) &&
+               (SupportedStatus(
+                    Parameter(step, "goal_support_status")) ||
+                string.Equals(
+                    Parameter(
+                        step,
+                        "machine_support_continuation_status"),
+                    "active",
+                    StringComparison.Ordinal));
     }
 
     private static MachineSupportIntentUpsertRequest CraftRequest(
@@ -112,6 +118,9 @@ public static class MachineSupportIntentPlanBinder
             EvidenceStatus = Parameter(
                 step,
                 "goal_support_evidence_status"),
+            TaskSourcesJson = Parameter(
+                step,
+                "priority_task_sources_json"),
             GrossBenefit = IntParameter(
                 step,
                 "goal_support_gross_benefit"),
@@ -148,7 +157,57 @@ public static class MachineSupportIntentPlanBinder
                 StringComparison.Ordinal));
         if (existing is null)
         {
-            return null;
+            if (!string.Equals(
+                    Parameter(step, "goal_support_status"),
+                    "supported_exact_active_collection_task",
+                    StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return new MachineSupportIntentUpsertRequest
+            {
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = ledger.Revision,
+                IntentId = intentId,
+                Stage = MachineSupportIntentStages.PlacementBound,
+                SourceDecisionId = CandidateId(step),
+                GoalId = Parameter(
+                    step,
+                    "goal_support_parent_goal_id"),
+                QualifiedItemId = Parameter(
+                    step,
+                    "qualified_item_id"),
+                ItemId = Parameter(step, "item_id"),
+                DemandClass = Parameter(
+                    step,
+                    "machine_demand_class"),
+                SupportKind = Parameter(
+                    step,
+                    "goal_support_kind"),
+                EvidenceStatus = Parameter(
+                    step,
+                    "goal_support_evidence_status"),
+                TaskSourcesJson = Parameter(
+                    step,
+                    "priority_task_sources_json"),
+                GrossBenefit = IntParameter(
+                    step,
+                    "goal_support_gross_benefit"),
+                OpportunityCost = IntParameter(
+                    step,
+                    "goal_support_opportunity_cost"),
+                NetBenefit = IntParameter(
+                    step,
+                    "goal_support_net_benefit"),
+                SupportScore = DoubleParameter(
+                    step,
+                    "goal_support_score"),
+                RequiredAdditionalMachineCount = 1,
+                TargetLocationId = step.TargetLocation,
+                TargetTileX = step.TargetTileX,
+                TargetTileY = step.TargetTileY
+            };
         }
 
         return new MachineSupportIntentUpsertRequest
@@ -166,6 +225,7 @@ public static class MachineSupportIntentPlanBinder
             DemandClass = existing.DemandClass,
             SupportKind = existing.SupportKind,
             EvidenceStatus = existing.EvidenceStatus,
+            TaskSourcesJson = existing.TaskSourcesJson,
             GrossBenefit = existing.GrossBenefit,
             OpportunityCost = existing.OpportunityCost,
             NetBenefit = existing.NetBenefit,
@@ -223,6 +283,52 @@ public static class MachineSupportIntentPlanBinder
             supportStep,
             "machine_support_intent_source_state_hash",
             intent.SourceStateHash);
+        if (string.Equals(
+                supportStep.Kind,
+                "place_machine_item",
+                StringComparison.Ordinal))
+        {
+            Set(
+                supportStep,
+                "machine_support_continuation_status",
+                "active");
+            Set(
+                supportStep,
+                "machine_support_continuation_kind",
+                "place_supported_machine");
+            Set(
+                supportStep,
+                "machine_support_goal_id",
+                intent.GoalId);
+            Set(
+                supportStep,
+                "machine_support_demand_class",
+                intent.DemandClass);
+            Set(
+                supportStep,
+                "machine_support_original_net_benefit",
+                intent.NetBenefit.ToString(
+                    CultureInfo.InvariantCulture));
+            Set(
+                supportStep,
+                "machine_support_current_input_net_benefit",
+                "0");
+            Set(
+                supportStep,
+                "machine_support_continuation_score",
+                intent.SupportScore.ToString(
+                    "0.####",
+                    CultureInfo.InvariantCulture));
+            Set(
+                supportStep,
+                "machine_support_continuation_reason",
+                string.Equals(
+                    intent.DemandClass,
+                    "priority_task_requirement",
+                    StringComparison.Ordinal)
+                        ? "continue_committed_task_machine_capacity"
+                        : "continue_committed_positive_machine_capacity");
+        }
     }
 
     private static void SetIfPresent(
@@ -300,4 +406,14 @@ public static class MachineSupportIntentPlanBinder
             parameter.Name,
             name,
             StringComparison.Ordinal))?.Value ?? string.Empty;
+
+    private static bool SupportedStatus(string status) =>
+        string.Equals(
+            status,
+            "supported_bounded_positive_net_benefit",
+            StringComparison.Ordinal) ||
+        string.Equals(
+            status,
+            "supported_exact_active_collection_task",
+            StringComparison.Ordinal);
 }

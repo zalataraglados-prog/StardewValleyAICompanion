@@ -48,6 +48,9 @@ public sealed class MachineSupportIntent
     [JsonPropertyName("evidence_status")]
     public string EvidenceStatus { get; set; } = string.Empty;
 
+    [JsonPropertyName("task_sources_json")]
+    public string TaskSourcesJson { get; set; } = "[]";
+
     [JsonPropertyName("gross_benefit")]
     public int GrossBenefit { get; set; }
 
@@ -110,6 +113,9 @@ public sealed class MachineSupportIntentUpsertRequest
 
     [JsonPropertyName("evidence_status")]
     public string EvidenceStatus { get; set; } = string.Empty;
+
+    [JsonPropertyName("task_sources_json")]
+    public string TaskSourcesJson { get; set; } = "[]";
 
     [JsonPropertyName("gross_benefit")]
     public int GrossBenefit { get; set; }

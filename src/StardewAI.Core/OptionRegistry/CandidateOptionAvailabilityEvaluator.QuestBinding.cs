@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -17,7 +18,8 @@ namespace StardewAI.Core.OptionRegistry
             QuestProgressRef[] quests,
             SpecialOrderProgressRef[] orders,
             QuestCandidateRef[] ordinaryCandidates,
-            QuestCandidateRef[] specialOrderCandidates)
+            QuestCandidateRef[] specialOrderCandidates,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             var results = new List<EventCandidate>();
             foreach (var candidate in ordinaryCandidates)
@@ -25,14 +27,22 @@ namespace StardewAI.Core.OptionRegistry
                 var quest = quests.FirstOrDefault(row =>
                     string.Equals(row.Id, candidate.QuestId, StringComparison.Ordinal) &&
                     string.Equals(row.RuntimeType, candidate.RuntimeType, StringComparison.Ordinal));
-                results.AddRange(BindOrdinaryQuestCandidate(snapshot, candidate, quest));
+                results.AddRange(BindOrdinaryQuestCandidate(
+                    snapshot,
+                    candidate,
+                    quest,
+                    commitmentLedger));
             }
 
             foreach (var candidate in specialOrderCandidates)
             {
                 var order = orders.FirstOrDefault(row =>
                     string.Equals(row.QuestKey, candidate.QuestKey, StringComparison.Ordinal));
-                results.AddRange(BindSpecialOrderCandidate(snapshot, candidate, order));
+                results.AddRange(BindSpecialOrderCandidate(
+                    snapshot,
+                    candidate,
+                    order,
+                    commitmentLedger));
             }
 
             return results.ToArray();
@@ -41,7 +51,8 @@ namespace StardewAI.Core.OptionRegistry
         private IEnumerable<EventCandidate> BindOrdinaryQuestCandidate(
             SnapshotEnvelope snapshot,
             QuestCandidateRef candidate,
-            QuestProgressRef? quest)
+            QuestProgressRef? quest,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (quest is null)
             {
@@ -57,7 +68,10 @@ namespace StardewAI.Core.OptionRegistry
                 case "harvest_items":
                     return BindOrdinaryItemHarvestCandidates(snapshot, candidate);
                 case "collect_resources":
-                    return BindOrdinaryResourceCollectionCandidates(snapshot, candidate);
+                    return BindOrdinaryResourceCollectionCandidates(
+                        snapshot,
+                        candidate,
+                        commitmentLedger);
                 case "go_to_location":
                     return new[] { BindQuestLocationRoute(snapshot, candidate, candidate.RequiredTargetLocation) };
                 case "deliver_to_npc":
@@ -128,7 +142,8 @@ namespace StardewAI.Core.OptionRegistry
         private IEnumerable<EventCandidate> BindSpecialOrderCandidate(
             SnapshotEnvelope snapshot,
             QuestCandidateRef candidate,
-            SpecialOrderProgressRef? order)
+            SpecialOrderProgressRef? order,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (order is null ||
                 candidate.SelectedObjectiveIndex < 0 ||
@@ -164,7 +179,11 @@ namespace StardewAI.Core.OptionRegistry
                             Math.Max(1, candidate.RequiredTargetCount - candidate.CurrentProgressCount))
                     };
                 case "CollectObjective":
-                    return BindSpecialOrderCollectCandidates(snapshot, candidate, fields);
+                    return BindSpecialOrderCollectCandidates(
+                        snapshot,
+                        candidate,
+                        fields,
+                        commitmentLedger);
                 case "DonateObjective":
                     return new[]
                     {

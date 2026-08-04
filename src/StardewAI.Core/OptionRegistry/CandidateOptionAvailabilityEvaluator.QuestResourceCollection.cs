@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -14,7 +15,8 @@ namespace StardewAI.Core.OptionRegistry
     {
         private IEnumerable<EventCandidate> BindOrdinaryResourceCollectionCandidates(
             SnapshotEnvelope snapshot,
-            QuestCandidateRef quest)
+            QuestCandidateRef quest,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (string.IsNullOrWhiteSpace(quest.RequiredItemId))
             {
@@ -173,7 +175,9 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "true"),
                         Parameter("quest_acquisition_source_step", "false")
                     }));
-            var machineLoadSources = BoundedTaskMachineLoadCandidates(snapshot)
+            var machineLoadSources = BoundedTaskMachineLoadCandidates(
+                    snapshot,
+                    commitmentLedger)
                 .Where(candidate => ItemIdentityMatches(
                     ReadParameter(
                         candidate.Parameters,
@@ -281,7 +285,8 @@ namespace StardewAI.Core.OptionRegistry
         private IEnumerable<EventCandidate> BindSpecialOrderCollectCandidates(
             SnapshotEnvelope snapshot,
             QuestCandidateRef quest,
-            PerTypeObjectiveFields fields)
+            PerTypeObjectiveFields fields,
+            StrategyCommitmentLedger? commitmentLedger)
         {
             if (fields.AcceptableContextTagSets.Length == 0)
             {
@@ -335,7 +340,9 @@ namespace StardewAI.Core.OptionRegistry
                                 "quest_acceptable_context_tag_sets_json",
                                 JsonSerializer.Serialize(fields.AcceptableContextTagSets))
                         })))
-                .Concat(BoundedTaskMachineLoadCandidates(snapshot)
+                .Concat(BoundedTaskMachineLoadCandidates(
+                        snapshot,
+                        commitmentLedger)
                     .Where(candidate => CandidateContextTagsMatch(
                         candidate,
                         "predicted_output_context_tags_json",
@@ -503,14 +510,14 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         private IEnumerable<EventCandidate> BoundedTaskMachineLoadCandidates(
-            SnapshotEnvelope snapshot)
+            SnapshotEnvelope snapshot,
+            StrategyCommitmentLedger? commitmentLedger)
         {
-            return MachineServiceCandidates(snapshot, commitmentLedger: null)
+            return MachineServiceCandidates(snapshot, commitmentLedger)
                 .Where(candidate => string.Equals(
                     candidate.Kind,
                     "load_machine_input_tile",
                     StringComparison.Ordinal))
-                .Where(candidate => candidate.Available)
                 .Where(candidate => string.Equals(
                     ReadParameter(
                         candidate.Parameters,

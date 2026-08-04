@@ -817,7 +817,19 @@ namespace StardewAI.Core.Execution
                     string.Equals(
                         reservation.Status,
                         StardewAI.Contracts.Strategy.StrategyCommitmentStatuses.Active,
-                        StringComparison.Ordinal)) == true)
+                        StringComparison.Ordinal)) == true &&
+                !(string.Equals(
+                      ReadParameter(
+                          action,
+                          "machine_support_demand_class"),
+                      "priority_task_requirement",
+                      StringComparison.Ordinal) &&
+                  string.Equals(
+                      ReadParameter(
+                          action,
+                          "material_reservation_guard_status"),
+                      "ready",
+                      StringComparison.Ordinal)))
             {
                 reasons.Add(
                     "task_machine_input_active_material_reservations_require_projection");

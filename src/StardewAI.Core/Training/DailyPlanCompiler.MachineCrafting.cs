@@ -63,6 +63,8 @@ namespace StardewAI.Core.Training
                 "material_reservation_ledger_id",
                 "material_reservation_ledger_revision",
                 "material_reservation_ids_json",
+                "material_reservation_request_priority",
+                "material_reservation_request_class",
                 "collection_path_required",
                 "collection_path_source",
                 "goal_support_status",

@@ -1,3 +1,15 @@
+2026-08-05 task-driven machine-capacity static composition
+
+- Extended the existing `farm.establish_supported_machine_capacity` lifecycle;
+  no second machine candidate, compiler, ledger, or executor was added.
+- Exact ordinary `ResourceCollectionQuest` and special-order `CollectObjective`
+  output demand can select existing craft or direct-inventory placement.
+- Canonical source evidence, live task drift, exact slot reservations, placement,
+  plan, binder, compiler, and dispatch contracts fail closed.
+- Core 1528/1528 and Backend 111/111 PASS; `git diff --check` PASS.
+- Runtime EVD-217 is pending. Five-gate and allowlist counts are unchanged until
+  the hidden/silent combined craft/place/load/natural-collect matrix passes.
+
 2026-08-04 EVD-215 supported machine-capacity lifecycle runtime admission
 
 - Hidden/silent E-drive isolated run

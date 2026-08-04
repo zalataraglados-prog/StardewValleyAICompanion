@@ -44,7 +44,9 @@ internal sealed record MachineDemandProjection(
     bool CollectionPathRequired,
     string CollectionPathSource)
 {
-    public bool HasDemand => Priority > 0;
+    public bool HasDemand =>
+        Priority > 0 &&
+        (!PriorityTaskRequired || RequiredAdditionalMachineCount > 0);
 }
 
 internal static class MachineDemandProjectionEvaluator
@@ -59,14 +61,17 @@ internal static class MachineDemandProjectionEvaluator
     {
         var qualifiedId = ReadString(recipe, "output_qualified_item_id");
         var itemId = ReadString(recipe, "output_item_id");
-        var tags = ReadStringArray(recipe, "output_context_tags");
         var inputs = ReadPotentialInputs(recipe);
         var predictedOutputs = inputs.SelectMany(input => input.Outputs).Distinct().ToArray();
         var outputs = predictedOutputs
             .Concat(ReadCapabilityOutputs(recipe))
             .Distinct()
             .ToArray();
-        var taskSources = ReadPriorityTaskSources(snapshot, qualifiedId, itemId, tags, outputs);
+        var taskSources = ReadPriorityTaskSources(
+            snapshot,
+            qualifiedId,
+            itemId,
+            outputs);
         var potentialInputCount = Math.Max(0, ReadInt(recipe, "potential_loadable_input_count"));
         var backlogUnits = inputs.Sum(input => Math.Max(0, input.Stack));
         var fleet = ReadFleetCapacity(snapshot, qualifiedId);
@@ -120,17 +125,24 @@ internal static class MachineDemandProjectionEvaluator
             ReadInventorySameMachineCount(
                 snapshot,
                 qualifiedId);
-        var requiredAdditional = Math.Max(
-            0,
-            Math.Max(
-                backlogAdditional,
-                arrivalAdditional) -
-            inventorySameMachineCount);
+        var requiredAdditional = taskSources.Length > 0
+            ? fleet.Rows.Length + inventorySameMachineCount == 0
+                ? 1
+                : 0
+            : Math.Max(
+                0,
+                Math.Max(
+                    backlogAdditional,
+                    arrivalAdditional) -
+                inventorySameMachineCount);
         var latestBuildLead = backlogAdditional > 0 && cycleMinutes > 0
             ? DivideRoundUp(deficit, backlogAdditional) * cycleMinutes
             : 0;
-        var buildWindowOpen = requiredAdditional > 0 && (cropWave.Days < 0 ||
-            windowMinutes <= latestBuildLead + MinimumCraftAndPlacementLeadMinutes);
+        var buildWindowOpen = requiredAdditional > 0 &&
+            (taskSources.Length > 0 ||
+             cropWave.Days < 0 ||
+             windowMinutes <= latestBuildLead +
+             MinimumCraftAndPlacementLeadMinutes);
         var horizonComplete = cycleMinutes > 0 &&
             ((inputs.Length > 0 && backlogUnits > 0) || (cropWave.Days >= 0 && cropWave.ServiceIntervalDays > 0));
         var productionRequired = horizonComplete && requiredAdditional > 0 && buildWindowOpen;
@@ -358,7 +370,10 @@ internal static class MachineDemandProjectionEvaluator
         ReadString(output, "item_id"),
         ReadString(output, "preserve_type"),
         ReadString(output, "preserve_id"),
+        Array.Empty<string>(),
         processMinutes,
+        -1,
+        "capability_summary_not_exact_input_probe",
         false,
         0,
         0,
@@ -386,8 +401,15 @@ internal static class MachineDemandProjectionEvaluator
             item.ValueKind == JsonValueKind.Object ? ReadString(item, "item_id") : string.Empty,
             ReadString(output, "preserve_type"),
             ReadString(output, "preserved_item_id"),
+            ReadStringArray(output, "output_context_tags").Length > 0
+                ? ReadStringArray(output, "output_context_tags")
+                : item.ValueKind == JsonValueKind.Object
+                    ? ReadStringArray(item, "context_tags")
+                    : Array.Empty<string>(),
             Math.Max(0, ReadInt(output, "effective_minutes_until_ready",
                 ReadInt(output, "override_minutes_until_ready", ReadInt(output, "rule_minutes_until_ready")))),
+            ReadInt(output, "additional_consumed_item_count", -1),
+            ReadString(output, "training_eligibility_status"),
             salePriceKnown,
             salePrice,
             stackKnown ? stack : 0,
@@ -428,7 +450,6 @@ internal static class MachineDemandProjectionEvaluator
         SnapshotEnvelope snapshot,
         string qualifiedId,
         string itemId,
-        IReadOnlyCollection<string> contextTags,
         IReadOnlyCollection<PredictedMachineDemandOutput> outputs)
     {
         var sources = new List<string>();
@@ -443,9 +464,22 @@ internal static class MachineDemandProjectionEvaluator
                     continue;
                 }
                 var required = ReadString(fields, "item_id");
-                if (SameItem(required, qualifiedId, itemId) || outputs.Any(output => SameItem(required, output.QualifiedItemId, output.ItemId)))
+                var sourceSuffix =
+                    ReadString(quest, "runtime_type", "unknown") +
+                    ":" + ReadString(quest, "id", "unknown");
+                if (outputs.Any(output =>
+                    ExactTaskOutput(output) &&
+                    SameItem(
+                        required,
+                        output.QualifiedItemId,
+                        output.ItemId)))
                 {
-                    sources.Add("ordinary_quest:" + ReadString(quest, "id", ReadString(quest, "runtime_type", "unknown")));
+                    sources.Add("ordinary_quest:" + sourceSuffix);
+                }
+                else if (SameItem(required, qualifiedId, itemId))
+                {
+                    sources.Add(
+                        "ordinary_quest_machine_item:" + sourceSuffix);
                 }
             }
         }
@@ -466,7 +500,13 @@ internal static class MachineDemandProjectionEvaluator
                     if (objective.ValueKind == JsonValueKind.Object && ReadBool(objective, "complete") != true &&
                         objective.TryGetProperty("per_type_fields", out var fields) && fields.ValueKind == JsonValueKind.Object &&
                         fields.TryGetProperty("acceptable_context_tag_sets", out var sets) && sets.ValueKind == JsonValueKind.Array &&
-                        sets.EnumerateArray().Any(set => set.ValueKind == JsonValueKind.String && TagSetMatches(set.GetString(), contextTags)))
+                        outputs.Any(output =>
+                            ExactTaskOutput(output) &&
+                            sets.EnumerateArray().Any(set =>
+                                set.ValueKind == JsonValueKind.String &&
+                                TagSetMatches(
+                                    set.GetString(),
+                                    output.ContextTags))))
                     {
                         sources.Add("special_order:" + ReadString(order, "quest_key", "unknown") + ":objective:" + index);
                     }
@@ -536,6 +576,16 @@ internal static class MachineDemandProjectionEvaluator
             requiredGroup.Split('/').Any(requiredTag =>
                 contextTags.Contains(requiredTag.Trim(), StringComparer.OrdinalIgnoreCase)));
     }
+
+    private static bool ExactTaskOutput(
+        PredictedMachineDemandOutput output) =>
+        output.AdditionalConsumedItemCount == 0 &&
+        string.Equals(
+            output.TrainingEligibilityStatus,
+            "exact_current_snapshot_probe_supported",
+            StringComparison.Ordinal) &&
+        (!string.IsNullOrWhiteSpace(output.QualifiedItemId) ||
+         !string.IsNullOrWhiteSpace(output.ItemId));
 
     private static bool SameItem(string requiredId, string qualifiedId, string itemId)
     {
