@@ -183,6 +183,17 @@ public sealed class MachineTaskCapacityMainlineTests
             Parameter(
                 candidate.Parameters,
                 "machine_task_capacity_action_required"));
+        Assert.Equal(
+            "0",
+            Parameter(candidate.Parameters, "placed_same_machine_count"));
+        Assert.Equal(
+            "1",
+            Parameter(candidate.Parameters, "inventory_same_machine_count"));
+        Assert.Equal(
+            "1",
+            Parameter(
+                candidate.Parameters,
+                "required_additional_machine_count"));
         var ranked = Assert.Single(new EventCandidateRanker().Rank(
             new(),
             availability,
@@ -190,9 +201,12 @@ public sealed class MachineTaskCapacityMainlineTests
         Assert.Equal(
             ExplicitGoalSupportProjection.TaskSupportStatus,
             Parameter(ranked.Parameters, "goal_support_status"));
-        Assert.NotEmpty(Parameter(
-            ranked.Parameters,
-            "machine_support_intent_id"));
+        Assert.EndsWith(
+            ":fleet=0:required=1",
+            Parameter(
+                ranked.Parameters,
+                "machine_support_intent_id"),
+            StringComparison.Ordinal);
 
         var plan = new DailyPlanCompiler().Compile(
             [ranked],
@@ -362,7 +376,7 @@ public sealed class MachineTaskCapacityMainlineTests
               """;
         var placementRows = inventoryMachine
             ? """
-              [{"inventory_slot_index":4,"item_id":"12","qualified_item_id":"(BC)12","stack":1,"locations":[{"location_id":"FarmHouse","location_is_current":true,"machine_operational_context_valid":true,"placement_probe_status":"native_legal_tiles_available","static_legal_tile_count":2,"static_legal_tile_ranges":[{"y":5,"start_x":7,"end_x":8}]}]}]
+              [{"inventory_slot_index":4,"item_id":"12","qualified_item_id":"(BC)12","stack":1,"locations":[{"location_id":"AdventureGuild","location_is_current":false,"machine_operational_context_valid":true,"placement_probe_status":"native_legal_tiles_available","static_legal_tile_count":1,"static_legal_tile_ranges":[{"y":5,"start_x":7,"end_x":7}]},{"location_id":"FarmHouse","location_is_current":true,"machine_operational_context_valid":true,"placement_probe_status":"native_legal_tiles_available","static_legal_tile_count":2,"static_legal_tile_ranges":[{"y":5,"start_x":7,"end_x":8}]}]}]
               """
             : "[]";
         var inventoryMachineRow = inventoryMachine

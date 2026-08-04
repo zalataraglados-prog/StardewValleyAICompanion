@@ -19,12 +19,25 @@ param(
     [string] $MachineItemId = "12",
     [string] $ProcessInputQualifiedItemId = "(O)262",
     [int] $ProcessInputQuantity = 20,
+    [ValidateSet("none", "ordinary_quest", "special_order")]
+    [string] $TaskFamily = "none",
+    [string] $TaskId = "960217",
+    [string] $TaskOutputQualifiedItemId = "(O)346",
+    [ValidateSet("empty", "inventory")]
+    [string] $FixtureCapacityMode = "empty",
+    [int] $CompletionTimeoutSeconds = 120,
     [switch] $KeepGameRunning
 )
 
 $ErrorActionPreference = "Stop"
 $lifecycleTargetX = $TargetTileX
 $lifecycleTargetY = $TargetTileY
+$taskMode = $TaskFamily -ne "none"
+$lifecycleGoal = if ($taskMode) {
+    "goal.grandpa_max_score_year3"
+} else {
+    "goal.economy.earn_money"
+}
 
 function Write-JsonFile {
     param([string] $Path, $Value)
@@ -199,6 +212,33 @@ function Wait-LifecycleState {
     throw "Lifecycle stage '$Stage' timed out. Last status: $lastStatus"
 }
 
+function Wait-TaskMachineReady {
+    param([string] $Url, [int] $TimeoutSeconds)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastStatus = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-WorldSnapshot -Url $Url `
+            -TimeoutSeconds 20
+        $machine = Find-MachineAtTarget -Snapshot $snapshot
+        $ready = $null -ne $machine -and
+            [bool]$machine.ready_for_harvest -and
+            [string]$machine.held_item.qualified_item_id -eq
+                $TaskOutputQualifiedItemId
+        $lastStatus = if ($null -eq $machine) {
+            "machine_absent"
+        } else {
+            "ready=$($machine.ready_for_harvest);" +
+            "minutes=$($machine.minutes_until_ready);" +
+            "output=$($machine.held_item.qualified_item_id)"
+        }
+        if ($ready) {
+            return $snapshot
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    throw "Task machine ready wait timed out. Last status: $lastStatus"
+}
+
 function Get-LatestSupportLedger {
     param($Snapshot)
     $snapshotJson = $Snapshot |
@@ -243,13 +283,22 @@ function Assert-SupportIntent {
         [int]$intent.target_tile_y -ne $lifecycleTargetY)) {
         throw "Machine support intent lost its exact placement target."
     }
+    if ($taskMode -and (
+        [string]$intent.demand_class -ne
+            "priority_task_requirement" -or
+        [string]$intent.support_kind -ne
+            "machine_capacity_active_collection_task")) {
+        throw "Machine support intent lost its exact task demand class."
+    }
     return $intent
 }
 
 function Invoke-LifecycleStage {
     param(
         [int] $Iteration,
-        [string] $ExpectedExecutorOptionId
+        [string] $ExpectedExecutorOptionId,
+        [string] $CandidateOptionId =
+            "farm.establish_supported_machine_capacity"
     )
     & dotnet $loopDll `
         --root $loopRoot `
@@ -259,7 +308,7 @@ function Invoke-LifecycleStage {
         --no-manifest `
         --run-id $RunId `
         --save-isolation-path $savesPath `
-        --goal "goal.economy.earn_money" `
+        --goal $lifecycleGoal `
         --iterations 1 `
         --train-every 1 `
         --skip-training `
@@ -267,7 +316,7 @@ function Invoke-LifecycleStage {
         --use-daily-plan `
         --daily-plan-max-candidates 1 `
         --daily-plan-candidate-options `
-            "farm.establish_supported_machine_capacity" `
+            $CandidateOptionId `
         --after-snapshot-wait-ms 1000 `
         --continue-after-blocked-queue-items
     if ($LASTEXITCODE -ne 0) {
@@ -323,6 +372,8 @@ function Invoke-LifecycleStage {
         QueueId = [string]$queue.queue_id
         QueueItemId = [string]$step.queue_item_id
         PrimitiveKind = [string]$step.primitive_kind
+        QuestProgressBefore = $step.quest_progress_before
+        QuestProgressAfter = $step.quest_progress_after
     }
 }
 
@@ -480,18 +531,94 @@ try {
     Write-JsonFile (Join-Path $runDirectory `
         "fixture-snapshot.json") $fixtureSnapshot
 
-    $craftStage = Invoke-LifecycleStage -Iteration 1 `
-        -ExpectedExecutorOptionId "executor.craft_machine_item"
-    $craftedSnapshot = Wait-LifecycleState -Url $snapshotUrl `
-        -Stage crafted
-    $craftLedger = Get-LatestSupportLedger `
-        -Snapshot $craftedSnapshot
-    $craftIntent = Assert-SupportIntent -Ledger $craftLedger `
-        -ExpectedStatus active -ExpectedStage craft_selected
-    Write-JsonFile (Join-Path $runDirectory `
-        "craft-selected-ledger.json") $craftLedger
+    $inventoryFixtureResult = $null
+    if ($FixtureCapacityMode -eq "inventory") {
+        $inventoryFixtureRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-supported-machine-capacity"
+            queue_item_id =
+                "runtime-supported-machine-capacity.setup-inventory"
+            before_state_hash = [string]$fixtureSnapshot.state_hash
+            option_id = "debug.setup_machine_placement_target"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            target_tile_x = $TargetTileX
+            target_tile_y = $TargetTileY
+            qualified_item_id = $MachineQualifiedItemId
+        }
+        $inventoryFixtureResult = Invoke-JsonPost -Url $executeUrl `
+            -Body $inventoryFixtureRequest
+        Write-JsonFile (Join-Path $runDirectory `
+            "inventory-fixture-result.json") $inventoryFixtureResult
+        if ([string]$inventoryFixtureResult.status -ne "applied" -or
+            [string]$inventoryFixtureResult.primitive_verification_status -ne
+                "verified") {
+            throw "Inventory machine fixture failed."
+        }
+        $fixtureSnapshot = Wait-LifecycleState -Url $snapshotUrl `
+            -Stage crafted
+        Write-JsonFile (Join-Path $runDirectory `
+            "inventory-fixture-snapshot.json") $fixtureSnapshot
+    }
 
-    $placementStage = Invoke-LifecycleStage -Iteration 2 `
+    $taskSetupResult = $null
+    if ($taskMode) {
+        $taskSetupRequest = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-supported-machine-capacity"
+            queue_item_id =
+                "runtime-supported-machine-capacity.setup-task"
+            before_state_hash = [string]$fixtureSnapshot.state_hash
+            option_id = "debug.setup_collection_task_fixture"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            quest_family = $TaskFamily
+            quest_id = $TaskId
+            qualified_item_id = $TaskOutputQualifiedItemId
+            quest_expected_target_count = 1
+        }
+        $taskSetupResult = Invoke-JsonPost -Url $executeUrl `
+            -Body $taskSetupRequest
+        Write-JsonFile (Join-Path $runDirectory `
+            "task-setup-result.json") $taskSetupResult
+        if ([string]$taskSetupResult.status -ne "applied" -or
+            [string]$taskSetupResult.primitive_verification_status -ne
+                "verified") {
+            throw "Machine lifecycle task fixture failed."
+        }
+        $fixtureSnapshot = Wait-WorldSnapshot -Url $snapshotUrl `
+            -TimeoutSeconds 30
+        Write-JsonFile (Join-Path $runDirectory `
+            "task-fixture-snapshot.json") $fixtureSnapshot
+    }
+
+    $craftStage = $null
+    $craftIntent = $null
+    $placementIteration = 1
+    if ($FixtureCapacityMode -eq "empty") {
+        $craftStage = Invoke-LifecycleStage -Iteration 1 `
+            -ExpectedExecutorOptionId "executor.craft_machine_item"
+        $craftedSnapshot = Wait-LifecycleState -Url $snapshotUrl `
+            -Stage crafted
+        $craftLedger = Get-LatestSupportLedger `
+            -Snapshot $craftedSnapshot
+        $craftIntent = Assert-SupportIntent -Ledger $craftLedger `
+            -ExpectedStatus active -ExpectedStage craft_selected
+        Write-JsonFile (Join-Path $runDirectory `
+            "craft-selected-ledger.json") $craftLedger
+        $placementIteration = 2
+    }
+
+    $placementStage = Invoke-LifecycleStage `
+        -Iteration $placementIteration `
         -ExpectedExecutorOptionId "executor.place_machine"
     $placementQueue = Get-Content $placementStage.QueuePath -Raw |
         ConvertFrom-Json
@@ -517,8 +644,18 @@ try {
     Write-JsonFile (Join-Path $runDirectory `
         "placement-bound-ledger.json") $placementLedger
 
-    $loadStage = Invoke-LifecycleStage -Iteration 3 `
-        -ExpectedExecutorOptionId "executor.load_machine_input"
+    $loadCandidateOption = if ($taskMode) {
+        "farm.fulfill_machine_task_demand"
+    } else {
+        "farm.establish_supported_machine_capacity"
+    }
+    $loadIteration = $placementIteration + 1
+    $loadStage = Invoke-LifecycleStage -Iteration $loadIteration `
+        -ExpectedExecutorOptionId "executor.load_machine_input" `
+        -CandidateOptionId $loadCandidateOption
+    if ($taskMode -and [int]$loadStage.QuestProgressAfter -ne 0) {
+        throw "Task progress changed during machine input loading."
+    }
     $processingSnapshot = Wait-LifecycleState -Url $snapshotUrl `
         -Stage processing
     $processingJson = $processingSnapshot |
@@ -537,6 +674,24 @@ try {
     Write-JsonFile (Join-Path $runDirectory `
         "completed-ledger.json") $completedLedger
 
+    $collectStage = $null
+    if ($taskMode) {
+        $readySnapshot = Wait-TaskMachineReady -Url $snapshotUrl `
+            -TimeoutSeconds $CompletionTimeoutSeconds
+        Write-JsonFile (Join-Path $runDirectory `
+            "ready-snapshot.json") $readySnapshot
+        $collectStage = Invoke-LifecycleStage `
+            -Iteration ($loadIteration + 1) `
+            -ExpectedExecutorOptionId `
+                "executor.collect_machine_output" `
+            -CandidateOptionId `
+                "farm.fulfill_machine_task_demand"
+        if ([int]$collectStage.QuestProgressBefore -ne 0 -or
+            [int]$collectStage.QuestProgressAfter -ne 1) {
+            throw "Native machine collection did not advance the task."
+        }
+    }
+
     $datasetPath = Join-Path $loopRoot (
         "datasets\live-training-feature-rows.jsonl")
     if (-not (Test-Path $datasetPath -PathType Leaf)) {
@@ -545,10 +700,16 @@ try {
     $rows = @(Get-Content $datasetPath | ForEach-Object {
         $_ | ConvertFrom-Json
     })
-    $expectedExecutors = @(
-        "executor.craft_machine_item",
+    $expectedExecutors = @()
+    if ($FixtureCapacityMode -eq "empty") {
+        $expectedExecutors += "executor.craft_machine_item"
+    }
+    $expectedExecutors += @(
         "executor.place_machine",
         "executor.load_machine_input")
+    if ($taskMode) {
+        $expectedExecutors += "executor.collect_machine_output"
+    }
     foreach ($expectedExecutor in $expectedExecutors) {
         $matching = @($rows | Where-Object {
             @($_.action_features.option_ids) -contains
@@ -561,9 +722,23 @@ try {
         }
     }
 
+    $stageQueueIds = @()
+    if ($null -ne $craftStage) {
+        $stageQueueIds += [string]$craftStage.QueueId
+    }
+    $stageQueueIds += [string]$placementStage.QueueId
+    $stageQueueIds += [string]$loadStage.QueueId
+    if ($taskMode) {
+        $stageQueueIds += [string]$collectStage.QueueId
+    }
+
     $summary = [ordered]@{
         status = "passed"
-        evidence_id = "EVD-215"
+        evidence_id = $(if ($taskMode) {
+            "EVD-217"
+        } else {
+            "EVD-215"
+        })
         run_id = $RunId
         save_slot = $SaveSlot
         option_id =
@@ -576,20 +751,40 @@ try {
         process_input_qualified_item_id =
             $ProcessInputQualifiedItemId
         process_input_quantity = $ProcessInputQuantity
+        fixture_capacity_mode = $FixtureCapacityMode
+        task_family = $TaskFamily
+        task_id = $(if ($taskMode) { $TaskId } else { "" })
+        task_output_qualified_item_id = $(if ($taskMode) {
+            $TaskOutputQualifiedItemId
+        } else {
+            ""
+        })
         support_intent_id = [string]$completedIntent.intent_id
         craft_selected_verified =
+            $FixtureCapacityMode -eq "empty" -and
             [string]$craftIntent.stage -eq "craft_selected"
+        direct_inventory_placement_verified =
+            $FixtureCapacityMode -eq "inventory" -and
+            $null -eq $craftStage -and
+            [string]$placementIntent.stage -eq "placement_bound"
         placement_bound_verified =
             [string]$placementIntent.stage -eq "placement_bound"
         processing_started = $true
+        task_progress_after_load = $(if ($taskMode) {
+            [int]$loadStage.QuestProgressAfter
+        } else {
+            $null
+        })
+        task_progress_after_collect = $(if ($taskMode) {
+            [int]$collectStage.QuestProgressAfter
+        } else {
+            $null
+        })
         completion_reason =
             [string]$completedIntent.completion_reason
         training_feature_row_count = $rows.Count
         training_feature_executors = $expectedExecutors
-        stage_queue_ids = @(
-            $craftStage.QueueId,
-            $placementStage.QueueId,
-            $loadStage.QueueId)
+        stage_queue_ids = $stageQueueIds
         dataset_path = $datasetPath
         executor_health = $executorHealth
         backend_process_id = $backendProcess.Id

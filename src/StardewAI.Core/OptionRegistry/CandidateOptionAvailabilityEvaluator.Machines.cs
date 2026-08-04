@@ -267,6 +267,10 @@ namespace StardewAI.Core.OptionRegistry
                         snapshot,
                         commitmentLedger)
                     .Where(placement => string.Equals(
+                        placement.Kind,
+                        "place_machine_item",
+                        StringComparison.Ordinal))
+                    .Where(placement => string.Equals(
                         placement.QualifiedItemId,
                         task.QualifiedItemId,
                         StringComparison.OrdinalIgnoreCase))
@@ -299,10 +303,19 @@ namespace StardewAI.Core.OptionRegistry
             var sources = ReadParameter(
                 task.Parameters,
                 "priority_task_sources_json");
+            var placedCount = ReadMachineIntParameter(
+                task.Parameters,
+                "placed_same_machine_count");
+            var inventoryCount = ReadMachineIntParameter(
+                task.Parameters,
+                "inventory_same_machine_count");
             placement.ExpectedEffect +=
                 ";machine_demand_class=priority_task_requirement" +
                 ";priority_task_required=true" +
                 ";priority_task_sources_json=" + sources +
+                ";placed_same_machine_count=" + placedCount +
+                ";inventory_same_machine_count=" + inventoryCount +
+                ";required_additional_machine_count=1" +
                 ";material_reservation_request_priority=300" +
                 ";material_reservation_request_class=active_collection_task" +
                 ";machine_task_capacity_action_required=true";
@@ -313,6 +326,13 @@ namespace StardewAI.Core.OptionRegistry
                     "priority_task_requirement"),
                 Parameter("priority_task_required", "true"),
                 Parameter("priority_task_sources_json", sources),
+                Parameter(
+                    "placed_same_machine_count",
+                    placedCount.ToString()),
+                Parameter(
+                    "inventory_same_machine_count",
+                    inventoryCount.ToString()),
+                Parameter("required_additional_machine_count", "1"),
                 Parameter(
                     "material_reservation_request_priority",
                     "300"),

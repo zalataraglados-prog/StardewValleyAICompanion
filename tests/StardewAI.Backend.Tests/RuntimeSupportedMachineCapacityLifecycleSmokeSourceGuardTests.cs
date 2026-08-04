@@ -64,4 +64,22 @@ public sealed class RuntimeSupportedMachineCapacityLifecycleSmokeSourceGuardTest
             Script,
             StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void SmokeBuildsStageQueueIdsAsAnArrayBeforeSummarySerialization()
+    {
+        Assert.Contains("$stageQueueIds = @()", Script, StringComparison.Ordinal);
+        Assert.Contains(
+            "$stageQueueIds += [string]$placementStage.QueueId",
+            Script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stage_queue_ids = $stageQueueIds",
+            Script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "stage_queue_ids = $(if",
+            Script,
+            StringComparison.Ordinal);
+    }
 }

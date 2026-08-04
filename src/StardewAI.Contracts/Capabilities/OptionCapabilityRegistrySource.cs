@@ -370,8 +370,9 @@ namespace StardewAI.Contracts.Capabilities
                         "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
                         "EVD-214"),
                     ["farm.establish_supported_machine_capacity"] = VerifiedEvidence(
-                        "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows",
-                        "EVD-215"),
+                        "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
+                        "EVD-215",
+                        "EVD-217"),
                     ["farm.fulfill_machine_task_demand"] = VerifiedEvidence(
                         "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
                         "EVD-216"),

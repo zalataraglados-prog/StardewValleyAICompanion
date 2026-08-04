@@ -1635,7 +1635,7 @@
       "compilerBinding": "step",
       "runtimeBinding": "internal_execution_pipeline",
       "verifierBinding": "runtime_before_after_verifier",
-      "evidenceBinding": "EVD-215",
+      "evidenceBinding": "EVD-215,EVD-217",
       "registrationStatus": "Registered",
       "readStatus": "RequiredFactContractDeclared",
       "candidateStatus": "Declared",
