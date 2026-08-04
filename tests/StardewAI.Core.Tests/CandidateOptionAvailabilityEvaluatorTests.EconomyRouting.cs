@@ -2,7 +2,10 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -276,9 +279,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     {
         var snapshot = RouteConnectorSnapshot(routeTrainingBlocked: false);
 
-        var option = new CandidateOptionAvailabilityEvaluator()
-            .Evaluate(snapshot, new[] { "exploration.visit_location" })
-            .Options[0];
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" });
+        var option = availability.Options[0];
 
         Assert.False(option.Available);
         Assert.True(option.ReadEligible);
@@ -287,13 +290,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("route_executor_disabled", option.BlockingReasons);
         var candidate = Assert.Single(option.EventCandidates);
-        Assert.Equal("route:Farm:12,10:warp", candidate.CandidateId);
+        Assert.Equal(
+            "route:Farm:12,10:warp:to=Town:arrival=1,2",
+            candidate.CandidateId);
         Assert.Equal("route_connector_tile", candidate.Kind);
         Assert.True(candidate.Available);
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(12, candidate.TileX);
         Assert.Equal(10, candidate.TileY);
-        Assert.Equal("player.tile=12,10;route_connector=warp;expected_target_location=Town;fresh_snapshot_replan_required=true;expected_arrival_tile=1,2", candidate.ExpectedEffect);
+        Assert.Equal("player.tile=12,10;route_source_location=Farm;route_connector=warp;expected_target_location=Town;route_connector_resolved=true;route_training_scope=exact_current_cross_location_connector;fresh_snapshot_replan_required=true;expected_arrival_tile=1,2", candidate.ExpectedEffect);
         Assert.Equal(120, candidate.EstimatedTicks);
         Assert.Empty(candidate.BlockReasons);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
@@ -302,6 +307,61 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_x" && parameter.Value == "1");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_y" && parameter.Value == "2");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "estimated_ticks" && parameter.Value == "120");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route.source_location_id" &&
+            parameter.Value == "Farm");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route.snapshot_policy" &&
+            parameter.Value == "one_connector_then_fresh_snapshot");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "daily.closed_loop"));
+        Assert.Equal("exploration.visit_location", ranked.OptionId);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("traverse_connector", step.Kind);
+        Assert.Contains(step.Parameters, parameter =>
+            parameter.Name == "route.training_scope" &&
+            parameter.Value == "exact_current_cross_location_connector");
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "route.snapshot_policy" &&
+            parameter.Value == "one_connector_then_fresh_snapshot");
+    }
+
+    [Fact]
+    public void VisitLocationFailsClosedForUnresolvedOrSameLocationConnector()
+    {
+        foreach (var snapshot in new[]
+        {
+            RouteConnectorSnapshot(
+                routeTrainingBlocked: false,
+                resolved: false),
+            RouteConnectorSnapshot(
+                routeTrainingBlocked: false,
+                targetLocation: "Farm")
+        })
+        {
+            var option = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(snapshot, new[] { "exploration.visit_location" })
+                .Options[0];
+            var candidate = Assert.Single(option.EventCandidates);
+
+            Assert.False(candidate.Available);
+            Assert.Contains(candidate.BlockReasons, reason =>
+                reason is "route_connector_unresolved" or
+                    "route_connector_cross_location_target_required");
+            Assert.Contains(
+                "no_available_route_connector_candidates",
+                option.BlockingReasons);
+        }
     }
 
     [Fact]
@@ -368,8 +428,32 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         var repair = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
         Assert.True(repair.Available);
         Assert.Equal("route_repair_clearable_obstacle", repair.AvailabilityClass);
-        Assert.StartsWith("route-repair:route:Farm:12,10:warp:clear:Farm:12,10:grass", repair.CandidateId);
-        Assert.Equal("route_repair_for=route:Farm:12,10:warp;move_to_adjacent=11,10;current_location.obstacle[12,10]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
+        Assert.StartsWith("route-repair:route:Farm:12,10:warp:to=Town:arrival=1,2:clear:Farm:12,10:grass", repair.CandidateId);
+        Assert.Equal("route_repair_for=route:Farm:12,10:warp:to=Town:arrival=1,2;route_repair_expected_target_location=Town;fresh_snapshot_replan_required=true;move_to_adjacent=11,10;current_location.obstacle[12,10]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
+        Assert.Contains(repair.Parameters, parameter =>
+            parameter.Name == "route_repair.snapshot_policy" &&
+            parameter.Value == "clear_one_obstacle_then_fresh_snapshot");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[] { "exploration.visit_location" }),
+            "daily.closed_loop"));
+        Assert.Equal("clear_obstacle_tile", ranked.Kind);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        Assert.Contains(plan.Steps, step =>
+            step.Kind == "clear_obstacle" &&
+            step.Parameters.Any(parameter =>
+                parameter.Name == "route_repair.candidate_id"));
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Contains(queue.Items, item =>
+            item.OptionId == "executor.clear_obstacle" &&
+            item.NormalizedCommand.Parameters.Any(parameter =>
+                parameter.Name == "route_repair.snapshot_policy"));
     }
 
     [Fact]
@@ -412,8 +496,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("route_path_blocked_by_collision_grid", route.BlockReasons);
         var repair = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
         Assert.True(repair.Available);
-        Assert.StartsWith("route-repair:route:Farm:3,0:warp:clear:Farm:1,0:grass", repair.CandidateId);
-        Assert.Equal("route_repair_for=route:Farm:3,0:warp;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
+        Assert.StartsWith("route-repair:route:Farm:3,0:warp:to=Town:arrival=1,2:clear:Farm:1,0:grass", repair.CandidateId);
+        Assert.Equal("route_repair_for=route:Farm:3,0:warp:to=Town:arrival=1,2;route_repair_expected_target_location=Town;fresh_snapshot_replan_required=true;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
     }
 
     [Fact]

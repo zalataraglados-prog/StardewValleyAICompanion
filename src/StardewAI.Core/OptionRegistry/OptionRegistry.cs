@@ -192,12 +192,12 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "grandpa evaluation direction selected", "score delta target estimated" },
                 new[] { "block_unavailable_required_state", "block_state_hash_mismatch" }));
 
-            Register(Option("exploration.visit_location", "exploration", "Visit location preview",
+            Register(Option("exploration.visit_location", "exploration", "Advance one exact rolling cross-location route step",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
                 TrainingRoles.Mixed,
                 new[] { "locations.collision_grid", "locations.route_action_branch_coverage", "player.energy", "time.time" },
-                new[] { "route previewed" },
+                new[] { "one connector traversed or one exact route obstacle cleared; fresh snapshot required" },
                 new[] { "block_unverified_movement", "block_unavailable_required_state" }));
 
             Register(Option("fishing.catch_fish", "fishing", "Catch fish from a transparent legal cast candidate",

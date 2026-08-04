@@ -1,3 +1,24 @@
+2026-08-05 EVD-218 bounded rolling visit-location runtime admission
+
+- Existing route candidate, daily-plan compiler, action-queue compiler and native
+  `executor.traverse_connector` were reused; no second route executor was added.
+- Candidate identity now includes source map/tile, connector kind, target map and
+  optional arrival; unresolved and same-map connectors fail closed.
+- Route repair preserves the existing clear candidate parameters and requires a
+  fresh snapshot before routing continues.
+- Hidden/silent E-drive PASS:
+  `runtime-route-connector-smoke-evd218-pass-20260805` ranked 3 transparent
+  FarmHouse candidates, compiled exactly 1 connector step/item, executed
+  `FarmHouse -> Farm` as `applied/verified`, refreshed the state hash and wrote
+  exactly 1 feature row.
+- Earlier same-day runs were non-evidence diagnostics: one exposed the obsolete
+  light-profile `current_location.warps` lookup, one exposed backend rejection of
+  `profile=route`, and one had a script-only exact-ranked-count assertion after a
+  fully verified action. None is cited as PASS evidence.
+- Final regression: Core 1530/1530 and Backend 114/114 PASS. Full Release solution
+  build PASS with 0 errors and 5 pre-existing warnings; action reconciliation
+  remains 585/585 exports with blocking 0.
+
 2026-08-05 EVD-217 task-driven machine-capacity runtime admission
 
 - Extended the existing `farm.establish_supported_machine_capacity` lifecycle;

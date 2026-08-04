@@ -1131,7 +1131,7 @@ public sealed class DailyPlanCompilerTests
     {
         var candidate = new PolicyEventCandidatePrediction
         {
-            CandidateId = "route:Farm:12,10:warp",
+            CandidateId = "route:Farm:12,10:warp:to=Town:arrival=1,2",
             Kind = "route_connector_tile",
             Rank = 1,
             TimelineStatus = "ready_now",

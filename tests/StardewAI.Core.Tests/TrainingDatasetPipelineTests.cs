@@ -31,6 +31,7 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
+                    "exploration.visit_location",
                     "farm.collect_machine_outputs",
                     "farm.establish_supported_machine_capacity",
                     "farm.fulfill_machine_task_demand",

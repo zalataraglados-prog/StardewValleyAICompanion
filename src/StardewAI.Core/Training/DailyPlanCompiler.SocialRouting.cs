@@ -148,7 +148,12 @@ namespace StardewAI.Core.Training
                 "machine_route.committed_segment_index",
                 "machine_route.snapshot_policy",
                 "storage_route.remaining_connector_count",
-                "storage_route.snapshot_policy"
+                "storage_route.snapshot_policy",
+                "route.source_location_id",
+                "route.target_location_id",
+                "route.connector_resolved",
+                "route.snapshot_policy",
+                "route.training_scope"
             })
             {
                 var value = CandidateParameter(candidate, name);

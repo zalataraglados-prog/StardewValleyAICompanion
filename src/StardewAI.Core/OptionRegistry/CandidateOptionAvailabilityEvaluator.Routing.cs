@@ -50,6 +50,7 @@ namespace StardewAI.Core.OptionRegistry
             var y = ReadInt(connector, "tile_y");
             var kind = ReadString(connector, "kind").ToLowerInvariant();
             var targetLocation = ReadString(connector, "target_location");
+            var resolved = ReadBool(connector, "resolved") == true;
             var actionParameters = new List<SmallModelActionParameter>
             {
                 Parameter("target_tile_x", x.ToString()),
@@ -89,20 +90,47 @@ namespace StardewAI.Core.OptionRegistry
             });
             var blockReasons = routePreviewBlocks
                 .Concat(CompilerProbeBlockingReasons(executionProbe))
+                .Concat(!resolved
+                    ? new[] { "route_connector_unresolved" }
+                    : Array.Empty<string>())
+                .Concat(string.IsNullOrWhiteSpace(targetLocation)
+                    ? new[] { "route_connector_target_location_required" }
+                    : Array.Empty<string>())
+                .Concat(string.Equals(
+                        locationId,
+                        targetLocation,
+                        StringComparison.OrdinalIgnoreCase)
+                    ? new[] { "route_connector_cross_location_target_required" }
+                    : Array.Empty<string>())
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
             var normalizedParameters = executionProbe?.NormalizedCommand.Parameters ?? actionParameters.ToArray();
             var candidateParameters = new[]
                 {
-                    Parameter("execution_option_id", "executor.traverse_connector")
+                    Parameter("execution_option_id", "executor.traverse_connector"),
+                    Parameter("route.source_location_id", locationId),
+                    Parameter("route.target_location_id", targetLocation),
+                    Parameter(
+                        "route.connector_resolved",
+                        resolved.ToString().ToLowerInvariant()),
+                    Parameter(
+                        "route.snapshot_policy",
+                        "one_connector_then_fresh_snapshot"),
+                    Parameter(
+                        "route.training_scope",
+                        "exact_current_cross_location_connector")
                 }
                 .Concat(normalizedParameters)
                 .ToArray();
             var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
             var gateTimeline = ReadRouteGateTimeline(snapshot, x, y);
             var expectedEffect = "player.tile=" + x + "," + y +
+                ";route_source_location=" + locationId +
                 ";route_connector=" + kind +
                 ";expected_target_location=" + targetLocation +
+                ";route_connector_resolved=" +
+                resolved.ToString().ToLowerInvariant() +
+                ";route_training_scope=exact_current_cross_location_connector" +
                 ";fresh_snapshot_replan_required=true";
             if (targetX.HasValue && targetY.HasValue)
             {
@@ -111,7 +139,14 @@ namespace StardewAI.Core.OptionRegistry
 
             return new EventCandidate
             {
-                CandidateId = "route:" + locationId + ":" + x + "," + y + ":" + kind,
+                CandidateId = RouteCandidateId(
+                    locationId,
+                    x,
+                    y,
+                    kind,
+                    targetLocation,
+                    targetX,
+                    targetY),
                 Kind = "route_connector_tile",
                 Available = blockReasons.Length == 0,
                 LocationId = locationId,
@@ -265,14 +300,51 @@ namespace StardewAI.Core.OptionRegistry
                         LocationId = clear.LocationId,
                         TileX = clear.TileX,
                         TileY = clear.TileY,
-                        ExpectedEffect = "route_repair_for=" + route.CandidateId + ";" + clear.ExpectedEffect,
+                        ExpectedEffect = "route_repair_for=" + route.CandidateId +
+                            ";route_repair_expected_target_location=" +
+                            ReadParameter(
+                                route.Parameters,
+                                "expected_target_location") +
+                            ";fresh_snapshot_replan_required=true;" +
+                            clear.ExpectedEffect,
                         EstimatedTicks = clear.EstimatedTicks,
                         EnergyCost = clear.EnergyCost,
                         AvailabilityClass = "route_repair_clearable_obstacle",
-                        BlockReasons = Array.Empty<string>()
+                        BlockReasons = Array.Empty<string>(),
+                        Parameters = clear.Parameters.Concat(new[]
+                        {
+                            Parameter(
+                                "route_repair.candidate_id",
+                                route.CandidateId),
+                            Parameter(
+                                "route_repair.expected_target_location",
+                                ReadParameter(
+                                    route.Parameters,
+                                    "expected_target_location")),
+                            Parameter(
+                                "route_repair.snapshot_policy",
+                                "clear_one_obstacle_then_fresh_snapshot"),
+                            Parameter(
+                                "route_repair.training_scope",
+                                "exact_current_cross_location_connector")
+                        }).ToArray()
                     }))
                 .ToArray();
         }
+
+        private static string RouteCandidateId(
+            string locationId,
+            int tileX,
+            int tileY,
+            string kind,
+            string targetLocation,
+            int? targetX,
+            int? targetY) =>
+            "route:" + locationId + ":" + tileX + "," + tileY +
+            ":" + kind + ":to=" + targetLocation +
+            (targetX.HasValue && targetY.HasValue
+                ? ":arrival=" + targetX.Value + "," + targetY.Value
+                : string.Empty);
 
         private static bool ClearCandidateRepairsRoute(SnapshotEnvelope snapshot, EventCandidate route, EventCandidate clear)
         {

@@ -497,7 +497,7 @@ public sealed partial class EventCandidateRankerTests
                     {
                         new EventCandidate
                         {
-                            CandidateId = "route:Farm:12,10:warp",
+                            CandidateId = "route:Farm:12,10:warp:to=Town:arrival=1,2",
                             Kind = "route_connector_tile",
                             Available = true,
                             LocationId = "Farm",
@@ -515,7 +515,9 @@ public sealed partial class EventCandidateRankerTests
         var ranked = new EventCandidateRanker().Rank(report, availability);
 
         var candidate = Assert.Single(ranked);
-        Assert.Equal("route:Farm:12,10:warp", candidate.CandidateId);
+        Assert.Equal(
+            "route:Farm:12,10:warp:to=Town:arrival=1,2",
+            candidate.CandidateId);
         Assert.Equal("route_connector_tile", candidate.Kind);
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(12, candidate.TileX);

@@ -363,6 +363,13 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, TrainingEvidence>(
                 new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
                 {
+                    ["exploration.visit_location"] = BoundedEvidence(
+                        "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
+                        readEvidenceIds: new[] { "EVD-025", "EVD-058" },
+                        candidateEvidenceIds: new[] { "EVD-042", "EVD-103", "EVD-218" },
+                        compilerEvidenceIds: new[] { "EVD-058", "EVD-103", "EVD-218" },
+                        runtimeEvidenceIds: new[] { "EVD-058", "EVD-189", "EVD-218" },
+                        outputEvidenceIds: new[] { "EVD-058", "EVD-189", "EVD-218" }),
                     ["farm.collect_machine_outputs"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                         "EVD-213"),
