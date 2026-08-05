@@ -34,6 +34,7 @@ var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
 JsonObject? activeObjectiveContinuation = null;
+var objectiveCompleted = false;
 var socialObjectiveCompleted = false;
 var persistedIterationCount = Directory.EnumerateFiles(
     options.SnapshotDir,
@@ -50,6 +51,7 @@ var noProgressBackoff = new NoProgressBackoffPolicy(
 for (var attemptOrdinal = 1;
     attemptOrdinal <= options.MaxAttempts &&
     (options.RequiredVerifiedActions <= 0 || verifiedActions < options.RequiredVerifiedActions) &&
+    (!options.StopAfterObjectiveComplete || !objectiveCompleted) &&
     (!options.StopAfterSocialObjectiveComplete || !socialObjectiveCompleted);
     attemptOrdinal++)
 {
@@ -191,6 +193,7 @@ for (var attemptOrdinal = 1;
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
+            objectiveCompleted = execution["objective_continuation_completed"]?.GetValue<bool>() == true;
             socialObjectiveCompleted = execution["social_objective_completed"]?.GetValue<bool>() == true;
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
@@ -271,6 +274,7 @@ for (var attemptOrdinal = 1;
 
 var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
     (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
+    (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
     (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
@@ -295,6 +299,8 @@ var report = new LiveTrainingLoopReport
     VerifiedActions = verifiedActions,
     RequiredVerifiedActions = options.RequiredVerifiedActions,
     StopReason = stopReason,
+    ObjectiveCompleted = objectiveCompleted,
+    ActiveObjectiveContinuation = activeObjectiveContinuation,
     SocialObjectiveCompleted = socialObjectiveCompleted,
     ActiveSocialContinuation = string.Equals(ReadString(activeObjectiveContinuation, "kind"), "social", StringComparison.Ordinal)
         ? activeObjectiveContinuation
@@ -330,6 +336,7 @@ Console.WriteLine(JsonSerializer.Serialize(new
     execution = options.TargetExecutionMode,
     feedback = options.FeedbackMode,
     executor_feedback_required = options.RequireExecutorFeedback,
+    objective_completed = objectiveCompleted,
     social_objective_completed = socialObjectiveCompleted
 }, JsonOptions));
 

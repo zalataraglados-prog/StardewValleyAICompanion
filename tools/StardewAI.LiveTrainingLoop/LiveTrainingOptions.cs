@@ -58,6 +58,7 @@ public sealed class LiveTrainingOptions
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
+    public bool StopAfterObjectiveComplete { get; set; }
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
@@ -344,6 +345,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--stop-after-social-objective-complete")
             {
                 options.StopAfterSocialObjectiveComplete = true;
+            }
+            else if (current == "--stop-after-objective-complete")
+            {
+                options.StopAfterObjectiveComplete = true;
             }
         }
 

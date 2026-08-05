@@ -782,7 +782,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             };
         }
 
-        if (string.Equals(parts[0], "AnimalShop", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(parts[0], "AnimalShop", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(parts[0], "Marnie", StringComparison.OrdinalIgnoreCase))
         {
             return new
             {
@@ -796,7 +797,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             };
         }
 
-        if (string.Equals(parts[0], "AdventureShop", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(parts[0], "AdventureShop", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(parts[0], "AdventureGuild", StringComparison.OrdinalIgnoreCase))
         {
             return new
             {

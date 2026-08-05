@@ -47,9 +47,9 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
         Assert.Equal("goal_support=friendship;utility=0.2", selected.SourceCandidate.ExpectedEffect);
         var unavailable = Assert.Single(trajectory.Candidates.Where(row => row.CandidateId == "talk"));
         Assert.Contains("already_talked_today", unavailable.ExclusionReasons);
-        var excluded = Assert.Single(trajectory.Candidates.Where(row => row.CandidateId == "buy"));
-        Assert.False(excluded.AdmittedForPolicy);
-        Assert.Contains(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, excluded.ExclusionReasons);
+        var purchase = Assert.Single(trajectory.Candidates.Where(row => row.CandidateId == "buy"));
+        Assert.True(purchase.AdmittedForPolicy);
+        Assert.DoesNotContain(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, purchase.ExclusionReasons);
         Assert.Equal("executor.social_interact", trajectory.Outcome.PrimitiveOptionId);
         Assert.Equal(90, trajectory.Outcome.ActualTicks);
         Assert.True(trajectory.Outcome.AfterSnapshotFresh);
@@ -65,7 +65,7 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
         {
             RankedEventCandidates = new[]
             {
-                Candidate("buy", "economy.buy_supplies", 1, available: true, ticks: 1, energy: 0)
+                Candidate("recover", "recovery.stabilize_day", 1, available: true, ticks: 1, energy: 0)
             }
         };
 
@@ -77,7 +77,7 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
             Versions(),
             "hash.before",
             decision,
-            "buy",
+            "recover",
             Execution()));
 
         decision.RankedEventCandidates = new[]

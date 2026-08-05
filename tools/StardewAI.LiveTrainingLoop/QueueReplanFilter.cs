@@ -46,6 +46,40 @@ public static class QueueReplanFilter
             };
         }
 
+        var purchaseShopId = ReadParameter(
+            queueItem,
+            "continuation.shop_id");
+        var purchaseQualifiedItemId = ReadParameter(
+            queueItem,
+            "continuation.qualified_item_id");
+        if (string.Equals(
+                optionId,
+                "economy.buy_supplies",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(purchaseShopId) &&
+            !string.IsNullOrWhiteSpace(purchaseQualifiedItemId))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "economy_purchase",
+                ["option_id"] = optionId,
+                ["shop_id"] = purchaseShopId,
+                ["target_location"] = ReadParameter(
+                    queueItem,
+                    "continuation.target_location"),
+                ["item_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.item_id"),
+                ["qualified_item_id"] = purchaseQualifiedItemId,
+                ["max_unit_price"] = ReadParameter(
+                    queueItem,
+                    "continuation.max_unit_price"),
+                ["quantity"] = ReadParameter(
+                    queueItem,
+                    "continuation.quantity")
+            };
+        }
+
         var npcName = ReadParameter(queueItem, "continuation.npc_name");
         if (!string.IsNullOrWhiteSpace(optionId) && !string.IsNullOrWhiteSpace(npcName))
         {
@@ -217,6 +251,28 @@ public static class QueueReplanFilter
         var continuationKind = ReadString(continuation, "kind");
         if (string.Equals(
                 continuationKind,
+                "economy_purchase",
+                StringComparison.Ordinal))
+        {
+            return string.Equals(
+                    optionId,
+                    "executor.buy_shop_item",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "expected_shop_id"),
+                    ReadString(continuation, "shop_id"),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    ReadParameter(queueItem, "qualified_item_id"),
+                    ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "quantity"),
+                    ReadString(continuation, "quantity"),
+                    StringComparison.Ordinal);
+        }
+        if (string.Equals(
+                continuationKind,
                 "machine_placement",
                 StringComparison.Ordinal))
         {
@@ -363,6 +419,37 @@ public static class QueueReplanFilter
         if (!string.Equals(optionId, ReadString(continuation, "option_id"), StringComparison.Ordinal))
         {
             return false;
+        }
+
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "economy_purchase",
+                StringComparison.Ordinal))
+        {
+            var candidateShopId = ReadString(candidate, "shop_id");
+            if (string.IsNullOrWhiteSpace(candidateShopId))
+            {
+                candidateShopId = ReadCandidateParameter(
+                    candidate,
+                    "continuation.shop_id");
+            }
+            var candidateQualifiedItemId = ReadString(
+                candidate,
+                "qualified_item_id");
+            if (string.IsNullOrWhiteSpace(candidateQualifiedItemId))
+            {
+                candidateQualifiedItemId = ReadCandidateParameter(
+                    candidate,
+                    "continuation.qualified_item_id");
+            }
+            return string.Equals(
+                    candidateShopId,
+                    ReadString(continuation, "shop_id"),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    candidateQualifiedItemId,
+                    ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal);
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "machine", StringComparison.Ordinal))

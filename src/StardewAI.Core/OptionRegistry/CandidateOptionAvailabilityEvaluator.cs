@@ -98,16 +98,25 @@ namespace StardewAI.Core.OptionRegistry
             var safety = verifier.Verify(snapshot, option);
             var reasons = new List<string>(safety.BlockingReasons);
             var notes = new List<string>();
-            var compilerProbe = IsUnboundSocialCandidate(candidate) || IsSocialContinuationCandidate(candidate)
+            var compilerProbe = IsUnboundSocialCandidate(candidate) ||
+                IsSocialContinuationCandidate(candidate) ||
+                IsPurchaseContinuationCandidate(candidate)
                 ? new CompilerProbeResult()
                 : ProbeCompiler(snapshot, candidate, commitmentLedger);
             var compilerReasons = compilerProbe.BlockingReasons;
             var safetyPolicy = SafetyPolicyGate.Evaluate(option, candidate);
-            var economicCandidates = EconomicCandidates(snapshot, option.OptionId);
             var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
+            var economicCandidates = EconomicCandidates(
+                snapshot,
+                option.OptionId,
+                candidate.Parameters);
             var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
             var valueReasons = safety.MissingStateFactors.Length == 0
-                ? ValueGateBlockingReasons(snapshot, option.OptionId, economicCandidates)
+                ? ValueGateBlockingReasons(
+                    snapshot,
+                    option.OptionId,
+                    economicCandidates,
+                    eventCandidates)
                 : Array.Empty<string>();
             var eventCandidateReasons = option.OptionId == "mining.reach_depth" ||
                 option.OptionId == "mining.obtain_skull_key" ||

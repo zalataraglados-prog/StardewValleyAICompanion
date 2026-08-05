@@ -58,6 +58,12 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("stop_reason")]
     public string StopReason { get; set; } = string.Empty;
 
+    [JsonPropertyName("objective_completed")]
+    public bool ObjectiveCompleted { get; set; }
+
+    [JsonPropertyName("active_objective_continuation")]
+    public JsonObject? ActiveObjectiveContinuation { get; set; }
+
     [JsonPropertyName("social_objective_completed")]
     public bool SocialObjectiveCompleted { get; set; }
 

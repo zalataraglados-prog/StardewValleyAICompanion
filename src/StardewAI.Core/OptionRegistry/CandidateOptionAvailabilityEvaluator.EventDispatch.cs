@@ -39,6 +39,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.claim_reward_chests"] = (snapshot, _) => MineRewardChestCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["quest.advance"] = (snapshot, _) => QuestCandidates(snapshot),
+                ["economy.buy_supplies"] = BuySupplyStageCandidates,
                 ["economy.ship_items"] = (snapshot, _) => ShipCandidates(snapshot),
                 ["inventory.transfer_item"] = MaterialTransferCandidates
             };

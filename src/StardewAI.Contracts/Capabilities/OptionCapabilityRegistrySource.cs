@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -370,6 +370,13 @@ namespace StardewAI.Contracts.Capabilities
                         compilerEvidenceIds: new[] { "EVD-058", "EVD-103", "EVD-218" },
                         runtimeEvidenceIds: new[] { "EVD-058", "EVD-189", "EVD-218" },
                         outputEvidenceIds: new[] { "EVD-058", "EVD-189", "EVD-218" }),
+                    ["economy.buy_supplies"] = BoundedEvidence(
+                        "vanilla_safe_single_money_purchase_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_buy_and_menu_cleanup",
+                        readEvidenceIds: new[] { "EVD-013", "EVD-014", "EVD-015", "EVD-219" },
+                        candidateEvidenceIds: new[] { "EVD-059", "EVD-219" },
+                        compilerEvidenceIds: new[] { "EVD-062", "EVD-219" },
+                        runtimeEvidenceIds: new[] { "EVD-062", "EVD-219" },
+                        outputEvidenceIds: new[] { "EVD-062", "EVD-219" }),
                     ["farm.collect_machine_outputs"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                         "EVD-213"),
@@ -500,6 +507,8 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("social_gift_current"), SupportedCandidate("social_talk_current"),
                 SupportedCandidate("volcano_reach_caldera_plan_envelope"),
                 SupportedCandidate("water_crop_tile"), SupportedCandidate("sell_shop_item"),
+                BlockedCandidate("purchase_service_gate", "purchase_service_gate_excluded_upstream"),
+                BlockedCandidate("purchase_stage_blocked", "purchase_stage_not_compilable"),
                 BlockedCandidate("quest_candidate", "quest_objective_binding_not_executable"),
                 BlockedCandidate("special_order_candidate", "special_order_objective_binding_not_executable")
             });

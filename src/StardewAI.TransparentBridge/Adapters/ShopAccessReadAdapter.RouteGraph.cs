@@ -223,6 +223,13 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             var targetX = ParseIntPart(parts, 1);
             var targetY = ParseIntPart(parts, 2);
             var resolved = !string.IsNullOrWhiteSpace(targetLocation) && targetX.HasValue && targetY.HasValue && locationNames.Contains(targetLocation);
+            var gate = ReadLockedDoorWarpGate(
+                location,
+                action.tile_x,
+                action.tile_y,
+                action.raw_action,
+                action.source_property,
+                parts);
             return new
             {
                 kind = "locked_door_warp",
@@ -238,6 +245,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 close_time = ParseIntPart(parts, 5),
                 npc_name = Part(parts, 6),
                 min_friendship = ParseIntPart(parts, 7),
+                gate,
                 resolved,
                 unresolved_reason = resolved ? (string?)null : "locked_door_warp_target_not_resolved"
             };
@@ -245,6 +253,18 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
         if (IsShopEndpointAction(parts[0]))
         {
+            var openTime = string.Equals(parts[0], "OpenShop", StringComparison.OrdinalIgnoreCase)
+                ? ParseIntPart(parts, 3)
+                : null;
+            var closeTime = string.Equals(parts[0], "OpenShop", StringComparison.OrdinalIgnoreCase)
+                ? ParseIntPart(parts, 4)
+                : null;
+            var directTimeGateKnown = openTime.HasValue && closeTime.HasValue;
+            var directTimeAllowed = !directTimeGateKnown ||
+                Game1.timeOfDay >= openTime!.Value &&
+                Game1.timeOfDay < closeTime!.Value;
+            var festivalClosed = location.InValleyContext() &&
+                GameLocation.AreStoresClosedForFestival();
             return new
             {
                 kind = "shop_endpoint",
@@ -256,7 +276,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 target_y = (int?)null,
                 source_property = action.source_property,
                 raw_action = action.raw_action,
+                action_type = parts[0],
                 shop_id = ResolveShopEndpointId(location, parts),
+                open_time = openTime,
+                close_time = closeTime,
+                direct_time_gate_known = directTimeGateKnown,
+                direct_time_allowed = directTimeAllowed,
+                festival_closed = festivalClosed,
+                allowed_now = directTimeAllowed && !festivalClosed,
                 resolved = false,
                 unresolved_reason = "shop_endpoint_not_location_transition"
             };
@@ -375,8 +402,10 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Blacksmith" => "covered_for_read",
             "Carpenter" => "covered_for_read",
             "Marnie" => "covered_for_read",
+            "AnimalShop" => "covered_for_read",
             "AdventureGuild" => "covered_for_read",
             "adventureGuild" => "covered_for_read",
+            "AdventureShop" => "covered_for_read",
             null or "" => "unsupported_for_route_training",
             _ => "unsupported_for_route_training"
         };
@@ -396,7 +425,9 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Blacksmith" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             "Carpenter" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             "Marnie" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
+            "AnimalShop" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             "AdventureGuild" or "adventureGuild" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
+            "AdventureShop" => "dialogue shop endpoint recognized; shop-opening executor may call branch then whitelisted dialogue response",
             _ => "branch not route-transparent; route/shop-opening training must block on this action"
         };
     }
@@ -409,8 +440,10 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             || string.Equals(branch, "Blacksmith", StringComparison.OrdinalIgnoreCase)
             || string.Equals(branch, "Carpenter", StringComparison.OrdinalIgnoreCase)
             || string.Equals(branch, "Marnie", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(branch, "AnimalShop", StringComparison.OrdinalIgnoreCase)
             || string.Equals(branch, "AdventureGuild", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(branch, "adventureGuild", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(branch, "adventureGuild", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(branch, "AdventureShop", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed record MapActionRow(int tile_x, int tile_y, string source_property, string raw_action, string? branch);

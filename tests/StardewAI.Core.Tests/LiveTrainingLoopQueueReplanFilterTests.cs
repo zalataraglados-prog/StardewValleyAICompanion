@@ -165,6 +165,79 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void PurchaseContinuationLocksShopAndItemUntilExactNativeBuyApplies()
+    {
+        var route = QueueItem(
+            "queue.purchase.route",
+            "executor.traverse_connector",
+            "2",
+            "3",
+            string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.option_id", "economy.buy_supplies"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.shop_id", "Blacksmith"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.target_location", "Blacksmith"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.qualified_item_id", "(O)378"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.max_unit_price", "150"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("continuation.quantity", "1"));
+
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal(
+            "economy_purchase",
+            continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            PurchaseCandidate("Blacksmith", "(O)378"),
+            PurchaseCandidate("Blacksmith", "(O)380"),
+            PurchaseCandidate("SeedShop", "(O)378")
+        };
+        var selected = Assert.Single(
+            QueueReplanFilter.FilterRankedCandidates(
+                candidates,
+                continuation));
+        Assert.Equal(
+            "(O)378",
+            selected!["qualified_item_id"]!.GetValue<string>());
+
+        var interact = QueueItem(
+            "queue.purchase.interact",
+            "executor.interact",
+            "3",
+            "5",
+            string.Empty);
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            interact,
+            continuation,
+            "applied"));
+
+        var buy = QueueItem(
+            "queue.purchase.buy",
+            "executor.buy_shop_item",
+            "0",
+            "0",
+            "(O)378");
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("expected_shop_id", "Blacksmith"));
+        buy["normalized_command"]!["parameters"]!.AsArray().Add(
+            Parameter("quantity", "1"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            buy,
+            continuation,
+            "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            buy,
+            continuation,
+            "blocked"));
+    }
+
+    [Fact]
     public void MachineContinuationKeepsSameExecutorLocationAndTileUntilApplied()
     {
         var route = QueueItem("queue.machine.route", "executor.traverse_connector", "4", "8", string.Empty);
@@ -360,6 +433,21 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                     }
                 }
             }
+        };
+    }
+
+    private static JsonObject PurchaseCandidate(
+        string shopId,
+        string qualifiedItemId)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "purchase:" + shopId + ":" + qualifiedItemId,
+            ["option_id"] = "economy.buy_supplies",
+            ["kind"] = "buy_shop_item",
+            ["shop_id"] = shopId,
+            ["qualified_item_id"] = qualifiedItemId,
+            ["parameters"] = new JsonArray()
         };
     }
 

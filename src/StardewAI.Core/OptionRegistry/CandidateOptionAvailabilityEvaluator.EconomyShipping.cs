@@ -13,11 +13,14 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private static EconomicCandidate[] EconomicCandidates(SnapshotEnvelope snapshot, string optionId)
+        private static EconomicCandidate[] EconomicCandidates(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            SmallModelActionParameter[] boundParameters)
         {
             if (optionId == "economy.buy_supplies")
             {
-                return BuyCandidates(snapshot);
+                return BuyCandidates(snapshot, boundParameters);
             }
 
             if (optionId == "economy.sell_items")
@@ -33,11 +36,15 @@ namespace StardewAI.Core.OptionRegistry
             return Array.Empty<EconomicCandidate>();
         }
 
-        private static string[] ValueGateBlockingReasons(SnapshotEnvelope snapshot, string optionId, EconomicCandidate[] economicCandidates)
+        private static string[] ValueGateBlockingReasons(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            EconomicCandidate[] economicCandidates,
+            EventCandidate[] eventCandidates)
         {
             if (optionId == "economy.buy_supplies")
             {
-                return BuySuppliesValueBlockReasons(snapshot, economicCandidates);
+                return BuySuppliesValueBlockReasons(snapshot, economicCandidates, eventCandidates);
             }
 
             if (optionId == "economy.sell_items")
@@ -53,11 +60,24 @@ namespace StardewAI.Core.OptionRegistry
             return Array.Empty<string>();
         }
 
-        private static string[] BuySuppliesValueBlockReasons(SnapshotEnvelope snapshot, EconomicCandidate[] candidates)
+        private static string[] BuySuppliesValueBlockReasons(
+            SnapshotEnvelope snapshot,
+            EconomicCandidate[] candidates,
+            EventCandidate[] eventCandidates)
         {
-            if (candidates.Any(candidate => candidate.Available))
+            if (candidates.Any(candidate => candidate.Available) ||
+                eventCandidates.Any(candidate => candidate.Available))
             {
                 return Array.Empty<string>();
+            }
+
+            if (eventCandidates.Length > 0)
+            {
+                return eventCandidates
+                    .SelectMany(candidate => candidate.BlockReasons)
+                    .Concat(new[] { "no_value_available_purchase_candidates" })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
             }
 
             var shopStock = ReadStateFieldValue(snapshot, "menus", "shop_stock");
@@ -122,7 +142,9 @@ namespace StardewAI.Core.OptionRegistry
             return Array.Empty<string>();
         }
 
-        private static EconomicCandidate[] BuyCandidates(SnapshotEnvelope snapshot)
+        private static EconomicCandidate[] BuyCandidates(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] boundParameters)
         {
             var shopStock = ReadStateFieldValue(snapshot, "menus", "shop_stock");
             if (!shopStock.HasValue ||
@@ -130,20 +152,56 @@ namespace StardewAI.Core.OptionRegistry
                 !shopStock.Value.TryGetProperty("entries", out var entries) ||
                 entries.ValueKind != JsonValueKind.Array)
             {
-                return BuyCandidatesFromShopPreview(snapshot);
+                return Array.Empty<EconomicCandidate>();
             }
 
             var shopId = ReadString(shopStock.Value, "shop_id");
+            var continuationShopId = ReadParameter(boundParameters, "continuation.shop_id");
+            var continuationQualifiedItemId = ReadParameter(
+                boundParameters,
+                "continuation.qualified_item_id");
+            var continuationMaxUnitPrice = ReadParameterInt(
+                boundParameters,
+                "continuation.max_unit_price");
+            var continuationParameters = PurchaseContinuationParameters(
+                boundParameters);
             return entries.EnumerateArray()
                 .Select((entry, index) =>
                 {
-                    var blockReasons = BuyEntryBlockReasons(entry);
+                    var blockReasons = new List<string>(
+                        BuyEntryBlockReasons(entry));
+                    if (!string.IsNullOrWhiteSpace(continuationShopId) &&
+                        !string.Equals(
+                            shopId,
+                            continuationShopId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        blockReasons.Add(
+                            "active_shop_does_not_match_purchase_continuation");
+                    }
+                    if (!string.IsNullOrWhiteSpace(
+                            continuationQualifiedItemId) &&
+                        !string.Equals(
+                            ReadString(entry, "qualified_item_id"),
+                            continuationQualifiedItemId,
+                            StringComparison.Ordinal))
+                    {
+                        blockReasons.Add(
+                            "shop_item_does_not_match_purchase_continuation");
+                    }
                     var price = ReadInt(entry, "price");
+                    if (continuationMaxUnitPrice.HasValue &&
+                        price > continuationMaxUnitPrice.Value)
+                    {
+                        blockReasons.Add(
+                            "shop_item_price_exceeds_purchase_continuation");
+                    }
                     return new EconomicCandidate
                     {
-                        CandidateId = "buy:" + index,
+                        CandidateId = "buy:" + shopId + ":" +
+                            ReadString(entry, "qualified_item_id") + ":" + index,
                         Kind = "buy_shop_item",
-                        Available = blockReasons.Length == 0,
+                        Available = blockReasons.Count == 0,
                         ItemId = ReadString(entry, "item_id"),
                         QualifiedItemId = ReadString(entry, "qualified_item_id"),
                         DisplayName = ReadString(entry, "display_name"),
@@ -155,6 +213,9 @@ namespace StardewAI.Core.OptionRegistry
                         Stock = ReadInt(entry, "stock"),
                         InfiniteStock = ReadBool(entry, "infinite_stock") == true,
                         BlockReasons = blockReasons
+                            .Distinct(StringComparer.Ordinal)
+                            .ToArray(),
+                        Parameters = continuationParameters
                     };
                 })
                 .ToArray();

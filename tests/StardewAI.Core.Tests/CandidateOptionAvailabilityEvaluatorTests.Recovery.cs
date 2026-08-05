@@ -422,6 +422,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "money": {"value":500,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "seed_inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -439,7 +443,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         """.Replace("ENTRY", entryOverride));
     }
 
-    private static SnapshotEnvelope BuyPreviewSnapshot(string entryOverride)
+    private static SnapshotEnvelope BuyPreviewSnapshot(
+        string entryOverride,
+        bool endpointAllowed = true)
     {
         return Snapshot("""
         {
@@ -448,6 +454,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "money": {"value":500,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "seed_inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -455,13 +465,28 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "crop_catalog": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "shops": {"value":{"shops":[{"shop_id":"Blacksmith","stock_preview":{"kind":"shop_stock_preview","shop_id":"Blacksmith","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"Blacksmith","stock_preview":{"kind":"shop_stock_preview","shop_id":"Blacksmith","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true},
+              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED,"resolved":false}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "map": {"value":{"id":"FarmHouse"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shop_action_tiles": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
-        """.Replace("ENTRY", entryOverride));
+        """
+            .Replace("ENTRY", entryOverride)
+            .Replace(
+                "ENDPOINT_ALLOWED",
+                endpointAllowed ? "true" : "false"));
     }
 
     private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)

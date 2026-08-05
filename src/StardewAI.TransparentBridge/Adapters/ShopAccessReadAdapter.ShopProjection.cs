@@ -208,13 +208,36 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return null;
         }
 
-        if (string.Equals(parts[0], "JojaShop", StringComparison.OrdinalIgnoreCase))
+        var actionType = parts[0];
+        if (string.Equals(actionType, "JojaShop", StringComparison.OrdinalIgnoreCase))
         {
             return "Joja";
         }
 
+        if (string.Equals(actionType, "Blacksmith", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Blacksmith";
+        }
+
+        if (string.Equals(actionType, "Carpenter", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Carpenter";
+        }
+
+        if (string.Equals(actionType, "Marnie", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "AnimalShop", StringComparison.OrdinalIgnoreCase))
+        {
+            return "AnimalShop";
+        }
+
+        if (string.Equals(actionType, "AdventureGuild", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "AdventureShop", StringComparison.OrdinalIgnoreCase))
+        {
+            return "AdventureShop";
+        }
+
         var rawShopId = Part(parts, 1);
-        if (string.Equals(parts[0], "Buy", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(actionType, "Buy", StringComparison.OrdinalIgnoreCase))
         {
             return ShopIdResolver.ResolveLegacyBuy(location, rawShopId);
         }

@@ -73,6 +73,7 @@ namespace StardewAI.Core.Training
         private static IEnumerable<SmallModelPlanStep> InteractEndpointSteps(PolicyEventCandidatePrediction candidate)
         {
             var steps = new List<SmallModelPlanStep>();
+            var continuation = PurchaseContinuation(candidate);
             var standTile = ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
             if (standTile.HasValue)
             {
@@ -87,7 +88,8 @@ namespace StardewAI.Core.Training
                     Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
                     ExpectedEffects = new[] { "player.tile=" + standTile.Value.X + "," + standTile.Value.Y },
                     SafetyConstraints = new[] { "collision_checked_by_action_queue_compiler" },
-                    FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = continuation
                 });
             }
 
@@ -118,10 +120,12 @@ namespace StardewAI.Core.Training
                 SafetyConstraints = new[] { "interaction_kind=map_action", "expected_action_type=" + expectedActionType },
                 FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                 Parameters = new[]
-                {
-                    Parameter("interaction_kind", "map_action"),
-                    Parameter("expected_action_type", expectedActionType)
-                }
+                    {
+                        Parameter("interaction_kind", "map_action"),
+                        Parameter("expected_action_type", expectedActionType)
+                    }
+                    .Concat(continuation)
+                    .ToArray()
             });
             if (dialogueResponse.HasValue)
             {
@@ -135,11 +139,13 @@ namespace StardewAI.Core.Training
                     SafetyConstraints = new[] { "dialogue_response_whitelisted", "expected_shop_id=" + dialogueResponse.Value.ShopId },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = new[]
-                    {
-                        Parameter("expected_dialogue_key", dialogueResponse.Value.DialogueKey),
-                        Parameter("dialogue_response_key", dialogueResponse.Value.ResponseKey),
-                        Parameter("expected_shop_id", dialogueResponse.Value.ShopId)
-                    }
+                        {
+                            Parameter("expected_dialogue_key", dialogueResponse.Value.DialogueKey),
+                            Parameter("dialogue_response_key", dialogueResponse.Value.ResponseKey),
+                            Parameter("expected_shop_id", dialogueResponse.Value.ShopId)
+                        }
+                        .Concat(continuation)
+                        .ToArray()
                 });
             }
             return steps;
@@ -157,13 +163,15 @@ namespace StardewAI.Core.Training
                 return new DialogueShopResponseSpec("carpenter", "Shop", string.IsNullOrWhiteSpace(shopId) ? "Carpenter" : shopId);
             }
 
-            if (string.Equals(expectedActionType, "Marnie", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(expectedActionType, "Marnie", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(expectedActionType, "AnimalShop", StringComparison.OrdinalIgnoreCase))
             {
                 return new DialogueShopResponseSpec("Marnie", "Supplies", string.IsNullOrWhiteSpace(shopId) ? "AnimalShop" : shopId);
             }
 
             if (string.Equals(expectedActionType, "AdventureGuild", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(expectedActionType, "adventureGuild", StringComparison.OrdinalIgnoreCase))
+                string.Equals(expectedActionType, "adventureGuild", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(expectedActionType, "AdventureShop", StringComparison.OrdinalIgnoreCase))
             {
                 return new DialogueShopResponseSpec("adventureGuild", "Shop", string.IsNullOrWhiteSpace(shopId) ? "AdventureShop" : shopId);
             }
@@ -199,6 +207,7 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("expected_shop_id", candidate.ShopId));
             }
+            parameters.AddRange(PurchaseContinuation(candidate));
 
             return new[]
             {
@@ -224,6 +233,16 @@ namespace StardewAI.Core.Training
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" }
                 }
             };
+        }
+
+        private static SmallModelActionParameter[] PurchaseContinuation(
+            PolicyEventCandidatePrediction candidate)
+        {
+            return candidate.Parameters
+                .Where(parameter => parameter.Name.StartsWith(
+                    "continuation.",
+                    StringComparison.Ordinal))
+                .ToArray();
         }
 
     }

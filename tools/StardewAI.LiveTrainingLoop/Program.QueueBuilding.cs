@@ -96,6 +96,10 @@ static partial class Program
                             new { name = "continuation.target_location", value = ReadString(objectiveContinuation, "target_location") },
                             new { name = "continuation.slot_index", value = ReadString(objectiveContinuation, "slot_index") },
                             new { name = "continuation.qualified_item_id", value = ReadString(objectiveContinuation, "qualified_item_id") },
+                            new { name = "continuation.shop_id", value = ReadString(objectiveContinuation, "shop_id") },
+                            new { name = "continuation.item_id", value = ReadString(objectiveContinuation, "item_id") },
+                            new { name = "continuation.max_unit_price", value = ReadString(objectiveContinuation, "max_unit_price") },
+                            new { name = "continuation.quantity", value = ReadString(objectiveContinuation, "quantity") },
                             new { name = "continuation.quest_candidate_id", value = ReadString(objectiveContinuation, "quest_candidate_id") },
                             new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },
                             new { name = "continuation.machine_location_id", value = ReadString(objectiveContinuation, "machine_location_id") },
@@ -136,14 +140,17 @@ static partial class Program
             QueueReplanFilter.FilterCandidateId(
                 selectedCandidates,
                 effectiveCandidateId);
-        ranking["social_continuation_filter"] = new JsonObject
+        var objectiveContinuationFilter = new JsonObject
         {
             ["active"] = objectiveContinuation is not null,
             ["objective"] = objectiveContinuation is null ? null : JsonNode.Parse(objectiveContinuation.ToJsonString(JsonOptions)),
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = continuationCandidates.Count,
-            ["policy"] = "social_same_npc_and_optional_gift_or_machine_same_executor_location_tile;fail_closed_no_objective_switch"
+            ["policy"] = "typed_objective_identity_match;fail_closed_no_objective_switch"
         };
+        ranking["objective_continuation_filter"] = objectiveContinuationFilter;
+        ranking["social_continuation_filter"] = JsonNode.Parse(
+            objectiveContinuationFilter.ToJsonString(JsonOptions));
         ranking["candidate_kind_filter"] = new JsonObject
         {
             ["active"] = !string.IsNullOrWhiteSpace(

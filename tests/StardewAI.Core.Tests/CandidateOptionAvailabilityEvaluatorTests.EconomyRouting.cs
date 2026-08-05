@@ -46,7 +46,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void BuySuppliesUsesLocationsShopStockPreviewBeforeMenuOpens()
+    public void BuySuppliesUsesPreviewToCompileOneRollingShopRouteBeforeMenuOpens()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(BuyPreviewSnapshot("""
@@ -71,13 +71,78 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.False(option.PreviewOnly);
         Assert.DoesNotContain("menus.shop_stock", option.MissingStateFactors);
         Assert.DoesNotContain("no_value_available_purchase_candidates", option.BlockingReasons);
-        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.Empty(option.EconomicCandidates);
+        var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
-        Assert.Equal("buy-preview:Blacksmith:0", candidate.CandidateId);
-        Assert.Equal("buy_shop_item", candidate.Kind);
+        Assert.Equal("route_connector_tile", candidate.Kind);
         Assert.Equal("Blacksmith", candidate.ShopId);
         Assert.Equal("(O)378", candidate.QualifiedItemId);
         Assert.Equal(150, candidate.UnitPrice);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" &&
+            parameter.Value == "economy.buy_supplies");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.shop_id" &&
+            parameter.Value == "Blacksmith");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.qualified_item_id" &&
+            parameter.Value == "(O)378");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.1",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
+        var routeStep = Assert.Single(new DailyPlanCompiler()
+            .Compile(new[] { ranked }, "state.1")
+            .Steps);
+        Assert.Equal("traverse_connector", routeStep.Kind);
+        Assert.Contains(routeStep.Parameters, parameter =>
+            parameter.Name == "continuation.shop_id" &&
+            parameter.Value == "Blacksmith");
+    }
+
+    [Fact]
+    public void BuySuppliesExcludesKnownClosedShopBeforeRouteRanking()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"378",
+                "qualified_item_id":"(O)378",
+                "display_name":"Copper Ore",
+                "price":150,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        Assert.Empty(option.EconomicCandidates);
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedToday);
+        Assert.Equal("purchase_service_gate", gate.Kind);
+        Assert.Contains(
+            "shop_endpoint_direct_time_gate_blocked",
+            gate.BlockReasons);
+        Assert.Contains(
+            "no_value_available_purchase_candidates",
+            option.BlockingReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.1",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
     }
 
     [Fact]

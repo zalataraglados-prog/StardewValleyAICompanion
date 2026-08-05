@@ -24,13 +24,14 @@ namespace StardewAI.Core.Tests
 
             Assert.Equal("baseline_training_report.v1", report.SchemaVersion);
             Assert.Equal(4, report.RowCount);
-            Assert.Equal(1, report.IncludedRowCount);
+            Assert.Equal(2, report.IncludedRowCount);
             Assert.Equal(2, report.ExcludedCalibrationRowCount);
-            Assert.Equal(1, report.ExcludedAdmissionRowCount);
-            Assert.Equal(new[] { "economy.buy_supplies" }, report.ExcludedOptionIds);
+            Assert.Equal(0, report.ExcludedAdmissionRowCount);
+            Assert.Empty(report.ExcludedOptionIds);
             Assert.Equal(
                 new[]
                 {
+                    "economy.buy_supplies",
                     "exploration.visit_location",
                     "farm.collect_machine_outputs",
                     "farm.establish_supported_machine_capacity",
@@ -43,13 +44,21 @@ namespace StardewAI.Core.Tests
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);
-            Assert.Contains(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, report.ExcludedReasons);
-            var score = Assert.Single(report.OptionScores);
-            Assert.Equal("social.gift_npc", score.OptionId);
-            Assert.Equal(1, score.ExampleCount);
-            Assert.Equal(0.30, score.AverageGoalProgressDelta);
-            Assert.Equal(0.30, score.AverageTotalReward);
-            Assert.Equal(0, score.HardBlockRate);
+            Assert.DoesNotContain(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, report.ExcludedReasons);
+            Assert.Collection(
+                report.OptionScores,
+                score =>
+                {
+                    Assert.Equal("economy.buy_supplies", score.OptionId);
+                    Assert.Equal(1, score.ExampleCount);
+                    Assert.Equal(0.20, score.AverageTotalReward);
+                },
+                score =>
+                {
+                    Assert.Equal("social.gift_npc", score.OptionId);
+                    Assert.Equal(1, score.ExampleCount);
+                    Assert.Equal(0.30, score.AverageTotalReward);
+                });
         }
 
         private static TrainingFeatureRowEnvelope Row(

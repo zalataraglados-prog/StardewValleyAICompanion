@@ -43,6 +43,53 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
     }
 
     [Fact]
+    public void ParsesGenericObjectiveCompletionStopCondition()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--stop-after-objective-complete"
+        });
+
+        Assert.True(options.StopAfterObjectiveComplete);
+        Assert.False(options.StopAfterSocialObjectiveComplete);
+    }
+
+    [Fact]
+    public void MainLoopUsesGenericObjectiveCompletionForExitAndReport()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+
+        Assert.Contains(
+            "execution[\"objective_continuation_completed\"]",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "!options.StopAfterObjectiveComplete || !objectiveCompleted",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ObjectiveCompleted = objectiveCompleted",
+            source,
+            StringComparison.Ordinal);
+
+        var queueSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueBuilding.cs"));
+        Assert.Contains(
+            "ranking[\"objective_continuation_filter\"]",
+            queueSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "typed_objective_identity_match;fail_closed_no_objective_switch",
+            queueSource,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RankingRequestUsesTypedCandidateInsteadOfBareOptionId()
     {
         var source = File.ReadAllText(FindRepositoryFile(

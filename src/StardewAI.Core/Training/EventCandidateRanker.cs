@@ -294,9 +294,12 @@ namespace StardewAI.Core.Training
                         ExpectedEffect = expectedEffect,
                         ItemId = candidate.ItemId,
                         QualifiedItemId = candidate.QualifiedItemId,
+                        DisplayName = candidate.DisplayName,
                         SlotIndex = candidate.SlotIndex,
                         Quantity = candidate.Quantity,
                         ShopId = candidate.ShopId,
+                        UnitPrice = candidate.UnitPrice,
+                        TotalValue = candidate.TotalValue,
                         EstimatedTicks = candidate.EstimatedTicks,
                         EnergyCost = candidate.EnergyCost,
                         AvailabilityClass = candidate.AvailabilityClass,
@@ -352,7 +355,8 @@ namespace StardewAI.Core.Training
                             "current_economic_context",
                         AllowedNow = true,
                         AllowedToday = true,
-                        BlockReasons = candidate.BlockReasons
+                        BlockReasons = candidate.BlockReasons,
+                        Parameters = candidate.Parameters
                     });
                 }
             }

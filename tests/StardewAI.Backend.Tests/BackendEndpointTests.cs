@@ -809,7 +809,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(20, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(21, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Equal(0, trainRoot.GetProperty("option_scores").GetArrayLength());
 
             var predictResponse = await client.PostAsJsonAsync("/api/v1/training/baseline/predict", new

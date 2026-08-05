@@ -119,13 +119,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact inventory book branch selected", "native book use and item consumption handed to the mechanical executor" },
                 new[] { "block_native_book_use_gate", "block_incomplete_book_projection", "block_projection_drift", "block_direct_skill_stat_mail_or_recipe_mutation" }));
 
-            Register(Option("economy.buy_supplies", "economy", "Buy supplies preview",
+            Register(Option("economy.buy_supplies", "economy", "Buy one exact supply through a rolling shop route",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
                 TrainingRoles.StrategyValue,
                 new[] { "time.time", "time.season", "player.money", "player.seed_inventory", "farm.crop_catalog", "locations.shops", "menus.active_menu" },
-                new[] { "purchase list verified", "budget impact previewed" },
-                new[] { "never_spend_below_emergency_reserve", "block_unknown_ui_clicks" }));
+                new[] { "exact purchase target rebound", "one route or shop interaction stage compiled", "native purchase verified before objective completion" },
+                new[] { "never_spend_below_emergency_reserve", "block_closed_or_unbound_shop", "block_unknown_ui_clicks" }));
 
             Register(Option("economy.sell_items", "economy", "Sell items in active shop only",
                 OptionBehaviorCategories.EconomicStrategic,

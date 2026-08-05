@@ -1,3 +1,13 @@
+2026-08-05 EVD-219 rolling high-level purchase runtime admission
+- Hidden/silent isolated E-drive PASS: `artifacts\runtime-purchase-mainline-smoke\runtime-purchase-mainline-20260805-092658\summary.json`.
+- Started in `FarmHouse` at 9:00 and completed in six fresh-snapshot iterations.
+- Queue surface observed: `executor.traverse_connector`, `executor.move_to_tile`, `executor.interact`, `executor.choose_dialogue_response`, `executor.buy_shop_item`, `executor.close_menu`.
+- Exact AnimalShop `(BC)104` purchase was applied/verified for 2000g; money 144753 -> 142753 and inventory count 0 -> 1.
+- `objective_completed=true`, active continuation cleared, and six real execution rows were recorded.
+- Scope is one safe base-game money purchase; strategy authorization remains required and autonomous candidate enablement remains false.
+- Action reconciliation PASS: 101 registered, 169 semantic, 90 compiler-bound, 22 five-gate closed, 21 training-allowlisted, and zero blocking native surfaces/branches/map-action tokens.
+- Final regression PASS: Core 1537/1537; Backend 114/114; Release solution build 0 errors with 5 existing warnings.
+
 2026-08-05 EVD-218 bounded rolling visit-location runtime admission
 
 - Existing route candidate, daily-plan compiler, action-queue compiler and native

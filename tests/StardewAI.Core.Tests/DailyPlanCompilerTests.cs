@@ -137,6 +137,56 @@ public sealed class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileCarriesExactPurchaseContinuationThroughShopInteraction()
+    {
+        var open = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "purchase:Blacksmith:(O)378:interact",
+            OptionId = "economy.buy_supplies",
+            Kind = "interact_endpoint",
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            ShopId = "Blacksmith",
+            QualifiedItemId = "(O)378",
+            LocationId = "Blacksmith",
+            TileX = 3,
+            TileY = 5,
+            ExpectedEffect = "move_to_adjacent=3,6;preview_interact=Blacksmith",
+            EstimatedTicks = 90,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "continuation.option_id", Value = "economy.buy_supplies" },
+                new SmallModelActionParameter { Name = "continuation.shop_id", Value = "Blacksmith" },
+                new SmallModelActionParameter { Name = "continuation.target_location", Value = "Blacksmith" },
+                new SmallModelActionParameter { Name = "continuation.qualified_item_id", Value = "(O)378" },
+                new SmallModelActionParameter { Name = "continuation.max_unit_price", Value = "150" },
+                new SmallModelActionParameter { Name = "continuation.quantity", Value = "1" }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { open },
+            "state.1");
+
+        Assert.Equal(3, plan.Steps.Length);
+        Assert.Equal(
+            new[] { "move_to_tile", "interact", "choose_dialogue_response" },
+            plan.Steps.Select(step => step.Kind));
+        Assert.All(plan.Steps, step =>
+        {
+            Assert.Contains(step.Parameters, parameter =>
+                parameter.Name == "continuation.option_id" &&
+                parameter.Value == "economy.buy_supplies");
+            Assert.Contains(step.Parameters, parameter =>
+                parameter.Name == "continuation.shop_id" &&
+                parameter.Value == "Blacksmith");
+            Assert.Contains(step.Parameters, parameter =>
+                parameter.Name == "continuation.qualified_item_id" &&
+                parameter.Value == "(O)378");
+        });
+    }
+
+    [Fact]
     public void CompileSkipsUnsupportedCandidateKindsInsteadOfPretendingExecutorSupport()
     {
         var candidate = new PolicyEventCandidatePrediction

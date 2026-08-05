@@ -555,6 +555,9 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("qualified_item_id")]
         public string QualifiedItemId { get; set; } = string.Empty;
 
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
+
         [JsonPropertyName("slot_index")]
         public int? SlotIndex { get; set; }
 
@@ -563,6 +566,12 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("shop_id")]
         public string ShopId { get; set; } = string.Empty;
+
+        [JsonPropertyName("unit_price")]
+        public int UnitPrice { get; set; }
+
+        [JsonPropertyName("total_value")]
+        public int TotalValue { get; set; }
 
         [JsonPropertyName("estimated_ticks")]
         public int EstimatedTicks { get; set; }
@@ -686,5 +695,8 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("block_reasons")]
         public string[] BlockReasons { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("parameters")]
+        public SmallModelActionParameter[] Parameters { get; set; } = System.Array.Empty<SmallModelActionParameter>();
     }
 }

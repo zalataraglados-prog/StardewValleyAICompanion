@@ -151,6 +151,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
+                "economy.buy_supplies",
                 "exploration.visit_location",
                 "farm.collect_machine_outputs",
                 "farm.establish_supported_machine_capacity",
@@ -179,6 +180,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             var expectedScope = optionId switch
             {
                 "exploration.visit_location" => "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
+                "economy.buy_supplies" => "vanilla_safe_single_money_purchase_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_buy_and_menu_cleanup",
                 "farm.collect_machine_outputs" => "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                 "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
                 "farm.fulfill_machine_task_demand" => "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
@@ -235,6 +237,32 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.DoesNotContain(
             "executor.traverse_connector",
+            OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
+    public void BuySuppliesAdmissionRequiresExactRollingPurchaseEvidence()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired(
+            "economy.buy_supplies");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.AutonomousCandidateEnabled);
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(
+            CapabilityCompilerStatus.StepCompilerDeclared,
+            declaration.CompilerStatus);
+        Assert.Contains("EVD-219", declaration.ReadEvidenceIds);
+        Assert.Contains("EVD-219", declaration.CandidateEvidenceIds);
+        Assert.Contains("EVD-219", declaration.CompilerEvidenceIds);
+        Assert.Contains("EVD-219", declaration.RuntimeEvidenceIds);
+        Assert.Contains("EVD-219", declaration.OutputEvidenceIds);
+        Assert.Contains(
+            "safe_single_money_purchase",
+            declaration.TrainingEvidenceScope,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "economy.buy_supplies",
             OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
