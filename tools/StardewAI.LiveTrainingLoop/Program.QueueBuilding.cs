@@ -99,6 +99,7 @@ static partial class Program
                             new { name = "continuation.shop_id", value = ReadString(objectiveContinuation, "shop_id") },
                             new { name = "continuation.item_id", value = ReadString(objectiveContinuation, "item_id") },
                             new { name = "continuation.max_unit_price", value = ReadString(objectiveContinuation, "max_unit_price") },
+                            new { name = "continuation.expected_unit_price", value = ReadString(objectiveContinuation, "expected_unit_price") },
                             new { name = "continuation.quantity", value = ReadString(objectiveContinuation, "quantity") },
                             new { name = "continuation.quest_candidate_id", value = ReadString(objectiveContinuation, "quest_candidate_id") },
                             new { name = "continuation.execution_option_id", value = ReadString(objectiveContinuation, "execution_option_id") },

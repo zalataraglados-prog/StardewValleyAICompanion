@@ -20,7 +20,9 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         int item_rule_count,
         bool condition_present,
         string? currency,
-        object stock_preview);
+        string[] salable_item_tags,
+        object stock_preview,
+        object sale_preview);
 
     private sealed record FriendshipDoorGate(
         bool AllowedNow,
@@ -43,6 +45,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             .Cast<object>()
             .ToArray();
 
+        var salableItemTags = (shopData.SalableItemTags ?? new List<string>())
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(tag => tag, StringComparer.Ordinal)
+            .ToArray();
+
         return new ShopAccessSummary(
             shopId,
             ownerEntries.Length,
@@ -52,7 +60,42 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             ReadEnumerableProperty(shopData, "Items").Length,
             !string.IsNullOrWhiteSpace(ReadStringProperty(shopData, "Condition")),
             ReadProperty(shopData, "Currency")?.ToString(),
-            ReadShopStockPreview(shopId, shopData));
+            salableItemTags,
+            ReadShopStockPreview(shopId, shopData),
+            ReadShopSalePreview(shopId, shopData, salableItemTags));
+    }
+
+    private static object ReadShopSalePreview(
+        string shopId,
+        ShopData shopData,
+        string[] salableItemTags)
+    {
+        var currency = ReadIntProperty(shopData, "Currency") ?? 0;
+        var blockReasons = new List<string>();
+        if (currency != 0)
+        {
+            blockReasons.Add("non_money_shop_sale_requires_audit");
+        }
+        if (salableItemTags.Length == 0)
+        {
+            blockReasons.Add("shop_has_no_salable_item_tags");
+        }
+
+        return new
+        {
+            kind = "shop_sale_preview",
+            shop_id = shopId,
+            source = "Data/Shops ShopData.SalableItemTags",
+            currency,
+            default_sell_percentage = 1f,
+            salable_item_tags = salableItemTags,
+            tag_groups_to_sell = salableItemTags
+                .Select(tag => new[] { tag })
+                .ToArray(),
+            runtime_menu_recheck_required = true,
+            executor_sale_preview_enabled = blockReasons.Count == 0,
+            executor_block_reasons = blockReasons.ToArray()
+        };
     }
 
     private static object ReadShopStockPreview(string shopId, ShopData shopData)
@@ -259,5 +302,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
     private static object? ReadProperty(object source, string propertyName)
     {
-        return source.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)?.GetValue(source);
-    }}
+        var type = source.GetType();
+        return type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)?.GetValue(source) ??
+            type.GetField(propertyName, BindingFlags.Instance | BindingFlags.Public)?.GetValue(source);
+    }
+}

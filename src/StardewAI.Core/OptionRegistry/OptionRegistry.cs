@@ -127,13 +127,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "exact purchase target rebound", "one route or shop interaction stage compiled", "native purchase verified before objective completion" },
                 new[] { "never_spend_below_emergency_reserve", "block_closed_or_unbound_shop", "block_unknown_ui_clicks" }));
 
-            Register(Option("economy.sell_items", "economy", "Sell items in active shop only",
+            Register(Option("economy.sell_items", "economy", "Sell one exact safe inventory stack through a rolling shop route",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
                 TrainingRoles.StrategyValue,
-                new[] { "player.inventory", "menus.active_menu", "menus.sell_context" },
-                new[] { "sell candidates previewed" },
-                new[] { "never_sell_protected_items", "block_unknown_ui_clicks" }));
+                new[] { "time.time", "player.location_id", "player.inventory", "locations.shops", "locations.route_graph", "menus.active_menu" },
+                new[] { "exact sale target rebound", "one route or shop interaction stage compiled", "native sale verified before objective completion" },
+                new[] { "never_sell_protected_items", "block_unaccepted_or_unbound_shop", "block_unknown_ui_clicks" }));
 
             Register(Option("economy.ship_items", "economy", "Ship items through shipping bin",
                 OptionBehaviorCategories.EconomicStrategic,

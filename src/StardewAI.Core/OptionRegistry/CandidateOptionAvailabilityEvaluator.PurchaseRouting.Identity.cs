@@ -78,8 +78,9 @@ namespace StardewAI.Core.OptionRegistry
                     "continuation.qualified_item_id"));
         }
 
-        private static EventCandidate BlockedPurchaseStageCandidate(
+        private static EventCandidate BlockedShopObjectiveStageCandidate(
             EconomicCandidate preview,
+            string objectivePrefix,
             string reason,
             string locationId = "",
             int? tileX = null,
@@ -88,13 +89,14 @@ namespace StardewAI.Core.OptionRegistry
         {
             return new EventCandidate
             {
-                CandidateId = PurchaseCandidateId(
+                CandidateId = ShopObjectiveCandidateId(
                     preview,
+                    objectivePrefix,
                     "blocked",
                     locationId,
                     tileX,
                     tileY),
-                Kind = "purchase_stage_blocked",
+                Kind = objectivePrefix + "_stage_blocked",
                 Available = false,
                 LocationId = locationId,
                 TileX = tileX,
@@ -102,11 +104,12 @@ namespace StardewAI.Core.OptionRegistry
                 ItemId = preview.ItemId,
                 QualifiedItemId = preview.QualifiedItemId,
                 DisplayName = preview.DisplayName,
-                Quantity = 1,
+                SlotIndex = preview.SlotIndex,
+                Quantity = preview.Quantity,
                 ShopId = preview.ShopId,
                 UnitPrice = preview.UnitPrice,
                 TotalValue = preview.UnitPrice,
-                AvailabilityClass = "purchase_stage_blocked",
+                AvailabilityClass = objectivePrefix + "_stage_blocked",
                 AllowedNow = false,
                 AllowedToday = false,
                 BlockReasons = preview.BlockReasons
@@ -117,14 +120,15 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static string PurchaseCandidateId(
+        private static string ShopObjectiveCandidateId(
             EconomicCandidate candidate,
+            string objectivePrefix,
             string stage,
             string locationId,
             int? tileX,
             int? tileY)
         {
-            return "purchase:" + candidate.ShopId + ":" +
+            return objectivePrefix + ":" + candidate.ShopId + ":" +
                 candidate.QualifiedItemId + ":" + stage + ":" +
                 locationId + ":" + (tileX?.ToString(CultureInfo.InvariantCulture) ?? "none") +
                 "," + (tileY?.ToString(CultureInfo.InvariantCulture) ?? "none");

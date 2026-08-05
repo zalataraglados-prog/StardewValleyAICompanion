@@ -46,37 +46,68 @@ public static class QueueReplanFilter
             };
         }
 
-        var purchaseShopId = ReadParameter(
+        var shopId = ReadParameter(
             queueItem,
             "continuation.shop_id");
-        var purchaseQualifiedItemId = ReadParameter(
+        var qualifiedItemId = ReadParameter(
             queueItem,
             "continuation.qualified_item_id");
         if (string.Equals(
                 optionId,
                 "economy.buy_supplies",
                 StringComparison.Ordinal) &&
-            !string.IsNullOrWhiteSpace(purchaseShopId) &&
-            !string.IsNullOrWhiteSpace(purchaseQualifiedItemId))
+            !string.IsNullOrWhiteSpace(shopId) &&
+            !string.IsNullOrWhiteSpace(qualifiedItemId))
         {
             return new JsonObject
             {
                 ["kind"] = "economy_purchase",
                 ["option_id"] = optionId,
-                ["shop_id"] = purchaseShopId,
+                ["shop_id"] = shopId,
                 ["target_location"] = ReadParameter(
                     queueItem,
                     "continuation.target_location"),
                 ["item_id"] = ReadParameter(
                     queueItem,
                     "continuation.item_id"),
-                ["qualified_item_id"] = purchaseQualifiedItemId,
+                ["qualified_item_id"] = qualifiedItemId,
                 ["max_unit_price"] = ReadParameter(
                     queueItem,
                     "continuation.max_unit_price"),
                 ["quantity"] = ReadParameter(
                     queueItem,
                     "continuation.quantity")
+            };
+        }
+
+        if (string.Equals(
+                optionId,
+                "economy.sell_items",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(shopId) &&
+            !string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "economy_sale",
+                ["option_id"] = optionId,
+                ["shop_id"] = shopId,
+                ["target_location"] = ReadParameter(
+                    queueItem,
+                    "continuation.target_location"),
+                ["item_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.item_id"),
+                ["qualified_item_id"] = qualifiedItemId,
+                ["slot_index"] = ReadParameter(
+                    queueItem,
+                    "continuation.slot_index"),
+                ["quantity"] = ReadParameter(
+                    queueItem,
+                    "continuation.quantity"),
+                ["expected_unit_price"] = ReadParameter(
+                    queueItem,
+                    "continuation.expected_unit_price")
             };
         }
 
@@ -273,6 +304,36 @@ public static class QueueReplanFilter
         }
         if (string.Equals(
                 continuationKind,
+                "economy_sale",
+                StringComparison.Ordinal))
+        {
+            return string.Equals(
+                    optionId,
+                    "executor.sell_shop_item",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "expected_shop_id"),
+                    ReadString(continuation, "shop_id"),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    ReadParameter(queueItem, "qualified_item_id"),
+                    ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "slot_index"),
+                    ReadString(continuation, "slot_index"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "quantity"),
+                    ReadString(continuation, "quantity"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "expected_unit_price"),
+                    ReadString(continuation, "expected_unit_price"),
+                    StringComparison.Ordinal);
+        }
+        if (string.Equals(
+                continuationKind,
                 "machine_placement",
                 StringComparison.Ordinal))
         {
@@ -449,6 +510,47 @@ public static class QueueReplanFilter
                 string.Equals(
                     candidateQualifiedItemId,
                     ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal);
+        }
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "economy_sale",
+                StringComparison.Ordinal))
+        {
+            var candidateShopId = ReadString(candidate, "shop_id");
+            if (string.IsNullOrWhiteSpace(candidateShopId))
+            {
+                candidateShopId = ReadCandidateParameter(
+                    candidate,
+                    "continuation.shop_id");
+            }
+            var candidateQualifiedItemId = ReadString(
+                candidate,
+                "qualified_item_id");
+            if (string.IsNullOrWhiteSpace(candidateQualifiedItemId))
+            {
+                candidateQualifiedItemId = ReadCandidateParameter(
+                    candidate,
+                    "continuation.qualified_item_id");
+            }
+            var candidateSlotIndex = ReadString(candidate, "slot_index");
+            if (string.IsNullOrWhiteSpace(candidateSlotIndex))
+            {
+                candidateSlotIndex = ReadCandidateParameter(
+                    candidate,
+                    "continuation.slot_index");
+            }
+            return string.Equals(
+                    candidateShopId,
+                    ReadString(continuation, "shop_id"),
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    candidateQualifiedItemId,
+                    ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    candidateSlotIndex,
+                    ReadString(continuation, "slot_index"),
                     StringComparison.Ordinal);
         }
 

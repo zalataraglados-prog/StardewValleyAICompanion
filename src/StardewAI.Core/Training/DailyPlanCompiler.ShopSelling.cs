@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -55,6 +56,9 @@ namespace StardewAI.Core.Training
                         Parameter("expected_total_value", candidate.TotalValue.ToString()),
                         Parameter("expected_shop_id", candidate.ShopId)
                     }
+                    .Concat(candidate.Parameters.Where(parameter =>
+                        parameter.Name.StartsWith("continuation.", StringComparison.Ordinal)))
+                    .ToArray()
                 },
                 new SmallModelPlanStep
                 {

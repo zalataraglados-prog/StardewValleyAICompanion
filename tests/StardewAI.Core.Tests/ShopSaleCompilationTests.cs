@@ -27,6 +27,7 @@ public sealed class ShopSaleCompilationTests
         Assert.Contains(sale.NormalizedCommand.Parameters, row => row.Name == "slot_index" && row.Value == "0");
         Assert.Contains(sale.NormalizedCommand.Parameters, row => row.Name == "expected_unit_price" && row.Value == "35");
         Assert.Contains(sale.NormalizedCommand.Steps, row => row.StepType == "sell_shop_item");
+        Assert.Equal("executor.close_menu", queue.Items[1].OptionId);
     }
 
     [Fact]
@@ -66,6 +67,9 @@ public sealed class ShopSaleCompilationTests
         var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
             $$"""
             {
+              "time": {
+                "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
               "player": {
                 "money": {"value":500,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory": {"value":[{"slot_index":0,"item_id":"24","qualified_item_id":"(O)24","stack":3,"category":-75,"context_tags":["item_parsnip"],"sell_to_store_price":{{unitPrice}},"protected_from_auto_sell":false,"auto_sell_protection_reasons":[],"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

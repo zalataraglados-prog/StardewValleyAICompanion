@@ -73,7 +73,7 @@ namespace StardewAI.Core.Training
         private static IEnumerable<SmallModelPlanStep> InteractEndpointSteps(PolicyEventCandidatePrediction candidate)
         {
             var steps = new List<SmallModelPlanStep>();
-            var continuation = PurchaseContinuation(candidate);
+            var continuation = ShopObjectiveContinuation(candidate);
             var standTile = ParseCoordinate(candidate.ExpectedEffect, "move_to_adjacent=");
             if (standTile.HasValue)
             {
@@ -207,7 +207,7 @@ namespace StardewAI.Core.Training
             {
                 parameters.Add(Parameter("expected_shop_id", candidate.ShopId));
             }
-            parameters.AddRange(PurchaseContinuation(candidate));
+            parameters.AddRange(ShopObjectiveContinuation(candidate));
 
             return new[]
             {
@@ -235,7 +235,7 @@ namespace StardewAI.Core.Training
             };
         }
 
-        private static SmallModelActionParameter[] PurchaseContinuation(
+        private static SmallModelActionParameter[] ShopObjectiveContinuation(
             PolicyEventCandidatePrediction candidate)
         {
             return candidate.Parameters

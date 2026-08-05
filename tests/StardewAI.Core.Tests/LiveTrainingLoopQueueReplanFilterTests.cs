@@ -238,6 +238,69 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void SaleContinuationLocksExactStackUntilVerifiedNativeSaleApplies()
+    {
+        var route = QueueItem(
+            "queue.sale.route",
+            "executor.traverse_connector",
+            "2",
+            "3",
+            string.Empty);
+        var parameters = route["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "economy.sell_items"));
+        parameters.Add(Parameter("continuation.shop_id", "SeedShop"));
+        parameters.Add(Parameter("continuation.target_location", "SeedShop"));
+        parameters.Add(Parameter("continuation.qualified_item_id", "(O)24"));
+        parameters.Add(Parameter("continuation.slot_index", "0"));
+        parameters.Add(Parameter("continuation.quantity", "3"));
+        parameters.Add(Parameter("continuation.expected_unit_price", "35"));
+
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("economy_sale", continuation!["kind"]!.GetValue<string>());
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(
+            new JsonArray
+            {
+                SaleCandidate("SeedShop", "(O)24", 0),
+                SaleCandidate("SeedShop", "(O)24", 1),
+                SaleCandidate("FishShop", "(O)24", 0)
+            },
+            continuation));
+        Assert.Equal(0, selected!["slot_index"]!.GetValue<int>());
+
+        var sell = QueueItem(
+            "queue.sale.sell",
+            "executor.sell_shop_item",
+            "0",
+            "0",
+            "(O)24");
+        var sellParameters = sell["normalized_command"]!["parameters"]!.AsArray();
+        sellParameters.Add(Parameter("expected_shop_id", "SeedShop"));
+        sellParameters.Add(Parameter("slot_index", "0"));
+        sellParameters.Add(Parameter("quantity", "3"));
+        sellParameters.Add(Parameter("expected_unit_price", "35"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            sell,
+            continuation,
+            "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            sell,
+            continuation,
+            "blocked"));
+
+        sellParameters
+            .Select(node => node!.AsObject())
+            .Single(parameter =>
+                parameter["name"]!.GetValue<string>() ==
+                "expected_unit_price")["value"] = "34";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            sell,
+            continuation,
+            "applied"));
+    }
+
+    [Fact]
     public void MachineContinuationKeepsSameExecutorLocationAndTileUntilApplied()
     {
         var route = QueueItem("queue.machine.route", "executor.traverse_connector", "4", "8", string.Empty);
@@ -448,6 +511,26 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["shop_id"] = shopId,
             ["qualified_item_id"] = qualifiedItemId,
             ["parameters"] = new JsonArray()
+        };
+    }
+
+    private static JsonObject SaleCandidate(
+        string shopId,
+        string qualifiedItemId,
+        int slotIndex)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "sale:" + shopId + ":" + qualifiedItemId + ":" + slotIndex,
+            ["option_id"] = "economy.sell_items",
+            ["kind"] = "sell_shop_item",
+            ["shop_id"] = shopId,
+            ["qualified_item_id"] = qualifiedItemId,
+            ["slot_index"] = slotIndex,
+            ["parameters"] = new JsonArray
+            {
+                Parameter("continuation.slot_index", slotIndex.ToString())
+            }
         };
     }
 

@@ -24,6 +24,19 @@ namespace StardewAI.Core.OptionRegistry
             var previews = BuyCandidatesFromShopPreview(snapshot)
                 .Where(candidate => PurchaseIdentityMatches(candidate, boundParameters))
                 .ToArray();
+            return ShopObjectiveStageCandidates(
+                snapshot,
+                previews,
+                "purchase",
+                PurchaseContinuationParameters);
+        }
+
+        private EventCandidate[] ShopObjectiveStageCandidates(
+            SnapshotEnvelope snapshot,
+            EconomicCandidate[] previews,
+            string objectivePrefix,
+            Func<EconomicCandidate, string, SmallModelActionParameter[]> continuationFactory)
+        {
             if (previews.Length == 0)
             {
                 return Array.Empty<EventCandidate>();
@@ -36,9 +49,10 @@ namespace StardewAI.Core.OptionRegistry
                 edges.ValueKind != JsonValueKind.Array)
             {
                 return previews
-                    .Select(candidate => BlockedPurchaseStageCandidate(
+                    .Select(candidate => BlockedShopObjectiveStageCandidate(
                         candidate,
-                        "purchase_shop_endpoint_graph_unavailable"))
+                        objectivePrefix,
+                        objectivePrefix + "_shop_endpoint_graph_unavailable"))
                     .ToArray();
             }
 
@@ -70,22 +84,25 @@ namespace StardewAI.Core.OptionRegistry
                     .ToArray();
                 if (endpoints.Length == 0)
                 {
-                    results.Add(BlockedPurchaseStageCandidate(
+                    results.Add(BlockedShopObjectiveStageCandidate(
                         preview,
-                        "purchase_shop_endpoint_binding_missing"));
+                        objectivePrefix,
+                        objectivePrefix + "_shop_endpoint_binding_missing"));
                     continue;
                 }
 
                 foreach (var endpoint in endpoints)
                 {
-                    results.Add(BuildPurchaseStageCandidate(
+                    results.Add(BuildShopObjectiveStageCandidate(
                         snapshot,
                         preview,
                         endpoint,
                         graphEdges,
                         currentLocation,
                         routeCandidates,
-                        interactionCandidates));
+                        interactionCandidates,
+                        objectivePrefix,
+                        continuationFactory(preview, ReadString(endpoint, "from_location"))));
                 }
             }
 
@@ -95,14 +112,16 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate BuildPurchaseStageCandidate(
+        private EventCandidate BuildShopObjectiveStageCandidate(
             SnapshotEnvelope snapshot,
             EconomicCandidate preview,
             JsonElement endpoint,
             JsonElement[] graphEdges,
             string currentLocation,
             EventCandidate[] routeCandidates,
-            EventCandidate[] interactionCandidates)
+            EventCandidate[] interactionCandidates,
+            string objectivePrefix,
+            SmallModelActionParameter[] continuation)
         {
             var targetLocation = ReadString(endpoint, "from_location");
             var endpointX = ReadInt(endpoint, "from_x");
@@ -112,34 +131,33 @@ namespace StardewAI.Core.OptionRegistry
                 endpoint,
                 graphEdges,
                 targetLocation);
-            var continuation = PurchaseContinuationParameters(
-                preview,
-                targetLocation);
 
             if (!gate.AllowedNow)
             {
                 return new EventCandidate
                 {
-                    CandidateId = PurchaseCandidateId(
+                    CandidateId = ShopObjectiveCandidateId(
                         preview,
+                        objectivePrefix,
                         "gate",
                         targetLocation,
                         endpointX,
                         endpointY),
-                    Kind = "purchase_service_gate",
+                    Kind = objectivePrefix + "_service_gate",
                     Available = false,
                     LocationId = targetLocation,
                     TileX = endpointX,
                     TileY = endpointY,
-                    ExpectedEffect = "purchase_service_gate_checked_upstream=true",
+                    ExpectedEffect = objectivePrefix + "_service_gate_checked_upstream=true",
                     ItemId = preview.ItemId,
                     QualifiedItemId = preview.QualifiedItemId,
                     DisplayName = preview.DisplayName,
-                    Quantity = 1,
+                    SlotIndex = preview.SlotIndex,
+                    Quantity = preview.Quantity,
                     ShopId = preview.ShopId,
                     UnitPrice = preview.UnitPrice,
-                    TotalValue = preview.UnitPrice,
-                    AvailabilityClass = "purchase_service_unavailable",
+                    TotalValue = preview.TotalValue,
+                    AvailabilityClass = objectivePrefix + "_service_unavailable",
                     AllowedNow = false,
                     AllowedToday = false,
                     EffectiveOpenTime = gate.OpenTime,
@@ -167,9 +185,10 @@ namespace StardewAI.Core.OptionRegistry
                     candidate.TileY == endpointY);
                 if (interaction is null)
                 {
-                    return BlockedPurchaseStageCandidate(
+                    return BlockedShopObjectiveStageCandidate(
                         preview,
-                        "purchase_current_shop_endpoint_not_rebound",
+                        objectivePrefix,
+                        objectivePrefix + "_current_shop_endpoint_not_rebound",
                         targetLocation,
                         endpointX,
                         endpointY,
@@ -182,8 +201,9 @@ namespace StardewAI.Core.OptionRegistry
                     .ToArray();
                 return new EventCandidate
                 {
-                    CandidateId = PurchaseCandidateId(
+                    CandidateId = ShopObjectiveCandidateId(
                         preview,
+                        objectivePrefix,
                         "interact",
                         targetLocation,
                         endpointX,
@@ -193,20 +213,21 @@ namespace StardewAI.Core.OptionRegistry
                     LocationId = interaction.LocationId,
                     TileX = interaction.TileX,
                     TileY = interaction.TileY,
-                    ExpectedEffect = interaction.ExpectedEffect +
-                        ";purchase_target_shop_id=" + preview.ShopId +
-                        ";purchase_target_qualified_item_id=" + preview.QualifiedItemId +
+                    ExpectedEffect = interaction.ExpectedEffect + ";" +
+                        objectivePrefix + "_target_shop_id=" + preview.ShopId + ";" +
+                        objectivePrefix + "_target_qualified_item_id=" + preview.QualifiedItemId +
                         ";fresh_snapshot_after_shop_menu_open=true",
                     ItemId = preview.ItemId,
                     QualifiedItemId = preview.QualifiedItemId,
                     DisplayName = preview.DisplayName,
-                    Quantity = 1,
+                    SlotIndex = preview.SlotIndex,
+                    Quantity = preview.Quantity,
                     ShopId = preview.ShopId,
                     UnitPrice = preview.UnitPrice,
-                    TotalValue = preview.UnitPrice,
+                    TotalValue = preview.TotalValue,
                     EstimatedTicks = interaction.EstimatedTicks,
                     EnergyCost = 0,
-                    AvailabilityClass = "purchase_shop_endpoint_interaction",
+                    AvailabilityClass = objectivePrefix + "_shop_endpoint_interaction",
                     AllowedNow = interaction.AllowedNow,
                     AllowedToday = interaction.AllowedToday,
                     NextOpenTime = interaction.NextOpenTime,
@@ -229,9 +250,10 @@ namespace StardewAI.Core.OptionRegistry
             var route = routePlan?.FirstConnectorCandidate;
             if (route is null)
             {
-                return BlockedPurchaseStageCandidate(
+                return BlockedShopObjectiveStageCandidate(
                     preview,
-                    "purchase_cross_map_route_unavailable",
+                    objectivePrefix,
+                    objectivePrefix + "_cross_map_route_unavailable",
                     targetLocation,
                     endpointX,
                     endpointY,
@@ -244,8 +266,9 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
             return new EventCandidate
             {
-                CandidateId = PurchaseCandidateId(
+                CandidateId = ShopObjectiveCandidateId(
                     preview,
+                    objectivePrefix,
                     "route",
                     currentLocation,
                     route.TileX,
@@ -255,20 +278,21 @@ namespace StardewAI.Core.OptionRegistry
                 LocationId = currentLocation,
                 TileX = route.TileX,
                 TileY = route.TileY,
-                ExpectedEffect = "purchase_route_target_location=" + targetLocation +
-                    ";purchase_target_shop_id=" + preview.ShopId +
-                    ";purchase_target_qualified_item_id=" + preview.QualifiedItemId +
+                ExpectedEffect = objectivePrefix + "_route_target_location=" + targetLocation + ";" +
+                    objectivePrefix + "_target_shop_id=" + preview.ShopId + ";" +
+                    objectivePrefix + "_target_qualified_item_id=" + preview.QualifiedItemId +
                     ";one_connector_then_fresh_snapshot=true",
                 ItemId = preview.ItemId,
                 QualifiedItemId = preview.QualifiedItemId,
                 DisplayName = preview.DisplayName,
-                Quantity = 1,
+                SlotIndex = preview.SlotIndex,
+                Quantity = preview.Quantity,
                 ShopId = preview.ShopId,
                 UnitPrice = preview.UnitPrice,
-                TotalValue = preview.UnitPrice,
+                TotalValue = preview.TotalValue,
                 EstimatedTicks = route.EstimatedTicks,
                 EnergyCost = 0,
-                AvailabilityClass = "purchase_cross_map_route_step",
+                AvailabilityClass = objectivePrefix + "_cross_map_route_step",
                 AllowedNow = route.AllowedNow,
                 AllowedToday = route.AllowedToday,
                 NextOpenTime = route.NextOpenTime,
@@ -282,11 +306,11 @@ namespace StardewAI.Core.OptionRegistry
                     .Concat(new[]
                     {
                         Parameter(
-                            "purchase_route.remaining_connector_count",
+                            objectivePrefix + "_route.remaining_connector_count",
                             (routePlan?.Path.Length ?? 0).ToString(
                                 CultureInfo.InvariantCulture)),
                         Parameter(
-                            "purchase_route.snapshot_policy",
+                            objectivePrefix + "_route.snapshot_policy",
                             "fresh_snapshot_after_each_connector_and_shop_open")
                     })
                     .ToArray()

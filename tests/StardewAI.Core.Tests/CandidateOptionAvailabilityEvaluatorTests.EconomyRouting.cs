@@ -214,6 +214,155 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void SellItemsUsesTransparentShopTagsToCompileRollingRouteBeforeMenuOpens()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellPreviewSnapshot("""
+              {
+                "slot_index":0,
+                "item_id":"24",
+                "qualified_item_id":"(O)24",
+                "display_name":"Parsnip",
+                "stack":3,
+                "category":-75,
+                "context_tags":["category_vegetable","item_parsnip"],
+                "sell_to_store_price":35,
+                "protected_from_auto_sell":false,
+                "auto_sell_protection_reasons":[],
+                "is_empty":false
+              }
+            """), new[] { "economy.sell_items" })
+            .Options[0];
+
+        Assert.Empty(option.EconomicCandidates);
+        Assert.DoesNotContain(
+            "no_value_available_sell_candidates",
+            option.BlockingReasons);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Equal("SeedShop", candidate.ShopId);
+        Assert.Equal(0, candidate.SlotIndex);
+        Assert.Equal("(O)24", candidate.QualifiedItemId);
+        Assert.Equal(3, candidate.Quantity);
+        Assert.Equal(35, candidate.UnitPrice);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" &&
+            parameter.Value == "economy.sell_items");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.slot_index" &&
+            parameter.Value == "0");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.expected_unit_price" &&
+            parameter.Value == "35");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.sell.1",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
+        var routeStep = Assert.Single(new DailyPlanCompiler()
+            .Compile(new[] { ranked }, "state.sell.1")
+            .Steps);
+        Assert.Equal("traverse_connector", routeStep.Kind);
+        Assert.Contains(routeStep.Parameters, parameter =>
+            parameter.Name == "sale_route.remaining_connector_count");
+        Assert.Contains(routeStep.Parameters, parameter =>
+            parameter.Name == "continuation.expected_unit_price" &&
+            parameter.Value == "35");
+    }
+
+    [Fact]
+    public void SellItemsExcludesClosedShopBeforeRouteRanking()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellPreviewSnapshot("""
+              {
+                "slot_index":0,
+                "item_id":"24",
+                "qualified_item_id":"(O)24",
+                "display_name":"Parsnip",
+                "stack":3,
+                "category":-75,
+                "context_tags":["category_vegetable"],
+                "sell_to_store_price":35,
+                "protected_from_auto_sell":false,
+                "auto_sell_protection_reasons":[],
+                "is_empty":false
+              }
+            """, endpointAllowed: false), new[] { "economy.sell_items" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.Equal("sale_service_gate", gate.Kind);
+        Assert.Contains(
+            "shop_endpoint_direct_time_gate_blocked",
+            gate.BlockReasons);
+        Assert.Contains(
+            "no_value_available_sell_candidates",
+            option.BlockingReasons);
+    }
+
+    [Fact]
+    public void SellContinuationRebindsExactStackAfterShopMenuOpens()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellSnapshot("""
+              {
+                "slot_index":0,
+                "item_id":"24",
+                "qualified_item_id":"(O)24",
+                "display_name":"Parsnip",
+                "stack":3,
+                "category":-75,
+                "context_tags":["category_vegetable"],
+                "sell_to_store_price":35,
+                "protected_from_auto_sell":false,
+                "auto_sell_protection_reasons":[],
+                "is_empty":false
+              }
+            """), new[]
+            {
+                Candidate(
+                    "economy.sell_items",
+                    Parameter("continuation.option_id", "economy.sell_items"),
+                    Parameter("continuation.shop_id", "SeedShop"),
+                    Parameter("continuation.qualified_item_id", "(O)24"),
+                    Parameter("continuation.slot_index", "0"),
+                    Parameter("continuation.quantity", "3"),
+                    Parameter("continuation.expected_unit_price", "35"))
+            })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.True(candidate.Available);
+        Assert.Equal("SeedShop", candidate.ShopId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.expected_unit_price" &&
+            parameter.Value == "35");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.sell.menu",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            "state.sell.menu");
+        Assert.Equal("sell_shop_item", plan.Steps[0].Kind);
+        Assert.Contains(plan.Steps[0].Parameters, parameter =>
+            parameter.Name == "continuation.expected_unit_price" &&
+            parameter.Value == "35");
+    }
+
+    [Fact]
     public void SellItemsRejectsShopWithNoCategoryOrTagAcceptance()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

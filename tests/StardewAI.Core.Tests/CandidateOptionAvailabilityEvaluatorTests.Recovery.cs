@@ -493,8 +493,16 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     {
         return Snapshot("""
         {
+          "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "player": {
+            "location_id": {"value":"SeedShop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":true,"type":"ShopMenu"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -510,6 +518,47 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "SELL_CONTEXT",
                 sellContextOverride ??
                 """{"kind":"shop_sell_context","shop_id":"SeedShop","currency":0,"read_only":false,"safety_timer":0,"held_item_present":false,"storage_shop":false,"sell_percentage":1.0,"custom_on_sell_present":false,"categories_to_sell":[-75],"tag_groups_to_sell":[]}"""));
+    }
+
+    private static SnapshotEnvelope SellPreviewSnapshot(
+        string inventoryItemOverride,
+        bool endpointAllowed = true)
+    {
+        return Snapshot("""
+        {
+          "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"SeedShop","sale_preview":{"kind":"shop_sale_preview","shop_id":"SeedShop","currency":0,"default_sell_percentage":1.0,"tag_groups_to_sell":[["category_vegetable"]],"executor_sale_preview_enabled":true,"executor_block_reasons":[]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "collision_grid": {"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"SeedShop","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"SeedShop","target_x":3,"target_y":4,"resolved":true},
+              {"kind":"shop_endpoint","from_location":"SeedShop","from_x":3,"from_y":5,"shop_id":"SeedShop","action_type":"OpenShop","allowed_now":ENDPOINT_ALLOWED,"resolved":false}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "map": {"value":{"id":"FarmHouse"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shop_action_tiles": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """
+            .Replace("ITEM", inventoryItemOverride)
+            .Replace(
+                "ENDPOINT_ALLOWED",
+                endpointAllowed ? "true" : "false"));
     }
 
     private static OptionAvailabilityCandidate Candidate(string optionId, params SmallModelActionParameter[] parameters)

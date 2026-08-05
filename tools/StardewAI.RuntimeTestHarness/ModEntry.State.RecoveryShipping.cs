@@ -219,6 +219,22 @@ public sealed partial class ModEntry : Mod
         public bool BeforeEventUp { get; }
     }
 
+    private sealed class ActiveMenuClose
+    {
+        public ActiveMenuClose(PendingExecution pending, IClickableMenu initialMenu)
+        {
+            Pending = pending;
+            InitialMenu = initialMenu;
+            BeforeMenuType = initialMenu.GetType().Name;
+        }
+
+        public PendingExecution Pending { get; }
+        public IClickableMenu InitialMenu { get; }
+        public string BeforeMenuType { get; }
+        public int ElapsedTicks { get; set; }
+        public int MaxTicks { get; } = 600;
+    }
+
     private sealed class ActiveShippingSummaryClose
     {
         public ActiveShippingSummaryClose(PendingExecution pending, ShippingMenu initialMenu)

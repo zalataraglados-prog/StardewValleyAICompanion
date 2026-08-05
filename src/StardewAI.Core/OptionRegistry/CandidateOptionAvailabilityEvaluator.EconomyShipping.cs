@@ -25,7 +25,9 @@ namespace StardewAI.Core.OptionRegistry
 
             if (optionId == "economy.sell_items")
             {
-                return SellCandidates(snapshot);
+                return ActiveShopMenuOpen(snapshot)
+                    ? SellCandidates(snapshot, boundParameters)
+                    : Array.Empty<EconomicCandidate>();
             }
 
             if (optionId == "economy.ship_items")
@@ -49,7 +51,10 @@ namespace StardewAI.Core.OptionRegistry
 
             if (optionId == "economy.sell_items")
             {
-                return SellItemsValueBlockReasons(snapshot, economicCandidates);
+                return SellItemsValueBlockReasons(
+                    snapshot,
+                    economicCandidates,
+                    eventCandidates);
             }
 
             if (optionId == "economy.ship_items")
@@ -104,7 +109,10 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static string[] SellItemsValueBlockReasons(SnapshotEnvelope snapshot, EconomicCandidate[] candidates)
+        private static string[] SellItemsValueBlockReasons(
+            SnapshotEnvelope snapshot,
+            EconomicCandidate[] candidates,
+            EventCandidate[] eventCandidates)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
@@ -112,9 +120,19 @@ namespace StardewAI.Core.OptionRegistry
                 return new[] { "player_inventory_unavailable" };
             }
 
-            if (candidates.Any(candidate => candidate.Available))
+            if (candidates.Any(candidate => candidate.Available) ||
+                eventCandidates.Any(candidate => candidate.Available))
             {
                 return Array.Empty<string>();
+            }
+
+            if (eventCandidates.Length > 0)
+            {
+                return eventCandidates
+                    .SelectMany(candidate => candidate.BlockReasons)
+                    .Concat(new[] { "no_value_available_sell_candidates" })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
             }
 
             return (candidates.Length == 0
@@ -284,7 +302,9 @@ namespace StardewAI.Core.OptionRegistry
             return reasons.ToArray();
         }
 
-        private static EconomicCandidate[] SellCandidates(SnapshotEnvelope snapshot)
+        private static EconomicCandidate[] SellCandidates(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] boundParameters)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
@@ -304,6 +324,11 @@ namespace StardewAI.Core.OptionRegistry
                 ? ReadString(sellContext.Value, "shop_id")
                 : string.Empty;
 
+            var continuationParameters = boundParameters
+                .Where(parameter => parameter.Name.StartsWith(
+                    "continuation.",
+                    StringComparison.Ordinal))
+                .ToArray();
             return inventory.Value.EnumerateArray()
                 .Where(item => ReadBool(item, "is_empty") != true)
                 .Select(item =>
@@ -331,9 +356,13 @@ namespace StardewAI.Core.OptionRegistry
                         UnitPrice = sellToStorePrice,
                         TotalValue = sellToStorePrice * stack,
                         CanShopSell = canShopSell,
-                        BlockReasons = blockReasons
+                        BlockReasons = blockReasons,
+                        Parameters = continuationParameters
                     };
                 })
+                .Where(candidate => SaleIdentityMatches(
+                    candidate,
+                    boundParameters))
                 .ToArray();
         }
 

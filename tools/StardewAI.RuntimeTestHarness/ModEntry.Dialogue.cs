@@ -54,6 +54,25 @@ public sealed partial class ModEntry : Mod
                     allowIncubatorBirthMessage,
                 allowIncubatorBirthMessage))
         {
+            if (menu is not null &&
+                IsSafeCloseMenuType(menu.GetType().Name) &&
+                !menu.readyToClose())
+            {
+                if (activeMenuClose is not null)
+                {
+                    pending.Completion.SetResult(BlockedWithPrimitive(
+                        pending.Request,
+                        "close_menu",
+                        "menus.active_menu.is_open=false",
+                        CloseMenuObservedEffect(),
+                        "menu_close_executor_busy"));
+                    return;
+                }
+
+                activeMenuClose = new ActiveMenuClose(pending, menu);
+                return;
+            }
+
             pending.Completion.SetResult(ExecuteCloseMenu(pending.Request));
             return;
         }
@@ -70,6 +89,79 @@ public sealed partial class ModEntry : Mod
 
         activeDialogueAdvance = new ActiveDialogueAdvance(pending, dialogueBox);
         Monitor.Log($"Started native dialogue advance: isQuestion={dialogueBox.isQuestion}, responses={dialogueBox.responses?.Length ?? 0}, transitioning={dialogueBox.transitioning}, safetyTimer={dialogueBox.safetyTimer}, eventUp={Game1.eventUp}, speaker={dialogueBox.characterDialogue?.speaker?.Name ?? "none"}", LogLevel.Info);
+    }
+
+    private void TickMenuClose()
+    {
+        if (activeMenuClose is null)
+        {
+            return;
+        }
+
+        var close = activeMenuClose;
+        close.ElapsedTicks++;
+        var menu = Game1.activeClickableMenu;
+        if (menu is null)
+        {
+            activeMenuClose = null;
+            close.Pending.Completion.SetResult(CompletedCloseMenu(
+                close.Pending.Request,
+                true,
+                close.BeforeMenuType,
+                "applied",
+                "verified",
+                new[] { "active_menu_closed_while_waiting", "ready_wait_ticks=" + close.ElapsedTicks }));
+            return;
+        }
+
+        if (!ReferenceEquals(menu, close.InitialMenu))
+        {
+            activeMenuClose = null;
+            close.Pending.Completion.SetResult(BlockedWithPrimitive(
+                close.Pending.Request,
+                "close_menu",
+                "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(),
+                "menu_changed_while_waiting_to_close"));
+            return;
+        }
+
+        if (close.ElapsedTicks > close.MaxTicks)
+        {
+            activeMenuClose = null;
+            close.Pending.Completion.SetResult(BlockedWithPrimitive(
+                close.Pending.Request,
+                "close_menu",
+                "menus.active_menu.is_open=false",
+                CloseMenuObservedEffect(),
+                "menu_ready_to_close_timeout"));
+            return;
+        }
+
+        var bypassedVisualOnlyShopAnimation =
+            menu is ShopMenu shopMenu &&
+            shopMenu.heldItem is null &&
+            shopMenu.safetyTimer <= 0 &&
+            close.ElapsedTicks >= 120;
+        if (!menu.readyToClose() && !bypassedVisualOnlyShopAnimation)
+        {
+            return;
+        }
+
+        menu.exitThisMenu();
+        var verified = Game1.activeClickableMenu is null;
+        activeMenuClose = null;
+        close.Pending.Completion.SetResult(CompletedCloseMenu(
+            close.Pending.Request,
+            true,
+            close.BeforeMenuType,
+            verified ? "applied" : "blocked",
+            verified ? "verified" : "observed_mismatch",
+            verified
+                ? bypassedVisualOnlyShopAnimation
+                    ? new[] { "active_menu_closed", "shop_visual_animation_only_block_bypassed", "ready_wait_ticks=" + close.ElapsedTicks }
+                    : new[] { "active_menu_closed", "ready_wait_ticks=" + close.ElapsedTicks }
+                : new[] { "active_menu_still_open" }));
     }
 
     private void TickDialogueAdvance()

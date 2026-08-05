@@ -848,7 +848,7 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "close_menu", "menus.active_menu.is_open=false", CloseMenuObservedEffect(), "menu_not_ready_to_close");
         }
 
-        Game1.exitActiveMenu();
+        menu.exitThisMenu();
         var verified = Game1.activeClickableMenu is null;
         return CompletedCloseMenu(
             request,

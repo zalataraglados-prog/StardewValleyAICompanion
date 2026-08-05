@@ -40,6 +40,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["quest.advance"] = (snapshot, _) => QuestCandidates(snapshot),
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
+                ["economy.sell_items"] = SellItemStageCandidates,
                 ["economy.ship_items"] = (snapshot, _) => ShipCandidates(snapshot),
                 ["inventory.transfer_item"] = MaterialTransferCandidates
             };

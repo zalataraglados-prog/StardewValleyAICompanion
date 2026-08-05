@@ -40,6 +40,7 @@ public sealed partial class ModEntry
             "debug.setup_plant_seed_target",
             "debug.setup_quarry_mine",
             "debug.setup_quest_monster_drop_fixture",
+            "debug.setup_sale_target",
             "debug.setup_shipping_target",
             "debug.setup_single_gift_item",
             "debug.setup_skull_cavern_shaft",

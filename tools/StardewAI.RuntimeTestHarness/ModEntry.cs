@@ -87,6 +87,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMaterialTransfer? activeMaterialTransfer;
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
     private ActiveDialogueAdvance? activeDialogueAdvance;
+    private ActiveMenuClose? activeMenuClose;
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
@@ -428,6 +429,7 @@ public sealed partial class ModEntry : Mod
         TickMaterialTransferSafely();
         TickWorkbenchCraftSafely();
         TickDialogueAdvance();
+        TickMenuClose();
         TickShippingSummaryClose();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
@@ -810,6 +812,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_shipping_target")
             {
                 pending.Completion.SetResult(ExecuteSetupShippingTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_sale_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupSaleTarget(pending.Request));
                 return;
             }
 
@@ -1316,6 +1324,7 @@ public sealed partial class ModEntry : Mod
             activeMaterialTransfer is not null ||
             activeWorkbenchCraft is not null ||
             activeDialogueAdvance is not null ||
+            activeMenuClose is not null ||
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null;

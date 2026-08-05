@@ -280,4 +280,65 @@ public sealed partial class ModEntry : Mod
             }
         };
     }
+
+    private TrainingExecutionResult ExecuteSetupSaleTarget(
+        TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        var qualifiedItemId = !string.IsNullOrWhiteSpace(request.QualifiedItemId)
+            ? request.QualifiedItemId
+            : "(O)24";
+        var quantity = Math.Max(1, request.Quantity ?? 3);
+        var slotIndex = EnsureInventoryItem(qualifiedItemId, quantity);
+        if (slotIndex < 0)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_sale_target",
+                "sale_target_fixture=completed",
+                "qualified_item_id=" + qualifiedItemId,
+                "inventory_full_or_item_invalid");
+        }
+
+        var item = Game1.player.Items[slotIndex];
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_sale_target",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[]
+            {
+                "fixture_item_ensured",
+                "slot_index=" + slotIndex,
+                "qualified_item_id=" + qualifiedItemId,
+                "quantity=" + (item?.Stack ?? 0),
+                "sell_to_store_price=" + (item?.sellToStorePrice(-1L) ?? 0)
+            },
+            RequestedEffect = "player.inventory[" + slotIndex + "].stack>=" + quantity,
+            ObservedEffect = "fixture_item_ensured;slot_index=" + slotIndex +
+                ";qualified_item_id=" + qualifiedItemId,
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "player.inventory.slot_index",
+                    Before = "",
+                    After = slotIndex.ToString()
+                }
+            }
+        };
+    }
 }
