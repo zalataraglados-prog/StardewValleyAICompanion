@@ -113,6 +113,7 @@ namespace StardewAI.Core.Execution
             RequireInt(action, reasons, "slot_index");
             RequireText(action, reasons, "qualified_item_id");
             RequireInt(action, reasons, "quantity");
+            RequireInt(action, reasons, "expected_unit_price");
             if (ReadIntParameter(action, "quantity") is int quantity && quantity != 1)
             {
                 reasons.Add("executor_parameter_must_equal_one:quantity");

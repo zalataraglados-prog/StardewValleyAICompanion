@@ -111,6 +111,50 @@ public static class QueueReplanFilter
             };
         }
 
+        if (string.Equals(
+                optionId,
+                "economy.ship_items",
+                StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(qualifiedItemId))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "economy_shipping",
+                ["option_id"] = optionId,
+                ["target_location"] = ReadParameter(
+                    queueItem,
+                    "continuation.target_location"),
+                ["item_id"] = ReadParameter(
+                    queueItem,
+                    "continuation.item_id"),
+                ["qualified_item_id"] = qualifiedItemId,
+                ["slot_index"] = ReadParameter(
+                    queueItem,
+                    "continuation.slot_index"),
+                ["quantity"] = ReadParameter(
+                    queueItem,
+                    "continuation.quantity"),
+                ["expected_unit_price"] = ReadParameter(
+                    queueItem,
+                    "continuation.expected_unit_price"),
+                ["bin_location"] = ReadParameter(
+                    queueItem,
+                    "continuation.bin_location"),
+                ["bin_tile_x"] = ReadParameter(
+                    queueItem,
+                    "continuation.bin_tile_x"),
+                ["bin_tile_y"] = ReadParameter(
+                    queueItem,
+                    "continuation.bin_tile_y"),
+                ["stand_tile_x"] = ReadParameter(
+                    queueItem,
+                    "continuation.stand_tile_x"),
+                ["stand_tile_y"] = ReadParameter(
+                    queueItem,
+                    "continuation.stand_tile_y")
+            };
+        }
+
         var npcName = ReadParameter(queueItem, "continuation.npc_name");
         if (!string.IsNullOrWhiteSpace(optionId) && !string.IsNullOrWhiteSpace(npcName))
         {
@@ -334,6 +378,48 @@ public static class QueueReplanFilter
         }
         if (string.Equals(
                 continuationKind,
+                "economy_shipping",
+                StringComparison.Ordinal))
+        {
+            return string.Equals(
+                    optionId,
+                    "executor.ship_inventory_item_to_bin",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "qualified_item_id"),
+                    ReadString(continuation, "qualified_item_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "slot_index"),
+                    ReadString(continuation, "slot_index"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "quantity"),
+                    ReadString(continuation, "quantity"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "expected_unit_price"),
+                    ReadString(continuation, "expected_unit_price"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "target_tile_x"),
+                    ReadString(continuation, "bin_tile_x"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "target_tile_y"),
+                    ReadString(continuation, "bin_tile_y"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "stand_tile_x"),
+                    ReadString(continuation, "stand_tile_x"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "stand_tile_y"),
+                    ReadString(continuation, "stand_tile_y"),
+                    StringComparison.Ordinal);
+        }
+        if (string.Equals(
+                continuationKind,
                 "machine_placement",
                 StringComparison.Ordinal))
         {
@@ -553,6 +639,50 @@ public static class QueueReplanFilter
                     ReadString(continuation, "slot_index"),
                     StringComparison.Ordinal);
         }
+        if (string.Equals(
+                ReadString(continuation, "kind"),
+                "economy_shipping",
+                StringComparison.Ordinal))
+        {
+            return OptionalIdentityMatches(
+                    candidate,
+                    continuation,
+                    "qualified_item_id",
+                    "continuation.qualified_item_id") &&
+                OptionalIdentityMatches(
+                    candidate,
+                    continuation,
+                    "slot_index",
+                    "continuation.slot_index") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "quantity") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "expected_unit_price") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "bin_location") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "bin_tile_x") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "bin_tile_y") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "stand_tile_x") &&
+                CandidateParameterMatchesContinuation(
+                    candidate,
+                    continuation,
+                    "stand_tile_y");
+        }
 
         if (string.Equals(ReadString(continuation, "kind"), "machine", StringComparison.Ordinal))
         {
@@ -717,6 +847,30 @@ public static class QueueReplanFilter
             actual = directValue?.ToString() ?? string.Empty;
         }
         return string.Equals(actual, expected, StringComparison.Ordinal);
+    }
+
+    private static bool CandidateParameterMatchesContinuation(
+        JsonObject candidate,
+        JsonObject continuation,
+        string name)
+    {
+        var expected = ReadString(continuation, name);
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return true;
+        }
+
+        var actual = ReadCandidateParameter(candidate, "continuation." + name);
+        if (string.IsNullOrWhiteSpace(actual))
+        {
+            actual = ReadCandidateParameter(candidate, name);
+        }
+        if (string.IsNullOrWhiteSpace(actual) &&
+            candidate.TryGetPropertyValue(name, out var directValue))
+        {
+            actual = directValue?.ToString() ?? string.Empty;
+        }
+        return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ReadCandidateParameter(JsonObject candidate, string name)

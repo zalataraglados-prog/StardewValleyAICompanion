@@ -215,7 +215,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
-            "executor.craft_machine_item", "executor.craft_storage_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
+            "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
             "executor.read_book", "executor.catch_fish",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -273,7 +273,7 @@ namespace StardewAI.Contracts.Capabilities
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.obtain_skull_key",
             "mining.claim_reward_chests", "mining.acquire_golden_scythe",
-            "volcano.reach_caldera", "economy.buy_supplies", "economy.sell_items",
+            "volcano.reach_caldera", "economy.buy_supplies", "economy.sell_items", "economy.ship_items",
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
@@ -384,6 +384,13 @@ namespace StardewAI.Contracts.Capabilities
                         compilerEvidenceIds: new[] { "EVD-220" },
                         runtimeEvidenceIds: new[] { "EVD-220" },
                         outputEvidenceIds: new[] { "EVD-220" }),
+                    ["economy.ship_items"] = BoundedEvidence(
+                        "vanilla_one_explicitly_authorized_unprotected_positive_shipping_payout_item_rolling_resolved_route_exact_bin_approach_native_single_item_deposit_immediate_inventory_bin_receipt_and_delayed_day_settlement",
+                        readEvidenceIds: new[] { "EVD-018", "EVD-020", "EVD-022", "EVD-024", "EVD-221" },
+                        candidateEvidenceIds: new[] { "EVD-038", "EVD-221" },
+                        compilerEvidenceIds: new[] { "EVD-221" },
+                        runtimeEvidenceIds: new[] { "EVD-221" },
+                        outputEvidenceIds: new[] { "EVD-221" }),
                     ["farm.collect_machine_outputs"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                         "EVD-213"),

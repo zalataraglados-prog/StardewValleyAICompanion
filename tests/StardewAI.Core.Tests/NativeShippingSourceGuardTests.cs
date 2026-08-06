@@ -9,6 +9,8 @@ public sealed partial class NativeShippingSourceGuardTests
     private static readonly string RuntimeHarnessSource = RuntimeHarnessSources.All;
     private static readonly string ShippingSmokeSource = File.ReadAllText(
         FindRepositoryFile("scripts", "Invoke-RuntimeShipInventorySmoke.ps1"));
+    private static readonly string ShippingMainlineSmokeSource = File.ReadAllText(
+        FindRepositoryFile("scripts", "Invoke-RuntimeShippingMainlineSmoke.ps1"));
 
     [Fact]
     public void ShipExecutorSourceHasDayStartedSubscription()
@@ -106,6 +108,16 @@ public sealed partial class NativeShippingSourceGuardTests
         Assert.Contains("player_not_on_exact_stand_tile", startSlice, StringComparison.Ordinal);
         Assert.Contains("!pending.Request.StandTileX.HasValue || !pending.Request.StandTileY.HasValue", startSlice, StringComparison.Ordinal);
         Assert.Contains("distance > 2.0f", startSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShipExecutorRebindsTransparentUnitPriceBeforeNativeDeposit()
+    {
+        var source = RuntimeHarnessSource;
+        var startSlice = Slice(source, "private void StartShipInventoryItemToBin", "private void TickShipInventoryToBin");
+        Assert.Contains("slotItem.sellToStorePrice(-1L) != pending.Request.ExpectedUnitPrice.Value", startSlice, StringComparison.Ordinal);
+        Assert.Contains("shipping_unit_price_drift", startSlice, StringComparison.Ordinal);
+        Assert.Contains("expected_unit_price = $expectedUnitPrice", ShippingSmokeSource, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -437,6 +449,20 @@ public sealed partial class NativeShippingSourceGuardTests
         Assert.Contains("route_stand_tile_y", shipSlice, StringComparison.Ordinal);
         Assert.Contains("\"stand_tile_x\"", shipSlice, StringComparison.Ordinal);
         Assert.Contains("\"stand_tile_y\"", shipSlice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainlineSmokeExercisesRollingHighLevelShippingWithExactDeltas()
+    {
+        var script = ShippingMainlineSmokeSource;
+        Assert.Contains("economy.ship_items", script, StringComparison.Ordinal);
+        Assert.Contains("continuation.expected_unit_price", script, StringComparison.Ordinal);
+        Assert.Contains("continuation.bin_tile_x", script, StringComparison.Ordinal);
+        Assert.Contains("continuation.stand_tile_x", script, StringComparison.Ordinal);
+        Assert.Contains("$fixtureAwayTileX", script, StringComparison.Ordinal);
+        Assert.Contains("ship_inventory_count_before - $shipping.ship_inventory_count_after", script, StringComparison.Ordinal);
+        Assert.Contains("ship_bin_count_after - $shipping.ship_bin_count_before", script, StringComparison.Ordinal);
+        Assert.Contains("EVD-221", script, StringComparison.Ordinal);
     }
 
 }

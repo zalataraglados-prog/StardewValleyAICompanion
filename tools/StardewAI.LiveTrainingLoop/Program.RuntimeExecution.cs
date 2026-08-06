@@ -221,24 +221,40 @@ static partial class Program
             attemptedSemanticKeys.Add(itemSemanticKey);
 
             var executionStatus = ReadString(execution, "status");
-            if (QueueReplanFilter.CompletesObjectiveContinuation(item, activeObjectiveContinuation, executionStatus))
+            var continuationForCompletion = activeObjectiveContinuation;
+            if (continuationForCompletion is null &&
+                string.Equals(executionStatus, "applied", StringComparison.Ordinal))
+            {
+                continuationForCompletion =
+                    QueueReplanFilter.ReadObjectiveContinuation(item);
+            }
+
+            if (QueueReplanFilter.CompletesObjectiveContinuation(
+                    item,
+                    continuationForCompletion,
+                    executionStatus))
             {
                 if (string.IsNullOrWhiteSpace(objectiveContinuationKind) &&
                     string.Equals(ReadString(item, "option_id"), "executor.social_interact", StringComparison.Ordinal))
                 {
                     objectiveContinuationKind = "social";
                 }
+                else if (string.IsNullOrWhiteSpace(objectiveContinuationKind))
+                {
+                    objectiveContinuationKind = ReadString(
+                        continuationForCompletion,
+                        "kind");
+                }
                 objectiveContinuationCompleted = true;
                 activeObjectiveContinuation = null;
             }
-            else if (string.Equals(executionStatus, "applied", StringComparison.Ordinal))
+            else if (continuationForCompletion is not null &&
+                string.Equals(executionStatus, "applied", StringComparison.Ordinal))
             {
-                var discoveredContinuation = QueueReplanFilter.ReadObjectiveContinuation(item);
-                if (discoveredContinuation is not null)
-                {
-                    activeObjectiveContinuation = discoveredContinuation;
-                    objectiveContinuationKind = ReadString(discoveredContinuation, "kind");
-                }
+                activeObjectiveContinuation = continuationForCompletion;
+                objectiveContinuationKind = ReadString(
+                    continuationForCompletion,
+                    "kind");
             }
 
             var replanDecision = QueueReplanFilter.DecideAfterExecution(

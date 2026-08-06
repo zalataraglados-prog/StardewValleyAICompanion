@@ -298,6 +298,13 @@ try {
     $standTileX = [int]$Matches[1]; $standTileY = [int]$Matches[2]
     $binTileFact -match "bin_tile=(\d+),(\d+)" | Out-Null
     $binTileX = [int]$Matches[1]; $binTileY = [int]$Matches[2]
+    $fixtureInventoryItem = @($fixtureSnapshot.state.player.inventory.value) |
+        Where-Object { [int]$_.slot_index -eq $slotIndex } |
+        Select-Object -First 1
+    if ($null -eq $fixtureInventoryItem -or [int]$fixtureInventoryItem.sell_to_store_price -le 0) {
+        throw "Fixture snapshot did not expose a positive sell_to_store_price for slot $slotIndex"
+    }
+    $expectedUnitPrice = [int]$fixtureInventoryItem.sell_to_store_price
 
     # Stage 2: Move to stand tile (if not already there)
     $playerX = if ($null -ne $fixtureSnapshot.state.player.tile_x.value) { [int]$fixtureSnapshot.state.player.tile_x.value } else { -1 }
@@ -346,6 +353,7 @@ try {
         slot_index = $slotIndex
         qualified_item_id = $FixtureQualifiedItemId
         quantity = 1
+        expected_unit_price = $expectedUnitPrice
         target_tile_x = $binTileX
         target_tile_y = $binTileY
         stand_tile_x = $standTileX

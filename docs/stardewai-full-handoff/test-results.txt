@@ -1,3 +1,13 @@
+2026-08-07 EVD-221 rolling high-level shipping runtime admission
+- Hidden/silent isolated E-drive high-level PASS: `artifacts\runtime-shipping-mainline-smoke\runtime-shipping-mainline-20260807-012414\summary.json`.
+- Only `economy.ship_items` was submitted. Two fresh-snapshot iterations compiled `executor.move_to_tile` and then `executor.ship_inventory_item_to_bin`; the exact continuation completed and cleared after the matching terminal action.
+- Wood `(O)388` slot 10 changed 5 -> 4, the exact Farm shipping bin changed 0 -> 1, the live native shipping payout was rebound as 2g, and two real execution rows were recorded.
+- Hidden/silent isolated primitive plus cross-day settlement PASS: `artifacts\runtime-ship-inventory-smoke\runtime-ship-inventory-smoke-20260807-011702\summary.json`; inventory/bin deltas were exact, native sleep advanced the date, and the pending receipt settled as `completed` against `basicShipped`.
+- Local 1.6.15 decompile confirms `ShippingMenu` values each shipped item with `sellToStorePrice(-1L)` and then calls `Farmer.shippedBasic`; shipping no longer treats `salePrice()` as its settlement value.
+- A diagnostic pre-fix run exposed duplicate terminal execution when a continuation was first discovered on the terminal item. LiveTrainingLoop now checks same-item completion immediately and does not deposit twice.
+- Scope is one explicitly selected, unprotected, positive-payout item. Autonomous surplus/reserve strategy remains outside this admission.
+- Final regression PASS: focused shipping/capability 185/185; Core 1548/1548; Backend 114/114; Release solution build 0 errors with 7 existing warnings. Action reconciliation PASS with 585/585 exports, blocking 0, 101 registered, 169 semantic, 92 compiler-bound, 24 five-gate closed, and 23 training-allowlisted.
+
 2026-08-05 EVD-219 rolling high-level purchase runtime admission
 - Hidden/silent isolated E-drive PASS: `artifacts\runtime-purchase-mainline-smoke\runtime-purchase-mainline-20260805-092658\summary.json`.
 - Started in `FarmHouse` at 9:00 and completed in six fresh-snapshot iterations.

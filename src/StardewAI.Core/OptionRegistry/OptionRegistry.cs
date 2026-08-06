@@ -139,9 +139,9 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
                 TrainingRoles.StrategyValue,
-                new[] { "player.inventory", "farm.shipping_bins" },
-                new[] { "shipping candidates previewed" },
-                new[] { "never_ship_protected_items", "block_no_completed_shipping_bin", "block_no_route_to_bin" }));
+                new[] { "player.location_id", "player.inventory", "farm.shipping_bins", "locations.route_graph", "locations.route_connectors", "world_progress.shipping_collection" },
+                new[] { "exact shipping item and bin rebound", "one route, approach, or native deposit stage compiled", "immediate deposit and delayed day settlement recorded" },
+                new[] { "never_ship_protected_items", "block_identity_price_or_bin_drift", "one_native_item_per_fresh_snapshot" }));
 
             Register(Option("inventory.transfer_item", "inventory", "Transfer one exact item quantity between the player inventory and an ordinary placed chest",
                 OptionBehaviorCategories.ParameterizedMechanical,

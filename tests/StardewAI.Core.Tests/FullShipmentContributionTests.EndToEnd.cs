@@ -18,7 +18,11 @@ public sealed partial class FullShipmentContributionTests
             InventoryItem("0", "24", "(O)24", "Parsnip", 5, 17, 17, true, -75));
         var fsProgress = FullShipmentProgressField("available", 1,
             FsItem("24", "(O)24", "Parsnip", -75, "Basic", 0, false));
-        var snapshot = BuildSnapshot(inventory, fsProgress);
+        var snapshot = BuildSnapshot(
+            inventory,
+            fsProgress,
+            playerTileX: 67,
+            playerTileY: 15);
 
         var availability = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
@@ -94,9 +98,111 @@ public sealed partial class FullShipmentContributionTests
         Assert.Contains(queueItem.NormalizedCommand.Parameters,
             p => p.Name == "quantity" && p.Value == "1");
         Assert.Contains(queueItem.NormalizedCommand.Parameters,
+            p => p.Name == "expected_unit_price" && p.Value == "17");
+        Assert.Contains(queueItem.NormalizedCommand.Parameters,
             p => p.Name == "stand_tile_x");
         Assert.Contains(queueItem.NormalizedCommand.Parameters,
             p => p.Name == "stand_tile_y");
+    }
+
+    [Fact]
+    public void ShippingApproachCompilesOnlyMovementAndCarriesExactContinuation()
+    {
+        var snapshot = BuildSnapshot(
+            Inventory(
+                InventoryItem("0", "24", "(O)24", "Parsnip", 5, 19, 17, true, -75)),
+            FullShipmentProgressField(
+                "available",
+                1,
+                FsItem("24", "(O)24", "Parsnip", -75, "Basic", 0, false)));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(
+            availability.Options.Single(option => option.OptionId == "economy.ship_items")
+                .EventCandidates);
+
+        Assert.Contains(candidate.Parameters,
+            parameter => parameter.Name == "shipping_stage" && parameter.Value == "approach");
+        Assert.Contains(candidate.Parameters,
+            parameter => parameter.Name == "continuation.expected_unit_price" && parameter.Value == "19");
+        Assert.Equal(19, candidate.UnitPrice);
+        Assert.Equal(19, candidate.TotalValue);
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport
+            {
+                OptionScores = new[]
+                {
+                    new BaselineOptionScore
+                    {
+                        OptionId = "economy.ship_items",
+                        AverageTotalReward = 0.1
+                    }
+                }
+            },
+            availability);
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            snapshot.StateHash,
+            maxCandidates: 1);
+
+        var move = Assert.Single(plan.Steps);
+        Assert.Equal("move_to_tile", move.Kind);
+        Assert.Contains(move.Parameters,
+            parameter => parameter.Name == "continuation.option_id" &&
+                parameter.Value == "economy.ship_items");
+    }
+
+    [Fact]
+    public void ShippingRemoteStageCompilesOneTransparentConnectorBeforeFarmApproach()
+    {
+        var snapshot = BuildSnapshot(
+            Inventory(
+                InventoryItem("0", "24", "(O)24", "Parsnip", 5, 19, 17, true, -75)),
+            FullShipmentProgressField(
+                "available",
+                1,
+                FsItem("24", "(O)24", "Parsnip", -75, "Basic", 0, false)),
+            playerTileX: 27,
+            playerTileY: 30,
+            playerLocation: "FarmHouse",
+            includeFarmRoute: true);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(
+            availability.Options.Single(option => option.OptionId == "economy.ship_items")
+                .EventCandidates);
+
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Equal("FarmHouse", candidate.LocationId);
+        Assert.Equal(27, candidate.TileX);
+        Assert.Equal(31, candidate.TileY);
+        Assert.Contains(candidate.Parameters,
+            parameter => parameter.Name == "continuation.qualified_item_id" &&
+                parameter.Value == "(O)24");
+        Assert.Contains(candidate.Parameters,
+            parameter => parameter.Name == "shipping_route.remaining_connector_count" &&
+                parameter.Value == "1");
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport
+            {
+                OptionScores = new[]
+                {
+                    new BaselineOptionScore
+                    {
+                        OptionId = "economy.ship_items",
+                        AverageTotalReward = 0.1
+                    }
+                }
+            },
+            availability);
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            snapshot.StateHash,
+            maxCandidates: 1);
+        var connector = Assert.Single(plan.Steps);
+        Assert.Equal("traverse_connector", connector.Kind);
     }
 
     // === Helper methods ===
@@ -205,8 +311,8 @@ public sealed partial class FullShipmentContributionTests
     {
         var snapshot = BuildSnapshot(
             Inventory(
-                InventoryItem("0", "388", "(O)388", "Coal", 5, 15, 15, true, -15)),
-            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Coal", -15, "Basic", 0, false)));
+                InventoryItem("0", "388", "(O)388", "Wood", 5, 2, 2, true, -16)),
+            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Wood", -16, "Basic", 0, false)));
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
         var shipCandidate = FindShipCandidate(availability, "388");
         Assert.NotNull(shipCandidate);
@@ -220,8 +326,8 @@ public sealed partial class FullShipmentContributionTests
     {
         var snapshot = BuildSnapshot(
             Inventory(
-                InventoryItem("2", "388", "(O)388", "Coal", 3, 15, 15, true, -15)),
-            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Coal", -15, "Basic", 0, false)));
+                InventoryItem("2", "388", "(O)388", "Wood", 3, 2, 2, true, -16)),
+            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Wood", -16, "Basic", 0, false)));
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
         var shipCandidate = FindShipCandidate(availability, "388");
         Assert.NotNull(shipCandidate);
@@ -283,8 +389,8 @@ public sealed partial class FullShipmentContributionTests
     {
         var snapshot = BuildSnapshot(
             Inventory(
-                InventoryItem("0", "388", "(O)388", "Coal", 5, 15, 15, true, -15)),
-            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Coal", -15, "Basic", 0, false)));
+                InventoryItem("0", "388", "(O)388", "Wood", 5, 2, 2, true, -16)),
+            FullShipmentProgressField("available", 1, FsItem("388", "(O)388", "Wood", -16, "Basic", 0, false)));
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "economy.ship_items" }, includeExecutorCalibrationOptions: true);
         var shipCandidate = FindShipCandidate(availability, "388");
         Assert.NotNull(shipCandidate);

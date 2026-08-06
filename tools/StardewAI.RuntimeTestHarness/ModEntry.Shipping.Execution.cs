@@ -81,6 +81,14 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (!pending.Request.ExpectedUnitPrice.HasValue ||
+            slotItem.sellToStorePrice(-1L) != pending.Request.ExpectedUnitPrice.Value)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "ship_inventory_item_to_bin",
+                ShipRequestedEffect(pending.Request), ShipObservedEffect(), "shipping_unit_price_drift"));
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(pending.Request.RequestNonce))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "ship_inventory_item_to_bin",

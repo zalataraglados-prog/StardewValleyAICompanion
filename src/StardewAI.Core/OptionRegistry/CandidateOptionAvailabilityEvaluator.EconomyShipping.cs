@@ -391,7 +391,7 @@ namespace StardewAI.Core.OptionRegistry
 
             return inventory.Value.EnumerateArray()
                 .Where(item => ReadBool(item, "is_empty") != true)
-                .Where(item => ReadBool(item, "can_be_shipped") == true && ReadInt(item, "sale_price") > 0 && ReadInt(item, "stack") > 0)
+                .Where(item => ReadBool(item, "can_be_shipped") == true && ReadInt(item, "sell_to_store_price") > 0 && ReadInt(item, "stack") > 0)
                 .Where(item => ReadBool(item, "protected_from_auto_sell") != true && !HasArrayItems(item, "auto_sell_protection_reasons"))
                 .Select(item => ShipCandidateForItem(snapshot, item, fullShipmentIndex, binBounds, binContents)!)
                 .ToArray();
@@ -412,6 +412,7 @@ namespace StardewAI.Core.OptionRegistry
             var slotIndex = ReadInt(item, "slot_index");
             var stack = Math.Max(1, ReadInt(item, "stack"));
             var salePrice = ReadInt(item, "sale_price");
+            var shippingUnitPrice = ReadInt(item, "sell_to_store_price");
 
             var fullShipmentContributes = false;
             var fullShipmentKnown = false;
@@ -465,7 +466,8 @@ namespace StardewAI.Core.OptionRegistry
                 ";quantity=" + quantity +
                 ";available_stack=" + availableStack +
                 ";sale_price=" + salePrice +
-                ";total_shipping_value=" + (salePrice * quantity) +
+                ";shipping_unit_price=" + shippingUnitPrice +
+                ";total_shipping_value=" + (shippingUnitPrice * quantity) +
                 ";shipping_bin_tile=" + binBounds.TileX + "," + binBounds.TileY +
                 ";shipping_bin_width=" + binBounds.Width + ",height=" + binBounds.Height +
                 (routeTarget is not null
@@ -503,6 +505,8 @@ namespace StardewAI.Core.OptionRegistry
                 FullShipmentAlreadyShipped = fullShipmentAlreadyShipped,
                 FullShipmentContributes = fullShipmentContributes,
                 AvailableStack = availableStack,
+                UnitPrice = shippingUnitPrice,
+                TotalValue = shippingUnitPrice * quantity,
                 BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
                 Parameters = new[]
                 {
@@ -512,6 +516,8 @@ namespace StardewAI.Core.OptionRegistry
                     Parameter("quantity", quantity.ToString()),
                     Parameter("available_stack", availableStack.ToString()),
                     Parameter("sale_price", salePrice.ToString()),
+                    Parameter("expected_unit_price", shippingUnitPrice.ToString()),
+                    Parameter("shipping_unit_price", shippingUnitPrice.ToString()),
                     Parameter("bin_tile_x", binBounds.TileX.ToString()),
                     Parameter("bin_tile_y", binBounds.TileY.ToString()),
                     Parameter("route_stand_tile_x", (routeTarget?.X).ToString() ?? string.Empty),

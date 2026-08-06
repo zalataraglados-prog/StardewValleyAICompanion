@@ -301,6 +301,83 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void ShippingContinuationLocksItemBinAndPriceUntilVerifiedDepositApplies()
+    {
+        var approach = QueueItem(
+            "queue.shipping.approach",
+            "executor.move_to_tile",
+            "67",
+            "15",
+            "(O)24");
+        var parameters = approach["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "economy.ship_items"));
+        parameters.Add(Parameter("continuation.target_location", "Farm"));
+        parameters.Add(Parameter("continuation.qualified_item_id", "(O)24"));
+        parameters.Add(Parameter("continuation.slot_index", "0"));
+        parameters.Add(Parameter("continuation.quantity", "1"));
+        parameters.Add(Parameter("continuation.expected_unit_price", "35"));
+        parameters.Add(Parameter("continuation.bin_location", "Farm"));
+        parameters.Add(Parameter("continuation.bin_tile_x", "68"));
+        parameters.Add(Parameter("continuation.bin_tile_y", "15"));
+        parameters.Add(Parameter("continuation.stand_tile_x", "67"));
+        parameters.Add(Parameter("continuation.stand_tile_y", "15"));
+
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(approach);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("economy_shipping", continuation!["kind"]!.GetValue<string>());
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(
+            new JsonArray
+            {
+                ShippingCandidate("(O)24", 0, 35, 68, 15),
+                ShippingCandidate("(O)24", 1, 35, 68, 15),
+                ShippingCandidate("(O)24", 0, 34, 68, 15)
+            },
+            continuation));
+        Assert.Equal(0, selected!["slot_index"]!.GetValue<int>());
+
+        var deposit = QueueItem(
+            "queue.shipping.deposit",
+            "executor.ship_inventory_item_to_bin",
+            "68",
+            "15",
+            "(O)24");
+        var depositParameters = deposit["normalized_command"]!["parameters"]!.AsArray();
+        depositParameters.Add(Parameter("slot_index", "0"));
+        depositParameters.Add(Parameter("quantity", "1"));
+        depositParameters.Add(Parameter("expected_unit_price", "35"));
+        depositParameters.Add(Parameter("stand_tile_x", "67"));
+        depositParameters.Add(Parameter("stand_tile_y", "15"));
+        foreach (var continuationParameter in parameters
+                     .Select(node => node!.AsObject())
+                     .Where(parameter => parameter["name"]!.GetValue<string>()
+                         .StartsWith("continuation.", StringComparison.Ordinal))
+                     .Select(parameter => JsonNode.Parse(parameter.ToJsonString())))
+        {
+            depositParameters.Add(continuationParameter);
+        }
+        var terminalDiscoveredContinuation =
+            QueueReplanFilter.ReadObjectiveContinuation(deposit);
+        Assert.NotNull(terminalDiscoveredContinuation);
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            deposit,
+            terminalDiscoveredContinuation,
+            "applied"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            deposit,
+            continuation,
+            "applied"));
+
+        depositParameters
+            .Select(node => node!.AsObject())
+            .Single(parameter => parameter["name"]!.GetValue<string>() == "expected_unit_price")["value"] = "34";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
+            deposit,
+            continuation,
+            "applied"));
+    }
+
+    [Fact]
     public void MachineContinuationKeepsSameExecutorLocationAndTileUntilApplied()
     {
         var route = QueueItem("queue.machine.route", "executor.traverse_connector", "4", "8", string.Empty);
@@ -530,6 +607,36 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["parameters"] = new JsonArray
             {
                 Parameter("continuation.slot_index", slotIndex.ToString())
+            }
+        };
+    }
+
+    private static JsonObject ShippingCandidate(
+        string qualifiedItemId,
+        int slotIndex,
+        int unitPrice,
+        int binTileX,
+        int binTileY)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "shipping:" + slotIndex + ":" + unitPrice,
+            ["option_id"] = "economy.ship_items",
+            ["kind"] = "ship_inventory_item_to_bin",
+            ["qualified_item_id"] = qualifiedItemId,
+            ["slot_index"] = slotIndex,
+            ["quantity"] = 1,
+            ["parameters"] = new JsonArray
+            {
+                Parameter("continuation.qualified_item_id", qualifiedItemId),
+                Parameter("continuation.slot_index", slotIndex.ToString()),
+                Parameter("continuation.quantity", "1"),
+                Parameter("continuation.expected_unit_price", unitPrice.ToString()),
+                Parameter("continuation.bin_location", "Farm"),
+                Parameter("continuation.bin_tile_x", binTileX.ToString()),
+                Parameter("continuation.bin_tile_y", binTileY.ToString()),
+                Parameter("continuation.stand_tile_x", "67"),
+                Parameter("continuation.stand_tile_y", "15")
             }
         };
     }

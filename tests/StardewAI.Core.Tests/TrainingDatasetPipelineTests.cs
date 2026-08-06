@@ -33,6 +33,7 @@ namespace StardewAI.Core.Tests
                 {
                     "economy.buy_supplies",
                     "economy.sell_items",
+                    "economy.ship_items",
                     "exploration.visit_location",
                     "farm.collect_machine_outputs",
                     "farm.establish_supported_machine_capacity",

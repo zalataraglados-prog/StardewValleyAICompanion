@@ -13,7 +13,13 @@ public sealed partial class FullShipmentContributionTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private static SnapshotEnvelope BuildSnapshot(string inventoryJson, string? fullShipmentProgressJson)
+    private static SnapshotEnvelope BuildSnapshot(
+        string inventoryJson,
+        string? fullShipmentProgressJson,
+        int playerTileX = 65,
+        int playerTileY = 18,
+        string playerLocation = "Farm",
+        bool includeFarmRoute = false)
     {
         var worldProgressFields = fullShipmentProgressJson != null
             ? $@"""full_shipment_progress"":{fullShipmentProgressJson},"
@@ -26,9 +32,9 @@ public sealed partial class FullShipmentContributionTests
           },
             "player": {
             "inventory": {{inventoryJson}},
-            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_x": {"value":65,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_y": {"value":18,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "location_id": {"value":"{{playerLocation}}","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":{{playerTileX}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":{{playerTileY}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "money": {"value":500,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "total_money_earned": {"value":10000,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -45,6 +51,7 @@ public sealed partial class FullShipmentContributionTests
           },
           "world_progress": {
             {{worldProgressFields}}
+            "shipping_collection": {"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "achievements": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "community_center": {"value":{"location_accessible":false,"completed":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "joja_membership": {"value":false,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -55,7 +62,9 @@ public sealed partial class FullShipmentContributionTests
           },
           "locations": {
             "collision_grid": {"value":{"width":80,"height":80,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"{{playerLocation}}","connectors":{{(includeFarmRoute ? "[{\"tile_x\":27,\"tile_y\":31,\"kind\":\"warp\",\"target_location\":\"Farm\",\"target_x\":64,\"target_y\":15,\"resolved\":true}]" : "[]")}}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":{{(includeFarmRoute ? "[{\"kind\":\"warp\",\"from_location\":\"FarmHouse\",\"from_x\":27,\"from_y\":31,\"target_location\":\"Farm\",\"target_x\":64,\"target_y\":15,\"resolved\":true}]" : "[]")}}},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "npcs": {
             "friendships": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -244,10 +253,10 @@ public sealed partial class FullShipmentContributionTests
     }
 
     [Fact]
-    public void NonpositiveSalePriceProducesCanShipFalseAndContributesFalse()
+    public void NonpositiveShippingPayoutProducesNoCandidate()
     {
         var inventory = Inventory(
-            InventoryItem("0", "24", "(O)24", "Parsnip", 5, 17, 0, true, -75));
+            InventoryItem("0", "24", "(O)24", "Parsnip", 5, 0, 17, true, -75));
         var fsProgress = FullShipmentProgressField("available", 1,
             FsItem("24", "(O)24", "Parsnip", -75, "Basic", 0, false));
         var snapshot = BuildSnapshot(inventory, fsProgress);
