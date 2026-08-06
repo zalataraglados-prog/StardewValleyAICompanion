@@ -22,4 +22,4 @@
 
 ## 接续
 
-先运行能力对账和全量回归，确认 EVD-221 五门及 allowlist 计数落盘。下一能力必须从更新后的动作对账表选择，不能凭旧 TODO 猜测。
+EVD-221 对账和全量回归已经完成。下一切片是 `farm.collect_animal_products`：先审计现有 `AnimalProductCandidates -> collect_animal_product -> executor.collect_animal_product` 单链和 `runtime-animal-product-smoke-20260718-125259` 的 Milk Pail/Shears 两条原生证据，核对透明输入、即时输出、任务/经验/体力/友好度副作用与训练记录是否完整，再决定能否直接登记五门。不得新增第二套动物收获候选、编译器或执行器。
