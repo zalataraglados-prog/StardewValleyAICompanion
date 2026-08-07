@@ -50,13 +50,13 @@ function New-BaseRequest($Snapshot, [string] $OptionId, [string] $QueueItemId) {
     }
 }
 
-function Invoke-AnimalCase([string] $ToolName, [string] $OutputId, [int] $Quality) {
+function Invoke-AnimalCase([string] $ToolName, [string] $OutputId, [int] $Quality, [int] $CrackerMultiplier) {
     $initial = Wait-WorldSnapshot $snapshotUrl 30
-    $caseName = $ToolName.Replace(" ", "-").ToLowerInvariant()
+    $caseName = $ToolName.Replace(" ", "-").ToLowerInvariant() + "-cracker-x" + $CrackerMultiplier
     $setup = New-BaseRequest $initial "debug.setup_animal_product_target" ("setup-" + $caseName)
     $setup.target_tile_x = $TargetTileX; $setup.target_tile_y = $TargetTileY
     $setup.required_tool_kind = $ToolName; $setup.qualified_item_id = $OutputId
-    $setup.expected_output_quality = $Quality; $setup.expected_animal_cracker_multiplier = 1
+    $setup.expected_output_quality = $Quality; $setup.expected_animal_cracker_multiplier = $CrackerMultiplier
     $setupResult = Invoke-JsonPost $executorUrl $setup
     $setupResult | ConvertTo-Json -Depth 64 | Set-Content -LiteralPath (Join-Path $artifactDirectory ($caseName + "-setup-result.json")) -Encoding utf8
     Start-Sleep -Milliseconds 750
@@ -86,9 +86,11 @@ function Invoke-AnimalCase([string] $ToolName, [string] $OutputId, [int] $Qualit
     $collect.expected_stat_increments_json = [string]$animal.harvest_stat_increments_json; $collect.max_movement_tiles = 512
     $result = Invoke-JsonPost $executorUrl $collect
     $caseSummary = [ordered]@{
-        tool = $ToolName; setup_status = $setupResult.status; collect_status = $result.status;
+        tool = $ToolName; cracker_multiplier = $CrackerMultiplier; expected_quantity = $CrackerMultiplier
+        setup_status = $setupResult.status; collect_status = $result.status;
         verification = $result.primitive_verification_status; reasons = @($result.primitive_verification_reasons);
         block_reasons = @($result.block_reasons); observed_effect = $result.observed_effect
+        changed_facts = @($result.changed_facts)
     }
     $result | ConvertTo-Json -Depth 64 | Set-Content -LiteralPath (Join-Path $artifactDirectory ($caseName + "-result.json")) -Encoding utf8
     return $caseSummary
@@ -98,6 +100,15 @@ $gameDir = Join-Path $RuntimeRoot "Stardew Valley"; $smapiExe = Join-Path $gameD
 $snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"; $executorUrl = "http://127.0.0.1:8767/api/v1/training/execute"
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) { throw "SMAPI executable not found: $smapiExe" }
 if ([string]::IsNullOrWhiteSpace($SaveSlot)) { $SaveSlot = (Get-ChildItem -LiteralPath $savesPath -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1).Name }
+foreach ($port in @(8765, 8767)) {
+    if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) {
+        throw "Port $port is already listening. Refusing to attach to an existing runtime."
+    }
+}
+$existingSmapi = Get-Process -Name "StardewModdingAPI" -ErrorAction SilentlyContinue
+if ($null -ne $existingSmapi) {
+    throw "StardewModdingAPI process already running (PID $($existingSmapi.Id)). Refusing to attach or start."
+}
 $artifactDirectory = Join-Path $ProjectRoot ("artifacts\runtime-animal-product-smoke\" + $RunId); New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot | Out-Null
@@ -109,9 +120,26 @@ try {
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId; $env:STARDEWAI_TRAINING_MODE = "1"; $env:SDL_AUDIODRIVER = "dummy"; $env:ALSOFT_DRIVERS = "null"
     $process = Start-Process -FilePath $smapiExe -WorkingDirectory $gameDir -WindowStyle Hidden -PassThru
     Wait-Json "http://127.0.0.1:8767/health" 30 | Out-Null; Wait-WorldSnapshot $snapshotUrl 120 | Out-Null
-    $cases = @(); $cases += Invoke-AnimalCase "Milk Pail" "(O)184" 2; $cases += Invoke-AnimalCase "Shears" "(O)440" 1
-    $passed = @($cases | Where-Object { $_.setup_status -eq "applied" -and $_.collect_status -eq "applied" -and $_.verification -eq "verified" }).Count -eq 2
-    $summary = [ordered]@{ status = if ($passed) { "passed" } else { "failed" }; run_id = $RunId; save_slot = $SaveSlot; cases = $cases }
+    $cases = @()
+    $cases += Invoke-AnimalCase "Milk Pail" "(O)184" 2 1
+    $cases += Invoke-AnimalCase "Milk Pail" "(O)184" 2 2
+    $cases += Invoke-AnimalCase "Shears" "(O)440" 1 2
+    $cases += Invoke-AnimalCase "Shears" "(O)440" 1 1
+    $passedCases = @($cases | Where-Object {
+        $_.setup_status -eq "applied" -and $_.collect_status -eq "applied" -and
+        $_.verification -eq "verified" -and
+        $_.observed_effect -match ("inventory_delta=" + $_.expected_quantity)
+    })
+    $passed = $passedCases.Count -eq 4
+    $summary = [ordered]@{
+        status = if ($passed) { "passed" } else { "failed" }
+        evidence_id = "EVD-222"
+        run_id = $RunId
+        save_slot = $SaveSlot
+        expected_case_count = 4
+        passed_case_count = $passedCases.Count
+        cases = $cases
+    }
     $summary | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath (Join-Path $artifactDirectory "summary.json") -Encoding utf8
     $summary | ConvertTo-Json -Depth 32
     if (-not $passed) { throw "Runtime animal-product smoke failed: $artifactDirectory" }

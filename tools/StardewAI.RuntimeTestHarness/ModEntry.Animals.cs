@@ -144,7 +144,9 @@ public sealed partial class ModEntry
         }
         if (request.ToolSlotIndex.Value < 0 || request.ToolSlotIndex.Value >= Game1.player.Items.Count ||
             Game1.player.Items[request.ToolSlotIndex.Value] is not Tool tool || tool.Name != request.RequiredToolKind ||
-            (tool is not MilkPail && tool is not Shears) || !animal.CanGetProduceWithTool(tool))
+            (request.RequiredToolKind == "Milk Pail" && tool.GetType() != typeof(MilkPail)) ||
+            (request.RequiredToolKind == "Shears" && tool.GetType() != typeof(Shears)) ||
+            !animal.CanGetProduceWithTool(tool))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_animal_product", "animal.current_produce=null", AnimalProductObservedEffect(animal), "collect_animal_product_tool_projection_drifted"));
             return;
@@ -154,7 +156,9 @@ public sealed partial class ModEntry
         output.CanBeSetDown = false;
         output.HasBeenInInventory = true;
         var outputKey = ClearanceOutputItemKey.From(output);
+        var nativeStatIncrementAmount = ProjectAnimalProductStatAmountAfterInventoryInsert(output);
         if (request.Quantity.Value != (animal.hasEatenAnimalCracker.Value ? 2 : 1) || request.ExpectedAnimalCrackerMultiplier != request.Quantity.Value ||
+            output.GetType() != typeof(StardewValley.Object) ||
             request.ExpectedOutputQuality != animal.produceQuality.Value || expectedItems[0].Key != outputKey || expectedItems[0].Quantity != request.Quantity.Value ||
             !string.Equals(output.QualifiedItemId, request.QualifiedItemId, StringComparison.OrdinalIgnoreCase) || !Game1.player.couldInventoryAcceptThisItem(output))
         {
@@ -163,7 +167,8 @@ public sealed partial class ModEntry
         }
         if (animal.friendshipTowardFarmer.Value != request.ExpectedFriendshipBefore.Value ||
             Math.Min(1000, animal.friendshipTowardFarmer.Value + 5) != request.ExpectedFriendshipAfter.Value ||
-            statIncrements.Any(stat => Game1.stats.Get(stat.StatName) != stat.Before || stat.After != stat.Before + stat.Amount || stat.Amount != request.Quantity.Value))
+            statIncrements.Any(stat => Game1.stats.Get(stat.StatName) != stat.Before ||
+                stat.After != stat.Before + stat.Amount || stat.Amount != nativeStatIncrementAmount))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "collect_animal_product", "animal.current_produce=null", AnimalProductObservedEffect(animal), "collect_animal_product_side_effect_projection_drifted"));
             return;
@@ -185,6 +190,23 @@ public sealed partial class ModEntry
             request.Quantity.Value, request.ExpectedOutputQuality.Value, Game1.player.Stamina,
             Game1.player.experiencePoints[Farmer.farmingSkill], animal.friendshipTowardFarmer.Value,
             statIncrements, Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512));
+    }
+
+    private static uint ProjectAnimalProductStatAmountAfterInventoryInsert(Item output)
+    {
+        var remaining = output.Stack;
+        foreach (var existing in Game1.player.Items)
+        {
+            if (existing is not null && output.canStackWith(existing))
+            {
+                remaining = Math.Max(0, remaining - existing.getRemainingStackSpace());
+                if (remaining == 0)
+                {
+                    break;
+                }
+            }
+        }
+        return (uint)remaining;
     }
 
     private void TickAnimalProductHarvest()
@@ -331,6 +353,22 @@ public sealed partial class ModEntry
         var verified = active.Animal.currentProduce.Value is null && outputAfter - active.OutputCountBefore == active.ExpectedQuantity &&
             xpDelta == active.Pending.Request.ExpectedSkillExperienceDelta!.Value && Math.Abs(staminaDelta - active.Pending.Request.ExpectedEnergyDelta!.Value) < 0.01f &&
             friendshipAfter == active.Pending.Request.ExpectedFriendshipAfter!.Value && statsVerified;
+        var changedFacts = new List<SimulatedFactChange>
+        {
+            new() { Path = "farm.animals[" + active.Animal.myID.Value + "].current_produce", Before = active.Pending.Request.QualifiedItemId, After = active.Animal.currentProduce.Value ?? "null" },
+            new() { Path = "player.inventory[" + active.OutputKey.QualifiedItemId + ";quality=" + active.OutputKey.Quality + ";unit_state_sha256=" + active.OutputKey.UnitStateSha256 + "]", Before = active.OutputCountBefore.ToString(), After = outputAfter.ToString() },
+            new() { Path = "player.energy", Before = active.StaminaBefore.ToString("0.###", CultureInfo.InvariantCulture), After = Game1.player.Stamina.ToString("0.###", CultureInfo.InvariantCulture) },
+            new() { Path = "player.skills.farming.experience", Before = active.FarmingExperienceBefore.ToString(), After = Game1.player.experiencePoints[Farmer.farmingSkill].ToString() },
+            new() { Path = "farm.animals[" + active.Animal.myID.Value + "].friendship", Before = active.FriendshipBefore.ToString(), After = friendshipAfter.ToString() }
+        };
+        changedFacts.AddRange(active.StatIncrements.Select(stat => new SimulatedFactChange
+        {
+            Path = "stats." + stat.StatName,
+            Before = stat.Before.ToString(CultureInfo.InvariantCulture),
+            After = Game1.stats.Get(stat.StatName).ToString(CultureInfo.InvariantCulture)
+        }));
+        var expectedFriendshipDelta = active.Pending.Request.ExpectedFriendshipAfter!.Value -
+            active.Pending.Request.ExpectedFriendshipBefore!.Value;
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = active.Pending.Request.RunId,
@@ -352,17 +390,18 @@ public sealed partial class ModEntry
             PrimitiveVerificationReasons = verified
                 ? new[] { "native_animal_tool_lifecycle_collected_exact_product", "inventory_energy_friendship_farming_xp_and_stats_verified" }
                 : new[] { "animal_product_postcondition_mismatch" },
-            RequestedEffect = "animal.current_produce=null;inventory_delta=" + active.ExpectedQuantity + ";farming_xp_delta=5;energy_delta=-4;friendship_delta=5",
-            ObservedEffect = AnimalProductObservedEffect(active.Animal) + ";inventory_delta=" + (outputAfter - active.OutputCountBefore) + ";farming_xp_delta=" + xpDelta + ";energy_delta=" + staminaDelta.ToString("0.###", CultureInfo.InvariantCulture),
+            RequestedEffect = "animal.current_produce=null;inventory_delta=" + active.ExpectedQuantity + ";farming_xp_delta=5;energy_delta=-4;friendship_delta=" + expectedFriendshipDelta,
+            ObservedEffect = AnimalProductObservedEffect(active.Animal) +
+                ";output_runtime_type=" + active.OutputKey.RuntimeType +
+                ";output_qualified_item_id=" + active.OutputKey.QualifiedItemId +
+                ";output_quality=" + active.OutputKey.Quality +
+                ";output_unit_state_sha256=" + active.OutputKey.UnitStateSha256 +
+                ";inventory_delta=" + (outputAfter - active.OutputCountBefore) +
+                ";farming_xp_delta=" + xpDelta +
+                ";energy_delta=" + staminaDelta.ToString("0.###", CultureInfo.InvariantCulture) +
+                ";friendship_delta=" + (friendshipAfter - active.FriendshipBefore),
             BlockReasons = verified ? Array.Empty<string>() : new[] { "collect_animal_product_postcondition_mismatch" },
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "farm.animals[" + active.Animal.myID.Value + "].current_produce", Before = active.Pending.Request.QualifiedItemId, After = active.Animal.currentProduce.Value ?? "null" },
-                new SimulatedFactChange { Path = "player.inventory[" + active.Pending.Request.QualifiedItemId + "]", Before = active.OutputCountBefore.ToString(), After = outputAfter.ToString() },
-                new SimulatedFactChange { Path = "player.energy", Before = active.StaminaBefore.ToString("0.###", CultureInfo.InvariantCulture), After = Game1.player.Stamina.ToString("0.###", CultureInfo.InvariantCulture) },
-                new SimulatedFactChange { Path = "player.skills.farming.experience", Before = active.FarmingExperienceBefore.ToString(), After = Game1.player.experiencePoints[Farmer.farmingSkill].ToString() },
-                new SimulatedFactChange { Path = "farm.animals[" + active.Animal.myID.Value + "].friendship", Before = active.FriendshipBefore.ToString(), After = friendshipAfter.ToString() }
-            }
+            ChangedFacts = changedFacts.ToArray()
         });
     }
 

@@ -155,6 +155,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "economy.sell_items",
                 "economy.ship_items",
                 "exploration.visit_location",
+                "farm.collect_animal_products",
                 "farm.collect_machine_outputs",
                 "farm.establish_supported_machine_capacity",
                 "farm.fulfill_machine_task_demand",
@@ -185,6 +186,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "economy.buy_supplies" => "vanilla_safe_single_money_purchase_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_buy_and_menu_cleanup",
                 "economy.sell_items" => "vanilla_one_explicitly_authorized_unprotected_positive_value_stack_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_sale_and_background_safe_menu_cleanup",
                 "economy.ship_items" => "vanilla_one_explicitly_authorized_unprotected_positive_shipping_payout_item_rolling_resolved_route_exact_bin_approach_native_single_item_deposit_immediate_inventory_bin_receipt_and_delayed_day_settlement",
+                "farm.collect_animal_products" => "vanilla_current_location_exact_ready_base_farm_animal_milk_pail_shears_cracker_single_double_native_inventory_receipt_stats_farming_xp_energy_and_friendship",
                 "farm.collect_machine_outputs" => "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                 "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
                 "farm.fulfill_machine_task_demand" => "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
@@ -219,6 +221,25 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             OptionTrainingEligibility.Eligible,
             autonomousCandidateEnabled: true,
             playerConfirmationRequired: true));
+    }
+
+    [Fact]
+    public void AnimalProductAdmissionRequiresExactNativeToolMatrixAndEvd222Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("farm.collect_animal_products");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("farm.collect_animal_products"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("farm.collect_animal_products"));
+        Assert.Equal(new[] { "EVD-222" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-222" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-222" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-222" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-222" }, declaration.OutputEvidenceIds);
+        Assert.Contains("milk_pail_shears", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("cracker_single_double", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -38,7 +38,34 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var outputJson = ReadString(animal, "harvest_expected_output_items_json");
                 var outputHash = ReadString(animal, "harvest_output_unit_state_sha256");
                 var quantity = ReadInt(animal, "harvest_output_quantity");
+                var harvestTool = ReadString(animal, "harvest_tool");
+                var harvestToolRuntimeType = ReadString(animal, "harvest_tool_runtime_type");
                 var blockReasons = new List<string>();
+                if (!string.Equals(
+                        ReadString(animal, "runtime_type"),
+                        "StardewValley.FarmAnimal",
+                        StringComparison.Ordinal))
+                {
+                    blockReasons.Add("unsupported_animal_runtime_type");
+                }
+                if (!string.Equals(
+                        ReadString(animal, "harvest_output_runtime_type"),
+                        "StardewValley.Object",
+                        StringComparison.Ordinal))
+                {
+                    blockReasons.Add("unsupported_animal_product_runtime_type");
+                }
+                var expectedToolRuntimeType = harvestTool switch
+                {
+                    "Milk Pail" => "StardewValley.Tools.MilkPail",
+                    "Shears" => "StardewValley.Tools.Shears",
+                    _ => string.Empty
+                };
+                if (expectedToolRuntimeType.Length == 0 ||
+                    !string.Equals(harvestToolRuntimeType, expectedToolRuntimeType, StringComparison.Ordinal))
+                {
+                    blockReasons.Add("unsupported_animal_harvest_tool_runtime_type");
+                }
                 if (status != "ready")
                 {
                     blockReasons.Add(string.IsNullOrWhiteSpace(status) ? "animal_harvest_projection_unavailable" : status);
@@ -80,6 +107,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     TileY = y,
                     ItemId = ReadString(animal, "current_produce_item_id"),
                     QualifiedItemId = outputId,
+                    DisplayName = ReadString(animal, "display_name"),
                     Quantity = quantity,
                     ExpectedEffect = AnimalProductExpectedEffect(animal, animalId, stand),
                     EstimatedTicks = Math.Max(120, distance * 60 + 120),

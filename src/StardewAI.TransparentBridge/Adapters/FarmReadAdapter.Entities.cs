@@ -64,6 +64,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ? string.Empty
             : System.Text.Json.JsonSerializer.Serialize(new[] { outputProjection });
         var inventoryAcceptsOutput = output is not null && player.couldInventoryAcceptThisItem(output);
+        var nativeStatIncrementAmount = output is null
+            ? 0
+            : ProjectAnimalProduceStatAmountAfterInventoryInsert(player, output);
         var statIncrements = output is null || data?.StatToIncrementOnProduce is null
             ? Array.Empty<object>()
             : data.StatToIncrementOnProduce
@@ -72,12 +75,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 .Select(stat => (object)new
                 {
                     stat_name = stat.StatName,
-                    amount = output.Stack,
+                    amount = nativeStatIncrementAmount,
                     before = Game1.stats.Get(stat.StatName),
-                    after = Game1.stats.Get(stat.StatName) + (uint)output.Stack
+                    after = Game1.stats.Get(stat.StatName) + (uint)nativeStatIncrementAmount
                 })
                 .ToArray();
         var adult = animal.isAdult();
+        var friendshipAfterHarvest = Math.Min(1000, animal.friendshipTowardFarmer.Value + 5);
         var supportedTool = harvestTool is "Milk Pail" or "Shears";
         var harvestStatus = data is null
             ? "animal_data_unavailable"
@@ -109,7 +113,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             days_to_mature = data?.DaysToMature,
             is_adult = adult,
             friendship_toward_farmer = animal.friendshipTowardFarmer.Value,
-            friendship_after_harvest = Math.Min(1000, animal.friendshipTowardFarmer.Value + 5),
+            friendship_after_harvest = friendshipAfterHarvest,
             produce_quality = animal.produceQuality.Value,
             current_produce_item_id = currentProduce,
             current_produce_qualified_item_id = output?.QualifiedItemId ?? string.Empty,
@@ -127,13 +131,31 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             harvest_output_unit_state_sha256 = outputProjection?.UnitStateSha256 ?? string.Empty,
             harvest_expected_output_items_json = outputItemsJson,
             harvest_stat_increments_json = System.Text.Json.JsonSerializer.Serialize(statIncrements),
+            harvest_native_stat_increment_amount = nativeStatIncrementAmount,
             harvest_energy_cost = 4,
             harvest_farming_experience_delta = 5,
-            harvest_friendship_delta = 5,
+            harvest_friendship_delta = friendshipAfterHarvest - animal.friendshipTowardFarmer.Value,
             harvest_projection_status = outputProjection is null ? "unavailable" : "exact",
             tile_x = animal.TilePoint.X,
             tile_y = animal.TilePoint.Y
         };
+    }
+
+    private static int ProjectAnimalProduceStatAmountAfterInventoryInsert(Farmer player, Item output)
+    {
+        var remaining = output.Stack;
+        foreach (var existing in player.Items)
+        {
+            if (existing is not null && output.canStackWith(existing))
+            {
+                remaining = Math.Max(0, remaining - existing.getRemainingStackSpace());
+                if (remaining == 0)
+                {
+                    break;
+                }
+            }
+        }
+        return remaining;
     }
 
     private static object[] ReadResourceClumps(Farm farm)

@@ -242,6 +242,7 @@ namespace StardewAI.Core.Training
                     return OptionBehaviorCategories.ParameterizedMechanical;
                 case "economy.buy_supplies":
                 case "economy.sell_items":
+                case "economy.ship_items":
                 case "quest.advance":
                     return OptionBehaviorCategories.EconomicStrategic;
                 case "social.talk_npc":

@@ -1,3 +1,12 @@
+2026-08-07 EVD-222 exact native animal-product collection admission
+- Hidden/silent isolated E-drive PASS: `artifacts\runtime-animal-product-smoke\runtime-animal-product-smoke-20260807-101342\summary.json`.
+- Matrix PASS 4/4: Milk Pail and Shears, animal-cracker x1 and x2, with both new-slot and existing-stack merge contexts.
+- Exact receipts covered output runtime type, qualified ID, quality, unit-state SHA-256, quantity, current-produce clearing, Farming XP +5, energy -4, capped friendship +5, and every projected native stat.
+- A diagnostic 2/4 run exposed native post-insert stack semantics: full merging leaves the temporary product stack at zero before `HandleStatsOnProduceCollected`. The bridge now projects this from live inventory; verification was not weakened.
+- The existing `CollectAnimalProductSteps` implementation is now registered in `DailyPlanCompiler.OptionCandidateCompilerKinds`; no second candidate, compiler, or executor was added.
+- Scope excludes non-tool harvests, Auto-Grabber, unloaded animals, custom animal/product/tool runtime types, unsupported tools and projection drift.
+- Final regression PASS: Core 1558/1558; Backend 114/114; Release solution build 0 errors with 7 existing warnings. Action reconciliation PASS with 585/585 exports, blocking 0, 101 registered, 169 semantic, 93 compiler-bound, 25 five-gate closed, and 24 training-allowlisted.
+
 2026-08-07 EVD-221 rolling high-level shipping runtime admission
 - Hidden/silent isolated E-drive high-level PASS: `artifacts\runtime-shipping-mainline-smoke\runtime-shipping-mainline-20260807-012414\summary.json`.
 - Only `economy.ship_items` was submitted. Two fresh-snapshot iterations compiled `executor.move_to_tile` and then `executor.ship_inventory_item_to_bin`; the exact continuation completed and cleared after the matching terminal action.
