@@ -175,6 +175,8 @@ public sealed partial class ModEntry : Mod
         }
 
         helper.Events.GameLoop.DayStarted += OnDayStartedForShippingReceipts;
+        helper.Events.GameLoop.DayStarted += OnDayStartedForPetBowlReceipts;
+        helper.Events.GameLoop.SaveLoaded += OnSaveLoadedForPetBowlReceipts;
         ReconcileShippingReceipts();
     }
 
@@ -934,6 +936,18 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_animal_product_target")
             {
                 pending.Completion.SetResult(ExecuteSetupAnimalProductTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_pet_care_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupPetCareTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.prepare_pet_bowl_sleep")
+            {
+                pending.Completion.SetResult(ExecutePreparePetBowlSleep(pending.Request));
                 return;
             }
 

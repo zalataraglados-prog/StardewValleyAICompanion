@@ -1334,5 +1334,8 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("pet_next_day_settlement_status")]
         public string PetNextDaySettlementStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("pet_bowl_pending_receipt_path")]
+        public string PetBowlPendingReceiptPath { get; set; } = string.Empty;
     }
 }

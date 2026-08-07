@@ -55,7 +55,7 @@ public sealed partial class ModEntry
             modifiers: null);
         if (pet is null || !ReferenceEquals(pet.currentLocation, location) ||
             !string.Equals(location.NameOrUniqueName, request.LocationId, StringComparison.OrdinalIgnoreCase) ||
-            pet.TilePoint != target || pet.GetType().FullName != request.TargetRuntimeType || !IsSupportedVanillaPetRuntimeType(pet.GetType()) || checkAction?.DeclaringType != typeof(Pet))
+            pet.GetType().FullName != request.TargetRuntimeType || !IsSupportedVanillaPetRuntimeType(pet.GetType()) || checkAction?.DeclaringType != typeof(Pet))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pet_interact", "pet.daily_interaction=applied", PetObservedEffect(pet), "pet_interaction_target_not_ready_or_drifted"));
             return;
@@ -90,13 +90,9 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pet_interact", "pet.daily_interaction=applied", PetObservedEffect(pet), "pet_interaction_projection_drifted"));
             return;
         }
-        if (!AreAdjacent(stand, target) || !IsTileOnMap(location, stand) || !IsTileWalkable(location, stand) || IsTileOccupiedByCharacter(location, stand))
-        {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "pet_interact", "pet.daily_interaction=applied", PetObservedEffect(pet), "pet_interaction_stand_tile_invalid"));
-            return;
-        }
         var maxMovement = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
-        var path = TryBuildTilePath(location, Game1.player.TilePoint, stand, maxMovement, out var pathReason, avoidSoftObstacles: true, allowRemovableObstacles: false);
+        target = pet.TilePoint;
+        var path = TryBuildInitialPetPath(location, pet, stand, maxMovement, out stand, out var pathReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "pet_interact", "pet.daily_interaction=applied", PetObservedEffect(pet), "pet_interaction_path_unavailable:" + pathReason));
@@ -108,6 +104,35 @@ public sealed partial class ModEntry
             pet.timesPet.Value, pet.grantedFriendshipForPet.Value,
             Game1.player.mailReceived.Contains("petLoveMessage"),
             Game1.player.hasOrWillReceiveMail("MarniePetAdoption"), location.debris.Count);
+    }
+
+    private static List<Point>? TryBuildInitialPetPath(
+        GameLocation location,
+        Pet pet,
+        Point requestedStand,
+        int maxMovementTiles,
+        out Point resolvedStand,
+        out string reason)
+    {
+        var candidates = PetInteractionStandTiles(location, pet)
+            .OrderBy(tile => tile == requestedStand ? 0 : 1)
+            .ThenBy(tile => ManhattanDistance(Game1.player.TilePoint, tile));
+        foreach (var candidate in candidates)
+        {
+            if (!IsTileOnMap(location, candidate) || !IsTileWalkable(location, candidate) || IsTileOccupiedByCharacter(location, candidate))
+            {
+                continue;
+            }
+            var path = TryBuildTilePath(location, Game1.player.TilePoint, candidate, maxMovementTiles, out reason, avoidSoftObstacles: true, allowRemovableObstacles: false);
+            if (path is not null)
+            {
+                resolvedStand = candidate;
+                return path;
+            }
+        }
+        resolvedStand = Point.Zero;
+        reason = "no_reachable_adjacent_tile";
+        return null;
     }
 
     private void TickPetInteraction()
@@ -125,6 +150,18 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (!active.InteractionIssued && TryFacePetForInteraction(Game1.player, active.Pet))
+        {
+            StopAllMovement();
+            Game1.player.CurrentToolIndex = active.SafeSlotIndex;
+            if (!active.Pet.checkAction(Game1.player, active.Location))
+            {
+                CompletePetInteractionBlocked(active, "pet_interaction_native_check_action_returned_false");
+                return;
+            }
+            active.InteractionIssued = true;
+            return;
+        }
         if (!active.InteractionIssued && active.Pet.TilePoint != active.Target)
         {
             active.ReplanCount++;
@@ -134,7 +171,7 @@ public sealed partial class ModEntry
             }
             return;
         }
-        if (!active.InteractionIssued && !AreAdjacent(Game1.player.TilePoint, active.Target))
+        if (!active.InteractionIssued && Game1.player.TilePoint != active.Stand)
         {
             if (active.PathIndex >= active.Path.Count)
             {
@@ -178,17 +215,13 @@ public sealed partial class ModEntry
             return;
         }
 
-        StopAllMovement();
         if (!active.InteractionIssued)
         {
-            Game1.player.CurrentToolIndex = active.SafeSlotIndex;
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Pet.TilePoint));
-            if (!active.Pet.checkAction(Game1.player, active.Location))
+            active.ReplanCount++;
+            if (!TryReplanPetPath(active, out var reason))
             {
-                CompletePetInteractionBlocked(active, "pet_interaction_native_check_action_returned_false");
-                return;
+                CompletePetInteractionBlocked(active, "pet_interaction_reach_replan_failed:" + reason);
             }
-            active.InteractionIssued = true;
             return;
         }
 
@@ -214,7 +247,7 @@ public sealed partial class ModEntry
     private bool TryReplanPetPath(ActivePetInteraction active, out string reason)
     {
         active.Target = active.Pet.TilePoint;
-        foreach (var candidate in AnimalAdjacentTiles(active.Target).OrderBy(tile => ManhattanDistance(Game1.player.TilePoint, tile)))
+        foreach (var candidate in PetInteractionStandTiles(active.Location, active.Pet).OrderBy(tile => ManhattanDistance(Game1.player.TilePoint, tile)))
         {
             if (!IsTileOnMap(active.Location, candidate) || !IsTileWalkable(active.Location, candidate) || IsTileOccupiedByCharacter(active.Location, candidate))
             {
@@ -230,6 +263,55 @@ public sealed partial class ModEntry
             }
         }
         reason = "no_reachable_adjacent_tile";
+        return false;
+    }
+
+    private static IEnumerable<Point> PetInteractionStandTiles(GameLocation location, Pet pet)
+    {
+        var bounds = pet.GetBoundingBox();
+        var minX = Math.Max(0, bounds.Left / Game1.tileSize);
+        var maxX = Math.Max(minX, (bounds.Right - 1) / Game1.tileSize);
+        var minY = Math.Max(0, bounds.Top / Game1.tileSize);
+        var maxY = Math.Max(minY, (bounds.Bottom - 1) / Game1.tileSize);
+        var offsets = new[] { new Point(0, -1), new Point(1, 0), new Point(0, 1), new Point(-1, 0) };
+        var seen = new HashSet<Point>();
+        for (var actionY = minY; actionY <= maxY; actionY++)
+        {
+            for (var actionX = minX; actionX <= maxX; actionX++)
+            {
+                var actionTile = new Point(actionX, actionY);
+                if (!TileRectangle(actionTile).Intersects(bounds))
+                {
+                    continue;
+                }
+                foreach (var offset in offsets)
+                {
+                    var stand = new Point(actionTile.X - offset.X, actionTile.Y - offset.Y);
+                    if (seen.Add(stand) && IsTileOnMap(location, stand) &&
+                        !TileRectangle(stand).Intersects(bounds))
+                    {
+                        yield return stand;
+                    }
+                }
+            }
+        }
+    }
+
+    private static bool TryFacePetForInteraction(Farmer farmer, Pet pet)
+    {
+        var offsets = new[] { new Point(0, -1), new Point(1, 0), new Point(0, 1), new Point(-1, 0) };
+        var bounds = pet.GetBoundingBox();
+        for (var direction = 0; direction < offsets.Length; direction++)
+        {
+            var actionTile = new Point(
+                farmer.TilePoint.X + offsets[direction].X,
+                farmer.TilePoint.Y + offsets[direction].Y);
+            if (TileRectangle(actionTile).Intersects(bounds))
+            {
+                farmer.faceDirection(direction);
+                return true;
+            }
+        }
         return false;
     }
 
@@ -408,6 +490,13 @@ public sealed partial class ModEntry
             adoptionMailAfter == request.ExpectedMarniePetAdoptionMailBeforeOrPending!.Value &&
             tool.WaterBefore == request.ExpectedWaterBefore!.Value && waterAfter == request.ExpectedWaterAfter!.Value &&
             Math.Abs(energyCost - tool.ExpectedEnergyCost) <= 0.001d;
+        var receiptPath = verified && bowl is not null && pet is not null
+            ? WritePetBowlPendingReceipt(tool, bowl, pet)
+            : string.Empty;
+        if (verified && string.IsNullOrWhiteSpace(receiptPath))
+        {
+            verified = false;
+        }
         tool.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -436,8 +525,8 @@ public sealed partial class ModEntry
             PrimitiveKind = "fill_pet_bowl",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? NativeToolVerifiedReasons(tool)
-                : new[] { wateredAfter == true ? "pet_bowl_native_energy_delta_mismatch" : "pet_bowl_water_state_unchanged_after_native_tool_lifecycle" },
+                ? NativeToolVerifiedReasons(tool).Append("durable_next_day_pet_bowl_receipt_written").ToArray()
+                : new[] { wateredAfter == true && string.IsNullOrWhiteSpace(receiptPath) ? "pet_bowl_pending_receipt_write_failed" : wateredAfter == true ? "pet_bowl_native_energy_delta_mismatch" : "pet_bowl_water_state_unchanged_after_native_tool_lifecycle" },
             RequestedEffect = tool.RequestedEffect,
             ObservedEffect = PetBowlObservedEffect(Game1.currentLocation, tool.Target),
             BlockReasons = verified ? Array.Empty<string>() : new[] { "fill_pet_bowl_postcondition_mismatch" },
@@ -454,11 +543,11 @@ public sealed partial class ModEntry
             PetNextDayLoveMailExpectedAfter = request.ExpectedNextDayPetLoveMail,
             PetNextDayMarnieAdoptionMailExpectedAfter = request.ExpectedNextDayMarniePetAdoptionMail,
             PetNextDaySettlementStatus = verified ? "pending_Pet.dayUpdate" : "not_scheduled",
+            PetBowlPendingReceiptPath = receiptPath,
             ChangedFacts = verified
                 ? new[]
                 {
                     new SimulatedFactChange { Path = "farm.pet_bowls[" + tool.Target.X + "," + tool.Target.Y + "].watered", Before = "false", After = "true" },
-                    new SimulatedFactChange { Path = "farm.pets[" + request.TargetRuntimeIdentity + "].friendship", Before = request.ExpectedFriendshipBefore?.ToString() ?? "missing", After = friendshipAfter?.ToString() ?? "missing" },
                     new SimulatedFactChange { Path = "player.watering_can.water_left", Before = tool.WaterBefore?.ToString() ?? "missing", After = waterAfter?.ToString() ?? "missing" }
                 }
                 : Array.Empty<SimulatedFactChange>()
@@ -500,7 +589,7 @@ public sealed partial class ModEntry
 
     private static bool IsSupportedVanillaPetRuntimeType(Type runtimeType)
     {
-        return runtimeType == typeof(Pet) || runtimeType == typeof(Cat) || runtimeType == typeof(Dog);
+        return runtimeType == typeof(Pet);
     }
 
     private static string PetBowlObservedEffect(GameLocation location, Point target)

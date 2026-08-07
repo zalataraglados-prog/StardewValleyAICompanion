@@ -72,8 +72,7 @@ public sealed partial class FarmReadAdapter
                     new[] { typeof(Farmer), typeof(GameLocation) },
                     modifiers: null);
                 var nativeCheckActionSupported = nativeMethod?.DeclaringType == typeof(Pet) &&
-                    pet.GetType() is var petRuntimeType &&
-                    (petRuntimeType == typeof(Pet) || petRuntimeType == typeof(Cat) || petRuntimeType == typeof(Dog));
+                    pet.GetType() == typeof(Pet);
                 var actionStatus = data is null
                     ? "pet_data_unavailable"
                     : !nativeCheckActionSupported
@@ -82,9 +81,7 @@ public sealed partial class FarmReadAdapter
                             ? "already_petted_today"
                             : !grantAvailable
                                 ? "daily_friendship_already_granted"
-                                : friendshipBefore >= Pet.maxFriendship
-                                    ? "pet_love_already_maximum"
-                                    : !safeSlot.HasValue
+                            : !safeSlot.HasValue
                                         ? "safe_toolbar_slot_unavailable"
                                         : "ready";
 

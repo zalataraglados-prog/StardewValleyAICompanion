@@ -43,6 +43,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     reasons.Add(string.IsNullOrWhiteSpace(status) ? "pet_interaction_projection_unavailable" : status);
                 }
+                if (ReadString(pet, "runtime_type") != "StardewValley.Characters.Pet" ||
+                    ReadString(pet, "native_check_action_declaring_type") != "StardewValley.Characters.Pet")
+                {
+                    reasons.Add("unsupported_pet_runtime_type");
+                }
                 if (!sameLocation)
                 {
                     reasons.Add("pet_not_in_current_location");
@@ -110,6 +115,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 if (status != "ready")
                 {
                     reasons.Add(string.IsNullOrWhiteSpace(status) ? "pet_bowl_projection_unavailable" : status);
+                }
+                if (ReadString(bowl, "runtime_type") != "StardewValley.Buildings.PetBowl" ||
+                    ReadString(bowl, "watering_can_runtime_type") != "StardewValley.Tools.WateringCan")
+                {
+                    reasons.Add("unsupported_pet_bowl_or_watering_can_runtime_type");
                 }
                 if (!sameLocation)
                 {

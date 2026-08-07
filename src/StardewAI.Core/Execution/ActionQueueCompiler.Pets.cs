@@ -103,7 +103,7 @@ public sealed partial class ActionQueueCompiler
             reasons.Add("pet_interaction_target_location_mismatch");
         }
 
-        var row = FindPetRow(snapshot, petId);
+        var row = FindPetRow(snapshot, petId!);
         if (!row.HasValue || row.Value.ValueKind != JsonValueKind.Object || ReadString(row.Value, "action_status") != "ready" ||
             ReadInt(row.Value, "tile_x") != targetX.Value || ReadInt(row.Value, "tile_y") != targetY.Value ||
             !string.Equals(ReadString(row.Value, "location_id"), targetLocation, StringComparison.OrdinalIgnoreCase) ||
@@ -175,7 +175,7 @@ public sealed partial class ActionQueueCompiler
             reasons.Add("fill_pet_bowl_target_location_mismatch");
         }
 
-        var row = FindPetBowlRow(snapshot, targetLocation, buildingX.Value, buildingY.Value);
+        var row = FindPetBowlRow(snapshot, targetLocation!, buildingX.Value, buildingY.Value);
         if (!row.HasValue || row.Value.ValueKind != JsonValueKind.Object || ReadString(row.Value, "action_status") != "ready" ||
             NullableReadInt(row.Value, "action_tile_x") != targetX || NullableReadInt(row.Value, "action_tile_y") != targetY ||
             ReadInt(row.Value, "watering_can_slot_index") != toolSlot.Value || ReadBool(row.Value, "watered") != false ||

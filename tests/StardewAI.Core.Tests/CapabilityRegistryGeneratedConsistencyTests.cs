@@ -155,6 +155,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "economy.sell_items",
                 "economy.ship_items",
                 "exploration.visit_location",
+                "farm.care_for_pets",
                 "farm.collect_animal_products",
                 "farm.collect_machine_outputs",
                 "farm.establish_supported_machine_capacity",
@@ -187,6 +188,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "economy.sell_items" => "vanilla_one_explicitly_authorized_unprotected_positive_value_stack_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_sale_and_background_safe_menu_cleanup",
                 "economy.ship_items" => "vanilla_one_explicitly_authorized_unprotected_positive_shipping_payout_item_rolling_resolved_route_exact_bin_approach_native_single_item_deposit_immediate_inventory_bin_receipt_and_delayed_day_settlement",
                 "farm.collect_animal_products" => "vanilla_current_location_exact_ready_base_farm_animal_milk_pail_shears_cracker_single_double_native_inventory_receipt_stats_farming_xp_energy_and_friendship",
+                "farm.care_for_pets" => "vanilla_current_location_exact_base_pet_native_checkAction_normal_and_max_friendship_gift_output_dynamic_bounding_box_rebind_and_base_pet_bowl_watering_native_sleep_dayUpdate_durable_settlement",
                 "farm.collect_machine_outputs" => "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                 "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
                 "farm.fulfill_machine_task_demand" => "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
@@ -240,6 +242,24 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Contains("milk_pail_shears", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.Contains("cracker_single_double", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PetCareAdmissionRequiresBothNativeBranchesAndEvd223Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("farm.care_for_pets");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("farm.care_for_pets"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("farm.care_for_pets"));
+        Assert.Equal(new[] { "EVD-223" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-223" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-223" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-223" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-223" }, declaration.OutputEvidenceIds);
+        Assert.Contains("max_friendship_gift_output", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+        Assert.Contains("native_sleep_dayUpdate_durable_settlement", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
     }
 
     [Fact]
