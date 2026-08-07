@@ -1,11 +1,14 @@
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Training;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.GameData.Museum;
 using StardewValley.Locations;
 using StardewValley.Menus;
 using StardewValley.Network;
+using StardewValley.Quests;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -26,6 +29,11 @@ public sealed partial class ModEntry
             !request.InventorySlotIndex.HasValue || !request.ExpectedStackBefore.HasValue || !request.ExpectedStackAfter.HasValue ||
             !request.ExpectedDonatedCountBefore.HasValue || !request.ExpectedDonatedCountAfter.HasValue ||
             !request.MuseumTotalDonatableItems.HasValue || !request.ExpectedCollectionCompleteAfter.HasValue ||
+            !request.ExpectedCompleteCollectionAchievementAfter.HasValue || !request.FieldGuideQuestPresentBefore.HasValue ||
+            !request.FieldGuideQuestCompletedBefore.HasValue || !request.ExpectedFieldGuideQuestCompletedAfter.HasValue ||
+            string.IsNullOrWhiteSpace(request.PendingRewardIdsBeforeJson) || string.IsNullOrWhiteSpace(request.PendingRewardIdsAfterJson) ||
+            string.IsNullOrWhiteSpace(request.NewlyPendingRewardIdsJson) || string.IsNullOrWhiteSpace(request.AutoAppliedRewardIdsJson) ||
+            string.IsNullOrWhiteSpace(request.AutoAppliedRewardActionsJson) || request.RewardProjectionStatus != "ready" ||
             !request.RustyKeyDonationThreshold.HasValue || !request.ReachesRustyKeyThreshold.HasValue ||
             string.IsNullOrWhiteSpace(request.QualifiedItemId))
         {
@@ -67,12 +75,29 @@ public sealed partial class ModEntry
         rewards.TryGetValue("museum60", out var rustyKeyReward);
         var liveRewardActions = rustyKeyReward?.RewardActions;
         var liveRewardAction = liveRewardActions?.Count == 1 ? liveRewardActions[0] : string.Empty;
+        var fieldGuideQuest = Game1.player.questLog.FirstOrDefault(quest => quest.id.Value == "24");
+        var rewardProjectionMatches = TryProjectRuntimeMuseumRewards(
+            museum,
+            Game1.player,
+            rewards,
+            item,
+            out var rewardProjection) &&
+            request.PendingRewardIdsBeforeJson == JsonSerializer.Serialize(rewardProjection.PendingRewardIdsBefore) &&
+            request.PendingRewardIdsAfterJson == JsonSerializer.Serialize(rewardProjection.PendingRewardIdsAfter) &&
+            request.NewlyPendingRewardIdsJson == JsonSerializer.Serialize(rewardProjection.NewlyPendingRewardIds) &&
+            request.AutoAppliedRewardIdsJson == JsonSerializer.Serialize(rewardProjection.AutoAppliedRewardIds) &&
+            request.AutoAppliedRewardActionsJson == JsonSerializer.Serialize(rewardProjection.AutoAppliedRewardActions);
         if (item is not StardewValley.Object || item.GetType().FullName != request.TargetRuntimeType ||
             item.QualifiedItemId != request.QualifiedItemId || item.ItemId != request.ItemId ||
             item.Stack != request.ExpectedStackBefore.Value || request.ExpectedStackAfter.Value != item.Stack - 1 ||
             !LibraryMuseum.IsItemSuitableForDonation(item.QualifiedItemId) ||
             donatedCount != request.ExpectedDonatedCountBefore.Value || request.ExpectedDonatedCountAfter.Value != donatedCount + 1 ||
             total != request.MuseumTotalDonatableItems.Value || request.ExpectedCollectionCompleteAfter.Value != (donatedCount + 1 >= total) ||
+            request.ExpectedCompleteCollectionAchievementAfter.Value != (Game1.player.achievements.Contains(5) || donatedCount + 1 >= total) ||
+            request.FieldGuideQuestPresentBefore.Value != (fieldGuideQuest is not null) ||
+            request.FieldGuideQuestCompletedBefore.Value != IsMuseumFieldGuideQuestCompleted(fieldGuideQuest) ||
+            request.ExpectedFieldGuideQuestCompletedAfter.Value != (fieldGuideQuest is not null) ||
+            !rewardProjectionMatches ||
             request.ReachesRustyKeyThreshold.Value != expectedReachesThreshold ||
             string.IsNullOrWhiteSpace(liveRewardAction) || request.RustyKeyRewardAction != liveRewardAction ||
             expectedReachesThreshold && liveRewardAction != "MarkEventSeen Host 295672")
@@ -103,7 +128,9 @@ public sealed partial class ModEntry
             donatedCount,
             Game1.player.achievements.Contains(5),
             Game1.player.mailReceived.Contains("museum60"),
-            Game1.MasterPlayer.eventsSeen.Contains("295672"));
+            Game1.MasterPlayer.eventsSeen.Contains("295672"),
+            fieldGuideQuest,
+            request.PendingRewardIdsBeforeJson);
     }
 
     private void TickMuseumDonation()
@@ -177,12 +204,40 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (active.CloseIssued)
+        {
+            active.SettlementTicks++;
+            var settled = Game1.activeClickableMenu is null && MuseumDonationPostconditionsMatch(active);
+            if (settled)
+            {
+                CompleteMuseumDonation(active);
+            }
+            else if (Game1.activeClickableMenu is not null and not MuseumMenu)
+            {
+                CompleteMuseumDonationBlocked(active, "museum_donation_native_exit_replaced_by_other_menu");
+            }
+            else if (active.SettlementTicks > 300)
+            {
+                CompleteMuseumDonationBlocked(active, "museum_donation_native_settlement_timeout_or_mismatch");
+            }
+            return;
+        }
+
         if (Game1.activeClickableMenu is not MuseumMenu menu)
         {
             active.OpenWaitTicks++;
             if (Game1.activeClickableMenu is not null || active.OpenWaitTicks > 180)
             {
                 CompleteMuseumDonationBlocked(active, "museum_donation_native_menu_open_failed");
+            }
+            return;
+        }
+
+        if (menu.state != MuseumMenu.placingInMuseumState || menu.fadeTimer > 0)
+        {
+            if (++active.MenuReadyWaitTicks > 240)
+            {
+                CompleteMuseumDonationBlocked(active, "museum_donation_native_menu_fade_timeout");
             }
             return;
         }
@@ -197,7 +252,7 @@ public sealed partial class ModEntry
             var component = menu.inventory.inventory[active.InventorySlotIndex];
             menu.receiveLeftClick(component.bounds.Center.X, component.bounds.Center.Y);
             active.InventoryClickIssued = true;
-            if (menu.heldItem?.QualifiedItemId != active.QualifiedItemId)
+            if (menu.heldItem?.QualifiedItemId != active.QualifiedItemId || menu.heldItem.Stack != 1)
             {
                 CompleteMuseumDonationBlocked(active, "museum_donation_native_inventory_pickup_failed");
             }
@@ -219,7 +274,7 @@ public sealed partial class ModEntry
 
         if (!active.CloseIssued)
         {
-            if (!menu.readyToClose())
+            if (!menu.readyToClose() || menu.okButton is null)
             {
                 if (++active.SettlementTicks > 180)
                 {
@@ -227,20 +282,14 @@ public sealed partial class ModEntry
                 }
                 return;
             }
-            Game1.exitActiveMenu();
+            menu.receiveLeftClick(menu.okButton.bounds.Center.X, menu.okButton.bounds.Center.Y);
+            if (menu.state != MuseumMenu.exitingState || menu.fadeTimer <= 0)
+            {
+                CompleteMuseumDonationBlocked(active, "museum_donation_native_close_click_failed");
+                return;
+            }
             active.CloseIssued = true;
             return;
-        }
-
-        active.SettlementTicks++;
-        var settled = Game1.activeClickableMenu is null && MuseumDonationPostconditionsMatch(active);
-        if (settled)
-        {
-            CompleteMuseumDonation(active);
-        }
-        else if (active.SettlementTicks > 240)
-        {
-            CompleteMuseumDonationBlocked(active, "museum_donation_native_settlement_timeout_or_mismatch");
         }
     }
 
@@ -250,12 +299,56 @@ public sealed partial class ModEntry
         var item = active.InventorySlotIndex < Game1.player.Items.Count ? Game1.player.Items[active.InventorySlotIndex] : null;
         var stackAfter = item?.QualifiedItemId == active.QualifiedItemId ? item.Stack : 0;
         var reachesThreshold = request.ReachesRustyKeyThreshold == true;
+        var rewards = DataLoader.MuseumRewards(Game1.content);
+        var pendingAfterMatches = TryProjectRuntimeMuseumRewards(
+            active.Museum,
+            Game1.player,
+            rewards,
+            candidateItem: null,
+            out var rewardProjection) &&
+            request.PendingRewardIdsAfterJson == JsonSerializer.Serialize(rewardProjection.PendingRewardIdsBefore);
+        var questCompletedAfter = IsMuseumFieldGuideQuestCompleted(active.FieldGuideQuestBefore);
+        var autoRewardsApplied = AutoAppliedMuseumRewardsMatch(request, rewards);
         return active.Museum.museumPieces.Count() == request.ExpectedDonatedCountAfter &&
             stackAfter == request.ExpectedStackAfter &&
-            Game1.player.achievements.Contains(5) == request.ExpectedCollectionCompleteAfter &&
+            Game1.player.achievements.Contains(5) == request.ExpectedCompleteCollectionAchievementAfter &&
+            questCompletedAfter == request.ExpectedFieldGuideQuestCompletedAfter &&
+            pendingAfterMatches &&
+            autoRewardsApplied &&
             (!reachesThreshold ||
                 Game1.player.mailReceived.Contains("museum60") &&
                 Game1.MasterPlayer.eventsSeen.Contains("295672"));
+    }
+
+    private static bool AutoAppliedMuseumRewardsMatch(
+        TrainingExecutionRequest request,
+        Dictionary<string, MuseumRewards> rewards)
+    {
+        string[] ids;
+        string[] actions;
+        try
+        {
+            ids = JsonSerializer.Deserialize<string[]>(request.AutoAppliedRewardIdsJson) ?? Array.Empty<string>();
+            actions = JsonSerializer.Deserialize<string[]>(request.AutoAppliedRewardActionsJson) ?? Array.Empty<string>();
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+        if (actions.Any(action => action != "MarkEventSeen Host 295672"))
+        {
+            return false;
+        }
+        foreach (var id in ids)
+        {
+            if (!rewards.TryGetValue(id, out var reward) || reward.RewardItemId is not null ||
+                reward.FlagOnCompletion && !Game1.player.mailReceived.Contains(id))
+            {
+                return false;
+            }
+        }
+        return !actions.Contains("MarkEventSeen Host 295672", StringComparer.Ordinal) ||
+            Game1.MasterPlayer.eventsSeen.Contains("295672");
     }
 
     private void CompleteMuseumDonation(ActiveMuseumDonation active)
@@ -265,6 +358,10 @@ public sealed partial class ModEntry
         var request = active.Pending.Request;
         var item = active.InventorySlotIndex < Game1.player.Items.Count ? Game1.player.Items[active.InventorySlotIndex] : null;
         var stackAfter = item?.QualifiedItemId == active.QualifiedItemId ? item.Stack : 0;
+        var rewards = DataLoader.MuseumRewards(Game1.content);
+        TryProjectRuntimeMuseumRewards(active.Museum, Game1.player, rewards, candidateItem: null, out var rewardProjection);
+        var pendingRewardIdsAfterJson = JsonSerializer.Serialize(rewardProjection.PendingRewardIdsBefore);
+        var fieldGuideQuestCompletedAfter = IsMuseumFieldGuideQuestCompleted(active.FieldGuideQuestBefore);
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -298,6 +395,8 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "world_progress.museum.donated_count", Before = active.DonatedCountBefore.ToString(), After = active.Museum.museumPieces.Count().ToString() },
                 new SimulatedFactChange { Path = "player.inventory[" + active.InventorySlotIndex + "].stack", Before = active.StackBefore.ToString(), After = stackAfter.ToString() },
                 new SimulatedFactChange { Path = "player.achievements.5", Before = active.AchievementBefore.ToString().ToLowerInvariant(), After = Game1.player.achievements.Contains(5).ToString().ToLowerInvariant() },
+                new SimulatedFactChange { Path = "quests.quest_24.completed", Before = (active.Pending.Request.FieldGuideQuestCompletedBefore == true).ToString().ToLowerInvariant(), After = fieldGuideQuestCompletedAfter.ToString().ToLowerInvariant() },
+                new SimulatedFactChange { Path = "world_progress.museum.pending_reward_ids", Before = active.PendingRewardIdsBeforeJson, After = pendingRewardIdsAfterJson },
                 new SimulatedFactChange { Path = "quests.mail_received.museum60", Before = active.RewardClaimedBefore.ToString().ToLowerInvariant(), After = Game1.player.mailReceived.Contains("museum60").ToString().ToLowerInvariant() },
                 new SimulatedFactChange { Path = "player.events_seen.295672", Before = active.PrerequisiteEventBefore.ToString().ToLowerInvariant(), After = Game1.MasterPlayer.eventsSeen.Contains("295672").ToString().ToLowerInvariant() }
             }
@@ -307,9 +406,9 @@ public sealed partial class ModEntry
     private void CompleteMuseumDonationBlocked(ActiveMuseumDonation active, string reason)
     {
         StopAllMovement();
-        if (Game1.activeClickableMenu is MuseumMenu)
+        if (Game1.activeClickableMenu is MuseumMenu menu)
         {
-            Game1.exitActiveMenu();
+            menu.exitThisMenuNoSound();
         }
         else
         {
@@ -344,5 +443,83 @@ public sealed partial class ModEntry
         return typeof(LibraryMuseum)
             .GetField("mutex", BindingFlags.Instance | BindingFlags.NonPublic)
             ?.GetValue(museum) as NetMutex;
+    }
+
+    private static bool IsMuseumFieldGuideQuestCompleted(Quest? quest)
+    {
+        return quest is not null && quest.completed.Value;
+    }
+
+    private static bool TryProjectRuntimeMuseumRewards(
+        LibraryMuseum museum,
+        Farmer player,
+        Dictionary<string, MuseumRewards> rewards,
+        Item? candidateItem,
+        out RuntimeMuseumRewardProjection projection)
+    {
+        projection = new RuntimeMuseumRewardProjection();
+        try
+        {
+            var beforeCounts = museum.GetDonatedByContextTag(rewards);
+            var afterCounts = beforeCounts.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+            if (candidateItem is not null)
+            {
+                foreach (var tag in afterCounts.Keys.ToArray())
+                {
+                    if (tag.Length == 0 || ItemContextTagManager.HasBaseTag(candidateItem.ItemId, tag))
+                    {
+                        afterCounts[tag]++;
+                    }
+                }
+            }
+            var pendingBefore = RuntimePendingMuseumRewardIds(museum, player, rewards, beforeCounts);
+            var pendingAfter = RuntimePendingMuseumRewardIds(museum, player, rewards, afterCounts);
+            var autoRewards = rewards
+                .Where(pair => pair.Value.RewardItemId is null)
+                .Where(pair => museum.CanCollectReward(pair.Value, pair.Key, player, afterCounts))
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .ToArray();
+            projection = new RuntimeMuseumRewardProjection
+            {
+                PendingRewardIdsBefore = pendingBefore,
+                PendingRewardIdsAfter = pendingAfter,
+                NewlyPendingRewardIds = pendingAfter.Except(pendingBefore, StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+                AutoAppliedRewardIds = autoRewards.Select(pair => pair.Key).ToArray(),
+                AutoAppliedRewardActions = autoRewards.SelectMany(pair => pair.Value.RewardActions ?? new List<string>()).Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal).ToArray()
+            };
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string[] RuntimePendingMuseumRewardIds(
+        LibraryMuseum museum,
+        Farmer player,
+        Dictionary<string, MuseumRewards> rewards,
+        Dictionary<string, int> counts)
+    {
+        return rewards
+            .Where(pair => pair.Value.RewardItemId is not null)
+            .Where(pair => museum.CanCollectReward(pair.Value, pair.Key, player, counts))
+            .Where(pair =>
+            {
+                var item = ItemRegistry.Create(pair.Value.RewardItemId!, pair.Value.RewardItemCount);
+                return !player.mailReceived.Contains(museum.getRewardItemKey(item));
+            })
+            .Select(pair => pair.Key)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private sealed class RuntimeMuseumRewardProjection
+    {
+        public string[] PendingRewardIdsBefore { get; init; } = Array.Empty<string>();
+        public string[] PendingRewardIdsAfter { get; init; } = Array.Empty<string>();
+        public string[] NewlyPendingRewardIds { get; init; } = Array.Empty<string>();
+        public string[] AutoAppliedRewardIds { get; init; } = Array.Empty<string>();
+        public string[] AutoAppliedRewardActions { get; init; } = Array.Empty<string>();
     }
 }

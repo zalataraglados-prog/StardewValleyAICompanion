@@ -669,6 +669,36 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_collection_complete_after")]
         public bool? ExpectedCollectionCompleteAfter { get; set; }
 
+        [JsonPropertyName("expected_complete_collection_achievement_after")]
+        public bool? ExpectedCompleteCollectionAchievementAfter { get; set; }
+
+        [JsonPropertyName("field_guide_quest_present_before")]
+        public bool? FieldGuideQuestPresentBefore { get; set; }
+
+        [JsonPropertyName("field_guide_quest_completed_before")]
+        public bool? FieldGuideQuestCompletedBefore { get; set; }
+
+        [JsonPropertyName("expected_field_guide_quest_completed_after")]
+        public bool? ExpectedFieldGuideQuestCompletedAfter { get; set; }
+
+        [JsonPropertyName("pending_reward_ids_before_json")]
+        public string PendingRewardIdsBeforeJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("pending_reward_ids_after_json")]
+        public string PendingRewardIdsAfterJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("newly_pending_reward_ids_json")]
+        public string NewlyPendingRewardIdsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("auto_applied_reward_ids_json")]
+        public string AutoAppliedRewardIdsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("auto_applied_reward_actions_json")]
+        public string AutoAppliedRewardActionsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("reward_projection_status")]
+        public string RewardProjectionStatus { get; set; } = string.Empty;
+
         [JsonPropertyName("rusty_key_donation_threshold")]
         public int? RustyKeyDonationThreshold { get; set; }
 

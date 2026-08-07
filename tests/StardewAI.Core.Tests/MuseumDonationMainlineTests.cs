@@ -24,6 +24,8 @@ public sealed class MuseumDonationMainlineTests
         AssertParameter(candidate.Parameters, "expected_donated_count_after", "60");
         AssertParameter(candidate.Parameters, "reaches_rusty_key_threshold", "true");
         AssertParameter(candidate.Parameters, "rusty_key_reward_action", "MarkEventSeen Host 295672");
+        AssertParameter(candidate.Parameters, "auto_applied_reward_ids_json", "[\"museum60\"]");
+        AssertParameter(candidate.Parameters, "auto_applied_reward_actions_json", "[\"MarkEventSeen Host 295672\"]");
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
@@ -49,6 +51,8 @@ public sealed class MuseumDonationMainlineTests
         var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
 
         AssertParameter(candidate.Parameters, "expected_collection_complete_after", "true");
+        AssertParameter(candidate.Parameters, "expected_complete_collection_achievement_after", "true");
+        AssertParameter(candidate.Parameters, "newly_pending_reward_ids_json", "[\"museumComplete\"]");
         var plan = new DailyPlanCompiler().Compile(
             new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
             snapshot.StateHash);
@@ -85,7 +89,11 @@ public sealed class MuseumDonationMainlineTests
         Assert.Contains("LibraryMuseum.OpenDonationMenu", source, StringComparison.Ordinal);
         Assert.Contains("MuseumMenu", source, StringComparison.Ordinal);
         Assert.Contains("receiveLeftClick", source, StringComparison.Ordinal);
-        Assert.Contains("Game1.exitActiveMenu", source, StringComparison.Ordinal);
+        Assert.Contains("MuseumMenu.placingInMuseumState", source, StringComparison.Ordinal);
+        Assert.Contains("menu.fadeTimer > 0", source, StringComparison.Ordinal);
+        Assert.Contains("menu.okButton.bounds.Center", source, StringComparison.Ordinal);
+        Assert.Contains("museum_donation_native_settlement_timeout_or_mismatch", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.exitActiveMenu()", source, StringComparison.Ordinal);
         Assert.DoesNotContain("museumPieces.Add", source, StringComparison.Ordinal);
         Assert.DoesNotContain("hasRustyKey =", source, StringComparison.Ordinal);
         Assert.DoesNotContain("achievements.Add", source, StringComparison.Ordinal);
@@ -96,6 +104,9 @@ public sealed class MuseumDonationMainlineTests
         var donatedAfter = donatedBefore + 1;
         var reachesThreshold = donatedBefore < 60 && donatedAfter >= 60;
         var completesCollection = donatedAfter >= total;
+        var pendingAfterJson = completesCollection ? "[\"museumComplete\"]" : "[]";
+        var autoRewardIdsJson = reachesThreshold ? "[\"museum60\"]" : "[]";
+        var autoRewardActionsJson = reachesThreshold ? "[\"MarkEventSeen Host 295672\"]" : "[]";
         var json = $$$"""
         {
           "player": {
@@ -111,6 +122,8 @@ public sealed class MuseumDonationMainlineTests
               "total_donatable_items":{{{total}}},
               "collection_complete":false,
               "complete_collection_achievement_received":false,
+              "field_guide_quest_present":false,
+              "field_guide_quest_completed":false,
               "rusty_key_donation_threshold":60,
               "rusty_key_reward_id":"museum60",
               "rusty_key_reward_action":"MarkEventSeen Host 295672",
@@ -127,6 +140,7 @@ public sealed class MuseumDonationMainlineTests
               "free_donation_tile_x":4,
               "free_donation_tile_y":4,
               "free_donation_tile_count":1,
+              "pending_reward_ids":[],
               "donation_candidates":[{
                 "slot_index":0,
                 "item_id":"96",
@@ -139,6 +153,16 @@ public sealed class MuseumDonationMainlineTests
                 "donated_count_after":{{{donatedAfter}}},
                 "completes_collection":{{{completesCollection.ToString().ToLowerInvariant()}}},
                 "reaches_rusty_key_threshold":{{{reachesThreshold.ToString().ToLowerInvariant()}}},
+                "expected_complete_collection_achievement_after":{{{completesCollection.ToString().ToLowerInvariant()}}},
+                "field_guide_quest_present_before":false,
+                "field_guide_quest_completed_before":false,
+                "expected_field_guide_quest_completed_after":false,
+                "pending_reward_ids_before":[],
+                "pending_reward_ids_after":{{{pendingAfterJson}}},
+                "newly_pending_reward_ids":{{{pendingAfterJson}}},
+                "auto_applied_reward_ids":{{{autoRewardIdsJson}}},
+                "auto_applied_reward_actions":{{{autoRewardActionsJson}}},
+                "reward_projection_status":"ready",
                 "action_status":"ready"
               }]
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

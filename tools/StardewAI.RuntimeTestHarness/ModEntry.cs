@@ -945,6 +945,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_museum_donation")
+            {
+                pending.Completion.SetResult(ExecuteSetupMuseumDonationFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.prepare_pet_bowl_sleep")
             {
                 pending.Completion.SetResult(ExecutePreparePetBowlSleep(pending.Request));

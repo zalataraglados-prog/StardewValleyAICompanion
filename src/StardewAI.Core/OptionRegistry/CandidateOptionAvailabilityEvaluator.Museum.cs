@@ -43,6 +43,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     reasons.Add(string.IsNullOrWhiteSpace(status) ? "museum_donation_projection_unavailable" : status);
                 }
+                if (ReadString(candidate, "reward_projection_status") != "ready")
+                {
+                    reasons.Add("museum_reward_projection_not_verified");
+                }
                 if (!actionX.HasValue || !actionY.HasValue)
                 {
                     reasons.Add("gunther_action_tile_unavailable");
@@ -121,12 +125,27 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("expected_donated_count_after", ReadInt(candidate, "donated_count_after").ToString()),
             Parameter("museum_total_donatable_items", ReadInt(museum, "total_donatable_items").ToString()),
             Parameter("expected_collection_complete_after", ReadBool(candidate, "completes_collection") == true ? "true" : "false"),
+            Parameter("expected_complete_collection_achievement_after", ReadBool(candidate, "expected_complete_collection_achievement_after") == true ? "true" : "false"),
+            Parameter("field_guide_quest_present_before", ReadBool(candidate, "field_guide_quest_present_before") == true ? "true" : "false"),
+            Parameter("field_guide_quest_completed_before", ReadBool(candidate, "field_guide_quest_completed_before") == true ? "true" : "false"),
+            Parameter("expected_field_guide_quest_completed_after", ReadBool(candidate, "expected_field_guide_quest_completed_after") == true ? "true" : "false"),
+            Parameter("pending_reward_ids_before_json", RawJson(candidate, "pending_reward_ids_before")),
+            Parameter("pending_reward_ids_after_json", RawJson(candidate, "pending_reward_ids_after")),
+            Parameter("newly_pending_reward_ids_json", RawJson(candidate, "newly_pending_reward_ids")),
+            Parameter("auto_applied_reward_ids_json", RawJson(candidate, "auto_applied_reward_ids")),
+            Parameter("auto_applied_reward_actions_json", RawJson(candidate, "auto_applied_reward_actions")),
+            Parameter("reward_projection_status", ReadString(candidate, "reward_projection_status")),
             Parameter("rusty_key_donation_threshold", ReadInt(museum, "rusty_key_donation_threshold").ToString()),
             Parameter("reaches_rusty_key_threshold", ReadBool(candidate, "reaches_rusty_key_threshold") == true ? "true" : "false"),
             Parameter("rusty_key_reward_id", ReadString(museum, "rusty_key_reward_id")),
             Parameter("rusty_key_reward_action", ReadString(museum, "rusty_key_reward_action")),
-            Parameter("native_contract", "LibraryMuseum.OpenDonationMenu_then_MuseumMenu.receiveLeftClick_inventory_and_display_then_Game1.exitActiveMenu")
+            Parameter("native_contract", "LibraryMuseum.OpenDonationMenu_then_MuseumMenu_fade_then_receiveLeftClick_inventory_and_display_then_okButton_native_exit")
         };
+    }
+
+    private static string RawJson(JsonElement row, string propertyName)
+    {
+        return row.TryGetProperty(propertyName, out var value) ? value.GetRawText() : "[]";
     }
 
     private static string MuseumDonationExpectedEffect(JsonElement museum, JsonElement candidate)
@@ -134,6 +153,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         return "museum_donated_count=" + ReadInt(candidate, "donated_count_after") +
             ";inventory_slot=" + ReadInt(candidate, "slot_index") + ":stack=" + ReadInt(candidate, "stack_after") +
             ";collection_complete=" + (ReadBool(candidate, "completes_collection") == true ? "true" : "false") +
+            ";museum_achievement=" + (ReadBool(candidate, "expected_complete_collection_achievement_after") == true ? "true" : "false") +
+            ";field_guide_quest_completed=" + (ReadBool(candidate, "expected_field_guide_quest_completed_after") == true ? "true" : "false") +
+            ";pending_rewards=" + RawJson(candidate, "pending_reward_ids_after") +
             ";rusty_key_threshold=" + ReadInt(museum, "rusty_key_donation_threshold") +
             ";reaches_rusty_key_threshold=" + (ReadBool(candidate, "reaches_rusty_key_threshold") == true ? "true" : "false");
     }

@@ -37,6 +37,7 @@ public sealed partial class ModEntry
             "debug.setup_mining_combat_fixture",
             "debug.setup_mining_floor",
             "debug.setup_mining_resource_clump",
+            "debug.setup_museum_donation",
             "debug.setup_pan_ore_spot",
             "debug.setup_pet_care_target",
             "debug.setup_plant_seed_target",

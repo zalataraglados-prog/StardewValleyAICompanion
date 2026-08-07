@@ -831,6 +831,12 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("complete_collection_achievement_received")]
         public bool CompleteCollectionAchievementReceived { get; set; }
 
+        [JsonPropertyName("field_guide_quest_present")]
+        public bool FieldGuideQuestPresent { get; set; }
+
+        [JsonPropertyName("field_guide_quest_completed")]
+        public bool FieldGuideQuestCompleted { get; set; }
+
         [JsonPropertyName("rusty_key_donation_threshold")]
         public int RustyKeyDonationThreshold { get; set; }
 
@@ -879,6 +885,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("free_donation_tile_count")]
         public int FreeDonationTileCount { get; set; }
 
+        [JsonPropertyName("pending_reward_ids")]
+        public string[] PendingRewardIds { get; set; } = new string[0];
+
         [JsonPropertyName("donation_candidates")]
         public MuseumDonationCandidateRef[] DonationCandidates { get; set; } = new MuseumDonationCandidateRef[0];
     }
@@ -917,6 +926,36 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("reaches_rusty_key_threshold")]
         public bool ReachesRustyKeyThreshold { get; set; }
+
+        [JsonPropertyName("expected_complete_collection_achievement_after")]
+        public bool ExpectedCompleteCollectionAchievementAfter { get; set; }
+
+        [JsonPropertyName("field_guide_quest_present_before")]
+        public bool FieldGuideQuestPresentBefore { get; set; }
+
+        [JsonPropertyName("field_guide_quest_completed_before")]
+        public bool FieldGuideQuestCompletedBefore { get; set; }
+
+        [JsonPropertyName("expected_field_guide_quest_completed_after")]
+        public bool ExpectedFieldGuideQuestCompletedAfter { get; set; }
+
+        [JsonPropertyName("pending_reward_ids_before")]
+        public string[] PendingRewardIdsBefore { get; set; } = new string[0];
+
+        [JsonPropertyName("pending_reward_ids_after")]
+        public string[] PendingRewardIdsAfter { get; set; } = new string[0];
+
+        [JsonPropertyName("newly_pending_reward_ids")]
+        public string[] NewlyPendingRewardIds { get; set; } = new string[0];
+
+        [JsonPropertyName("auto_applied_reward_ids")]
+        public string[] AutoAppliedRewardIds { get; set; } = new string[0];
+
+        [JsonPropertyName("auto_applied_reward_actions")]
+        public string[] AutoAppliedRewardActions { get; set; } = new string[0];
+
+        [JsonPropertyName("reward_projection_status")]
+        public string RewardProjectionStatus { get; set; } = string.Empty;
 
         [JsonPropertyName("action_status")]
         public string ActionStatus { get; set; } = string.Empty;

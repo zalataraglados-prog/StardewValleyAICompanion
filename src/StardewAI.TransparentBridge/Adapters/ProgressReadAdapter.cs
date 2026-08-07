@@ -99,7 +99,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             ["joja_development"] = Field(ReadJojaDevelopment(master, actor, jojaMart), "JojaMart.JoinJoja map action/checkAction/answerDialogue; JojaCDMenu button mapping and getPriceFromButtonNumber; actor mail/events/money", tick),
             ["marriage_house"] = Field(ReadMarriageHouse(actor, scienceHouse), "GameLocation.Carpenter action/carpenters/answerDialogue carpenter_Upgrade and upgrade_Yes; Farmer houseUpgradeLevel/daysUntilHouseUpgrade/isMarriedOrRoommates/isEngaged/hasCurrentOrPendingRoommate; FarmHouse.setMapForUpgradeLevel/AddCellarTiles/createCellarWarps/GetCellarName; Cellar map/objects plus GameLocation.isTilePlaceable/IsTileBlockedBy static capacity; exact vanilla 1.6 upgrade costs and Cask recipe unlock", tick),
             ["raccoon_request"] = Field(ReadRaccoonRequest(world), "NetWorldState raccoon request fields and Raccoon.GetBundle", tick),
-            ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece; Data/MuseumRewards[museum60]; Events/Farm[66]", tick),
+            ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece/CanCollectReward; Data/MuseumRewards; Farmer.questLog[24]/achievements/mailReceived; Events/Farm[66]", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
             ["artifact_collection"] = Field(ToSortedArrayDictionary(master?.archaeologyFound), "Game1.MasterPlayer.archaeologyFound", tick),
@@ -500,6 +500,13 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
         var rustyKeyAction = rustyKeyActions?.Count == 1 ? rustyKeyActions[0] : string.Empty;
         var museumIsCurrent = ReferenceEquals(Game1.currentLocation, museum);
         var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
+        var fieldGuideQuest = Game1.player.questLog.FirstOrDefault(quest => quest.id.Value == "24");
+        var currentRewardProjectionAvailable = TryProjectMuseumRewards(
+            museum,
+            Game1.player,
+            rewards,
+            candidateItem: null,
+            out var currentRewardProjection);
         var sharedStatus = !museumIsCurrent
             ? "museum_not_current_location"
             : rustyKeyThreshold <= 0 || string.IsNullOrWhiteSpace(rustyKeyAction)
@@ -512,6 +519,8 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                             ? "gunther_action_tile_unavailable"
                             : freeTiles.Length == 0
                                 ? "museum_no_free_donation_tile"
+                                : !currentRewardProjectionAvailable
+                                    ? "museum_reward_projection_unavailable"
                                 : "ready";
 
         return new MuseumProgressRef
@@ -531,6 +540,8 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             TotalDonatableItems = total,
             CollectionComplete = donatedCount >= total,
             CompleteCollectionAchievementReceived = Game1.player.achievements.Contains(5),
+            FieldGuideQuestPresent = fieldGuideQuest is not null,
+            FieldGuideQuestCompleted = fieldGuideQuest?.completed.Value == true,
             RustyKeyDonationThreshold = rustyKeyThreshold,
             RustyKeyRewardId = "museum60",
             RustyKeyRewardAction = rustyKeyAction,
@@ -547,24 +558,50 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             FreeDonationTileX = freeTiles.FirstOrDefault()?.X,
             FreeDonationTileY = freeTiles.FirstOrDefault()?.Y,
             FreeDonationTileCount = freeTiles.Length,
+            PendingRewardIds = currentRewardProjection.PendingRewardIdsBefore,
             DonationCandidates = Game1.player.Items
                 .Select((item, slot) => new { item, slot })
                 .Where(entry => entry.item is StardewValley.Object && entry.item.Stack > 0)
                 .Where(entry => LibraryMuseum.IsItemSuitableForDonation(entry.item.QualifiedItemId))
-                .Select(entry => new MuseumDonationCandidateRef
+                .Select(entry =>
                 {
-                    SlotIndex = entry.slot,
-                    ItemId = entry.item.ItemId,
-                    QualifiedItemId = entry.item.QualifiedItemId,
-                    DisplayName = entry.item.DisplayName,
-                    RuntimeType = entry.item.GetType().FullName ?? string.Empty,
-                    StackBefore = entry.item.Stack,
-                    StackAfter = entry.item.Stack - 1,
-                    DonatedCountBefore = donatedCount,
-                    DonatedCountAfter = donatedCount + 1,
-                    CompletesCollection = donatedCount + 1 >= total,
-                    ReachesRustyKeyThreshold = donatedCount < rustyKeyThreshold && donatedCount + 1 >= rustyKeyThreshold,
-                    ActionStatus = sharedStatus
+                    var projected = TryProjectMuseumRewards(
+                        museum,
+                        Game1.player,
+                        rewards,
+                        entry.item,
+                        out var rewardProjection);
+                    var rewardStatus = !projected
+                        ? "museum_reward_projection_unavailable"
+                        : rewardProjection.AutoAppliedRewardActions.All(action =>
+                            string.Equals(action, "MarkEventSeen Host 295672", StringComparison.Ordinal))
+                            ? "ready"
+                            : "museum_reward_action_not_verified";
+                    return new MuseumDonationCandidateRef
+                    {
+                        SlotIndex = entry.slot,
+                        ItemId = entry.item.ItemId,
+                        QualifiedItemId = entry.item.QualifiedItemId,
+                        DisplayName = entry.item.DisplayName,
+                        RuntimeType = entry.item.GetType().FullName ?? string.Empty,
+                        StackBefore = entry.item.Stack,
+                        StackAfter = entry.item.Stack - 1,
+                        DonatedCountBefore = donatedCount,
+                        DonatedCountAfter = donatedCount + 1,
+                        CompletesCollection = donatedCount + 1 >= total,
+                        ReachesRustyKeyThreshold = donatedCount < rustyKeyThreshold && donatedCount + 1 >= rustyKeyThreshold,
+                        ExpectedCompleteCollectionAchievementAfter = Game1.player.achievements.Contains(5) || donatedCount + 1 >= total,
+                        FieldGuideQuestPresentBefore = fieldGuideQuest is not null,
+                        FieldGuideQuestCompletedBefore = fieldGuideQuest?.completed.Value == true,
+                        ExpectedFieldGuideQuestCompletedAfter = fieldGuideQuest is not null,
+                        PendingRewardIdsBefore = rewardProjection.PendingRewardIdsBefore,
+                        PendingRewardIdsAfter = rewardProjection.PendingRewardIdsAfter,
+                        NewlyPendingRewardIds = rewardProjection.NewlyPendingRewardIds,
+                        AutoAppliedRewardIds = rewardProjection.AutoAppliedRewardIds,
+                        AutoAppliedRewardActions = rewardProjection.AutoAppliedRewardActions,
+                        RewardProjectionStatus = rewardStatus,
+                        ActionStatus = sharedStatus == "ready" ? rewardStatus : sharedStatus
+                    };
                 })
                 .OrderBy(candidate => candidate.SlotIndex)
                 .ToArray()

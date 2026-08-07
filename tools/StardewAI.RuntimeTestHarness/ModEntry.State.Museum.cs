@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Training;
 using StardewValley.Locations;
+using StardewValley.Quests;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -22,7 +23,9 @@ public sealed partial class ModEntry
             int donatedCountBefore,
             bool achievementBefore,
             bool rewardClaimedBefore,
-            bool prerequisiteEventBefore)
+            bool prerequisiteEventBefore,
+            Quest? fieldGuideQuestBefore,
+            string pendingRewardIdsBeforeJson)
         {
             Pending = pending;
             Museum = museum;
@@ -38,6 +41,8 @@ public sealed partial class ModEntry
             AchievementBefore = achievementBefore;
             RewardClaimedBefore = rewardClaimedBefore;
             PrerequisiteEventBefore = prerequisiteEventBefore;
+            FieldGuideQuestBefore = fieldGuideQuestBefore;
+            PendingRewardIdsBeforeJson = pendingRewardIdsBeforeJson;
             LastObservedTile = StardewValley.Game1.player.TilePoint;
         }
 
@@ -55,6 +60,8 @@ public sealed partial class ModEntry
         public bool AchievementBefore { get; }
         public bool RewardClaimedBefore { get; }
         public bool PrerequisiteEventBefore { get; }
+        public Quest? FieldGuideQuestBefore { get; }
+        public string PendingRewardIdsBeforeJson { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int ElapsedTicks { get; set; }
         public int PathIndex { get; set; }
@@ -63,6 +70,7 @@ public sealed partial class ModEntry
         public Point LastObservedTile { get; set; }
         public bool OpenIssued { get; set; }
         public int OpenWaitTicks { get; set; }
+        public int MenuReadyWaitTicks { get; set; }
         public bool InventoryClickIssued { get; set; }
         public bool DonationClickIssued { get; set; }
         public bool CloseIssued { get; set; }

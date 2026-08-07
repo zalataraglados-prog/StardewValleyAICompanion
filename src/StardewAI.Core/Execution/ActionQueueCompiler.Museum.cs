@@ -29,6 +29,9 @@ public sealed partial class ActionQueueCompiler
                 "world_progress.museum.donated_count=" + ReadParameter(action, "expected_donated_count_after") +
                     ";player.inventory[" + slot.Value + "].stack=" + ReadParameter(action, "expected_stack_after") +
                     ";collection_complete=" + ReadParameter(action, "expected_collection_complete_after") +
+                    ";museum_achievement=" + ReadParameter(action, "expected_complete_collection_achievement_after") +
+                    ";field_guide_quest_completed=" + ReadParameter(action, "expected_field_guide_quest_completed_after") +
+                    ";pending_rewards=" + ReadParameter(action, "pending_reward_ids_after_json") +
                     ";reaches_rusty_key_threshold=" + ReadParameter(action, "reaches_rusty_key_threshold"),
                 240)
         };
@@ -66,11 +69,21 @@ public sealed partial class ActionQueueCompiler
             string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")) ||
             !TryBoolParameter(action, "expected_collection_complete_after", out var completesCollection) ||
             completesCollection != (countAfter.Value >= total.Value) ||
+            !TryBoolParameter(action, "expected_complete_collection_achievement_after", out _) ||
+            !TryBoolParameter(action, "field_guide_quest_present_before", out _) ||
+            !TryBoolParameter(action, "field_guide_quest_completed_before", out _) ||
+            !TryBoolParameter(action, "expected_field_guide_quest_completed_after", out _) ||
             !TryBoolParameter(action, "reaches_rusty_key_threshold", out var reachesThreshold) ||
             reachesThreshold != (countBefore.Value < threshold.Value && countAfter.Value >= threshold.Value) ||
+            ReadParameter(action, "reward_projection_status") != "ready" ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "pending_reward_ids_before_json")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "pending_reward_ids_after_json")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "newly_pending_reward_ids_json")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "auto_applied_reward_ids_json")) ||
+            string.IsNullOrWhiteSpace(ReadParameter(action, "auto_applied_reward_actions_json")) ||
             ReadParameter(action, "rusty_key_reward_id") != "museum60" ||
             string.IsNullOrWhiteSpace(ReadParameter(action, "rusty_key_reward_action")) ||
-            ReadParameter(action, "native_contract") != "LibraryMuseum.OpenDonationMenu_then_MuseumMenu.receiveLeftClick_inventory_and_display_then_Game1.exitActiveMenu")
+            ReadParameter(action, "native_contract") != "LibraryMuseum.OpenDonationMenu_then_MuseumMenu_fade_then_receiveLeftClick_inventory_and_display_then_okButton_native_exit")
         {
             return new[] { "museum_donation_typed_projection_required" };
         }
@@ -106,6 +119,7 @@ public sealed partial class ActionQueueCompiler
             ReadInt(museum.Value, "total_donatable_items") != total.Value ||
             ReadInt(museum.Value, "rusty_key_donation_threshold") != threshold.Value ||
             ReadString(museum.Value, "rusty_key_reward_action") != ReadParameter(action, "rusty_key_reward_action") ||
+            MuseumRawJson(museum.Value, "pending_reward_ids") != ReadParameter(action, "pending_reward_ids_before_json") ||
             !TryFindMuseumDonationCandidate(museum.Value, slot.Value, ReadParameter(action, "qualified_item_id"), out var candidate) ||
             ReadString(candidate, "action_status") != "ready" ||
             ReadString(candidate, "item_id") != ReadParameter(action, "item_id") ||
@@ -115,12 +129,32 @@ public sealed partial class ActionQueueCompiler
             ReadInt(candidate, "donated_count_before") != countBefore.Value ||
             ReadInt(candidate, "donated_count_after") != countAfter.Value ||
             ReadBool(candidate, "completes_collection") != completesCollection ||
-            ReadBool(candidate, "reaches_rusty_key_threshold") != reachesThreshold)
+            ReadBool(candidate, "reaches_rusty_key_threshold") != reachesThreshold ||
+            ReadBool(candidate, "expected_complete_collection_achievement_after") != ReadBoolParameter(action, "expected_complete_collection_achievement_after") ||
+            ReadBool(candidate, "field_guide_quest_present_before") != ReadBoolParameter(action, "field_guide_quest_present_before") ||
+            ReadBool(candidate, "field_guide_quest_completed_before") != ReadBoolParameter(action, "field_guide_quest_completed_before") ||
+            ReadBool(candidate, "expected_field_guide_quest_completed_after") != ReadBoolParameter(action, "expected_field_guide_quest_completed_after") ||
+            MuseumRawJson(candidate, "pending_reward_ids_before") != ReadParameter(action, "pending_reward_ids_before_json") ||
+            MuseumRawJson(candidate, "pending_reward_ids_after") != ReadParameter(action, "pending_reward_ids_after_json") ||
+            MuseumRawJson(candidate, "newly_pending_reward_ids") != ReadParameter(action, "newly_pending_reward_ids_json") ||
+            MuseumRawJson(candidate, "auto_applied_reward_ids") != ReadParameter(action, "auto_applied_reward_ids_json") ||
+            MuseumRawJson(candidate, "auto_applied_reward_actions") != ReadParameter(action, "auto_applied_reward_actions_json") ||
+            ReadString(candidate, "reward_projection_status") != "ready")
         {
             reasons.Add("museum_donation_projection_drifted");
         }
 
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool? ReadBoolParameter(SmallModelAction action, string name)
+    {
+        return TryBoolParameter(action, name, out var value) ? value : null;
+    }
+
+    private static string MuseumRawJson(JsonElement row, string propertyName)
+    {
+        return row.TryGetProperty(propertyName, out var value) ? value.GetRawText() : string.Empty;
     }
 
     private static bool TryFindMuseumDonationCandidate(JsonElement museum, int slot, string? qualifiedItemId, out JsonElement candidate)

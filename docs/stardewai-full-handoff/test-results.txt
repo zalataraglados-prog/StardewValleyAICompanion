@@ -3795,3 +3795,14 @@ Scope boundary:
 - Full solution Release build PASS: 0 errors, 5 pre-existing warnings.
 - Authoritative reconciliation: 585/585 exports, blocking 0; registered 99,
   semantic 167, compiler-bound 87, five-gate 18, allowlist 17, Product Executor 0.
+
+2026-08-07 native museum donation five-gate closure
+
+- Repaired the native MuseumMenu executor to wait through both fade phases, verify a one-item inventory pickup, click the native OK button, and settle only after the menu exits. The prior implementation clicked during the opening fade and could not reach its success check after menu close.
+- Added transparent projection for quest 24, achievement 5, all current/new pending `Data/MuseumRewards` item rewards, and supported automatically applied non-item rewards/actions. Unknown automatic actions fail closed.
+- Hidden/silent isolated runtime PASS 3/3: `artifacts/runtime-museum-donation-smoke/runtime-museum-donation-smoke-20260807-174754/summary.json`.
+- Cases: ordinary `0 -> 1` completed quest 24; `59 -> 60` applied `museum60` and event 295672; `94 -> 95` granted achievement 5 and matched all 25 pending rewards, including `dwarf` and `museumComplete` as newly pending.
+- `museum.donate_items` closes five gates under EVD-224 but remains player-confirmed/evaluation-only; autonomous training allowlist remains unchanged.
+- Focused museum/capability regression PASS: 37/37. Core full regression PASS: 1567/1567. Backend full regression PASS: 114/114.
+- Full solution Release build PASS: 0 errors, 1 pre-existing warning in `MiningReadAdapter.Objects.cs`.
+- Authoritative reconciliation: 585/585 exports, blocking 0; registered 101, semantic 169, compiler-bound 95, five-gate 27, allowlist 25, Product Executor 0.
