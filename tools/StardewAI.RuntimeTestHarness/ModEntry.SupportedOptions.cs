@@ -14,6 +14,7 @@ public sealed partial class ModEntry
             "debug.setup_breakable_container",
             "debug.setup_clear_obstacle",
             "debug.setup_collection_task_fixture",
+            "debug.setup_community_center_donation",
             "debug.setup_crab_pot_target",
             "debug.setup_debris_target",
             "debug.setup_farm_resource_clump",

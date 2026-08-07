@@ -3806,3 +3806,16 @@ Scope boundary:
 - Focused museum/capability regression PASS: 37/37. Core full regression PASS: 1567/1567. Backend full regression PASS: 114/114.
 - Full solution Release build PASS: 0 errors, 1 pre-existing warning in `MiningReadAdapter.Objects.cs`.
 - Authoritative reconciliation: 585/585 exports, blocking 0; registered 101, semantic 169, compiler-bound 95, five-gate 27, allowlist 25, Product Executor 0.
+
+2026-08-07 native Community Center donation five-gate closure
+
+- Reused the sole `community_center.donate_bundle_items -> donate_community_center_item -> executor.donate_community_center_item` chain; no second executor was added.
+- Added exact live `BundleData` projection for ingredient progress, bundle rewards, bundle/area/all-area completion, completion mail, bulletin thank-you mail and newly appearing Junimo-note areas.
+- Kept physical note position separate from the actual Buildings-layer interaction endpoint; bulletin area 5 uses the native interaction tile action rather than its visible note tile.
+- Native runtime now requires readable Junimo text, performs the complete native click lifecycle in one bound menu state, and waits for animation, menu, mutex, camera and control settlement.
+- Hidden/silent isolated runtime PASS 5/5: `artifacts/runtime-community-center-donation/runtime-community-center-donation-20260807-185808/summary.json`.
+- Cases: ordinary donation, complete bundle, complete area, complete bulletin area, and complete all areas; every result was `verified_native_junimo_note_menu_lifecycle`.
+- `community_center.donate_bundle_items` closes five gates under EVD-225 but remains player-confirmed/evaluation-only; bundle reward collection remains separate and autonomous training allowlist remains unchanged.
+- Core full regression PASS: 1568/1568. Backend full regression PASS: 114/114.
+- Full solution Release build PASS: 0 errors, 1 pre-existing warning in `MiningReadAdapter.Objects.cs`.
+- Authoritative reconciliation: 585/585 exports, blocking 0; registered 101, semantic 169, compiler-bound 96, five-gate 28, allowlist 25, Product Executor 0.

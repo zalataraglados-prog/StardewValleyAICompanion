@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Training;
 using StardewModdingAPI;
@@ -20,11 +21,17 @@ public sealed partial class ModEntry
             return;
         }
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue || !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
+            !request.CommunityCenterNoteTileX.HasValue || !request.CommunityCenterNoteTileY.HasValue ||
             !request.InventorySlotIndex.HasValue || !request.BundleId.HasValue || !request.BundleAreaId.HasValue || !request.BundleIngredientIndex.HasValue ||
             !request.ExpectedItemQuality.HasValue || !request.RequiredStack.HasValue || !request.ExpectedStackBefore.HasValue || !request.ExpectedStackAfter.HasValue ||
             !request.InventoryItemTotalBefore.HasValue || !request.InventoryItemTotalAfter.HasValue ||
             !request.BundleRequiredSlotCount.HasValue || !request.ExpectedBundleCompletedCountBefore.HasValue ||
             !request.ExpectedBundleCompletedCountAfter.HasValue || !request.ExpectedBundleCompleteAfter.HasValue ||
+            !request.ExpectedBundleRewardAvailableAfter.HasValue || !request.ExpectedCompleteBundleCountAfter.HasValue ||
+            !request.CompletesArea.HasValue || !request.ExpectedAreaCompleteAfter.HasValue ||
+            !request.ExpectedAreaCompletionMailPendingAfter.HasValue || !request.ExpectedBulletinThankYouPendingAfter.HasValue ||
+            !request.ExpectedAllAreasCompleteAfter.HasValue || string.IsNullOrWhiteSpace(request.AreaCompletionMailId) ||
+            string.IsNullOrWhiteSpace(request.NewlyAppearingNoteAreaIdsJson) ||
             string.IsNullOrWhiteSpace(request.BundleDataKey) || string.IsNullOrWhiteSpace(request.QualifiedItemId))
         {
             pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_typed_projection_required"));
@@ -41,6 +48,11 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_target_location_mismatch"));
             return;
         }
+        if (!Game1.player.hasOrWillReceiveMail("canReadJunimoText"))
+        {
+            pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_junimo_text_not_readable"));
+            return;
+        }
 
         var jojaLocked = Game1.MasterPlayer.hasOrWillReceiveMail("JojaMember");
         var ccLocked = Game1.MasterPlayer.hasOrWillReceiveMail("ccIsComplete") || Game1.MasterPlayer.hasCompletedCommunityCenter();
@@ -51,7 +63,8 @@ public sealed partial class ModEntry
             return;
         }
 
-        var noteTile = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var interactionTile = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
+        var noteTile = new Point(request.CommunityCenterNoteTileX.Value, request.CommunityCenterNoteTileY.Value);
         var standTile = new Point(request.StandTileX.Value, request.StandTileY.Value);
         if (request.BundleAreaId.Value < 0 || request.BundleAreaId.Value >= communityCenter.bundleMutexes.Count ||
             request.BundleAreaId.Value >= communityCenter.areasComplete.Count)
@@ -60,7 +73,8 @@ public sealed partial class ModEntry
             return;
         }
         var liveNoteTile = CommunityCenterNoteTileRuntime(communityCenter, request.BundleAreaId.Value);
-        if (liveNoteTile != noteTile || !AreAdjacent(noteTile, standTile) || !communityCenter.shouldNoteAppearInArea(request.BundleAreaId.Value) ||
+        var liveInteractionTile = CommunityCenterInteractionTileRuntime(communityCenter, request.BundleAreaId.Value, liveNoteTile);
+        if (liveNoteTile != noteTile || liveInteractionTile != interactionTile || !AreAdjacent(interactionTile, standTile) || !communityCenter.shouldNoteAppearInArea(request.BundleAreaId.Value) ||
             !communityCenter.isJunimoNoteAtArea(request.BundleAreaId.Value) ||
             communityCenter.bundleMutexes[request.BundleAreaId.Value].IsLocked() || !IsTileOnMap(communityCenter, standTile) ||
             !IsTileWalkable(communityCenter, standTile) || IsTileOccupiedByCharacter(communityCenter, standTile))
@@ -71,9 +85,14 @@ public sealed partial class ModEntry
 
         var slot = request.InventorySlotIndex.Value;
         var item = slot >= 0 && slot < Game1.player.Items.Count ? Game1.player.Items[slot] : null;
-        if (!TryReadLiveCommunityCenterBundle(communityCenter, request, item, out var completedCount))
+        if (!TryReadLiveCommunityCenterBundle(communityCenter, request, item, out var completedCount, out var projectionFailure))
         {
-            pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_bundle_or_inventory_projection_drifted"));
+            pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_bundle_or_inventory_projection_drifted:" + projectionFailure));
+            return;
+        }
+        if (!CommunityCenterOutcomeProjectionMatches(communityCenter, request, out var outcomeFailure))
+        {
+            pending.Completion.SetResult(CommunityCenterDonationBlocked(request, "community_center_donation_outcome_projection_drifted:" + outcomeFailure));
             return;
         }
 
@@ -86,9 +105,15 @@ public sealed partial class ModEntry
         }
 
         activeCommunityCenterDonation = new ActiveCommunityCenterDonation(
-            pending, communityCenter, noteTile, standTile, path, maxMovement, slot,
+            pending, communityCenter, noteTile, interactionTile, standTile, path, maxMovement, slot,
             item!.QualifiedItemId, item.Stack, request.BundleId.Value, request.BundleAreaId.Value,
-            request.BundleIngredientIndex.Value, completedCount, request.InventoryItemTotalBefore.Value);
+            request.BundleIngredientIndex.Value, completedCount, request.InventoryItemTotalBefore.Value,
+            communityCenter.bundleRewards.TryGetValue(request.BundleId.Value, out var rewardAvailable) && rewardAvailable,
+            communityCenter.areasComplete[request.BundleAreaId.Value],
+            HasPendingCommunityCenterMail(Game1.player, request.AreaCompletionMailId),
+            HasPendingCommunityCenterMail(Game1.player, "ccBulletinThankYou"),
+            CommunityCenterCompleteBundleCount(communityCenter),
+            communityCenter.areAllAreasComplete());
     }
 
     private void TickCommunityCenterDonation()
@@ -149,13 +174,13 @@ public sealed partial class ModEntry
         {
             var request = active.Pending.Request;
             var item = active.InventorySlotIndex < Game1.player.Items.Count ? Game1.player.Items[active.InventorySlotIndex] : null;
-            if (!TryReadLiveCommunityCenterBundle(active.CommunityCenter, request, item, out var completedCount) ||
+            if (!TryReadLiveCommunityCenterBundle(active.CommunityCenter, request, item, out var completedCount, out var projectionFailure) ||
                 completedCount != active.CompletedCountBefore || active.CommunityCenter.bundleMutexes[active.AreaId].IsLocked())
             {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_preopen_projection_drifted");
+                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_preopen_projection_drifted:" + projectionFailure);
                 return;
             }
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.NoteTile));
+            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.InteractionTile));
             active.CommunityCenter.checkBundle(active.AreaId);
             active.OpenIssued = true;
             return;
@@ -164,11 +189,12 @@ public sealed partial class ModEntry
         if (active.ExitIssued)
         {
             active.SettlementTicks++;
-            if (Game1.activeClickableMenu is null && CommunityCenterDonationPostconditionsMatch(active))
+            if (Game1.activeClickableMenu is null && !Game1.freezeControls && !Game1.isViewportOnCustomPath() &&
+                CommunityCenterDonationPostconditionsMatch(active))
             {
                 CompleteCommunityCenterDonation(active);
             }
-            else if (active.SettlementTicks > 1260)
+            else if (active.SettlementTicks > 3600)
             {
                 CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_settlement_timeout_or_mismatch");
             }
@@ -199,90 +225,117 @@ public sealed partial class ModEntry
             }
             menu.receiveLeftClick(bundle.bounds.Center.X, bundle.bounds.Center.Y);
             active.BundleClickIssued = true;
-            return;
+            if (!menu.specificBundlePage || menu.currentPageBundle?.bundleIndex != active.BundleId)
+            {
+                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_bundle_click_had_no_immediate_effect");
+                return;
+            }
+            active.BundlePageObservedOpen = true;
         }
 
         if (!menu.specificBundlePage || menu.currentPageBundle?.bundleIndex != active.BundleId)
         {
-            CompleteCommunityCenterDonationBlocked(active, "community_center_donation_bundle_page_open_failed");
-            return;
-        }
-        var requestNow = active.Pending.Request;
-        if (!active.InventoryClickIssued)
-        {
-            var item = active.InventorySlotIndex < Game1.player.Items.Count ? Game1.player.Items[active.InventorySlotIndex] : null;
-            if (item is null || menu.currentPageBundle.GetBundleIngredientDescriptionIndexForItem(item) != active.IngredientIndex ||
-                active.InventorySlotIndex >= menu.inventory.inventory.Count)
+            if (active.IngredientClickIssued && active.RemainderReturnClickIssued)
             {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_candidate_drifted");
+                active.BackClickIssued = true;
+            }
+            else
+            {
+                CompleteCommunityCenterDonationBlocked(
+                    active,
+                    "community_center_donation_bundle_page_open_failed:specific=" + menu.specificBundlePage +
+                    ":current=" + (menu.currentPageBundle?.bundleIndex.ToString() ?? "none") +
+                    ":can_click=" + JunimoNoteMenu.canClick +
+                    ":scrambled=" + menu.scrambledText +
+                    ":complete=" + (menu.currentPageBundle?.complete.ToString() ?? "unavailable") +
+                    ":completion_timer=" + (menu.currentPageBundle?.completionTimer.ToString() ?? "unavailable") +
+                    ":previously_open=" + active.BundlePageObservedOpen +
+                    ":contains=" + (menu.bundles.FirstOrDefault(row => row.bundleIndex == active.BundleId)?.containsPoint(
+                        menu.bundles.First(row => row.bundleIndex == active.BundleId).bounds.Center.X,
+                        menu.bundles.First(row => row.bundleIndex == active.BundleId).bounds.Center.Y).ToString() ?? "unavailable"));
                 return;
             }
-            var component = menu.inventory.inventory[active.InventorySlotIndex];
-            menu.receiveLeftClick(component.bounds.Center.X, component.bounds.Center.Y);
-            active.InventoryClickIssued = true;
-            if (menu.heldItem?.QualifiedItemId != active.QualifiedItemId || menu.heldItem.Stack != active.StackBefore)
-            {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_inventory_pickup_failed");
-            }
-            return;
         }
-
-        if (!active.IngredientClickIssued)
+        if (!active.BackClickIssued)
         {
-            var ingredientSlot = menu.ingredientSlots.FirstOrDefault(row => row.item is null && menu.currentPageBundle.canAcceptThisItem(menu.heldItem, row));
-            if (ingredientSlot is null)
+            var requestNow = active.Pending.Request;
+            var pageBundle = menu.currentPageBundle!;
+            if (!active.InventoryClickIssued)
             {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_ingredient_slot_unavailable");
-                return;
-            }
-            menu.receiveLeftClick(ingredientSlot.bounds.Center.X, ingredientSlot.bounds.Center.Y);
-            active.IngredientClickIssued = true;
-            if (!CommunityCenterDonationBitsMatch(active) ||
-                CommunityCenterDonationOwnedItemTotal(active, menu.heldItem) != requestNow.InventoryItemTotalAfter)
-            {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_ingredient_click_failed");
-            }
-            return;
-        }
-
-        if (!active.RemainderReturnClickIssued)
-        {
-            if (menu.heldItem is not null)
-            {
-                if (menu.heldItem.QualifiedItemId != active.QualifiedItemId || menu.heldItem.Stack != requestNow.ExpectedStackAfter ||
+                var item = active.InventorySlotIndex < Game1.player.Items.Count ? Game1.player.Items[active.InventorySlotIndex] : null;
+                if (item is null || pageBundle.GetBundleIngredientDescriptionIndexForItem(item) != active.IngredientIndex ||
                     active.InventorySlotIndex >= menu.inventory.inventory.Count)
                 {
-                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_remainder_drifted");
+                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_candidate_drifted");
                     return;
                 }
                 var component = menu.inventory.inventory[active.InventorySlotIndex];
                 menu.receiveLeftClick(component.bounds.Center.X, component.bounds.Center.Y);
-            }
-            active.RemainderReturnClickIssued = true;
-            if (menu.heldItem is not null || CommunityCenterDonationInventoryItemTotal(active) != requestNow.InventoryItemTotalAfter ||
-                requestNow.ExpectedBundleCompleteAfter != true && CommunityCenterDonationInventoryStack(active) != requestNow.ExpectedStackAfter)
-            {
-                CompleteCommunityCenterDonationBlocked(active, "community_center_donation_remainder_return_failed");
-            }
-            return;
-        }
-
-        if (menu.specificBundlePage)
-        {
-            if (!menu.isReadyToCloseMenuOrBundle())
-            {
-                if (++active.SettlementTicks > 900)
+                active.InventoryClickIssued = true;
+                if (menu.heldItem?.QualifiedItemId != active.QualifiedItemId || menu.heldItem.Stack != active.StackBefore)
                 {
-                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_bundle_animation_timeout");
+                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_inventory_pickup_failed");
+                    return;
+                }
+            }
+
+            if (!active.IngredientClickIssued)
+            {
+                var ingredientSlot = menu.ingredientSlots.FirstOrDefault(row => row.item is null && pageBundle.canAcceptThisItem(menu.heldItem, row));
+                if (ingredientSlot is null)
+                {
+                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_ingredient_slot_unavailable");
+                    return;
+                }
+                menu.receiveLeftClick(ingredientSlot.bounds.Center.X, ingredientSlot.bounds.Center.Y);
+                active.IngredientClickIssued = true;
+                if (!CommunityCenterDonationBitsMatch(active) ||
+                    CommunityCenterDonationOwnedItemTotal(active, menu.heldItem) != requestNow.InventoryItemTotalAfter)
+                {
+                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_native_ingredient_click_failed");
+                    return;
+                }
+            }
+
+            if (!active.RemainderReturnClickIssued)
+            {
+                if (menu.heldItem is not null)
+                {
+                    if (menu.heldItem.QualifiedItemId != active.QualifiedItemId || menu.heldItem.Stack != requestNow.ExpectedStackAfter ||
+                        active.InventorySlotIndex >= menu.inventory.inventory.Count)
+                    {
+                        CompleteCommunityCenterDonationBlocked(active, "community_center_donation_remainder_drifted");
+                        return;
+                    }
+                    var component = menu.inventory.inventory[active.InventorySlotIndex];
+                    menu.receiveLeftClick(component.bounds.Center.X, component.bounds.Center.Y);
+                }
+                active.RemainderReturnClickIssued = true;
+                if (menu.heldItem is not null || CommunityCenterDonationInventoryItemTotal(active) != requestNow.InventoryItemTotalAfter ||
+                    requestNow.ExpectedBundleCompleteAfter != true && CommunityCenterDonationInventoryStack(active) != requestNow.ExpectedStackAfter)
+                {
+                    CompleteCommunityCenterDonationBlocked(active, "community_center_donation_remainder_return_failed");
+                    return;
+                }
+            }
+
+            if (menu.specificBundlePage)
+            {
+                if (!menu.isReadyToCloseMenuOrBundle())
+                {
+                    if (++active.SettlementTicks > 900)
+                    {
+                        CompleteCommunityCenterDonationBlocked(active, "community_center_donation_bundle_animation_timeout");
+                    }
+                    return;
+                }
+                if (!active.BackClickIssued)
+                {
+                    menu.receiveLeftClick(menu.backButton.bounds.Center.X, menu.backButton.bounds.Center.Y);
+                    active.BackClickIssued = true;
                 }
                 return;
             }
-            if (!active.BackClickIssued)
-            {
-                menu.receiveLeftClick(menu.backButton.bounds.Center.X, menu.backButton.bounds.Center.Y);
-                active.BackClickIssued = true;
-            }
-            return;
         }
 
         if (!active.ExitIssued)
@@ -306,14 +359,17 @@ public sealed partial class ModEntry
         CommunityCenter communityCenter,
         TrainingExecutionRequest request,
         Item? item,
-        out int completedCount)
+        out int completedCount,
+        out string failure)
     {
         completedCount = 0;
+        failure = string.Empty;
         if (!request.BundleId.HasValue || !request.BundleAreaId.HasValue || !request.BundleIngredientIndex.HasValue ||
             !request.BundleRequiredSlotCount.HasValue || !request.ExpectedBundleCompletedCountBefore.HasValue ||
             string.IsNullOrWhiteSpace(request.BundleDataKey) || !Game1.netWorldState.Value.BundleData.TryGetValue(request.BundleDataKey, out var raw) ||
             !communityCenter.bundles.TryGetValue(request.BundleId.Value, out var bits))
         {
+            failure = "bundle_request_or_live_row_missing";
             return false;
         }
         var keyParts = request.BundleDataKey.Split('/');
@@ -322,11 +378,13 @@ public sealed partial class ModEntry
             !int.TryParse(keyParts[1], out var keyBundleId) || keyBundleId != request.BundleId.Value ||
             CommunityCenter.getAreaNumberFromName(keyParts[0]) != request.BundleAreaId.Value)
         {
+            failure = "bundle_data_key_or_area_mismatch";
             return false;
         }
         var parts = ArgUtility.SplitBySpace(fields[Bundle.IngredientsIndex]);
         if (parts.Length % 3 != 0 || bits.Length < parts.Length / 3)
         {
+            failure = "bundle_ingredient_shape_mismatch";
             return false;
         }
         var ingredients = new List<BundleIngredientDescription>();
@@ -335,6 +393,7 @@ public sealed partial class ModEntry
             if (!int.TryParse(parts[index * 3 + 1], out var stack) || stack < 1 ||
                 !int.TryParse(parts[index * 3 + 2], out var quality) || quality < 0)
             {
+                failure = "bundle_ingredient_value_invalid";
                 return false;
             }
             ingredients.Add(new BundleIngredientDescription(parts[index * 3], stack, quality, bits[index]));
@@ -344,19 +403,42 @@ public sealed partial class ModEntry
         var matcher = new Bundle(fields[Bundle.NameIndex], fields[Bundle.DisplayNameIndex], ingredients, bits, fields[Bundle.RewardIndex]);
         var selectedIndex = item is null ? -1 : matcher.GetBundleIngredientDescriptionIndexForItem(item);
         if (item is null || item.QualifiedItemId != request.QualifiedItemId || item.ItemId != request.ItemId ||
-            item.GetType().FullName != request.TargetRuntimeType || item.Quality != request.ExpectedItemQuality ||
-            item.Stack != request.ExpectedStackBefore || request.ExpectedStackAfter != item.Stack - request.RequiredStack ||
+            item.GetType().FullName != request.TargetRuntimeType || item.Quality != request.ExpectedItemQuality)
+        {
+            failure = "inventory_item_identity_quality_mismatch";
+            return false;
+        }
+        if (item.Stack != request.ExpectedStackBefore || request.ExpectedStackAfter != item.Stack - request.RequiredStack ||
             CommunityCenterDonationInventoryItemTotal(request.QualifiedItemId) != request.InventoryItemTotalBefore ||
-            request.InventoryItemTotalAfter != request.InventoryItemTotalBefore - request.RequiredStack ||
-            requiredSlots != request.BundleRequiredSlotCount || completedCount != request.ExpectedBundleCompletedCountBefore ||
-            selectedIndex != request.BundleIngredientIndex || selectedIndex < 0 || selectedIndex >= ingredients.Count ||
+            request.InventoryItemTotalAfter != request.InventoryItemTotalBefore - request.RequiredStack)
+        {
+            failure = "inventory_stack_or_total_mismatch";
+            return false;
+        }
+        if (requiredSlots != request.BundleRequiredSlotCount || completedCount != request.ExpectedBundleCompletedCountBefore)
+        {
+            failure = "bundle_required_or_completed_count_mismatch";
+            return false;
+        }
+        if (selectedIndex != request.BundleIngredientIndex || selectedIndex < 0 || selectedIndex >= ingredients.Count ||
             ingredients[selectedIndex].stack != request.RequiredStack || ingredients[selectedIndex].quality > item.Quality)
         {
+            failure = "bundle_native_matcher_or_requirement_mismatch";
             return false;
         }
         var completes = completedCount + 1 >= requiredSlots;
         var expectedAfter = completes ? ingredients.Count : completedCount + 1;
-        return request.ExpectedBundleCompleteAfter == completes && request.ExpectedBundleCompletedCountAfter == expectedAfter;
+        if (request.ExpectedBundleCompleteAfter != completes || request.ExpectedBundleCompletedCountAfter != expectedAfter)
+        {
+            failure = "bundle_completion_projection_mismatch:completed=" + completedCount +
+                ":required=" + requiredSlots +
+                ":expected_complete=" + request.ExpectedBundleCompleteAfter +
+                ":actual_complete=" + completes +
+                ":expected_count=" + request.ExpectedBundleCompletedCountAfter +
+                ":actual_count=" + expectedAfter;
+            return false;
+        }
+        return true;
     }
 
     private static bool CommunityCenterDonationBitsMatch(ActiveCommunityCenterDonation active)
@@ -367,8 +449,20 @@ public sealed partial class ModEntry
             return false;
         }
         var rewardSettled = active.CommunityCenter.bundleRewards.TryGetValue(active.BundleId, out var rewardAvailable) && rewardAvailable;
-        return bits[active.IngredientIndex] && bits.Count(value => value) == request.ExpectedBundleCompletedCountAfter &&
+        var ingredientCount = CommunityCenterBundleIngredientCount(request);
+        return ingredientCount > 0 && bits[active.IngredientIndex] && bits.Take(ingredientCount).Count(value => value) == request.ExpectedBundleCompletedCountAfter &&
             (!request.ExpectedBundleCompleteAfter.GetValueOrDefault() || rewardSettled);
+    }
+
+    private static int CommunityCenterBundleIngredientCount(TrainingExecutionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.BundleDataKey) ||
+            !Game1.netWorldState.Value.BundleData.TryGetValue(request.BundleDataKey, out var raw))
+        {
+            return 0;
+        }
+        var fields = raw.Split('/');
+        return fields.Length < Bundle.FieldCount ? 0 : ArgUtility.SplitBySpace(fields[Bundle.IngredientsIndex]).Length / 3;
     }
 
     private static int CommunityCenterDonationInventoryStack(ActiveCommunityCenterDonation active)
@@ -395,8 +489,27 @@ public sealed partial class ModEntry
 
     private static bool CommunityCenterDonationPostconditionsMatch(ActiveCommunityCenterDonation active)
     {
+        var request = active.Pending.Request;
+        int[] newlyAppearingAreas;
+        try
+        {
+            newlyAppearingAreas = JsonSerializer.Deserialize<int[]>(request.NewlyAppearingNoteAreaIdsJson) ?? Array.Empty<int>();
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
         return CommunityCenterDonationBitsMatch(active) &&
-            CommunityCenterDonationInventoryItemTotal(active) == active.Pending.Request.InventoryItemTotalAfter;
+            CommunityCenterDonationInventoryItemTotal(active) == request.InventoryItemTotalAfter &&
+            active.CommunityCenter.bundleRewards.TryGetValue(active.BundleId, out var rewardAvailable) &&
+            rewardAvailable == request.ExpectedBundleRewardAvailableAfter &&
+            CommunityCenterCompleteBundleCount(active.CommunityCenter) == request.ExpectedCompleteBundleCountAfter &&
+            active.CommunityCenter.areasComplete[active.AreaId] == request.ExpectedAreaCompleteAfter &&
+            HasPendingCommunityCenterMail(Game1.player, request.AreaCompletionMailId) == request.ExpectedAreaCompletionMailPendingAfter &&
+            HasPendingCommunityCenterMail(Game1.player, "ccBulletinThankYou") == request.ExpectedBulletinThankYouPendingAfter &&
+            active.CommunityCenter.areAllAreasComplete() == request.ExpectedAllAreasCompleteAfter &&
+            newlyAppearingAreas.All(active.CommunityCenter.isJunimoNoteAtArea) &&
+            !active.CommunityCenter.bundleMutexes[active.AreaId].IsLocked();
     }
 
     private void CompleteCommunityCenterDonation(ActiveCommunityCenterDonation active)
@@ -431,12 +544,18 @@ public sealed partial class ModEntry
             EstimatedTicks = 300,
             ActualTicks = active.ElapsedTicks,
             TargetLocation = active.CommunityCenter.NameOrUniqueName,
-            TargetTileX = active.NoteTile.X,
-            TargetTileY = active.NoteTile.Y,
+            TargetTileX = active.InteractionTile.X,
+            TargetTileY = active.InteractionTile.Y,
             ChangedFacts = new[]
             {
                 new SimulatedFactChange { Path = "world_progress.community_center.bundle_rows[" + active.BundleId + "].ingredients[" + active.IngredientIndex + "].completed", Before = "false", After = "true" },
                 new SimulatedFactChange { Path = "world_progress.community_center.bundle_rows[" + active.BundleId + "].completed_ingredient_count", Before = active.CompletedCountBefore.ToString(), After = request.ExpectedBundleCompletedCountAfter?.ToString() ?? "unavailable" },
+                new SimulatedFactChange { Path = "world_progress.community_center.bundle_rewards[" + active.BundleId + "]", Before = active.RewardAvailableBefore.ToString().ToLowerInvariant(), After = request.ExpectedBundleRewardAvailableAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
+                new SimulatedFactChange { Path = "world_progress.community_center.complete_bundle_count", Before = active.CompleteBundleCountBefore.ToString(), After = request.ExpectedCompleteBundleCountAfter?.ToString() ?? "unavailable" },
+                new SimulatedFactChange { Path = "world_progress.community_center.areas_complete[" + active.AreaId + "]", Before = active.AreaCompleteBefore.ToString().ToLowerInvariant(), After = request.ExpectedAreaCompleteAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
+                new SimulatedFactChange { Path = "player.mail_for_tomorrow." + request.AreaCompletionMailId, Before = active.AreaMailPendingBefore.ToString().ToLowerInvariant(), After = request.ExpectedAreaCompletionMailPendingAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
+                new SimulatedFactChange { Path = "player.mail_for_tomorrow.ccBulletinThankYou", Before = active.BulletinThankYouPendingBefore.ToString().ToLowerInvariant(), After = request.ExpectedBulletinThankYouPendingAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
+                new SimulatedFactChange { Path = "world_progress.community_center.all_areas_complete", Before = active.AllAreasCompleteBefore.ToString().ToLowerInvariant(), After = request.ExpectedAllAreasCompleteAfter?.ToString().ToLowerInvariant() ?? "unavailable" },
                 new SimulatedFactChange { Path = "player.inventory.qualified_item_total[" + active.QualifiedItemId + "]", Before = active.InventoryItemTotalBefore.ToString(), After = CommunityCenterDonationInventoryItemTotal(active).ToString() }
             }
         });
@@ -486,5 +605,29 @@ public sealed partial class ModEntry
     {
         var method = typeof(CommunityCenter).GetMethod("getNotePosition", BindingFlags.Instance | BindingFlags.NonPublic);
         return method?.Invoke(communityCenter, new object[] { areaId }) is Point point && point != Point.Zero ? point : null;
+    }
+
+    private static Point? CommunityCenterInteractionTileRuntime(CommunityCenter communityCenter, int areaId, Point? noteTile)
+    {
+        if (areaId != 5)
+        {
+            return noteTile;
+        }
+        var buildings = communityCenter.Map?.GetLayer("Buildings");
+        if (buildings is null)
+        {
+            return null;
+        }
+        for (var y = 0; y < buildings.LayerHeight; y++)
+        {
+            for (var x = 0; x < buildings.LayerWidth; x++)
+            {
+                if (communityCenter.getTileIndexAt(x, y, "Buildings") == 1799)
+                {
+                    return new Point(x, y);
+                }
+            }
+        }
+        return null;
     }
 }

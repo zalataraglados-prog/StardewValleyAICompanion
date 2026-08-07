@@ -152,8 +152,16 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             BundleRewards = world.BundleRewards.Pairs
                 .OrderBy(pair => pair.Key)
                 .ToDictionary(pair => pair.Key, pair => pair.Value),
+            AreasComplete = Enumerable.Range(0, communityCenter.areasComplete.Count)
+                .Select(index => communityCenter.areasComplete[index])
+                .ToArray(),
+            CompleteBundleCount = world.Bundles.Pairs.Count(pair => pair.Value.All(value => value)),
             CompletedAreaMailFlags = areaFlags
                 .Where(flag => master.mailReceived.Contains(flag))
+                .OrderBy(flag => flag, StringComparer.Ordinal)
+                .ToArray(),
+            PendingAreaMailFlags = areaFlags
+                .Where(flag => HasPendingMail(Game1.player, flag))
                 .OrderBy(flag => flag, StringComparer.Ordinal)
                 .ToArray(),
             RouteState = routeState,
@@ -177,6 +185,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             CommunityCenterCompleteFlagReceivedOrPending = ccCompleteFlag,
             CommunityCenterCompleteNative = ccCompleteNative,
             CommunityCenterIsCurrentLocation = ReferenceEquals(Game1.currentLocation, communityCenter),
+            CanReadJunimoText = Game1.player.hasOrWillReceiveMail("canReadJunimoText"),
             BundleDataRowCount = world.BundleData.Count,
             ProjectedBundleRowCount = bundleRows.Length,
             UnavailableBundleRowCount = bundleRows.Count(row => row.ProjectionStatus != "exact"),
@@ -321,11 +330,12 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
     {
         return world.BundleData
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => ReadCommunityCenterBundle(pair.Key, pair.Value, communityCenter, routeState))
+            .Select(pair => ReadCommunityCenterBundle(world, pair.Key, pair.Value, communityCenter, routeState))
             .ToArray();
     }
 
     private static CommunityCenterBundleProgressRef ReadCommunityCenterBundle(
+        StardewValley.Network.NetWorldState world,
         string dataKey,
         string raw,
         CommunityCenter communityCenter,
@@ -362,18 +372,23 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
         var requiredSlots = ArgUtility.GetInt(fields, Bundle.NumberOfSlotsIndex, ingredients.Count);
         var completedCount = ingredients.Count(ingredient => ingredient.completed);
         var noteTile = CommunityCenterNoteTile(communityCenter, areaId);
+        var interactionTile = CommunityCenterInteractionTile(communityCenter, areaId, noteTile);
         var noteAppears = areaId < communityCenter.areasComplete.Count && communityCenter.shouldNoteAppearInArea(areaId) && communityCenter.isJunimoNoteAtArea(areaId);
         var mutex = areaId >= 0 && areaId < communityCenter.bundleMutexes.Count ? communityCenter.bundleMutexes[areaId] : null;
         var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp;
+        var areaMailId = CommunityCenterAreaCompletionMailId(areaId);
+        var areaComplete = areaId >= 0 && areaId < communityCenter.areasComplete.Count && communityCenter.areasComplete[areaId];
         var sharedStatus = routeState == "conflicting_irreversible_flags"
             ? "community_center_route_state_conflict"
             : routeState == "joja_locked"
             ? "community_center_route_locked_out_by_joja"
             : !ReferenceEquals(Game1.currentLocation, communityCenter)
                 ? "community_center_not_current_location"
+                : !Game1.player.hasOrWillReceiveMail("canReadJunimoText")
+                    ? "community_center_junimo_text_not_readable"
                 : !menuClear
                     ? "community_center_menu_or_dialogue_not_clear"
-                    : !noteAppears || noteTile is null
+                    : !noteAppears || noteTile is null || interactionTile is null
                         ? "community_center_area_note_unavailable"
                         : mutex?.IsLocked() == true
                             ? "community_center_area_mutex_locked"
@@ -397,7 +412,14 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             NoteAppears = noteAppears,
             NoteTileX = noteTile?.X,
             NoteTileY = noteTile?.Y,
+            InteractionTileX = interactionTile?.X,
+            InteractionTileY = interactionTile?.Y,
             AreaMutexLocked = mutex?.IsLocked(),
+            RewardAvailable = communityCenter.bundleRewards.TryGetValue(bundleId, out var rewardAvailable) && rewardAvailable,
+            AreaComplete = areaComplete,
+            AreaCompletionMailId = areaMailId,
+            AreaCompletionMailPending = !string.IsNullOrWhiteSpace(areaMailId) && HasPendingMail(Game1.player, areaMailId),
+            BulletinThankYouPending = HasPendingMail(Game1.player, "ccBulletinThankYou"),
             Ingredients = ingredients.Select((ingredient, index) => new CommunityCenterIngredientProgressRef
             {
                 IngredientIndex = index,
@@ -417,28 +439,47 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
                 })
                 .Where(entry => entry.index >= 0 && entry.index < ingredients.Count)
                 .Select(entry => new { entry.item, entry.slot, ingredient = ingredients[entry.index], entry.index })
-                .Where(entry => !entry.ingredient.completed && entry.item.Stack >= entry.ingredient.stack)
-                .Select(entry => new CommunityCenterDonationCandidateRef
+                .Where(entry => completedCount < requiredSlots && !entry.ingredient.completed && entry.item.Stack >= entry.ingredient.stack)
+                .Select(entry =>
                 {
-                    InventorySlotIndex = entry.slot,
-                    IngredientIndex = entry.index,
-                    ItemId = entry.item.ItemId,
-                    QualifiedItemId = entry.item.QualifiedItemId,
-                    RuntimeType = entry.item.GetType().FullName ?? string.Empty,
-                    Quality = entry.item.Quality,
-                    StackBefore = entry.item.Stack,
-                    StackAfter = entry.item.Stack - entry.ingredient.stack,
-                    RequiredStack = entry.ingredient.stack,
-                    InventoryItemTotalBefore = Game1.player.Items
+                    var projection = ProjectCommunityCenterDonation(
+                        world,
+                        communityCenter,
+                        areaId,
+                        bundleId,
+                        entry.index,
+                        ingredients.Count,
+                        requiredSlots,
+                        completedCount);
+                    var inventoryTotalBefore = Game1.player.Items
                         .Where(item => item?.QualifiedItemId == entry.item.QualifiedItemId)
-                        .Sum(item => item?.Stack ?? 0),
-                    InventoryItemTotalAfter = Game1.player.Items
-                        .Where(item => item?.QualifiedItemId == entry.item.QualifiedItemId)
-                        .Sum(item => item?.Stack ?? 0) - entry.ingredient.stack,
-                    CompletedIngredientCountBefore = completedCount,
-                    CompletedIngredientCountAfter = completedCount + 1 >= requiredSlots ? ingredients.Count : completedCount + 1,
-                    CompletesBundle = completedCount + 1 >= requiredSlots,
-                    ActionStatus = sharedStatus
+                        .Sum(item => item?.Stack ?? 0);
+                    return new CommunityCenterDonationCandidateRef
+                    {
+                        InventorySlotIndex = entry.slot,
+                        IngredientIndex = entry.index,
+                        ItemId = entry.item.ItemId,
+                        QualifiedItemId = entry.item.QualifiedItemId,
+                        RuntimeType = entry.item.GetType().FullName ?? string.Empty,
+                        Quality = entry.item.Quality,
+                        StackBefore = entry.item.Stack,
+                        StackAfter = entry.item.Stack - entry.ingredient.stack,
+                        RequiredStack = entry.ingredient.stack,
+                        InventoryItemTotalBefore = inventoryTotalBefore,
+                        InventoryItemTotalAfter = inventoryTotalBefore - entry.ingredient.stack,
+                        CompletedIngredientCountBefore = completedCount,
+                        CompletedIngredientCountAfter = projection.CompletedIngredientCountAfter,
+                        CompletesBundle = projection.CompletesBundle,
+                        ExpectedBundleRewardAvailableAfter = projection.ExpectedBundleRewardAvailableAfter,
+                        ExpectedCompleteBundleCountAfter = projection.ExpectedCompleteBundleCountAfter,
+                        CompletesArea = projection.CompletesArea,
+                        ExpectedAreaCompleteAfter = projection.ExpectedAreaCompleteAfter,
+                        ExpectedAreaCompletionMailPendingAfter = projection.ExpectedAreaCompletionMailPendingAfter,
+                        ExpectedBulletinThankYouPendingAfter = projection.ExpectedBulletinThankYouPendingAfter,
+                        ExpectedAllAreasCompleteAfter = projection.ExpectedAllAreasCompleteAfter,
+                        NewlyAppearingNoteAreaIds = projection.NewlyAppearingNoteAreaIds,
+                        ActionStatus = sharedStatus
+                    };
                 })
                 .OrderBy(candidate => candidate.InventorySlotIndex)
                 .ThenBy(candidate => candidate.IngredientIndex)

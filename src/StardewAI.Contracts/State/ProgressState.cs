@@ -561,8 +561,17 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("bundle_rewards")]
         public Dictionary<int, bool> BundleRewards { get; set; } = new Dictionary<int, bool>();
 
+        [JsonPropertyName("areas_complete")]
+        public bool[] AreasComplete { get; set; } = System.Array.Empty<bool>();
+
+        [JsonPropertyName("complete_bundle_count")]
+        public int CompleteBundleCount { get; set; }
+
         [JsonPropertyName("completed_area_mail_flags")]
         public string[] CompletedAreaMailFlags { get; set; } = new string[0];
+
+        [JsonPropertyName("pending_area_mail_flags")]
+        public string[] PendingAreaMailFlags { get; set; } = new string[0];
 
         [JsonPropertyName("route_state")]
         public string RouteState { get; set; } = string.Empty;
@@ -587,6 +596,9 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("community_center_is_current_location")]
         public bool CommunityCenterIsCurrentLocation { get; set; }
+
+        [JsonPropertyName("can_read_junimo_text")]
+        public bool CanReadJunimoText { get; set; }
 
         [JsonPropertyName("bundle_data_row_count")]
         public int BundleDataRowCount { get; set; }
@@ -648,8 +660,29 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("note_tile_y")]
         public int? NoteTileY { get; set; }
 
+        [JsonPropertyName("interaction_tile_x")]
+        public int? InteractionTileX { get; set; }
+
+        [JsonPropertyName("interaction_tile_y")]
+        public int? InteractionTileY { get; set; }
+
         [JsonPropertyName("area_mutex_locked")]
         public bool? AreaMutexLocked { get; set; }
+
+        [JsonPropertyName("reward_available")]
+        public bool RewardAvailable { get; set; }
+
+        [JsonPropertyName("area_complete")]
+        public bool AreaComplete { get; set; }
+
+        [JsonPropertyName("area_completion_mail_id")]
+        public string AreaCompletionMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("area_completion_mail_pending")]
+        public bool AreaCompletionMailPending { get; set; }
+
+        [JsonPropertyName("bulletin_thank_you_pending")]
+        public bool BulletinThankYouPending { get; set; }
 
         [JsonPropertyName("ingredients")]
         public CommunityCenterIngredientProgressRef[] Ingredients { get; set; } = System.Array.Empty<CommunityCenterIngredientProgressRef>();
@@ -719,6 +752,30 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("completes_bundle")]
         public bool CompletesBundle { get; set; }
+
+        [JsonPropertyName("expected_bundle_reward_available_after")]
+        public bool ExpectedBundleRewardAvailableAfter { get; set; }
+
+        [JsonPropertyName("expected_complete_bundle_count_after")]
+        public int ExpectedCompleteBundleCountAfter { get; set; }
+
+        [JsonPropertyName("completes_area")]
+        public bool CompletesArea { get; set; }
+
+        [JsonPropertyName("expected_area_complete_after")]
+        public bool ExpectedAreaCompleteAfter { get; set; }
+
+        [JsonPropertyName("expected_area_completion_mail_pending_after")]
+        public bool ExpectedAreaCompletionMailPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_bulletin_thank_you_pending_after")]
+        public bool ExpectedBulletinThankYouPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_all_areas_complete_after")]
+        public bool ExpectedAllAreasCompleteAfter { get; set; }
+
+        [JsonPropertyName("newly_appearing_note_area_ids")]
+        public int[] NewlyAppearingNoteAreaIds { get; set; } = System.Array.Empty<int>();
 
         [JsonPropertyName("action_status")]
         public string ActionStatus { get; set; } = string.Empty;

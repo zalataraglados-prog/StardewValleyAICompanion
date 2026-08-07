@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -267,7 +267,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
-            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "skills.read_books",
+            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "skills.read_books",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -400,6 +400,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["museum.donate_items"] = VerifiedEvidence(
                         "vanilla_current_location_exact_donatable_object_native_MuseumMenu_fade_inventory_display_and_confirm_exit_quest24_completion_all_data_driven_pending_item_rewards_supported_non_item_reward_actions_and_collection_achievement",
                         "EVD-224"),
+                    ["community_center.donate_bundle_items"] = VerifiedEvidence(
+                        "vanilla_current_location_exact_live_BundleData_native_JunimoNoteMenu_bundle_inventory_ingredient_and_exit_lifecycle_bundle_reward_area_completion_mail_new_note_camera_settlement_and_distinct_bulletin_interaction_endpoint",
+                        "EVD-225"),
                     ["farm.collect_machine_outputs"] = VerifiedEvidence(
                         "vanilla_current_location_exact_ready_non_incubator_machine_output_native_inventory_receipt_structured_skill_and_mastery",
                         "EVD-213"),

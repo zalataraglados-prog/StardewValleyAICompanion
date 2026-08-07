@@ -756,6 +756,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("bundle_data_key")]
         public string BundleDataKey { get; set; } = string.Empty;
 
+        [JsonPropertyName("community_center_fixture_case")]
+        public string CommunityCenterFixtureCase { get; set; } = string.Empty;
+
+        [JsonPropertyName("community_center_note_tile_x")]
+        public int? CommunityCenterNoteTileX { get; set; }
+
+        [JsonPropertyName("community_center_note_tile_y")]
+        public int? CommunityCenterNoteTileY { get; set; }
+
         [JsonPropertyName("bundle_id")]
         public int? BundleId { get; set; }
 
@@ -791,6 +800,33 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("expected_bundle_complete_after")]
         public bool? ExpectedBundleCompleteAfter { get; set; }
+
+        [JsonPropertyName("expected_bundle_reward_available_after")]
+        public bool? ExpectedBundleRewardAvailableAfter { get; set; }
+
+        [JsonPropertyName("expected_complete_bundle_count_after")]
+        public int? ExpectedCompleteBundleCountAfter { get; set; }
+
+        [JsonPropertyName("completes_area")]
+        public bool? CompletesArea { get; set; }
+
+        [JsonPropertyName("expected_area_complete_after")]
+        public bool? ExpectedAreaCompleteAfter { get; set; }
+
+        [JsonPropertyName("area_completion_mail_id")]
+        public string AreaCompletionMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_area_completion_mail_pending_after")]
+        public bool? ExpectedAreaCompletionMailPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_bulletin_thank_you_pending_after")]
+        public bool? ExpectedBulletinThankYouPendingAfter { get; set; }
+
+        [JsonPropertyName("expected_all_areas_complete_after")]
+        public bool? ExpectedAllAreasCompleteAfter { get; set; }
+
+        [JsonPropertyName("newly_appearing_note_area_ids_json")]
+        public string NewlyAppearingNoteAreaIdsJson { get; set; } = string.Empty;
 
         [JsonPropertyName("expected_mine_level_delta")]
         public int? ExpectedMineLevelDelta { get; set; }

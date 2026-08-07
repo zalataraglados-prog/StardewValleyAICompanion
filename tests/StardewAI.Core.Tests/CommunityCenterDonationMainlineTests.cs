@@ -23,6 +23,10 @@ public sealed class CommunityCenterDonationMainlineTests
         AssertParameter(candidate.Parameters, "bundle_id", "0");
         AssertParameter(candidate.Parameters, "bundle_ingredient_index", "1");
         AssertParameter(candidate.Parameters, "required_stack", "1");
+        AssertParameter(candidate.Parameters, "community_center_note_tile_x", "10");
+        AssertParameter(candidate.Parameters, "interaction_tile_x", "10");
+        AssertParameter(candidate.Parameters, "expected_bundle_reward_available_after", "false");
+        AssertParameter(candidate.Parameters, "expected_area_complete_after", "false");
 
         var plan = new DailyPlanCompiler().Compile(
             new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
@@ -73,9 +77,12 @@ public sealed class CommunityCenterDonationMainlineTests
             "community_center":{"value":{
               "route_state":"undecided",
               "community_center_is_current_location":true,
+              "can_read_junimo_text":true,
               "bundle_data_row_count":1,
               "projected_bundle_row_count":1,
               "unavailable_bundle_row_count":0,
+              "complete_bundle_count":0,
+              "areas_complete":[false,false,false,false,false,false],
               "bundle_rows":[{
                 "projection_status":"exact",
                 "projection_failure":"",
@@ -89,7 +96,14 @@ public sealed class CommunityCenterDonationMainlineTests
                 "note_appears":true,
                 "note_tile_x":10,
                 "note_tile_y":10,
+                "interaction_tile_x":10,
+                "interaction_tile_y":10,
                 "area_mutex_locked":false,
+                "reward_available":false,
+                "area_complete":false,
+                "area_completion_mail_id":"ccPantry",
+                "area_completion_mail_pending":false,
+                "bulletin_thank_you_pending":false,
                 "ingredients":[
                   {"ingredient_index":0,"item_id_or_category":"16","required_stack":1,"minimum_quality":0,"completed":true},
                   {"ingredient_index":1,"item_id_or_category":"24","required_stack":1,"minimum_quality":0,"completed":false},
@@ -113,6 +127,14 @@ public sealed class CommunityCenterDonationMainlineTests
                   "completed_ingredient_count_before":{{{completedBefore}}},
                   "completed_ingredient_count_after":{{{completedAfter}}},
                   "completes_bundle":false,
+                  "expected_bundle_reward_available_after":false,
+                  "expected_complete_bundle_count_after":0,
+                  "completes_area":false,
+                  "expected_area_complete_after":false,
+                  "expected_area_completion_mail_pending_after":false,
+                  "expected_bulletin_thank_you_pending_after":false,
+                  "expected_all_areas_complete_after":false,
+                  "newly_appearing_note_area_ids":[],
                   "action_status":"ready"
                 }]
               }]
@@ -148,6 +170,9 @@ public sealed class CommunityCenterDonationMainlineTests
         Assert.Contains("menu.receiveLeftClick", source, StringComparison.Ordinal);
         Assert.Contains("menu.exitThisMenu", source, StringComparison.Ordinal);
         Assert.Contains("GetBundleIngredientDescriptionIndexForItem", source, StringComparison.Ordinal);
+        Assert.Contains("CommunityCenterInteractionTileRuntime", source, StringComparison.Ordinal);
+        Assert.Contains("HasPendingCommunityCenterMail", source, StringComparison.Ordinal);
+        Assert.Contains("community_center_donation_outcome_projection_drifted", source, StringComparison.Ordinal);
         Assert.DoesNotContain("bundles.FieldDict", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ConsumeStack", source, StringComparison.Ordinal);
         Assert.DoesNotContain("mailReceived.Add", source, StringComparison.Ordinal);

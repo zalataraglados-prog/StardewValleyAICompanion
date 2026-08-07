@@ -22,6 +22,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
         var progressRow = progress.Value;
         var routeState = ReadString(progressRow, "route_state");
+        var canReadJunimoText = ReadBool(progressRow, "can_read_junimo_text") == true;
         var rowCountExact = ReadInt(progressRow, "bundle_data_row_count") == ReadInt(progressRow, "projected_bundle_row_count") &&
             ReadInt(progressRow, "unavailable_bundle_row_count") == 0;
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
@@ -36,7 +37,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             }
             var noteX = NullableReadInt(bundle, "note_tile_x");
             var noteY = NullableReadInt(bundle, "note_tile_y");
-            var stand = noteX.HasValue && noteY.HasValue ? FindBestStandTile(snapshot, noteX.Value, noteY.Value) : null;
+            var interactionX = NullableReadInt(bundle, "interaction_tile_x");
+            var interactionY = NullableReadInt(bundle, "interaction_tile_y");
+            var stand = interactionX.HasValue && interactionY.HasValue ? FindBestStandTile(snapshot, interactionX.Value, interactionY.Value) : null;
             foreach (var candidate in candidates.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object))
             {
                 var reasons = new List<string>();
@@ -55,6 +58,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     reasons.Add("community_center_bundle_projection_incomplete");
                 }
+                if (!canReadJunimoText)
+                {
+                    reasons.Add("community_center_junimo_text_not_readable");
+                }
                 if (ReadString(bundle, "projection_status") != "exact")
                 {
                     reasons.Add("community_center_bundle_row_unavailable");
@@ -62,6 +69,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 if (!noteX.HasValue || !noteY.HasValue)
                 {
                     reasons.Add("community_center_note_tile_unavailable");
+                }
+                if (!interactionX.HasValue || !interactionY.HasValue)
+                {
+                    reasons.Add("community_center_interaction_tile_unavailable");
                 }
                 if (stand is null)
                 {
@@ -81,13 +92,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 if (slot < 0 || ingredientIndex < 0 || requiredSlots < 1 || ingredientCount < requiredSlots || after != expectedAfter ||
                     ReadInt(candidate, "required_stack") < 1 || ReadInt(candidate, "stack_after") != ReadInt(candidate, "stack_before") - ReadInt(candidate, "required_stack") ||
                     ReadInt(candidate, "inventory_item_total_before") < ReadInt(candidate, "stack_before") ||
-                    ReadInt(candidate, "inventory_item_total_after") != ReadInt(candidate, "inventory_item_total_before") - ReadInt(candidate, "required_stack"))
+                    ReadInt(candidate, "inventory_item_total_after") != ReadInt(candidate, "inventory_item_total_before") - ReadInt(candidate, "required_stack") ||
+                    ReadBool(candidate, "expected_bundle_reward_available_after") != (ReadBool(bundle, "reward_available") == true || completesBundle) ||
+                    ReadInt(candidate, "expected_complete_bundle_count_after") < ReadInt(progressRow, "complete_bundle_count") ||
+                    ReadBool(candidate, "completes_area") != (ReadBool(bundle, "area_complete") != true && ReadBool(candidate, "expected_area_complete_after") == true) ||
+                    ReadBool(candidate, "expected_area_completion_mail_pending_after") !=
+                        (ReadBool(bundle, "area_completion_mail_pending") == true || ReadBool(candidate, "completes_area") == true) ||
+                    ReadBool(candidate, "expected_bulletin_thank_you_pending_after") !=
+                        (ReadBool(bundle, "bulletin_thank_you_pending") == true || ReadBool(candidate, "completes_area") == true && ReadInt(bundle, "area_id") == 5))
                 {
                     reasons.Add("community_center_donation_candidate_typed_projection_invalid");
                 }
-                var parameters = stand is null || !noteX.HasValue || !noteY.HasValue
+                var parameters = stand is null || !noteX.HasValue || !noteY.HasValue || !interactionX.HasValue || !interactionY.HasValue
                     ? Array.Empty<SmallModelActionParameter>()
-                    : CommunityCenterDonationParameters(progressRow, bundle, candidate, stand.X, stand.Y, noteX.Value, noteY.Value);
+                    : CommunityCenterDonationParameters(progressRow, bundle, candidate, stand.X, stand.Y, noteX.Value, noteY.Value, interactionX.Value, interactionY.Value);
                 var distance = stand is null ? 0 : Math.Abs(playerX - stand.X) + Math.Abs(playerY - stand.Y);
 
                 result.Add(new EventCandidate
@@ -96,8 +114,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Kind = "donate_community_center_item",
                     Available = reasons.Count == 0,
                     LocationId = "CommunityCenter",
-                    TileX = noteX,
-                    TileY = noteY,
+                    TileX = interactionX,
+                    TileY = interactionY,
                     ExpectedEffect = CommunityCenterDonationExpectedEffect(bundle, candidate),
                     ItemId = ReadString(candidate, "item_id"),
                     QualifiedItemId = ReadString(candidate, "qualified_item_id"),
@@ -121,15 +139,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int standX,
         int standY,
         int noteX,
-        int noteY)
+        int noteY,
+        int interactionX,
+        int interactionY)
     {
         return new[]
         {
             Parameter("target_location", "CommunityCenter"),
             Parameter("stand_tile_x", standX.ToString()),
             Parameter("stand_tile_y", standY.ToString()),
-            Parameter("note_tile_x", noteX.ToString()),
-            Parameter("note_tile_y", noteY.ToString()),
+            Parameter("community_center_note_tile_x", noteX.ToString()),
+            Parameter("community_center_note_tile_y", noteY.ToString()),
+            Parameter("interaction_tile_x", interactionX.ToString()),
+            Parameter("interaction_tile_y", interactionY.ToString()),
             Parameter("route_state", ReadString(progress, "route_state")),
             Parameter("bundle_data_key", ReadString(bundle, "bundle_data_key")),
             Parameter("bundle_id", ReadInt(bundle, "bundle_id").ToString()),
@@ -150,6 +172,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("expected_bundle_completed_count_before", ReadInt(candidate, "completed_ingredient_count_before").ToString()),
             Parameter("expected_bundle_completed_count_after", ReadInt(candidate, "completed_ingredient_count_after").ToString()),
             Parameter("expected_bundle_complete_after", ReadBool(candidate, "completes_bundle") == true ? "true" : "false"),
+            Parameter("expected_bundle_reward_available_after", ReadBool(candidate, "expected_bundle_reward_available_after") == true ? "true" : "false"),
+            Parameter("expected_complete_bundle_count_after", ReadInt(candidate, "expected_complete_bundle_count_after").ToString()),
+            Parameter("completes_area", ReadBool(candidate, "completes_area") == true ? "true" : "false"),
+            Parameter("expected_area_complete_after", ReadBool(candidate, "expected_area_complete_after") == true ? "true" : "false"),
+            Parameter("area_completion_mail_id", ReadString(bundle, "area_completion_mail_id")),
+            Parameter("expected_area_completion_mail_pending_after", ReadBool(candidate, "expected_area_completion_mail_pending_after") == true ? "true" : "false"),
+            Parameter("expected_bulletin_thank_you_pending_after", ReadBool(candidate, "expected_bulletin_thank_you_pending_after") == true ? "true" : "false"),
+            Parameter("expected_all_areas_complete_after", ReadBool(candidate, "expected_all_areas_complete_after") == true ? "true" : "false"),
+            Parameter("newly_appearing_note_area_ids_json", RawJson(candidate, "newly_appearing_note_area_ids")),
             Parameter("native_contract", "CommunityCenter.checkBundle_then_JunimoNoteMenu.receiveLeftClick_bundle_inventory_and_ingredient_slot_then_exitThisMenu")
         };
     }
@@ -159,6 +190,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         return "community_center.bundle=" + ReadInt(bundle, "bundle_id") +
             ":ingredient=" + ReadInt(candidate, "ingredient_index") + ":completed=true" +
             ";inventory_slot=" + ReadInt(candidate, "inventory_slot_index") + ":stack=" + ReadInt(candidate, "stack_after") +
-            ";bundle_complete=" + (ReadBool(candidate, "completes_bundle") == true ? "true" : "false");
+            ";bundle_complete=" + (ReadBool(candidate, "completes_bundle") == true ? "true" : "false") +
+            ";bundle_reward_available=" + (ReadBool(candidate, "expected_bundle_reward_available_after") == true ? "true" : "false") +
+            ";area_complete=" + (ReadBool(candidate, "expected_area_complete_after") == true ? "true" : "false") +
+            ";new_note_areas=" + RawJson(candidate, "newly_appearing_note_area_ids");
     }
 }
