@@ -14,7 +14,6 @@ namespace StardewAI.Core.Execution
         private static readonly IReadOnlyDictionary<string, ActionStepCompiler> ActionStepCompilers =
             new Dictionary<string, ActionStepCompiler>(StringComparer.Ordinal)
             {
-                ["farm.maintain_crops"] = CompileCropMaintenanceSteps,
                 ["farm.process_machines"] = (_, snapshot) => CompileMachineProcessingSteps(snapshot),
                 ["recovery.stabilize_day"] = (_, snapshot) => CompileRecoverySteps(snapshot),
                 ["executor.move_to_tile"] = (action, _) => CompileMoveToTileStep(action),
@@ -29,6 +28,8 @@ namespace StardewAI.Core.Execution
                 ["executor.clear_obstacle"] = (action, _) => CompileClearObstacleStep(action),
                 ["executor.break_farm_resource_clump"] = (action, _) => CompileFarmResourceClumpStep(action),
                 ["executor.break_current_location_resource_clump"] = (action, _) => CompileCurrentLocationResourceClumpStep(action),
+                ["executor.water_crop"] = CompileWaterCropStep,
+                ["executor.apply_fertilizer"] = (action, _) => CompileApplyFertilizerStep(action),
                 ["executor.till_soil"] = CompileTillSoilStep,
                 ["executor.plant_seed"] = (action, _) => CompilePlantSeedStep(action),
                 ["executor.harvest_crop"] = (action, _) => CompileHarvestCropStep(action),
@@ -99,7 +100,6 @@ namespace StardewAI.Core.Execution
                 ["executor.buy_shop_item"] = BuildBuyShopItemParameters,
                 ["social.talk_npc"] = BuildSocialParameters,
                 ["social.gift_npc"] = BuildSocialParameters,
-                ["farm.maintain_crops"] = BuildCropMaintenanceParameters,
                 ["inventory.transfer_item"] = BuildMaterialTransferParameters,
                 ["executor.transfer_material"] = BuildMaterialTransferParameters
             };

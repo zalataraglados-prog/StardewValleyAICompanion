@@ -489,7 +489,7 @@ public sealed partial class ActionQueueCompilerTests
     public void CompileBlocksHumanActorBeforeExecutor()
     {
         var snapshot = Snapshot("{}");
-        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        var request = WaitRequest(snapshot.StateHash);
         request.Actor = new ActionActorRef
         {
             ActorId = "human.local_player",
@@ -510,6 +510,7 @@ public sealed partial class ActionQueueCompilerTests
         var snapshot = Snapshot("""
         {
           "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "weather": {"value":"sun","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -522,7 +523,7 @@ public sealed partial class ActionQueueCompilerTests
           }
         }
         """);
-        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        var request = WaitRequest(snapshot.StateHash);
         request.ExecutionMode = "coop_companion";
         request.Actor = new ActionActorRef
         {
@@ -544,6 +545,7 @@ public sealed partial class ActionQueueCompilerTests
         var snapshot = Snapshot("""
         {
           "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "weather": {"value":"sun","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -556,7 +558,7 @@ public sealed partial class ActionQueueCompilerTests
           }
         }
         """);
-        var request = Request(snapshot.StateHash, "farm.maintain_crops");
+        var request = WaitRequest(snapshot.StateHash);
         request.ExecutionMode = ExecutionTargetProfiles.DedicatedHostAi;
         request.Actor = ExecutionTargetProfiles.CreateActor(request.ExecutionMode);
 
@@ -600,6 +602,7 @@ public sealed partial class ActionQueueCompilerTests
         var snapshot = Snapshot("""
         {
           "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "weather": {"value":"sun","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -612,7 +615,7 @@ public sealed partial class ActionQueueCompilerTests
           }
         }
         """);
-        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "farm.maintain_crops"), snapshot);
+        var queue = new ActionQueueCompiler().Compile(WaitRequest(snapshot.StateHash), snapshot);
 
         var result = new DryRunExecutorPort().Execute(queue);
 
@@ -628,6 +631,7 @@ public sealed partial class ActionQueueCompilerTests
         var snapshot = Snapshot("""
         {
           "time": {
+            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "weather": {"value":"sun","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -640,7 +644,7 @@ public sealed partial class ActionQueueCompilerTests
           }
         }
         """);
-        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "farm.maintain_crops"), snapshot);
+        var queue = new ActionQueueCompiler().Compile(WaitRequest(snapshot.StateHash), snapshot);
 
         var result = new TrainingSandboxExecutorPort().Execute(queue);
 
@@ -649,7 +653,7 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("applied", result.Status);
         Assert.True(result.FeedbackAvailable);
         Assert.NotEmpty(result.AfterStateHash);
-        Assert.Contains("farm.maintain_crops", result.CompletedOptionIds);
+        Assert.Contains("executor.wait_ticks", result.CompletedOptionIds);
     }
 
     [Fact]
@@ -741,6 +745,16 @@ public sealed partial class ActionQueueCompilerTests
         };
     }
 
+    private static SmallModelActionEnvelope WaitRequest(string stateHash)
+    {
+        var request = Request(stateHash, "executor.wait_ticks");
+        request.Actions[0].Parameters = new[]
+        {
+            new SmallModelActionParameter { Name = "wait_ticks", Value = "1" }
+        };
+        return request;
+    }
+
     private static SmallModelPlanEnvelope Plan(string stateHash, params SmallModelPlanStep[] steps)
     {
         return new SmallModelPlanEnvelope
@@ -789,6 +803,8 @@ public sealed partial class ActionQueueCompilerTests
         {
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":63,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":15,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "seed_inventory": {"value":[{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":2,"seed_id":"472"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -808,6 +824,9 @@ public sealed partial class ActionQueueCompilerTests
                 }]
               }]
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":100,"height":100,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """.Replace("ALLOW_PLANTING", allowPlanting ? "true" : "false"));
@@ -819,11 +838,16 @@ public sealed partial class ActionQueueCompilerTests
         {
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory_capacity": {"value":{"max_items":2,"occupied_item_stacks":OCCUPIED_STACKS,"empty_slots":EMPTY_SLOTS,"has_empty_slot":HAS_EMPTY_SLOT},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":INVENTORY_VALUE,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
+          "current_location": {
             "crops": {"value":[{"tile_x":7,"tile_y":8,"harvest_item_id":"24","harvest_method":"HARVEST_METHOD","ready_for_harvest":READY_FOR_HARVEST,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -846,13 +870,18 @@ public sealed partial class ActionQueueCompilerTests
         {
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":7,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":9,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
-            "resource_clumps": {"value":[{"tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,"is_giant_crop":IS_GIANT_CROP,"giant_crop_id":"276","required_tool":"axe","executor_status":"blocked_requires_giant_crop_executor"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          "current_location": {
+            "resource_clumps": {"value":[{"tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,"parent_sheet_index":190,"runtime_type":"StardewValley.TerrainFeatures.GiantCrop","is_giant_crop":IS_GIANT_CROP,"giant_crop_id":"276","required_tool":"axe","executor_status":"runtime_verified","tool_slot_index":0,"expected_tool_hits_to_clear":3}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """.Replace("IS_GIANT_CROP", isGiantCrop ? "true" : "false"));

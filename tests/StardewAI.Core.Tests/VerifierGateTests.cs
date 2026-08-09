@@ -170,8 +170,14 @@ public sealed class VerifierGateTests
                     ("time", "season", "\"spring\""),
                     ("time", "weather", "\"sun\""),
                     ("player", "location_id", "\"Farm\""),
+                    ("player", "tile_x", "6"),
+                    ("player", "tile_y", "8"),
                     ("player", "energy", "270"),
-                    ("farm", "crops", "[]"))),
+                    ("player", "inventory", "[]"),
+                    ("current_location", "crops", "[]"),
+                    ("current_location", "planting_context", "{\"hoe_dirt_tiles\":[]}"),
+                    ("locations", "collision_grid", "{\"width\":80,\"height\":65,\"notable_tiles\":[]}"),
+                    ("menus", "active_menu", "{\"is_open\":false}"))),
             "water crops today",
             "efficiency");
 

@@ -10,7 +10,7 @@ namespace StardewAI.Core.Tests;
 public sealed class TrainingStateTransitionSimulatorTests
 {
     [Fact]
-    public void MaintainCropsProducesFactChangesAndEnergyCost()
+    public void MaintainCropsCannotBypassCandidateAndDailyPlanExpansion()
     {
         var snapshot = Snapshot("""
         {
@@ -46,18 +46,54 @@ public sealed class TrainingStateTransitionSimulatorTests
 
         var result = new TrainingStateTransitionSimulator().Simulate(model, queue);
 
-        Assert.False(result.Blocked);
+        Assert.True(result.Blocked);
         Assert.Equal(snapshot.StateHash, result.BeforeStateHash);
-        Assert.StartsWith("sim.", result.AfterStateHash);
-        Assert.Contains("farm.maintain_crops", result.AppliedOptionIds);
+        Assert.Empty(result.AfterStateHash);
+        Assert.Empty(result.AppliedOptionIds);
+        Assert.Empty(result.ChangedFacts);
+        Assert.Empty(result.ResourceCosts);
+    }
+
+    [Fact]
+    public void WaterCropPrimitiveSimulatesOnlyItsExactCurrentLocationTarget()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[{"slot_index":0,"item_id":"WateringCan","qualified_item_id":"(T)WateringCan","stack":1}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "crops": {"value":[{"tile_x":1,"tile_y":2,"needs_watering":true,"watered":false},{"tile_x":3,"tile_y":4,"needs_watering":true,"watered":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":10,"height":10,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var queue = new ActionQueueCompiler().Compile(
+            Request(
+                snapshot.StateHash,
+                "executor.water_crop",
+                new SmallModelActionParameter { Name = "target_location", Value = "Farm" },
+                new SmallModelActionParameter { Name = "target_tile_x", Value = "1" },
+                new SmallModelActionParameter { Name = "target_tile_y", Value = "2" }),
+            snapshot);
+        var model = new WorldModelProjector().Project(snapshot, "water selected crop", "training");
+
+        var result = new TrainingStateTransitionSimulator().Simulate(model, queue);
+
+        Assert.False(result.Blocked);
+        Assert.Equal(new[] { "executor.water_crop" }, result.AppliedOptionIds);
         Assert.Contains(result.ChangedFacts, item =>
-            item.Path == "farm.crops[1,2].needs_watering" &&
-            item.Before == "true" &&
-            item.After == "false");
-        Assert.Contains(result.ChangedFacts, item =>
-            item.Path == "farm.crops[1,2].watered" &&
-            item.Before == "false" &&
-            item.After == "true");
+            item.Path == "current_location.crops[1,2].needs_watering" && item.After == "false");
+        Assert.DoesNotContain(result.ChangedFacts, item => item.Path.Contains("[3,4]", StringComparison.Ordinal));
         Assert.Contains(result.ResourceCosts, item => item.Resource == "player.energy" && item.Amount == 2);
     }
 
@@ -93,7 +129,10 @@ public sealed class TrainingStateTransitionSimulatorTests
         Assert.Equal(string.Empty, result.AfterStateHash);
     }
 
-    private static SmallModelActionEnvelope Request(string stateHash, string optionId)
+    private static SmallModelActionEnvelope Request(
+        string stateHash,
+        string optionId,
+        params SmallModelActionParameter[] parameters)
     {
         return new SmallModelActionEnvelope
         {
@@ -114,7 +153,8 @@ public sealed class TrainingStateTransitionSimulatorTests
                 {
                     ActionId = "action.test",
                     OptionId = optionId,
-                    Rationale = "test"
+                    Rationale = "test",
+                    Parameters = parameters
                 }
             }
         };

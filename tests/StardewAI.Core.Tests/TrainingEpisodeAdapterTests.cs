@@ -128,7 +128,7 @@ namespace StardewAI.Core.Tests
                     new ActionQueueItem
                     {
                         QueueItemId = "item.farm",
-                        OptionId = "farm.maintain_crops",
+                        OptionId = "executor.water_crop",
                         Status = "pending"
                     }
                 }
@@ -143,18 +143,18 @@ namespace StardewAI.Core.Tests
             {
                 BeforeStateHash = "hash.before",
                 AfterStateHash = "hash.after",
-                AppliedOptionIds = new[] { "farm.maintain_crops" },
+                AppliedOptionIds = new[] { "executor.water_crop" },
                 ChangedFacts = new[]
                 {
                     new SimulatedFactChange
                     {
-                        Path = "farm.crops[1,2].needs_watering",
+                        Path = "current_location.crops[1,2].needs_watering",
                         Before = "true",
                         After = "false"
                     },
                     new SimulatedFactChange
                     {
-                        Path = "farm.crops[1,2].watered",
+                        Path = "current_location.crops[1,2].watered",
                         Before = "false",
                         After = "true"
                     }

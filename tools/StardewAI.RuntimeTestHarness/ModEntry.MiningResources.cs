@@ -1040,6 +1040,11 @@ public sealed partial class ModEntry : Mod
     {
         var nativeToolTrace =
             ResourceClumpToolTracePatch.Complete(active.Clump);
+        if (active.IsGiantCrop)
+        {
+            CompleteGiantCrop(active, nativeToolTrace);
+            return;
+        }
         if (!ResourceClumpProjectedOutputsMatch(active))
         {
             CompleteResourceClumpBlocked(
@@ -1147,6 +1152,106 @@ public sealed partial class ModEntry : Mod
         active.Pending.Completion.SetResult(result);
     }
 
+    private void CompleteGiantCrop(
+        ActiveResourceClump active,
+        IReadOnlyList<string> nativeToolTrace)
+    {
+        StopAllMovement();
+        RestoreSlot(active.RestoreSlotIndex);
+        activeResourceClump = null;
+
+        var request = active.Pending.Request;
+        var debrisCountAfter = active.Location.debris.Count;
+        var removed = !active.Location.resourceClumps.Any(clump =>
+            ReferenceEquals(clump, active.Clump));
+        var debrisCreated = debrisCountAfter > active.DebrisCountBefore;
+        if (!removed || !debrisCreated)
+        {
+            var reason = !removed
+                ? "harvest_giant_crop_still_present"
+                : "harvest_giant_crop_debris_not_created";
+            var blocked = BlockedWithPrimitive(
+                request,
+                "harvest_giant_crop",
+                active.RequestedEffect,
+                GiantCropObservedEffect(active.Location, active.Anchor) +
+                    ";native_swings=" + active.SwingCount +
+                    ";native_tool_callbacks=" + string.Join("|", nativeToolTrace),
+                reason);
+            blocked.ToolQualifiedItemId = active.Tool.QualifiedItemId;
+            blocked.ToolUpgradeLevel = active.Tool.UpgradeLevel;
+            blocked.ToolUseCount = active.SwingCount;
+            blocked.ActualTicks = active.ElapsedTicks;
+            blocked.EnergyBefore = active.StaminaBefore;
+            blocked.EnergyAfter = Game1.player.Stamina;
+            active.Pending.Completion.SetResult(blocked);
+            return;
+        }
+
+        var result = new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = "applied",
+            FeedbackAvailable = true,
+            EnergyBefore = active.StaminaBefore,
+            EnergyAfter = Game1.player.Stamina,
+            TargetLocation = active.Location.NameOrUniqueName,
+            TargetTileX = active.Anchor.X,
+            TargetTileY = active.Anchor.Y,
+            ToolQualifiedItemId = active.Tool.QualifiedItemId,
+            ToolUpgradeLevel = active.Tool.UpgradeLevel,
+            ToolUseCount = active.SwingCount,
+            ActualTicks = active.ElapsedTicks,
+            TrainingImpactScope = "executor_calibration",
+            StartedAt = active.StartedAt,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "harvest_giant_crop",
+            PrimitiveVerificationStatus = "verified",
+            PrimitiveVerificationReasons = new[]
+            {
+                "native_axe_lifecycle_removed_giant_crop",
+                "target_giant_crop_debris_created",
+                "multi_tile_clump_identity_verified",
+                "native_swing_count=" + active.SwingCount
+            },
+            RequestedEffect = active.RequestedEffect,
+            ObservedEffect = GiantCropObservedEffect(active.Location, active.Anchor) +
+                ";debris_delta=" + (debrisCountAfter - active.DebrisCountBefore) +
+                ";luck_xp_delta=" +
+                (Game1.player.experiencePoints[Farmer.luckSkill] - active.LuckExperienceBefore) +
+                ";native_swings=" + active.SwingCount +
+                ";native_tool_callbacks=" + string.Join("|", nativeToolTrace),
+            ChangedFacts = new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = active.FactPathPrefix + "[" + active.Anchor.X + "," + active.Anchor.Y + "]",
+                    Before = "is_giant_crop=true;health=" + active.HealthBefore.ToString("0.###", CultureInfo.InvariantCulture),
+                    After = "removed"
+                },
+                new SimulatedFactChange
+                {
+                    Path = "current_location.debris.count",
+                    Before = active.DebrisCountBefore.ToString(CultureInfo.InvariantCulture),
+                    After = debrisCountAfter.ToString(CultureInfo.InvariantCulture)
+                },
+                new SimulatedFactChange
+                {
+                    Path = "player.skills.luck.experience",
+                    Before = active.LuckExperienceBefore.ToString(CultureInfo.InvariantCulture),
+                    After = Game1.player.experiencePoints[Farmer.luckSkill].ToString(CultureInfo.InvariantCulture)
+                }
+            }
+        };
+        ApplyQuestResourceSourceFeedback(result, request);
+        ApplySpecialOrderCollectSourceFeedback(result, request);
+        active.Pending.Completion.SetResult(result);
+    }
+
     private void CompleteResourceClumpBlocked(ActiveResourceClump active, string reason)
     {
         var nativeToolTrace =
@@ -1160,7 +1265,7 @@ public sealed partial class ModEntry : Mod
         activeResourceClump = null;
         var result = BlockedWithPrimitive(
             active.Pending.Request,
-            "break_resource_clump",
+            active.IsGiantCrop ? "harvest_giant_crop" : "break_resource_clump",
             active.RequestedEffect,
             ResourceClumpObservedEffect(active.Location, active.Anchor) +
                 ";native_swings=" + active.SwingCount +

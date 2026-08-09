@@ -648,8 +648,14 @@ namespace StardewAI.Backend.Tests
                     new
                     {
                         action_id = "action.test",
-                        option_id = "farm.maintain_crops",
-                        rationale = "maintain crops"
+                        option_id = "executor.water_crop",
+                        rationale = "water the exact candidate selected by the daily planner",
+                        parameters = new[]
+                        {
+                            new { name = "target_location", value = "Farm" },
+                            new { name = "target_tile_x", value = "1" },
+                            new { name = "target_tile_y", value = "2" }
+                        }
                     }
                 }
             });
@@ -692,7 +698,7 @@ namespace StardewAI.Backend.Tests
             Assert.False(transitionRoot.GetProperty("blocked").GetBoolean());
             Assert.StartsWith("sim.", transitionRoot.GetProperty("after_state_hash").GetString());
             Assert.Contains(transitionRoot.GetProperty("changed_facts").EnumerateArray(), item =>
-                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering" &&
+                item.GetProperty("path").GetString() == "current_location.crops[1,2].needs_watering" &&
                 item.GetProperty("after").GetString() == "false");
         }
 
@@ -727,9 +733,42 @@ namespace StardewAI.Backend.Tests
                 new StringContent(mockPayload, Encoding.UTF8, "application/json"));
 
             Assert.Equal(HttpStatusCode.OK, compileResponse.StatusCode);
-            using var queueJson = JsonDocument.Parse(await compileResponse.Content.ReadAsStringAsync());
-            var queueId = queueJson.RootElement.GetProperty("queue_id").GetString();
-            Assert.Equal("pending", queueJson.RootElement.GetProperty("status").GetString());
+            using var directQueueJson = JsonDocument.Parse(await compileResponse.Content.ReadAsStringAsync());
+            Assert.Equal("blocked", directQueueJson.RootElement.GetProperty("status").GetString());
+            Assert.Contains(directQueueJson.RootElement.GetProperty("items")[0].GetProperty("blocking_reasons").EnumerateArray(), item =>
+                item.GetString() == "full_action_step_compilation_empty");
+
+            var dailyPlanResponse = await client.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new
+            {
+                state_hash = stateHash,
+                goal_id = "goal.mock.crop-maintenance",
+                compile_action_queue = true,
+                ranked_event_candidates = new[]
+                {
+                    new
+                    {
+                        candidate_id = "water:Farm:1,2",
+                        option_id = "farm.maintain_crops",
+                        kind = "water_crop_tile",
+                        rank = 1,
+                        timeline_status = "ready_now",
+                        available = true,
+                        location_id = "Farm",
+                        tile_x = 1,
+                        tile_y = 2,
+                        expected_effect = "current_location.crops[1,2].needs_watering=false",
+                        estimated_ticks = 60,
+                        energy_cost = 2
+                    }
+                }
+            });
+
+            Assert.Equal(HttpStatusCode.OK, dailyPlanResponse.StatusCode);
+            using var dailyPlanJson = JsonDocument.Parse(await dailyPlanResponse.Content.ReadAsStringAsync());
+            var queueRoot = dailyPlanJson.RootElement.GetProperty("action_queue");
+            var queueId = queueRoot.GetProperty("queue_id").GetString();
+            Assert.Equal("pending", queueRoot.GetProperty("status").GetString());
+            Assert.Equal("executor.water_crop", queueRoot.GetProperty("items")[0].GetProperty("option_id").GetString());
 
             var timeBudgetResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/time-budget");
 
@@ -746,7 +785,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal("simulated_transition.v1", transitionJson.RootElement.GetProperty("schema_version").GetString());
             Assert.False(transitionJson.RootElement.GetProperty("blocked").GetBoolean());
             Assert.Contains(transitionJson.RootElement.GetProperty("changed_facts").EnumerateArray(), item =>
-                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
+                item.GetProperty("path").GetString() == "current_location.crops[1,2].needs_watering");
 
             var episodeResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-episode");
 
@@ -755,7 +794,7 @@ namespace StardewAI.Backend.Tests
             var episodeRoot = episodeJson.RootElement;
             Assert.Equal("training_episode.v1", episodeRoot.GetProperty("schema_version").GetString());
             Assert.Equal(queueId, episodeRoot.GetProperty("queue_id").GetString());
-            Assert.Equal("farm.maintain_crops", episodeRoot.GetProperty("action_summary").GetProperty("option_ids")[0].GetString());
+            Assert.Equal("executor.water_crop", episodeRoot.GetProperty("action_summary").GetProperty("option_ids")[0].GetString());
             Assert.False(episodeRoot.GetProperty("hard_feasibility").GetProperty("blocked").GetBoolean());
             Assert.Equal(0.09, episodeRoot.GetProperty("strategy_value").GetProperty("goal_progress_delta").GetDouble());
             Assert.Contains(episodeRoot.GetProperty("strategy_value").GetProperty("reward_terms").EnumerateArray(), item =>
@@ -763,7 +802,7 @@ namespace StardewAI.Backend.Tests
                 item.GetProperty("source").GetString() == "simulated_transition.changed_facts");
             Assert.Equal("perfect_human_player", episodeRoot.GetProperty("executor_calibration").GetProperty("execution_profile").GetString());
             Assert.Contains(episodeRoot.GetProperty("executor_calibration").GetProperty("changed_facts").EnumerateArray(), item =>
-                item.GetProperty("path").GetString() == "farm.crops[1,2].needs_watering");
+                item.GetProperty("path").GetString() == "current_location.crops[1,2].needs_watering");
 
             var featureResponse = await client.GetAsync($"/api/v1/action-queues/{queueId}/training-feature-row");
 
@@ -772,10 +811,10 @@ namespace StardewAI.Backend.Tests
             var featureRoot = featureJson.RootElement;
             Assert.Equal("training_feature_row.v1", featureRoot.GetProperty("schema_version").GetString());
             Assert.Equal(queueId, featureRoot.GetProperty("queue_id").GetString());
-            Assert.Equal("farm.maintain_crops", featureRoot.GetProperty("action_features").GetProperty("option_ids")[0].GetString());
+            Assert.Equal("executor.water_crop", featureRoot.GetProperty("action_features").GetProperty("option_ids")[0].GetString());
             Assert.Equal(0.09, featureRoot.GetProperty("labels").GetProperty("goal_progress_delta").GetDouble());
             Assert.Contains(featureRoot.GetProperty("state_features").GetProperty("numeric").EnumerateArray(), item =>
-                item.GetProperty("name").GetString() == "farm.crops_needing_watering" &&
+                item.GetProperty("name").GetString() == "current_location.crops_needing_watering" &&
                 item.GetProperty("value").GetDouble() == 1);
             Assert.Contains(featureRoot.GetProperty("action_features").GetProperty("features").GetProperty("categorical").EnumerateArray(), item =>
                 item.GetProperty("name").GetString() == "action.intent_category" &&
@@ -1168,7 +1207,7 @@ namespace StardewAI.Backend.Tests
                 "current_item_qualified_id": {{FieldJson("(O)72")}},
                 "active_object_qualified_id": {{FieldJson("(O)72")}},
                 "active_menu": {{FieldJson("none", status: unavailableCarriesDefault ? "unavailable" : "available")}},
-                "inventory": {{FieldJson("[{\"slot_index\":0,\"item_id\":\"Axe\",\"qualified_item_id\":\"(T)Axe\",\"display_name\":\"Axe\",\"stack\":1,\"quality\":0,\"is_empty\":false}]", raw: true)}}
+                "inventory": {{FieldJson("[{\"slot_index\":0,\"item_id\":\"Axe\",\"qualified_item_id\":\"(T)Axe\",\"display_name\":\"Axe\",\"stack\":1,\"quality\":0,\"is_empty\":false},{\"slot_index\":1,\"item_id\":\"WateringCan\",\"qualified_item_id\":\"(T)WateringCan\",\"display_name\":\"Watering Can\",\"stack\":1,\"quality\":0,\"is_empty\":false}]", raw: true)}}
               },
               "mods": {
                 "installed_count": {{FieldJson(0)}},
@@ -1189,7 +1228,12 @@ namespace StardewAI.Backend.Tests
                     : UnavailableFieldJson("material_graph_not_in_general_backend_fixture"))}}
               },
               "current_location": {
-                "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}}
+                "identity": {{FieldJson("{\"name\":\"Farm\",\"name_or_unique_name\":\"Farm\",\"type\":\"StardewValley.Farm\"}", raw: true)}},
+                "crops": {{FieldJson("[{\"location_id\":\"Farm\",\"tile_x\":1,\"tile_y\":2,\"needs_watering\":true,\"watered\":false}]", raw: true)}},
+                "planting_context": {{FieldJson("{\"hoe_dirt_tiles\":[]}", raw: true)}}
+              },
+              "locations": {
+                "collision_grid": {{FieldJson("{\"width\":80,\"height\":65,\"notable_tiles\":[]}", raw: true)}}
               },
               "npcs": {
                 "positions": {{FieldJson("[]", raw: true)}},

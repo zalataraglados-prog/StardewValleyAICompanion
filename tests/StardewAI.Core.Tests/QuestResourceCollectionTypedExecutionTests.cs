@@ -178,10 +178,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             {
               "player":{
                 "location_id":{"value":"Farm","status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_x":{"value":6,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_y":{"value":8,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory_capacity":{"value":{"has_empty_slot":true,"empty_slots":12},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
-              "farm":{
+              "current_location":{
                 "crops":{"value":[{
                   "tile_x":7,"tile_y":8,"ready_for_harvest":true,
                   "harvest_item_id":"24","harvest_item_qualified_id":"(O)24",
@@ -194,6 +196,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                   "harvest_experience_condition":"native_crop_harvest",
                   "harvest_experience_projection_status":"exact"
                 }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
+              "locations":{
+                "collision_grid":{"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
               "quests":{
                 "active_quests":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -680,7 +685,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     {
         var snapshot = ResourceCollectionSnapshot(
             """
-            "farm":{
+            "current_location":{
               "crops":{"value":[{
                 "tile_x":7,"tile_y":8,"ready_for_harvest":true,
                 "harvest_item_id":"771","harvest_item_qualified_id":"(O)771",
@@ -721,7 +726,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     {
         var snapshot = SpecialOrderCollectionSnapshot(
             """
-            "farm":{
+            "current_location":{
               "crops":{"value":[{
                 "tile_x":7,"tile_y":8,"ready_for_harvest":true,
                 "harvest_item_id":"771","harvest_item_qualified_id":"(O)771",
@@ -759,9 +764,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     {
         var snapshot = ResourceCollectionSnapshot(
             """
-            "farm":{
+            "current_location":{
               "resource_clumps":{"value":[{
                 "tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,
+                "parent_sheet_index":190,"runtime_type":"StardewValley.TerrainFeatures.GiantCrop",
+                "tool_slot_index":0,"expected_tool_hits_to_clear":3,
                 "is_giant_crop":true,"giant_crop_id":"Pumpkin",
                 "giant_crop_guaranteed_outputs_json":"[{\"qualified_item_id\":\"(O)276\",\"context_tags\":[\"category_vegetable\",\"id_o_276\"],\"quantity_min\":15,\"quantity_max\":21}]",
                 "giant_crop_output_projection_status":"exact_unconditional_direct_outputs",
@@ -1048,6 +1055,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               },
               "time":{"time":{"value":1200,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "menus":{"active_menu":{"value":{"is_open":false},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+              "locations":{"collision_grid":{"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "world_progress":{
                 "community_center":{"value":{},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "achievements":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
@@ -1094,6 +1102,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               },
               "time":{"time":{"value":1200,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "menus":{"active_menu":{"value":{"is_open":false},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+              "locations":{"collision_grid":{"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
               "world_progress":{
                 "community_center":{"value":{},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "achievements":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}

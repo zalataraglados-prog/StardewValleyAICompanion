@@ -79,7 +79,9 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     {
         var missing = new StardewAI.Core.OptionRegistry.OptionRegistry().All
             .Where(row => row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion)
-            .Where(row => !ActionQueueCompiler.HasStepCompiler(row.OptionId))
+            .Where(row =>
+                !ActionQueueCompiler.HasStepCompiler(row.OptionId) &&
+                !DailyPlanCompiler.HasOptionCompiler(row.OptionId))
             .Select(row => row.OptionId);
 
         Assert.Empty(missing);
@@ -242,6 +244,26 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Contains("milk_pail_shears", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.Contains("cracker_single_double", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CropMaintenanceClosesFiveGatesButRemainsExecutorCalibrationOnlyTests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("farm.maintain_crops");
+
+        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, declaration.TrainingEligibility);
+        Assert.True(declaration.AutonomousCandidateEnabled);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("farm.maintain_crops"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("farm.maintain_crops"));
+        Assert.Equal(new[] { "EVD-226" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-226" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-226" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-226" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-226" }, declaration.OutputEvidenceIds);
+        Assert.Equal("not_admitted", declaration.TrainingEvidenceScope);
+        Assert.Equal(new[] { TrainingAdmissionExclusionReason.NotPolicyTrainingOption }, declaration.TrainingExclusionReasons);
     }
 
     [Fact]

@@ -234,6 +234,8 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 
 当前第 1、3、6、7 步的数据治理与结构化模型基础设施已经闭合，第 2、4、5 步仍按证据范围持续推进；现有十三项 allowlist 不能代表全量目标覆盖。直接下一步是继续按权威字典扩大第 4 步准入项。只有真实长期 rollout 产生轨迹和闭合跨度观测后，才运行第 6 步工具形成可供检查点引用的正式数据清单；不得用合成测试数据冒充正式训练集。
 
+2026-08-09 EVD-226 已将 `farm.maintain_crops` 收敛为当前地点透明候选到五类类型化机械原语的唯一链路，并通过浇水、播种、普通收获、普通地块施肥、花盆施肥和巨型作物后台隔离验证。该项五门已闭合，但按 `CalibrationOnlyHighLevelIds` 仍为评估/执行器校准用途，不增加策略训练 allowlist。当前生成看板为 103 registered / 170 semantic / 98 compiler-bound / 67 runtime dispatch / 29 five-gate / 25 allowlist，KnowledgeCompiler 为 585/585、blocking 0。下一步仍是继续闭合未准入高层目标并采集真实长期 rollout，不是提前启动全量训练。
+
 ## 5. 新训练笔记本与模型路线
 
 目标训练节点为用户报告的新笔记本：

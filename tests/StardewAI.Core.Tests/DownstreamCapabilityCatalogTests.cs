@@ -14,7 +14,9 @@ public sealed class DownstreamCapabilityCatalogTests
     {
         var missing = new StardewAI.Core.OptionRegistry.OptionRegistry().All
             .Where(option => option.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion)
-            .Where(option => !ActionQueueCompiler.HasStepCompiler(option.OptionId))
+            .Where(option =>
+                !ActionQueueCompiler.HasStepCompiler(option.OptionId) &&
+                !DailyPlanCompiler.HasOptionCompiler(option.OptionId))
             .Select(option => option.OptionId)
             .OrderBy(value => value, StringComparer.Ordinal)
             .ToArray();

@@ -21,6 +21,11 @@ public sealed partial class CurrentLocationReadAdapter
     {
         var isExactVanilla = clump.GetType() == typeof(ResourceClump);
         var isGreenRainBush = clump.parentSheetIndex.Value is ResourceClump.greenRainBush1Index or ResourceClump.greenRainBush2Index;
+        var isGiantCrop = clump is GiantCrop;
+        var giantCropOutputs = clump is GiantCrop giantCrop
+            ? FarmReadAdapter.ReadGuaranteedGiantCropOutputs(giantCrop)
+            : Array.Empty<GiantCropOutputProjection>();
+        var giantCropExperience = FarmReadAdapter.ReadGiantCropExperience(clump, player);
         var axe = player.Items
             .Select((item, index) => new { Tool = item as Axe, SlotIndex = index })
             .Where(row => row.Tool is not null)
@@ -66,6 +71,23 @@ public sealed partial class CurrentLocationReadAdapter
             width = clump.width.Value,
             height = clump.height.Value,
             health = clump.health.Value,
+            is_giant_crop = isGiantCrop,
+            giant_crop_id = clump is GiantCrop giant ? giant.Id : string.Empty,
+            giant_crop_guaranteed_outputs = giantCropOutputs,
+            giant_crop_guaranteed_outputs_json = JsonSerializer.Serialize(giantCropOutputs),
+            giant_crop_output_projection_status = isGiantCrop
+                ? giantCropOutputs.Length > 0
+                    ? "exact_unconditional_direct_outputs"
+                    : "blocked_no_unconditional_direct_output"
+                : "not_applicable",
+            required_tool = isGiantCrop ? "axe" : string.Empty,
+            executor_status = isGiantCrop ? "runtime_verified" : string.Empty,
+            harvest_experience_skill_id = giantCropExperience.SkillId,
+            harvest_experience_skill_index = giantCropExperience.SkillIndex,
+            harvest_experience_on_success_min = giantCropExperience.Minimum,
+            harvest_experience_on_success_max = giantCropExperience.Maximum,
+            harvest_experience_condition = giantCropExperience.Condition,
+            harvest_experience_projection_status = giantCropExperience.Status,
             clear_kind = isGreenRainBush ? "green_rain_bush" : string.Empty,
             clear_obstacle_executor_status = status,
             required_tool_kind = isGreenRainBush ? "axe" : string.Empty,

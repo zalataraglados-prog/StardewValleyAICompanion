@@ -6,7 +6,7 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
-    private static GiantCropOutputProjection[] ReadGuaranteedGiantCropOutputs(GiantCrop giantCrop)
+    internal static GiantCropOutputProjection[] ReadGuaranteedGiantCropOutputs(GiantCrop giantCrop)
     {
         if (!GiantCrop.TryGetData(giantCrop.Id, out var data) || data?.HarvestItems is null)
         {

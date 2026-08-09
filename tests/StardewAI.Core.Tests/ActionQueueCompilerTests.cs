@@ -9,7 +9,7 @@ namespace StardewAI.Core.Tests;
 public sealed partial class ActionQueueCompilerTests
 {
     [Fact]
-    public void CompileTurnsRegisteredSmallModelActionIntoPendingQueueItem()
+    public void CompileBlocksDirectHighLevelCropMaintenanceWithoutCandidatePlan()
     {
         var snapshot = Snapshot("""
         {
@@ -31,27 +31,24 @@ public sealed partial class ActionQueueCompilerTests
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
 
         Assert.Equal("action_queue.v1", queue.SchemaVersion);
-        Assert.True(queue.Status == "pending", string.Join("|", queue.Items.SelectMany(item => item.BlockingReasons)));
+        Assert.Equal("blocked", queue.Status);
         Assert.Equal("training_singleplayer", queue.ExecutionMode);
         Assert.Equal("training_farmer.main", queue.Actor.ActorId);
         Assert.Single(queue.Items);
-        Assert.Equal("pending", queue.Items[0].Status);
+        Assert.Equal("blocked", queue.Items[0].Status);
         Assert.Equal("mechanical", queue.Items[0].BehaviorCategory);
         Assert.Equal("full_action_expansion", queue.Items[0].CompilerResponsibility);
         Assert.Equal("executor_calibration", queue.Items[0].TrainingRole);
         Assert.Equal("farm.maintain_crops", queue.Items[0].NormalizedCommand.OptionId);
         Assert.Equal("compiled_action_steps", queue.Items[0].NormalizedCommand.CommandType);
         Assert.Equal("executor_calibration", queue.Items[0].NormalizedCommand.TrainingRole);
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.season" && parameter.Value == "spring");
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.weather" && parameter.Value == "sun");
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.watering_candidate_count" && parameter.Value == "0");
-        Assert.Single(queue.Items[0].NormalizedCommand.Steps);
-        Assert.Equal("crop_maintenance_noop", queue.Items[0].NormalizedCommand.Steps[0].StepType);
+        Assert.Contains("full_action_step_compilation_empty", queue.Items[0].BlockingReasons);
+        Assert.Empty(queue.Items[0].NormalizedCommand.Steps);
         Assert.Equal("training_farmer.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
     }
 
     [Fact]
-    public void CompileExpandsCropMaintenanceIntoPerCropStepsFromTransparentState()
+    public void CompileTurnsCropMaintenancePlanIntoPerTileWaterPrimitives()
     {
         var snapshot = Snapshot("""
         {
@@ -61,28 +58,40 @@ public sealed partial class ActionQueueCompilerTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
+          "current_location": {
             "crops": {"value":[
               {"tile_x":1,"tile_y":2,"needs_watering":true},
               {"tile_x":3,"tile_y":4,"needs_watering":false},
               {"tile_x":5,"tile_y":6,"needs_watering":true}
             ],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
 
-        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "farm.maintain_crops"), snapshot);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep { StepId = "water.1.2", Kind = "water_crop", TargetLocation = "Farm", TargetTileX = 1, TargetTileY = 2 },
+            new SmallModelPlanStep { StepId = "water.5.6", Kind = "water_crop", TargetLocation = "Farm", TargetTileX = 5, TargetTileY = 6 });
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
 
-        var steps = queue.Items[0].NormalizedCommand.Steps;
-        Assert.Equal(2, steps.Length);
-        Assert.All(steps, step => Assert.Equal("water_crop", step.StepType));
-        Assert.Contains(steps, step => step.Target == "Farm(1,2)");
-        Assert.Contains(steps, step => step.Target == "Farm(5,6)");
-        Assert.All(steps, step => Assert.Contains("native_tool=WateringCan", step.ExpectedEffect));
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.crop_count" && parameter.Value == "3");
-        Assert.Contains(queue.Items[0].NormalizedCommand.Parameters, parameter => parameter.Name == "compiler_context.watering_candidate_count" && parameter.Value == "2");
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", queue.Items.SelectMany(item => item.BlockingReasons.Concat(item.MissingStateFactors))));
+        Assert.Equal(2, queue.Items.Length);
+        Assert.All(queue.Items, item => Assert.Equal("executor.water_crop", item.OptionId));
+        Assert.Contains(queue.Items, item => Assert.Single(item.NormalizedCommand.Steps).Target == "Farm(1,2)");
+        Assert.Contains(queue.Items, item => Assert.Single(item.NormalizedCommand.Steps).Target == "Farm(5,6)");
     }
 
     [Fact]
@@ -176,7 +185,9 @@ public sealed partial class ActionQueueCompilerTests
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
 
-        Assert.Equal("pending", queue.Status);
+        Assert.True(
+            queue.Status == "pending",
+            string.Join(";", queue.Items.SelectMany(item => item.BlockingReasons.Concat(item.MissingStateFactors))));
         var item = Assert.Single(queue.Items);
         Assert.Equal("executor.plant_seed", item.OptionId);
         var step = Assert.Single(item.NormalizedCommand.Steps);
@@ -224,8 +235,8 @@ public sealed partial class ActionQueueCompilerTests
         Assert.DoesNotContain("harvest_crop_not_ready_by_transparent_farm_state", item.BlockingReasons);
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("harvest_crop", step.StepType);
-        Assert.Equal("Farm(7,8):Grab", step.Target);
-        Assert.Equal("farm.crops[7,8].ready_for_harvest=false_or_blocked", step.ExpectedEffect);
+        Assert.Equal("current_location(7,8):Grab", step.Target);
+        Assert.Equal("current_location.crops[7,8].ready_for_harvest=false_or_blocked", step.ExpectedEffect);
     }
 
     [Fact]
@@ -289,8 +300,19 @@ public sealed partial class ActionQueueCompilerTests
         var request = Request(snapshot.StateHash, "executor.harvest_giant_crop");
         request.Actions[0].Parameters = new[]
         {
-            new SmallModelActionParameter { Name = "target_tile_x", Value = "8" },
-            new SmallModelActionParameter { Name = "target_tile_y", Value = "9" }
+            new SmallModelActionParameter { Name = "target_tile_x", Value = "7" },
+            new SmallModelActionParameter { Name = "target_tile_y", Value = "9" },
+            new SmallModelActionParameter { Name = "stand_tile_x", Value = "6" },
+            new SmallModelActionParameter { Name = "stand_tile_y", Value = "9" },
+            new SmallModelActionParameter { Name = "resource_clump_tile_x", Value = "7" },
+            new SmallModelActionParameter { Name = "resource_clump_tile_y", Value = "8" },
+            new SmallModelActionParameter { Name = "resource_clump_width", Value = "3" },
+            new SmallModelActionParameter { Name = "resource_clump_height", Value = "3" },
+            new SmallModelActionParameter { Name = "resource_clump_parent_sheet_index", Value = "190" },
+            new SmallModelActionParameter { Name = "target_runtime_type", Value = "StardewValley.TerrainFeatures.GiantCrop" },
+            new SmallModelActionParameter { Name = "tool_slot_index", Value = "0" },
+            new SmallModelActionParameter { Name = "required_tool_kind", Value = "axe" },
+            new SmallModelActionParameter { Name = "max_tool_swings", Value = "3" }
         };
 
         var queue = new ActionQueueCompiler().Compile(request, snapshot);
@@ -301,8 +323,8 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Empty(item.BlockingReasons);
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("harvest_giant_crop", step.StepType);
-        Assert.Equal("Farm(8,9):axe", step.Target);
-        Assert.Equal("farm.resource_clumps[8,9].is_giant_crop=false_or_blocked", step.ExpectedEffect);
+        Assert.Equal("current_location(7,9):axe", step.Target);
+        Assert.Equal("current_location.resource_clumps[7,9].is_giant_crop=false_or_blocked", step.ExpectedEffect);
     }
 
     [Fact]
@@ -516,7 +538,7 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompilePlanCropMaintenanceStepOnlyTargetsRequestedCropTile()
+    public void CompilePlanWaterCropStepOnlyTargetsRequestedCropTile()
     {
         var snapshot = Snapshot("""
         {
@@ -526,13 +548,22 @@ public sealed partial class ActionQueueCompilerTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
+          "current_location": {
             "crops": {"value":[
               {"tile_x":1,"tile_y":2,"needs_watering":true},
               {"tile_x":5,"tile_y":6,"needs_watering":true}
             ],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -551,11 +582,10 @@ public sealed partial class ActionQueueCompilerTests
                 new SmallModelPlanStep
                 {
                     StepId = "water.5.6",
-                    Kind = "maintain_crops",
+                    Kind = "water_crop",
                     TargetLocation = "Farm",
                     TargetTileX = 5,
-                    TargetTileY = 6,
-                    Parameters = new[] { new SmallModelActionParameter { Name = "max_crops", Value = "1" } }
+                    TargetTileY = 6
                 }
             }
         };
@@ -564,13 +594,12 @@ public sealed partial class ActionQueueCompilerTests
 
         Assert.Equal("pending", queue.Status);
         var item = Assert.Single(queue.Items);
-        Assert.Equal("farm.maintain_crops", item.OptionId);
+        Assert.Equal("executor.water_crop", item.OptionId);
         var step = Assert.Single(item.NormalizedCommand.Steps);
         Assert.Equal("water_crop", step.StepType);
         Assert.Equal("Farm(5,6)", step.Target);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_x" && parameter.Value == "5");
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "target_tile_y" && parameter.Value == "6");
-        Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "max_crops" && parameter.Value == "1");
     }
 
     [Fact]

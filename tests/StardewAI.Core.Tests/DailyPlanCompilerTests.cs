@@ -4,7 +4,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class DailyPlanCompilerTests
+public sealed partial class DailyPlanCompilerTests
 {
     [Fact]
     public void CompileTurnsDeferredShopEndpointIntoOneRollingWaitThenReplan()
@@ -232,7 +232,7 @@ public sealed class DailyPlanCompilerTests
         var plan = new DailyPlanCompiler().Compile(new[] { unsupported, supported }, "state.1", maxCandidates: 1);
 
         var step = Assert.Single(plan.Steps);
-        Assert.Equal("maintain_crops", step.Kind);
+        Assert.Equal("water_crop", step.Kind);
         Assert.Equal(2, plan.CandidateAudit.Length);
         Assert.Equal("skipped", plan.CandidateAudit[0].Decision);
         Assert.Contains("unsupported_candidate_kind_or_missing_required_candidate_fields", plan.CandidateAudit[0].Reasons);
@@ -388,12 +388,12 @@ public sealed class DailyPlanCompilerTests
         var plan = new DailyPlanCompiler().Compile(new[] { candidate }, "state.1");
 
         var step = Assert.Single(plan.Steps);
-        Assert.Equal("maintain_crops", step.Kind);
+        Assert.Equal("water_crop", step.Kind);
         Assert.Equal("Farm", step.TargetLocation);
         Assert.Equal(1, step.TargetTileX);
         Assert.Equal(2, step.TargetTileY);
-        Assert.Contains(step.Parameters, parameter =>
-            parameter.Name == "max_crops" && parameter.Value == "1");
+        Assert.DoesNotContain(step.Parameters, parameter => parameter.Name == "max_crops");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "budget.accepted_candidate_index");
         Assert.Contains(step.ExpectedEffects, effect => effect == "farm.crops[1,2].needs_watering=false");
     }
 
@@ -455,14 +455,14 @@ public sealed class DailyPlanCompilerTests
         Assert.Equal("Farm", step.TargetLocation);
         Assert.Equal(7, step.TargetTileX);
         Assert.Equal(8, step.TargetTileY);
-        Assert.Contains(step.Preconditions, condition => condition == "farm.resource_clumps.is_giant_crop=true");
+        Assert.Contains(step.Preconditions, condition => condition == "current_location.resource_clumps.is_giant_crop=true");
         Assert.Contains(step.ExpectedEffects, effect => effect.Contains("harvest_giant_crop_executor_status=runtime_verified"));
         Assert.Contains(step.SafetyConstraints, constraint => constraint == "target_giant_crop_from_transparent_resource_clumps");
         Assert.Contains(step.SafetyConstraints, constraint => constraint == "runtime_verified_multi_hit_axe_harvest");
         Assert.Contains(step.Parameters, parameter =>
             parameter.Name == "giant_crop_id" && parameter.Value == "276");
         Assert.Contains(step.Parameters, parameter =>
-            parameter.Name == "required_tool" && parameter.Value == "axe");
+            parameter.Name == "required_tool_kind" && parameter.Value == "axe");
     }
 
     [Fact]

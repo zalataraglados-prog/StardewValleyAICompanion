@@ -15,6 +15,7 @@ namespace StardewAI.Core.Training
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
+                ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.collect_machine_outputs"] = new[] { "collect_machine_output_tile" },
                 ["farm.load_supported_machine_input"] = new[] { "load_machine_input_tile" },
                 ["farm.establish_supported_machine_capacity"] = new[] { "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
@@ -120,6 +121,11 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return HarvestGingerSteps(candidate);
+            }
+
+            if (candidate.Kind == "apply_fertilizer_tile")
+            {
+                return ApplyFertilizerTileSteps(candidate);
             }
 
             if (candidate.Kind == "harvest_bush" &&

@@ -19,9 +19,9 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.energy", "time.season", "time.weather", "farm.crops" },
-                new[] { "crop obligations inspected", "crop maintenance action steps produced" },
-                new[] { "block_unavailable_required_state", "block_unverified_movement" }));
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "time.season", "time.weather", "current_location.crops", "current_location.planting_context", "locations.collision_grid", "menus.active_menu" },
+                new[] { "current loaded crop and soil obligations inspected", "one exact native crop-maintenance primitive produced" },
+                new[] { "block_unavailable_required_state", "block_unverified_movement", "block_native_crop_or_soil_rule_drift" }));
 
             Register(Option("farm.process_machines", "farm", "Process machines",
                 OptionBehaviorCategories.Mechanical,
@@ -633,9 +633,25 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.inventory", "player.seed_inventory", "current_location.planting_context", "menus.active_menu" },
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.seed_inventory", "current_location.planting_context", "locations.collision_grid", "menus.active_menu" },
                 new[] { "seed consumed and crop appears on target tile" },
                 new[] { "block_unverified_planting_tile", "block_unverified_seed", "block_menu_unsafe_item_use" }));
+
+            Register(Option("executor.water_crop", "farm", "Water one verified crop with the native watering can lifecycle",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "current_location.crops", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact live crop changes from needing water to watered through native tool input" },
+                new[] { "block_unverified_crop_tile", "block_missing_or_empty_watering_can", "block_unverified_route", "block_menu_unsafe_tool_use" }));
+
+            Register(Option("executor.apply_fertilizer", "farm", "Apply one verified fertilizer item to one verified HoeDirt tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.planting_context", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact fertilizer stack decreases and the target HoeDirt records that fertilizer through native placement" },
+                new[] { "block_unverified_fertilizer_rule", "block_inventory_identity_drift", "block_unverified_route", "block_menu_unsafe_item_use" }));
 
             Register(Option("executor.till_soil", "farm", "Till one eligible farm tile with the native hoe",
                 OptionBehaviorCategories.Mechanical,
@@ -649,7 +665,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.inventory", "farm.crops", "menus.active_menu" },
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.crops", "locations.collision_grid", "menus.active_menu" },
                 new[] { "mature crop harvested from target tile" },
                 new[] { "block_unverified_harvest_tile", "block_menu_unsafe_item_use", "block_inventory_full_or_unverified_yield" }));
 
@@ -657,7 +673,7 @@ namespace StardewAI.Core.OptionRegistry
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.inventory", "farm.resource_clumps", "menus.active_menu" },
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.resource_clumps", "locations.collision_grid", "menus.active_menu" },
                 new[] { "giant crop resource clump removed and output debris created" },
                 new[] { "block_unverified_giant_crop_clump", "block_missing_axe", "block_menu_unsafe_tool_use" }));
 

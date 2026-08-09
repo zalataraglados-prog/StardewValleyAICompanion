@@ -154,6 +154,36 @@ public sealed partial class ModEntry : Mod
         public NativeToolActionLifecycle Lifecycle { get; } = new();
     }
 
+    private sealed class ActiveCropTileAction
+    {
+        public ActiveCropTileAction(
+            PendingExecution pending,
+            string primitiveKind,
+            string locationId,
+            Point target,
+            List<Point> path)
+        {
+            Pending = pending;
+            PrimitiveKind = primitiveKind;
+            LocationId = locationId;
+            Target = target;
+            Path = path;
+            LastPosition = Game1.player.Position;
+            MaxTicks = Math.Max(180, path.Count * 90 + 180);
+        }
+
+        public PendingExecution Pending { get; }
+        public string PrimitiveKind { get; }
+        public string LocationId { get; }
+        public Point Target { get; }
+        public List<Point> Path { get; }
+        public int PathIndex { get; set; }
+        public int ElapsedTicks { get; set; }
+        public int StuckTicks { get; set; }
+        public int MaxTicks { get; }
+        public Vector2 LastPosition { get; set; }
+    }
+
     private sealed class ActiveCatchFish
     {
         public ActiveCatchFish(

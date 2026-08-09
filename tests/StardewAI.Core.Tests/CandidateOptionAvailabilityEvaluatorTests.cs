@@ -52,7 +52,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void EvaluateMarksMaintainCropsAvailableWhenRequiredFieldsExist()
+    public void EvaluateBlocksMaintainCropsWhenNoCurrentCropOrSoilObligationExists()
     {
         var snapshot = Snapshot("""
         {
@@ -62,10 +62,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
-            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          "current_location": {
+            "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -74,12 +84,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 
         var option = Assert.Single(availability.Options);
         Assert.Equal("farm.maintain_crops", option.OptionId);
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
+        Assert.False(option.Available);
+        Assert.Equal("blocked", option.Status);
         Assert.True(option.ExecutorEnabled);
         Assert.False(option.PreviewOnly);
         Assert.Empty(option.MissingStateFactors);
-        Assert.Empty(option.HardBlockReasons);
+        Assert.Contains("full_action_step_compilation_empty", option.BlockingReasons);
     }
 
     [Fact]
@@ -93,10 +103,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[{"slot_index":0,"qualified_item_id":"(T)WateringCan","stack":1}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
-            "crops": {"value":[{"tile_x":1,"tile_y":2,"needs_watering":true},{"tile_x":3,"tile_y":4,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          "current_location": {
+            "crops": {"value":[{"tile_x":1,"tile_y":2,"needs_watering":true},{"tile_x":3,"tile_y":4,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -112,7 +132,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(1, candidate.TileX);
         Assert.Equal(2, candidate.TileY);
-        Assert.Equal("farm.crops[1,2].needs_watering=false", candidate.ExpectedEffect);
+        Assert.Equal("current_location.crops[1,2].needs_watering=false", candidate.ExpectedEffect);
         Assert.Equal(60, candidate.EstimatedTicks);
         Assert.Equal(2, candidate.EnergyCost);
     }
@@ -128,10 +148,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
-            "crops": {"value":[{"tile_x":7,"tile_y":8,"harvest_item_id":"24","harvest_method":"Grab","ready_for_harvest":true,"needs_watering":false},{"tile_x":3,"tile_y":4,"ready_for_harvest":false,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          "current_location": {
+            "crops": {"value":[{"tile_x":7,"tile_y":8,"harvest_item_id":"24","harvest_method":"Grab","ready_for_harvest":true,"needs_watering":false},{"tile_x":3,"tile_y":4,"ready_for_harvest":false,"needs_watering":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -147,7 +177,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(7, candidate.TileX);
         Assert.Equal(8, candidate.TileY);
-        Assert.Contains("farm.crops[7,8].ready_for_harvest=false", candidate.ExpectedEffect);
+        Assert.Contains("current_location.crops[7,8].ready_for_harvest=false", candidate.ExpectedEffect);
         Assert.Contains("harvest_item_id=24", candidate.ExpectedEffect);
         Assert.Contains("harvest_method=Grab", candidate.ExpectedEffect);
         Assert.Contains("harvest_executor_status=runtime_verified", candidate.ExpectedEffect);
@@ -165,11 +195,21 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "tile_x": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
+          "current_location": {
             "crops": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "resource_clumps": {"value":[{"tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,"is_giant_crop":true,"giant_crop_id":"276","required_tool":"axe","executor_status":"blocked_requires_giant_crop_executor"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "resource_clumps": {"value":[{"tile_x":7,"tile_y":8,"width":3,"height":3,"health":3,"parent_sheet_index":190,"runtime_type":"StardewValley.TerrainFeatures.GiantCrop","is_giant_crop":true,"giant_crop_id":"276","required_tool":"axe","executor_status":"runtime_verified","tool_slot_index":0,"expected_tool_hits_to_clear":3}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -185,15 +225,21 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("Farm", candidate.LocationId);
         Assert.Equal(7, candidate.TileX);
         Assert.Equal(8, candidate.TileY);
-        Assert.Contains("farm.resource_clumps[7,8].is_giant_crop=false", candidate.ExpectedEffect);
+        Assert.Contains("current_location.resource_clumps[7,8].is_giant_crop=false", candidate.ExpectedEffect);
         Assert.Contains("giant_crop_id=276", candidate.ExpectedEffect);
         Assert.Contains("required_tool=axe", candidate.ExpectedEffect);
         Assert.Contains("harvest_giant_crop_executor_status=runtime_verified", candidate.ExpectedEffect);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "resource_clump_tile_x" && parameter.Value == "7");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "stand_tile_x" && parameter.Value == "6");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "max_tool_swings" && parameter.Value == "3");
         Assert.Empty(candidate.BlockReasons);
     }
 
     [Fact]
-    public void MaintainCropsEmitsPickupDebrisCandidatesFromTransparentDebrisState()
+    public void MaintainCropsDoesNotAbsorbIndependentDebrisPickupCandidates()
     {
         var snapshot = Snapshot("""
         {
@@ -220,16 +266,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "farm.maintain_crops" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        var candidate = Assert.Single(option.EventCandidates);
-        Assert.Equal("pickup_debris_item", candidate.Kind);
-        Assert.True(candidate.Available);
-        Assert.Equal("Farm", candidate.LocationId);
-        Assert.Equal(65, candidate.TileX);
-        Assert.Equal(15, candidate.TileY);
-        Assert.Equal("(O)388", candidate.QualifiedItemId);
-        Assert.Contains("debris_index=0", candidate.ExpectedEffect);
-        Assert.Contains("pickup_executor_status=runtime_collect", candidate.ExpectedEffect);
-        Assert.Empty(candidate.BlockReasons);
+        Assert.DoesNotContain(option.EventCandidates, candidate => candidate.Kind == "pickup_debris_item");
     }
 
     [Fact]
@@ -625,6 +662,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         {
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "seed_inventory": {"value":[{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":3}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -635,6 +674,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "crop_catalog": {"value":[{"seed_id":"472","harvest_item_id":"24","harvest_item_qualified_id":"(O)24","harvest_unit_sale_price":35,"harvest_min_stack":1,"harvest_max_stack":3,"harvest_max_increase_per_farming_level":0,"extra_harvest_chance":0.25,"harvest_min_quality":0,"harvest_max_quality":4,"harvest_method":"Grab","regrow_days":4}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "shops": {"value":{"shops":[{"shop_id":"SeedShop","stock_preview":{"entries":[{"item_id":"472","qualified_item_id":"(O)472","price":20}]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
@@ -700,6 +740,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         {
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":6,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "seed_inventory": {"value":[{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":3}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -708,6 +750,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -724,7 +769,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void MaintainCropsIncludesFarmMaintenanceClearObstacleCandidatesWhenTransparentLocationStateExists()
+    public void MaintainCropsDoesNotAbsorbIndependentClearObstacleCandidates()
     {
         var snapshot = Snapshot("""
         {
@@ -739,16 +784,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
-          "farm": {
-            "crops": {"value":[{"tile_x":1,"tile_y":2,"needs_watering":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
-          },
           "current_location": {
+            "crops": {"value":[{"tile_x":1,"tile_y":2,"needs_watering":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "planting_context": {"value":{"hoe_dirt_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "terrain_features": {"value":[{"tile_x":11,"tile_y":10,"type":"Grass"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "map": {"value":{"id":"Farm"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
         """);
@@ -757,15 +804,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Evaluate(snapshot, new[] { "farm.maintain_crops" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal(2, option.EventCandidates.Length);
+        Assert.Single(option.EventCandidates);
         Assert.Contains(option.EventCandidates, candidate =>
             candidate.CandidateId == "water:Farm:1,2" &&
             candidate.Kind == "water_crop_tile");
-        var clear = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
-        Assert.True(clear.Available);
-        Assert.Equal("farm-maintenance:clear:Farm:11,10:grass", clear.CandidateId);
-        Assert.StartsWith("farm_maintenance_clear_obstacle=true;move_to_adjacent=10,10;", clear.ExpectedEffect);
+        Assert.DoesNotContain(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
     }
 
     [Fact]

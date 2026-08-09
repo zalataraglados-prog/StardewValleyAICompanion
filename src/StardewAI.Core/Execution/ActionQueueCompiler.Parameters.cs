@@ -26,20 +26,6 @@ namespace StardewAI.Core.Execution
                 : action.Parameters;
         }
 
-        private static SmallModelActionParameter[] BuildCropMaintenanceParameters(SmallModelAction action, SnapshotEnvelope snapshot)
-        {
-            var parameters = new List<SmallModelActionParameter>(action.Parameters)
-            {
-                Parameter("compiler_context.season", ReadStateFieldString(snapshot, "time", "season")),
-                Parameter("compiler_context.weather", ReadStateFieldString(snapshot, "time", "weather")),
-                Parameter("compiler_context.crop_count", CountCrops(snapshot).ToString()),
-                Parameter("compiler_context.watering_candidate_count", CountWateringCandidates(snapshot).ToString()),
-                Parameter("hard_rule.crop_watering_source", "HoeDirt.needsWatering")
-            };
-
-            return parameters.ToArray();
-        }
-
         private static SmallModelActionParameter[] BuildSocialParameters(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             var parameters = new List<SmallModelActionParameter>(action.Parameters)

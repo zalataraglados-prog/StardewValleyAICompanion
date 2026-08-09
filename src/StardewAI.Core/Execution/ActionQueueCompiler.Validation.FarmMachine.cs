@@ -245,10 +245,7 @@ namespace StardewAI.Core.Execution
                 reasons.Add("till_soil_menu_must_be_clear");
             }
 
-            var targetLocation = ReadParameter(action, "target_location");
-            if (!string.IsNullOrWhiteSpace(targetLocation) &&
-                !string.Equals(targetLocation, "Farm", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase))
+            if (!TargetLocationMatchesCurrent(action, snapshot))
             {
                 reasons.Add("till_soil_target_location_mismatch");
             }
@@ -354,9 +351,20 @@ namespace StardewAI.Core.Execution
             var reasons = new List<string>();
             var targetX = ReadIntParameter(action, "target_tile_x");
             var targetY = ReadIntParameter(action, "target_tile_y");
-            if (!targetX.HasValue || !targetY.HasValue)
+            var standX = ReadIntParameter(action, "stand_tile_x");
+            var standY = ReadIntParameter(action, "stand_tile_y");
+            var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+            var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+            var width = ReadIntParameter(action, "resource_clump_width");
+            var height = ReadIntParameter(action, "resource_clump_height");
+            var parentSheetIndex = ReadIntParameter(action, "resource_clump_parent_sheet_index");
+            var toolSlot = ReadIntParameter(action, "tool_slot_index");
+            var maximumHits = ReadIntParameter(action, "max_tool_swings");
+            if (!targetX.HasValue || !targetY.HasValue || !standX.HasValue || !standY.HasValue ||
+                !anchorX.HasValue || !anchorY.HasValue || !width.HasValue || !height.HasValue ||
+                !parentSheetIndex.HasValue || !toolSlot.HasValue || !maximumHits.HasValue)
             {
-                reasons.Add("harvest_giant_crop_target_tile_required");
+                reasons.Add("harvest_giant_crop_typed_target_fields_required");
             }
 
             if (ActionSeesActiveMenuOpen(action, snapshot))
@@ -366,17 +374,41 @@ namespace StardewAI.Core.Execution
 
             var targetLocation = ReadParameter(action, "target_location");
             if (!string.IsNullOrWhiteSpace(targetLocation) &&
-                !string.Equals(targetLocation, "Farm", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase))
             {
                 reasons.Add("harvest_giant_crop_target_location_mismatch");
             }
 
-            if (targetX.HasValue &&
-                targetY.HasValue &&
-                !GiantCropResourceClumpAt(snapshot, targetX.Value, targetY.Value).HasValue)
+            var clump = targetX.HasValue && targetY.HasValue
+                ? GiantCropResourceClumpAt(snapshot, targetX.Value, targetY.Value)
+                : null;
+            if (!clump.HasValue)
             {
                 reasons.Add("harvest_giant_crop_not_verified_by_transparent_resource_clump");
+            }
+            else if (anchorX.HasValue && anchorY.HasValue && width.HasValue && height.HasValue &&
+                parentSheetIndex.HasValue && toolSlot.HasValue && maximumHits.HasValue &&
+                (ReadInt(clump.Value, "tile_x") != anchorX.Value ||
+                 ReadInt(clump.Value, "tile_y") != anchorY.Value ||
+                 ReadInt(clump.Value, "width") != width.Value ||
+                 ReadInt(clump.Value, "height") != height.Value ||
+                 ReadInt(clump.Value, "parent_sheet_index") != parentSheetIndex.Value ||
+                 NullableReadInt(clump.Value, "tool_slot_index") != toolSlot.Value ||
+                 !string.Equals(ReadString(clump.Value, "runtime_type"), ReadParameter(action, "target_runtime_type"), StringComparison.Ordinal) ||
+                 !string.Equals(ReadParameter(action, "required_tool_kind"), "axe", StringComparison.Ordinal) ||
+                 maximumHits.Value < Math.Max(1, NullableReadInt(clump.Value, "expected_tool_hits_to_clear") ?? int.MaxValue)))
+            {
+                reasons.Add("harvest_giant_crop_transparent_target_or_tool_projection_drifted");
+            }
+
+            if (targetX.HasValue && targetY.HasValue && standX.HasValue && standY.HasValue &&
+                anchorX.HasValue && anchorY.HasValue && width.HasValue && height.HasValue &&
+                (width.Value < 1 || height.Value < 1 ||
+                 !TileInsideRectangle(targetX.Value, targetY.Value, anchorX.Value, anchorY.Value, width.Value, height.Value) ||
+                 TileInsideRectangle(standX.Value, standY.Value, anchorX.Value, anchorY.Value, width.Value, height.Value) ||
+                 Math.Abs(standX.Value - targetX.Value) + Math.Abs(standY.Value - targetY.Value) != 1))
+            {
+                reasons.Add("harvest_giant_crop_hit_or_stand_geometry_invalid");
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
@@ -441,6 +473,118 @@ namespace StardewAI.Core.Execution
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateWaterCropPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "executor.water_crop")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                reasons.Add("water_crop_target_tile_required");
+            }
+            if (ActionSeesActiveMenuOpen(action, snapshot))
+            {
+                reasons.Add("water_crop_menu_must_be_clear");
+            }
+            if (!TargetLocationMatchesCurrent(action, snapshot))
+            {
+                reasons.Add("water_crop_target_location_mismatch");
+            }
+            if (targetX.HasValue && targetY.HasValue)
+            {
+                var crop = HarvestCropAt(snapshot, targetX.Value, targetY.Value);
+                if (!crop.HasValue || ReadBool(crop.Value, "needs_watering") != true)
+                {
+                    reasons.Add("water_crop_not_needed_by_transparent_current_location_state");
+                }
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static string[] ValidateApplyFertilizerPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "executor.apply_fertilizer")
+            {
+                return Array.Empty<string>();
+            }
+
+            var reasons = new List<string>();
+            var targetX = ReadIntParameter(action, "target_tile_x");
+            var targetY = ReadIntParameter(action, "target_tile_y");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+            var slotIndex = ReadIntParameter(action, "slot_index");
+            if (!targetX.HasValue || !targetY.HasValue)
+            {
+                reasons.Add("apply_fertilizer_target_tile_required");
+            }
+            if (string.IsNullOrWhiteSpace(qualifiedItemId) || !slotIndex.HasValue)
+            {
+                reasons.Add("apply_fertilizer_inventory_identity_required");
+            }
+            if (ActionSeesActiveMenuOpen(action, snapshot))
+            {
+                reasons.Add("apply_fertilizer_menu_must_be_clear");
+            }
+            if (!TargetLocationMatchesCurrent(action, snapshot))
+            {
+                reasons.Add("apply_fertilizer_target_location_mismatch");
+            }
+            if (targetX.HasValue && targetY.HasValue && !string.IsNullOrWhiteSpace(qualifiedItemId) &&
+                !FertilizerContextAllows(snapshot, targetX.Value, targetY.Value, qualifiedItemId, slotIndex))
+            {
+                reasons.Add("apply_fertilizer_not_allowed_by_transparent_context");
+            }
+
+            return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool TargetLocationMatchesCurrent(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var targetLocation = ReadParameter(action, "target_location");
+            return string.IsNullOrWhiteSpace(targetLocation) ||
+                string.Equals(targetLocation, "current_location", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(targetLocation, ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool FertilizerContextAllows(
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string qualifiedItemId,
+            int? slotIndex)
+        {
+            var context = ReadStateFieldValue(snapshot, "current_location", "planting_context");
+            if (!context.HasValue || context.Value.ValueKind != JsonValueKind.Object ||
+                !context.Value.TryGetProperty("hoe_dirt_tiles", out var tiles) || tiles.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var tile in tiles.EnumerateArray())
+            {
+                if (tile.ValueKind != JsonValueKind.Object || ReadInt(tile, "tile_x") != targetX || ReadInt(tile, "tile_y") != targetY ||
+                    !tile.TryGetProperty("fertilizer_results", out var results) || results.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                return results.EnumerateArray().Any(result =>
+                    result.ValueKind == JsonValueKind.Object &&
+                    string.Equals(ReadString(result, "qualified_item_id"), qualifiedItemId, StringComparison.OrdinalIgnoreCase) &&
+                    (!slotIndex.HasValue || NullableReadInt(result, "slot_index") == slotIndex) &&
+                    ReadInt(result, "stack") > 0 &&
+                    ReadBool(result, "hard_rule_allows_application") == true);
+            }
+
+            return false;
         }
 
         private static bool PickupDebrisIdentityMatches(

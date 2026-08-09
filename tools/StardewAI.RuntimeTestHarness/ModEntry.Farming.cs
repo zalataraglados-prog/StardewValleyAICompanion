@@ -26,112 +26,39 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
-    private void StartMaintainCrops(PendingExecution pending)
-    {
-        var request = pending.Request;
-        var reasons = ValidateExecutionRequest(request);
-        if (reasons.Count > 0)
-        {
-            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
-            return;
-        }
-
-        var farm = Game1.getFarm();
-        var hasTargetTile = request.TargetTileX.HasValue && request.TargetTileY.HasValue;
-        var targetTileX = request.TargetTileX.GetValueOrDefault();
-        var targetTileY = request.TargetTileY.GetValueOrDefault();
-
-        foreach (var pair in farm.terrainFeatures.Pairs.OrderBy(item => item.Key.Y).ThenBy(item => item.Key.X))
-        {
-            if (hasTargetTile &&
-                ((int)pair.Key.X != targetTileX ||
-                 (int)pair.Key.Y != targetTileY))
-            {
-                continue;
-            }
-
-            if (pair.Value is not HoeDirt dirt || dirt.crop is null || !dirt.needsWatering())
-            {
-                continue;
-            }
-
-            StartWaterCrop(pending, new Point((int)pair.Key.X, (int)pair.Key.Y));
-            return;
-        }
-
-        pending.Completion.SetResult(ExecuteMaintainCropsNoOp(request));
-    }
-
-    private TrainingExecutionResult ExecuteMaintainCropsNoOp(TrainingExecutionRequest request)
-    {
-        var started = DateTimeOffset.UtcNow.ToString("O");
-        var energyBefore = Game1.player.Stamina;
-        var farm = Game1.getFarm();
-        var hasTargetTile = request.TargetTileX.HasValue && request.TargetTileY.HasValue;
-        var targetTileX = request.TargetTileX.GetValueOrDefault();
-        var targetTileY = request.TargetTileY.GetValueOrDefault();
-
-        return new TrainingExecutionResult
-        {
-            RunId = request.RunId,
-            QueueId = request.QueueId,
-            QueueItemId = request.QueueItemId,
-            BeforeStateHash = request.BeforeStateHash,
-            OptionId = request.OptionId,
-            Status = "no_op",
-            FeedbackAvailable = true,
-            WateredCount = 0,
-            EnergyBefore = energyBefore,
-            EnergyAfter = Game1.player.Stamina,
-            TargetLocation = farm.NameOrUniqueName,
-            TargetTileX = hasTargetTile ? targetTileX : null,
-            TargetTileY = hasTargetTile ? targetTileY : null,
-            FailureCategory = hasTargetTile ? "invalid_tile" : "skipped_no_candidate",
-            TrainingImpactScope = "executor_calibration",
-            StartedAt = started,
-            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "maintain_crops",
-            PrimitiveVerificationStatus = "not_applicable_no_op",
-            PrimitiveVerificationReasons = new[] { hasTargetTile ? "target_crop_not_found_or_not_needing_watering" : "no_crop_needed_watering" },
-            RequestedEffect = hasTargetTile
-                ? "farm.crops[" + targetTileX + "," + targetTileY + "].needs_watering=false"
-                : "farm.crops.needs_watering=false",
-            ObservedEffect = "watered_count=0"
-        };
-    }
-
     private void StartWaterCrop(PendingExecution pending, Point target)
     {
         var request = pending.Request;
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var farm = Game1.getFarm();
+        var location = Game1.currentLocation;
         var staminaBefore = Game1.player.Stamina;
         var can = FindTool<WateringCan>();
         var waterBefore = can?.WaterLeft;
         var estimatedTicks = EstimateRuntimeToolTicks(target);
         var requested = WaterCropRequestedEffect(target);
 
-        if (Game1.currentLocation != farm)
+        if (!string.IsNullOrWhiteSpace(request.LocationId) &&
+            !string.Equals(request.LocationId, location.NameOrUniqueName, StringComparison.OrdinalIgnoreCase))
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, "wrong_location", requested, WaterCropObservedEffect(farm, target)));
+            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, "wrong_location", requested, WaterCropObservedEffect(location, target)));
             return;
         }
 
-        var precheck = ValidateWaterCropTarget(farm, target, can);
+        var precheck = ValidateWaterCropTarget(location, target, can);
         if (precheck.Length > 0)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, precheck[0], requested, WaterCropObservedEffect(farm, target), precheck));
+            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, precheck[0], requested, WaterCropObservedEffect(location, target), precheck));
             return;
         }
 
-        var path = BuildAdjacentToolPath(farm, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
         if (path is null)
         {
-            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, moveReason, requested, WaterCropObservedEffect(farm, target)));
+            pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, moveReason, requested, WaterCropObservedEffect(location, target)));
             return;
         }
 
-        activeNativeTool = ActiveNativeTool.Water(pending, farm.NameOrUniqueName, target, path, can!, staminaBefore, waterBefore, started, estimatedTicks, requested, IsCropWatered(farm, target));
+        activeNativeTool = ActiveNativeTool.Water(pending, location.NameOrUniqueName, target, path, can!, staminaBefore, waterBefore, started, estimatedTicks, requested, IsCropWatered(location, target));
     }
 
     private void StartTillSoil(PendingExecution pending)
@@ -183,11 +110,11 @@ public sealed partial class ModEntry : Mod
         activeNativeTool = ActiveNativeTool.Till(pending, farm.NameOrUniqueName, target, path, hoe!, staminaBefore, started, estimatedTicks, requested, hadHoeDirt);
     }
 
-    private static string[] ValidateWaterCropTarget(Farm farm, Point target, WateringCan? can)
+    private static string[] ValidateWaterCropTarget(GameLocation location, Point target, WateringCan? can)
     {
         var reasons = new List<string>();
         var tile = new Vector2(target.X, target.Y);
-        if (!IsTileOnMap(farm, target))
+        if (!IsTileOnMap(location, target))
         {
             reasons.Add("invalid_tile");
         }
@@ -203,7 +130,8 @@ public sealed partial class ModEntry : Mod
         {
             reasons.Add("insufficient_stamina");
         }
-        if (!farm.terrainFeatures.TryGetValue(tile, out var feature) || feature is not HoeDirt dirt || dirt.crop is null)
+        var dirt = location.GetHoeDirtAtTile(tile);
+        if (dirt?.crop is null)
         {
             reasons.Add("invalid_tile");
         }
@@ -374,7 +302,7 @@ public sealed partial class ModEntry : Mod
         {
             var recheck = tool.PrimitiveKind switch
             {
-                "water_crop" => ValidateWaterCropTarget(Game1.getFarm(), tool.Target, tool.Tool as WateringCan),
+                "water_crop" => ValidateWaterCropTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "fill_pet_bowl" => ValidatePetBowlTarget(Game1.currentLocation, tool.Target, tool.Tool as WateringCan),
                 "harvest_ginger" => ValidateGingerHarvestTarget(Game1.currentLocation, tool.Target, tool.Tool as Hoe, tool.Pending.Request),
                 _ => ValidateTillSoilTarget(Game1.getFarm(), tool.Target, tool.Tool as Hoe)
@@ -451,12 +379,13 @@ public sealed partial class ModEntry : Mod
         }
 
         var farm = Game1.getFarm();
+        var location = Game1.currentLocation;
         var verified = tool.PrimitiveKind == "water_crop"
-            ? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(farm, tool.Target)
+            ? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(location, tool.Target)
             : !tool.BeforeHadHoeDirt.GetValueOrDefault() && farm.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var feature) && feature is HoeDirt;
         var failureCategory = verified ? string.Empty : "unchanged_postcondition";
         var waterAfter = tool.Tool is WateringCan can ? can.WaterLeft : (int?)null;
-        var afterWatered = tool.PrimitiveKind == "water_crop" ? IsCropWatered(farm, tool.Target) : (bool?)null;
+        var afterWatered = tool.PrimitiveKind == "water_crop" ? IsCropWatered(location, tool.Target) : (bool?)null;
         var afterHoeDirt = tool.PrimitiveKind == "till_soil" ? farm.terrainFeatures.TryGetValue(new Vector2(tool.Target.X, tool.Target.Y), out var afterFeature) && afterFeature is HoeDirt : (bool?)null;
 
         tool.Pending.Completion.SetResult(new TrainingExecutionResult
@@ -471,7 +400,7 @@ public sealed partial class ModEntry : Mod
             WateredCount = tool.PrimitiveKind == "water_crop" && verified ? 1 : 0,
             EnergyBefore = tool.StaminaBefore,
             EnergyAfter = Game1.player.Stamina,
-            TargetLocation = farm.NameOrUniqueName,
+            TargetLocation = tool.LocationId,
             TargetTileX = tool.Target.X,
             TargetTileY = tool.Target.Y,
             ToolQualifiedItemId = tool.Tool.QualifiedItemId,
@@ -543,10 +472,9 @@ public sealed partial class ModEntry : Mod
             return PetBowlObservedEffect(Game1.currentLocation, tool.Target);
         }
 
-        var farm = Game1.getFarm();
         return tool.PrimitiveKind == "water_crop"
-            ? WaterCropObservedEffect(farm, tool.Target)
-            : TillSoilObservedEffect(farm, tool.Target);
+            ? WaterCropObservedEffect(Game1.currentLocation, tool.Target)
+            : TillSoilObservedEffect(Game1.getFarm(), tool.Target);
     }
 
     private static string[] NativeToolVerifiedReasons(ActiveNativeTool tool)
@@ -580,7 +508,7 @@ public sealed partial class ModEntry : Mod
 
         if (tool.PrimitiveKind == "water_crop")
         {
-            changes.Insert(0, new SimulatedFactChange { Path = "farm.crops[" + tool.Target.X + "," + tool.Target.Y + "].watered", Before = tool.BeforeWatered.GetValueOrDefault().ToString().ToLowerInvariant(), After = afterWatered.GetValueOrDefault().ToString().ToLowerInvariant() });
+            changes.Insert(0, new SimulatedFactChange { Path = "current_location.crops[" + tool.Target.X + "," + tool.Target.Y + "].watered", Before = tool.BeforeWatered.GetValueOrDefault().ToString().ToLowerInvariant(), After = afterWatered.GetValueOrDefault().ToString().ToLowerInvariant() });
             changes.Add(new SimulatedFactChange { Path = "player.watering_can.water_left", Before = tool.WaterBefore?.ToString() ?? "missing", After = waterAfter?.ToString() ?? "missing" });
         }
         else
@@ -603,11 +531,9 @@ public sealed partial class ModEntry : Mod
         }
     }
 
-    private static bool IsCropWatered(Farm farm, Point target)
+    private static bool IsCropWatered(GameLocation location, Point target)
     {
-        return farm.terrainFeatures.TryGetValue(new Vector2(target.X, target.Y), out var feature) &&
-            feature is HoeDirt dirt &&
-            dirt.isWatered();
+        return location.GetHoeDirtAtTile(new Vector2(target.X, target.Y))?.isWatered() == true;
     }
 
     private static int EstimateRuntimeToolTicks(Point target)
@@ -617,14 +543,15 @@ public sealed partial class ModEntry : Mod
 
     private static string WaterCropRequestedEffect(Point target)
     {
-        return "farm.crops[" + target.X + "," + target.Y + "].needs_watering=false;native_tool=WateringCan";
+        return "current_location.crops[" + target.X + "," + target.Y + "].needs_watering=false;native_tool=WateringCan";
     }
 
-    private static string WaterCropObservedEffect(Farm farm, Point target)
+    private static string WaterCropObservedEffect(GameLocation location, Point target)
     {
         var tile = new Vector2(target.X, target.Y);
         var water = FindTool<WateringCan>();
-        var cropState = farm.terrainFeatures.TryGetValue(tile, out var feature) && feature is HoeDirt dirt
+        var dirt = location.GetHoeDirtAtTile(tile);
+        var cropState = dirt is not null
             ? "has_hoe_dirt=true;has_crop=" + (dirt.crop is not null).ToString().ToLowerInvariant() + ";watered=" + dirt.isWatered().ToString().ToLowerInvariant() + ";needs_watering=" + dirt.needsWatering().ToString().ToLowerInvariant()
             : "has_hoe_dirt=false";
         return "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";player.tile=" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y + ";target=" + target.X + "," + target.Y + ";" + cropState + ";water_left=" + (water?.WaterLeft.ToString() ?? "missing");

@@ -25,7 +25,7 @@ namespace StardewAI.Core.Tests
             Assert.True(preview.PreviewOnly);
             Assert.Equal("disabled", preview.ExecutionPermission);
             Assert.False(preview.WouldBeExecutable);
-            Assert.Contains("farm.crops", preview.MissingStateFactors);
+            Assert.Contains("current_location.crops", preview.MissingStateFactors);
         }
 
         [Fact]
@@ -34,8 +34,10 @@ namespace StardewAI.Core.Tests
             var snapshot = Snapshot(new[]
             {
                 Fields("time", ("season", "\"spring\""), ("weather", "\"sun\"")),
-                Fields("player", ("location_id", "\"Farm\""), ("energy", "270")),
-                Field("farm", "crops", "[]")
+                Fields("player", ("location_id", "\"Farm\""), ("tile_x", "6"), ("tile_y", "8"), ("energy", "270"), ("inventory", "[]")),
+                Fields("current_location", ("crops", "[]"), ("planting_context", "{\"hoe_dirt_tiles\":[]}")),
+                Field("locations", "collision_grid", "{\"width\":80,\"height\":65,\"notable_tiles\":[]}"),
+                Field("menus", "active_menu", "{\"is_open\":false}")
             });
             var compiler = new PlanningPreviewCompiler();
 
@@ -53,11 +55,9 @@ namespace StardewAI.Core.Tests
         private static SnapshotEnvelope Snapshot(IEnumerable<string> sections)
         {
             var stateJson = "{" + string.Join(",", sections) + @",
-                ""locations"": {},
                 ""npcs"": {},
                 ""quests"": {},
                 ""world_progress"": {},
-                ""menus"": {},
                 ""mods"": {},
                 ""modded_state"": {}
             }";

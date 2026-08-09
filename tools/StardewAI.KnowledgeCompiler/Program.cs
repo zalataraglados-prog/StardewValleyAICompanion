@@ -678,6 +678,8 @@ internal static class Program
                 .Select(row =>
                 {
                     var stepCompilerRegistered = ActionQueueCompiler.HasStepCompiler(row.OptionId);
+                    var dailyPlanCompilerRegistered = DailyPlanCompiler.HasOptionCompiler(row.OptionId);
+                    var compilerRegistered = stepCompilerRegistered || dailyPlanCompilerRegistered;
                     var parameterCompilerRegistered = ActionQueueCompiler.HasParameterCompiler(row.OptionId);
                     var harnessDispatchSupported = row.HarnessDispatchSupported;
                     var productExecutorSupported = row.ProductExecutorSupported;
@@ -687,11 +689,11 @@ internal static class Program
                             ? "runtime_test_harness_only"
                             : row.OptionId == "recovery.stabilize_day"
                             ? "compiler_parameter_execution_option_id"
-                            : row.OptionId == "farm.process_machines"
+                            : dailyPlanCompilerRegistered
                                 ? "daily_candidate_to_runtime_primitive"
                                 : "not_directly_executable_at_this_stage";
                     var downstreamStatus =
-                        row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion && !stepCompilerRegistered
+                        row.CompilerResponsibility == CompilerResponsibilities.FullActionExpansion && !compilerRegistered
                             ? "blocking_missing_step_compiler"
                             : productExecutorSupported
                                 ? "product_executor_declared"
@@ -705,6 +707,7 @@ internal static class Program
                         row.CompilerResponsibility,
                         row.TrainingRole,
                         step_compiler_registered = stepCompilerRegistered,
+                        daily_plan_compiler_registered = dailyPlanCompilerRegistered,
                         parameter_compiler_registered = parameterCompilerRegistered,
                         harness_dispatch_supported = harnessDispatchSupported,
                         product_executor_supported = productExecutorSupported,

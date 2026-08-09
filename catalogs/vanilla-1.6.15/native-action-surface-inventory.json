@@ -6,7 +6,7 @@
   "surface_count": 320,
   "mapped_count": 43,
   "catalogued_blocked_surface_count": 126,
-  "catalogued_blocked_action_count": 68,
+  "catalogued_blocked_action_count": 67,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
     "animals.purchase",
@@ -15,7 +15,6 @@
     "buildings.paint",
     "crafting.cook_recipe",
     "crafting.forge_item",
-    "executor.apply_fertilizer",
     "executor.apply_tree_treatment",
     "executor.place_cookout_kit",
     "executor.place_crab_pot",

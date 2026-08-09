@@ -1,7 +1,7 @@
 {
   "schema_version": "stardewai.action_implementation_reconciliation.v1",
   "authority_policy": "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
-  "registered_option_count": 101,
+  "registered_option_count": 103,
   "primary_engine_count": 10,
   "orphan_compiler_count": 0,
   "orphan_compiler_ids": [],
@@ -17,7 +17,7 @@
     "engine.movement_navigation": 3,
     "engine.recovery_timing": 3,
     "engine.strategy_orchestration": 35,
-    "engine.tool_harvest": 15
+    "engine.tool_harvest": 17
   },
   "options": [
     {
@@ -107,6 +107,28 @@
       "compilerTrainingGate": "RuntimeVerified",
       "runtimeTrainingGate": "RuntimeVerified",
       "outputTrainingGate": "RuntimeVerified"
+    },
+    {
+      "optionId": "executor.apply_fertilizer",
+      "domain": "farm",
+      "primaryEngineId": "engine.tool_harvest",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "not_applicable",
+      "compilerBinding": "step",
+      "runtimeBinding": "runtime_test_harness",
+      "verifierBinding": "pending_runtime_postcondition",
+      "evidenceBinding": "pending",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "NotApplicable",
+      "compilerStatus": "StepCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RegisteredOnly",
+      "readTrainingGate": "DeclaredOnly",
+      "candidateTrainingGate": "Missing",
+      "compilerTrainingGate": "DeclaredOnly",
+      "runtimeTrainingGate": "Missing",
+      "outputTrainingGate": "Missing"
     },
     {
       "optionId": "executor.break_container",
@@ -1539,6 +1561,28 @@
       "outputTrainingGate": "Missing"
     },
     {
+      "optionId": "executor.water_crop",
+      "domain": "farm",
+      "primaryEngineId": "engine.tool_harvest",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "not_applicable",
+      "compilerBinding": "step",
+      "runtimeBinding": "runtime_test_harness",
+      "verifierBinding": "pending_runtime_postcondition",
+      "evidenceBinding": "pending",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "NotApplicable",
+      "compilerStatus": "StepCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RegisteredOnly",
+      "readTrainingGate": "DeclaredOnly",
+      "candidateTrainingGate": "Missing",
+      "compilerTrainingGate": "DeclaredOnly",
+      "runtimeTrainingGate": "Missing",
+      "outputTrainingGate": "Missing"
+    },
+    {
       "optionId": "exploration.visit_location",
       "domain": "exploration",
       "primaryEngineId": "engine.strategy_orchestration",
@@ -1698,21 +1742,21 @@
       "primaryEngineId": "engine.strategy_orchestration",
       "adapterId": "vanilla_native",
       "candidateBinding": "StardewAI.Core.OptionRegistry.CandidateOptionAvailabilityEvaluator",
-      "compilerBinding": "step\u002Bparameter",
-      "runtimeBinding": "runtime_test_harness",
-      "verifierBinding": "pending_runtime_postcondition",
-      "evidenceBinding": "pending",
+      "compilerBinding": "step",
+      "runtimeBinding": "internal_execution_pipeline",
+      "verifierBinding": "runtime_before_after_verifier",
+      "evidenceBinding": "EVD-226",
       "registrationStatus": "Registered",
       "readStatus": "RequiredFactContractDeclared",
       "candidateStatus": "Declared",
-      "compilerStatus": "StepAndParameterCompilerDeclared",
+      "compilerStatus": "StepCompilerDeclared",
       "productExecutorSupported": false,
-      "runtimeStatus": "RegisteredOnly",
-      "readTrainingGate": "DeclaredOnly",
-      "candidateTrainingGate": "DeclaredOnly",
-      "compilerTrainingGate": "DeclaredOnly",
-      "runtimeTrainingGate": "Missing",
-      "outputTrainingGate": "Missing"
+      "runtimeStatus": "RuntimeVerified",
+      "readTrainingGate": "RuntimeVerified",
+      "candidateTrainingGate": "RuntimeVerified",
+      "compilerTrainingGate": "RuntimeVerified",
+      "runtimeTrainingGate": "RuntimeVerified",
+      "outputTrainingGate": "RuntimeVerified"
     },
     {
       "optionId": "farm.process_machines",

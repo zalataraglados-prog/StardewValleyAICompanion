@@ -75,7 +75,7 @@ function Wait-WorldSnapshot {
             if ($null -ne $snapshot.state -and
                 $snapshot.state.PSObject.Properties.Name -contains "farm" -and
                 $snapshot.state.farm.PSObject.Properties.Name -contains "crops") {
-                $farmReadable = $snapshot.state.farm.crops.status -in @("available", "derived")
+                $farmReadable = $snapshot.state.current_location.crops.status -in @("available", "derived")
             }
 
             $lastStatus = "save_id=$($snapshot.save_id.status);in_game_time=$($snapshot.in_game_time.status);farm_crops_readable=$farmReadable;completeness=$($snapshot.completeness)"
@@ -98,12 +98,12 @@ function Find-FirstWateringTarget {
 
     if ($null -eq $Snapshot.state -or
         $null -eq $Snapshot.state.farm -or
-        $null -eq $Snapshot.state.farm.crops -or
-        $null -eq $Snapshot.state.farm.crops.value) {
+        $null -eq $Snapshot.state.current_location.crops -or
+        $null -eq $Snapshot.state.current_location.crops.value) {
         return $null
     }
 
-    foreach ($crop in @($Snapshot.state.farm.crops.value)) {
+    foreach ($crop in @($Snapshot.state.current_location.crops.value)) {
         if ($crop.needs_watering -eq $true -and
             $null -ne $crop.tile_x -and
             $null -ne $crop.tile_y) {
@@ -248,13 +248,15 @@ try {
         queue_id = "runtime-targeted-watering-smoke"
         queue_item_id = "runtime-targeted-watering-smoke.water"
         before_state_hash = $beforeSnapshot.state_hash
-        option_id = "farm.maintain_crops"
+        option_id = "executor.water_crop"
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         max_crops = 1
+        max_movement_tiles = 512
+        location_id = [string]$beforeSnapshot.state.player.location_id.value
         target_tile_x = $target.tile_x
         target_tile_y = $target.tile_y
     }

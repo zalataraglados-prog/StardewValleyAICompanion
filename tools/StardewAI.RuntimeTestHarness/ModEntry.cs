@@ -52,6 +52,7 @@ public sealed partial class ModEntry : Mod
     private ActiveQuarrySetup? activeQuarrySetup;
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeTool? activeNativeTool;
+    private ActiveCropTileAction? activeCropTileAction;
     private ActiveClearObstacle? activeClearObstacle;
     private ActiveMineStone? activeMineStone;
     private ActiveResourceClump? activeResourceClump;
@@ -405,6 +406,7 @@ public sealed partial class ModEntry : Mod
         TickVolcanoSetup();
         TickDeferredCombatRestore();
         TickNativeTool();
+        TickCropTileAction();
         TickClearObstacle();
         TickMineStone();
         TickResourceClump();
@@ -700,6 +702,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_fertilizer_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupFertilizerTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_indoor_pot_fertilizer_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupFertilizerTarget(pending.Request, useIndoorPot: true));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_harvest_crop_target")
             {
                 pending.Completion.SetResult(ExecuteSetupHarvestCropTarget(pending.Request));
@@ -863,7 +877,7 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.plant_seed")
             {
-                pending.Completion.SetResult(ExecutePlantSeed(pending.Request));
+                StartCropTileAction(pending, "plant_seed");
                 return;
             }
 
@@ -873,21 +887,34 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
-            if (pending.Request.OptionId == "farm.maintain_crops")
+            if (pending.Request.OptionId == "executor.water_crop")
             {
-                StartMaintainCrops(pending);
+                if (!pending.Request.TargetTileX.HasValue || !pending.Request.TargetTileY.HasValue)
+                {
+                    pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "water_crop", "current_location.crops[target].needs_watering=false", "target_tile=missing", "target_tile_required"));
+                }
+                else
+                {
+                    StartWaterCrop(pending, new Point(pending.Request.TargetTileX.Value, pending.Request.TargetTileY.Value));
+                }
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.apply_fertilizer")
+            {
+                StartCropTileAction(pending, "apply_fertilizer");
                 return;
             }
 
             if (pending.Request.OptionId == "executor.harvest_crop")
             {
-                pending.Completion.SetResult(ExecuteHarvestCrop(pending.Request));
+                StartCropTileAction(pending, "harvest_crop");
                 return;
             }
 
             if (pending.Request.OptionId == "executor.harvest_giant_crop")
             {
-                pending.Completion.SetResult(ExecuteHarvestGiantCrop(pending.Request));
+                StartHarvestGiantCrop(pending);
                 return;
             }
 
@@ -1318,6 +1345,7 @@ public sealed partial class ModEntry : Mod
             activeQuarrySetup is not null ||
             activeVolcanoSetup is not null ||
             activeNativeTool is not null ||
+            activeCropTileAction is not null ||
             activeClearObstacle is not null ||
             activeMineStone is not null ||
             activeResourceClump is not null ||

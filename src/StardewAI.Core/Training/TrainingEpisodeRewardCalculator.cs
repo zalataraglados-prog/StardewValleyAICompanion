@@ -33,13 +33,13 @@ namespace StardewAI.Core.Training
             SimulatedTransitionResult transition,
             List<EpisodeRewardTerm> terms)
         {
-            if (!queue.Items.Any(item => item.OptionId == "farm.maintain_crops"))
+            if (!queue.Items.Any(item => item.OptionId == "executor.water_crop"))
             {
                 return;
             }
 
             var wateredCrops = transition.ChangedFacts.Count(item =>
-                item.Path.StartsWith("farm.crops[", StringComparison.Ordinal) &&
+                item.Path.StartsWith("current_location.crops[", StringComparison.Ordinal) &&
                 item.Path.EndsWith("].needs_watering", StringComparison.Ordinal) &&
                 item.Before == "true" &&
                 item.After == "false");

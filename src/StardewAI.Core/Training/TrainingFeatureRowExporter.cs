@@ -36,7 +36,7 @@ namespace StardewAI.Core.Training
                 Number("player.health", ReadDouble(worldModel.Facts.Player, "health")),
                 Number("player.level", ReadDouble(worldModel.Facts.Player, "level")),
                 Number("player.total_money_earned", ReadDouble(worldModel.Facts.Player, "total_money_earned")),
-                Number("farm.crops_needing_watering", CountCropsNeedingWater(worldModel)),
+                Number("current_location.crops_needing_watering", CountCropsNeedingWater(worldModel)),
                 Number("completeness.unavailable_count", worldModel.Completeness.UnavailableCount),
                 Number("completeness.required_readable_ratio", ReadableRatio(worldModel))
             };
@@ -168,7 +168,7 @@ namespace StardewAI.Core.Training
 
         private static double CountCropsNeedingWater(WorldModelEnvelope worldModel)
         {
-            if (!worldModel.Facts.Farm.TryGetValue("crops", out var crops) || crops.ValueKind != JsonValueKind.Array)
+            if (!worldModel.Facts.CurrentLocation.TryGetValue("crops", out var crops) || crops.ValueKind != JsonValueKind.Array)
             {
                 return 0;
             }
@@ -215,6 +215,7 @@ namespace StardewAI.Core.Training
             {
                 case "farm.maintain_crops":
                 case "farm.process_machines":
+                case "executor.water_crop":
                 case "executor.catch_fish":
                 case "executor.collect_crab_pot":
                 case "executor.collect_fish_pond_output":

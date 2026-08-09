@@ -18,8 +18,7 @@ namespace StardewAI.Core.OptionRegistry
             return WateringCandidates(snapshot)
                 .Concat(HarvestCropCandidates(snapshot))
                 .Concat(HarvestGiantCropCandidates(snapshot))
-                .Concat(ClearFarmResourceClumpCandidates(snapshot))
-                .Concat(PickupDebrisCandidates(snapshot))
+                .Concat(ApplyFertilizerCandidates(snapshot))
                 .Concat(PlantSeedCandidates(snapshot).Select(candidate => new EventCandidate
                 {
                     CandidateId = "farm-maintenance:" + candidate.CandidateId,
@@ -44,35 +43,94 @@ namespace StardewAI.Core.OptionRegistry
                     ClosesAt = candidate.ClosesAt,
                     WaitCost = candidate.WaitCost,
                     GateReasons = candidate.GateReasons,
-                    BlockReasons = candidate.BlockReasons
-                }))
-                .Concat(ClearObstacleCandidates(snapshot).Select(candidate => new EventCandidate
-                {
-                    CandidateId = "farm-maintenance:" + candidate.CandidateId,
-                    Kind = candidate.Kind,
-                    Available = candidate.Available,
-                    LocationId = candidate.LocationId,
-                    TileX = candidate.TileX,
-                    TileY = candidate.TileY,
-                    ExpectedEffect = "farm_maintenance_clear_obstacle=true;" + candidate.ExpectedEffect,
-                    ItemId = candidate.ItemId,
-                    QualifiedItemId = candidate.QualifiedItemId,
-                    SlotIndex = candidate.SlotIndex,
-                    Quantity = candidate.Quantity,
-                    ShopId = candidate.ShopId,
-                    EstimatedTicks = candidate.EstimatedTicks,
-                    EnergyCost = candidate.EnergyCost,
-                    AvailabilityClass = candidate.AvailabilityClass,
-                    AllowedNow = candidate.AllowedNow,
-                    AllowedToday = candidate.AllowedToday,
-                    NextOpenTime = candidate.NextOpenTime,
-                    EffectiveOpenTime = candidate.EffectiveOpenTime,
-                    ClosesAt = candidate.ClosesAt,
-                    WaitCost = candidate.WaitCost,
-                    GateReasons = candidate.GateReasons,
-                    BlockReasons = candidate.BlockReasons
+                    BlockReasons = candidate.BlockReasons,
+                    Parameters = candidate.Parameters
                 }))
                 .ToArray();
+        }
+
+        private EventCandidate[] ApplyFertilizerCandidates(SnapshotEnvelope snapshot)
+        {
+            var context = ReadStateFieldValue(snapshot, "current_location", "planting_context");
+            if (!context.HasValue ||
+                context.Value.ValueKind != JsonValueKind.Object ||
+                !context.Value.TryGetProperty("hoe_dirt_tiles", out var tiles) ||
+                tiles.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<EventCandidate>();
+            }
+
+            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
+            return tiles.EnumerateArray()
+                .Where(tile => tile.ValueKind == JsonValueKind.Object &&
+                    tile.TryGetProperty("fertilizer_results", out var results) &&
+                    results.ValueKind == JsonValueKind.Array)
+                .SelectMany(tile => tile.GetProperty("fertilizer_results").EnumerateArray()
+                    .Where(result => result.ValueKind == JsonValueKind.Object)
+                    .Select(result => FertilizerCandidate(snapshot, locationId, tile, result)))
+                .OrderBy(candidate => candidate.TileY)
+                .ThenBy(candidate => candidate.TileX)
+                .ThenBy(candidate => candidate.QualifiedItemId, StringComparer.Ordinal)
+                .Take(64)
+                .ToArray();
+        }
+
+        private EventCandidate FertilizerCandidate(
+            SnapshotEnvelope snapshot,
+            string locationId,
+            JsonElement tile,
+            JsonElement result)
+        {
+            var x = ReadInt(tile, "tile_x");
+            var y = ReadInt(tile, "tile_y");
+            var itemId = ReadString(result, "item_id");
+            var qualifiedItemId = ReadString(result, "qualified_item_id");
+            var slotIndex = NullableReadInt(result, "slot_index");
+            var blockReasons = new List<string>();
+            if (ReadBool(result, "hard_rule_allows_application") != true)
+            {
+                blockReasons.Add("fertilizer_not_allowed_by_transparent_context");
+            }
+            if (ReadInt(result, "stack") <= 0)
+            {
+                blockReasons.Add("fertilizer_inventory_item_missing");
+            }
+            blockReasons.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
+            {
+                OptionId = "executor.apply_fertilizer",
+                Parameters = new[]
+                {
+                    Parameter("target_location", locationId),
+                    Parameter("target_tile_x", x.ToString()),
+                    Parameter("target_tile_y", y.ToString()),
+                    Parameter("item_id", itemId),
+                    Parameter("qualified_item_id", qualifiedItemId),
+                    Parameter("slot_index", slotIndex?.ToString() ?? string.Empty)
+                }
+            }));
+
+            return new EventCandidate
+            {
+                CandidateId = "fertilize:" + locationId + ":" + x + "," + y + ":" + qualifiedItemId,
+                Kind = "apply_fertilizer_tile",
+                Available = blockReasons.Count == 0,
+                LocationId = locationId,
+                TileX = x,
+                TileY = y,
+                ItemId = itemId,
+                QualifiedItemId = qualifiedItemId,
+                SlotIndex = slotIndex,
+                Quantity = 1,
+                EstimatedTicks = 60,
+                EnergyCost = 0,
+                AvailabilityClass = "transparent_native_fertilizer_rule",
+                ExpectedEffect = "current_location.planting_context[" + x + "," + y + "].fertilizer_id=" + qualifiedItemId + ";player.inventory[" + slotIndex + "].stack_decreases",
+                BlockReasons = blockReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                Parameters = new[]
+                {
+                    Parameter("fertilizer_apply_status", ReadString(result, "apply_status"))
+                }
+            };
         }
 
         private EventCandidate[] PlantSeedCandidates(SnapshotEnvelope snapshot)
@@ -477,31 +535,43 @@ namespace StardewAI.Core.OptionRegistry
             return 1 + Math.Max(0, regrowHarvestCount ?? 0);
         }
 
-        private static EventCandidate[] WateringCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] WateringCandidates(SnapshotEnvelope snapshot)
         {
-            var crops = ReadStateFieldValue(snapshot, "farm", "crops");
+            var crops = CurrentLocationCropArray(snapshot);
             if (!crops.HasValue || crops.Value.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<EventCandidate>();
             }
 
+            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
             return crops.Value.EnumerateArray()
                 .Where(crop => crop.ValueKind == JsonValueKind.Object && ReadBool(crop, "needs_watering") == true)
                 .Select(crop =>
                 {
                     var x = ReadInt(crop, "tile_x");
                     var y = ReadInt(crop, "tile_y");
+                    var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
+                    {
+                        OptionId = "executor.water_crop",
+                        Parameters = new[]
+                        {
+                            Parameter("target_location", locationId),
+                            Parameter("target_tile_x", x.ToString()),
+                            Parameter("target_tile_y", y.ToString())
+                        }
+                    });
                     return new EventCandidate
                     {
-                        CandidateId = "water:Farm:" + x + "," + y,
+                        CandidateId = "water:" + locationId + ":" + x + "," + y,
                         Kind = "water_crop_tile",
-                        Available = true,
-                        LocationId = "Farm",
+                        Available = blockReasons.Length == 0,
+                        LocationId = locationId,
                         TileX = x,
                         TileY = y,
-                        ExpectedEffect = "farm.crops[" + x + "," + y + "].needs_watering=false",
+                        ExpectedEffect = "current_location.crops[" + x + "," + y + "].needs_watering=false",
                         EstimatedTicks = 60,
-                        EnergyCost = 2
+                        EnergyCost = 2,
+                        BlockReasons = blockReasons
                     };
                 })
                 .ToArray();
@@ -509,12 +579,13 @@ namespace StardewAI.Core.OptionRegistry
 
         private static EventCandidate[] HarvestCropCandidates(SnapshotEnvelope snapshot)
         {
-            var crops = ReadStateFieldValue(snapshot, "farm", "crops");
+            var crops = CurrentLocationCropArray(snapshot);
             if (!crops.HasValue || crops.Value.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<EventCandidate>();
             }
 
+            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
             return crops.Value.EnumerateArray()
                 .Where(crop => crop.ValueKind == JsonValueKind.Object && ReadBool(crop, "ready_for_harvest") == true)
                 .Select(crop =>
@@ -530,7 +601,7 @@ namespace StardewAI.Core.OptionRegistry
                     var skillMaximum = NullableReadInt(crop, "harvest_experience_on_success_max");
                     var skillCondition = ReadString(crop, "harvest_experience_condition");
                     var skillStatus = ReadString(crop, "harvest_experience_projection_status");
-                    var effect = "farm.crops[" + x + "," + y + "].ready_for_harvest=false" +
+                    var effect = "current_location.crops[" + x + "," + y + "].ready_for_harvest=false" +
                         (!string.IsNullOrWhiteSpace(harvestItemId) ? ";harvest_item_id=" + harvestItemId : string.Empty) +
                         (!string.IsNullOrWhiteSpace(harvestQualifiedItemId) ? ";harvest_item_qualified_id=" + harvestQualifiedItemId : string.Empty) +
                         ";harvest_item_category=" + harvestItemCategory +
@@ -543,10 +614,10 @@ namespace StardewAI.Core.OptionRegistry
                         ";harvest_executor_status=runtime_verified";
                     return new EventCandidate
                     {
-                        CandidateId = "harvest:Farm:" + x + "," + y,
+                        CandidateId = "harvest:" + locationId + ":" + x + "," + y,
                         Kind = "harvest_crop_tile",
                         Available = true,
-                        LocationId = "Farm",
+                        LocationId = locationId,
                         TileX = x,
                         TileY = y,
                         ItemId = harvestItemId,
@@ -575,20 +646,28 @@ namespace StardewAI.Core.OptionRegistry
 
         private static EventCandidate[] HarvestGiantCropCandidates(SnapshotEnvelope snapshot)
         {
-            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            var clumps = ReadStateFieldValue(snapshot, "current_location", "resource_clumps");
             if (!clumps.HasValue || clumps.Value.ValueKind != JsonValueKind.Array)
             {
                 return Array.Empty<EventCandidate>();
             }
 
+            var locationId = ReadStateFieldString(snapshot, "player", "location_id");
             return clumps.Value.EnumerateArray()
                 .Where(clump => clump.ValueKind == JsonValueKind.Object && ReadBool(clump, "is_giant_crop") == true)
                 .Select(clump =>
                 {
                     var x = ReadInt(clump, "tile_x");
                     var y = ReadInt(clump, "tile_y");
+                    var width = Math.Max(1, ReadInt(clump, "width"));
+                    var height = Math.Max(1, ReadInt(clump, "height"));
+                    var standSelection = FindBestResourceClumpStandTile(snapshot, x, y, width, height);
+                    var standTile = standSelection?.Stand;
+                    var hitTile = standSelection?.Hit;
                     var id = ReadString(clump, "giant_crop_id");
                     var health = ReadInt(clump, "health");
+                    var hits = Math.Max(1, NullableReadInt(clump, "expected_tool_hits_to_clear") ?? health);
+                    var toolSlot = NullableReadInt(clump, "tool_slot_index");
                     var skillId = ReadString(clump, "harvest_experience_skill_id");
                     var skillMinimum = NullableReadInt(clump, "harvest_experience_on_success_min");
                     var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
@@ -596,7 +675,7 @@ namespace StardewAI.Core.OptionRegistry
                     var skillStatus = ReadString(clump, "harvest_experience_projection_status");
                     var outputProjectionStatus = ReadString(clump, "giant_crop_output_projection_status");
                     var guaranteedOutputsJson = ReadString(clump, "giant_crop_guaranteed_outputs_json");
-                    var effect = "farm.resource_clumps[" + x + "," + y + "].is_giant_crop=false" +
+                    var effect = "current_location.resource_clumps[" + x + "," + y + "].is_giant_crop=false" +
                         (!string.IsNullOrWhiteSpace(id) ? ";giant_crop_id=" + id : string.Empty) +
                         (!string.IsNullOrWhiteSpace(outputProjectionStatus) ? ";giant_crop_output_projection_status=" + outputProjectionStatus : string.Empty) +
                         ";required_tool=axe" +
@@ -607,20 +686,42 @@ namespace StardewAI.Core.OptionRegistry
                         (!string.IsNullOrWhiteSpace(skillCondition) ? ";skill_experience_condition=" + skillCondition : string.Empty) +
                         (!string.IsNullOrWhiteSpace(skillStatus) ? ";skill_experience_projection_status=" + skillStatus : string.Empty) +
                         ";harvest_giant_crop_executor_status=runtime_verified";
+                    var blockReasons = new List<string>();
+                    if (standTile is null || hitTile is null)
+                    {
+                        blockReasons.Add("harvest_giant_crop_no_reachable_perimeter_tile");
+                    }
+                    if (!toolSlot.HasValue)
+                    {
+                        blockReasons.Add("harvest_giant_crop_axe_missing");
+                    }
                     return new EventCandidate
                     {
-                        CandidateId = "harvest-giant-crop:Farm:" + x + "," + y,
+                        CandidateId = "harvest-giant-crop:" + locationId + ":" + x + "," + y,
                         Kind = "harvest_giant_crop_tile",
-                        Available = true,
-                        LocationId = "Farm",
-                        TileX = x,
-                        TileY = y,
+                        Available = blockReasons.Count == 0,
+                        LocationId = locationId,
+                        TileX = hitTile?.X ?? x,
+                        TileY = hitTile?.Y ?? y,
                         ExpectedEffect = effect,
-                        EstimatedTicks = Math.Max(3, health) * 60,
-                        EnergyCost = Math.Max(1, health),
+                        EstimatedTicks = Math.Max(60, hits * 60),
+                        EnergyCost = hits * 2,
                         AvailabilityClass = "transparent_giant_crop_resource_clump_runtime_verified",
+                        BlockReasons = blockReasons.ToArray(),
                         Parameters = new[]
                         {
+                            Parameter("stand_tile_x", standTile?.X.ToString() ?? string.Empty),
+                            Parameter("stand_tile_y", standTile?.Y.ToString() ?? string.Empty),
+                            Parameter("resource_clump_tile_x", x.ToString()),
+                            Parameter("resource_clump_tile_y", y.ToString()),
+                            Parameter("resource_clump_width", width.ToString()),
+                            Parameter("resource_clump_height", height.ToString()),
+                            Parameter("resource_clump_parent_sheet_index", ReadInt(clump, "parent_sheet_index").ToString()),
+                            Parameter("target_runtime_type", ReadString(clump, "runtime_type")),
+                            Parameter("tool_slot_index", toolSlot?.ToString() ?? string.Empty),
+                            Parameter("required_tool_kind", "axe"),
+                            Parameter("max_tool_swings", hits.ToString()),
+                            Parameter("max_movement_tiles", "512"),
                             Parameter("skill_experience_skill_id", skillId),
                             Parameter("skill_experience_on_success_min", skillMinimum?.ToString() ?? string.Empty),
                             Parameter("skill_experience_on_success_max", skillMaximum?.ToString() ?? string.Empty),
@@ -632,6 +733,12 @@ namespace StardewAI.Core.OptionRegistry
                     };
                 })
                 .ToArray();
+        }
+
+        private static JsonElement? CurrentLocationCropArray(SnapshotEnvelope snapshot)
+        {
+            var current = ReadStateFieldValue(snapshot, "current_location", "crops");
+            return current.HasValue && current.Value.ValueKind == JsonValueKind.Array ? current : null;
         }
 
         private EventCandidate[] ClearFarmResourceClumpCandidates(SnapshotEnvelope snapshot)

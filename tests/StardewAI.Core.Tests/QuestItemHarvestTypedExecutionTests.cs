@@ -62,10 +62,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             {
               "player":{
                 "location_id":{"value":"Farm","status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_x":{"value":6,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_y":{"value":8,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory":{"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory_capacity":{"value":{"has_empty_slot":true,"empty_slots":12},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
-              "farm":{
+              "current_location":{
                 "crops":{"value":[{
                   "tile_x":7,"tile_y":8,"ready_for_harvest":true,
                   "harvest_item_id":"24","harvest_item_qualified_id":"(O)24",
@@ -78,6 +80,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                   "harvest_experience_condition":"native_crop_harvest",
                   "harvest_experience_projection_status":"exact"
                 }],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
+              "locations":{
+                "collision_grid":{"value":{"width":80,"height":65,"notable_tiles":[]},"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
               "quests":{
                 "active_quests":{"value":[{

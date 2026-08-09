@@ -59,7 +59,7 @@ public sealed partial class FarmReadAdapter
         }
     }
 
-    private static HarvestExperienceProjection ReadGiantCropExperience(ResourceClump clump, Farmer player)
+    internal static HarvestExperienceProjection ReadGiantCropExperience(ResourceClump clump, Farmer player)
     {
         if (clump is not GiantCrop)
         {

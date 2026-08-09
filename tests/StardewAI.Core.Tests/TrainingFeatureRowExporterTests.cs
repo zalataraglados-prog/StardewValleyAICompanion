@@ -30,7 +30,7 @@ namespace StardewAI.Core.Tests
                 {
                     Game = JsonObject("""{"time":610,"day":1,"year":3,"season":"spring","weather":"sun"}"""),
                     Player = JsonObject("""{"location_id":"Farm","money":500,"energy":270,"health":100,"level":25,"total_money_earned":1000000}"""),
-                    Farm = JsonObject("""{"crops":[{"tile_x":1,"tile_y":2,"needs_watering":true},{"tile_x":3,"tile_y":4,"needs_watering":false}]}""")
+                    CurrentLocation = JsonObject("""{"crops":[{"tile_x":1,"tile_y":2,"needs_watering":true},{"tile_x":3,"tile_y":4,"needs_watering":false}]}""")
                 }
             };
             var episode = new TrainingEpisodeEnvelope
@@ -94,7 +94,7 @@ namespace StardewAI.Core.Tests
 
             Assert.Equal("training_feature_row.v1", row.SchemaVersion);
             Assert.Equal("episode.test", row.EpisodeId);
-            Assert.Contains(row.StateFeatures.Numeric, item => item.Name == "farm.crops_needing_watering" && item.Value == 1);
+            Assert.Contains(row.StateFeatures.Numeric, item => item.Name == "current_location.crops_needing_watering" && item.Value == 1);
             Assert.Contains(row.StateFeatures.Numeric, item => item.Name == "completeness.required_readable_ratio" && item.Value == 0.8);
             Assert.Contains(row.StateFeatures.Categorical, item => item.Name == "game.season" && item.Value == "spring");
             Assert.Contains(row.ActionFeatures.Features.Categorical, item => item.Name == "action.intent_category" && item.Value == "mechanical");

@@ -159,12 +159,13 @@ namespace StardewAI.Core.Execution
             }
 
             var harvestMethod = ReadParameter(action, "harvest_method") ?? "unknown";
+            var location = ReadParameter(action, "target_location") ?? "current_location";
             return new[]
             {
                 Step(
                     "harvest_crop",
-                    "Farm(" + x.Value + "," + y.Value + "):" + harvestMethod,
-                    "farm.crops[" + x.Value + "," + y.Value + "].ready_for_harvest=false_or_blocked",
+                    location + "(" + x.Value + "," + y.Value + "):" + harvestMethod,
+                    "current_location.crops[" + x.Value + "," + y.Value + "].ready_for_harvest=false_or_blocked",
                     60)
             };
         }
@@ -179,12 +180,13 @@ namespace StardewAI.Core.Execution
             }
 
             var maxSwings = Math.Clamp(ReadIntParameter(action, "max_tool_swings") ?? 16, 1, 64);
+            var location = ReadParameter(action, "target_location") ?? "current_location";
             return new[]
             {
                 Step(
                     "harvest_giant_crop",
-                    "Farm(" + x.Value + "," + y.Value + "):axe",
-                    "farm.resource_clumps[" + x.Value + "," + y.Value + "].is_giant_crop=false_or_blocked",
+                    location + "(" + x.Value + "," + y.Value + "):axe",
+                    "current_location.resource_clumps[" + x.Value + "," + y.Value + "].is_giant_crop=false_or_blocked",
                     maxSwings * 60)
             };
         }
@@ -218,6 +220,47 @@ namespace StardewAI.Core.Execution
                     targetLocation + "(" + x.Value + "," + y.Value + "):" + (debrisIndex.HasValue ? "debris_index=" + debrisIndex.Value : qualifiedItemId),
                     "current_location.debris[" + (debrisIndex.HasValue ? debrisIndex.Value.ToString() : x.Value + "," + y.Value) + "].chunk_count_decreases_or_removed=true;player.inventory.updated",
                     30)
+            };
+        }
+
+        private static CompiledActionStep[] CompileWaterCropStep(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            if (!x.HasValue || !y.HasValue)
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            var location = ReadParameter(action, "target_location") ??
+                ReadStateFieldString(snapshot, "player", "location_id");
+            return new[]
+            {
+                Step(
+                    "water_crop",
+                    location + "(" + x.Value + "," + y.Value + ")",
+                    "current_location.crops[" + x.Value + "," + y.Value + "].needs_watering=false;native_tool=WateringCan",
+                    EstimateToolActionTicks(snapshot, x.Value, y.Value))
+            };
+        }
+
+        private static CompiledActionStep[] CompileApplyFertilizerStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(qualifiedItemId))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "apply_fertilizer",
+                    (ReadParameter(action, "target_location") ?? "current_location") + "(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
+                    "current_location.planting_context[" + x.Value + "," + y.Value + "].fertilizer_id=" + qualifiedItemId,
+                    60)
             };
         }
 

@@ -141,6 +141,12 @@ public sealed partial class ModEntry : Mod
             RequestedEffect = requestedEffect;
             StaminaBefore = Game1.player.Stamina;
             ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
+            IsGiantCrop = string.Equals(
+                pending.Request.OptionId,
+                "executor.harvest_giant_crop",
+                StringComparison.Ordinal);
+            DebrisCountBefore = location.debris.Count;
+            LuckExperienceBefore = Game1.player.experiencePoints[Farmer.luckSkill];
             MaxTicks = Math.Max(300, path.Count * 90 + maxSwings * 240);
             LastPosition = Game1.player.Position;
             LastObservedTile = Game1.player.TilePoint;
@@ -174,6 +180,9 @@ public sealed partial class ModEntry : Mod
         public string RequestedEffect { get; }
         public double StaminaBefore { get; }
         public int ForagingExperienceBefore { get; }
+        public bool IsGiantCrop { get; }
+        public int DebrisCountBefore { get; }
+        public int LuckExperienceBefore { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; }
         public int ElapsedTicks { get; set; }

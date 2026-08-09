@@ -19,71 +19,6 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
-        private static CompiledActionStep[] CompileCropMaintenanceSteps(SmallModelAction action, SnapshotEnvelope snapshot)
-        {
-            if (!snapshot.State.TryGetValue("farm", out var farm) ||
-                farm.ValueKind != JsonValueKind.Object ||
-                !farm.TryGetProperty("crops", out var cropsField) ||
-                !cropsField.TryGetProperty("value", out var crops) ||
-                crops.ValueKind != JsonValueKind.Array)
-            {
-                return Array.Empty<CompiledActionStep>();
-            }
-
-            var targetX = ReadIntParameter(action, "target_tile_x");
-            var targetY = ReadIntParameter(action, "target_tile_y");
-            var hasTargetTile = targetX.HasValue && targetY.HasValue;
-            var targetXValue = targetX.GetValueOrDefault();
-            var targetYValue = targetY.GetValueOrDefault();
-            var maxCrops = ReadIntParameter(action, "max_crops");
-            var limit = maxCrops.GetValueOrDefault(int.MaxValue);
-            var steps = new List<CompiledActionStep>();
-            foreach (var crop in crops.EnumerateArray())
-            {
-                if (steps.Count >= limit)
-                {
-                    break;
-                }
-
-                if (crop.ValueKind != JsonValueKind.Object ||
-                    !crop.TryGetProperty("needs_watering", out var needsWatering) ||
-                    needsWatering.ValueKind != JsonValueKind.True)
-                {
-                    continue;
-                }
-
-                var x = ReadInt(crop, "tile_x");
-                var y = ReadInt(crop, "tile_y");
-                if (hasTargetTile && (x != targetXValue || y != targetYValue))
-                {
-                    continue;
-                }
-
-                steps.Add(new CompiledActionStep
-                {
-                    StepId = "step." + Guid.NewGuid().ToString("N"),
-                    StepType = "water_crop",
-                    Target = "Farm(" + x + "," + y + ")",
-                    ExpectedEffect = "farm.crops[" + x + "," + y + "].needs_watering=false;native_tool=WateringCan",
-                    EstimatedTicks = EstimateToolActionTicks(snapshot, x, y)
-                });
-            }
-
-            if (steps.Count == 0)
-            {
-                steps.Add(new CompiledActionStep
-                {
-                    StepId = "step." + Guid.NewGuid().ToString("N"),
-                    StepType = "crop_maintenance_noop",
-                    Target = "Farm",
-                    ExpectedEffect = "no_crop_needs_watering",
-                    EstimatedTicks = 0
-                });
-            }
-
-            return steps.ToArray();
-        }
-
         private static int EstimateToolActionTicks(SnapshotEnvelope snapshot, int targetX, int targetY)
         {
             var playerX = ReadStateFieldIntOptional(snapshot, "player", "tile_x");
@@ -94,42 +29,18 @@ namespace StardewAI.Core.Execution
             return routeTicks + 5 + 60 + 20;
         }
 
-        private static int CountCrops(SnapshotEnvelope snapshot)
-        {
-            return ReadCropArray(snapshot)?.GetArrayLength() ?? 0;
-        }
-
-        private static int CountWateringCandidates(SnapshotEnvelope snapshot)
-        {
-            var crops = ReadCropArray(snapshot);
-            if (!crops.HasValue)
-            {
-                return 0;
-            }
-
-            var count = 0;
-            foreach (var crop in crops.Value.EnumerateArray())
-            {
-                if (crop.ValueKind == JsonValueKind.Object &&
-                    crop.TryGetProperty("needs_watering", out var needsWatering) &&
-                    needsWatering.ValueKind == JsonValueKind.True)
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
         private static JsonElement? ReadCropArray(SnapshotEnvelope snapshot)
         {
-            return snapshot.State.TryGetValue("farm", out var farm) &&
-                farm.ValueKind == JsonValueKind.Object &&
-                farm.TryGetProperty("crops", out var cropsField) &&
-                cropsField.TryGetProperty("value", out var crops) &&
-                crops.ValueKind == JsonValueKind.Array
-                ? crops
-                : null;
+            if (snapshot.State.TryGetValue("current_location", out var currentLocation) &&
+                currentLocation.ValueKind == JsonValueKind.Object &&
+                currentLocation.TryGetProperty("crops", out var currentCropsField) &&
+                currentCropsField.TryGetProperty("value", out var currentCrops) &&
+                currentCrops.ValueKind == JsonValueKind.Array)
+            {
+                return currentCrops;
+            }
+
+            return null;
         }
 
         private static bool PlantingContextAllows(SnapshotEnvelope snapshot, int targetX, int targetY, string seedId)
@@ -267,7 +178,7 @@ namespace StardewAI.Core.Execution
 
         private static JsonElement? GiantCropResourceClumpAt(SnapshotEnvelope snapshot, int targetX, int targetY)
         {
-            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            var clumps = ReadStateFieldValue(snapshot, "current_location", "resource_clumps");
             if (!clumps.HasValue || clumps.Value.ValueKind != JsonValueKind.Array)
             {
                 return null;

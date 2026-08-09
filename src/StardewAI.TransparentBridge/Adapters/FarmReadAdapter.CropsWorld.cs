@@ -81,13 +81,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         }
     }
 
-    private static object[] ReadCrops(Farm farm)
+    internal static object[] ReadCrops(GameLocation location)
     {
-        return farm.terrainFeatures.Pairs
-            .Where(pair => pair.Value is HoeDirt { crop: not null })
-            .Select(pair =>
+        return ReadCropDirtRows(location)
+            .Where(row => row.Dirt.crop is not null)
+            .Select(row =>
             {
-                var dirt = (HoeDirt)pair.Value;
+                var dirt = row.Dirt;
                 var crop = dirt.crop;
                 var cropData = crop.GetData();
                 var experience = ReadCropHarvestExperience(crop);
@@ -95,8 +95,10 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var harvestItem = ReadHarvestItemProjection(crop.indexOfHarvest.Value);
                 return new
                 {
-                    tile_x = (int)pair.Key.X,
-                    tile_y = (int)pair.Key.Y,
+                    location_id = location.NameOrUniqueName,
+                    tile_x = (int)row.Tile.X,
+                    tile_y = (int)row.Tile.Y,
+                    is_garden_pot = row.IsGardenPot,
                     harvest_item_id = crop.indexOfHarvest.Value,
                     harvest_item_qualified_id = QualifyObjectId(crop.indexOfHarvest.Value),
                     harvest_item_category = harvestItem.Category,
@@ -131,6 +133,27 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             .ThenBy(crop => crop.tile_x)
             .ToArray();
     }
+
+    private static IEnumerable<CropDirtRow> ReadCropDirtRows(GameLocation location)
+    {
+        foreach (var pair in location.terrainFeatures.Pairs)
+        {
+            if (pair.Value is HoeDirt dirt)
+            {
+                yield return new CropDirtRow(pair.Key, dirt, false);
+            }
+        }
+
+        foreach (var pair in location.objects.Pairs)
+        {
+            if (pair.Value is IndoorPot { bush.Value: null } pot)
+            {
+                yield return new CropDirtRow(pair.Key, pot.hoeDirt.Value, true);
+            }
+        }
+    }
+
+    private sealed record CropDirtRow(Vector2 Tile, HoeDirt Dirt, bool IsGardenPot);
 
     private sealed record HarvestItemProjection(int? SalePrice, int Category, string[] ContextTags);
 

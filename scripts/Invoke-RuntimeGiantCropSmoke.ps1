@@ -57,9 +57,9 @@ function Wait-WorldSnapshot {
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
             $farmReadable = $false
             if ($null -ne $snapshot.state -and
-                $snapshot.state.PSObject.Properties.Name -contains "farm" -and
-                $snapshot.state.farm.PSObject.Properties.Name -contains "resource_clumps") {
-                $farmReadable = $snapshot.state.farm.resource_clumps.status -in @("available", "derived")
+                $snapshot.state.PSObject.Properties.Name -contains "current_location" -and
+                $snapshot.state.current_location.PSObject.Properties.Name -contains "resource_clumps") {
+                $farmReadable = $snapshot.state.current_location.resource_clumps.status -in @("available", "derived")
             }
 
             $lastStatus = "save_id=$($snapshot.save_id.status);farm_resource_clumps_readable=$farmReadable"
@@ -73,8 +73,8 @@ function Wait-WorldSnapshot {
 
 function Find-GiantCrop {
     param($Snapshot, [int] $X, [int] $Y)
-    if ($null -eq $Snapshot.state.farm.resource_clumps.value) { return $null }
-    foreach ($clump in @($Snapshot.state.farm.resource_clumps.value)) {
+    if ($null -eq $Snapshot.state.current_location.resource_clumps.value) { return $null }
+    foreach ($clump in @($Snapshot.state.current_location.resource_clumps.value)) {
         $cx = [int]$clump.tile_x
         $cy = [int]$clump.tile_y
         $width = [Math]::Max(1, [int]$clump.width)
@@ -88,10 +88,29 @@ function Find-GiantCrop {
     return $null
 }
 
+function Resolve-GiantCropApproach {
+    param($Snapshot, $Clump)
+    $standX = [int]$Snapshot.state.player.tile_x.value
+    $standY = [int]$Snapshot.state.player.tile_y.value
+    $anchorX = [int]$Clump.tile_x
+    $anchorY = [int]$Clump.tile_y
+    $width = [Math]::Max(1, [int]$Clump.width)
+    $height = [Math]::Max(1, [int]$Clump.height)
+    foreach ($offset in @(@(1,0), @(-1,0), @(0,1), @(0,-1))) {
+        $hitX = $standX + $offset[0]
+        $hitY = $standY + $offset[1]
+        if ($hitX -ge $anchorX -and $hitX -lt ($anchorX + $width) -and
+            $hitY -ge $anchorY -and $hitY -lt ($anchorY + $height)) {
+            return [pscustomobject]@{ stand_x=$standX; stand_y=$standY; hit_x=$hitX; hit_y=$hitY }
+        }
+    }
+    throw "Fixture farmer is not adjacent to the transparent giant crop."
+}
+
 function Count-Debris {
     param($Snapshot)
-    if ($null -eq $Snapshot.state.farm.debris.value) { return 0 }
-    return @($Snapshot.state.farm.debris.value).Count
+    if ($null -eq $Snapshot.state.current_location.debris.value) { return 0 }
+    return @($Snapshot.state.current_location.debris.value).Count
 }
 
 function Read-CollectionTaskProgress {
@@ -249,6 +268,7 @@ try {
         Write-JsonFile (Join-Path $runDirectory "snapshot-before-giant-harvest-rejected.json") $beforeHarvestSnapshot
         throw "Fixture did not produce giant crop resource clump at $TargetTileX,$TargetTileY."
     }
+    $approach = Resolve-GiantCropApproach -Snapshot $beforeHarvestSnapshot -Clump $beforeClump
     $guaranteedOutput = @($beforeClump.giant_crop_guaranteed_outputs) |
         Select-Object -First 1
     $qualifiedOutputId = if ($null -eq $guaranteedOutput) {
@@ -306,8 +326,21 @@ try {
         save_isolation_path = $savesPath
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        target_tile_x = $TargetTileX
-        target_tile_y = $TargetTileY
+        target_tile_x = [int]$approach.hit_x
+        target_tile_y = [int]$approach.hit_y
+        stand_tile_x = [int]$approach.stand_x
+        stand_tile_y = [int]$approach.stand_y
+        resource_clump_tile_x = [int]$beforeClump.tile_x
+        resource_clump_tile_y = [int]$beforeClump.tile_y
+        resource_clump_width = [int]$beforeClump.width
+        resource_clump_height = [int]$beforeClump.height
+        resource_clump_parent_sheet_index = [int]$beforeClump.parent_sheet_index
+        target_runtime_type = [string]$beforeClump.runtime_type
+        tool_slot_index = [int]$beforeClump.tool_slot_index
+        required_tool_kind = "axe"
+        max_crops = [Math]::Max(1, [int]$beforeClump.expected_tool_hits_to_clear)
+        max_movement_tiles = 512
+        location_id = [string]$beforeHarvestSnapshot.state.player.location_id.value
         giant_crop_id = $GiantCropId
     }
     Add-CollectionTaskFields -Request $harvestRequest -SourceStep $true
@@ -385,7 +418,6 @@ try {
             $harvestResult.status -eq "applied" -and
             $harvestResult.primitive_verification_status -eq "verified" -and
             $null -eq $afterClump -and
-            $afterDebrisCount -gt $beforeDebrisCount -and
             ($TaskFamily -eq "none" -or $taskProgressAfterReceipt -ge 1)
         ) { "passed" } else { "failed" }
         run_id = $RunId

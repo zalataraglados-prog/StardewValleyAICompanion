@@ -35,10 +35,13 @@ namespace StardewAI.Core.Training
             {
                 foreach (var item in queue.Items.Where(item => item.Status == "pending"))
                 {
-                    if (item.OptionId == "farm.maintain_crops")
+                    if (item.OptionId == "executor.water_crop")
                     {
                         applied.Add(item.OptionId);
-                        SimulateMaintainCrops(before, changes, costs);
+                        if (!SimulateWaterCrop(before, item, changes, costs))
+                        {
+                            blockReasons.Add("transparent_water_crop_target_missing_or_not_needed");
+                        }
                     }
                     else
                     {
@@ -64,48 +67,70 @@ namespace StardewAI.Core.Training
             };
         }
 
-        private static void SimulateMaintainCrops(WorldModelEnvelope before, List<SimulatedFactChange> changes, List<SimulatedResourceCost> costs)
+        private static bool SimulateWaterCrop(
+            WorldModelEnvelope before,
+            ActionQueueItem item,
+            List<SimulatedFactChange> changes,
+            List<SimulatedResourceCost> costs)
         {
-            var watered = 0;
-            if (before.Facts.Farm.TryGetValue("crops", out var crops) && crops.ValueKind == JsonValueKind.Array)
+            var targetX = ReadIntParameter(item, "target_tile_x");
+            var targetY = ReadIntParameter(item, "target_tile_y");
+            if (!targetX.HasValue || !targetY.HasValue ||
+                !before.Facts.CurrentLocation.TryGetValue("crops", out var crops) ||
+                crops.ValueKind != JsonValueKind.Array)
             {
-                foreach (var crop in crops.EnumerateArray())
-                {
-                    if (crop.ValueKind != JsonValueKind.Object)
-                    {
-                        continue;
-                    }
-
-                    var tile = TileLabel(crop);
-                    var needsWatering = crop.TryGetProperty("needs_watering", out var needs) &&
-                        needs.ValueKind == JsonValueKind.True;
-                    if (needsWatering)
-                    {
-                        watered++;
-                        changes.Add(new SimulatedFactChange
-                        {
-                            Path = "farm.crops[" + tile + "].needs_watering",
-                            Before = "true",
-                            After = "false"
-                        });
-                        changes.Add(new SimulatedFactChange
-                        {
-                            Path = "farm.crops[" + tile + "].watered",
-                            Before = crop.TryGetProperty("watered", out var wateredValue) ? wateredValue.GetRawText() : "unknown",
-                            After = "true"
-                        });
-                    }
-                }
+                return false;
             }
 
-            if (watered > 0)
+            foreach (var crop in crops.EnumerateArray())
             {
+                if (crop.ValueKind != JsonValueKind.Object ||
+                    ReadInt(crop, "tile_x") != targetX ||
+                    ReadInt(crop, "tile_y") != targetY)
+                {
+                    continue;
+                }
+
+                if (!crop.TryGetProperty("needs_watering", out var needs) || needs.ValueKind != JsonValueKind.True)
+                    return false;
+
+                var tile = TileLabel(crop);
+                changes.Add(new SimulatedFactChange
+                {
+                    Path = "current_location.crops[" + tile + "].needs_watering",
+                    Before = "true",
+                    After = "false"
+                });
+                changes.Add(new SimulatedFactChange
+                {
+                    Path = "current_location.crops[" + tile + "].watered",
+                    Before = crop.TryGetProperty("watered", out var wateredValue) ? wateredValue.GetRawText() : "unknown",
+                    After = "true"
+                });
                 costs.Add(new SimulatedResourceCost
                 {
                     Resource = "player.energy",
-                    Amount = watered * EnergyPerWateredCrop
+                    Amount = EnergyPerWateredCrop
                 });
+                return true;
             }
+
+            return false;
+        }
+
+        private static int? ReadIntParameter(ActionQueueItem item, string name)
+        {
+            var value = item.NormalizedCommand.Parameters
+                .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
+                ?.Value;
+            return int.TryParse(value, out var parsed) ? parsed : null;
+        }
+
+        private static int? ReadInt(JsonElement value, string propertyName)
+        {
+            return value.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var parsed)
+                ? parsed
+                : null;
         }
 
         private static string TileLabel(JsonElement crop)

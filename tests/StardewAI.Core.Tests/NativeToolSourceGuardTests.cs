@@ -23,12 +23,12 @@ public sealed class NativeToolSourceGuardTests
         var executionSource = Slice(source, "private void StartWaterCrop", "private static TrainingExecutionResult NativeToolBlocked");
         Assert.DoesNotContain("Game1.player.Position =", executionSource, StringComparison.Ordinal);
         Assert.DoesNotContain("currentLocation = farm", executionSource, StringComparison.Ordinal);
-        Assert.Contains("if (Game1.currentLocation != farm)", executionSource, StringComparison.Ordinal);
-        Assert.Contains("BuildAdjacentToolPath(farm, target", executionSource, StringComparison.Ordinal);
-        Assert.Contains("ValidateWaterCropTarget(Game1.getFarm(), tool.Target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("request.LocationId, location.NameOrUniqueName", executionSource, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(location, target", executionSource, StringComparison.Ordinal);
+        Assert.Contains("ValidateWaterCropTarget(Game1.currentLocation, tool.Target", executionSource, StringComparison.Ordinal);
         Assert.Contains("ValidateTillSoilTarget(Game1.getFarm(), tool.Target", executionSource, StringComparison.Ordinal);
         Assert.Contains("CompleteNativeTool(tool);", executionSource, StringComparison.Ordinal);
-        Assert.Contains("? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(farm, tool.Target)", executionSource, StringComparison.Ordinal);
+        Assert.Contains("? !tool.BeforeWatered.GetValueOrDefault() && IsCropWatered(location, tool.Target)", executionSource, StringComparison.Ordinal);
         Assert.Contains(": !tool.BeforeHadHoeDirt.GetValueOrDefault() && farm.terrainFeatures.TryGetValue", executionSource, StringComparison.Ordinal);
         Assert.Contains("Status = verified ? \"applied\" : \"blocked\"", executionSource, StringComparison.Ordinal);
 
@@ -45,6 +45,33 @@ public sealed class NativeToolSourceGuardTests
         Assert.Contains("player.location_id=Farm", tillFixtureSource, StringComparison.Ordinal);
         Assert.DoesNotContain("Path = \"player.location\"", tillFixtureSource, StringComparison.Ordinal);
         Assert.DoesNotContain("player.location=Farm", tillFixtureSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GiantCropHarvestReusesNativePerFrameResourceClumpLifecycle()
+    {
+        var dispatch = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var fixtureSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.FarmFixtures.cs"));
+        var miningSource = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MiningResources.cs"));
+        var giantCropExecution = Slice(
+            fixtureSource,
+            "private void StartHarvestGiantCrop",
+            "private static GiantCrop? GiantCropAt");
+
+        Assert.Contains("StartHarvestGiantCrop(pending);", dispatch, StringComparison.Ordinal);
+        Assert.DoesNotContain("ExecuteHarvestGiantCrop", dispatch, StringComparison.Ordinal);
+        Assert.Contains("activeResourceClump = new ActiveResourceClump", giantCropExecution, StringComparison.Ordinal);
+        Assert.Contains("request.ResourceClumpTileX", giantCropExecution, StringComparison.Ordinal);
+        Assert.Contains("request.StandTileX", giantCropExecution, StringComparison.Ordinal);
+        Assert.Contains("request.ToolSlotIndex", giantCropExecution, StringComparison.Ordinal);
+        Assert.DoesNotContain("performToolAction", giantCropExecution, StringComparison.Ordinal);
+        Assert.DoesNotContain("resourceClumps.Remove", giantCropExecution, StringComparison.Ordinal);
+        Assert.DoesNotContain("while (GiantCropAt", giantCropExecution, StringComparison.Ordinal);
+        Assert.Contains("if (active.IsGiantCrop)", miningSource, StringComparison.Ordinal);
+        Assert.Contains("CompleteGiantCrop(active, nativeToolTrace);", miningSource, StringComparison.Ordinal);
     }
 
     private static string Slice(string source, string startMarker, string endMarker)

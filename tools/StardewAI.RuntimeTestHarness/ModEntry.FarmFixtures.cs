@@ -25,6 +25,103 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
+    private TrainingExecutionResult ExecuteSetupFertilizerTarget(TrainingExecutionRequest request, bool useIndoorPot = false)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+        if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_fertilizer_target", "current_location.planting_context[target].fertilizer_result.hard_rule_allows_application=true", "target_tile=missing", "target_tile_required");
+        }
+
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var farm = Game1.getFarm();
+        Game1.currentLocation = farm;
+        Game1.player.currentLocation = farm;
+        var tile = new Vector2(request.TargetTileX.Value, request.TargetTileY.Value);
+        farm.objects.Remove(tile);
+        farm.terrainFeatures.Remove(tile);
+        HoeDirt dirt;
+        if (useIndoorPot)
+        {
+            var pot = new IndoorPot(tile) { Location = farm };
+            farm.objects[tile] = pot;
+            dirt = pot.hoeDirt.Value;
+        }
+        else
+        {
+            dirt = new HoeDirt(0, farm);
+            farm.terrainFeatures[tile] = dirt;
+        }
+
+        StardewValley.Object? fertilizer = null;
+        foreach (var itemId in Game1.objectData.Keys.OrderBy(value => value, StringComparer.Ordinal))
+        {
+            try
+            {
+                if (ItemRegistry.Create(ItemRegistry.QualifyItemId(itemId), 2) is StardewValley.Object candidate &&
+                    candidate.Category == StardewValley.Object.fertilizerCategory &&
+                    dirt.CanApplyFertilizer(candidate.QualifiedItemId))
+                {
+                    fertilizer = candidate;
+                    break;
+                }
+            }
+            catch
+            {
+                // A malformed custom item must not invalidate the base-game fixture scan.
+            }
+        }
+        if (fertilizer is null || !Game1.player.addItemToInventoryBool(fertilizer))
+        {
+            return BlockedWithPrimitive(request, "debug_setup_fertilizer_target", "current_location.planting_context[target].fertilizer_result.hard_rule_allows_application=true", "fertilizer=missing", "fixture_no_runtime_legal_fertilizer_or_inventory_capacity");
+        }
+
+        var slotIndex = FindFertilizerInventoryIndex(fertilizer.QualifiedItemId);
+        MoveFixtureFarmerToFarmAdjacent(new Point(request.TargetTileX.Value, request.TargetTileY.Value));
+        var verified = slotIndex >= 0 && dirt.CanApplyFertilizer(fertilizer.QualifiedItemId) &&
+            (useIndoorPot
+                ? farm.objects.TryGetValue(tile, out var targetObject) && targetObject is IndoorPot
+                : farm.terrainFeatures.TryGetValue(tile, out var terrainFeature) && ReferenceEquals(terrainFeature, dirt));
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = started,
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_fertilizer_target",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "runtime_Data_Objects_fertilizer_selected", "native_HoeDirt_rule_allows_application" }
+                : new[] { "fixture_fertilizer_target_not_verified" },
+            RequestedEffect = "current_location.planting_context[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].fertilizer_result.hard_rule_allows_application=true",
+            ObservedEffect = "qualified_item_id=" + fertilizer.QualifiedItemId + ";slot_index=" + slotIndex + ";rule=" + dirt.CheckApplyFertilizerRules(fertilizer.QualifiedItemId) + ";is_garden_pot=" + useIndoorPot.ToString().ToLowerInvariant(),
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "fixture_fertilizer_target_not_verified" }
+        };
+    }
+
+    private static int FindFertilizerInventoryIndex(string qualifiedItemId)
+    {
+        for (var index = 0; index < Game1.player.Items.Count; index++)
+        {
+            if (Game1.player.Items[index] is StardewValley.Object item &&
+                item.Category == StardewValley.Object.fertilizerCategory &&
+                string.Equals(item.QualifiedItemId, qualifiedItemId, StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     private TrainingExecutionResult ExecuteSetupPlantSeedTarget(TrainingExecutionRequest request)
     {
         var reasons = ValidateExecutionRequest(request);
@@ -113,7 +210,8 @@ public sealed partial class ModEntry : Mod
         var location = Game1.currentLocation;
         var seedId = PlantSeedId(request);
         var tile = new Vector2(request.TargetTileX.Value, request.TargetTileY.Value);
-        if (!location.terrainFeatures.TryGetValue(tile, out var feature) || feature is not HoeDirt dirt)
+        var dirt = location.GetHoeDirtAtTile(tile);
+        if (dirt is null)
         {
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_target_not_hoe_dirt");
         }
@@ -123,12 +221,15 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_target_already_has_crop");
         }
 
-        if (!Game1.cropData.TryGetValue(seedId, out var cropData) || !cropData.Seasons.Contains(location.GetSeason()))
+        var isGardenPot = location.objects.TryGetValue(tile, out var tileObject) && tileObject is IndoorPot;
+        if (!Game1.cropData.TryGetValue(seedId, out var cropData) ||
+            (!location.SeedsIgnoreSeasonsHere() && !(isGardenPot && !location.IsOutdoors) && !cropData.Seasons.Contains(location.GetSeason())))
         {
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_crop_catalog_or_season_blocked");
         }
 
-        if (!location.CanPlantSeedsHere(seedId, request.TargetTileX.Value, request.TargetTileY.Value, false, out _))
+        if (!(isGardenPot && !location.IsOutdoors) &&
+            !location.CanPlantSeedsHere(seedId, request.TargetTileX.Value, request.TargetTileY.Value, isGardenPot, out _))
         {
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_location_rule_blocked");
         }
@@ -331,7 +432,7 @@ public sealed partial class ModEntry : Mod
     {
         var location = Game1.currentLocation;
         var tile = new Vector2(x, y);
-        var hasCrop = location.terrainFeatures.TryGetValue(tile, out var feature) && feature is HoeDirt { crop: not null };
+        var hasCrop = location.GetHoeDirtAtTile(tile)?.crop is not null;
         var seedIndex = FindSeedInventoryIndex(seedId, location);
         var stack = seedIndex >= 0 ? Game1.player.Items[seedIndex]?.Stack ?? 0 : 0;
         return "has_crop=" + hasCrop.ToString().ToLowerInvariant() + ";seed_id=" + seedId + ";seed_stack=" + stack;
@@ -354,7 +455,8 @@ public sealed partial class ModEntry : Mod
         var location = Game1.currentLocation;
         var tile = new Vector2(request.TargetTileX.Value, request.TargetTileY.Value);
         var requested = HarvestCropRequestedEffect(request);
-        if (!location.terrainFeatures.TryGetValue(tile, out var feature) || feature is not HoeDirt dirt || dirt.crop is null)
+        var dirt = location.GetHoeDirtAtTile(tile);
+        if (dirt?.crop is null)
         {
             return BlockedWithPrimitive(request, "harvest_crop", requested, HarvestCropObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value), "harvest_crop_target_not_crop");
         }
@@ -419,13 +521,13 @@ public sealed partial class ModEntry : Mod
         {
             new()
             {
-                Path = "farm.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].ready_for_harvest",
+                Path = "current_location.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].ready_for_harvest",
                 Before = beforeReady.ToString().ToLowerInvariant(),
                 After = afterReady.ToString().ToLowerInvariant()
             },
             new()
             {
-                Path = "farm.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].has_crop",
+                Path = "current_location.crops[" + request.TargetTileX.Value + "," + request.TargetTileY.Value + "].has_crop",
                 Before = beforeHadCrop.ToString().ToLowerInvariant(),
                 After = afterHadCrop.ToString().ToLowerInvariant()
             }
@@ -629,7 +731,8 @@ public sealed partial class ModEntry : Mod
     private static string HarvestCropObservedEffect(int x, int y)
     {
         var tile = new Vector2(x, y);
-        if (!Game1.currentLocation.terrainFeatures.TryGetValue(tile, out var feature) || feature is not HoeDirt dirt || dirt.crop is null)
+        var dirt = Game1.currentLocation.GetHoeDirtAtTile(tile);
+        if (dirt?.crop is null)
         {
             return "has_crop=false;ready_for_harvest=false";
         }
@@ -637,122 +740,128 @@ public sealed partial class ModEntry : Mod
         return "has_crop=true;ready_for_harvest=" + dirt.readyForHarvest().ToString().ToLowerInvariant() + ";harvest_method=" + dirt.crop.GetHarvestMethod();
     }
 
-    private TrainingExecutionResult ExecuteHarvestGiantCrop(TrainingExecutionRequest request)
+    private void StartHarvestGiantCrop(PendingExecution pending)
     {
+        var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
         {
-            return Blocked(request, reasons.ToArray());
+            pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
+            return;
         }
-
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
         {
-            return BlockedWithPrimitive(request, "harvest_giant_crop", "farm.resource_clumps[target].is_giant_crop=false", "target_tile=missing", "target_tile_required");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", "current_location.resource_clumps[target].is_giant_crop=false", "target_tile=missing", "target_tile_required"));
+            return;
         }
 
-        var started = DateTimeOffset.UtcNow.ToString("O");
         var location = Game1.currentLocation;
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var requested = GiantCropRequestedEffect(request);
         var before = GiantCropObservedEffect(location, target);
+        if (!string.IsNullOrWhiteSpace(request.LocationId) &&
+            !string.Equals(request.LocationId, location.NameOrUniqueName, StringComparison.OrdinalIgnoreCase))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_target_location_mismatch"));
+            return;
+        }
+
         var clump = GiantCropAt(location, target);
         if (clump is null)
         {
-            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_target_not_giant_crop");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_target_not_giant_crop"));
+            return;
+        }
+        var anchor = new Point((int)clump.Tile.X, (int)clump.Tile.Y);
+        if (!request.ResourceClumpTileX.HasValue || !request.ResourceClumpTileY.HasValue ||
+            !request.ResourceClumpWidth.HasValue || !request.ResourceClumpHeight.HasValue ||
+            !request.ResourceClumpParentSheetIndex.HasValue ||
+            !request.StandTileX.HasValue || !request.StandTileY.HasValue ||
+            !request.ToolSlotIndex.HasValue ||
+            !string.Equals(request.RequiredToolKind, "axe", StringComparison.Ordinal) ||
+            !string.Equals(request.TargetRuntimeType, clump.GetType().FullName, StringComparison.Ordinal) ||
+            request.ResourceClumpTileX.Value != anchor.X ||
+            request.ResourceClumpTileY.Value != anchor.Y ||
+            request.ResourceClumpWidth.Value != clump.width.Value ||
+            request.ResourceClumpHeight.Value != clump.height.Value ||
+            request.ResourceClumpParentSheetIndex.Value != clump.parentSheetIndex.Value)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_typed_target_or_tool_projection_drifted"));
+            return;
         }
         var guaranteedOutputIds = GuaranteedGiantCropOutputIds(clump);
         var resourceQuestReason = ValidateQuestResourceSourceTarget(request, guaranteedOutputIds);
         if (!string.IsNullOrWhiteSpace(resourceQuestReason))
         {
-            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, resourceQuestReason);
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, resourceQuestReason));
+            return;
         }
-        if (!ValidateSpecialOrderCollectSourceTarget(
-                request,
-                guaranteedOutputIds,
-                out var specialOrderReason))
+        if (!ValidateSpecialOrderCollectSourceTarget(request, guaranteedOutputIds, out var specialOrderReason))
         {
-            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, specialOrderReason);
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, specialOrderReason));
+            return;
         }
 
-        var axe = FindTool<Axe>();
+        var toolSlot = request.ToolSlotIndex.Value;
+        var axe = toolSlot >= 0 && toolSlot < Game1.player.Items.Count
+            ? Game1.player.Items[toolSlot] as Axe
+            : null;
         if (axe is null)
         {
-            return BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_axe_missing");
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_tool_slot_drifted"));
+            return;
         }
 
-        var beforeDebrisCount = location.debris.Count;
-        var beforeHealth = clump.health.Value;
-        var beforeLuckExperience = Game1.player.experiencePoints[Farmer.luckSkill];
-        var swings = 0;
-        const int maxSwings = 64;
-        axe.lastUser = Game1.player;
-        while (GiantCropAt(location, target) is GiantCrop current && swings < maxSwings)
+        var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
+        if (!ResourceClumpContainsTile(clump, target) ||
+            ResourceClumpContainsTile(clump, stand) ||
+            !AreAdjacent(stand, target) ||
+            !IsTileOnMap(location, stand) ||
+            !IsTileWalkable(location, stand) ||
+            IsTileOccupiedByCharacter(location, stand))
         {
-            swings++;
-            if (current.performToolAction(axe, 0, current.Tile))
-            {
-                location.resourceClumps.Remove(current);
-            }
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_hit_or_stand_geometry_drifted"));
+            return;
+        }
+        var maximumMovement = Math.Clamp(request.MaxMovementTiles ?? 512, 1, 512);
+        var path = TryBuildTilePath(
+            location,
+            Game1.player.TilePoint,
+            stand,
+            maximumMovement,
+            out var pathReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
+        if (path is null)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(request, "harvest_giant_crop", requested, before, "harvest_giant_crop_path_unavailable:" + pathReason));
+            return;
         }
 
-        var after = GiantCropObservedEffect(location, target);
-        var afterDebrisCount = location.debris.Count;
-        var removed = GiantCropAt(location, target) is null;
-        var debrisCreated = afterDebrisCount > beforeDebrisCount;
-        var verified = removed && debrisCreated;
-
-        var result = new TrainingExecutionResult
-        {
-            RunId = request.RunId,
-            QueueId = request.QueueId,
-            QueueItemId = request.QueueItemId,
-            BeforeStateHash = request.BeforeStateHash,
-            OptionId = request.OptionId,
-            Status = verified ? "applied" : "blocked",
-            FeedbackAvailable = true,
-            StartedAt = started,
-            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "harvest_giant_crop",
-            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
-            PrimitiveVerificationReasons = verified
-                ? new[] { "target_giant_crop_removed", "target_giant_crop_debris_created", "tool=Axe", "swings=" + swings }
-                : new[] { removed ? "target_giant_crop_removed" : "target_giant_crop_still_present", debrisCreated ? "target_giant_crop_debris_created" : "target_giant_crop_debris_not_created", "tool=Axe", "swings=" + swings },
-            RequestedEffect = requested,
-            ObservedEffect = after,
-            BlockReasons = verified ? Array.Empty<string>() : new[] { removed ? "harvest_giant_crop_debris_not_created" : "harvest_giant_crop_still_present" },
-            ChangedFacts = verified
-                ? new[]
-                {
-                    new SimulatedFactChange
-                    {
-                        Path = "farm.resource_clumps[" + target.X + "," + target.Y + "].is_giant_crop",
-                        Before = "true",
-                        After = "false"
-                    },
-                    new SimulatedFactChange
-                    {
-                        Path = "farm.resource_clumps[" + target.X + "," + target.Y + "].health",
-                        Before = beforeHealth.ToString(),
-                        After = "0"
-                    },
-                    new SimulatedFactChange
-                    {
-                        Path = "farm.debris.count",
-                        Before = beforeDebrisCount.ToString(),
-                        After = afterDebrisCount.ToString()
-                    },
-                    new SimulatedFactChange
-                    {
-                        Path = "player.skills.luck.experience",
-                        Before = beforeLuckExperience.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        After = Game1.player.experiencePoints[Farmer.luckSkill].ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    }
-                }
-                : Array.Empty<SimulatedFactChange>()
-        };
-        ApplyQuestResourceSourceFeedback(result, request);
-        ApplySpecialOrderCollectSourceFeedback(result, request);
-        return result;
+        ResourceClumpToolTracePatch.Begin(clump);
+        activeResourceClump = new ActiveResourceClump(
+            pending,
+            location,
+            clump,
+            anchor,
+            target,
+            stand,
+            path,
+            axe,
+            "axe",
+            0,
+            clump.health.Value,
+            Math.Clamp(request.MaxCrops, 1, 64),
+            maximumMovement,
+            request.RestoreSlotIndex ?? Game1.player.CurrentToolIndex,
+            "current_location.resource_clumps",
+            false,
+            Array.Empty<ClearanceOutputItemExpectation>(),
+            Array.Empty<int>(),
+            null,
+            string.Empty,
+            0,
+            requested);
     }
 
     private static GiantCrop? GiantCropAt(GameLocation location, Point target)
@@ -777,7 +886,7 @@ public sealed partial class ModEntry : Mod
 
     private static string GiantCropRequestedEffect(TrainingExecutionRequest request)
     {
-        return "farm.resource_clumps[" + request.TargetTileX + "," + request.TargetTileY + "].is_giant_crop=false";
+        return "current_location.resource_clumps[" + request.TargetTileX + "," + request.TargetTileY + "].is_giant_crop=false";
     }
 
     private static string GiantCropObservedEffect(GameLocation location, Point target)

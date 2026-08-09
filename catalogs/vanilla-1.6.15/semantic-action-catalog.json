@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "e64842cb531e3e365cb749da8b8fbd6a24af064e87c149d42fbb46c739ce74a3",
-  "action_count": 169,
-  "registered_option_spec_count": 101,
-  "catalogued_blocked_count": 68,
+  "denominator_fingerprint_sha256": "5512e066d25a44c1015dfb775e943f94fec4b4cbcf91fb10669550584fb572f2",
+  "action_count": 170,
+  "registered_option_spec_count": 103,
+  "catalogued_blocked_count": 67,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -124,14 +124,12 @@
     },
     {
       "action_id": "executor.apply_fertilizer",
-      "domain": "farming",
-      "semantic_kind": "primitive",
+      "domain": "farm",
+      "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.tool_harvest",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "Object"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "executor.apply_tree_treatment",
@@ -923,6 +921,15 @@
       "domain": "timing",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.recovery_timing",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.water_crop",
+      "domain": "farm",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.tool_harvest",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []

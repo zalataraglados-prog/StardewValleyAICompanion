@@ -204,7 +204,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
             "executor.clear_obstacle", "executor.break_farm_resource_clump",
-            "executor.break_current_location_resource_clump", "executor.till_soil",
+            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
@@ -233,15 +233,15 @@ namespace StardewAI.Contracts.Capabilities
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "executor.buy_shop_item",
-            "social.talk_npc", "social.gift_npc", "farm.maintain_crops",
+            "social.talk_npc", "social.gift_npc",
             "inventory.transfer_item", "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
-            "farm.maintain_crops", "executor.move_to_tile", "executor.traverse_connector",
+            "executor.move_to_tile", "executor.traverse_connector",
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.sleep",
             "executor.wait_ticks", "executor.clear_obstacle", "executor.break_farm_resource_clump",
-            "executor.break_current_location_resource_clump", "executor.till_soil",
+            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
@@ -288,7 +288,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.break_resource_clump", "executor.combat_monster", "executor.descend_ladder",
             "executor.exit_mine", "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
-            "executor.clear_obstacle", "executor.break_farm_resource_clump",
+            "executor.clear_obstacle", "executor.break_farm_resource_clump", "executor.water_crop",
             "executor.break_current_location_resource_clump", "executor.till_soil",
             "executor.harvest_crop", "executor.harvest_giant_crop", "executor.pickup_debris",
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
@@ -339,7 +339,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.clear_obstacle",
             "executor.break_farm_resource_clump", "executor.break_current_location_resource_clump",
-            "executor.plant_seed", "executor.till_soil", "executor.harvest_crop",
+            "executor.water_crop", "executor.apply_fertilizer", "executor.plant_seed", "executor.till_soil", "executor.harvest_crop",
             "executor.harvest_giant_crop", "executor.pickup_debris",
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
@@ -363,6 +363,9 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, TrainingEvidence>(
                 new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
                 {
+                    ["farm.maintain_crops"] = VerifiedEvidence(
+                        "vanilla_current_location_one_exact_candidate_per_fresh_snapshot_native_terrain_HoeDirt_water_plant_fertilize_grab_or_scythe_harvest_IndoorPot_fertilize_and_giant_crop_axe_lifecycle",
+                        "EVD-226"),
                     ["exploration.visit_location"] = BoundedEvidence(
                         "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
                         readEvidenceIds: new[] { "EVD-025", "EVD-058" },
@@ -516,7 +519,8 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("mining_reach_depth_plan_envelope"),
                 SupportedCandidate("mining_slay_monsters_plan_envelope"), SupportedCandidate("pan_ore_spot"),
                 SupportedCandidate("pet_daily_interaction"), SupportedCandidate("pickup_debris_item"),
-                SupportedCandidate("plant_seed_tile"), SupportedCandidate("purchase_farmhouse_expansion"),
+                SupportedCandidate("plant_seed_tile"), SupportedCandidate("apply_fertilizer_tile"),
+                SupportedCandidate("purchase_farmhouse_expansion"),
                 SupportedCandidate("purchase_farmhouse_upgrade"),
                 SupportedCandidate("purchase_joja_membership"),
                 SupportedCandidate("purchase_joja_project"), SupportedCandidate("read_inventory_book"),

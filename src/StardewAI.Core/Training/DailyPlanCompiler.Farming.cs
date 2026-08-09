@@ -19,8 +19,8 @@ namespace StardewAI.Core.Training
             {
                 new SmallModelPlanStep
                 {
-                    StepId = StepId(candidate, "maintain_crops", 0),
-                    Kind = "maintain_crops",
+                    StepId = StepId(candidate, "water_crop", 0),
+                    Kind = "water_crop",
                     TargetLocation = string.IsNullOrWhiteSpace(candidate.LocationId) ? "Farm" : candidate.LocationId,
                     TargetTileX = candidate.TileX,
                     TargetTileY = candidate.TileY,
@@ -29,9 +29,38 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[] { "target_crop_tile_from_transparent_farm_state" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = Array.Empty<SmallModelActionParameter>()
+                }
+            };
+        }
+
+        private static IEnumerable<SmallModelPlanStep> ApplyFertilizerTileSteps(PolicyEventCandidatePrediction candidate)
+        {
+            if (!candidate.TileX.HasValue || !candidate.TileY.HasValue ||
+                string.IsNullOrWhiteSpace(candidate.QualifiedItemId) || !candidate.SlotIndex.HasValue)
+            {
+                return Array.Empty<SmallModelPlanStep>();
+            }
+
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "apply_fertilizer", 0),
+                    Kind = "apply_fertilizer",
+                    TargetLocation = candidate.LocationId,
+                    TargetTileX = candidate.TileX,
+                    TargetTileY = candidate.TileY,
+                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "hard_rule_allows_application=true" },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[] { "exact_live_HoeDirt_CheckApplyFertilizerRules", "single_tile_single_item_slice" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = new[]
                     {
-                        Parameter("max_crops", "1")
+                        Parameter("item_id", candidate.ItemId),
+                        Parameter("qualified_item_id", candidate.QualifiedItemId),
+                        Parameter("slot_index", candidate.SlotIndex.Value.ToString())
                     }
                 }
             };
@@ -86,14 +115,16 @@ namespace StardewAI.Core.Training
             }
 
             var giantCropId = ParseValue(candidate.ExpectedEffect, "giant_crop_id=");
-            var parameters = candidate.Parameters
-                .Where(parameter => parameter.Name.StartsWith("quest_", StringComparison.Ordinal))
-                .ToList();
-            if (!string.IsNullOrWhiteSpace(giantCropId))
+            var parameters = candidate.Parameters.ToList();
+            if (!string.IsNullOrWhiteSpace(giantCropId) &&
+                !parameters.Any(parameter => parameter.Name == "giant_crop_id"))
             {
                 parameters.Add(Parameter("giant_crop_id", giantCropId));
             }
-            parameters.Add(Parameter("required_tool", "axe"));
+            if (!parameters.Any(parameter => parameter.Name == "required_tool_kind"))
+            {
+                parameters.Add(Parameter("required_tool_kind", "axe"));
+            }
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
 
             return new[]
@@ -106,7 +137,7 @@ namespace StardewAI.Core.Training
                     TargetTileX = candidate.TileX,
                     TargetTileY = candidate.TileY,
                     EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
-                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "farm.resource_clumps.is_giant_crop=true" },
+                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "current_location.resource_clumps.is_giant_crop=true" },
                     ExpectedEffects = new[] { candidate.ExpectedEffect },
                     SafetyConstraints = new[] { "target_giant_crop_from_transparent_resource_clumps", "runtime_verified_multi_hit_axe_harvest" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },

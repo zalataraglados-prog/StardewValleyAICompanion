@@ -88,7 +88,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["shipping_bins"] = Field(ReadShippingBins(farm), "Game1.getFarm().buildings as ShippingBin", tick, "vanilla_1_6_farm"),
             ["grandpa_score"] = Field(farm.grandpaScore.Value, "Game1.getFarm().grandpaScore.Value", tick, "vanilla_1_6_farm"),
             ["buildings"] = Field(ReadBuildings(farm), "Game1.getFarm().buildings", tick, "vanilla_1_6_farm"),
-            ["crops"] = Field(ReadCrops(farm), "Game1.getFarm().terrainFeatures[*] as HoeDirt.crop", tick, "vanilla_1_6_farm"),
+            ["crops"] = Field(ReadCrops(farm), "Game1.getFarm().terrainFeatures[*] as HoeDirt.crop; IndoorPot.hoeDirt.crop", tick, "vanilla_1_6_farm"),
             ["terrain_features"] = Field(ReadTerrainFeatures(farm), "Game1.getFarm().terrainFeatures", tick, "vanilla_1_6_farm"),
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),
             ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false) plus native farm/home ownership topology; GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),

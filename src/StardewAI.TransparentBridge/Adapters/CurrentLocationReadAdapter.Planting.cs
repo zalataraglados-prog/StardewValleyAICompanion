@@ -17,6 +17,11 @@ public sealed partial class CurrentLocationReadAdapter
             .Where(item => item is not null)
             .Cast<object>()
             .ToArray() ?? Array.Empty<object>();
+        var fertilizerCandidates = Game1.player?.Items
+            .Select((item, index) => ReadFertilizerCandidate(item, index))
+            .Where(item => item is not null)
+            .Cast<object>()
+            .ToArray() ?? Array.Empty<object>();
 
         return new
         {
@@ -33,11 +38,27 @@ public sealed partial class CurrentLocationReadAdapter
                 location.GetData()?.CanPlantHere ??
                 location.IsFarm,
             candidate_seed_count = seedCandidates.Length,
+            candidate_fertilizer_count = fertilizerCandidates.Length,
             hoe_dirt_tiles =
                 ReadHoeDirtPlantingTiles(
                     location,
-                    seedCandidates)
+                    seedCandidates,
+                    fertilizerCandidates)
         };
+    }
+
+    private static object? ReadFertilizerCandidate(Item? item, int index)
+    {
+        return item is StardewObject { Category: StardewObject.fertilizerCategory } fertilizer
+            ? new
+            {
+                slot_index = index,
+                item_id = fertilizer.ItemId,
+                qualified_item_id = fertilizer.QualifiedItemId,
+                stack = fertilizer.Stack,
+                category = fertilizer.Category
+            }
+            : null;
     }
 
     private static object? ReadSeedCandidate(
@@ -83,32 +104,51 @@ public sealed partial class CurrentLocationReadAdapter
 
     private static object[] ReadHoeDirtPlantingTiles(
         GameLocation location,
-        object[] seedCandidates)
+        object[] seedCandidates,
+        object[] fertilizerCandidates)
     {
-        return location.terrainFeatures.Pairs
-            .Where(pair => pair.Value is HoeDirt)
-            .OrderBy(pair => pair.Key.Y)
-            .ThenBy(pair => pair.Key.X)
-            .Select(pair =>
+        return ReadHoeDirtRows(location)
+            .OrderBy(row => row.Tile.Y)
+            .ThenBy(row => row.Tile.X)
+            .Select(row =>
                 ReadHoeDirtPlantingTile(
                     location,
-                    pair.Key,
-                    (HoeDirt)pair.Value,
-                    seedCandidates))
+                    row.Tile,
+                    row.Dirt,
+                    row.IsGardenPot,
+                    seedCandidates,
+                    fertilizerCandidates))
             .ToArray();
+    }
+
+    private static IEnumerable<PlantingDirtRow> ReadHoeDirtRows(GameLocation location)
+    {
+        foreach (var pair in location.terrainFeatures.Pairs)
+        {
+            if (pair.Value is HoeDirt dirt)
+            {
+                yield return new PlantingDirtRow(pair.Key, dirt, false);
+            }
+        }
+
+        foreach (var pair in location.objects.Pairs)
+        {
+            if (pair.Value is IndoorPot { bush.Value: null } pot)
+            {
+                yield return new PlantingDirtRow(pair.Key, pot.hoeDirt.Value, true);
+            }
+        }
     }
 
     private static object ReadHoeDirtPlantingTile(
         GameLocation location,
         Vector2 tile,
         HoeDirt dirt,
-        object[] seedCandidates)
+        bool isGardenPot,
+        object[] seedCandidates,
+        object[] fertilizerCandidates)
     {
-        var isGardenPot =
-            location.objects.TryGetValue(
-                tile,
-                out var tileObject) &&
-            tileObject is IndoorPot;
+        location.objects.TryGetValue(tile, out var tileObject);
         var indoorPotBypass =
             isGardenPot &&
             !location.IsOutdoors;
@@ -146,6 +186,9 @@ public sealed partial class CurrentLocationReadAdapter
                 paddyWaterEligible
                     ? 0.25f
                     : 0f,
+            fertilizer_results = fertilizerCandidates
+                .Select(fertilizer => ReadFertilizerTileResult(dirt, fertilizer))
+                .ToArray(),
             seed_results = seedCandidates
                 .Select(seed =>
                     ReadSeedTilePlantingResult(
@@ -158,6 +201,27 @@ public sealed partial class CurrentLocationReadAdapter
                 .ToArray()
         };
     }
+
+    private static object ReadFertilizerTileResult(HoeDirt dirt, object fertilizerCandidate)
+    {
+        var type = fertilizerCandidate.GetType();
+        var itemId = (string?)type.GetProperty("item_id")?.GetValue(fertilizerCandidate) ?? string.Empty;
+        var qualifiedItemId = (string?)type.GetProperty("qualified_item_id")?.GetValue(fertilizerCandidate) ?? string.Empty;
+        var slotIndex = (int?)type.GetProperty("slot_index")?.GetValue(fertilizerCandidate);
+        var stack = (int?)type.GetProperty("stack")?.GetValue(fertilizerCandidate) ?? 0;
+        var status = dirt.CheckApplyFertilizerRules(qualifiedItemId);
+        return new
+        {
+            slot_index = slotIndex,
+            item_id = itemId,
+            qualified_item_id = qualifiedItemId,
+            stack,
+            apply_status = status.ToString(),
+            hard_rule_allows_application = status == HoeDirtFertilizerApplyStatus.Okay
+        };
+    }
+
+    private sealed record PlantingDirtRow(Vector2 Tile, HoeDirt Dirt, bool IsGardenPot);
 
     private static object ReadSeedTilePlantingResult(
         GameLocation location,

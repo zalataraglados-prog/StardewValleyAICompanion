@@ -22,6 +22,8 @@ public sealed partial class ModEntry
             "debug.setup_fish_pond",
             "debug.setup_fish_pond_output",
             "debug.setup_fish_pond_request",
+            "debug.setup_fertilizer_target",
+            "debug.setup_indoor_pot_fertilizer_target",
             "debug.setup_forage_source_fixture",
             "debug.setup_giant_crop_target",
             "debug.setup_green_rain_resource_clump",

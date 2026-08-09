@@ -57,7 +57,8 @@ public sealed class MockSmallModelPolicyTests
         Assert.Contains(output.Actions[0].Parameters, item =>
             item.Name == "intent_category" &&
             item.Value == TaskIntentCategory.Mechanical);
-        Assert.Equal("pending", queue.Status);
+        Assert.Equal("blocked", queue.Status);
+        Assert.Empty(queue.Items[0].NormalizedCommand.Steps);
     }
 
     [Fact]

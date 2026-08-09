@@ -28,7 +28,6 @@ public static class PendingSemanticActionCatalog
             C("buildings.paint", "buildings", "composite", "engine.building_management", "BuildingPaintMenu"),
             C("crafting.cook_recipe", "crafting", "composite", "engine.crafting_processing", "GameLocation"),
             C("crafting.forge_item", "crafting", "composite", "engine.crafting_processing", "ForgeMenu"),
-            P("executor.apply_fertilizer", "farming", "engine.tool_harvest", "Object"),
             P("executor.apply_tree_treatment", "foraging", "engine.tool_harvest", "Object"),
             P("executor.place_cookout_kit", "crafting", "engine.placement_layout", "Object"),
             P("executor.place_crab_pot", "fishing", "engine.placement_layout", "Object"),
