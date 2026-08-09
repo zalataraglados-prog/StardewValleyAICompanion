@@ -9,6 +9,14 @@ namespace StardewAI.Core.Tests;
 
 public sealed class MarriageHouseMainlineTests
 {
+    [Fact]
+    public void FarmhouseUpgradeHasOnlyCandidateDailyPlanCompilationPath()
+    {
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("housing.advance_farmhouse"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("housing.advance_farmhouse"));
+        Assert.True(ActionQueueCompiler.HasStepCompiler("executor.purchase_farmhouse_upgrade"));
+    }
+
     [Theory]
     [InlineData(0, 1, 10000, "(O)388", 450, 20000, 500)]
     [InlineData(1, 2, 65000, "(O)709", 100, 80000, 125)]

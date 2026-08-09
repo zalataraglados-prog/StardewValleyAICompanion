@@ -1,3 +1,11 @@
+2026-08-09 EVD-229 native farmhouse-upgrade evaluation admission
+- Hidden/silent isolated E-drive PASS 3/3: `artifacts\runtime-farmhouse-upgrade-daily-plan\runtime-farmhouse-upgrade-daily-plan-20260809-174522\summary.json`.
+- Level 0->1 used 10000g plus 450 `(O)388`; level 1->2 used 65000g plus 100 `(O)709`; level 2->3 used 100000g and no material. Every case compiled from `housing.advance_farmhouse` to the sole `executor.purchase_farmhouse_upgrade`, completed native Carpenter/Upgrade/Yes callbacks, left the immediate level unchanged, set construction countdown to 3, matched exact money/material deltas, closed the dialogue, and wrote one verified training row.
+- Diagnostic runs exposed and fixed two boundary defects without weakening gates: LiveTrainingLoop now transports `carpenter_action_raw` into the typed execution request, and the isolated fixture keeps Robin within native range without placing her on the Carpenter action tile. Primitive feedback uses the standard `verified` status while retaining all three native callback proofs in verification reasons.
+- Capability and governance now declare the high-level chain as internally executable, host-only and explicitly player-confirmed. EVD-229 closes all five evidence gates for both option layers, but neither enters autonomous training.
+- Final regression PASS: focused capability/marriage 48/48; Core 1582/1582; Backend 119/119; Release solution build 0 errors with 1 existing AvoidNetField warning.
+- Action reconciliation PASS: 585/585 exports, blocking 0; 103 registered, 170 semantic, 100 compiler-bound, 67 harness-dispatched, 34 five-gate closed, 26 training-allowlisted, and zero missing registrations/native-surface/native-branch/map-token blockers.
+
 2026-08-07 EVD-222 exact native animal-product collection admission
 - Hidden/silent isolated E-drive PASS: `artifacts\runtime-animal-product-smoke\runtime-animal-product-smoke-20260807-101342\summary.json`.
 - Matrix PASS 4/4: Milk Pail and Shears, animal-cracker x1 and x2, with both new-slot and existing-stack merge contexts.

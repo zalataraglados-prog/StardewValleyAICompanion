@@ -289,6 +289,49 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void FarmhouseUpgradeClosesFiveGatesButRetainsHostPlayerConfirmationTests()
+    {
+        var highLevel = OptionCapabilityRegistrySource.GetRequired("housing.advance_farmhouse");
+        var primitive = OptionCapabilityRegistrySource.GetRequired("executor.purchase_farmhouse_upgrade");
+
+        Assert.False(TrainingEligibilityPolicy.IsEligible(highLevel));
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, highLevel.TrainingEligibility);
+        Assert.True(highLevel.PlayerConfirmationRequired);
+        Assert.True(highLevel.HostOnly);
+        Assert.True(highLevel.InternalExecutionPipelineSupported);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, highLevel.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler(highLevel.OptionId));
+        Assert.False(ActionQueueCompiler.HasStepCompiler(highLevel.OptionId));
+        Assert.Equal(new[] { TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired }, highLevel.TrainingExclusionReasons);
+
+        Assert.False(TrainingEligibilityPolicy.IsEligible(primitive));
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, primitive.TrainingEligibility);
+        Assert.True(primitive.PlayerConfirmationRequired);
+        Assert.True(primitive.HostOnly);
+        Assert.True(primitive.HarnessDispatchSupported);
+        Assert.True(ActionQueueCompiler.HasStepCompiler(primitive.OptionId));
+        Assert.Equal(
+            new[] { TrainingAdmissionExclusionReason.NotPolicyTrainingOption, TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired },
+            primitive.TrainingExclusionReasons);
+
+        foreach (var declaration in new[] { highLevel, primitive })
+        {
+            Assert.Equal(new[] { "EVD-229" }, declaration.ReadEvidenceIds);
+            Assert.Equal(new[] { "EVD-229" }, declaration.CandidateEvidenceIds);
+            Assert.Equal(new[] { "EVD-229" }, declaration.CompilerEvidenceIds);
+            Assert.Equal(new[] { "EVD-229" }, declaration.RuntimeEvidenceIds);
+            Assert.Equal(new[] { "EVD-229" }, declaration.OutputEvidenceIds);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.RuntimeTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.OutputTrainingGate);
+            Assert.Equal("not_admitted", declaration.TrainingEvidenceScope);
+            Assert.DoesNotContain(declaration.OptionId, OptionCapabilityRegistrySource.TrainingAllowlist);
+        }
+    }
+
+    [Fact]
     public void PetCareAdmissionRequiresBothNativeBranchesAndEvd223Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("farm.care_for_pets");

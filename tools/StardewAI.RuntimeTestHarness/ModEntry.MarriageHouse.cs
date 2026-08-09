@@ -284,7 +284,7 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "purchase_farmhouse_upgrade",
-            PrimitiveVerificationStatus = "verified_native_carpenter_lifecycle",
+            PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[] { "GameLocation.checkAction_Carpenter_completed", "GameLocation.answerDialogue_carpenter_Upgrade_completed", "GameLocation.answerDialogue_upgrade_Yes_completed" },
             RequestedEffect = "player.days_until_farmhouse_upgrade=3;eventual.player.farmhouse_upgrade_level=" + request.ExpectedHouseUpgradeLevelAfterConstruction,
             ObservedEffect = FarmhouseUpgradeObservedEffect(request),
@@ -322,4 +322,192 @@ public sealed partial class ModEntry
         ";house_level=" + Game1.player.HouseUpgradeLevel +
         ";days_until_upgrade=" + Game1.player.daysUntilHouseUpgrade.Value +
         ";material_count=" + Game1.player.Items.CountId(request.QualifiedItemId);
+
+    private TrainingExecutionResult ExecuteSetupFarmhouseUpgradeFixture(TrainingExecutionRequest request)
+    {
+        var reasons = ValidateExecutionRequest(request);
+        if (reasons.Count > 0)
+        {
+            return Blocked(request, reasons.ToArray());
+        }
+
+        var levelBefore = request.ExpectedHouseUpgradeLevelBefore;
+        var fixture = levelBefore switch
+        {
+            0 => (Price: 10000, ItemId: "(O)388", RequiredCount: 450),
+            1 => (Price: 65000, ItemId: "(O)709", RequiredCount: 100),
+            2 => (Price: 100000, ItemId: string.Empty, RequiredCount: 0),
+            _ => default
+        };
+        if (!levelBefore.HasValue || levelBefore < 0 || levelBefore > 2)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_farmhouse_upgrade",
+                "farmhouse_upgrade_fixture=ready", "level_before=" + levelBefore,
+                "farmhouse_upgrade_fixture_level_0_2_required");
+        }
+
+        var house = Game1.getLocationFromName("ScienceHouse");
+        var actionTile = house is null ? null : FarmhouseFixtureActionTile(house);
+        var standTile = house is null || !actionTile.HasValue ? null : FarmhouseFixtureStandTile(house, actionTile.Value);
+        var robinTile = house is null || !actionTile.HasValue || !standTile.HasValue
+            ? null
+            : FarmhouseFixtureRobinTile(house, actionTile.Value, standTile.Value);
+        var robin = Game1.getCharacterFromName("Robin");
+        if (house is null || !actionTile.HasValue || !standTile.HasValue || !robinTile.HasValue || robin is null)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_farmhouse_upgrade",
+                "farmhouse_upgrade_fixture=ready", "location=ScienceHouse",
+                "farmhouse_upgrade_fixture_location_action_stand_or_robin_missing");
+        }
+
+        var player = Game1.player;
+        var beforeLevel = player.HouseUpgradeLevel;
+        var beforeDays = player.daysUntilHouseUpgrade.Value;
+        var beforeMoney = player.Money;
+        var beforeMaterialCount = string.IsNullOrEmpty(fixture.ItemId) ? 0 : player.Items.CountId(fixture.ItemId);
+        var beforeLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var beforeRobinLocation = robin.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var expectedMoney = fixture.Price + 5000;
+        var expectedMaterialCount = fixture.RequiredCount == 0 ? 0 : fixture.RequiredCount + 25;
+
+        EnsureFixtureInventoryCapacity(player);
+        if (!string.IsNullOrEmpty(fixture.ItemId))
+        {
+            for (var index = 0; index < player.Items.Count; index++)
+            {
+                if (string.Equals(player.Items[index]?.QualifiedItemId, fixture.ItemId, StringComparison.Ordinal))
+                {
+                    player.Items[index] = null;
+                }
+            }
+            InstallFixtureItem(player, ItemRegistry.Create(fixture.ItemId, expectedMaterialCount));
+        }
+
+        Game1.activeClickableMenu = null;
+        Game1.dialogueUp = false;
+        Game1.eventUp = false;
+        Game1.eventOver = false;
+        player.UsingTool = false;
+        player.canMove = true;
+        player.HouseUpgradeLevel = levelBefore.Value;
+        player.daysUntilHouseUpgrade.Value = -1;
+        player.Money = expectedMoney;
+        Game1.currentLocation = house;
+        player.currentLocation = house;
+        player.Position = new Vector2(standTile.Value.X * Game1.tileSize, standTile.Value.Y * Game1.tileSize);
+
+        robin.currentLocation?.characters.Remove(robin);
+        if (!house.characters.Contains(robin))
+        {
+            house.characters.Add(robin);
+        }
+        robin.currentLocation = house;
+        robin.Position = new Vector2(robinTile.Value.X * Game1.tileSize, robinTile.Value.Y * Game1.tileSize);
+
+        var verified = ReferenceEquals(Game1.currentLocation, house) &&
+            player.HouseUpgradeLevel == levelBefore.Value &&
+            player.daysUntilHouseUpgrade.Value == -1 &&
+            player.Money == expectedMoney &&
+            (string.IsNullOrEmpty(fixture.ItemId) || player.Items.CountId(fixture.ItemId) == expectedMaterialCount) &&
+            house.characters.Contains(robin) &&
+            robin.TilePoint != actionTile.Value && robin.TilePoint != standTile.Value &&
+            Vector2.Distance(robin.Tile, new Vector2(actionTile.Value.X, actionTile.Value.Y)) <= 3f &&
+            player.TilePoint == standTile.Value;
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_farmhouse_upgrade",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[] { "isolated_save_fixture_ready", "carpenter_action_and_robin_ready", "native_purchase_resources_ready" }
+                : new[] { "farmhouse_upgrade_fixture_post_state_mismatch" },
+            RequestedEffect = "farmhouse_upgrade_fixture=ready;level_before=" + levelBefore.Value,
+            ObservedEffect = "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
+                ";level_before=" + player.HouseUpgradeLevel +
+                ";days_until_upgrade=" + player.daysUntilHouseUpgrade.Value +
+                ";money=" + player.Money +
+                ";material_count=" + (string.IsNullOrEmpty(fixture.ItemId) ? 0 : player.Items.CountId(fixture.ItemId)) +
+                ";action_tile=" + actionTile.Value.X + "," + actionTile.Value.Y +
+                ";stand_tile=" + standTile.Value.X + "," + standTile.Value.Y,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "farmhouse_upgrade_fixture_post_state_mismatch" },
+            ChangedFacts = verified
+                ? new[]
+                {
+                    new SimulatedFactChange { Path = "player.location_id", Before = beforeLocation, After = house.NameOrUniqueName },
+                    new SimulatedFactChange { Path = "player.farmhouse_upgrade_level", Before = beforeLevel.ToString(), After = player.HouseUpgradeLevel.ToString() },
+                    new SimulatedFactChange { Path = "player.days_until_farmhouse_upgrade", Before = beforeDays.ToString(), After = player.daysUntilHouseUpgrade.Value.ToString() },
+                    new SimulatedFactChange { Path = "player.money", Before = beforeMoney.ToString(), After = player.Money.ToString() },
+                    new SimulatedFactChange { Path = "player.inventory." + fixture.ItemId, Before = beforeMaterialCount.ToString(), After = expectedMaterialCount.ToString() },
+                    new SimulatedFactChange { Path = "npcs.Robin.location_id", Before = beforeRobinLocation, After = house.NameOrUniqueName },
+                    new SimulatedFactChange { Path = "npcs.Robin.tile", Before = string.Empty, After = robinTile.Value.X + "," + robinTile.Value.Y }
+                }
+                : Array.Empty<SimulatedFactChange>()
+        };
+    }
+
+    private static Point? FarmhouseFixtureActionTile(GameLocation house)
+    {
+        var buildings = house.Map?.GetLayer("Buildings");
+        if (buildings is null)
+        {
+            return null;
+        }
+        for (var y = 0; y < buildings.LayerHeight; y++)
+        {
+            for (var x = 0; x < buildings.LayerWidth; x++)
+            {
+                if (house.doesTileHaveProperty(x, y, "Action", "Buildings") == "Carpenter")
+                {
+                    return new Point(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Point? FarmhouseFixtureStandTile(GameLocation house, Point actionTile)
+    {
+        foreach (var tile in new[]
+        {
+            new Point(actionTile.X, actionTile.Y + 1),
+            new Point(actionTile.X - 1, actionTile.Y),
+            new Point(actionTile.X + 1, actionTile.Y),
+            new Point(actionTile.X, actionTile.Y - 1)
+        })
+        {
+            if (IsTileOnMap(house, tile) && IsTileWalkable(house, tile) && !IsTileOccupiedByCharacter(house, tile))
+            {
+                return tile;
+            }
+        }
+        return null;
+    }
+
+    private static Point? FarmhouseFixtureRobinTile(GameLocation house, Point actionTile, Point standTile)
+    {
+        foreach (var tile in new[]
+        {
+            new Point(actionTile.X, actionTile.Y - 1),
+            new Point(actionTile.X - 1, actionTile.Y - 1),
+            new Point(actionTile.X + 1, actionTile.Y - 1),
+            new Point(actionTile.X - 2, actionTile.Y),
+            new Point(actionTile.X + 2, actionTile.Y)
+        })
+        {
+            if (tile != actionTile && tile != standTile && IsTileOnMap(house, tile) &&
+                Vector2.Distance(new Vector2(tile.X, tile.Y), new Vector2(actionTile.X, actionTile.Y)) <= 3f)
+            {
+                return tile;
+            }
+        }
+        return null;
+    }
 }

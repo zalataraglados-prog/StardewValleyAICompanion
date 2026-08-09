@@ -1033,6 +1033,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_farmhouse_upgrade")
+            {
+                pending.Completion.SetResult(ExecuteSetupFarmhouseUpgradeFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_pan_ore_spot")
             {
                 pending.Completion.SetResult(ExecuteSetupPanOreSpot(pending.Request));

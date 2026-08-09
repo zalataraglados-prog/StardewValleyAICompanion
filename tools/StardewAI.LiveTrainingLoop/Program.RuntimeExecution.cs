@@ -499,6 +499,10 @@ static partial class Program
         var routeState = ReadQueueParameterString(item, "route_state");
         var purchaseKind = ReadQueueParameterString(item, "purchase_kind");
         var joinActionRaw = ReadQueueParameterString(item, "join_action_raw");
+        if (string.IsNullOrWhiteSpace(joinActionRaw))
+        {
+            joinActionRaw = ReadQueueParameterString(item, "carpenter_action_raw");
+        }
         var projectId = ReadQueueParameterString(item, "project_id");
         var buttonNumber = ReadQueueParameterInt(item, "button_number");
         var ccMailId = ReadQueueParameterString(item, "cc_mail_id");
