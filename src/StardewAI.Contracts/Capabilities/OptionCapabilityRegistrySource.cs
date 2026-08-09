@@ -363,6 +363,13 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, TrainingEvidence>(
                 new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
                 {
+                    ["farm.process_machines"] = BoundedEvidence(
+                        "vanilla_bounded_aggregate_of_existing_exact_machine_service_native_craft_current_or_resolved_route_placement_idle_relocation_ordinary_storage_and_deterministic_incubator_naming_chains",
+                        readEvidenceIds: new[] { "EVD-227" },
+                        candidateEvidenceIds: new[] { "EVD-227" },
+                        compilerEvidenceIds: new[] { "EVD-227" },
+                        runtimeEvidenceIds: new[] { "EVD-227" },
+                        outputEvidenceIds: new[] { "EVD-227" }),
                     ["farm.maintain_crops"] = VerifiedEvidence(
                         "vanilla_current_location_one_exact_candidate_per_fresh_snapshot_native_terrain_HoeDirt_water_plant_fertilize_grab_or_scythe_harvest_IndoorPot_fertilize_and_giant_crop_axe_lifecycle",
                         "EVD-226"),

@@ -267,6 +267,27 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void MachineProcessingClosesBoundedAggregateFiveGatesButRemainsExecutorCalibrationOnlyTests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("farm.process_machines");
+
+        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, declaration.TrainingEligibility);
+        Assert.False(declaration.AutonomousCandidateEnabled);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("farm.process_machines"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("farm.process_machines"));
+        Assert.Equal(new[] { "EVD-227" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-227" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-227" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-227" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-227" }, declaration.OutputEvidenceIds);
+        Assert.Equal("not_admitted", declaration.TrainingEvidenceScope);
+        Assert.Equal(new[] { TrainingAdmissionExclusionReason.NotPolicyTrainingOption }, declaration.TrainingExclusionReasons);
+        Assert.DoesNotContain("farm.process_machines", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
     public void PetCareAdmissionRequiresBothNativeBranchesAndEvd223Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("farm.care_for_pets");

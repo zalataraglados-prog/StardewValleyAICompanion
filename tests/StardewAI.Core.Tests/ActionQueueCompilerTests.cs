@@ -3,6 +3,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -45,6 +46,43 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Contains("full_action_step_compilation_empty", queue.Items[0].BlockingReasons);
         Assert.Empty(queue.Items[0].NormalizedCommand.Steps);
         Assert.Equal("training_farmer.main", queue.Items[0].NormalizedCommand.Actor.ActorId);
+    }
+
+    [Fact]
+    public void CompileBlocksDirectHighLevelMachineProcessingWithoutCandidatePlan()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory_capacity": {"value":12,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "farm": {
+            "machines": {"value":[{"location_id":"Farm","tile_x":4,"tile_y":5,"ready_for_harvest":true}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var queue = new ActionQueueCompiler().Compile(
+            Request(snapshot.StateHash, "farm.process_machines"),
+            snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("farm.process_machines", item.OptionId);
+        Assert.Contains("full_action_step_compilation_empty", item.BlockingReasons);
+        Assert.Empty(item.NormalizedCommand.Steps);
+    }
+
+    [Fact]
+    public void MachineProcessingHasOnlyCandidateDailyPlanCompilationPath()
+    {
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("farm.process_machines"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("farm.process_machines"));
+        Assert.DoesNotContain("CompileMachineProcessingSteps", ActionQueueCompilerSources.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("machine_processing_noop", ActionQueueCompilerSources.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("process_machine", ActionQueueCompilerSources.All, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -159,6 +159,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_animal_product_candidates");
             }
 
+            if (optionId == "farm.process_machines")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_machine_processing_candidates",
+                    "no_available_machine_processing_candidates");
+            }
+
             if (optionId == "farm.collect_machine_outputs")
             {
                 return EventCandidateAvailabilityReasons(

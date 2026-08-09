@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
@@ -204,38 +203,6 @@ namespace StardewAI.Core.Execution
             }
 
             return null;
-        }
-
-        private static CompiledActionStep[] CompileMachineProcessingSteps(SnapshotEnvelope snapshot)
-        {
-            if (!snapshot.State.TryGetValue("farm", out var farm) ||
-                farm.ValueKind != JsonValueKind.Object ||
-                !farm.TryGetProperty("machines", out var machinesField) ||
-                !machinesField.TryGetProperty("value", out var machines) ||
-                machines.ValueKind != JsonValueKind.Array)
-            {
-                return new[]
-                {
-                    Step("machine_processing_noop", "Farm", "no_machine_data_available", 0)
-                };
-            }
-
-            var steps = new List<CompiledActionStep>();
-            foreach (var machine in machines.EnumerateArray())
-            {
-                if (machine.ValueKind != JsonValueKind.Object || !IsMachineReady(machine))
-                {
-                    continue;
-                }
-
-                var x = ReadInt(machine, "tile_x");
-                var y = ReadInt(machine, "tile_y");
-                steps.Add(Step("process_machine", "Farm(" + x + "," + y + ")", "machine_output_collected_or_input_loaded", 80));
-            }
-
-            return steps.Count == 0
-                ? new[] { Step("machine_processing_noop", "Farm", "no_machine_ready", 0) }
-                : steps.ToArray();
         }
 
     }

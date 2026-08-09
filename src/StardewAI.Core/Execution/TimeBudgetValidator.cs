@@ -161,8 +161,6 @@ namespace StardewAI.Core.Execution
             {
                 case "farm.maintain_crops":
                     return Fixed(30, "crop_farming_rule.v1");
-                case "farm.process_machines":
-                    return Fixed(20, "machine_processing_rule.v1");
                 case "farm.collect_animal_products":
                 case "executor.collect_animal_product":
                     return EstimateCompiledSteps(item, "native_animal_tool_steps.v1");

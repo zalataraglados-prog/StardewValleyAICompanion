@@ -14,7 +14,6 @@ namespace StardewAI.Core.Execution
         private static readonly IReadOnlyDictionary<string, ActionStepCompiler> ActionStepCompilers =
             new Dictionary<string, ActionStepCompiler>(StringComparer.Ordinal)
             {
-                ["farm.process_machines"] = (_, snapshot) => CompileMachineProcessingSteps(snapshot),
                 ["recovery.stabilize_day"] = (_, snapshot) => CompileRecoverySteps(snapshot),
                 ["executor.move_to_tile"] = (action, _) => CompileMoveToTileStep(action),
                 ["executor.traverse_connector"] = (action, _) => CompileTraverseConnectorStep(action),

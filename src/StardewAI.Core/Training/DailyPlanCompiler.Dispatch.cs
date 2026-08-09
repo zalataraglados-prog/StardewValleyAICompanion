@@ -16,6 +16,18 @@ namespace StardewAI.Core.Training
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
+                ["farm.process_machines"] = new[]
+                {
+                    "collect_machine_output_tile",
+                    "load_machine_input_tile",
+                    "name_hatched_animal",
+                    "craft_machine_item",
+                    "craft_storage_item",
+                    "place_machine_item",
+                    "relocate_machine_item",
+                    "place_storage_item",
+                    "route_connector_tile"
+                },
                 ["farm.collect_machine_outputs"] = new[] { "collect_machine_output_tile" },
                 ["farm.load_supported_machine_input"] = new[] { "load_machine_input_tile" },
                 ["farm.establish_supported_machine_capacity"] = new[] { "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
