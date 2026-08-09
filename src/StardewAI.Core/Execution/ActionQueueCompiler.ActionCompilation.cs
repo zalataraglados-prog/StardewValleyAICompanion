@@ -101,8 +101,8 @@ namespace StardewAI.Core.Execution
             try
             {
                 option = optionRegistry.GetRequired(action.OptionId);
-                safety = verifier.Verify(snapshot, option);
-                requiredFactors = option.RequiredStateFactors;
+                requiredFactors = EffectiveRequiredStateFactors(action, option);
+                safety = verifier.Verify(snapshot, option, requiredFactors);
                 blocking.AddRange(safety.BlockingReasons);
             }
             catch (KeyNotFoundException)

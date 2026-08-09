@@ -12,5 +12,13 @@ namespace StardewAI.Core.Verifier
         {
             return requiredFactGate.Evaluate(snapshot, option);
         }
+
+        public SafetyResult Verify(
+            SnapshotEnvelope snapshot,
+            OptionSpec option,
+            string[] requiredStateFactors)
+        {
+            return requiredFactGate.Evaluate(snapshot, option, requiredStateFactors);
+        }
     }
 }

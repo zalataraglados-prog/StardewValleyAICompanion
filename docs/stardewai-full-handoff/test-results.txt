@@ -1,3 +1,12 @@
+2026-08-09 EVD-231 Quarry Mine Golden Scythe DailyPlan evaluation admission
+- Hidden/silent isolated E-drive PASS: `artifacts\runtime-quarry-golden-scythe\runtime-quarry-golden-scythe-20260809-203952\summary.json`.
+- The exact `mining.acquire_golden_scythe` candidate completed 68 DailyPlan decisions: 56 verified native actions/training rows and 12 blocked-but-fresh recoverable replans. Verified actions were 5 stone removals, 46 moves, 3 combats, one exact altar interaction and one native mine exit; the 12 remaining combat attempts produced precise moved/disengaged feedback and no rows.
+- The claim changed `(W)53` inventory `0 -> 1` and `claimed false -> true`; the next fresh-plan tail exited to `Mine(67,10)`. All accepted after-snapshots were fresh with changed state hashes.
+- Runtime defects corrected by this evidence were shared native tool-lifecycle settlement for stones, safe route-prefix progress before a distant currently unreachable flying blocker, purpose-limited mining primitive facts, and exact altar validation. No second movement, mining or combat executor was introduced.
+- EVD-231 closes all five evidence gates but keeps explicit player confirmation and remains outside the autonomous training allowlist.
+- Final regression PASS: Core 1596/1596; Backend 119/119; Release solution build 0 errors with 1 existing AvoidNetField warning.
+- Action reconciliation PASS: 585/585 exports, blocking 0; 36 five-gate closed and 26 training-allowlisted.
+
 2026-08-09 EVD-230 native partnership-progression evaluation admission
 - Hidden/silent isolated E-drive PASS 4/4: `artifacts\runtime-partnership-daily-plan\runtime-partnership-daily-plan-20260809-185103\summary.json`.
 - Bouquet `(O)458` changed Abigail `Friendly -> Dating`; Mermaid's Pendant `(O)460` changed `Dating -> Engaged`; Void Ghost Pendant `(O)808` engaged Krobus with `RoommateMarriage=true`. Each case compiled from `social.advance_partnership` through the sole shared `executor.social_interact`, consumed exactly one relationship item, returned `applied/verified`, and wrote a verified calibration row.

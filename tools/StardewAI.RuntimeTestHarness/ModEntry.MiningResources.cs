@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -239,11 +240,7 @@ public sealed partial class ModEntry : Mod
         var targetVector = new Vector2(active.Target.X, active.Target.Y);
         if (!mine.objects.TryGetValue(targetVector, out var current))
         {
-            if (active.BeginIssued)
-            {
-                RecordMineStoneCompletedSwing(active, 0);
-            }
-            CompleteMineStone(active);
+            TickRemovedMineStone(active);
             return;
         }
 
@@ -253,7 +250,8 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (!active.BeginIssued && ImmediateMiningThreat(mine))
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            ImmediateMiningThreat(mine))
         {
             StopAllMovement();
             active.CombatInterrupted = true;
@@ -262,7 +260,8 @@ public sealed partial class ModEntry : Mod
         }
         active.CombatInterrupted = false;
 
-        if (!active.BeginIssued && !AreAdjacent(Game1.player.TilePoint, active.Target))
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            !AreAdjacent(Game1.player.TilePoint, active.Target))
         {
             if (active.PathIndex >= active.Path.Count)
             {
@@ -327,7 +326,8 @@ public sealed partial class ModEntry : Mod
         }
 
         StopAllMovement();
-        if (active.SwingCount >= active.MaxSwings)
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            active.SwingCount >= active.MaxSwings)
         {
             CompleteMineStoneBlocked(active, "mine_stone_max_swings_exceeded");
             return;
@@ -339,29 +339,67 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (!active.BeginIssued)
+        var decision = active.Lifecycle.Advance(ObserveNativeToolAction());
+        switch (decision.Command)
         {
-            SelectTool(active.Pickaxe);
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-            Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize);
-            Game1.player.BeginUsingTool();
-            active.BeginIssued = true;
+            case NativeToolActionCommand.Press:
+                SelectTool(active.Pickaxe);
+                Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+                Game1.player.lastClick = new Vector2(active.Target.X * Game1.tileSize, active.Target.Y * Game1.tileSize);
+                Game1.player.BeginUsingTool();
+                return;
+
+            case NativeToolActionCommand.Release:
+                Game1.player.EndUsingTool();
+                return;
+
+            case NativeToolActionCommand.CycleCompleted:
+                RecordMineStoneCompletedSwing(active, current.MinutesUntilReady);
+                return;
+
+            case NativeToolActionCommand.Block:
+                WriteExecutorDiagnosticDump(decision.Reason);
+                CompleteMineStoneBlocked(active, "mine_stone_" + decision.Reason);
+                return;
+        }
+    }
+
+    private void TickRemovedMineStone(ActiveMineStone active)
+    {
+        if (active.Lifecycle.Phase == NativeToolActionPhase.Ready)
+        {
+            if (active.SwingCount > 0)
+            {
+                CompleteMineStone(active);
+            }
+            else
+            {
+                CompleteMineStoneBlocked(active, "mine_stone_target_removed_before_native_action");
+            }
             return;
         }
 
-        if (!active.ReleaseIssued && Game1.player.UsingTool && Game1.player.canReleaseTool)
+        var decision = active.Lifecycle.Advance(ObserveNativeToolAction());
+        switch (decision.Command)
         {
-            Game1.player.EndUsingTool();
-            active.ReleaseIssued = true;
-            return;
-        }
+            case NativeToolActionCommand.Release:
+                Game1.player.EndUsingTool();
+                return;
 
-        if (Game1.player.UsingTool || !Game1.player.CanMove || Game1.player.FarmerSprite.PauseForSingleAnimation)
-        {
-            return;
-        }
+            case NativeToolActionCommand.CycleCompleted:
+                active.SwingCount++;
+                if (active.ObservedHealth.Count == 0 || active.ObservedHealth[^1] != 0)
+                {
+                    active.ObservedHealth.Add(0);
+                }
+                CompleteMineStone(active);
+                return;
 
-        RecordMineStoneCompletedSwing(active, mine.objects.TryGetValue(targetVector, out var afterSwing) ? afterSwing.MinutesUntilReady : 0);
+            case NativeToolActionCommand.Block:
+                WriteExecutorDiagnosticDump(decision.Reason);
+                CompleteMineStoneBlocked(active, "mine_stone_" + decision.Reason);
+                return;
+        }
     }
 
     private bool AdvanceMineStonePath(ActiveMineStone active)
@@ -421,8 +459,7 @@ public sealed partial class ModEntry : Mod
     {
         active.SwingCount++;
         active.ObservedHealth.Add(remainingHealth);
-        active.BeginIssued = false;
-        active.ReleaseIssued = false;
+        active.Lifecycle.Reset();
     }
 
     private void CompleteMineStone(ActiveMineStone active)
@@ -466,7 +503,8 @@ public sealed partial class ModEntry : Mod
     private void CompleteMineStoneBlocked(ActiveMineStone active, string reason)
     {
         StopAllMovement();
-        if (active.BeginIssued && ReferenceEquals(Game1.player.CurrentTool, active.Pickaxe))
+        if (active.Lifecycle.Phase != NativeToolActionPhase.Ready &&
+            ReferenceEquals(Game1.player.CurrentTool, active.Pickaxe))
         {
             Game1.player.completelyStopAnimatingOrDoingAction();
         }

@@ -16,7 +16,8 @@ param(
 $ErrorActionPreference = "Stop"
 $recoverableReplanReasons = @(
     "combat_disengaged_transit_target",
-    "combat_target_not_found_or_moved"
+    "combat_target_not_found_or_moved",
+    "mine_stone_target_not_breakable_stone"
 )
 
 function Write-JsonFile {
@@ -139,6 +140,45 @@ function Wait-QuarrySnapshot {
     throw "Timed out waiting for a complete Quarry Mine snapshot. Last error: $lastError"
 }
 
+function Clear-TransientMenus {
+    param($Snapshot, [string] $Phase)
+    $current = $Snapshot
+    for ($attempt = 1; $attempt -le 16; $attempt++) {
+        if (-not [bool]$current.state.menus.active_menu.value.is_open) {
+            return $current
+        }
+
+        $request = [ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-quarry-golden-scythe"
+            queue_item_id = "runtime-quarry-golden-scythe.$Phase.close-menu-$attempt"
+            before_state_hash = $current.state_hash
+            option_id = "executor.close_menu"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $runtimeSaves
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+            social_continuation_dialogue_recovery = $true
+        }
+        $result = Invoke-JsonPost `
+            -Url "http://127.0.0.1:8767/api/v1/training/execute" `
+            -Body $request `
+            -TimeoutSeconds 60
+        Write-JsonFile `
+            (Join-Path $runDirectory ("$Phase-close-menu-$attempt.json")) `
+            $result
+        if ($result.status -ne "applied" -or
+            $result.primitive_verification_status -ne "verified") {
+            throw "$Phase could not close transient menu: $(@($result.block_reasons) -join ',')"
+        }
+        Start-Sleep -Milliseconds 250
+        $current = Wait-WorldSnapshot -TimeoutSeconds 30
+    }
+    throw "$Phase transient menu did not settle after 16 native advances."
+}
+
 function Read-ExecutionPrimitive {
     param($Execution)
     $steps = @($Execution.step_results)
@@ -154,7 +194,7 @@ if ($MaximumSteps -lt 2) {
 
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
-$runtimeSaves = Join-Path $RuntimeRoot "saves"
+$sourceSaves = Join-Path $RuntimeRoot "saves"
 $runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
 $smokeModsPath = Join-Path (Join-Path $RuntimeRoot "smoke-mods") $RunId
 $trainingRoot = Join-Path $runDirectory "training"
@@ -171,11 +211,11 @@ $exitVerified = $false
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) {
     throw "SMAPI executable not found: $smapiExe"
 }
-if (-not (Test-Path -LiteralPath $runtimeSaves -PathType Container)) {
-    throw "Isolated saves path not found: $runtimeSaves"
+if (-not (Test-Path -LiteralPath $sourceSaves -PathType Container)) {
+    throw "Isolated saves path not found: $sourceSaves"
 }
 if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
-    $slot = Get-ChildItem -LiteralPath $runtimeSaves -Directory |
+    $slot = Get-ChildItem -LiteralPath $sourceSaves -Directory |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
     if ($null -eq $slot) {
@@ -190,6 +230,27 @@ if (@($occupiedPorts).Count -gt 0) {
 }
 
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
+$sourceSaveSlot = Join-Path $sourceSaves $SaveSlot
+if (-not (Test-Path -LiteralPath $sourceSaveSlot -PathType Container)) {
+    throw "Source save slot not found: $sourceSaveSlot"
+}
+$runtimeSaves = Join-Path $runDirectory "isolated-saves"
+$runtimeSaveSlot = Join-Path $runtimeSaves $SaveSlot
+New-Item -ItemType Directory -Force -Path $runtimeSaveSlot | Out-Null
+Get-ChildItem -LiteralPath $sourceSaveSlot -File | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $runtimeSaveSlot $_.Name) -Force
+}
+$oldSave = Join-Path $runtimeSaveSlot ($SaveSlot + "_old")
+$currentSave = Join-Path $runtimeSaveSlot $SaveSlot
+$oldSaveInfo = Join-Path $runtimeSaveSlot "SaveGameInfo_old"
+$currentSaveInfo = Join-Path $runtimeSaveSlot "SaveGameInfo"
+$usedOldSaveSnapshot = Test-Path -LiteralPath $oldSave -PathType Leaf
+if ($usedOldSaveSnapshot) {
+    Copy-Item -LiteralPath $oldSave -Destination $currentSave -Force
+    if (Test-Path -LiteralPath $oldSaveInfo -PathType Leaf) {
+        Copy-Item -LiteralPath $oldSaveInfo -Destination $currentSaveInfo -Force
+    }
+}
 
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
@@ -257,6 +318,7 @@ try {
     Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30 | Out-Null
     Start-Sleep -Seconds 20
     $worldSnapshot = Wait-WorldSnapshot -TimeoutSeconds $StartupTimeoutSeconds
+    $worldSnapshot = Clear-TransientMenus -Snapshot $worldSnapshot -Phase "pre-setup"
 
     $setupRequest = [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -274,6 +336,8 @@ try {
         throw "Quarry fixture failed: status=$($setupResult.status); reasons=$(@($setupResult.block_reasons) -join ',')"
     }
 
+    $postSetupWorld = Wait-WorldSnapshot -TimeoutSeconds $StartupTimeoutSeconds
+    Clear-TransientMenus -Snapshot $postSetupWorld -Phase "post-setup" | Out-Null
     $beforeSetupSnapshot = Wait-QuarrySnapshot -TimeoutSeconds $StartupTimeoutSeconds
     $initialQuarry = Read-QuarryState $beforeSetupSnapshot
     Write-JsonFile (Join-Path $runDirectory "before-snapshot.json") $beforeSetupSnapshot
@@ -310,11 +374,14 @@ try {
             "--skip-training",
             "--sleep-ms", "0",
             "--max-crops", "64",
-            "--use-parameterized-action",
-            "--action-option-id", "mining.acquire_golden_scythe",
-            "--action-parameter", "latest_exit_time=$LatestExitTime",
-            "--action-parameter", "minimum_reserve_health=$MinimumReserveHealth",
-            "--action-parameter", "minimum_reserve_energy=$MinimumReserveEnergy",
+            "--use-daily-plan",
+            "--daily-plan-max-candidates", "1",
+            "--daily-plan-candidate-options", "mining.acquire_golden_scythe",
+            "--daily-plan-candidate-kind", "mining_acquire_golden_scythe_plan_envelope",
+            "--daily-plan-candidate-id", "mining:acquire_golden_scythe",
+            "--daily-plan-candidate-parameter", "latest_exit_time=$LatestExitTime",
+            "--daily-plan-candidate-parameter", "minimum_reserve_health=$MinimumReserveHealth",
+            "--daily-plan-candidate-parameter", "minimum_reserve_energy=$MinimumReserveEnergy",
             "--max-queue-item-attempts", "1"
         )
         $loopOutputPath = Join-Path $runDirectory ("loop-step-" + $step.ToString("D4") + ".json")
@@ -322,9 +389,29 @@ try {
         $loopExitCode = $LASTEXITCODE
 
         $snapshotDirectory = Join-Path $trainingRoot (Join-Path "runs" (Join-Path $artifactRunId "live-snapshots"))
+        $dailyPlanPath = Join-Path $snapshotDirectory "daily-plan-response-0001.json"
+        $queuePath = Join-Path $snapshotDirectory "compiled-queue-0001.json"
         $executionPath = Join-Path $snapshotDirectory "execution-0001.json"
+        if (-not (Test-Path -LiteralPath $dailyPlanPath -PathType Leaf) -or
+            -not (Test-Path -LiteralPath $queuePath -PathType Leaf)) {
+            throw "Step $step did not write DailyPlan and compiled-queue artifacts; loop_exit_code=$loopExitCode"
+        }
         if (-not (Test-Path -LiteralPath $executionPath -PathType Leaf)) {
             throw "Step $step did not write execution-0001.json; loop_exit_code=$loopExitCode"
+        }
+
+        $dailyPlan = Get-Content -LiteralPath $dailyPlanPath -Raw | ConvertFrom-Json
+        $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
+        $acceptedCandidate = @($dailyPlan.plan.candidate_audit | Where-Object {
+            $_.candidate_id -eq "mining:acquire_golden_scythe" -and
+            $_.kind -eq "mining_acquire_golden_scythe_plan_envelope" -and
+            $_.decision -eq "accepted"
+        }) | Select-Object -First 1
+        if ($null -eq $acceptedCandidate) {
+            throw "Step $step did not accept the exact Golden Scythe DailyPlan candidate."
+        }
+        if ([string]$queue.status -ne "pending" -or @($queue.items).Count -ne 1) {
+            throw "Step $step did not compile one pending rolling primitive."
         }
 
         $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
@@ -385,6 +472,8 @@ try {
             block_reasons = $blockReasons
             replan_required = $isRecoverableReplan
             actual_ticks = $primitive.actual_ticks
+            daily_plan_path = $dailyPlanPath
+            queue_path = $queuePath
             execution_path = $executionPath
             after_snapshot_path = $afterPath
         }
@@ -393,6 +482,9 @@ try {
 
         if ($optionId -notin $expectedOptions) {
             throw "Step $step selected an unexpected cross-family option: $optionId"
+        }
+        if ([string]$queue.items[0].option_id -ne $optionId) {
+            throw "Step $step compiled queue option $($queue.items[0].option_id) but executed $optionId."
         }
         if (-not [bool]$execution.after_snapshot_fresh) {
             throw "Step $step produced a stale after snapshot."
@@ -454,6 +546,9 @@ try {
         all_state_hashes_changed = @($stepSummaryArray | Where-Object { -not $_.state_hash_changed }).Count -eq 0
         dataset_path = $datasetPath
         dataset_rows = $datasetRows
+        source_save_slot = $sourceSaveSlot
+        isolated_save_slot = $runtimeSaveSlot
+        used_old_save_snapshot = $usedOldSaveSnapshot
         smoke_mods_path = $smokeModsPath
         loaded_mod_allowlist = @(
             "StardewAI.TransparentBridge",

@@ -85,8 +85,12 @@ namespace StardewAI.Core.Execution
                 };
                 if (plan is null)
                 {
-                    return Blocked(
-                        "quarry_route_blocker_attributed_but_unreachable");
+                    return BuildQuarryRoutePrefixApproach(
+                        staticRoute,
+                        routeObjectiveId,
+                        index,
+                        dynamicGrid,
+                        blocker);
                 }
 
                 plan.Reason = blocker.Kind switch
@@ -127,6 +131,65 @@ namespace StardewAI.Core.Execution
 
             return Blocked(
                 "quarry_route_blocker_unattributed");
+        }
+
+        private static MiningFloorStepPlan BuildQuarryRoutePrefixApproach(
+            MiningFloorStepPlan staticRoute,
+            string routeObjectiveId,
+            int blockedIndex,
+            bool[,] dynamicGrid,
+            RouteBlocker blocker)
+        {
+            var approachIndex = Math.Min(
+                ObjectiveApproachHorizonTiles,
+                blockedIndex - 1);
+            if (approachIndex <= 0 ||
+                staticRoute.Path
+                    .Take(approachIndex + 1)
+                    .Any(cell =>
+                        !InBounds(dynamicGrid, cell.X, cell.Y) ||
+                        dynamicGrid[cell.X, cell.Y]))
+            {
+                return Blocked(
+                    "quarry_route_blocker_attributed_but_unreachable");
+            }
+
+            var waypoint = staticRoute.Path[approachIndex];
+            return new MiningFloorStepPlan
+            {
+                Status = "ready",
+                StepKind = string.Equals(
+                    routeObjectiveId,
+                    "golden_scythe_exit",
+                    StringComparison.Ordinal)
+                        ? MiningFloorStepKinds.MoveToMineExitRoute
+                        : MiningFloorStepKinds.MoveToGoldenScytheAltar,
+                Reason = "approach_unreachable_quarry_route_blocker",
+                TargetTileX = waypoint.X,
+                TargetTileY = waypoint.Y,
+                StandTileX = waypoint.X,
+                StandTileY = waypoint.Y,
+                EstimatedMovementTiles = approachIndex,
+                RouteObjectiveId = routeObjectiveId,
+                RouteTargetTileX = staticRoute.TargetTileX,
+                RouteTargetTileY = staticRoute.TargetTileY,
+                RouteTargetStandTileX = staticRoute.StandTileX,
+                RouteTargetStandTileY = staticRoute.StandTileY,
+                BlockedRouteCellX = staticRoute.Path[blockedIndex].X,
+                BlockedRouteCellY = staticRoute.Path[blockedIndex].Y,
+                BlockerAttributionStatus =
+                    "exact_static_route_cell_identity_unreachable_now",
+                ExpectedConnectivityGain = ExpectedRouteConnectivityGain(
+                    staticRoute.Path,
+                    blockedIndex,
+                    dynamicGrid,
+                    blocker),
+                SafetyWindowStatus =
+                    "clear_prefix_before_unreachable_route_blocker",
+                Path = staticRoute.Path
+                    .Take(approachIndex + 1)
+                    .ToArray()
+            };
         }
 
         private static List<RouteBlocker> RouteBlockersAt(

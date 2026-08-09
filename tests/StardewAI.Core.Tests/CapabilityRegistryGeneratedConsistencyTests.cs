@@ -787,6 +787,32 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void GoldenScytheClosesFiveGatesButRemainsConfirmationOnlyTests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("mining.acquire_golden_scythe");
+
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, declaration.TrainingEligibility);
+        Assert.True(declaration.PlayerConfirmationRequired);
+        Assert.False(declaration.AutonomousCandidateEnabled);
+        Assert.Equal(CapabilityCompilerStatus.ParameterCompilerDeclared, declaration.CompilerStatus);
+        Assert.Equal(new[] { "EVD-231" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-231" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-231" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-231" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-231" }, declaration.OutputEvidenceIds);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.RuntimeTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.OutputTrainingGate);
+        Assert.Equal("not_admitted", declaration.TrainingEvidenceScope);
+        Assert.Equal(
+            new[] { TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired },
+            declaration.TrainingExclusionReasons);
+        Assert.DoesNotContain("mining.acquire_golden_scythe", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
     public void BushAdmissionRequiresExactVanillaBranchMatrixAndEvd120Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("foraging.harvest_bushes");

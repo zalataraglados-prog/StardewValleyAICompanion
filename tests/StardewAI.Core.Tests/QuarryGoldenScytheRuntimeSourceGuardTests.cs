@@ -37,6 +37,50 @@ public sealed class QuarryGoldenScytheRuntimeSourceGuardTests
             "\"--executor-timeout-seconds\", \"600\"",
             source,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--use-daily-plan\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--daily-plan-candidate-options\", \"mining.acquire_golden_scythe\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--daily-plan-candidate-kind\", \"mining_acquire_golden_scythe_plan_envelope\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"--daily-plan-candidate-id\", \"mining:acquire_golden_scythe\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "\"--use-parameterized-action\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "option_id = \"executor.close_menu\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$worldSnapshot = Clear-TransientMenus",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Clear-TransientMenus -Snapshot $postSetupWorld",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$runtimeSaves = Join-Path $runDirectory \"isolated-saves\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Copy-Item -LiteralPath $oldSave -Destination $currentSave -Force",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Remove-Item -Recurse",
+            source,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "continued Quarry Mine clearance after the reward had already been claimed",
             source,
@@ -51,6 +95,10 @@ public sealed class QuarryGoldenScytheRuntimeSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "\"combat_target_not_found_or_moved\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"mine_stone_target_not_breakable_stone\"",
             source,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -164,6 +212,41 @@ public sealed class QuarryGoldenScytheRuntimeSourceGuardTests
             "private void MoveTowardCombatTarget",
             source,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MineStoneWaitsForSharedNativeToolLifecycleSettlement()
+    {
+        var source = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MiningResources.cs");
+        var state = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.Mining.cs");
+        var mineStoneState = state[
+            state.IndexOf("private sealed class ActiveMineStone", StringComparison.Ordinal)..
+            state.IndexOf("private sealed class ActiveResourceClump", StringComparison.Ordinal)];
+
+        Assert.Contains(
+            "active.Lifecycle.Advance(ObserveNativeToolAction())",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NativeToolActionCommand.CycleCompleted",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TickRemovedMineStone(active)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "public NativeToolActionLifecycle Lifecycle { get; } = new();",
+            mineStoneState,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("BeginIssued", mineStoneState, StringComparison.Ordinal);
+        Assert.DoesNotContain("ReleaseIssued", mineStoneState, StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

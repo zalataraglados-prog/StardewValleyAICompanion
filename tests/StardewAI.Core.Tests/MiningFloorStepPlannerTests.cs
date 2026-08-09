@@ -174,6 +174,54 @@ public sealed partial class MiningFloorStepPlannerTests
     }
 
     [Fact]
+    public void GoldenScytheObjectiveApproachesClearPrefixBeforeUnreachableFlyingMonster()
+    {
+        var plan = Plan(
+            goldenScytheAltars:
+                "[{\"tile_x\":10,\"tile_y\":2,\"action\":\"GoldenScythe\"}]",
+            monsters:
+                "[{\"runtime_identity\":\"flying-route-blocker\",\"runtime_type\":\"StardewValley.Monsters.Bat\",\"name\":\"Haunted Skull\",\"tile_x\":7,\"tile_y\":2,\"health\":100,\"bounding_box\":{\"x\":384,\"y\":128,\"width\":192,\"height\":64},\"melee_attack_projections\":[{\"slot_index\":1,\"expected_attacks_to_defeat\":4.0,\"expected_active_damage_duration_ms\":900.0,\"duration_status\":\"exact_active_melee_phase_excluding_movement\",\"terminal_effect\":\"defeat\",\"can_defeat_with_this_weapon\":true}]}]",
+            rows: new[]
+            {
+                "111111111111",
+                "111111111111",
+                "100000111001",
+                "111111111111",
+                "111111111111"
+            },
+            staticRows: new[]
+            {
+                "111111111111",
+                "111111111111",
+                "100000000001",
+                "111111111111",
+                "111111111111"
+            },
+            mineKind: "quarry_mine",
+            goldenScytheApplicable: true,
+            objective: new MiningFloorObjective
+            {
+                Kind = MiningObjectiveKinds.AcquireGoldenScythe,
+                ThreatRadiusTiles = 1
+            });
+
+        Assert.Equal(
+            MiningFloorStepKinds.MoveToGoldenScytheAltar,
+            plan.StepKind);
+        Assert.Equal(
+            "approach_unreachable_quarry_route_blocker",
+            plan.Reason);
+        Assert.Equal(5, plan.TargetTileX);
+        Assert.Equal(2, plan.TargetTileY);
+        Assert.Equal(4, plan.EstimatedMovementTiles);
+        Assert.Equal(6, plan.BlockedRouteCellX);
+        Assert.Equal(2, plan.BlockedRouteCellY);
+        Assert.Equal(
+            "exact_static_route_cell_identity_unreachable_now",
+            plan.BlockerAttributionStatus);
+    }
+
+    [Fact]
     public void GoldenScytheObjectiveUsesNativeMineExitAfterClaim()
     {
         var plan = Plan(

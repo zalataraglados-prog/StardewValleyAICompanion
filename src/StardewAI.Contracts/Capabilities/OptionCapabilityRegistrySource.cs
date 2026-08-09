@@ -471,6 +471,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["mining.obtain_skull_key"] = VerifiedEvidence(
                         "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                         "EVD-106"),
+                    ["mining.acquire_golden_scythe"] = VerifiedEvidence(
+                        "vanilla_quarry_mine_sentinel_77377_daily_plan_rolling_native_combat_clearance_movement_golden_scythe_claim_and_mine_exit_with_explicit_confirmation",
+                        "EVD-231"),
                     ["recovery.stabilize_day"] = BoundedEvidence(
                         "all_current_recovery_candidates_including_rolling_cross_map_return_and_terminal_native_sleep",
                         readEvidenceIds: new[] { "EVD-045", "EVD-046" },

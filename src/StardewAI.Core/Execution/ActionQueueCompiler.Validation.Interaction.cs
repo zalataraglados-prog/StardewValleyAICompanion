@@ -146,6 +146,17 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_kind_unsupported" };
             }
 
+            if (string.Equals(expectedActionType, "GoldenScythe", StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(action, "required_executor_profile"),
+                    "mining_perfect_executor",
+                    StringComparison.Ordinal))
+            {
+                return GoldenScytheAltarMatches(snapshot, targetX.Value, targetY.Value)
+                    ? Array.Empty<string>()
+                    : new[] { "golden_scythe_altar_not_observed_at_target" };
+            }
+
             if (RouteActionBranchBlockedAtTile(snapshot, targetX.Value, targetY.Value))
             {
                 return new[] { "interact_unsupported_action_branch_at_target" };
@@ -157,6 +168,23 @@ namespace StardewAI.Core.Execution
             }
 
             return Array.Empty<string>();
+        }
+
+        private static bool GoldenScytheAltarMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
+        {
+            var tiles = ReadStateFieldValue(snapshot, "mining", "tiles");
+            if (!tiles.HasValue || tiles.Value.ValueKind != JsonValueKind.Object ||
+                !tiles.Value.TryGetProperty("golden_scythe_altars", out var altars) ||
+                altars.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            return altars.EnumerateArray().Any(altar =>
+                ReadInt(altar, "tile_x") == targetX &&
+                ReadInt(altar, "tile_y") == targetY &&
+                ReadBool(altar, "present") == true &&
+                string.Equals(ReadString(altar, "action"), "GoldenScythe", StringComparison.Ordinal));
         }
 
         private static bool SkullKeyRewardChestMatches(SnapshotEnvelope snapshot, int targetX, int targetY)

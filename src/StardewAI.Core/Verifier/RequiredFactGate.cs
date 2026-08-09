@@ -12,11 +12,19 @@ namespace StardewAI.Core.Verifier
     {
         public SafetyResult Evaluate(SnapshotEnvelope snapshot, OptionSpec option)
         {
+            return Evaluate(snapshot, option, option.RequiredStateFactors);
+        }
+
+        public SafetyResult Evaluate(
+            SnapshotEnvelope snapshot,
+            OptionSpec option,
+            string[] requiredStateFactors)
+        {
             var missing = new List<string>();
             var results = new List<PreconditionResult>();
             var blocking = new List<string>();
 
-            foreach (var factor in option.RequiredStateFactors)
+            foreach (var factor in requiredStateFactors)
             {
                 var rule = RuleFor(option.RequiredFactPolicy, factor);
                 var result = EvaluateOne(snapshot, factor, rule);

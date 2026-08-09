@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -81,8 +82,7 @@ public sealed partial class ModEntry : Mod
         public Vector2 LastPosition { get; set; }
         public Point LastObservedTile { get; set; }
         public int SwingCount { get; set; }
-        public bool BeginIssued { get; set; }
-        public bool ReleaseIssued { get; set; }
+        public NativeToolActionLifecycle Lifecycle { get; } = new();
         public bool CombatInterrupted { get; set; }
         public int CombatInterruptedTicks { get; set; }
         public List<int> ObservedHealth { get; } = new();

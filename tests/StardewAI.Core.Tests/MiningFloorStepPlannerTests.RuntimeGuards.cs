@@ -17,6 +17,9 @@ public sealed partial class MiningFloorStepPlannerTests
         var tickStart = source.IndexOf("private void TickMineStoneCore", StringComparison.Ordinal);
         var tickEnd = source.IndexOf("\n    private ", tickStart + 1, StringComparison.Ordinal);
         var tickMineStoneSource = source[tickStart..tickEnd];
+        var removedStart = source.IndexOf("private void TickRemovedMineStone", StringComparison.Ordinal);
+        var removedEnd = source.IndexOf("\n    private ", removedStart + 1, StringComparison.Ordinal);
+        var removedMineStoneSource = source[removedStart..removedEnd];
         var advanceStart = source.IndexOf("private bool AdvanceMineStonePath", StringComparison.Ordinal);
         var advanceEnd = source.IndexOf("\n    private ", advanceStart + 1, StringComparison.Ordinal);
         var advanceMineStoneSource = source[advanceStart..advanceEnd];
@@ -24,7 +27,10 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("executor.mine_stone", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.BeginUsingTool()", tickMineStoneSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.EndUsingTool()", tickMineStoneSource, StringComparison.Ordinal);
-        Assert.Contains("RecordMineStoneCompletedSwing(active, 0);", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.Lifecycle.Advance(ObserveNativeToolAction())", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("TickRemovedMineStone(active)", tickMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("NativeToolActionCommand.CycleCompleted", removedMineStoneSource, StringComparison.Ordinal);
+        Assert.Contains("active.ObservedHealth.Add(0)", removedMineStoneSource, StringComparison.Ordinal);
         Assert.Contains("native_pickaxe_lifecycle_removed_breakable_stone", source, StringComparison.Ordinal);
         Assert.Contains("ImmediateMiningThreat(mine)", tickMineStoneSource, StringComparison.Ordinal);
         Assert.Contains("active.CombatInterrupted = true", tickMineStoneSource, StringComparison.Ordinal);
