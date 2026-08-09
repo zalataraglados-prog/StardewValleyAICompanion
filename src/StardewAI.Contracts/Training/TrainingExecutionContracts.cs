@@ -492,6 +492,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("social_expected_talked_to_today_before")]
         public bool? SocialExpectedTalkedToTodayBefore { get; set; }
 
+        [JsonPropertyName("partnership_fixture_case")]
+        public string PartnershipFixtureCase { get; set; } = string.Empty;
+
         [JsonPropertyName("slot_index")]
         public int? SlotIndex { get; set; }
 

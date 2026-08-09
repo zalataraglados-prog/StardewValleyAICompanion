@@ -485,11 +485,9 @@ namespace StardewAI.Contracts.Capabilities
                         compilerEvidenceIds: new[] { "EVD-076", "EVD-104", "EVD-196" },
                         runtimeEvidenceIds: new[] { "EVD-196" },
                         outputEvidenceIds: new[] { "EVD-196" }),
-                    ["social.advance_partnership"] = BoundedEvidence(
-                        "vanilla_current_loaded_exact_bouquet_marriage_proposal_or_krobus_roommate_transition_with_explicit_confirmation",
-                        readEvidenceIds: new[] { "EVD-230" },
-                        candidateEvidenceIds: new[] { "EVD-230" },
-                        compilerEvidenceIds: new[] { "EVD-230" }),
+                    ["social.advance_partnership"] = VerifiedEvidence(
+                        "vanilla_current_loaded_exact_bouquet_marriage_proposal_or_krobus_roommate_transition_and_native_cross_day_wedding_settlement_with_explicit_confirmation",
+                        "EVD-230"),
                     ["social.talk_npc"] = VerifiedEvidence(
                         "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                         "EVD-076",

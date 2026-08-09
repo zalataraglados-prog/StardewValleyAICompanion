@@ -1,3 +1,12 @@
+2026-08-09 EVD-230 native partnership-progression evaluation admission
+- Hidden/silent isolated E-drive PASS 4/4: `artifacts\runtime-partnership-daily-plan\runtime-partnership-daily-plan-20260809-185103\summary.json`.
+- Bouquet `(O)458` changed Abigail `Friendly -> Dating`; Mermaid's Pendant `(O)460` changed `Dating -> Engaged`; Void Ghost Pendant `(O)808` engaged Krobus with `RoommateMarriage=true`. Each case compiled from `social.advance_partnership` through the sole shared `executor.social_interact`, consumed exactly one relationship item, returned `applied/verified`, and wrote a verified calibration row.
+- Marriage settlement was not simulated or written directly. Three existing `executor.sleep` executions advanced total day 218 -> 221; native new-day wedding logic changed Abigail `Engaged -> Married`, retained spouse Abigail, and matched the scheduled wedding date.
+- The first diagnostic run corrected a smoke assertion to inspect the executor-calibration row's primitive and exact candidate ID. The second exposed a missing `STARDEWAI_TRAINING_OUTPUT_DIR` in the smoke launcher; setting an isolated output directory restored the existing fail-closed sleep receipt contract without weakening production code.
+- EVD-230 closes all five evidence gates for the bounded vanilla option but retains explicit player confirmation, so the autonomous training allowlist remains unchanged.
+- Final regression PASS: Core 1589/1589; Backend 119/119; Release solution build 0 errors with 1 existing AvoidNetField warning.
+- Action reconciliation PASS: 585/585 exports, blocking 0; 104 registered, 171 semantic, 101 compiler-bound, 67 harness-dispatched, 35 five-gate closed, 26 training-allowlisted, and zero missing registrations/native-surface/native-branch/map-token blockers.
+
 2026-08-09 EVD-229 native farmhouse-upgrade evaluation admission
 - Hidden/silent isolated E-drive PASS 3/3: `artifacts\runtime-farmhouse-upgrade-daily-plan\runtime-farmhouse-upgrade-daily-plan-20260809-174522\summary.json`.
 - Level 0->1 used 10000g plus 450 `(O)388`; level 1->2 used 65000g plus 100 `(O)709`; level 2->3 used 100000g and no material. Every case compiled from `housing.advance_farmhouse` to the sole `executor.purchase_farmhouse_upgrade`, completed native Carpenter/Upgrade/Yes callbacks, left the immediate level unchanged, set construction countdown to 3, matched exact money/material deltas, closed the dialogue, and wrote one verified training row.
