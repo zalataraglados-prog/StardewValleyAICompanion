@@ -39,9 +39,9 @@ public sealed partial class ModEntry : Mod
         {
             return BuildSocialBlockedResult(request, false, null, "social_interact", "social_npc_name_required");
         }
-        if (actionKind != "talk" && actionKind != "gift")
+        if (actionKind is not ("talk" or "gift" or "bouquet" or "propose_marriage" or "propose_roommate"))
         {
-            return BuildSocialBlockedResult(request, false, null, "social_interact", "social_action_kind_talk_or_gift_required");
+            return BuildSocialBlockedResult(request, false, null, "social_interact", "social_action_kind_not_supported");
         }
 
         if (string.IsNullOrWhiteSpace(request.LocationId))
@@ -141,6 +141,9 @@ public sealed partial class ModEntry : Mod
         var beforeGiftsThisWeek = 0;
         var beforePoints = 0;
         var beforeFriendshipRowExists = false;
+        var beforeFriendshipStatus = string.Empty;
+        bool? beforeRoommateMarriage = null;
+        int? beforeWeddingDate = null;
         if (Game1.player.friendshipData.TryGetValue(npcName, out var friendshipEntry))
         {
             beforeFriendshipRowExists = true;
@@ -148,14 +151,18 @@ public sealed partial class ModEntry : Mod
             beforeGiftsToday = friendshipEntry.GiftsToday;
             beforeGiftsThisWeek = friendshipEntry.GiftsThisWeek;
             beforePoints = friendshipEntry.Points;
+            beforeFriendshipStatus = friendshipEntry.Status.ToString();
+            beforeRoommateMarriage = friendshipEntry.RoommateMarriage;
+            beforeWeddingDate = friendshipEntry.WeddingDate?.TotalDays;
         }
+        var beforeSpouse = Game1.player.spouse ?? string.Empty;
 
         int? beforeGiftStack = null;
         string beforeGiftItemId = string.Empty;
         int? beforeGiftQuality = null;
         int? beforeGiftSlot = null;
 
-        if (actionKind == "gift")
+        if (actionKind != "talk")
         {
             var slotIndex = request.SocialGiftSlotIndex ?? -1;
             if (slotIndex < 0 || slotIndex >= Game1.player.Items.Count)
@@ -180,23 +187,34 @@ public sealed partial class ModEntry : Mod
                 return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_gift_stack_empty");
             }
 
-            if (!npc.CanReceiveGifts())
+            if (actionKind == "gift" && !npc.CanReceiveGifts())
             {
                 return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_npc_cannot_receive_gifts");
             }
 
-            var isStardropTea = string.Equals(item.QualifiedItemId, "(O)StardropTea", StringComparison.Ordinal);
-            var isSpouse = string.Equals(Game1.player.spouse, npcName, StringComparison.Ordinal);
-            var isBirthday = npc.isBirthday();
-            var dailyExhausted = beforeGiftsToday >= 1;
-            var weeklyExhausted = beforeGiftsThisWeek >= 2;
-            if (dailyExhausted && !isStardropTea)
+            if (actionKind == "gift")
             {
-                return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_gift_daily_limit_exhausted");
+                var isStardropTea = string.Equals(item.QualifiedItemId, "(O)StardropTea", StringComparison.Ordinal);
+                var isSpouse = string.Equals(Game1.player.spouse, npcName, StringComparison.Ordinal);
+                var isBirthday = npc.isBirthday();
+                var dailyExhausted = beforeGiftsToday >= 1;
+                var weeklyExhausted = beforeGiftsThisWeek >= 2;
+                if (dailyExhausted && !isStardropTea)
+                {
+                    return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_gift_daily_limit_exhausted");
+                }
+                if (weeklyExhausted && !isSpouse && !isBirthday && !isStardropTea)
+                {
+                    return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_gift_weekly_limit_exhausted");
+                }
             }
-            if (weeklyExhausted && !isSpouse && !isBirthday && !isStardropTea)
+            else
             {
-                return BuildSocialBlockedResult(request, true, npc, "social_interact", "social_gift_weekly_limit_exhausted");
+                var partnershipReasons = PartnershipRuntimeBlockReasons(actionKind, npc, item, friendshipEntry);
+                if (partnershipReasons.Length > 0)
+                {
+                    return BuildSocialBlockedResult(request, true, npc, "social_interact", partnershipReasons);
+                }
             }
 
             beforeGiftStack = item.Stack;
@@ -208,7 +226,7 @@ public sealed partial class ModEntry : Mod
         var startTicks = Game1.ticks;
         var startedAt = DateTimeOffset.UtcNow.ToString("O");
 
-        if (actionKind == "gift" && beforeGiftSlot.HasValue)
+        if (actionKind != "talk" && beforeGiftSlot.HasValue)
         {
             Game1.player.CurrentToolIndex = beforeGiftSlot.Value;
 
@@ -260,6 +278,9 @@ public sealed partial class ModEntry : Mod
         var afterGiftsThisWeek = 0;
         var afterPoints = 0;
         var afterFriendshipRowExists = false;
+        var afterFriendshipStatus = string.Empty;
+        bool? afterRoommateMarriage = null;
+        int? afterWeddingDate = null;
         if (Game1.player.friendshipData.TryGetValue(npcName, out var afterFriendshipEntry))
         {
             afterFriendshipRowExists = true;
@@ -267,14 +288,18 @@ public sealed partial class ModEntry : Mod
             afterGiftsToday = afterFriendshipEntry.GiftsToday;
             afterGiftsThisWeek = afterFriendshipEntry.GiftsThisWeek;
             afterPoints = afterFriendshipEntry.Points;
+            afterFriendshipStatus = afterFriendshipEntry.Status.ToString();
+            afterRoommateMarriage = afterFriendshipEntry.RoommateMarriage;
+            afterWeddingDate = afterFriendshipEntry.WeddingDate?.TotalDays;
         }
+        var afterSpouse = Game1.player.spouse ?? string.Empty;
 
         int? afterGiftStack = null;
         string afterGiftItemId = string.Empty;
         int? afterGiftQuality = null;
         int? afterGiftSlot = null;
 
-        if (actionKind == "gift" && beforeGiftSlot.HasValue && beforeGiftSlot.Value < Game1.player.Items.Count)
+        if (actionKind != "talk" && beforeGiftSlot.HasValue && beforeGiftSlot.Value < Game1.player.Items.Count)
         {
             var afterItem = Game1.player.Items[beforeGiftSlot.Value];
             afterGiftStack = afterItem?.Stack;
@@ -375,6 +400,60 @@ public sealed partial class ModEntry : Mod
                 "verified", new[] { "native_talk_handled", "observable_social_transition" },
                 string.Empty, string.Empty,
                 startedAt, completedAt, actualTicks);
+        }
+
+        if (actionKind is "bouquet" or "propose_marriage" or "propose_roommate")
+        {
+            var itemConsumed = beforeGiftStack.HasValue &&
+                ((!afterGiftStack.HasValue && beforeGiftStack.Value == 1) ||
+                    (afterGiftStack.HasValue &&
+                        string.Equals(afterGiftItemId, beforeGiftItemId, StringComparison.Ordinal) &&
+                        afterGiftStack.Value == beforeGiftStack.Value - 1));
+            var transitionVerified = actionKind == "bouquet"
+                ? string.Equals(afterFriendshipStatus, "Dating", StringComparison.Ordinal) &&
+                    !string.Equals(beforeFriendshipStatus, "Dating", StringComparison.Ordinal)
+                : string.Equals(afterFriendshipStatus, "Engaged", StringComparison.Ordinal) &&
+                    string.Equals(afterSpouse, npcName, StringComparison.Ordinal) &&
+                    afterWeddingDate.HasValue && afterWeddingDate.Value > Game1.Date.TotalDays &&
+                    afterRoommateMarriage == (actionKind == "propose_roommate");
+            var verified = handled && itemConsumed && transitionVerified;
+            var result = BuildSocialInteractResult(request, handled, npcName,
+                beforeNpcLocation, afterNpcLocation,
+                beforeNpcTile, afterNpcTile,
+                beforeNpcVisible, afterNpcVisible,
+                beforeNpcSleeping, afterNpcSleeping,
+                beforeNpcOrdinary, afterNpcOrdinary,
+                afterNpcPresent,
+                beforePlayerTile, afterPlayerTile,
+                beforeFacing, afterFacing,
+                beforeSelectedSlot, afterSelectedSlot,
+                beforeMenuOpen, afterMenuOpen, beforeMenuType, afterMenuType,
+                beforeDialogueOpen, afterDialogueOpen,
+                beforeDialogueCount, afterDialogueCount,
+                beforeDialogueKey, afterDialogueKey,
+                beforeDialogueSpeakerName, afterDialogueSpeakerName,
+                beforePoints, afterPoints, beforeTalkedToToday, afterTalkedToToday,
+                beforeGiftsToday, afterGiftsToday, beforeGiftsThisWeek, afterGiftsThisWeek,
+                beforeFriendshipRowExists, afterFriendshipRowExists,
+                beforeGiftStack, afterGiftStack, beforeGiftItemId, afterGiftItemId,
+                beforeGiftQuality, afterGiftQuality, beforeGiftSlot, afterGiftSlot,
+                true, verified ? "applied" : "blocked",
+                verified ? "verified" : "observed_mismatch",
+                verified
+                    ? new[] { "native_partnership_branch_handled", "exact_one_relationship_item_consumed", "relationship_transition_verified" }
+                    : new[] { handled ? "native_partnership_transition_incomplete" : "native_checkAction_not_handled_for_partnership" },
+                verified ? string.Empty : "native_partnership_transition_incomplete",
+                "evaluation_only",
+                startedAt, completedAt, actualTicks);
+            result.PartnershipFriendshipStatusBefore = beforeFriendshipStatus;
+            result.PartnershipFriendshipStatusAfter = afterFriendshipStatus;
+            result.PartnershipSpouseBefore = beforeSpouse;
+            result.PartnershipSpouseAfter = afterSpouse;
+            result.PartnershipRoommateMarriageBefore = beforeRoommateMarriage;
+            result.PartnershipRoommateMarriageAfter = afterRoommateMarriage;
+            result.PartnershipWeddingDateTotalDaysBefore = beforeWeddingDate;
+            result.PartnershipWeddingDateTotalDaysAfter = afterWeddingDate;
+            return result;
         }
 
         if (actionKind == "gift" && !handled)
@@ -498,6 +577,49 @@ public sealed partial class ModEntry : Mod
         }
 
         return BuildSocialBlockedResult(request, true, null, "social_interact", "social_unexpected_state_after_interact");
+    }
+
+    private static string[] PartnershipRuntimeBlockReasons(string actionKind, NPC npc, Item item, Friendship? friendship)
+    {
+        var reasons = new List<string>();
+        if (friendship is null)
+        {
+            reasons.Add("partnership_friendship_row_missing");
+            return reasons.ToArray();
+        }
+
+        var playerCommitted = Game1.player.isMarriedOrRoommates() || Game1.player.isEngaged();
+        if (actionKind == "bouquet")
+        {
+            if (item.QualifiedItemId != "(O)458") reasons.Add("partnership_bouquet_item_mismatch");
+            if (!npc.datable.Value) reasons.Add("partnership_target_not_datable");
+            if (npc.isMarriedOrEngaged()) reasons.Add("partnership_target_already_committed");
+            if (friendship.IsDating()) reasons.Add("partnership_already_dating");
+            if (friendship.IsDivorced()) reasons.Add("partnership_divorced_target_rejects_bouquet");
+            if (friendship.Points < 2000) reasons.Add("partnership_bouquet_requires_2000_points");
+        }
+        else if (actionKind == "propose_marriage")
+        {
+            if (item.QualifiedItemId != "(O)460") reasons.Add("partnership_mermaid_pendant_item_mismatch");
+            if (!npc.datable.Value) reasons.Add("partnership_target_not_datable");
+            if (npc.isMarriedOrEngaged()) reasons.Add("partnership_target_already_committed");
+            if (friendship.IsDivorced()) reasons.Add("partnership_divorced_target_rejects_proposal");
+            if (friendship.Points < 2500) reasons.Add("partnership_marriage_proposal_requires_2500_points");
+            if (playerCommitted) reasons.Add("partnership_player_already_committed");
+            if (Game1.player.HouseUpgradeLevel < 1) reasons.Add("partnership_proposal_requires_house_upgrade");
+        }
+        else
+        {
+            var expectedTag = ItemContextTagManager.SanitizeContextTag("propose_roommate_" + npc.Name);
+            if (!item.HasContextTag(expectedTag)) reasons.Add("partnership_roommate_item_context_tag_mismatch");
+            if (npc.Name != "Krobus") reasons.Add("partnership_vanilla_roommate_target_must_be_krobus");
+            if (npc.isMarriedOrEngaged()) reasons.Add("partnership_target_already_committed");
+            if (friendship.Points / NPC.friendshipPointsPerHeartLevel < 10) reasons.Add("partnership_roommate_proposal_requires_10_hearts");
+            if (playerCommitted) reasons.Add("partnership_player_already_committed");
+            if (Game1.player.HouseUpgradeLevel < 1) reasons.Add("partnership_proposal_requires_house_upgrade");
+        }
+
+        return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
     private static TrainingExecutionResult BuildSocialBlockedResult(

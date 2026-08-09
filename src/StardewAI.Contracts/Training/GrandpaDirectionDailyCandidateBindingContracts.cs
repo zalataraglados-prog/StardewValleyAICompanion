@@ -94,10 +94,10 @@ namespace StardewAI.Contracts.Training
         public string Binder { get; set; } = "StardewAI.Core.Training.GrandpaDirectionDailyCandidateBinding";
 
         [JsonPropertyName("policy")]
-        public string Policy { get; set; } = "Conservative typed binding for all Grandpa directions. marriage_and_house_upgrade currently binds only its native farmhouse-upgrade axis; partnership completion remains fail-closed when no exact candidate exists.";
+        public string Policy { get; set; } = "Conservative typed binding for all Grandpa directions. marriage_and_house_upgrade binds exact native farmhouse, bouquet, marriage-proposal, and Krobus-roommate candidates; scheduled weddings settle only through the normal cross-day lifecycle.";
 
         [JsonPropertyName("catalog_version")]
-        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v4";
+        public string CatalogVersion { get; set; } = "grandpa_direction_catalog.v5";
 
         [JsonPropertyName("state_hash_verified")]
         public bool StateHashVerified { get; set; }

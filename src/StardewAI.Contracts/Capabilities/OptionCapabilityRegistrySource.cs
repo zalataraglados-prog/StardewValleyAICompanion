@@ -233,7 +233,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "executor.buy_shop_item",
-            "social.talk_npc", "social.gift_npc",
+            "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "inventory.transfer_item", "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
@@ -300,7 +300,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
-            "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe",
+            "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe", "social.advance_partnership",
             "executor.choose_dialogue_response", "executor.donate_museum_item",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade");
@@ -316,7 +316,7 @@ namespace StardewAI.Contracts.Capabilities
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "economy.buy_supplies",
-            "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc",
+            "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "quest.advance", "strategy.grandpa_progress", "exploration.visit_location",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -485,6 +485,11 @@ namespace StardewAI.Contracts.Capabilities
                         compilerEvidenceIds: new[] { "EVD-076", "EVD-104", "EVD-196" },
                         runtimeEvidenceIds: new[] { "EVD-196" },
                         outputEvidenceIds: new[] { "EVD-196" }),
+                    ["social.advance_partnership"] = BoundedEvidence(
+                        "vanilla_current_loaded_exact_bouquet_marriage_proposal_or_krobus_roommate_transition_with_explicit_confirmation",
+                        readEvidenceIds: new[] { "EVD-230" },
+                        candidateEvidenceIds: new[] { "EVD-230" },
+                        compilerEvidenceIds: new[] { "EVD-230" }),
                     ["social.talk_npc"] = VerifiedEvidence(
                         "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                         "EVD-076",
@@ -554,6 +559,9 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("transfer_inventory_item"),
                 SupportedCandidate("social_continuation_retry_wait"),
                 SupportedCandidate("social_gift_current"), SupportedCandidate("social_talk_current"),
+                SupportedCandidate("partnership_bouquet_current"),
+                SupportedCandidate("partnership_propose_marriage_current"),
+                SupportedCandidate("partnership_propose_roommate_current"),
                 SupportedCandidate("volcano_reach_caldera_plan_envelope"),
                 SupportedCandidate("water_crop_tile"), SupportedCandidate("sell_shop_item"),
                 BlockedCandidate("purchase_service_gate", "purchase_service_gate_excluded_upstream"),

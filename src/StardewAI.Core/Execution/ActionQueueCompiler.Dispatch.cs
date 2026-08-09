@@ -99,6 +99,7 @@ namespace StardewAI.Core.Execution
                 ["executor.buy_shop_item"] = BuildBuyShopItemParameters,
                 ["social.talk_npc"] = BuildSocialParameters,
                 ["social.gift_npc"] = BuildSocialParameters,
+                ["social.advance_partnership"] = BuildSocialParameters,
                 ["inventory.transfer_item"] = BuildMaterialTransferParameters,
                 ["executor.transfer_material"] = BuildMaterialTransferParameters
             };

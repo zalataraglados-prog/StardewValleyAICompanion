@@ -1191,6 +1191,30 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("social_gifts_this_week_after")]
         public int? SocialGiftsThisWeekAfter { get; set; }
 
+        [JsonPropertyName("partnership_friendship_status_before")]
+        public string PartnershipFriendshipStatusBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("partnership_friendship_status_after")]
+        public string PartnershipFriendshipStatusAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("partnership_spouse_before")]
+        public string PartnershipSpouseBefore { get; set; } = string.Empty;
+
+        [JsonPropertyName("partnership_spouse_after")]
+        public string PartnershipSpouseAfter { get; set; } = string.Empty;
+
+        [JsonPropertyName("partnership_roommate_marriage_before")]
+        public bool? PartnershipRoommateMarriageBefore { get; set; }
+
+        [JsonPropertyName("partnership_roommate_marriage_after")]
+        public bool? PartnershipRoommateMarriageAfter { get; set; }
+
+        [JsonPropertyName("partnership_wedding_date_total_days_before")]
+        public int? PartnershipWeddingDateTotalDaysBefore { get; set; }
+
+        [JsonPropertyName("partnership_wedding_date_total_days_after")]
+        public int? PartnershipWeddingDateTotalDaysAfter { get; set; }
+
         [JsonPropertyName("social_menu_open_before")]
         public bool? SocialMenuOpenBefore { get; set; }
 

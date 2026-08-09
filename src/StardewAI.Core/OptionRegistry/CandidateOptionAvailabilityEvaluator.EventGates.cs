@@ -16,7 +16,9 @@ namespace StardewAI.Core.OptionRegistry
     {
         private static string[] SocialCandidateGateBlockingReasons(string optionId, EventCandidate[] socialCandidates, bool hasBoundParameters)
         {
-            if (optionId != "social.talk_npc" && optionId != "social.gift_npc")
+            if (optionId != "social.talk_npc" &&
+                optionId != "social.gift_npc" &&
+                optionId != "social.advance_partnership")
             {
                 return Array.Empty<string>();
             }
@@ -35,12 +37,16 @@ namespace StardewAI.Core.OptionRegistry
         private static bool IsUnboundSocialCandidate(OptionAvailabilityCandidate candidate)
         {
             return candidate.Parameters.Length == 0 &&
-                (candidate.OptionId == "social.talk_npc" || candidate.OptionId == "social.gift_npc");
+                (candidate.OptionId == "social.talk_npc" ||
+                    candidate.OptionId == "social.gift_npc" ||
+                    candidate.OptionId == "social.advance_partnership");
         }
 
         private static bool IsSocialContinuationCandidate(OptionAvailabilityCandidate candidate)
         {
-            return (candidate.OptionId == "social.talk_npc" || candidate.OptionId == "social.gift_npc") &&
+            return (candidate.OptionId == "social.talk_npc" ||
+                    candidate.OptionId == "social.gift_npc" ||
+                    candidate.OptionId == "social.advance_partnership") &&
                 !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.npc_name")) &&
                 !string.IsNullOrWhiteSpace(ReadParameter(candidate.Parameters, "continuation.target_location"));
         }

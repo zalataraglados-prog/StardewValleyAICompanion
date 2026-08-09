@@ -225,6 +225,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("inventory.transfer_item", C, R1, None, NoConfirm, Actor, Inventory, Policy),
                 P("social.talk_npc", C, R5, Relationship, PolicyConfirm, Actor, ActorState, Policy),
                 P("social.gift_npc", C, R5, Relationship, PolicyConfirm, Actor, Mixed, Policy),
+                P("social.advance_partnership", C, R5, Relationship, ExplicitConfirm, Actor, Mixed, Explicit),
                 P("quest.advance", Goal, R2, Consume, PolicyConfirm, Actor, Mixed, Policy),
                 P("strategy.grandpa_progress", Goal, R1, None, NoConfirm, Actor, Mixed, Allowed),
                 P("exploration.visit_location", C, R1, None, NoConfirm, Actor, ActorState, Allowed),

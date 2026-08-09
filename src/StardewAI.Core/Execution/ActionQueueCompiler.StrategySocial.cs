@@ -160,7 +160,9 @@ namespace StardewAI.Core.Execution
 
         private static string[] ValidateSocialPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
-            if (action.OptionId != "social.talk_npc" && action.OptionId != "social.gift_npc")
+            if (action.OptionId != "social.talk_npc" &&
+                action.OptionId != "social.gift_npc" &&
+                action.OptionId != "social.advance_partnership")
             {
                 return Array.Empty<string>();
             }
@@ -172,7 +174,7 @@ namespace StardewAI.Core.Execution
                 reasons.Add("social_npc_name_required");
             }
 
-            if (action.OptionId == "social.gift_npc")
+            if (action.OptionId == "social.gift_npc" || action.OptionId == "social.advance_partnership")
             {
                 if (!ReadIntParameter(action, "slot_index").HasValue)
                 {
@@ -181,6 +183,11 @@ namespace StardewAI.Core.Execution
                 if (string.IsNullOrWhiteSpace(ReadParameter(action, "qualified_item_id")))
                 {
                     reasons.Add("social_gift_qualified_item_id_required");
+                }
+                if (action.OptionId == "social.advance_partnership" &&
+                    ReadParameter(action, "partnership_action_kind") is not ("bouquet" or "propose_marriage" or "propose_roommate"))
+                {
+                    reasons.Add("partnership_action_kind_required");
                 }
             }
 
@@ -210,9 +217,9 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("social_npc_name_required");
             }
-            if (actionKind != "talk" && actionKind != "gift")
+            if (actionKind is not ("talk" or "gift" or "bouquet" or "propose_marriage" or "propose_roommate"))
             {
-                reasons.Add("social_action_kind_talk_or_gift_required");
+                reasons.Add("social_action_kind_not_supported");
             }
             var targetX = ReadIntParameter(action, "target_tile_x");
             var targetY = ReadIntParameter(action, "target_tile_y");
@@ -237,7 +244,7 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("social_candidate_stand_npc_evidence_missing");
             }
-            if (actionKind == "gift")
+            if (actionKind != "talk")
             {
                 if (!ReadIntParameter(action, "slot_index").HasValue)
                 {
@@ -251,7 +258,11 @@ namespace StardewAI.Core.Execution
             if (!string.IsNullOrWhiteSpace(npcName) && !string.IsNullOrWhiteSpace(actionKind) &&
                 standX.HasValue && standY.HasValue)
             {
-                var optionId = actionKind == "gift" ? "social.gift_npc" : "social.talk_npc";
+                var optionId = actionKind == "gift"
+                    ? "social.gift_npc"
+                    : actionKind == "talk"
+                        ? "social.talk_npc"
+                        : "social.advance_partnership";
                 var probe = new SmallModelAction
                 {
                     ActionId = "social.interact.probe",
@@ -261,7 +272,7 @@ namespace StardewAI.Core.Execution
                         new SmallModelActionParameter { Name = "npc_name", Value = npcName }
                     }
                 };
-                if (actionKind == "gift")
+                if (actionKind != "talk")
                 {
                     var slotIndex = ReadIntParameter(action, "slot_index") ?? 0;
                     var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;
@@ -269,7 +280,8 @@ namespace StardewAI.Core.Execution
                     {
                         new SmallModelActionParameter { Name = "npc_name", Value = npcName },
                         new SmallModelActionParameter { Name = "slot_index", Value = slotIndex.ToString() },
-                        new SmallModelActionParameter { Name = "qualified_item_id", Value = qualifiedItemId }
+                        new SmallModelActionParameter { Name = "qualified_item_id", Value = qualifiedItemId },
+                        new SmallModelActionParameter { Name = "partnership_action_kind", Value = actionKind == "gift" ? string.Empty : actionKind }
                     };
                 }
                 var candidate = SocialCandidateBuilder.FindMatching(snapshot, probe);

@@ -136,12 +136,15 @@ namespace StardewAI.Core.OptionRegistry
             return optionId == "economy.ship_items" ||
                 optionId == "social.talk_npc" ||
                 optionId == "social.gift_npc" ||
+                optionId == "social.advance_partnership" ||
                 optionId == "quest.advance";
         }
 
         private static string ExecutorDisabledReason(string optionId)
         {
-            if (optionId == "social.talk_npc" || optionId == "social.gift_npc")
+            if (optionId == "social.talk_npc" ||
+                optionId == "social.gift_npc" ||
+                optionId == "social.advance_partnership")
             {
                 return "social_high_level_direct_executor_disabled_use_daily_plan_compiler";
             }

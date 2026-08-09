@@ -211,6 +211,8 @@ public sealed class NpcReadAdapter : ReadAdapterBase
                     is_villager = npc.IsVillager,
                     is_child = npc is Child,
                     is_datably_flagged = npc.datable.Value,
+                    is_married_or_engaged = npc.isMarriedOrEngaged(),
+                    spouse_name = npc.getSpouse()?.Name ?? string.Empty,
                     simple_non_villager_npc = npc.SimpleNonVillagerNPC,
                     is_invisible = npc.IsInvisible,
                     is_sleeping = npc.isSleeping.Value,

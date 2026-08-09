@@ -128,7 +128,9 @@ namespace StardewAI.Core.Execution
             var actionKind = ReadParameter(action, "social_action_kind") ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(actionKind))
             {
-                actionKind = actionKind == "talk" || actionKind == "gift" ? actionKind : string.Empty;
+                actionKind = actionKind is "talk" or "gift" or "bouquet" or "propose_marriage" or "propose_roommate"
+                    ? actionKind
+                    : string.Empty;
             }
             var targetX = ReadIntParameter(action, "target_tile_x");
             var targetY = ReadIntParameter(action, "target_tile_y");
@@ -200,7 +202,9 @@ namespace StardewAI.Core.Execution
 
         private static SocialPlanEnvelope? CompileSocialPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
-            if (action.OptionId != "social.talk_npc" && action.OptionId != "social.gift_npc")
+            if (action.OptionId != "social.talk_npc" &&
+                action.OptionId != "social.gift_npc" &&
+                action.OptionId != "social.advance_partnership")
             {
                 return null;
             }
@@ -209,7 +213,11 @@ namespace StardewAI.Core.Execution
             var evidence = candidate?.Parameters ?? Array.Empty<SmallModelActionParameter>();
             return new SocialPlanEnvelope
             {
-                ActionKind = action.OptionId == "social.talk_npc" ? "talk" : "gift",
+                ActionKind = action.OptionId == "social.talk_npc"
+                    ? "talk"
+                    : action.OptionId == "social.gift_npc"
+                        ? "gift"
+                        : ReadParameter(action, "partnership_action_kind") ?? string.Empty,
                 RequestedNpcName = ReadParameter(action, "npc_name") ?? ReadParameter(action, "target_npc") ?? string.Empty,
                 RequestedSlotIndex = ReadIntParameter(action, "slot_index"),
                 RequestedQualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty,

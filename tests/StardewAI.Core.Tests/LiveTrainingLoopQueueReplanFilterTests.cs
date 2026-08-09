@@ -165,6 +165,32 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void PartnershipContinuationKeepsIrreversibleActionKindBound()
+    {
+        var route = QueueItem("queue.partnership.route", "executor.traverse_connector", "2", "3", string.Empty);
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.option_id", "social.advance_partnership"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.npc_name", "Abigail"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.target_location", "SeedShop"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.slot_index", "0"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.qualified_item_id", "(O)460"));
+        route["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("continuation.partnership_action_kind", "propose_marriage"));
+        var continuation = QueueReplanFilter.ReadSocialContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("propose_marriage", continuation!["partnership_action_kind"]!.GetValue<string>());
+
+        var wrong = QueueItem("queue.partnership.wrong", "executor.social_interact", "10", "10", "(O)460");
+        wrong["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("npc_name", "Abigail"));
+        wrong["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("social_action_kind", "bouquet"));
+        Assert.False(QueueReplanFilter.CompletesSocialContinuation(wrong, continuation, "applied"));
+
+        var exact = QueueItem("queue.partnership.exact", "executor.social_interact", "10", "10", "(O)460");
+        exact["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("npc_name", "Abigail"));
+        exact["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("social_action_kind", "propose_marriage"));
+        Assert.True(QueueReplanFilter.CompletesSocialContinuation(exact, continuation, "applied"));
+    }
+
+    [Fact]
     public void PurchaseContinuationLocksShopAndItemUntilExactNativeBuyApplies()
     {
         var route = QueueItem(

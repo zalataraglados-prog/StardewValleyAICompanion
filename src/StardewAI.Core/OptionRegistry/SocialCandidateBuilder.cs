@@ -13,7 +13,9 @@ namespace StardewAI.Core.OptionRegistry
     {
         public static EventCandidate[] Build(SnapshotEnvelope snapshot, string optionId, int maxCandidates = 64)
         {
-            if (optionId != "social.talk_npc" && optionId != "social.gift_npc")
+            if (optionId != "social.talk_npc" &&
+                optionId != "social.gift_npc" &&
+                optionId != "social.advance_partnership")
             {
                 return Array.Empty<EventCandidate>();
             }
@@ -40,9 +42,13 @@ namespace StardewAI.Core.OptionRegistry
                         results.Add(candidate);
                     }
                 }
-                else
+                else if (optionId == "social.gift_npc")
                 {
                     results.AddRange(GiftCandidates(snapshot, npc));
+                }
+                else
+                {
+                    results.AddRange(PartnershipCandidates(snapshot, npc));
                 }
             }
 
@@ -61,6 +67,204 @@ namespace StardewAI.Core.OptionRegistry
         public static EventCandidate? FindMatching(SnapshotEnvelope snapshot, SmallModelAction action)
         {
             return Build(snapshot, action.OptionId).FirstOrDefault(candidate => candidate.Available && ParametersMatch(candidate, action));
+        }
+
+        private static IEnumerable<EventCandidate> PartnershipCandidates(SnapshotEnvelope snapshot, JsonElement npc)
+        {
+            var npcName = ReadString(npc, "name");
+            var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
+            if (string.IsNullOrWhiteSpace(npcName) || !inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
+            {
+                yield break;
+            }
+
+            var friendship = Friendship(snapshot, npcName);
+            foreach (var item in inventory.Value.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object || ReadBool(item, "is_empty"))
+                {
+                    continue;
+                }
+
+                var qualifiedItemId = ReadString(item, "qualified_item_id");
+                var actionKind = qualifiedItemId == "(O)458"
+                    ? "bouquet"
+                    : qualifiedItemId == "(O)460"
+                        ? "propose_marriage"
+                        : HasExactContextTag(item, "propose_roommate_" + npcName)
+                            ? "propose_roommate"
+                            : string.Empty;
+                if (string.IsNullOrWhiteSpace(actionKind))
+                {
+                    continue;
+                }
+
+                var reasons = PartnershipBaseBlockReasons(snapshot, npc, item);
+                var points = friendship.HasValue ? ReadInt(friendship.Value, "points") : 0;
+                var playerMarriageKnown = TryReadStateBool(snapshot, "player", "married_or_roommate", out var playerMarriedOrRoommate);
+                var playerEngagementKnown = TryReadStateBool(snapshot, "player", "engaged", out var playerEngaged);
+                var farmhouseUpgradeLevel = ReadStateFieldIntOptional(snapshot, "player", "farmhouse_upgrade_level");
+                var playerCommitted = playerMarriedOrRoommate || playerEngaged;
+                if (!friendship.HasValue)
+                {
+                    reasons.Add("partnership_friendship_row_missing");
+                }
+
+                if (actionKind == "bouquet")
+                {
+                    if (!TryReadBool(npc, "is_datably_flagged", out _)) reasons.Add("partnership_target_datable_fact_incomplete");
+                    if (!ReadBool(npc, "is_datably_flagged")) reasons.Add("partnership_target_not_datable");
+                    if (ReadBool(npc, "is_married_or_engaged")) reasons.Add("partnership_target_already_committed");
+                    if (friendship.HasValue && !TryReadBool(friendship.Value, "is_dating", out _)) reasons.Add("partnership_dating_fact_incomplete");
+                    if (friendship.HasValue && !TryReadBool(friendship.Value, "is_divorced", out _)) reasons.Add("partnership_divorced_fact_incomplete");
+                    if (ReadBool(friendship, "is_dating")) reasons.Add("partnership_already_dating");
+                    if (ReadBool(friendship, "is_divorced")) reasons.Add("partnership_divorced_target_rejects_bouquet");
+                    if (points < 2000) reasons.Add("partnership_bouquet_requires_2000_points");
+                }
+                else if (actionKind == "propose_marriage")
+                {
+                    if (!TryReadBool(npc, "is_datably_flagged", out _)) reasons.Add("partnership_target_datable_fact_incomplete");
+                    if (!ReadBool(npc, "is_datably_flagged")) reasons.Add("partnership_target_not_datable");
+                    if (ReadBool(npc, "is_married_or_engaged")) reasons.Add("partnership_target_already_committed");
+                    if (friendship.HasValue && !TryReadBool(friendship.Value, "is_divorced", out _)) reasons.Add("partnership_divorced_fact_incomplete");
+                    if (ReadBool(friendship, "is_divorced")) reasons.Add("partnership_divorced_target_rejects_proposal");
+                    if (points < 2500) reasons.Add("partnership_marriage_proposal_requires_2500_points");
+                    if (!playerMarriageKnown || !playerEngagementKnown) reasons.Add("partnership_player_commitment_fact_incomplete");
+                    if (playerCommitted) reasons.Add("partnership_player_already_committed");
+                    if (!farmhouseUpgradeLevel.HasValue) reasons.Add("partnership_farmhouse_upgrade_fact_incomplete");
+                    else if (farmhouseUpgradeLevel.Value < 1)
+                    {
+                        reasons.Add("partnership_proposal_requires_house_upgrade");
+                    }
+                }
+                else
+                {
+                    if (!string.Equals(npcName, "Krobus", StringComparison.Ordinal))
+                    {
+                        reasons.Add("partnership_vanilla_roommate_target_must_be_krobus");
+                    }
+                    if (ReadBool(npc, "is_married_or_engaged")) reasons.Add("partnership_target_already_committed");
+                    if (points < 2500) reasons.Add("partnership_roommate_proposal_requires_10_hearts");
+                    if (!playerMarriageKnown || !playerEngagementKnown) reasons.Add("partnership_player_commitment_fact_incomplete");
+                    if (playerCommitted) reasons.Add("partnership_player_already_committed");
+                    if (!farmhouseUpgradeLevel.HasValue) reasons.Add("partnership_farmhouse_upgrade_fact_incomplete");
+                    else if (farmhouseUpgradeLevel.Value < 1)
+                    {
+                        reasons.Add("partnership_proposal_requires_house_upgrade");
+                    }
+                }
+
+                var tileX = ReadInt(npc, "tile_x");
+                var tileY = ReadInt(npc, "tile_y");
+                var locationId = ReadString(npc, "location_id") ?? string.Empty;
+                var standTile = SelectReachableStandTile(snapshot, tileX, tileY, locationId);
+                reasons.AddRange(standTile.BlockReasons);
+                var routeDistanceTicks = standTile.RouteDistance >= 0 ? standTile.RouteDistance * 12 : -1;
+                var estimatedTicks = routeDistanceTicks >= 0 ? routeDistanceTicks + 120 : -1;
+                var slotIndex = ReadInt(item, "slot_index");
+                yield return new EventCandidate
+                {
+                    CandidateId = "partnership:" + actionKind + ":" + npcName + ":slot:" + slotIndex,
+                    Kind = PartnershipCandidateKind(actionKind),
+                    Available = reasons.Count == 0,
+                    EstimatedTicks = estimatedTicks,
+                    EnergyCost = 0,
+                    LocationId = locationId,
+                    TileX = standTile.Tile?.X,
+                    TileY = standTile.Tile?.Y,
+                    QualifiedItemId = qualifiedItemId,
+                    ItemId = ReadString(item, "item_id"),
+                    SlotIndex = slotIndex,
+                    Quantity = 1,
+                    ExpectedEffect = actionKind == "bouquet"
+                        ? "friendship_status=Dating;relationship_item_consumed=1"
+                        : "friendship_status=Engaged;spouse=" + npcName + ";wedding_date_scheduled=true;roommate_marriage=" + (actionKind == "propose_roommate").ToString().ToLowerInvariant() + ";relationship_item_consumed=1",
+                    AvailabilityClass = reasons.Count == 0 ? "current_state_complete" : "current_state_blocked_with_diagnostics",
+                    BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
+                    Parameters = new[]
+                    {
+                        Parameter("npc_name", npcName),
+                        Parameter("partnership_action_kind", actionKind),
+                        Parameter("slot_index", slotIndex.ToString()),
+                        Parameter("qualified_item_id", qualifiedItemId),
+                        Parameter("item_stack_before", ReadInt(item, "stack").ToString()),
+                        Parameter("friendship_points_before", points.ToString()),
+                        Parameter("friendship_status_before", friendship.HasValue ? ReadString(friendship.Value, "status") : string.Empty),
+                        Parameter("expected_friendship_status_after", actionKind == "bouquet" ? "Dating" : "Engaged"),
+                        Parameter("expected_roommate_marriage_after", (actionKind == "propose_roommate").ToString().ToLowerInvariant()),
+                        Parameter("target_location", locationId),
+                        Parameter("npc_tile_x", tileX.ToString()),
+                        Parameter("npc_tile_y", tileY.ToString()),
+                        Parameter("stand_tile_x", standTile.Tile?.X.ToString() ?? string.Empty),
+                        Parameter("stand_tile_y", standTile.Tile?.Y.ToString() ?? string.Empty),
+                        Parameter("route_distance_tiles", standTile.RouteDistance.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter("route_distance_ticks", routeDistanceTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        Parameter("native_interaction_planner_budget_ticks", "120"),
+                        Parameter("social_legality_evidence", "player.inventory;player.married_or_roommate;player.engaged;player.farmhouse_upgrade_level;npcs.social_interaction;npcs.friendships")
+                    }
+                };
+            }
+        }
+
+        private static List<string> PartnershipBaseBlockReasons(SnapshotEnvelope snapshot, JsonElement npc, JsonElement item)
+        {
+            var reasons = new List<string>();
+            if (!ReadBool(npc, "master_data_present")) reasons.Add("partnership_npc_master_data_missing");
+            if (!ReadBool(npc, "current_instance_loaded")) reasons.Add("partnership_npc_not_loaded_currently");
+            if (!ReadBool(npc, "current_route_window_complete")) reasons.Add("partnership_current_route_window_incomplete");
+            if (!ReadBool(npc, "can_socialize_complete")) reasons.Add("partnership_can_socialize_incomplete");
+            else if (!ReadBool(npc, "can_socialize")) reasons.Add("partnership_can_socialize_false");
+            if (ReadBool(npc, "is_sleeping")) reasons.Add("partnership_npc_sleeping");
+            if (ReadBool(npc, "is_invisible")) reasons.Add("partnership_npc_invisible");
+            if (ReadBool(npc, "simple_non_villager_npc")) reasons.Add("partnership_simple_non_villager_unsupported");
+            if (!TryReadBool(npc, "is_married_or_engaged", out _)) reasons.Add("partnership_target_commitment_fact_incomplete");
+            if (!string.Equals(ReadString(npc, "location_id"), ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.Ordinal))
+            {
+                reasons.Add("partnership_npc_not_in_player_location");
+            }
+            if (ActiveMenuOpen(snapshot)) reasons.Add("partnership_menu_must_be_clear");
+            if (!ReadBool(item, "is_object")) reasons.Add("partnership_item_not_object");
+            if (ReadInt(item, "stack") <= 0) reasons.Add("partnership_item_stack_empty");
+            if (!item.TryGetProperty("context_tags", out var tags) || tags.ValueKind != JsonValueKind.Array)
+            {
+                reasons.Add("partnership_item_context_tags_incomplete");
+            }
+            return reasons;
+        }
+
+        private static bool HasExactContextTag(JsonElement item, string expected)
+        {
+            if (!item.TryGetProperty("context_tags", out var tags) || tags.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+            return tags.EnumerateArray().Any(tag =>
+                tag.ValueKind == JsonValueKind.String &&
+                string.Equals(tag.GetString(), expected, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool TryReadStateBool(SnapshotEnvelope snapshot, string section, string field, out bool value)
+        {
+            var stateValue = ReadStateFieldValue(snapshot, section, field);
+            if (stateValue.HasValue && stateValue.Value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            {
+                value = stateValue.Value.GetBoolean();
+                return true;
+            }
+
+            value = false;
+            return false;
+        }
+
+        private static string PartnershipCandidateKind(string actionKind)
+        {
+            return actionKind switch
+            {
+                "bouquet" => "partnership_bouquet_current",
+                "propose_marriage" => "partnership_propose_marriage_current",
+                "propose_roommate" => "partnership_propose_roommate_current",
+                _ => string.Empty
+            };
         }
 
         private static EventCandidate? TalkCandidate(SnapshotEnvelope snapshot, JsonElement npc)
@@ -406,10 +610,19 @@ namespace StardewAI.Core.OptionRegistry
 
             var requestedSlot = ReadParameter(action, "slot_index");
             var requestedItem = ReadParameter(action, "qualified_item_id");
-            return !string.IsNullOrWhiteSpace(requestedSlot) &&
+            var itemMatches = !string.IsNullOrWhiteSpace(requestedSlot) &&
                 !string.IsNullOrWhiteSpace(requestedItem) &&
                 string.Equals(CandidateParameter(candidate, "slot_index"), requestedSlot, StringComparison.Ordinal) &&
                 string.Equals(CandidateParameter(candidate, "qualified_item_id"), requestedItem, StringComparison.OrdinalIgnoreCase);
+            if (action.OptionId != "social.advance_partnership")
+            {
+                return itemMatches;
+            }
+
+            var requestedKind = ReadParameter(action, "partnership_action_kind");
+            return itemMatches &&
+                !string.IsNullOrWhiteSpace(requestedKind) &&
+                string.Equals(CandidateParameter(candidate, "partnership_action_kind"), requestedKind, StringComparison.Ordinal);
         }
 
         private static JsonElement? Friendship(SnapshotEnvelope snapshot, string npcName)

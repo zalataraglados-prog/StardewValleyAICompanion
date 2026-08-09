@@ -1,7 +1,7 @@
 {
   "schema_version": "stardewai.action_implementation_reconciliation.v1",
   "authority_policy": "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
-  "registered_option_count": 103,
+  "registered_option_count": 104,
   "primary_engine_count": 10,
   "orphan_compiler_count": 0,
   "orphan_compiler_ids": [],
@@ -16,7 +16,7 @@
     "engine.inventory_transfer": 4,
     "engine.movement_navigation": 3,
     "engine.recovery_timing": 3,
-    "engine.strategy_orchestration": 35,
+    "engine.strategy_orchestration": 36,
     "engine.tool_harvest": 17
   },
   "options": [
@@ -2197,6 +2197,28 @@
       "compilerTrainingGate": "RuntimeVerified",
       "runtimeTrainingGate": "RuntimeVerified",
       "outputTrainingGate": "RuntimeVerified"
+    },
+    {
+      "optionId": "social.advance_partnership",
+      "domain": "social",
+      "primaryEngineId": "engine.strategy_orchestration",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "StardewAI.Core.OptionRegistry.SocialCandidateBuilder",
+      "compilerBinding": "parameter",
+      "runtimeBinding": "unbound",
+      "verifierBinding": "pending_runtime_postcondition",
+      "evidenceBinding": "pending",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "Declared",
+      "compilerStatus": "ParameterCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RegisteredOnly",
+      "readTrainingGate": "RuntimeVerified",
+      "candidateTrainingGate": "RuntimeVerified",
+      "compilerTrainingGate": "RuntimeVerified",
+      "runtimeTrainingGate": "Missing",
+      "outputTrainingGate": "Missing"
     },
     {
       "optionId": "social.gift_npc",

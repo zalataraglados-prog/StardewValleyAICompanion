@@ -42,7 +42,8 @@ public static class QueueReplanFilter
                 ["npc_name"] = ReadParameter(queueItem, "continuation.npc_name"),
                 ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
                 ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
-                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id"),
+                ["partnership_action_kind"] = ReadParameter(queueItem, "continuation.partnership_action_kind")
             };
         }
 
@@ -165,7 +166,8 @@ public static class QueueReplanFilter
                 ["npc_name"] = npcName,
                 ["target_location"] = ReadParameter(queueItem, "continuation.target_location"),
                 ["slot_index"] = ReadParameter(queueItem, "continuation.slot_index"),
-                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id")
+                ["qualified_item_id"] = ReadParameter(queueItem, "continuation.qualified_item_id"),
+                ["partnership_action_kind"] = ReadParameter(queueItem, "continuation.partnership_action_kind")
             };
         }
 
@@ -477,7 +479,9 @@ public static class QueueReplanFilter
         var continuationOption = ReadString(continuation, "option_id");
         var expectedActionKind = string.Equals(continuationOption, "social.gift_npc", StringComparison.Ordinal)
             ? "gift"
-            : "talk";
+            : string.Equals(continuationOption, "social.advance_partnership", StringComparison.Ordinal)
+                ? ReadString(continuation, "partnership_action_kind")
+                : "talk";
         return string.Equals(npcName, ReadString(continuation, "npc_name"), StringComparison.OrdinalIgnoreCase) &&
             string.Equals(actionKind, expectedActionKind, StringComparison.Ordinal);
     }
@@ -716,7 +720,8 @@ public static class QueueReplanFilter
         }
 
         return OptionalIdentityMatches(candidate, continuation, "slot_index", "continuation.slot_index") &&
-            OptionalIdentityMatches(candidate, continuation, "qualified_item_id", "continuation.qualified_item_id");
+            OptionalIdentityMatches(candidate, continuation, "qualified_item_id", "continuation.qualified_item_id") &&
+            OptionalIdentityMatches(candidate, continuation, "partnership_action_kind", "continuation.partnership_action_kind");
     }
 
     private static bool MatchesMachineContinuation(JsonObject candidate, JsonObject continuation)

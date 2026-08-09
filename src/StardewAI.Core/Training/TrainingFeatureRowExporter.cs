@@ -248,6 +248,7 @@ namespace StardewAI.Core.Training
                     return OptionBehaviorCategories.EconomicStrategic;
                 case "social.talk_npc":
                 case "social.gift_npc":
+                case "social.advance_partnership":
                     return OptionBehaviorCategories.SocialStrategic;
                 case "strategy.grandpa_progress":
                     return OptionBehaviorCategories.LongTermStrategic;

@@ -193,6 +193,7 @@ namespace StardewAI.Core.Execution
                     return Fixed(30, "shop_menu_rule.v1");
                 case "social.talk_npc":
                 case "social.gift_npc":
+                case "social.advance_partnership":
                     return Unknown("social_duration_unknown_until_route_and_native_executor.v1");
                 case "quest.advance":
                     return Unknown("quest_duration_unknown_until_route_and_native_executor_timing");

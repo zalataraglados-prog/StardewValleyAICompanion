@@ -273,9 +273,9 @@ public sealed partial class SocialTransparentPlanningTests
     [InlineData("(O)869", "869", "Dragon Tooth VI")]
     [InlineData("(O)870", "870", "Dragon Tooth VII")]
     [InlineData("(O)809", "809", "Movie Ticket")]
-    [InlineData("(O)458", "458", "Mermaid's Pendant")]
+    [InlineData("(O)458", "458", "Bouquet")]
     [InlineData("(O)277", "277", "Wilted Bouquet")]
-    [InlineData("(O)460", "460", "Stardrop")]
+    [InlineData("(O)460", "460", "Mermaid's Pendant")]
     public void AvailabilityRejectsAllSpecialSwitchItems(string qualifiedId, string itemId, string displayName)
     {
         var inventory = "[{\"slot_index\":0,\"item_id\":\"" + itemId + "\",\"qualified_item_id\":\"" + qualifiedId + "\",\"display_name\":\"" + displayName + "\",\"stack\":1,\"quality\":0,\"maximum_stack_size\":999,\"is_object\":true,\"object_quest_item\":false,\"object_big_craftable\":false,\"is_furniture\":false,\"is_wallpaper\":false,\"protected_from_auto_sell\":false,\"can_be_given_as_gift\":true,\"base_tag_not_giftable\":false,\"context_tags\":[],\"is_empty\":false}]";

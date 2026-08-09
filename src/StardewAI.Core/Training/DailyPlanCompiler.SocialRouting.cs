@@ -29,6 +29,8 @@ namespace StardewAI.Core.Training
                 ? "talk"
                 : candidate.Kind == "social_gift_current"
                     ? "gift"
+                    : candidate.Kind.StartsWith("partnership_", StringComparison.Ordinal)
+                        ? CandidateParameter(candidate, "partnership_action_kind")
                     : CandidateParameter(candidate, "quest_interaction_kind");
             if (candidate.Kind == "quest_npc_interaction" &&
                 actionKind != "report" &&
@@ -127,6 +129,7 @@ namespace StardewAI.Core.Training
                 "continuation.target_location",
                 "continuation.slot_index",
                 "continuation.qualified_item_id",
+                "continuation.partnership_action_kind",
                 "continuation.shop_id",
                 "continuation.item_id",
                 "continuation.max_unit_price",

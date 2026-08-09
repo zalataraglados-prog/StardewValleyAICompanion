@@ -350,7 +350,10 @@ public sealed partial class SocialTransparentPlanningTests
         string? activeMenuValue = null,
         int currentTime = 900,
         int playerTileX = 8,
-        int playerTileY = 10)
+        int playerTileY = 10,
+        bool playerMarriedOrRoommate = false,
+        bool playerEngaged = false,
+        int farmhouseUpgradeLevel = 0)
     {
         socialInteractionValue ??= "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"Town\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
         friendshipValue ??= "[{\"npc_name\":\"Abigail\",\"points\":250,\"heart_level\":1,\"gifts_this_week\":0,\"gifts_today\":0,\"talked_to_today\":false,\"is_divorced\":false}]";
@@ -373,6 +376,9 @@ public sealed partial class SocialTransparentPlanningTests
             "energy": {"value":270,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":INVENTORY_VALUE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             ,"spouse": {"value":"","status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            ,"married_or_roommate": {"value":PLAYER_MARRIED_OR_ROOMMATE,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            ,"engaged": {"value":PLAYER_ENGAGED,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            ,"farmhouse_upgrade_level": {"value":FARMHOUSE_UPGRADE_LEVEL,"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
             ,"active_dialogue_events": {"value":[],"status":"available","source":{"kind":"test","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "time": {
@@ -412,7 +418,10 @@ public sealed partial class SocialTransparentPlanningTests
         .Replace("ROUTE_GRAPH_VALUE", routeGraphValue)
         .Replace("CURRENT_TIME", currentTime.ToString())
         .Replace("PLAYER_TILE_X", playerTileX.ToString())
-        .Replace("PLAYER_TILE_Y", playerTileY.ToString()));
+        .Replace("PLAYER_TILE_Y", playerTileY.ToString())
+        .Replace("PLAYER_MARRIED_OR_ROOMMATE", playerMarriedOrRoommate.ToString().ToLowerInvariant())
+        .Replace("PLAYER_ENGAGED", playerEngaged.ToString().ToLowerInvariant())
+        .Replace("FARMHOUSE_UPGRADE_LEVEL", farmhouseUpgradeLevel.ToString()));
     }
 
     private static SmallModelActionEnvelope Request(string stateHash, string optionId)

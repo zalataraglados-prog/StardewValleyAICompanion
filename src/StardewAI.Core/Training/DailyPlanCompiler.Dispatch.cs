@@ -291,6 +291,9 @@ namespace StardewAI.Core.Training
 
             if (candidate.Kind == "social_talk_current" ||
                 candidate.Kind == "social_gift_current" ||
+                candidate.Kind == "partnership_bouquet_current" ||
+                candidate.Kind == "partnership_propose_marriage_current" ||
+                candidate.Kind == "partnership_propose_roommate_current" ||
                 candidate.Kind == "quest_npc_interaction")
             {
                 return SocialInteractionSteps(candidate);

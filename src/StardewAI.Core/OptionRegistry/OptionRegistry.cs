@@ -167,6 +167,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "gift target and exact owned item verified", "native social executor handoff envelope produced" },
                 new[] { "never_gift_protected_items", "block_unavailable_required_state", "block_incomplete_social_legality" }));
 
+            Register(Option("social.advance_partnership", "social", "Advance one transparent dating, marriage, or Krobus roommate transition",
+                OptionBehaviorCategories.SocialStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.married_or_roommate", "player.engaged", "player.spouse", "player.farmhouse_upgrade_level", "npcs.social_interaction", "npcs.friendships", "npcs.schedules", "menus.active_menu", "locations.collision_grid", "locations.route_action_branch_coverage" },
+                new[] { "exact native partnership branch and relationship item verified", "native social executor handoff envelope produced" },
+                new[] { "explicit_player_confirmation_required", "block_unavailable_required_state", "block_rejected_native_partnership_branch", "block_unverified_relationship_item" }));
+
             Register(Option("quest.advance", "quest", "Advance quest preview",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,

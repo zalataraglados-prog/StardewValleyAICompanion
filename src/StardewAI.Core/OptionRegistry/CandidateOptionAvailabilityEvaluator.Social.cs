@@ -154,6 +154,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 "continuation.slot_index",
                 "continuation.qualified_item_id",
+                "continuation.partnership_action_kind",
                 "continuation.observed_state_hash",
                 "continuation.observed_game_time"
             })
@@ -165,7 +166,11 @@ namespace StardewAI.Core.OptionRegistry
             return new EventCandidate
             {
                 CandidateId = "social:continuation:" + optionId + ":" + npcName,
-                Kind = optionId == "social.gift_npc" ? "social_gift_current" : "social_talk_current",
+                Kind = optionId == "social.gift_npc"
+                    ? "social_gift_current"
+                    : optionId == "social.advance_partnership"
+                        ? PartnershipContinuationCandidateKind(ReadParameter(boundParameters, "continuation.partnership_action_kind"))
+                        : "social_talk_current",
                 Available = false,
                 LocationId = targetLocation,
                 ExpectedEffect = "social_target_from_last_observed_loaded_instance=true;fresh_snapshot_required_after_each_connector=true",
@@ -184,7 +189,8 @@ namespace StardewAI.Core.OptionRegistry
         {
             var remainingReasons = socialCandidate.BlockReasons
                 .Where(reason => reason != "social_npc_not_in_player_location" &&
-                    reason != "social_npc_not_in_player_location_stand_skipped")
+                    reason != "social_npc_not_in_player_location_stand_skipped" &&
+                    reason != "partnership_npc_not_in_player_location")
                 .ToList();
             var routePlan = FindResolvedRoutePlan(
                 snapshot,
@@ -222,6 +228,17 @@ namespace StardewAI.Core.OptionRegistry
                 remainingReasons);
         }
 
+        private static string PartnershipContinuationCandidateKind(string actionKind)
+        {
+            return actionKind switch
+            {
+                "bouquet" => "partnership_bouquet_current",
+                "propose_marriage" => "partnership_propose_marriage_current",
+                "propose_roommate" => "partnership_propose_roommate_current",
+                _ => string.Empty
+            };
+        }
+
         private static EventCandidate CopySocialRouteCandidate(
             EventCandidate socialCandidate,
             string optionId,
@@ -249,6 +266,7 @@ namespace StardewAI.Core.OptionRegistry
             };
             var slotIndex = ReadParameter(socialCandidate.Parameters, "slot_index");
             var qualifiedItemId = ReadParameter(socialCandidate.Parameters, "qualified_item_id");
+            var partnershipActionKind = ReadParameter(socialCandidate.Parameters, "partnership_action_kind");
             if (!string.IsNullOrWhiteSpace(slotIndex))
             {
                 continuationParameters.Add(Parameter("continuation.slot_index", slotIndex));
@@ -256,6 +274,10 @@ namespace StardewAI.Core.OptionRegistry
             if (!string.IsNullOrWhiteSpace(qualifiedItemId))
             {
                 continuationParameters.Add(Parameter("continuation.qualified_item_id", qualifiedItemId));
+            }
+            if (!string.IsNullOrWhiteSpace(partnershipActionKind))
+            {
+                continuationParameters.Add(Parameter("continuation.partnership_action_kind", partnershipActionKind));
             }
 
             var expectedTargetLocation = ReadParameter(routeParameters, "expected_target_location");
