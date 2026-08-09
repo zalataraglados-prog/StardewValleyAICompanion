@@ -313,8 +313,8 @@ public sealed partial class ModEntry : Mod
         var targetBarPosition = Math.Clamp(predictedFishCenter + 32f - bar.bobberBarHeight / 2f, 0f, trackBottom);
         var positionError = targetBarPosition - bar.bobberBarPos;
         var acceleration = bar.bobberInBar ? 0.15f : 0.25f;
-        var reachableRelativeSpeed = MathF.Sqrt(2f * acceleration * MathF.Abs(positionError));
-        var desiredRelativeSpeed = MathF.Sign(positionError) * MathF.Min(5f, reachableRelativeSpeed);
+        var reachableSpeed = MathF.Sqrt(2f * acceleration * MathF.Abs(positionError));
+        var desiredRelativeSpeed = MathF.Sign(positionError) * MathF.Min(7f, reachableSpeed);
         var desiredBarSpeed = fishSpeed + desiredRelativeSpeed;
         var shouldPress = bar.bobberBarSpeed > desiredBarSpeed;
         active.BobberControlTicks++;
@@ -348,9 +348,13 @@ public sealed partial class ModEntry : Mod
         var inBarRatio = active.BobberBarTicks == 0
             ? 0f
             : active.BobberInBarTicks / (float)active.BobberBarTicks;
+        var pressedRatio = active.BobberControlTicks == 0
+            ? 0f
+            : active.BobberControlPressedTicks / (float)active.BobberControlTicks;
         return "catch_fish_minigame_diagnostic:" +
             "ticks=" + active.BobberBarTicks +
             ",in_bar_ratio=" + inBarRatio.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
+            ",pressed_ratio=" + pressedRatio.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
             ",min_progress=" + active.MinDistanceFromCatching.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
             ",last_progress=" + active.LastDistanceFromCatching.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
             ",fish_position=" + active.LastFishPosition.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +

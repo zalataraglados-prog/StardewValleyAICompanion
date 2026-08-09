@@ -163,7 +163,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "farm.establish_supported_machine_capacity",
                 "farm.fulfill_machine_task_demand",
                 "farm.load_supported_machine_input",
-                "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
+                "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
                 "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
@@ -195,6 +195,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
                 "farm.fulfill_machine_task_demand" => "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
                 "farm.load_supported_machine_input" => "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
+                "fishing.catch_fish" => "vanilla_current_or_resolved_route_exact_fishable_cast_native_max_power_stochastic_distribution_bobber_bar_or_special_no_minigame_receipt_and_idle_cleanup",
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",
                 "foraging.clear_green_rain_bushes" => "vanilla_current_location_exact_base_green_rain_resource_clump_indexes_44_46_seeded_core_outputs_bounded_secret_note_native_axe_and_task_receipt",
@@ -643,6 +644,35 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Contains("bait_and_ready_reset", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("custom", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
         Assert.DoesNotContain("executor.collect_crab_pot", OptionCapabilityRegistrySource.TrainingAllowlist);
+    }
+
+    [Fact]
+    public void CatchFishAdmissionUsesOneDailyPlanChainAndEvd228Tests()
+    {
+        var declaration = OptionCapabilityRegistrySource.GetRequired("fishing.catch_fish");
+        var executor = OptionCapabilityRegistrySource.GetRequired("executor.catch_fish");
+
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(declaration.PlayerConfirmationRequired);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, declaration.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("fishing.catch_fish"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("fishing.catch_fish"));
+        Assert.True(ActionQueueCompiler.HasStepCompiler("executor.catch_fish"));
+        Assert.Equal(new[] { "EVD-228" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, declaration.OutputEvidenceIds);
+        Assert.Contains("stochastic_distribution_bobber_bar_or_special_no_minigame", declaration.TrainingEvidenceScope, StringComparison.Ordinal);
+
+        Assert.False(TrainingEligibilityPolicy.IsEligible(executor));
+        Assert.Equal(OptionTrainingEligibility.EvaluationOnly, executor.TrainingEligibility);
+        Assert.Equal(new[] { "EVD-228" }, executor.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, executor.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, executor.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, executor.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-228" }, executor.OutputEvidenceIds);
+        Assert.DoesNotContain("executor.catch_fish", OptionCapabilityRegistrySource.TrainingAllowlist);
     }
 
     [Fact]

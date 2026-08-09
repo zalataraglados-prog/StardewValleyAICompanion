@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -363,6 +363,12 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyDictionary<string, TrainingEvidence>(
                 new Dictionary<string, TrainingEvidence>(StringComparer.Ordinal)
                 {
+                    ["fishing.catch_fish"] = VerifiedEvidence(
+                        "vanilla_current_or_resolved_route_exact_fishable_cast_native_max_power_stochastic_distribution_bobber_bar_or_special_no_minigame_receipt_and_idle_cleanup",
+                        "EVD-228"),
+                    ["executor.catch_fish"] = VerifiedEvidence(
+                        "vanilla_exact_fishable_cast_native_max_power_legal_input_bobber_control_stochastic_distribution_receipt_and_idle_cleanup",
+                        "EVD-228"),
                     ["farm.process_machines"] = BoundedEvidence(
                         "vanilla_bounded_aggregate_of_existing_exact_machine_service_native_craft_current_or_resolved_route_placement_idle_relocation_ordinary_storage_and_deterministic_incubator_naming_chains",
                         readEvidenceIds: new[] { "EVD-227" },

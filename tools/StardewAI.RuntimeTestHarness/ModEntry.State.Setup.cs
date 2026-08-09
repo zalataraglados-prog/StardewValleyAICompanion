@@ -197,6 +197,8 @@ public sealed partial class ModEntry : Mod
         bool LavaEelNativeNameCondition,
         bool CuriosityLureEquipped,
         bool CorkBobberEquipped,
+        int FishingExperience,
+        int FishingLevel,
         float Stamina);
 
 }

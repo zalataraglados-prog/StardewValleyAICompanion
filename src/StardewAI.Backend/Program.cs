@@ -1014,6 +1014,26 @@ public static class SnapshotValidator
         "volcano"
     };
 
+    private static readonly string[] FishingRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations",
+        "fishing",
+        "npcs",
+        "quests",
+        "world_progress",
+        "mods",
+        "modded_state"
+    };
+
     private static readonly string[] TrainingMachineRequiredDomains =
     {
         "environment",
@@ -1144,6 +1164,11 @@ public static class SnapshotValidator
         if (string.Equals(profile, "volcano", StringComparison.OrdinalIgnoreCase))
         {
             return VolcanoRequiredDomains;
+        }
+
+        if (string.Equals(profile, "fishing", StringComparison.OrdinalIgnoreCase))
+        {
+            return FishingRequiredDomains;
         }
 
         if (string.Equals(

@@ -236,6 +236,8 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 
 2026-08-09 EVD-226 已将 `farm.maintain_crops` 收敛为当前地点透明候选到五类类型化机械原语的唯一链路，并通过浇水、播种、普通收获、普通地块施肥、花盆施肥和巨型作物后台隔离验证。该项五门已闭合，但按 `CalibrationOnlyHighLevelIds` 仍为评估/执行器校准用途，不增加策略训练 allowlist。当前生成看板为 103 registered / 170 semantic / 98 compiler-bound / 67 runtime dispatch / 29 five-gate / 25 allowlist，KnowledgeCompiler 为 585/585、blocking 0。下一步仍是继续闭合未准入高层目标并采集真实长期 rollout，不是提前启动全量训练。
 
+2026-08-09 EVD-228 已将 `fishing.catch_fish` 收敛为透明候选经 DailyPlan 到 `executor.catch_fish` 的唯一链路，并以普通海滩 3/3、鱼塘无 BobberBar 1/1、矿井 100 层 12/12（含两次岩浆鳗鱼）后台隔离运行闭合读、候选、编译、运行和输出五门。高层动作进入策略训练 allowlist；机械原语仅作执行器校准。运行时只发送原生等价输入，不改写鱼、绿条、进度、结果或背包；低技能/低装备下的真实失败继续作为阻塞反馈，上游必须结合实时技能、鱼竿、浮标和鱼难度评估。当前生成看板为 103 registered / 170 semantic / 99 compiler-bound / 67 runtime dispatch / 32 five-gate / 26 allowlist，KnowledgeCompiler 为 585/585、blocking 0。正式全量训练仍等待其余高层目标闭合和生产长 rollout，不得把本次有界钓鱼验证外推为所有传奇鱼、宝箱优化或模组覆盖。
+
 ## 5. 新训练笔记本与模型路线
 
 目标训练节点为用户报告的新笔记本：

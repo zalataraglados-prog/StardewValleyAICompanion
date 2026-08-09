@@ -35,6 +35,7 @@ namespace StardewAI.Core.Training
                 ["economy.buy_supplies"] = new[] { "route_connector_tile", "interact_endpoint", "buy_shop_item" },
                 ["economy.sell_items"] = new[] { "route_connector_tile", "interact_endpoint", "sell_shop_item" },
                 ["economy.ship_items"] = new[] { "route_connector_tile", "ship_inventory_item_to_bin" },
+                ["fishing.catch_fish"] = new[] { "catch_fish" },
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },

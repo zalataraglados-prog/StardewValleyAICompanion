@@ -12,6 +12,14 @@ namespace StardewAI.Core.Tests;
 public sealed class FishingMainlineTests
 {
     [Fact]
+    public void FishingHasOnlyCandidateDailyPlanCompilationPath()
+    {
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("fishing.catch_fish"));
+        Assert.False(ActionQueueCompiler.HasStepCompiler("fishing.catch_fish"));
+        Assert.True(ActionQueueCompiler.HasStepCompiler("executor.catch_fish"));
+    }
+
+    [Fact]
     public void TransparentFishingRuleFlowsThroughCandidatePlanAndQueue()
     {
         var snapshot = Snapshot(BaseState());

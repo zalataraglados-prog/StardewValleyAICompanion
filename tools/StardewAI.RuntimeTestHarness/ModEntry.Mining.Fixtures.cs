@@ -431,6 +431,8 @@ public sealed partial class ModEntry : Mod
         rod.attach(ItemRegistry.Create<StardewValley.Object>("(O)856"));
         rod.attach(ItemRegistry.Create<StardewValley.Object>("(O)695"));
         player.CurrentToolIndex = player.Items.IndexOf(rod);
+        player.experiencePoints[1] = Math.Max(player.experiencePoints[1], 15000);
+        player.fishingLevel.Value = Math.Max(player.fishingLevel.Value, 10);
         player.Stamina = Math.Max(player.Stamina, 200f);
         return new MineFishingFixtureFacts(before, ReadMineFishingFixtureSnapshot(player));
     }
@@ -454,6 +456,8 @@ public sealed partial class ModEntry : Mod
             !string.IsNullOrWhiteSpace(lavaEelInternalName) && baitInternalName.Contains(lavaEelInternalName, StringComparison.Ordinal),
             selectedRod?.HasCuriosityLure() == true,
             selectedRod?.GetTackle().Any(item => item?.QualifiedItemId == "(O)695") == true,
+            player.experiencePoints[1],
+            player.FishingLevel,
             player.Stamina);
     }
 
@@ -951,6 +955,8 @@ public sealed partial class ModEntry : Mod
                     new SimulatedFactChange { Path = "fishing.fixture.lava_eel_native_name_condition", Before = active.PrerequisiteFacts.Before.LavaEelNativeNameCondition.ToString(), After = active.PrerequisiteFacts.After.LavaEelNativeNameCondition.ToString() },
                     new SimulatedFactChange { Path = "fishing.fixture.curiosity_lure_equipped", Before = active.PrerequisiteFacts.Before.CuriosityLureEquipped.ToString(), After = active.PrerequisiteFacts.After.CuriosityLureEquipped.ToString() },
                     new SimulatedFactChange { Path = "fishing.fixture.cork_bobber_equipped", Before = active.PrerequisiteFacts.Before.CorkBobberEquipped.ToString(), After = active.PrerequisiteFacts.After.CorkBobberEquipped.ToString() },
+                    new SimulatedFactChange { Path = "fishing.fixture.fishing_experience", Before = active.PrerequisiteFacts.Before.FishingExperience.ToString(), After = active.PrerequisiteFacts.After.FishingExperience.ToString() },
+                    new SimulatedFactChange { Path = "fishing.fixture.fishing_level", Before = active.PrerequisiteFacts.Before.FishingLevel.ToString(), After = active.PrerequisiteFacts.After.FishingLevel.ToString() },
                     new SimulatedFactChange { Path = "fishing.fixture.stamina", Before = active.PrerequisiteFacts.Before.Stamina.ToString("R"), After = active.PrerequisiteFacts.After.Stamina.ToString("R") }
                 }
                 : Array.Empty<SimulatedFactChange>()

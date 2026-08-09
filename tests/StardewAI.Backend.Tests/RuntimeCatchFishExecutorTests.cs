@@ -107,8 +107,9 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("mine.getMineArea() == MineShaft.lavaArea", source);
         Assert.Contains("predictedFishCenter + 32f - bar.bobberBarHeight / 2f", source);
         Assert.Contains("MathF.Sqrt(2f * acceleration * MathF.Abs(positionError))", source);
-        Assert.Contains("MathF.Sign(positionError) * MathF.Min(5f, reachableRelativeSpeed)", source);
+        Assert.Contains("MathF.Min(7f, reachableSpeed)", source);
         Assert.Contains("bar.bobberBarSpeed > desiredBarSpeed", source);
+        Assert.Contains("pressed_ratio=", source);
         Assert.Contains("catch_fish_minigame_diagnostic:", source);
         Assert.Contains("ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason)", source);
         Assert.Contains("TryApplySmapiLeftButtonOverride", source);
@@ -205,6 +206,8 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.DoesNotContain("bait.preservedParentSheetIndex.Value = \"162\"", source, StringComparison.Ordinal);
         Assert.Contains("ItemRegistry.Create<StardewValley.Object>(\"(O)856\")", source);
         Assert.Contains("ItemRegistry.Create<StardewValley.Object>(\"(O)695\")", source);
+        Assert.Contains("player.experiencePoints[1] = Math.Max(player.experiencePoints[1], 15000)", source);
+        Assert.Contains("player.fishingLevel.Value = Math.Max(player.fishingLevel.Value, 10)", source);
         Assert.Contains("fishing.fixture.backpack_empty_slots", source);
         Assert.Contains("fishing.fixture.selected_rod_qualified_item_id", source);
         Assert.Contains("fishing.fixture.specific_bait_target_item_id", source);
@@ -212,6 +215,8 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("fishing.fixture.lava_eel_native_name_condition", source);
         Assert.Contains("fishing.fixture.curiosity_lure_equipped", source);
         Assert.Contains("fishing.fixture.cork_bobber_equipped", source);
+        Assert.Contains("fishing.fixture.fishing_experience", source);
+        Assert.Contains("fishing.fixture.fishing_level", source);
         Assert.Contains("fishing.fixture.stamina", source);
         Assert.Contains("native Game1.enterMine fixture transition handles MineShaft entry", smokeSource);
         Assert.Contains("setup_route_skip_reason", smokeSource);
