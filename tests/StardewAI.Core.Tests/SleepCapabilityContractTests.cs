@@ -39,6 +39,19 @@ public sealed class SleepCapabilityContractTests
         Assert.Contains("sleep_resume_player_not_at_or_adjacent_to_bed", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void NativeSleepPrefersTheCurrentStandAndWaitsForAStableNewDay()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Sleep.cs"));
+
+        Assert.Contains(".OrderBy(tile => tile == startTile ? 0 : 1)", source, StringComparison.Ordinal);
+        Assert.Contains("NativeNewDayWorldStable()", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.timeOfDay >= 600 && Game1.timeOfDay < 700", source, StringComparison.Ordinal);
+        Assert.Contains("native_new_day_world_stable", source, StringComparison.Ordinal);
+        Assert.Contains("post_sleep_world_not_stable", source, StringComparison.Ordinal);
+    }
+
     private static string Slice(string source, string startMarker, string endMarker)
     {
         var start = source.IndexOf(startMarker, StringComparison.Ordinal);

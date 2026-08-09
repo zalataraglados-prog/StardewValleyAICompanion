@@ -15,6 +15,7 @@ namespace StardewAI.Core.Training
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
+                ["joja.advance_development"] = new[] { "purchase_joja_membership", "purchase_joja_project" },
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
                 {
@@ -190,7 +191,10 @@ namespace StardewAI.Core.Training
             {
                 return CommunityCenterDonationSteps(candidate);
             }
-            if (candidate.Kind == "purchase_joja_membership" || candidate.Kind == "purchase_joja_project")
+            if ((candidate.Kind == "purchase_joja_membership" || candidate.Kind == "purchase_joja_project") &&
+                OptionCandidateCompilerKinds["joja.advance_development"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
             {
                 return JojaDevelopmentSteps(candidate);
             }

@@ -775,6 +775,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_joja_development")
+            {
+                pending.Completion.SetResult(ExecuteSetupJojaDevelopmentFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.prepare_joja_settlement_sleep")
+            {
+                pending.Completion.SetResult(ExecutePrepareJojaSettlementSleep(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_input_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineInputTarget(pending.Request));

@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -267,7 +267,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
-            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "skills.read_books", "housing.advance_farmhouse",
+            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "housing.advance_farmhouse",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -375,6 +375,15 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.purchase_farmhouse_upgrade"] = VerifiedEvidence(
                         "vanilla_host_exact_level_0_to_1_level_1_to_2_and_level_2_to_3_native_Carpenter_action_Upgrade_Yes_money_material_and_three_day_countdown_receipt",
                         "EVD-229"),
+                    ["joja.advance_development"] = VerifiedEvidence(
+                        "vanilla_host_exact_undecided_route_membership_with_or_without_first_Morris_greeting_and_all_five_joja_project_candidates_daily_plan_native_purchase_immediate_money_pending_mail_and_next_day_settlement",
+                        "EVD-232"),
+                    ["executor.purchase_joja_membership"] = VerifiedEvidence(
+                        "vanilla_host_exact_JoinJoja_native_Morris_greeting_offer_confirmation_5000_money_and_JojaMember_next_day_settlement",
+                        "EVD-232"),
+                    ["executor.purchase_joja_project"] = VerifiedEvidence(
+                        "vanilla_host_exact_JoinJoja_native_JojaCDMenu_all_five_button_price_cc_mail_joja_mail_and_next_day_settlement",
+                        "EVD-232"),
                     ["farm.process_machines"] = BoundedEvidence(
                         "vanilla_bounded_aggregate_of_existing_exact_machine_service_native_craft_current_or_resolved_route_placement_idle_relocation_ordinary_storage_and_deterministic_incubator_naming_chains",
                         readEvidenceIds: new[] { "EVD-227" },

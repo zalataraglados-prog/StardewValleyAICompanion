@@ -160,6 +160,52 @@ public sealed class JojaDevelopmentMainlineTests
         Assert.Contains("\"complete_or_pending\":true", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RuntimeMatrixUsesIsolatedSaveDailyPlanAndNativeNextDaySettlement()
+    {
+        var script = File.ReadAllText(FindRepositoryFile(
+            "scripts", "Invoke-RuntimeJojaDevelopmentDailyPlanSmoke.ps1"));
+        var fixture = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JojaFixture.cs"));
+        var runtime = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Joja.cs"));
+        var supported = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.SupportedOptions.cs"));
+
+        Assert.Contains("Copy-Item -LiteralPath $sourceSaveSlot -Destination $isolatedSaveSlot -Recurse", script, StringComparison.Ordinal);
+        Assert.Contains("--use-daily-plan", script, StringComparison.Ordinal);
+        Assert.Contains("debug.setup_joja_development", script, StringComparison.Ordinal);
+        Assert.Contains("debug.prepare_joja_settlement_sleep", script, StringComparison.Ordinal);
+        Assert.Contains("\"debug.setup_joja_development\"", supported, StringComparison.Ordinal);
+        Assert.Contains("\"debug.prepare_joja_settlement_sleep\"", supported, StringComparison.Ordinal);
+        Assert.Contains("executor.sleep", script, StringComparison.Ordinal);
+        Assert.Contains("membership_without_greeting", fixture, StringComparison.Ordinal);
+        Assert.Contains("membership_with_greeting", fixture, StringComparison.Ordinal);
+        foreach (var project in new[] { "vault", "boiler_room", "crafts_room", "pantry", "fish_tank" })
+        {
+            Assert.Contains("project_" + project, fixture, StringComparison.Ordinal);
+        }
+        Assert.Contains("PrimitiveVerificationStatus = \"verified\"", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.Money -=", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.addMailForTomorrow", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailReceived.Add", runtime, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void JojaFixtureCaseRoundTripsThroughTheTypedDebugContract()
+    {
+        var request = new StardewAI.Contracts.Training.TrainingExecutionRequest
+        {
+            JojaFixtureCase = "project_vault"
+        };
+
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<StardewAI.Contracts.Training.TrainingExecutionRequest>(json, JsonOptions)!;
+
+        Assert.Contains("\"joja_fixture_case\":\"project_vault\"", json, StringComparison.Ordinal);
+        Assert.Equal("project_vault", roundTrip.JojaFixtureCase);
+    }
+
     private static SnapshotEnvelope Snapshot(bool membershipReceived, string routeState, int money)
     {
         var membershipStatus = membershipReceived ? "irreversible_route_already_locked" : "ready";

@@ -402,7 +402,7 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = membership ? "purchase_joja_membership" : "purchase_joja_project",
-            PrimitiveVerificationStatus = "verified_native_joja_lifecycle",
+            PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = membership
                 ? new[] { "JojaMart.checkAction_completed", "Dialogue.chooseResponse_signUpForJoja_completed", "JojaMart.answerDialogue_JojaSignUp_Yes_completed" }
                 : new[] { "JojaMart.checkAction_completed", "Dialogue.chooseResponse_viewJojaNote_completed", "JojaCDMenu.receiveLeftClick_checkbox_completed" },

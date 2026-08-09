@@ -172,6 +172,17 @@ public sealed partial class ModEntry
 
     private TrainingExecutionResult ExecutePreparePartnershipSleep(TrainingExecutionRequest request)
     {
+        return ExecutePrepareNativeSleepFixture(
+            request,
+            "debug_prepare_partnership_sleep",
+            "isolated_fixture_farmer_moved_to_native_sleep_stand");
+    }
+
+    private TrainingExecutionResult ExecutePrepareNativeSleepFixture(
+        TrainingExecutionRequest request,
+        string primitiveKind,
+        string verificationReason)
+    {
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
         {
@@ -183,10 +194,13 @@ public sealed partial class ModEntry
         var home = Utility.getHomeOfFarmer(Game1.player);
         Game1.currentLocation = home;
         Game1.player.currentLocation = home;
+        Game1.player.UsingTool = false;
+        Game1.player.canMove = true;
+        home.resetForPlayerEntry();
         var target = ResolveHomeSleepTarget(Game1.player.TilePoint, out var targetReason);
         if (target is null)
         {
-            return BlockedWithPrimitive(request, "debug_prepare_partnership_sleep",
+            return BlockedWithPrimitive(request, primitiveKind,
                 "player.at_sleep_stand=true", SleepObservedEffect(), targetReason);
         }
 
@@ -203,9 +217,9 @@ public sealed partial class ModEntry
             FeedbackAvailable = true,
             StartedAt = DateTimeOffset.UtcNow.ToString("O"),
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "debug_prepare_partnership_sleep",
+            PrimitiveKind = primitiveKind,
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "isolated_fixture_farmer_moved_to_native_sleep_stand" },
+            PrimitiveVerificationReasons = new[] { verificationReason },
             RequestedEffect = "player.at_sleep_stand=true",
             ObservedEffect = SleepObservedEffect()
         };

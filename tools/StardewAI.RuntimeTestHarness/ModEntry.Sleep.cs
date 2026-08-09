@@ -218,6 +218,15 @@ public sealed partial class ModEntry : Mod
             var menu = Game1.activeClickableMenu;
             if (menu is null)
             {
+                if (!NativeNewDayWorldStable())
+                {
+                    sleep.PostSleepWaitTicks++;
+                    if (sleep.PostSleepWaitTicks > 1800)
+                    {
+                        CompleteBlockedSleep(sleep, "post_sleep_world_not_stable");
+                    }
+                    return;
+                }
                 if (sleep.SummaryPhase != default)
                 {
                     ReleaseSmapiLeftButtonOverride();
@@ -232,7 +241,7 @@ public sealed partial class ModEntry : Mod
                     CompleteBlockedSleep(sleep, "post_sleep_receipt_settlement_threw:" + ex.GetType().Name);
                     return;
                 }
-                CompleteSleep(sleep, "verified", new[] { "sleep_yes_confirmed", "new_day_observed", "post_sleep_menu_closed" });
+                CompleteSleep(sleep, "verified", new[] { "sleep_yes_confirmed", "new_day_observed", "post_sleep_menu_closed", "native_new_day_world_stable" });
                 return;
             }
 
@@ -524,7 +533,7 @@ public sealed partial class ModEntry : Mod
             new Point(bedTile.X, bedTile.Y - 1)
         }
             .Where(tile => IsTileWalkable(farmHouse, tile))
-            .OrderBy(tile => tile == startTile ? 1 : 0)
+            .OrderBy(tile => tile == startTile ? 0 : 1)
             .ThenBy(tile => Math.Abs(startTile.X - tile.X) + Math.Abs(startTile.Y - tile.Y))
             .FirstOrDefault();
 
@@ -535,6 +544,19 @@ public sealed partial class ModEntry : Mod
         }
 
         return new SleepTarget(bedTile, stand);
+    }
+
+    private static bool NativeNewDayWorldStable()
+    {
+        var home = Utility.getHomeOfFarmer(Game1.player);
+        return home is not null &&
+            ReferenceEquals(Game1.currentLocation, home) &&
+            ReferenceEquals(Game1.player.currentLocation, home) &&
+            Game1.timeOfDay >= 600 && Game1.timeOfDay < 700 &&
+            !Game1.eventUp &&
+            Game1.activeClickableMenu is null &&
+            Game1.player.canMove &&
+            !Game1.player.UsingTool;
     }
 
     private static bool SleepPromptOpen()

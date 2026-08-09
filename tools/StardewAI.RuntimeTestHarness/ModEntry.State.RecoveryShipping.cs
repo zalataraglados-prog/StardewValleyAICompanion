@@ -39,7 +39,7 @@ public sealed partial class ModEntry : Mod
             StartTime = startTime;
             StartSeason = startSeason;
             StartMenuOpen = Game1.activeClickableMenu is not null;
-            MaxTicks = Math.Max(600, path.Count * 90 + 600);
+            MaxTicks = Math.Max(2400, path.Count * 90 + 2400);
             BedStepLastPosition = Game1.player.Position;
         }
 

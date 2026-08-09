@@ -756,6 +756,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("native_contract")]
         public string NativeContract { get; set; } = string.Empty;
 
+        [JsonPropertyName("joja_fixture_case")]
+        public string JojaFixtureCase { get; set; } = string.Empty;
+
         [JsonPropertyName("bundle_data_key")]
         public string BundleDataKey { get; set; } = string.Empty;
 

@@ -332,6 +332,54 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
     }
 
     [Fact]
+    public void JojaDevelopmentClosesFiveGatesButRetainsHostPlayerConfirmationTests()
+    {
+        var highLevel = OptionCapabilityRegistrySource.GetRequired("joja.advance_development");
+        var primitives = new[]
+        {
+            OptionCapabilityRegistrySource.GetRequired("executor.purchase_joja_membership"),
+            OptionCapabilityRegistrySource.GetRequired("executor.purchase_joja_project")
+        };
+
+        Assert.True(highLevel.InternalExecutionPipelineSupported);
+        Assert.Equal(CapabilityCompilerStatus.StepCompilerDeclared, highLevel.CompilerStatus);
+        Assert.True(DailyPlanCompiler.HasOptionCompiler(highLevel.OptionId));
+        Assert.False(ActionQueueCompiler.HasStepCompiler(highLevel.OptionId));
+
+        foreach (var declaration in new[] { highLevel }.Concat(primitives))
+        {
+            Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
+            Assert.Equal(OptionTrainingEligibility.EvaluationOnly, declaration.TrainingEligibility);
+            Assert.True(declaration.PlayerConfirmationRequired);
+            Assert.True(declaration.HostOnly);
+            Assert.Equal(new[] { "EVD-232" }, declaration.ReadEvidenceIds);
+            Assert.Equal(new[] { "EVD-232" }, declaration.CandidateEvidenceIds);
+            Assert.Equal(new[] { "EVD-232" }, declaration.CompilerEvidenceIds);
+            Assert.Equal(new[] { "EVD-232" }, declaration.RuntimeEvidenceIds);
+            Assert.Equal(new[] { "EVD-232" }, declaration.OutputEvidenceIds);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.ReadTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CandidateTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.CompilerTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.RuntimeTrainingGate);
+            Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, declaration.OutputTrainingGate);
+            Assert.Equal("not_admitted", declaration.TrainingEvidenceScope);
+            Assert.DoesNotContain(declaration.OptionId, OptionCapabilityRegistrySource.TrainingAllowlist);
+        }
+
+        foreach (var primitive in primitives)
+        {
+            Assert.True(primitive.HarnessDispatchSupported);
+            Assert.True(ActionQueueCompiler.HasStepCompiler(primitive.OptionId));
+            Assert.Equal(
+                new[] { TrainingAdmissionExclusionReason.NotPolicyTrainingOption, TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired },
+                primitive.TrainingExclusionReasons);
+        }
+        Assert.Equal(
+            new[] { TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired },
+            highLevel.TrainingExclusionReasons);
+    }
+
+    [Fact]
     public void PetCareAdmissionRequiresBothNativeBranchesAndEvd223Tests()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("farm.care_for_pets");
