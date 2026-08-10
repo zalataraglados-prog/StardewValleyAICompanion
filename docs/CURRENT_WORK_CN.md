@@ -1,20 +1,20 @@
 # StardewAI 当前工作
 
-更新时间：2026-08-10
+更新时间：2026-08-11
 
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `106 registered / 173 semantic / 105 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
-- `quest.advance` 的 28 个目录阶段为 `23 bound / 1 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
+- 动作对账当前为 `107 registered / 174 semantic / 106 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
+- `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的
   `player.quest_crafting` 经 `quest.advance`、DailyPlan、动作队列和既有原生 `CraftingPage` 执行器完成，
   并写入精确任务身份、前后存在/完成状态及 terminal 事实。EVD-236 又闭合普通 `HaveBuildingQuest`：
   `player.quest_building_construction`、候选、DailyPlan 和唯一 `executor.construct_building` 通过原生
   Robin/`CarpenterMenu` 放置建筑，原生扣除钱和材料并生成三天施工倒计时；后续天数复用既有恢复睡眠链。
-- `quest.advance` 仍为 `PartiallyBlocked / StepCompilerDeclared / RegisteredOnly`，没有进入训练白名单；
-  不得把两个终端成功外推为完整任务系统完成。
+- `quest.advance` 已因目录零阻塞提升为 `Declared / StepCompilerDeclared / RegisteredOnly`，但没有进入训练白名单；
+  目录绑定完成不等于原生运行证据闭环。
 - EVD-237 已确认秘密物品取得不是独立任务动作：原版只有任务 128/129，`Railroad.getFish` 在同一
   原生钓鱼事务中返回 `(O)191` 并创建两条任务；透明桥与现有 `fishing.catch_fish` 已覆盖该特殊收获，
   `itemFound=false` 任务行只是事务中的瞬态观察，不得再建第二套任务钓鱼执行器。候选与运行时均复用
@@ -24,8 +24,16 @@
   没有对应工厂分支，原生任务源码没有任何 `questType=11` 写入点；它只是保留的兼容常量。目录使用独立
   `native_unreachable` 状态，KnowledgeCompiler 每次对账复核常量、工厂分支和写入点；旧存档或模组强塞
   type-11 时明确失败关闭，不生成除草执行器。
-- 唯一紧接任务是处理剩余 1 个明确阻塞阶段：Junimo Kart 分数。仍按透明读取、候选、DailyPlan、
-  唯一既有或新增原语、原生运行反馈逐项闭合。
+- EVD-239 已闭合 Junimo Kart 分数的静态主链：真实 full 快照验证
+  `current_location.arcade_action_tiles` 可读且带来源；`JKScoreObjective` 绑定 Saloon 街机，复用移动、地图交互和
+  `MinecartGame/Endless` 对话原语，唯一新增 `executor.play_junimo_kart` 只发送原生跳跃输入并观察原生分数提交回调，
+  禁止直接写分数、轨道、碰撞或任务进度。动作分母保持 `320/428/150`，语义动作增至 174 后重新冻结。
+- 唯一紧接任务是 EVD-239 运行验收：在隔离存档中由原生 Endless 模式达到 50,000 分并自然提交，验证精确
+  `JKScoreObjective` 前后计数、失败重试和输出记录。通过前不得登记运行证据或加入训练白名单。
+- EVD-239 当前最好真实运行峰值为 `30,190/50,000`，制品位于
+  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260810-224026/`。已验证街机进入、Endless 原生输入、
+  多次死亡重试和目标进度回读；尚未达标的控制缺口收敛为动态 `FallingBoulder` 等主题障碍预测，以及高速段精确
+  落点控制。后续不得用直接改分、改轨道或改任务目标替代这两个控制问题。
 - 最新运行证据：
   `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-173859/summary.json`。
 

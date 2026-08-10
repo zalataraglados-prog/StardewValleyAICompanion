@@ -62,6 +62,7 @@ namespace StardewAI.Core.Execution
                 ["executor.place_storage"] = (action, _) => CompilePlaceStorageStep(action),
                 ["executor.read_book"] = (action, _) => CompileReadBookStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),
+                ["executor.play_junimo_kart"] = (action, _) => CompilePlayJunimoKartStep(action),
                 ["executor.cool_volcano_lava"] = (action, _) => CompileCoolVolcanoLavaStep(action),
                 ["executor.break_volcano_stone"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),
                 ["executor.break_volcano_container"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),

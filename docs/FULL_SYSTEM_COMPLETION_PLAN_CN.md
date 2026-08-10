@@ -483,3 +483,34 @@ KnowledgeCompiler 现在每轮扫描 `type_weeding=11` 常量、工厂分支和�
 任务目录现为 23 bound、1 blocked、3 observation-only、1 native-unreachable。唯一剩余明确阻塞阶段是
 `JKScoreObjective` 的 Junimo Kart 分数；在该阶段完成并重跑任务矩阵前，`quest.advance` 继续保持
 PartiallyBlocked、RegisteredOnly 且不进入训练白名单。
+
+## 2026-08-10 Junimo Kart 分数静态主链（EVD-239 静态与透明 schema 已闭合）
+
+锁定 1.6.15 反编译确认：`MinecartGame_Endless` 创建 `MineCart(0, 2)`；Endless 原生死亡分支调用
+`submitHighScore()`，再通过 `SpecialOrder.onJKScoreAchieved` 更新 `JKScoreObjective`。`QuitGame()` 不提交分数，
+因此执行器不得提前退出或直接写分数。街机入口来自 Saloon 地图 `Action=Arcade_Minecart`，进入条件是
+`Farmer.hasSkullKey`，随后选择原生对话 `MinecartGame/Endless`。
+
+透明桥新增 `current_location.arcade_action_tiles`，并由隐藏、静音的 E 盘隔离实例生成真实 full 快照；验证结果为
+required state factors 102、带来源可读 85、场景性不可用 17、blocking 0。任务候选在上游排除无骷髅钥匙、菜单占用、
+入口缺失和无可达站位；跨地图仍复用滚动连接器。DailyPlan 固定展开为移动、地图交互、Endless 对话选择和
+`play_junimo_kart` 四步，动作队列最终映射到唯一 `executor.play_junimo_kart`。
+
+运行时原语只通过 SMAPI 原生输入覆盖控制跳跃，读取原生轨道、障碍、玩家运动、分数和目标计数用于控制与验收；
+源码守卫禁止调用 `submitHighScore()`、`Die()`、`SetCount()` 或写入 MineCart 私有状态。任务目录现为
+24 bound、0 blocked、3 observation-only、1 native-unreachable，`quest.advance` 候选状态改为 Declared。
+动作对账为 107 registered / 174 semantic / 106 compiler-bound / 39 five-gate / 26 allowlist；原生分母仍为
+320 surfaces / 428 branches / 150 map tokens，KnowledgeCompiler 585/585、blocking 0，并已批准新语义指纹冻结。
+
+EVD-239 尚未完成运行验收：必须在隔离存档中真实进入 Saloon 街机，以 Endless 原生输入达到至少 50,000 分，
+由自然死亡路径提交分数，并观察同一个 `JKScoreObjective` 的计数达到目标。失败、重试、超时和输出反馈也必须落盘。
+在该证据产生前，`executor.play_junimo_kart` 与 `quest.advance` 均不得新增五门证据或训练准入；完成标志不是
+“目录无 blocked”，而是原生 50,000 分回调、fresh after-state 与可复核运行制品同时成立。
+
+2026-08-11 运行检查点：原生隔离实例的最好峰值为 `30,190/50,000`，对应制品
+`artifacts/runtime-junimo-kart/runtime-junimo-kart-20260810-224026/`。街机入口、Endless 模式、原生跳跃输入、
+死亡重试和失败后的 `JKScoreObjective` 进度输出均已实际贯通；短回归
+`runtime-junimo-kart-20260811-000649` 也确认恢复后的控制器仍能完整启动和收尾。50,000 之前不形成证据。
+下一控制切片只处理两类剩余动态问题：从原生实体集合识别并预测 `FallingBoulder` 等主题障碍，以及用连续轨迹预测
+替代高速段粗粒度落点判断。每次修改必须保留已知最好控制器作为回退基线，并使用同一夹具比较峰值、死亡位置、
+垂直速度和附近动态实体；不得再次引入分数、轨道、碰撞或目标状态写入。

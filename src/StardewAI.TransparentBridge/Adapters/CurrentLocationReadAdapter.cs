@@ -69,6 +69,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.planting_context",
                 "current_location.shop_action_tiles",
                 "current_location.drop_box_action_tiles",
+                "current_location.arcade_action_tiles",
                 "current_location.home_context",
                 "current_location.route_context",
                 "current_location.doors",
@@ -94,6 +95,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["planting_context"] = Field(location is null ? null : ReadPlantingContext(location), "Game1.currentLocation planting APIs and HoeDirt terrain features", tick),
             ["shop_action_tiles"] = Field(actionIndex?.ShopActionTiles, "Game1.currentLocation map Action properties parsed by GameLocation.performAction", tick),
             ["drop_box_action_tiles"] = Field(actionIndex?.DropBoxActionTiles, "Game1.currentLocation map Action=DropBox <box_id>; GameLocation.performAction native drop-box dispatch", tick),
+            ["arcade_action_tiles"] = Field(actionIndex?.ArcadeActionTiles, "Game1.currentLocation map Action=Arcade_*; GameLocation.performAction native arcade dispatch", tick),
             ["home_context"] = Field(location is null ? null : ReadHomeContext(location), "Utility.getHomeOfFarmer(Game1.player); FarmHouse.getEntryLocation(); FarmHouse.GetPlayerBedSpot(); BedFurniture.IsBedHere", tick),
             ["route_context"] = Field(location is null ? null : ReadRouteContext(location), "Game1.currentLocation.isCollidingPosition local tile probes", tick),
             ["doors"] = Field(location is null ? null : ReadDoors(location), "Game1.currentLocation.doors", tick),
@@ -317,6 +319,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     {
         public object[] ShopActionTiles { get; set; } = Array.Empty<object>();
         public object[] DropBoxActionTiles { get; set; } = Array.Empty<object>();
+        public object[] ArcadeActionTiles { get; set; } = Array.Empty<object>();
     }
 
     private static MapActionIndex ReadMapActionIndex(GameLocation location)
@@ -327,7 +330,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             return new MapActionIndex
             {
                 ShopActionTiles = Array.Empty<object>(),
-                DropBoxActionTiles = Array.Empty<object>()
+                DropBoxActionTiles = Array.Empty<object>(),
+                ArcadeActionTiles = Array.Empty<object>()
             };
         }
 
@@ -335,6 +339,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
         var shopTiles = new List<object>();
         var dropBoxTiles = new List<object>();
+        var arcadeTiles = new List<object>();
 
         for (var y = 0; y < height; y++)
         {
@@ -372,13 +377,27 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                         box_id = Part(parts, 1) ?? string.Empty
                     });
                 }
+
+                if (parts.Length > 0 && parts[0].StartsWith("Arcade_", StringComparison.OrdinalIgnoreCase))
+                {
+                    arcadeTiles.Add(new
+                    {
+                        tile_x = x,
+                        tile_y = y,
+                        action,
+                        action_type = parts[0],
+                        unlocked = !string.Equals(parts[0], "Arcade_Minecart", StringComparison.OrdinalIgnoreCase) || Game1.player.hasSkullKey,
+                        unlock_requirement = string.Equals(parts[0], "Arcade_Minecart", StringComparison.OrdinalIgnoreCase) ? "player.has_skull_key" : string.Empty
+                    });
+                }
             }
         }
 
         return new MapActionIndex
         {
             ShopActionTiles = shopTiles.ToArray(),
-            DropBoxActionTiles = dropBoxTiles.ToArray()
+            DropBoxActionTiles = dropBoxTiles.ToArray(),
+            ArcadeActionTiles = arcadeTiles.ToArray()
         };
     }
 

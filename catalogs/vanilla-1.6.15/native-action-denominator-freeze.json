@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "91fd6cc217938e6962e7b856293f34aa8d5efe330cc3a1badfc01c4dd3694e2f",
+  "fingerprint_sha256": "31253c3eb2a30b38b49323320e9ca89bdcbebf40287cf6a03a5b478b86af8045",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 173,
-  "approval_basis": "locked 1.6.15 decompile; typed HaveBuildingQuest native Carpenter construction primitive added; zero surface, branch, map-token, or semantic-registration blockers"
+  "semantic_action_count": 174,
+  "approval_basis": "locked 1.6.15 decompile; typed JKScoreObjective native MineCart endless input primitive added without direct score or objective mutation; zero snapshot, surface, branch, map-token, or semantic-registration blockers"
 }

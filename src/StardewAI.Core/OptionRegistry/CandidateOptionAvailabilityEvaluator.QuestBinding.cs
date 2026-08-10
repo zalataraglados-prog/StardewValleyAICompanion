@@ -200,6 +200,8 @@ namespace StardewAI.Core.OptionRegistry
                     return BindSpecialOrderFishingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "GiftObjective":
                     return BindSpecialOrderGiftCandidates(snapshot, candidate, fields);
+                case "JKScoreObjective":
+                    return new[] { BindJunimoKartScoreCandidate(snapshot, candidate) };
                 case "ShipObjective":
                     return BindSpecialOrderShippingCandidates(snapshot, candidate, fields.AcceptableContextTagSets);
                 case "ReachMineFloorObjective":
@@ -326,6 +328,87 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return false;
             }
+        }
+
+        private EventCandidate BindJunimoKartScoreCandidate(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest)
+        {
+            if (!ReadStateFieldBool(snapshot, "player", "has_skull_key"))
+            {
+                return BlockedQuestCandidate(snapshot, quest, "junimo_kart_skull_key_required");
+            }
+
+            const string targetLocation = "Saloon";
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            if (!string.Equals(currentLocation, targetLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                return BindQuestLocationRoute(snapshot, quest, targetLocation);
+            }
+
+            if (ActiveMenuOpenForCandidate(snapshot))
+            {
+                return BlockedQuestCandidate(snapshot, quest, "junimo_kart_entry_requires_clear_menu");
+            }
+
+            var arcadeTiles = ReadStateFieldValue(snapshot, "current_location", "arcade_action_tiles");
+            if (!arcadeTiles.HasValue || arcadeTiles.Value.ValueKind != JsonValueKind.Array)
+            {
+                return BlockedQuestCandidate(snapshot, quest, "current_location_arcade_action_tiles_unavailable");
+            }
+
+            foreach (var tile in arcadeTiles.Value.EnumerateArray())
+            {
+                if (tile.ValueKind != JsonValueKind.Object ||
+                    !string.Equals(ReadString(tile, "action_type"), "Arcade_Minecart", StringComparison.Ordinal) ||
+                    ReadBool(tile, "unlocked") != true)
+                {
+                    continue;
+                }
+
+                var actionX = ReadInt(tile, "tile_x");
+                var actionY = ReadInt(tile, "tile_y");
+                var stand = FindBestStandTile(snapshot, actionX, actionY);
+                if (stand is null)
+                {
+                    return BlockedQuestCandidate(snapshot, quest, "junimo_kart_arcade_has_no_reachable_stand_tile");
+                }
+
+                var distance = Math.Abs(ReadStateFieldInt(snapshot, "player", "tile_x") - stand.X) +
+                    Math.Abs(ReadStateFieldInt(snapshot, "player", "tile_y") - stand.Y);
+                return AttachQuest(new EventCandidate
+                {
+                    CandidateId = "junimo_kart:" + currentLocation + ":" + actionX + "," + actionY,
+                    Kind = "play_junimo_kart",
+                    Available = true,
+                    LocationId = currentLocation,
+                    TileX = actionX,
+                    TileY = actionY,
+                    ExpectedEffect = "native_MineCart_endless_score_submitted_at_or_above=" + quest.RequiredTargetCount,
+                    EstimatedTicks = Math.Max(3600, distance * 60 + 3600),
+                    EnergyCost = 0,
+                    AvailabilityClass = "typed_native_junimo_kart_endless",
+                    AllowedNow = true,
+                    AllowedToday = true,
+                    Parameters = new[]
+                    {
+                        Parameter("stand_tile_x", stand.X.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("stand_tile_y", stand.Y.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("target_tile_x", actionX.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("target_tile_y", actionY.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("expected_action_type", "Arcade_Minecart"),
+                        Parameter("expected_dialogue_key", "MinecartGame"),
+                        Parameter("dialogue_response_key", "Endless"),
+                        Parameter("minigame_id", "MineCart"),
+                        Parameter("minigame_mode", "2"),
+                        Parameter("minigame_target_score", quest.RequiredTargetCount.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("minigame_max_attempts", "8"),
+                        Parameter("max_movement_tiles", Math.Max(1, distance + 16).ToString(CultureInfo.InvariantCulture))
+                    }
+                }, quest);
+            }
+
+            return BlockedQuestCandidate(snapshot, quest, "junimo_kart_arcade_action_not_present_in_loaded_saloon_map");
         }
 
         private static bool FishingCandidateContainsItem(

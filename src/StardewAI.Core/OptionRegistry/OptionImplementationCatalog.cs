@@ -18,6 +18,7 @@ public static class ImplementationEngineIds
     public const string InventoryTransfer = "engine.inventory_transfer";
     public const string ToolHarvest = "engine.tool_harvest";
     public const string FarmMachine = "engine.farm_machine";
+    public const string Minigame = "engine.minigame";
 }
 
 public sealed class OptionImplementationBinding
@@ -85,6 +86,9 @@ public static class OptionImplementationCatalog
         "executor.collect_crab_pot",
         "executor.collect_fish_pond_output",
         "executor.complete_fish_pond_request");
+
+    private static readonly HashSet<string> MinigameOptions = Set(
+        "executor.play_junimo_kart");
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "executor.ship_inventory_item_to_bin",
@@ -187,6 +191,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.Combat;
         if (FishingOptions.Contains(optionId))
             return ImplementationEngineIds.Fishing;
+        if (MinigameOptions.Contains(optionId))
+            return ImplementationEngineIds.Minigame;
         if (InventoryOptions.Contains(optionId))
             return ImplementationEngineIds.InventoryTransfer;
         if (ToolOptions.Contains(optionId))

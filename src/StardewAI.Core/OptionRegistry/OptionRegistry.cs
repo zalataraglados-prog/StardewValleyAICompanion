@@ -574,6 +574,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "legal fishing input lifecycle executed", "catch outcome observed" },
                 new[] { "block_wrong_location_or_stand_tile", "block_invalid_rod_or_bobber_tile", "block_unobserved_catch_result" }));
 
+            Register(Option("executor.play_junimo_kart", "minigame", "Play one native Junimo Kart endless session to an exact quest score",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.has_skull_key", "quests.special_orders", "current_location.arcade_action_tiles", "menus.active_menu" },
+                new[] { "native endless score submitted", "matching JKScoreObjective progress observed" },
+                new[] { "block_missing_skull_key", "block_wrong_minigame_or_mode", "block_unobserved_score_submission", "block_direct_minigame_state_mutation" }));
+
             Register(Option("executor.ship_inventory_item_to_bin", "economy", "Put one inventory item into a completed shipping bin safely",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

@@ -1161,6 +1161,11 @@ static partial class Program
             executionRequest.OutcomeProbabilityStatus = fishingOutcomeProbabilityStatus;
         }
 
+        executionRequest.MinigameId = ReadQueueParameterString(item, "minigame_id");
+        executionRequest.MinigameMode = ReadQueueParameterInt(item, "minigame_mode");
+        executionRequest.MinigameTargetScore = ReadQueueParameterInt(item, "minigame_target_score");
+        executionRequest.MinigameMaxAttempts = ReadQueueParameterInt(item, "minigame_max_attempts");
+
         var socialNpcName = ReadQueueParameterString(item, "npc_name");
         var socialActionKind = ReadQueueParameterString(item, "social_action_kind");
         var socialObservedNpcTileX = ReadQueueParameterInt(item, "npc_tile_x");

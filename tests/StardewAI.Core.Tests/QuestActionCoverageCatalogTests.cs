@@ -60,6 +60,9 @@ public sealed class QuestActionCoverageCatalogTests
             row => string.IsNullOrWhiteSpace(row.RuntimeType) ||
                 string.IsNullOrWhiteSpace(row.ActionStage) ||
                 string.IsNullOrWhiteSpace(row.Evidence));
+        Assert.DoesNotContain(
+            QuestActionCoverageCatalog.All,
+            row => row.BindingStatus == QuestActionCoverageCatalog.Blocked);
     }
 
     [Fact]
@@ -72,6 +75,7 @@ public sealed class QuestActionCoverageCatalogTests
                 .OrderBy(value => value, StringComparer.Ordinal));
         Assert.Contains("mining_reach_depth_plan_envelope", QuestActionCoverageCatalog.BoundCandidateKinds);
         Assert.Contains("ship_inventory_item_to_bin", QuestActionCoverageCatalog.BoundCandidateKinds);
+        Assert.Contains("play_junimo_kart", QuestActionCoverageCatalog.BoundCandidateKinds);
         Assert.DoesNotContain("reach_mine_depth", QuestActionCoverageCatalog.BoundCandidateKinds);
         Assert.DoesNotContain("ship_inventory_item", QuestActionCoverageCatalog.BoundCandidateKinds);
     }

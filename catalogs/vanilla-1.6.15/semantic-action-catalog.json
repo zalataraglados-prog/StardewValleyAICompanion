@@ -1,9 +1,9 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "91fd6cc217938e6962e7b856293f34aa8d5efe330cc3a1badfc01c4dd3694e2f",
-  "action_count": 173,
-  "registered_option_spec_count": 106,
+  "denominator_fingerprint_sha256": "31253c3eb2a30b38b49323320e9ca89bdcbebf40287cf6a03a5b478b86af8045",
+  "action_count": 174,
+  "registered_option_spec_count": 107,
   "catalogued_blocked_count": 67,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -676,6 +676,15 @@
       "domain": "farm",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.tool_harvest",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.play_junimo_kart",
+      "domain": "minigame",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.minigame",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []

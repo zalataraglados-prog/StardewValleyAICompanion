@@ -101,7 +101,8 @@ namespace StardewAI.Core.Execution
             {
                 var step = expandedSteps[index];
                 actions.Add(PlanStepToAction(step, index, expandedSteps.Length, activeMenuOpenBeforeStep, activeMenuTypeBeforeStep));
-                if (string.Equals(step.Kind, "close_menu", StringComparison.Ordinal))
+                if (string.Equals(step.Kind, "close_menu", StringComparison.Ordinal) ||
+                    StepClosesMenu(step))
                 {
                     activeMenuOpenBeforeStep = false;
                     activeMenuTypeBeforeStep = string.Empty;

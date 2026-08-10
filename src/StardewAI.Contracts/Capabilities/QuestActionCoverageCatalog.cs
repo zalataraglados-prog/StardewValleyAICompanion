@@ -56,7 +56,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("special_order", "DonateObjective", "donate_items", Bound, new[] { "quest_drop_box_donation", "route_connector_tile" }),
                 Row("special_order", "FishObjective", "catch_fish", Bound, new[] { "catch_fish" }),
                 Row("special_order", "GiftObjective", "give_gifts", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
-                Row("special_order", "JKScoreObjective", "achieve_junimo_kart_score", Blocked, Array.Empty<string>(), "Junimo Kart play is not implemented."),
+                Row("special_order", "JKScoreObjective", "achieve_junimo_kart_score", Bound, new[] { "play_junimo_kart", "route_connector_tile" }),
                 Row("special_order", "ReachMineFloorObjective", "reach_mine_floor", Bound, new[] { "mining_reach_depth_plan_envelope" }),
                 Row("special_order", "ShipObjective", "ship_items", Bound, new[] { "ship_inventory_item_to_bin" }),
                 Row("special_order", "SlayObjective", "slay_monsters", Bound, new[] { "mining_slay_monsters_plan_envelope" })

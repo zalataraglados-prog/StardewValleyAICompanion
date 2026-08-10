@@ -216,7 +216,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
-            "executor.read_book", "executor.catch_fish",
+            "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -253,7 +253,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
-            "executor.read_book", "executor.catch_fish",
+            "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -334,7 +334,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.consume_food", "executor.descend_ladder", "executor.descend_shaft",
             "executor.exit_mine", "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
-            "executor.catch_fish", "executor.ship_inventory_item_to_bin",
+            "executor.catch_fish", "executor.play_junimo_kart", "executor.ship_inventory_item_to_bin",
             "executor.transfer_material",
             "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.clear_obstacle",
@@ -566,6 +566,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("recovery_sleep_before_collapse"),
                 SupportedCandidate("recovery_sleep_immediately"), SupportedCandidate("route_connector_tile"),
                 SupportedCandidate("quest_drop_box_donation"),
+                SupportedCandidate("play_junimo_kart"),
                 SupportedCandidate("quest_npc_interaction"),
                 SupportedCandidate("ship_inventory_item_to_bin"),
                 SupportedCandidate("transfer_inventory_item"),
@@ -653,7 +654,13 @@ namespace StardewAI.Contracts.Capabilities
                 var candidateStatus = id.StartsWith("executor.", StringComparison.Ordinal)
                     ? CapabilityCandidateStatus.NotApplicable
                     : id == "quest.advance"
-                        ? CapabilityCandidateStatus.PartiallyBlocked
+                        ? QuestActionCoverageCatalog.All.Any(row =>
+                            string.Equals(
+                                row.BindingStatus,
+                                QuestActionCoverageCatalog.Blocked,
+                                StringComparison.Ordinal))
+                            ? CapabilityCandidateStatus.PartiallyBlocked
+                            : CapabilityCandidateStatus.Declared
                         : CapabilityCandidateStatus.Declared;
                 var compilerStatus = hasStep && hasParameter
                     ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared

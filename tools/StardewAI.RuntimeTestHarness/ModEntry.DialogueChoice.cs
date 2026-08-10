@@ -13,6 +13,7 @@ using StardewValley.Buildings;
 using StardewValley.GameData.Crops;
 using StardewValley.Locations;
 using StardewValley.Menus;
+using StardewValley.Minigames;
 using StardewValley.Monsters;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
@@ -46,7 +47,12 @@ public sealed partial class ModEntry : Mod
         }
 
         var responseKey = request.DialogueResponseKey;
-        if (!IsDialogueResponseWhitelisted(expectedKey, responseKey, request.ExpectedShopId))
+        if (!IsDialogueResponseWhitelisted(
+                expectedKey,
+                responseKey,
+                request.ExpectedShopId,
+                request.MinigameId,
+                request.MinigameMode))
         {
             return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_response_not_whitelisted");
         }
@@ -59,16 +65,35 @@ public sealed partial class ModEntry : Mod
 
         var beforeMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var beforeQuestionKey = actualKey;
+        var beforeMinigame = Game1.currentMinigame?.minigameId() ?? "none";
         var started = DateTimeOffset.UtcNow.ToString("O");
         var handled = Game1.currentLocation.answerDialogue(response);
         var afterMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var afterShopId = Game1.activeClickableMenu is ShopMenu shopMenu ? shopMenu.ShopId : string.Empty;
-        var verified = handled &&
+        var expectsMinigame = DialogueResponseStartsExpectedMinigame(
+            expectedKey,
+            responseKey,
+            request.MinigameId,
+            request.MinigameMode);
+        var minigameVerified = expectsMinigame &&
+            Game1.currentMinigame is MineCart mineCart &&
+            (int)MineCartModeField.GetValue(mineCart)! == request.MinigameMode;
+        var shopVerified = !expectsMinigame &&
             string.Equals(afterMenuType, "ShopMenu", StringComparison.Ordinal) &&
             (string.IsNullOrWhiteSpace(request.ExpectedShopId) || string.Equals(afterShopId, request.ExpectedShopId, StringComparison.OrdinalIgnoreCase));
+        var verified = handled && (minigameVerified || shopVerified);
         var verificationReasons = verified
-            ? new[] { "dialogue_response_handled", "expected_shop_menu_opened" }
-            : new[] { handled ? "dialogue_response_handled_without_expected_shop_menu" : "dialogue_response_not_handled" };
+            ? expectsMinigame
+                ? new[] { "dialogue_response_handled", "expected_native_minigame_started" }
+                : new[] { "dialogue_response_handled", "expected_shop_menu_opened" }
+            : new[]
+            {
+                handled
+                    ? expectsMinigame
+                        ? "dialogue_response_handled_without_expected_minigame"
+                        : "dialogue_response_handled_without_expected_shop_menu"
+                    : "dialogue_response_not_handled"
+            };
 
         return new TrainingExecutionResult
         {
@@ -91,14 +116,37 @@ public sealed partial class ModEntry : Mod
             {
                 new SimulatedFactChange { Path = "menus.active_menu.type", Before = beforeMenuType, After = afterMenuType },
                 new SimulatedFactChange { Path = "menus.active_menu.shop_id", Before = "", After = afterShopId },
-                new SimulatedFactChange { Path = "menus.active_menu.last_question_key", Before = beforeQuestionKey, After = Game1.currentLocation.lastQuestionKey ?? string.Empty }
+                new SimulatedFactChange { Path = "menus.active_menu.last_question_key", Before = beforeQuestionKey, After = Game1.currentLocation.lastQuestionKey ?? string.Empty },
+                new SimulatedFactChange { Path = "minigame.id", Before = beforeMinigame, After = Game1.currentMinigame?.minigameId() ?? "none" }
             }
         };
     }
 
-    private static bool IsDialogueResponseWhitelisted(string expectedDialogueKey, string responseKey, string expectedShopId)
+    private static bool IsDialogueResponseWhitelisted(
+        string expectedDialogueKey,
+        string responseKey,
+        string expectedShopId,
+        string minigameId,
+        int? minigameMode)
     {
-        return DialogueResponseOpensExpectedShop(expectedDialogueKey, responseKey, expectedShopId);
+        return DialogueResponseOpensExpectedShop(expectedDialogueKey, responseKey, expectedShopId) ||
+            DialogueResponseStartsExpectedMinigame(
+                expectedDialogueKey,
+                responseKey,
+                minigameId,
+                minigameMode);
+    }
+
+    private static bool DialogueResponseStartsExpectedMinigame(
+        string expectedDialogueKey,
+        string responseKey,
+        string minigameId,
+        int? minigameMode)
+    {
+        return string.Equals(expectedDialogueKey, "MinecartGame", StringComparison.Ordinal) &&
+            string.Equals(responseKey, "Endless", StringComparison.Ordinal) &&
+            string.Equals(minigameId, "MineCart", StringComparison.Ordinal) &&
+            minigameMode == MineCart.infiniteMode;
     }
 
     private static bool DialogueResponseOpensExpectedShop(string expectedDialogueKey, string responseKey, string expectedShopId)
@@ -121,13 +169,16 @@ public sealed partial class ModEntry : Mod
     {
         return "dialogue_key=" + (string.IsNullOrWhiteSpace(request.ExpectedDialogueKey) ? "missing" : request.ExpectedDialogueKey) +
             ";response_key=" + (string.IsNullOrWhiteSpace(request.DialogueResponseKey) ? "missing" : request.DialogueResponseKey) +
-            ";expected_shop_id=" + (string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "missing" : request.ExpectedShopId);
+            ";expected_shop_id=" + (string.IsNullOrWhiteSpace(request.ExpectedShopId) ? "missing" : request.ExpectedShopId) +
+            ";minigame_id=" + (string.IsNullOrWhiteSpace(request.MinigameId) ? "missing" : request.MinigameId) +
+            ";minigame_mode=" + request.MinigameMode;
     }
 
     private static string DialogueObservedEffect()
     {
         return "menus.active_menu.type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
             ";last_question_key=" + (Game1.currentLocation?.lastQuestionKey ?? "none") +
-            ";shop_id=" + (Game1.activeClickableMenu is ShopMenu menu ? menu.ShopId : "none");
+            ";shop_id=" + (Game1.activeClickableMenu is ShopMenu menu ? menu.ShopId : "none") +
+            ";minigame_id=" + (Game1.currentMinigame?.minigameId() ?? "none");
     }
 }

@@ -39,6 +39,7 @@ public sealed partial class ModEntry : Mod
     private ActiveSleep? activeSleep;
     private ActiveWait? activeWait;
     private ActiveCatchFish? activeCatchFish;
+    private ActiveJunimoKart? activeJunimoKart;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -401,6 +402,7 @@ public sealed partial class ModEntry : Mod
         TickSleep();
         TickWait();
         TickCatchFish();
+        TickJunimoKart();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -669,6 +671,12 @@ public sealed partial class ModEntry : Mod
             {
                 pending.Completion.SetResult(
                     ExecuteSetupQuestTerminalFixture(pending.Request));
+                return;
+            }
+            if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupJunimoKartQuest(pending.Request));
                 return;
             }
             if (pending.Request.OptionId == "debug.setup_green_rain_resource_clump")
@@ -1164,6 +1172,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.play_junimo_kart")
+            {
+                StartJunimoKart(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.choose_dialogue_response")
             {
                 pending.Completion.SetResult(ExecuteChooseDialogueResponse(pending.Request));
@@ -1217,6 +1231,7 @@ public sealed partial class ModEntry : Mod
         {
             StopAllMovement();
             activeCatchFish = null;
+            activeJunimoKart = null;
             activeCrabPotCollect = null;
             activeBushHarvest = null;
             activeMineRewardChest = null;
@@ -1314,6 +1329,12 @@ public sealed partial class ModEntry : Mod
                 }
             }
 
+            if (activeJunimoKart is not null && !ApplyJunimoKartInput(activeJunimoKart, out var junimoKartInputReason))
+            {
+                CompleteBlockedJunimoKart(activeJunimoKart, junimoKartInputReason);
+                return;
+            }
+
             if (activeSleep is not null &&
                 (activeSleep.Stage == SleepStage.ConfirmPromptPress ||
                  activeSleep.Stage == SleepStage.ConfirmPromptRelease) &&
@@ -1351,6 +1372,12 @@ public sealed partial class ModEntry : Mod
                 CompleteBlockedSleep(sleepObj, "sleep_confirm_input_dispatch_exception:" + ex.GetType().Name);
                 return;
             }
+            var activeKart = activeJunimoKart;
+            if (activeKart is not null)
+            {
+                CompleteBlockedJunimoKart(activeKart, "junimo_kart_input_dispatch_exception:" + ex.GetType().Name);
+                return;
+            }
             if (sleepObj is not null && sleepObj.Stage == SleepStage.WaitForPostSleepStable)
             {
                 Monitor.Log($"Ship summary input dispatch failed once and was blocked: {ex}", LogLevel.Error);
@@ -1372,6 +1399,7 @@ public sealed partial class ModEntry : Mod
             activeSleep is not null ||
             activeWait is not null ||
             activeCatchFish is not null ||
+            activeJunimoKart is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

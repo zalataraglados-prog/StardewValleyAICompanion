@@ -338,6 +338,11 @@ namespace StardewAI.Core.Training
                 return QuestDropBoxDonationSteps(candidate);
             }
 
+            if (candidate.Kind == "play_junimo_kart")
+            {
+                return JunimoKartSteps(candidate);
+            }
+
             if (candidate.Kind == "ship_inventory_item_to_bin")
             {
                 return ShipInventoryItemToBinSteps(candidate);
