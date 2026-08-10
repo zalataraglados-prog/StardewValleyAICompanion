@@ -426,3 +426,23 @@ E 盘隐藏静音矩阵现为 `3/3`。新增案例使用原生 `QiChallenge12`�
 `executor.quest_drop_box_donate` 完成原生菜单点击与确认，目标进度增加并写入 verified 训练行。运行中暴露的
 未见 Mr. Qi 地点事件只在隔离测试夹具中按当前原生前置条件标记已见，生产执行器未放宽。下一步处理普通制作，
 其余明确阻塞阶段顺序不变。
+
+## 2026-08-10 普通制作与建造任务闭环（EVD-235、EVD-236 已闭合）
+
+EVD-235 将 `CraftingQuest` 接到目的限定的 `player.quest_crafting`、`quest.advance`、DailyPlan 和既有
+原生 `CraftingPage` 执行器。任务只由原生 `CraftingQuest.OnRecipeCrafted` 完成，材料预留、输出容量、配方身份
+和 Workbench 来源均在候选与编译时重绑定；隐藏静音 E 盘终点矩阵为 4/4。
+
+EVD-236 将 `HaveBuildingQuest` 接到目的限定的 `player.quest_building_construction`。透明行读取精确建筑类型、
+Robin 服务、蓝图价格/材料/工期、在建状态和农场放置候选；跨地图放置判断按反编译复刻目标地图的
+`GameLocation.isBuildable` 必要谓词，避免其内部错误依赖 `Game1.currentLocation`。候选将原生
+`Inventory.ReduceId` 槽位消耗计划交给既有材料承诺 guard，活动预留冲突在上游排除，并在编译和派发时绑定
+同一账本 revision。
+
+唯一 `executor.construct_building` 只执行 `Carpenter` 地图动作、`Construct` 对话、原生 `CarpenterMenu`
+蓝图选择与放置；不直接调用 `buildStructure`，不直接扣钱/材料，也不直接完成任务。E 盘隐藏静音运行通过：
+`runtime-quest-terminal-daily-plan-20260810-173859` 验证原生菜单生命周期、资源扣除和三天施工倒计时。
+后续每日结算复用既有 `recovery.stabilize_day`/`executor.sleep`，最终由
+`Building.FinishConstruction -> FarmerTeam.constructedBuildings.OnValueAdded -> HaveBuildingQuest.OnBuildingExists`
+完成。任务目录现为 23 bound、3 blocked、2 observation-only；下一步按权威目录处理秘密物品取得，之后是
+type-11 除草和 Junimo Kart 分数。`quest.advance` 在三个阻塞阶段关闭前仍不进入训练白名单。

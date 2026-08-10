@@ -4,6 +4,7 @@ param(
     [string] $SaveSlot = "",
     [string] $RunId = ("runtime-quest-terminal-daily-plan-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [int] $BackendPort = 5132,
+    [string[]] $CaseName = @(),
     [switch] $VisibleGame,
     [switch] $KeepGameRunning
 )
@@ -49,6 +50,9 @@ function Wait-WorldSnapshot([scriptblock] $Predicate, [string] $Description, [in
         }
         catch { $lastStatus = $_.Exception.Message }
         Start-Sleep -Milliseconds 500
+    }
+    if ($null -ne $snapshot -and -not [string]::IsNullOrWhiteSpace($caseDirectory)) {
+        Write-Json (Join-Path $caseDirectory "wait-timeout-snapshot.json") $snapshot
     }
     throw "Timed out waiting for $Description. Last status: $lastStatus"
 }
@@ -96,6 +100,13 @@ function Find-OrdinaryQuest($Snapshot, [string] $QuestId) {
 function Find-CraftingQuest($Snapshot, [string] $QuestId) {
     @($Snapshot.state.quests.active_quests.value | Where-Object {
         [string]$_.id -eq $QuestId -and [string]$_.runtime_type -eq "CraftingQuest" -and
+        -not [bool]$_.completed
+    }) | Select-Object -First 1
+}
+
+function Find-BuildingQuest($Snapshot, [string] $QuestId) {
+    @($Snapshot.state.quests.active_quests.value | Where-Object {
+        [string]$_.id -eq $QuestId -and [string]$_.runtime_type -eq "HaveBuildingQuest" -and
         -not [bool]$_.completed
     }) | Select-Object -First 1
 }
@@ -161,9 +172,16 @@ function Invoke-QuestTerminalCase($Case) {
             if ($Case.Name -eq "item-delivery") {
                 return $null -ne (Find-OrdinaryQuest $snapshot $Case.QuestId)
             }
+            if ($Case.Name -eq "building-construction") {
+                return $null -ne (Find-BuildingQuest $snapshot $Case.QuestId) -and
+                    @($snapshot.state.player.quest_building_construction.value.rows | Where-Object {
+                        [string]$_.quest_id -eq $Case.QuestId -and
+                        [string]$_.action_status -eq "ready_for_native_carpenter_menu"
+                    }).Count -gt 0
+            }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 0
-        } "ready quest terminal fixture $($Case.Name)"
+        } "ready quest terminal fixture $($Case.Name)" $(if ($Case.Name -eq "building-construction") { 30 } else { 120 })
         $snapshotPath = Join-Path $caseDirectory "before-snapshot.json"
         Write-Json $snapshotPath $before
         Invoke-JsonPostRaw "$backendUrl/api/v1/snapshots" `
@@ -252,6 +270,14 @@ function Invoke-QuestTerminalCase($Case) {
             }
             if ($Case.Name -eq "item-delivery") {
                 return $null -eq (Find-OrdinaryQuest $snapshot $Case.QuestId)
+            }
+            if ($Case.Name -eq "building-construction") {
+                return $null -ne (Find-BuildingQuest $snapshot $Case.QuestId) -and
+                    @($snapshot.state.player.quest_building_construction.value.rows | Where-Object {
+                        [string]$_.quest_id -eq $Case.QuestId -and
+                        [string]$_.action_status -eq "construction_in_progress" -and
+                        [int]$_.construction_days_left -eq 3
+                    }).Count -gt 0
             }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 1 -and
@@ -371,6 +397,16 @@ try {
             PrimitiveOptionId = "executor.quest_npc_interact"
         },
         [pscustomobject]@{
+            Name = "building-construction"
+            FixtureKind = "building_construction"
+            QuestId = "stardewai.runtime.building"
+            QuestKey = ""
+            RequiredTagPrefix = ""
+            QuestCandidateId = "quest:stardewai.runtime.building:HaveBuildingQuest"
+            CandidateKind = "construct_quest_building"
+            PrimitiveOptionId = "executor.construct_building"
+        },
+        [pscustomobject]@{
             Name = "drop-box"
             FixtureKind = "drop_box"
             QuestId = ""
@@ -391,6 +427,12 @@ try {
             PrimitiveOptionId = "executor.quest_drop_box_donate"
         }
     )
+    if ($CaseName.Count -gt 0) {
+        $cases = @($cases | Where-Object { $CaseName -contains $_.Name })
+        if ($cases.Count -ne $CaseName.Count) {
+            throw "One or more requested quest terminal cases are unknown: $($CaseName -join ',')"
+        }
+    }
     $caseResults = @($cases | ForEach-Object { Invoke-QuestTerminalCase $_ })
     $passedCount = @($caseResults | Where-Object { $_.passed }).Count
     $summary = [ordered]@{

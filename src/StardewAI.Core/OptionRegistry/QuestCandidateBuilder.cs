@@ -242,6 +242,7 @@ namespace StardewAI.Core.OptionRegistry
             string targetNpc = string.Empty;
             string targetLocation = string.Empty;
             string itemId = string.Empty;
+            string buildingType = string.Empty;
             int targetCount = 0;
             int currentCount = 0;
             int? targetTileX = null;
@@ -282,6 +283,7 @@ namespace StardewAI.Core.OptionRegistry
                     targetNpc = string.IsNullOrWhiteSpace(fields.TargetNpc) ? fields.NpcName : fields.TargetNpc;
                     targetLocation = string.IsNullOrWhiteSpace(fields.TargetLocation) ? fields.LocationOfItem : fields.TargetLocation;
                     itemId = fields.ItemId;
+                    buildingType = fields.BuildingType;
                     targetCount = fields.TargetCount;
                     currentCount = fields.CurrentCount;
                     if (quest.RuntimeType == "LostItemQuest")
@@ -322,6 +324,7 @@ namespace StardewAI.Core.OptionRegistry
                 RequiredTargetLocation = targetLocation,
                 RequiredTargetNpc = targetNpc,
                 RequiredItemId = itemId,
+                RequiredBuildingType = buildingType,
                 RequiredTargetCount = targetCount,
                 RequiredTargetTileX = targetTileX,
                 RequiredTargetTileY = targetTileY,

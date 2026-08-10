@@ -519,6 +519,11 @@ static partial class Program
         var expectedHouseUpgradeLevelAfterConstruction = ReadQueueParameterInt(item, "expected_house_upgrade_level_after_construction");
         var expectedDaysUntilHouseUpgradeBefore = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_before");
         var expectedDaysUntilHouseUpgradeAfter = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_after");
+        var constructionBuildingType = ReadQueueParameterString(item, "construction_building_type");
+        var constructionBuildDays = ReadQueueParameterInt(item, "construction_build_days");
+        var constructionMaterialsJson = ReadQueueParameterString(item, "construction_materials_json");
+        var placementLocationId = ReadQueueParameterString(item, "placement_location_id");
+        var placementVerification = ReadQueueParameterString(item, "placement_verification");
         var bundleDataKey = ReadQueueParameterString(item, "bundle_data_key");
         var communityCenterNoteTileX = ReadQueueParameterInt(item, "community_center_note_tile_x");
         var communityCenterNoteTileY = ReadQueueParameterInt(item, "community_center_note_tile_y");
@@ -884,6 +889,11 @@ static partial class Program
         executionRequest.ExpectedHouseUpgradeLevelAfterConstruction = expectedHouseUpgradeLevelAfterConstruction;
         executionRequest.ExpectedDaysUntilHouseUpgradeBefore = expectedDaysUntilHouseUpgradeBefore;
         executionRequest.ExpectedDaysUntilHouseUpgradeAfter = expectedDaysUntilHouseUpgradeAfter;
+        executionRequest.ConstructionBuildingType = constructionBuildingType;
+        executionRequest.ConstructionBuildDays = constructionBuildDays;
+        executionRequest.ConstructionMaterialsJson = constructionMaterialsJson;
+        executionRequest.PlacementLocationId = placementLocationId;
+        executionRequest.PlacementVerification = placementVerification;
         executionRequest.BundleDataKey = bundleDataKey;
         executionRequest.CommunityCenterNoteTileX = communityCenterNoteTileX;
         executionRequest.CommunityCenterNoteTileY = communityCenterNoteTileY;

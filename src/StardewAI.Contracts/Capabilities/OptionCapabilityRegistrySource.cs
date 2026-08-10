@@ -212,7 +212,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
-            "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
+            "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
@@ -249,7 +249,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
-            "executor.purchase_farmhouse_upgrade", "executor.pan_ore_spot",
+            "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage",
@@ -303,12 +303,12 @@ namespace StardewAI.Contracts.Capabilities
             "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe", "social.advance_partnership",
             "executor.choose_dialogue_response", "executor.donate_museum_item",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
-            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade");
+            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building");
 
         private static readonly HashSet<string> HostOnlyIds = Set(
             "joja.advance_development", "housing.advance_farmhouse",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
-            "executor.purchase_farmhouse_upgrade");
+            "executor.purchase_farmhouse_upgrade", "executor.construct_building");
 
         private static readonly string[] RegisteredOptionIds =
         {
@@ -346,7 +346,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.complete_fish_pond_request", "executor.collect_animal_product",
             "executor.pet_interact", "executor.fill_pet_bowl", "executor.donate_museum_item",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
-            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade",
+            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building",
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
@@ -536,6 +536,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("collect_machine_output_tile"),
                 SupportedCandidate("collect_spawned_object"),
                 SupportedCandidate("complete_fish_pond_request"),
+                SupportedCandidate("construct_quest_building"),
                 SupportedCandidate("craft_machine_item"),
                 SupportedCandidate("craft_storage_item"),
                 SupportedCandidate("craft_quest_item"),

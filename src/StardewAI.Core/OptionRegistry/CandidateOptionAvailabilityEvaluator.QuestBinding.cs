@@ -66,6 +66,8 @@ namespace StardewAI.Core.OptionRegistry
                         snapshot,
                         candidate,
                         commitmentLedger);
+                case "construct_building":
+                    return BindBuildingQuestCandidates(snapshot, candidate, commitmentLedger);
                 case "fish_for_item":
                     return BindExactFishingCandidate(snapshot, candidate);
                 case "slay_monsters":

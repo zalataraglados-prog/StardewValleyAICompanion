@@ -300,6 +300,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.purchase_joja_membership", Primitive, R5, Route, ExplicitConfirm, Host, World, Explicit),
                 P("executor.purchase_joja_project", Primitive, R5, Route, ExplicitConfirm, Host, World, Explicit),
                 P("executor.purchase_farmhouse_upgrade", Primitive, R3, CrossDay, ExplicitConfirm, Host, Farm, Explicit),
+                P("executor.construct_building", Primitive, R3, CrossDay, ExplicitConfirm, Host, Farm, Explicit),
                 P("executor.pan_ore_spot", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.collect_machine_output", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.load_machine_input", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),

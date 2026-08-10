@@ -53,6 +53,7 @@ public static class OptionImplementationCatalog
         "executor.purchase_joja_membership",
         "executor.purchase_joja_project",
         "executor.purchase_farmhouse_upgrade",
+        "executor.construct_building",
         "executor.read_book");
 
     private static readonly HashSet<string> RecoveryOptions = Set(

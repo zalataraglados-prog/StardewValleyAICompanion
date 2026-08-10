@@ -76,6 +76,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
+    private ActiveBuildingConstruction? activeBuildingConstruction;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
     private ActiveDescendLadder? activeDescendLadder;
@@ -444,6 +445,7 @@ public sealed partial class ModEntry : Mod
         TickCommunityCenterDonation();
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
+        TickBuildingConstruction();
         TickPanOreSpot();
         TickFishPondService();
         CaptureExecutorDiagnosticFrame("update_ticked");
@@ -1063,6 +1065,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.construct_building")
+            {
+                StartBuildingConstruction(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_farmhouse_upgrade")
             {
                 pending.Completion.SetResult(ExecuteSetupFarmhouseUpgradeFixture(pending.Request));
@@ -1219,6 +1227,7 @@ public sealed partial class ModEntry : Mod
             activeCommunityCenterDonation = null;
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
+            activeBuildingConstruction = null;
             activePanOreSpot = null;
             activeFishPondService = null;
             activeMaterialTransfer = null;
@@ -1392,6 +1401,7 @@ public sealed partial class ModEntry : Mod
             activeCommunityCenterDonation is not null ||
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
+            activeBuildingConstruction is not null ||
             activePanOreSpot is not null ||
             activeFishPondService is not null ||
             activeDescendLadder is not null ||

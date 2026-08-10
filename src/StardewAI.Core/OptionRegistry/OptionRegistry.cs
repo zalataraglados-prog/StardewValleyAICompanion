@@ -805,6 +805,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches Robin's counter", "native Carpenter Upgrade and Yes responses deduct exact costs", "three-day construction countdown starts" },
                 new[] { "block_active_construction", "block_robin_or_upgrade_tuple_drift", "block_unverified_route", "block_direct_money_inventory_or_house_mutation" }));
 
+            Register(Option("executor.construct_building", "buildings", "Construct one exact verified building through native Carpenter dialogue and placement",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.quest_building_construction", "quests.active_quests", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches Robin's counter", "native Carpenter Construct and CarpenterMenu select the exact blueprint", "native placement starts the exact construction countdown" },
+                new[] { "block_non_HaveBuildingQuest", "block_blueprint_resource_or_placement_drift", "block_active_construction", "block_direct_money_inventory_building_or_quest_mutation" }));
+
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

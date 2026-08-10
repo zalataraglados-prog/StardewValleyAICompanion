@@ -24,6 +24,7 @@ public sealed partial class ModEntry
         {
             "craft_item" => SetupCraftingQuestFixture(request),
             "offer_item" => SetupItemDeliveryFixture(request),
+            "building_construction" => SetupBuildingConstructionQuestFixture(request),
             "drop_box" => SetupDropBoxFixture(request),
             "drop_box_color" => SetupDropBoxFixture(request, usePreservedParentColor: true),
             _ => BlockedWithPrimitive(
@@ -33,6 +34,131 @@ public sealed partial class ModEntry
                 "interaction_kind=" + request.QuestInteractionKind,
                 "quest_terminal_fixture_kind_invalid")
         };
+    }
+
+    private TrainingExecutionResult SetupBuildingConstructionQuestFixture(
+        TrainingExecutionRequest request)
+    {
+        const string buildingType = "Coop";
+        var player = Game1.player;
+        var farm = Game1.getFarm();
+        var house = Game1.getLocationFromName("ScienceHouse");
+        var actionTile = house is null ? null : FarmhouseFixtureActionTile(house);
+        var standTile = house is null || !actionTile.HasValue
+            ? null
+            : FarmhouseFixtureStandTile(house, actionTile.Value);
+        var robinTile = house is null || !actionTile.HasValue || !standTile.HasValue
+            ? null
+            : FarmhouseFixtureRobinTile(house, actionTile.Value, standTile.Value);
+        var robin = Game1.getCharacterFromName("Robin");
+        if (house is null || !actionTile.HasValue || !standTile.HasValue ||
+            !robinTile.HasValue || robin is null ||
+            !Game1.buildingData.TryGetValue(buildingType, out var data) ||
+            data.BuildingToUpgrade is not null || data.Builder != "Robin")
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_quest_terminal_fixture",
+                "quest_building_fixture=ready",
+                "building_type=" + buildingType,
+                "quest_building_fixture_native_data_or_carpenter_topology_missing");
+        }
+
+        ClearQuestFixtureState();
+        foreach (var existingQuest in player.questLog.OfType<HaveBuildingQuest>().ToArray())
+        {
+            player.questLog.Remove(existingQuest);
+        }
+        foreach (var building in farm.buildings
+            .Where(building => building.daysOfConstructionLeft.Value > 0)
+            .ToArray())
+        {
+            farm.buildings.Remove(building);
+        }
+        player.team.constructedBuildings.Remove(buildingType);
+
+        // The fixture copy isolates destructive setup from every real save. Clearing
+        // loose farm blockers guarantees that the bridge can publish a native-valid
+        // placement without bypassing CarpenterMenu placement validation.
+        farm.objects.Clear();
+        farm.terrainFeatures.Clear();
+        farm.resourceClumps.Clear();
+        farm.debris.Clear();
+
+        EnsureFixtureInventoryCapacity(player);
+        foreach (var material in data.BuildMaterials)
+        {
+            for (var index = 0; index < player.Items.Count; index++)
+            {
+                if (string.Equals(player.Items[index]?.QualifiedItemId, material.ItemId, StringComparison.Ordinal))
+                {
+                    player.Items[index] = null;
+                }
+            }
+            InstallFixtureItem(player, ItemRegistry.Create(material.ItemId, material.Amount + 25));
+        }
+
+        var questId = string.IsNullOrWhiteSpace(request.QuestId)
+            ? "stardewai.runtime.building"
+            : request.QuestId;
+        var quest = new HaveBuildingQuest(buildingType);
+        quest.id.Value = questId;
+        quest.accepted.Value = true;
+        player.questLog.Add(quest);
+        player.Money = data.BuildCost + 5000;
+        Game1.timeOfDay = 1200;
+        Game1.activeClickableMenu = null;
+        Game1.dialogueUp = false;
+        Game1.eventUp = false;
+        Game1.eventOver = false;
+        player.UsingTool = false;
+        player.canMove = true;
+        Game1.currentLocation = house;
+        player.currentLocation = house;
+        player.Position = standTile.Value.ToVector2() * Game1.tileSize;
+        player.faceDirection(DirectionTo(standTile.Value, actionTile.Value));
+
+        robin.currentLocation?.characters.Remove(robin);
+        if (!house.characters.Contains(robin))
+        {
+            house.characters.Add(robin);
+        }
+        robin.currentLocation = house;
+        robin.Position = robinTile.Value.ToVector2() * Game1.tileSize;
+        robin.controller = null;
+        robin.Halt();
+        robin.ignoreScheduleToday = true;
+        robin.followSchedule = false;
+        robin.isSleeping.Value = false;
+        robin.IsInvisible = false;
+
+        var verified = ReferenceEquals(Game1.currentLocation, house) &&
+            player.TilePoint == standTile.Value &&
+            player.questLog.Contains(quest) &&
+            !player.team.constructedBuildings.Contains(buildingType) &&
+            !Game1.IsThereABuildingUnderConstruction() &&
+            player.Money == data.BuildCost + 5000 &&
+            data.BuildMaterials.All(material =>
+                player.Items.CountId(material.ItemId) == material.Amount + 25) &&
+            house.characters.Contains(robin) &&
+            Vector2.Distance(robin.Tile, actionTile.Value.ToVector2()) <= 3f;
+        return QuestTerminalFixtureResult(
+            request,
+            verified,
+            "building_construction",
+            questId,
+            string.Empty,
+            nameof(HaveBuildingQuest),
+            house.NameOrUniqueName,
+            actionTile.Value,
+            standTile.Value,
+            "Robin",
+            buildingType,
+            0,
+            0,
+            data.BuildDays,
+            null,
+            string.Empty);
     }
 
     private TrainingExecutionResult SetupCraftingQuestFixture(

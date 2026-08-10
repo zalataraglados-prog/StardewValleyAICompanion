@@ -425,6 +425,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("required_item_id")]
         public string RequiredItemId { get; set; } = string.Empty;
 
+        [JsonPropertyName("required_building_type")]
+        public string RequiredBuildingType { get; set; } = string.Empty;
+
         [JsonPropertyName("required_target_count")]
         public int RequiredTargetCount { get; set; }
 

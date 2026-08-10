@@ -42,7 +42,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("ordinary_quest", "GoSomewhereQuest", "go_to_location", Bound, new[] { "route_connector_tile" }),
                 Row("ordinary_quest", "FishingQuest", "fish_for_item", Bound, new[] { "catch_fish" }),
                 Row("ordinary_quest", "FishingQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
-                Row("ordinary_quest", "HaveBuildingQuest", "construct_building", Blocked, Array.Empty<string>(), "Quest-specific construction purchase is not bound."),
+                Row("ordinary_quest", "HaveBuildingQuest", "construct_building", Bound, new[] { "construct_quest_building", "route_connector_tile", "recovery_refresh_plan", "recovery_return_home", "recovery_sleep_immediately", "recovery_resume_sleep_prompt" }),
                 Row("ordinary_quest", "ItemHarvestQuest", "harvest_items", Bound, new[] { "harvest_crop_tile" }),
                 Row("ordinary_quest", "ResourceCollectionQuest", "collect_resources", Bound, new[] { "collect_spawned_object", "pickup_debris_item", "clear_obstacle_tile", "harvest_bush", "harvest_ginger", "harvest_crop_tile", "harvest_giant_crop_tile", "clear_green_rain_resource_clump", "catch_fish", "collect_machine_output_tile", "load_machine_input_tile", "mining_collect_quest_resource_plan_envelope" }),
                 Row("ordinary_quest", "ResourceCollectionQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
