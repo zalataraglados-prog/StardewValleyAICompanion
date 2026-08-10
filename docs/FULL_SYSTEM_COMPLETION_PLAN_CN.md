@@ -444,5 +444,25 @@ Robin 服务、蓝图价格/材料/工期、在建状态和农场放置候选；
 `runtime-quest-terminal-daily-plan-20260810-173859` 验证原生菜单生命周期、资源扣除和三天施工倒计时。
 后续每日结算复用既有 `recovery.stabilize_day`/`executor.sleep`，最终由
 `Building.FinishConstruction -> FarmerTeam.constructedBuildings.OnValueAdded -> HaveBuildingQuest.OnBuildingExists`
-完成。任务目录现为 23 bound、3 blocked、2 observation-only；下一步按权威目录处理秘密物品取得，之后是
-type-11 除草和 Junimo Kart 分数。`quest.advance` 在三个阻塞阶段关闭前仍不进入训练白名单。
+完成。在 EVD-236 检查点，任务目录为 23 bound、3 blocked、2 observation-only；当时的下一项是秘密物品取得，
+之后是 type-11 除草和 Junimo Kart 分数。该检查点不构成后续状态的当前声明。
+
+## 2026-08-10 秘密物品取得状态机纠正（EVD-237 已闭合）
+
+锁定版 `Data/Quests` 只有 128/129 两条 `SecretLostItemQuest`，均要求 `(O)191`。反编译确认
+`Railroad.getFish` 先检查秘密纸条 25 与 `carolinesNecklace` 邮件状态，在返回项链的同一调用中加入
+任务 128/129；随后原生收货回调才把 `itemFound` 置真。因此 `find_secret_lost_item` 不是任务创建后
+可再次派发的取得动作，而是既有钓鱼事务内部短暂可见的状态。若把它实现成第二次钓鱼，邮件已 pending
+会使原生分支失效，并制造错误训练负例。
+
+透明桥既有 `railroad_carolines_necklace` 特殊来源已直接读取上述原生条件，候选聚合器把 `(O)191`
+保留在完整结果分布中，DailyPlan 和动作队列继续复用唯一 `executor.catch_fish`；执行器只发送合法输入、
+观察特殊收获与原生空闲收尾，不直接创建物品或任务。聚焦测试验证了铁路候选、唯一结果分布与编译链，
+并保留 EVD-228 对原生无 BobberBar 特殊收获生命周期的运行证据。由于原生 `doneHoldingFish` 在背包
+无法接收时会打开必要的 `ItemGrabMenu`，而项链邮件此时已 pending、不能再次钓取，候选层和执行器
+起始校验统一要求 `player.inventory_capacity.has_empty_slot=true`；否则先由既有存储转移链腾位。本阶段
+不把未单独运行校准的项链案例外推为新五门准入。
+
+任务目录现为 23 bound、2 blocked、3 observation-only。下一步处理 type-11 除草，之后处理
+Junimo Kart 分数；在二者关闭并重新做完整任务矩阵前，`quest.advance` 仍保持 PartiallyBlocked、
+RegisteredOnly 且不进入训练白名单。

@@ -406,6 +406,11 @@ public sealed partial class ModEntry : Mod
             reasons.Add("catch_fish_energy_too_low");
         }
 
+        if (Game1.player.Items.Take(Game1.player.maxItems.Value).Count(item => item is not null) >= Game1.player.maxItems.Value)
+        {
+            reasons.Add("catch_fish_inventory_full_requires_storage_transfer");
+        }
+
         if (string.IsNullOrWhiteSpace(request.LocationId) || !string.Equals(Game1.currentLocation.NameOrUniqueName, request.LocationId, StringComparison.Ordinal))
         {
             reasons.Add("catch_fish_location_mismatch");

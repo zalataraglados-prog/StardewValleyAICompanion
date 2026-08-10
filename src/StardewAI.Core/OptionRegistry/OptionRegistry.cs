@@ -215,12 +215,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[]
                 {
                     "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory",
+                    "player.inventory_capacity",
                     "menus.active_menu", "current_location.map", "locations.collision_grid",
                     "fishing.location_context", "fishing.fishable_tiles", "fishing.rod_inventory",
                     "fishing.rod_contexts", "fishing.active_cast_state"
                 },
                 new[] { "legal cast candidate selected", "catch attempt handed to the fishing executor" },
-                new[] { "block_unresolved_fishing_context", "block_illegal_cast_geometry", "block_unobserved_catch_result" }));
+                new[] { "block_unresolved_fishing_context", "block_illegal_cast_geometry", "block_inventory_full", "block_unobserved_catch_result" }));
 
             Register(Option("fishing.collect_crab_pots", "fishing", "Collect one transparent ready crab pot",
                 OptionBehaviorCategories.ParameterizedMechanical,

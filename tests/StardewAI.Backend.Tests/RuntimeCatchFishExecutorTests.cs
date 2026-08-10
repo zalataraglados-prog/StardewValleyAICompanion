@@ -84,6 +84,8 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("CancelCatchFish(active);", source);
         Assert.Contains("fishing.caught_qualified_item_id", source);
         Assert.Contains("catch_fish_expected_item_must_be_unconstrained", source);
+        Assert.Contains("catch_fish_inventory_full_requires_storage_transfer", source);
+        Assert.Contains("Game1.player.Items.Take(Game1.player.maxItems.Value).Count(item => item is not null) >= Game1.player.maxItems.Value", source);
         Assert.Contains("catch_fish_outcome_distribution_incomplete", source);
         Assert.Contains("TryValidateFishingOutcomeDistribution", source);
         Assert.Contains("fishing.planned_outcome_distribution_json", source);
@@ -154,6 +156,12 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("baitName.Contains(specialFishInternalName, StringComparison.Ordinal)", bridgeSource);
         Assert.Contains("bait_preserved_parent_sheet_index", bridgeSource);
         Assert.Contains("specific_bait_name_condition_matched", bridgeSource);
+        Assert.Contains("case Railroad:", bridgeSource);
+        Assert.Contains("secretNotesSeen.Contains(GameLocation.NECKLACE_SECRET_NOTE_INDEX)", bridgeSource);
+        Assert.Contains("!Game1.player.hasOrWillReceiveMail(GameLocation.CAROLINES_NECKLACE_MAIL)", bridgeSource);
+        Assert.Contains("handler = \"railroad_carolines_necklace\"", bridgeSource);
+        Assert.Contains("\"add_quest_128\"", bridgeSource);
+        Assert.Contains("\"add_quest_129\"", bridgeSource);
         Assert.DoesNotContain("baitBonus = mineArea switch", bridgeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("baitName.Contains(\"Lava Eel\"", bridgeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("tryToCreateUnseenSecretNote", bridgeSource, StringComparison.Ordinal);

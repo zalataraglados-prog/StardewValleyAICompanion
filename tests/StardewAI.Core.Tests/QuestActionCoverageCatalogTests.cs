@@ -73,4 +73,18 @@ public sealed class QuestActionCoverageCatalogTests
         Assert.DoesNotContain("reach_mine_depth", QuestActionCoverageCatalog.BoundCandidateKinds);
         Assert.DoesNotContain("ship_inventory_item", QuestActionCoverageCatalog.BoundCandidateKinds);
     }
+
+    [Fact]
+    public void SecretLostItemAcquisitionIsARecordedFishingTransactionNotASecondQuestExecutor()
+    {
+        var row = Assert.Single(QuestActionCoverageCatalog.All.Where(candidate =>
+            candidate.Family == "ordinary_quest" &&
+            candidate.RuntimeType == "SecretLostItemQuest" &&
+            candidate.ActionStage == "find_secret_lost_item"));
+
+        Assert.Equal(QuestActionCoverageCatalog.NativeObservationOnly, row.BindingStatus);
+        Assert.Empty(row.CandidateKinds);
+        Assert.Contains("Railroad.getFish", row.GapReason, StringComparison.Ordinal);
+        Assert.Contains("existing fishing transaction", row.GapReason, StringComparison.Ordinal);
+    }
 }

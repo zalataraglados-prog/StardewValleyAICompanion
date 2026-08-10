@@ -1,3 +1,11 @@
+2026-08-10 EVD-237 vanilla secret lost-item state-machine correction
+- Locked 1.6.15 `Data/Quests` contains only SecretLostItemQuest 128/129 for `(O)191`; decompiled `Railroad.getFish` starts the necklace catch and creates both quests in one native call, before `OnItemReceived` sets `itemFound`.
+- The catalog now classifies `find_secret_lost_item` as native observation-only instead of an implementation blocker. Recasting after quest creation would be incorrect because `carolinesNecklace` is already pending.
+- Existing TransparentBridge `railroad_carolines_necklace` projection and the sole `fishing.catch_fish -> executor.catch_fish` chain are retained. A focused regression proves the complete result distribution contains only `(O)191` and compiles without a second task executor.
+- Decompiled `FishingRod.doneHoldingFish` can open an essential `ItemGrabMenu` when inventory insertion fails. Candidate and runtime start guards now require one empty slot, so a full inventory must use the existing storage-transfer preparation before the one-shot necklace catch.
+- Focused fishing/catalog PASS 23/23; fishing runtime source guard PASS 9/9; full Core PASS 1617/1617; full Backend PASS 121/121; Release solution build 0 errors with one existing AvoidNetField warning.
+- KnowledgeCompiler PASS 585/585, blocking 0. Quest matrix is now 23 bound, 2 blocked and 3 observation-only. No game process was launched and no dedicated necklace runtime calibration is claimed.
+
 2026-08-09 EVD-231 Quarry Mine Golden Scythe DailyPlan evaluation admission
 - Hidden/silent isolated E-drive PASS: `artifacts\runtime-quarry-golden-scythe\runtime-quarry-golden-scythe-20260809-203952\summary.json`.
 - The exact `mining.acquire_golden_scythe` candidate completed 68 DailyPlan decisions: 56 verified native actions/training rows and 12 blocked-but-fresh recoverable replans. Verified actions were 5 stone removals, 46 moves, 3 combats, one exact altar interaction and one native mine exit; the 12 remaining combat attempts produced precise moved/disengaged feedback and no rows.

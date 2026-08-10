@@ -6,7 +6,7 @@
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
 - 动作对账当前为 `106 registered / 173 semantic / 105 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
-- `quest.advance` 的 28 个目录阶段为 `23 bound / 3 blocked / 2 observation-only`；反编译扫描为
+- `quest.advance` 的 28 个目录阶段为 `23 bound / 2 blocked / 3 observation-only`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的
   `player.quest_crafting` 经 `quest.advance`、DailyPlan、动作队列和既有原生 `CraftingPage` 执行器完成，
@@ -15,8 +15,13 @@
   Robin/`CarpenterMenu` 放置建筑，原生扣除钱和材料并生成三天施工倒计时；后续天数复用既有恢复睡眠链。
 - `quest.advance` 仍为 `PartiallyBlocked / StepCompilerDeclared / RegisteredOnly`，没有进入训练白名单；
   不得把两个终端成功外推为完整任务系统完成。
-- 唯一紧接任务是按权威目录处理剩余 3 个明确阻塞阶段：秘密物品取得、type-11 除草、
-  Junimo Kart 分数。每个阶段仍按透明读取、候选、DailyPlan、
+- EVD-237 已确认秘密物品取得不是独立任务动作：原版只有任务 128/129，`Railroad.getFish` 在同一
+  原生钓鱼事务中返回 `(O)191` 并创建两条任务；透明桥与现有 `fishing.catch_fish` 已覆盖该特殊收获，
+  `itemFound=false` 任务行只是事务中的瞬态观察，不得再建第二套任务钓鱼执行器。候选与运行时均复用
+  `player.inventory_capacity` 要求至少一个空格；满包必须先走既有存储转移链，避免唯一项链进入未接管的
+  `ItemGrabMenu` 后无法重新取得。
+- 唯一紧接任务是按权威目录处理剩余 2 个明确阻塞阶段：type-11 除草、Junimo Kart 分数。
+  每个阶段仍按透明读取、候选、DailyPlan、
   唯一既有或新增原语、原生运行反馈逐项闭合。
 - 最新运行证据：
   `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-173859/summary.json`。

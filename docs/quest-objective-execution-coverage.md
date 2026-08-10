@@ -134,16 +134,22 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 21 bound, 5 blocked, and 2 native observation-only stages.
+contain 23 bound, 2 blocked, and 3 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
-- ordinary craft, construction, secret-item acquisition, and type-11 weeding stages;
+- type-11 weeding;
 - Junimo Kart score objectives;
 - modded or otherwise uncatalogued acquisition sources;
-- native color-tag matching for preserved `ColoredObject` inputs. The game checks
-  base context tags of the preserved parent, which is not yet projected on inventory
-  rows.
+
+Ordinary craft, construction, and preserved-parent color matching are now implemented.
+Vanilla secret-item acquisition is not a separate task action: `Railroad.getFish` begins
+the necklace catch and creates quests 128/129 in the same native transaction. The
+existing transparent `fishing.catch_fish` candidate owns that acquisition; the brief
+`SecretLostItemQuest.itemFound=false` row is therefore native observation-only. Both the
+candidate and runtime start guard require one empty inventory slot, so the one-shot native
+catch can't strand the necklace in an unowned full-inventory `ItemGrabMenu`; storage transfer
+must run first.
 
 The fallback `quest_candidate` and `special_order_candidate` kinds now mean
 objective-specific binding is absent. They are not blocked by the obsolete blanket
@@ -151,11 +157,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- full regression: Core 1,607 passed and Backend 119 passed;
+- full regression: Core 1,617 passed and Backend 121 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 21 bound, 5 blocked, and 2 observation-only;
+  differences, 28 stage rows with 23 bound, 2 blocked, and 3 observation-only;
 - full knowledge build: 585/585 exports and zero blocking rows;
-- capability reconciliation: 103 compiler-bound options, while five-gate closure stays
+- capability reconciliation: 105 compiler-bound options, while five-gate closure stays
   at 39 and the training allowlist stays at 26;
 - hidden/silent isolated runtime matrix PASS 3/3 at
   `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-121424/summary.json`;

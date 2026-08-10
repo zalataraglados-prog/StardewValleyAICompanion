@@ -48,7 +48,7 @@ namespace StardewAI.Contracts.Capabilities
                 Row("ordinary_quest", "ResourceCollectionQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "LostItemQuest", "find_lost_item", Bound, new[] { "collect_spawned_object", "route_connector_tile" }),
                 Row("ordinary_quest", "LostItemQuest", "return_lost_item_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
-                Row("ordinary_quest", "SecretLostItemQuest", "find_secret_lost_item", Blocked, Array.Empty<string>(), "Secret item source is event-specific and not projected as a quest source."),
+                Row("ordinary_quest", "SecretLostItemQuest", "find_secret_lost_item", NativeObservationOnly, Array.Empty<string>(), "Vanilla quests 128/129 are created inside Railroad.getFish after the necklace catch has already begun; acquisition is owned by the existing fishing transaction, and the not-found quest row is only its transient observation."),
                 Row("ordinary_quest", "SecretLostItemQuest", "return_secret_lost_item_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("special_order", "CollectObjective", "collect_items", Bound, new[] { "harvest_crop_tile", "harvest_giant_crop_tile", "pickup_debris_item", "harvest_bush", "harvest_ginger", "clear_green_rain_resource_clump", "catch_fish", "collect_machine_output_tile", "load_machine_input_tile", "mining_collect_quest_resource_plan_envelope" }),
                 Row("special_order", "DeliverObjective", "deliver_to_target", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),

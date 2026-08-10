@@ -20,6 +20,7 @@ namespace StardewAI.Core.OptionRegistry
             var rodContextsValue = FieldValue(snapshot, "fishing", "rod_contexts");
             var activeCast = FieldValue(snapshot, "fishing", "active_cast_state");
             var gridValue = FieldValue(snapshot, "locations", "collision_grid");
+            var inventoryCapacity = FieldValue(snapshot, "player", "inventory_capacity");
             var locationId = String(locationContext, "location_id");
             var playerLocation = StateString(snapshot, "player", "location_id");
 
@@ -51,6 +52,14 @@ namespace StardewAI.Core.OptionRegistry
             if (gridValue is null || gridValue.Value.ValueKind != JsonValueKind.Object)
             {
                 prerequisiteBlocks.Add("fishing_collision_grid_unavailable");
+            }
+            if (inventoryCapacity is null || inventoryCapacity.Value.ValueKind != JsonValueKind.Object)
+            {
+                prerequisiteBlocks.Add("fishing_inventory_capacity_unavailable");
+            }
+            else if (Bool(inventoryCapacity, "has_empty_slot") != true)
+            {
+                prerequisiteBlocks.Add("fishing_inventory_full_requires_storage_transfer");
             }
             if (prerequisiteBlocks.Count > 0)
             {

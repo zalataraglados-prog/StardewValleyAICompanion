@@ -308,6 +308,55 @@ public sealed class FishingMainlineTests
     }
 
     [Fact]
+    public void RailroadNecklaceUsesTheExistingSpecialCatchCompiler()
+    {
+        const string handler = "\"location_get_fish_override\":{\"present\":true,\"transparent_handler_available\":true,\"handlers\":[{\"handler\":\"railroad_carolines_necklace\",\"eligible_before_catch\":true,\"qualified_item_id\":\"(O)191\",\"required_secret_note_index\":25,\"necklace_mail_already_received_or_pending\":false,\"catch_side_effects\":[\"add_carolines_necklace_mail_for_tomorrow\",\"add_quest_128\",\"add_quest_129\"]}]}";
+        var state = BaseState()
+            .Replace("Beach", "Railroad")
+            .Replace(
+                "\"location_get_fish_override\":{\"present\":false,\"transparent_handler_available\":true,\"handlers\":[]}",
+                handler);
+        var snapshot = Snapshot(state);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "fishing.catch_fish" });
+
+        var option = Assert.Single(availability.Options);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available, string.Join(",", candidate.BlockReasons));
+        Assert.Equal("catch_fish", candidate.Kind);
+        Assert.Equal(string.Empty, candidate.QualifiedItemId);
+        Assert.Contains(
+            "railroad_carolines_necklace",
+            ParameterValue(candidate.Parameters, "outcome_distribution_json"),
+            StringComparison.Ordinal);
+        AssertParameter(candidate.Parameters, "possible_qualified_item_ids_json", "[\"(O)191\"]");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var catchItem = Assert.Single(queue.Items.Where(item => item.OptionId == "executor.catch_fish"));
+        Assert.Empty(catchItem.BlockingReasons);
+        AssertParameter(catchItem.NormalizedCommand.Parameters, "expected_qualified_item_id", string.Empty);
+        AssertParameter(catchItem.NormalizedCommand.Parameters, "possible_qualified_item_ids_json", "[\"(O)191\"]");
+    }
+
+    [Fact]
+    public void FullInventoryBlocksFishingBeforeAOneShotSpecialCatchCanOpenItemGrabMenu()
+    {
+        var state = BaseState().Replace(
+            "\"occupied_item_stacks\":1,\"empty_slots\":11,\"has_empty_slot\":true",
+            "\"occupied_item_stacks\":12,\"empty_slots\":0,\"has_empty_slot\":false");
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(Snapshot(state), new[] { "fishing.catch_fish" })
+            .Options);
+
+        Assert.False(option.Available);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains("fishing_inventory_full_requires_storage_transfer", candidate.BlockReasons);
+    }
+
+    [Fact]
     public void VanillaSecretNoteResolverChanceParticipatesInCandidateProbability()
     {
         var state = BaseState()
@@ -434,6 +483,7 @@ public sealed class FishingMainlineTests
             "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_y": {"value":5,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "energy": {"value":250,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory_capacity": {"value":{"max_items":12,"occupied_item_stacks":1,"empty_slots":11,"has_empty_slot":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[{"slot_index":0,"qualified_item_id":"(T)BambooPole"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "menus": {
