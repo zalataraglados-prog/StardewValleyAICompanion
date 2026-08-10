@@ -61,6 +61,11 @@ namespace StardewAI.Core.OptionRegistry
 
             switch (candidate.NextActionCategory)
             {
+                case "craft_item":
+                    return BindCraftingQuestCandidates(
+                        snapshot,
+                        candidate,
+                        commitmentLedger);
                 case "fish_for_item":
                     return BindExactFishingCandidate(snapshot, candidate);
                 case "slay_monsters":

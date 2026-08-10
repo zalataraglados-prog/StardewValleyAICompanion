@@ -69,6 +69,47 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void QuestCraftingReusesTheSameNativeMenuAndVerifiesQuestTerminal()
+    {
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+        var executor = RuntimeHarnessSources.File(
+            "ModEntry.MachineCrafting.cs");
+        var workbench = RuntimeHarnessSources.File(
+            "ModEntry.WorkbenchCrafting.cs");
+
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_quest_item\"",
+            dispatch);
+        Assert.Contains(
+            "ExecuteCraftMachineItem(pending.Request)",
+            dispatch);
+        Assert.Contains(
+            "ReadCraftingQuestTerminalState(request)",
+            executor);
+        Assert.Contains(
+            "exact_CraftingQuest_native_OnRecipeCrafted_terminal_verified",
+            executor);
+        Assert.Contains(
+            "QuestCandidateId = request.OptionId == \"executor.craft_quest_item\"",
+            executor);
+        Assert.Contains(
+            "Path = \"quests.\" + request.QuestCandidateId + \".terminal\"",
+            executor);
+        Assert.Contains(
+            "ReadCraftingQuestTerminalState(request)",
+            workbench);
+        Assert.Contains(
+            "QuestCandidateId = request.OptionId == \"executor.craft_quest_item\"",
+            workbench);
+        Assert.Contains(
+            "Path = \"quests.\" + request.QuestCandidateId + \".terminal\"",
+            workbench);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_quest_item"));
+    }
+
+    [Fact]
     public void MachineInputCapabilityUsesNativeEffectiveRuleInference()
     {
         var bridge = RuntimeHarnessSources.RepositoryFile(

@@ -262,6 +262,11 @@ namespace StardewAI.Core.Training
                 return CraftStorageItemSteps(candidate);
             }
 
+            if (candidate.Kind == "craft_quest_item")
+            {
+                return CraftQuestItemSteps(candidate);
+            }
+
             if (candidate.Kind == "place_machine_item")
             {
                 return PlaceMachineItemSteps(candidate);

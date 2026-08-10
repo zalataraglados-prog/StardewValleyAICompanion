@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "b1e5877d4881e374187de5c4a0cccc421db04f516e38b9b40043dd9f50670186",
+  "fingerprint_sha256": "f716b3e2fefdbfc5466da19f9784e7c49cfb367c36c7e920adaa8d821b691203",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 171,
-  "approval_basis": "locked 1.6.15 decompile; zero surface, branch, map-token, or semantic-registration blockers"
+  "semantic_action_count": 172,
+  "approval_basis": "locked 1.6.15 decompile; typed CraftingQuest native terminal added; zero surface, branch, map-token, or semantic-registration blockers"
 }

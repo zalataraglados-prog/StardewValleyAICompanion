@@ -853,6 +853,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact ordinary storage output enters player inventory", "native recipe count, quest callbacks, and achievement checks run", "the existing storage placement chain becomes eligible" },
                 new[] { "block_unknown_or_unlearned_storage_recipe", "block_existing_inventory_storage_or_available_capacity", "block_recipe_inventory_or_workbench_topology_drift", "block_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
+            Register(Option("executor.craft_quest_item", "quest", "Craft one exact active CraftingQuest target through the shared native personal or Workbench CraftingPage",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.quest_crafting", "quests.active_quests", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact quest output enters player inventory", "the exact CraftingQuest completes through Quest.OnRecipeCrafted" },
+                new[] { "block_non_CraftingQuest_or_completed_quest", "block_unknown_or_unlearned_target_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_stat_or_quest_mutation" }));
+
             Register(Option("executor.place_machine", "farm", "Place one verified inventory machine at one exact native-legal tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

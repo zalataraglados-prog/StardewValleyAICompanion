@@ -391,6 +391,18 @@ public sealed partial class ModEntry
         {
             return BlockedWithPrimitive(request, primitiveKind, requested, CraftMachineObservedEffect(request), primitiveKind + "_recipe_identity_or_count_drifted");
         }
+        var questBefore = ReadCraftingQuestTerminalState(request);
+        if (request.OptionId == "executor.craft_quest_item" &&
+            (!questBefore.Present || questBefore.Completed ||
+             !questBefore.TargetMatches))
+        {
+            return BlockedWithPrimitive(
+                request,
+                primitiveKind,
+                requested,
+                CraftMachineObservedEffect(request),
+                "craft_quest_item_live_identity_or_target_drifted");
+        }
 
         CraftingRecipe recipe;
         Item preview;
@@ -499,9 +511,41 @@ public sealed partial class ModEntry
         var timesAfter = Game1.player.craftingRecipes.TryGetValue(request.RecipeName, out var observedTimes) ? observedTimes : -1;
         var recipeCountMatch = timesAfter == request.TimesCraftedBefore.Value + request.OutputCount.Value;
         var menuClosed = Game1.activeClickableMenu is null;
-        var verified = clickFound && countMatch && recipeCountMatch && menuClosed;
+        var questAfter = ReadCraftingQuestTerminalState(request);
+        var questTerminalVerified = request.OptionId !=
+                "executor.craft_quest_item" ||
+            !questAfter.Present || questAfter.Completed;
+        var verified = clickFound && countMatch && recipeCountMatch &&
+            menuClosed && questTerminalVerified;
         var achievementsAfter = string.Join(",", Game1.player.achievements.OrderBy(id => id));
         var questsAfter = CraftQuestSignature();
+        var changedFacts = new List<SimulatedFactChange>();
+        if (verified)
+        {
+            changedFacts.AddRange(affectedIds.Select(id => new SimulatedFactChange
+            {
+                Path = "player.inventory.qualified_count[" + id + "]",
+                Before = beforeCounts[id].ToString(),
+                After = afterCounts[id].ToString()
+            }));
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "player.crafting_recipes[" + request.RecipeName + "]",
+                Before = request.TimesCraftedBefore.Value.ToString(),
+                After = timesAfter.ToString()
+            });
+            if (request.OptionId == "executor.craft_quest_item")
+            {
+                changedFacts.Add(new SimulatedFactChange
+                {
+                    Path = "quests." + request.QuestCandidateId + ".terminal",
+                    Before = "present=" + questBefore.Present.ToString().ToLowerInvariant() +
+                        ";completed=" + questBefore.Completed.ToString().ToLowerInvariant(),
+                    After = "present=" + questAfter.Present.ToString().ToLowerInvariant() +
+                        ";completed=" + (!questAfter.Present || questAfter.Completed).ToString().ToLowerInvariant()
+                });
+            }
+        }
 
         return new TrainingExecutionResult
         {
@@ -523,32 +567,37 @@ public sealed partial class ModEntry
                     "native_CraftingPage_inventory_click_completed",
                     "exact_ingredient_and_output_multiset_verified",
                     "native_recipe_count_increment_verified",
-                    "native_quest_callbacks_and_crafting_achievement_check_path_executed"
+                    request.OptionId == "executor.craft_quest_item"
+                        ? "exact_CraftingQuest_native_OnRecipeCrafted_terminal_verified"
+                        : "native_quest_callbacks_and_crafting_achievement_check_path_executed"
                 }
                 : new[]
                 {
                     countMatch ? "inventory_multiset_match" : "inventory_multiset_mismatch",
                     recipeCountMatch ? "recipe_count_match" : "recipe_count_mismatch",
-                    menuClosed ? "menu_closed" : "menu_not_closed"
+                    menuClosed ? "menu_closed" : "menu_not_closed",
+                    questTerminalVerified
+                        ? "quest_terminal_match"
+                        : "quest_terminal_mismatch"
                 },
             RequestedEffect = requested,
             ObservedEffect = CraftMachineObservedEffect(request) +
                 ";achievements_before=" + achievementsBefore + ";achievements_after=" + achievementsAfter +
                 ";quest_signature_before=" + questsBefore + ";quest_signature_after=" + questsAfter,
             BlockReasons = verified ? Array.Empty<string>() : new[] { primitiveKind + "_post_state_mismatch" },
-            ChangedFacts = verified
-                ? affectedIds.Select(id => new SimulatedFactChange
-                {
-                    Path = "player.inventory.qualified_count[" + id + "]",
-                    Before = beforeCounts[id].ToString(),
-                    After = afterCounts[id].ToString()
-                }).Append(new SimulatedFactChange
-                {
-                    Path = "player.crafting_recipes[" + request.RecipeName + "]",
-                    Before = request.TimesCraftedBefore.Value.ToString(),
-                    After = timesAfter.ToString()
-                }).ToArray()
-                : Array.Empty<SimulatedFactChange>()
+            ChangedFacts = changedFacts.ToArray(),
+            QuestCandidateId = request.OptionId == "executor.craft_quest_item" ? request.QuestCandidateId : string.Empty,
+            QuestFamily = request.OptionId == "executor.craft_quest_item" ? request.QuestFamily : string.Empty,
+            QuestId = request.OptionId == "executor.craft_quest_item" ? request.QuestId : string.Empty,
+            QuestKey = request.OptionId == "executor.craft_quest_item" ? request.QuestKey : string.Empty,
+            QuestObjectiveIndex = request.OptionId == "executor.craft_quest_item" ? request.QuestObjectiveIndex : null,
+            QuestProgressBefore = request.OptionId == "executor.craft_quest_item" ? request.QuestExpectedCurrentCount : null,
+            QuestProgressAfter = request.OptionId == "executor.craft_quest_item" ? request.QuestExpectedTargetCount : null,
+            QuestTargetCount = request.OptionId == "executor.craft_quest_item" ? request.QuestExpectedTargetCount : null,
+            QuestPresentBefore = request.OptionId == "executor.craft_quest_item" ? questBefore.Present : null,
+            QuestPresentAfter = request.OptionId == "executor.craft_quest_item" ? questAfter.Present : null,
+            QuestCompletedBefore = request.OptionId == "executor.craft_quest_item" ? questBefore.Completed : null,
+            QuestCompletedAfter = request.OptionId == "executor.craft_quest_item" ? !questAfter.Present || questAfter.Completed : null
         };
     }
 
@@ -556,7 +605,33 @@ public sealed partial class ModEntry
         TrainingExecutionRequest request) =>
         request.OptionId == "executor.craft_storage_item"
             ? "craft_storage_item"
+            : request.OptionId == "executor.craft_quest_item"
+                ? "craft_quest_item"
             : "craft_machine_item";
+
+    private static CraftingQuestTerminalState ReadCraftingQuestTerminalState(
+        TrainingExecutionRequest request)
+    {
+        if (request.OptionId != "executor.craft_quest_item")
+        {
+            return new CraftingQuestTerminalState(false, false, true);
+        }
+        var quest = Game1.player.questLog
+            .OfType<StardewValley.Quests.CraftingQuest>()
+            .SingleOrDefault(candidate => string.Equals(
+                candidate.id.Value,
+                request.QuestId,
+                StringComparison.Ordinal));
+        return quest is null
+            ? new CraftingQuestTerminalState(false, false, true)
+            : new CraftingQuestTerminalState(
+                true,
+                quest.completed.Value,
+                string.Equals(
+                    quest.ItemId.Value,
+                    request.OutputQualifiedItemId,
+                    StringComparison.Ordinal));
+    }
 
     private static ProjectedCraftIngredients ProjectNativePersonalCraftIngredients(CraftingRecipe recipe, IList<Item?> inventory)
     {
@@ -723,6 +798,11 @@ public sealed partial class ModEntry
         "recipe=" + request.RecipeName + ";times_crafted=" + (Game1.player?.craftingRecipes.TryGetValue(request.RecipeName, out var count) == true ? count : -1) + ";output_count=" + InventoryQualifiedCount(request.OutputQualifiedItemId) + ";active_menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
 
     private sealed record ProjectedCraftIngredients(string RowsJson, Dictionary<string, int> ConsumedByQualifiedId, bool Satisfied);
+
+    private sealed record CraftingQuestTerminalState(
+        bool Present,
+        bool Completed,
+        bool TargetMatches);
 
     private sealed record MachineLifecycleAdditionalItem(
         string QualifiedItemId,

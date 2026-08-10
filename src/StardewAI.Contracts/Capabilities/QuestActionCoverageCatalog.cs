@@ -33,7 +33,7 @@ namespace StardewAI.Contracts.Capabilities
             {
                 Row("ordinary_quest", "Quest", "basic_no_action", NativeObservationOnly, Array.Empty<string>(), "Quest has no objective-specific native action."),
                 Row("ordinary_quest", "Quest", "weeding_no_subclass", Blocked, Array.Empty<string>(), "Quest type 11 has no objective-specific transparent binding."),
-                Row("ordinary_quest", "CraftingQuest", "craft_item", Blocked, Array.Empty<string>(), "General recipe crafting terminal is not bound."),
+                Row("ordinary_quest", "CraftingQuest", "craft_item", Bound, new[] { "craft_quest_item" }),
                 Row("ordinary_quest", "ItemDeliveryQuest", "deliver_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "SlayMonsterQuest", "slay_monsters", Bound, new[] { "mining_slay_monsters_plan_envelope" }),
                 Row("ordinary_quest", "SlayMonsterQuest", "return_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),

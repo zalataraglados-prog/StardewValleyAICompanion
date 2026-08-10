@@ -3845,3 +3845,12 @@ Scope boundary:
 - Core full regression PASS: 1568/1568. Backend full regression PASS: 114/114.
 - Full solution Release build PASS: 0 errors, 1 pre-existing warning in `MiningReadAdapter.Objects.cs`.
 - Authoritative reconciliation: 585/585 exports, blocking 0; registered 101, semantic 169, compiler-bound 96, five-gate 28, allowlist 25, Product Executor 0.
+
+2026-08-10 ordinary CraftingQuest typed terminal closure
+
+- Added purpose-limited `player.quest_crafting` projection and one `quest.advance -> craft_quest_item -> executor.craft_quest_item` path; personal and Workbench sources reuse the existing native crafting executor.
+- Hidden/silent isolated runtime PASS 4/4: `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-132720/summary.json`.
+- Craft case verified native recipe/inventory clicks, exact material/output multiset, recipe-count increment, `CraftingQuest.OnRecipeCrafted` terminal, and complete task identity/terminal fields in execution output.
+- Core full regression PASS: 1610/1610. Backend full regression PASS: 120/120.
+- Full solution Debug build PASS: 0 errors, 1 existing `AvoidNetField` warning in `MiningReadAdapter.Objects.cs`.
+- Snapshot schema validation: required 100, blocking 0. Authoritative reconciliation: 585/585 exports, blocking 0; registered 105, semantic 172, compiler-bound 104, five-gate 39, allowlist 26, Product Executor 0.

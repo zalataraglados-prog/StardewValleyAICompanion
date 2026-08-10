@@ -55,6 +55,7 @@ namespace StardewAI.Core.Execution
                 ["executor.name_hatched_animal"] = (action, _) => CompileNameHatchedAnimalStep(action),
                 ["executor.craft_machine_item"] = (action, _) => CompileCraftMachineItemStep(action),
                 ["executor.craft_storage_item"] = (action, _) => CompileCraftStorageItemStep(action),
+                ["executor.craft_quest_item"] = (action, _) => CompileCraftQuestItemStep(action),
                 ["executor.place_machine"] = (action, _) => CompilePlaceMachineStep(action),
                 ["executor.remove_machine"] = (action, _) => CompileRemoveMachineStep(action),
                 ["executor.place_storage"] = (action, _) => CompilePlaceStorageStep(action),

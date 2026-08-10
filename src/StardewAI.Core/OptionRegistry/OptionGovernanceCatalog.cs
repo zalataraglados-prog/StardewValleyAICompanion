@@ -306,6 +306,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.name_hatched_animal", Primitive, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("executor.craft_machine_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.craft_storage_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
+                P("executor.craft_quest_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.place_machine", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.remove_machine", Primitive, R3, Route, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_storage", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),

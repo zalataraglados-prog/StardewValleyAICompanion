@@ -93,6 +93,13 @@ function Find-OrdinaryQuest($Snapshot, [string] $QuestId) {
     }) | Select-Object -First 1
 }
 
+function Find-CraftingQuest($Snapshot, [string] $QuestId) {
+    @($Snapshot.state.quests.active_quests.value | Where-Object {
+        [string]$_.id -eq $QuestId -and [string]$_.runtime_type -eq "CraftingQuest" -and
+        -not [bool]$_.completed
+    }) | Select-Object -First 1
+}
+
 function Find-DonateObjective($Snapshot, [string] $QuestKey, [string] $RequiredTagPrefix) {
     $order = @($Snapshot.state.quests.special_orders.value | Where-Object {
         [string]$_.quest_key -eq $QuestKey
@@ -144,6 +151,13 @@ function Invoke-QuestTerminalCase($Case) {
 
         $before = Wait-WorldSnapshot {
             param($snapshot)
+            if ($Case.Name -eq "craft-item") {
+                return $null -ne (Find-CraftingQuest $snapshot $Case.QuestId) -and
+                    @($snapshot.state.player.quest_crafting.value.rows | Where-Object {
+                        [string]$_.quest_id -eq $Case.QuestId -and
+                        [string]$_.craft_candidate_status -eq "ready_for_native_personal_crafting_menu"
+                    }).Count -gt 0
+            }
             if ($Case.Name -eq "item-delivery") {
                 return $null -ne (Find-OrdinaryQuest $snapshot $Case.QuestId)
             }
@@ -232,6 +246,10 @@ function Invoke-QuestTerminalCase($Case) {
 
         $after = Wait-WorldSnapshot {
             param($snapshot)
+            if ($Case.Name -eq "craft-item") {
+                return $null -eq (Find-CraftingQuest $snapshot $Case.QuestId) -and
+                    -not [bool]$snapshot.state.menus.active_menu.value.is_open
+            }
             if ($Case.Name -eq "item-delivery") {
                 return $null -eq (Find-OrdinaryQuest $snapshot $Case.QuestId)
             }
@@ -332,6 +350,16 @@ try {
     Wait-Json "$backendUrl/health" 60 | Out-Null
 
     $cases = @(
+        [pscustomobject]@{
+            Name = "craft-item"
+            FixtureKind = "craft_item"
+            QuestId = "stardewai.runtime.crafting"
+            QuestKey = ""
+            RequiredTagPrefix = ""
+            QuestCandidateId = "quest:stardewai.runtime.crafting:CraftingQuest"
+            CandidateKind = "craft_quest_item"
+            PrimitiveOptionId = "executor.craft_quest_item"
+        },
         [pscustomobject]@{
             Name = "item-delivery"
             FixtureKind = "offer_item"

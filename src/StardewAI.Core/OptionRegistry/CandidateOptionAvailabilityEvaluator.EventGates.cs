@@ -348,6 +348,11 @@ namespace StardewAI.Core.OptionRegistry
                 return TaskMachineDemandCandidates(snapshot, commitmentLedger);
             }
 
+            if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal))
+            {
+                return QuestCandidates(snapshot, commitmentLedger);
+            }
+
             return eventCandidateProviders.TryGetValue(optionId, out var provider)
                 ? provider(snapshot, parameters)
                 : Array.Empty<EventCandidate>();

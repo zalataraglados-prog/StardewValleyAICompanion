@@ -176,6 +176,7 @@ namespace StardewAI.Core.Execution
                 goalId,
                 commitmentLedger));
             blocking.AddRange(ValidateCraftStorageItemPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateCraftQuestItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidatePlaceMachinePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateRemoveMachinePlan(
                 action,

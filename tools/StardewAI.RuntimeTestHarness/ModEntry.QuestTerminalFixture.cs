@@ -22,6 +22,7 @@ public sealed partial class ModEntry
 
         return request.QuestInteractionKind switch
         {
+            "craft_item" => SetupCraftingQuestFixture(request),
             "offer_item" => SetupItemDeliveryFixture(request),
             "drop_box" => SetupDropBoxFixture(request),
             "drop_box_color" => SetupDropBoxFixture(request, usePreservedParentColor: true),
@@ -32,6 +33,147 @@ public sealed partial class ModEntry
                 "interaction_kind=" + request.QuestInteractionKind,
                 "quest_terminal_fixture_kind_invalid")
         };
+    }
+
+    private TrainingExecutionResult SetupCraftingQuestFixture(
+        TrainingExecutionRequest request)
+    {
+        var player = Game1.player;
+        var selected = CraftingRecipe.craftingRecipes.Keys
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .Select(TryCreateCraftingQuestFixtureRecipe)
+            .FirstOrDefault(row => row is not null);
+        if (selected is null)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_quest_terminal_fixture",
+                "quest_terminal_fixture=ready",
+                "native_recipe=unresolved",
+                "quest_crafting_fixture_native_recipe_unavailable");
+        }
+
+        var home = Utility.getHomeOfFarmer(player);
+        var placement = home is null ? null : FindQuestNpcFixturePlacement(home);
+        if (home is null || !placement.HasValue)
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_quest_terminal_fixture",
+                "quest_terminal_fixture=ready",
+                "crafting_home_or_placement=missing",
+                "quest_crafting_fixture_topology_missing");
+        }
+
+        ClearQuestFixtureState();
+        for (var slot = 0; slot < player.Items.Count; slot++)
+        {
+            player.Items[slot] = null;
+        }
+        for (var index = 0; index < selected.Ingredients.Length; index++)
+        {
+            player.Items[index] = selected.Ingredients[index];
+        }
+        player.craftingRecipes[selected.RecipeName] = 0;
+        var questId = string.IsNullOrWhiteSpace(request.QuestId)
+            ? "stardewai.runtime.crafting"
+            : request.QuestId;
+        var quest = new CraftingQuest(selected.Output.QualifiedItemId);
+        quest.id.Value = questId;
+        quest.questType.Value = 2;
+        quest.accepted.Value = true;
+        player.questLog.Add(quest);
+        PrepareQuestFixturePlayer(
+            player,
+            home,
+            placement.Value.Stand,
+            placement.Value.Npc);
+        Game1.activeClickableMenu = null;
+        Game1.dialogueUp = false;
+        Game1.eventUp = false;
+        player.canMove = true;
+        player.UsingTool = false;
+
+        var verified = ReferenceEquals(Game1.currentLocation, home) &&
+            player.TilePoint == placement.Value.Stand &&
+            player.questLog.Contains(quest) &&
+            quest.ItemId.Value == selected.Output.QualifiedItemId &&
+            player.craftingRecipes.ContainsKey(selected.RecipeName) &&
+            selected.Ingredients.Select((item, index) =>
+                player.Items[index]?.QualifiedItemId == item.QualifiedItemId &&
+                player.Items[index]?.Stack == item.Stack).All(value => value);
+        return QuestTerminalFixtureResult(
+            request,
+            verified,
+            "craft_item",
+            questId,
+            string.Empty,
+            nameof(CraftingQuest),
+            Game1.currentLocation.NameOrUniqueName,
+            player.TilePoint,
+            player.TilePoint,
+            string.Empty,
+            selected.Output.QualifiedItemId,
+            0,
+            0,
+            0,
+            null,
+            string.Empty);
+    }
+
+    private static CraftingQuestFixtureRecipe?
+        TryCreateCraftingQuestFixtureRecipe(string recipeName)
+    {
+        try
+        {
+            var recipe = new CraftingRecipe(
+                recipeName,
+                isCookingRecipe: false);
+            if (recipe.itemToProduce.Count != 1 ||
+                recipe.recipeList.Count == 0 ||
+                recipe.recipeList.Count >= Game1.player.Items.Count)
+            {
+                return null;
+            }
+            var output = recipe.createItem();
+            if (output is not StardewValley.Object outputObject ||
+                outputObject.bigCraftable.Value)
+            {
+                return null;
+            }
+
+            var ingredients = new List<Item>();
+            foreach (var ingredient in recipe.recipeList)
+            {
+                if (!int.TryParse(ingredient.Key, out var itemId) ||
+                    itemId <= 0 || ingredient.Value <= 0)
+                {
+                    return null;
+                }
+                var item = ItemRegistry.Create(
+                    ItemRegistry.ManuallyQualifyItemId(
+                        ingredient.Key,
+                        "(O)"),
+                    ingredient.Value);
+                if (item.Stack != ingredient.Value ||
+                    item.Stack > item.maximumStackSize() ||
+                    !CraftingRecipe.ItemMatchesForCrafting(
+                        item,
+                        ingredient.Key))
+                {
+                    return null;
+                }
+                ingredients.Add(item);
+            }
+            return new CraftingQuestFixtureRecipe(
+                recipeName,
+                output,
+                ingredients.ToArray());
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private TrainingExecutionResult SetupItemDeliveryFixture(
@@ -452,4 +594,9 @@ public sealed partial class ModEntry
                 : Array.Empty<SimulatedFactChange>()
         };
     }
+
+    private sealed record CraftingQuestFixtureRecipe(
+        string RecipeName,
+        Item Output,
+        Item[] Ingredients);
 }
