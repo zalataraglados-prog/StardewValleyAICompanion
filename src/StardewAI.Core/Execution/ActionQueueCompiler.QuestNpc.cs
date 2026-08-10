@@ -163,11 +163,6 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("special_order_gift_context_tag_sets_drifted");
             }
-            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(fields.AcceptableContextTagSets))
-            {
-                reasons.Add("special_order_gift_has_unprojected_color_tags");
-            }
-
             var npcName = ReadParameter(action, "npc_name") ?? string.Empty;
             var slotIndex = ReadIntParameter(action, "slot_index");
             var qualifiedItemId = ReadParameter(action, "qualified_item_id") ?? string.Empty;

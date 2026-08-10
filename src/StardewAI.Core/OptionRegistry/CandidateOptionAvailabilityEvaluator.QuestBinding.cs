@@ -285,11 +285,6 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_fish_context_tag_sets_missing") };
             }
-            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(contextTagSets))
-            {
-                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_fish_has_unprojected_color_tags") };
-            }
-
             var candidates = FishingEventCandidateBuilder.Build(snapshot)
                 .Where(candidate => candidate.Kind == "catch_fish" && candidate.Available)
                 .Where(candidate => FishingCandidateMatchesContextTags(candidate, contextTagSets))
@@ -358,10 +353,6 @@ namespace StardewAI.Core.OptionRegistry
             if (fields.AcceptableContextTagSets.Length == 0)
             {
                 return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_gift_context_tag_sets_missing") };
-            }
-            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(fields.AcceptableContextTagSets))
-            {
-                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_gift_has_unprojected_color_tags") };
             }
             if (!QuestGiftObjectiveMatcher.IsKnownMinimumLikeLevel(fields.MinimumLikeLevel))
             {
@@ -610,7 +601,12 @@ namespace StardewAI.Core.OptionRegistry
                 return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_location_missing");
             }
 
-            var inventoryItem = FindQuestInventoryItem(snapshot, string.Empty, fields.AcceptableContextTagSets, 1);
+            var inventoryItem = FindQuestInventoryItem(
+                snapshot,
+                string.Empty,
+                fields.AcceptableContextTagSets,
+                1,
+                QuestContextTagMatcher.MatchesDonateObjective);
             if (!inventoryItem.HasValue)
             {
                 return BlockedQuestCandidate(snapshot, quest, "special_order_drop_box_matching_inventory_item_not_available");
@@ -619,21 +615,13 @@ namespace StardewAI.Core.OptionRegistry
             var slotIndex = ReadInt(inventoryItem.Value, "slot_index");
             var qualifiedItemId = ReadString(inventoryItem.Value, "qualified_item_id");
             var itemStack = ReadInt(inventoryItem.Value, "stack");
-            if (order.Objectives.Any(objective =>
-                    string.Equals(objective.RuntimeType, "DonateObjective", StringComparison.Ordinal) &&
-                    QuestContextTagMatcher.ContainsUnprojectedColorTag(
-                        objective.PerTypeFields.AcceptableContextTagSets)))
-            {
-                return BlockedQuestCandidate(
-                    snapshot,
-                    quest,
-                    "special_order_drop_box_native_accept_capacity_has_unprojected_color_tags");
-            }
             var acceptedCapacity = order.Objectives
                 .Where(objective =>
                     string.Equals(objective.RuntimeType, "DonateObjective", StringComparison.Ordinal) &&
                     objective.PerTypeFields.Available &&
-                    QuestContextTagMatcher.Matches(inventoryItem.Value, objective.PerTypeFields.AcceptableContextTagSets))
+                    QuestContextTagMatcher.MatchesDonateObjective(
+                        inventoryItem.Value,
+                        objective.PerTypeFields.AcceptableContextTagSets))
                 .Sum(objective => Math.Max(0, objective.MaxCount - objective.CurrentCount));
             var expectedAcceptedCount = Math.Min(itemStack, acceptedCapacity);
             if (expectedAcceptedCount <= 0)
@@ -841,7 +829,8 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             string exactItemId,
             string[]? contextTagSets,
-            int requiredStack)
+            int requiredStack,
+            Func<JsonElement, string[], bool>? contextTagMatcher = null)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
@@ -863,7 +852,8 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     return item.Clone();
                 }
-                if (contextTagSets is { Length: > 0 } && QuestContextTagMatcher.Matches(item, contextTagSets))
+                if (contextTagSets is { Length: > 0 } &&
+                    (contextTagMatcher ?? QuestContextTagMatcher.Matches)(item, contextTagSets))
                 {
                     return item.Clone();
                 }

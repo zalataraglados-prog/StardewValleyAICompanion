@@ -151,14 +151,14 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- full regression: Core 1,601 passed and Backend 119 passed;
+- full regression: Core 1,607 passed and Backend 119 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
   differences, 28 stage rows with 21 bound, 5 blocked, and 2 observation-only;
 - full knowledge build: 585/585 exports and zero blocking rows;
 - capability reconciliation: 103 compiler-bound options, while five-gate closure stays
   at 39 and the training allowlist stays at 26;
-- hidden/silent isolated runtime matrix PASS 2/2 at
-  `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-113150/summary.json`;
+- hidden/silent isolated runtime matrix PASS 3/3 at
+  `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-121424/summary.json`;
 - ordinary item delivery compiled through `quest.advance` to
   `executor.quest_npc_interact`, completed through native `checkAction`, and wrote one
   verified training row;
@@ -166,6 +166,11 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
   `executor.quest_drop_box_donate`, completed the native `QuestContainerMenu`
   lifecycle, advanced `DonateObjective` from 0 to 1, and wrote one verified training
   row;
+- Qi's Prismatic Grange projected the preserved `ColoredObject` parent base tags,
+  matched the native red `DonateObjective`, compiled through the same drop-box terminal,
+  advanced the objective through the native menu, and wrote one verified training row;
+- ordinary collect, deliver, gift, and fish objectives continue matching only the
+  current item's `GetContextTags`; they do not inherit Donate's parent-color rule;
 - native-menu verification statuses are canonical `verified`; lifecycle detail remains
   in verification reasons so LiveTrainingLoop does not discard valid museum, community
   center, or quest drop-box rows.

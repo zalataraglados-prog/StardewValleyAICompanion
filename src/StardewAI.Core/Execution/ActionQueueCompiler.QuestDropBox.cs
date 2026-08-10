@@ -150,14 +150,7 @@ namespace StardewAI.Core.Execution
             }
             else if (order is not null && selectedObjective is not null)
             {
-                if (order.Objectives.Any(objective =>
-                        objective.RuntimeType == "DonateObjective" &&
-                        QuestContextTagMatcher.ContainsUnprojectedColorTag(
-                            objective.PerTypeFields.AcceptableContextTagSets)))
-                {
-                    reasons.Add("quest_drop_box_native_accept_capacity_has_unprojected_color_tags");
-                }
-                if (!QuestContextTagMatcher.Matches(
+                if (!QuestContextTagMatcher.MatchesDonateObjective(
                         inventoryItem.Value,
                         selectedObjective.PerTypeFields.AcceptableContextTagSets))
                 {
@@ -167,7 +160,7 @@ namespace StardewAI.Core.Execution
                     .Where(objective =>
                         objective.RuntimeType == "DonateObjective" &&
                         objective.PerTypeFields.Available &&
-                        QuestContextTagMatcher.Matches(
+                        QuestContextTagMatcher.MatchesDonateObjective(
                             inventoryItem.Value,
                             objective.PerTypeFields.AcceptableContextTagSets))
                     .Sum(objective => Math.Max(0, objective.MaxCount - objective.CurrentCount));

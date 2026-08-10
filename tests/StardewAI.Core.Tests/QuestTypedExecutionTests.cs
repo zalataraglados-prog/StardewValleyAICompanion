@@ -408,6 +408,75 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void DonateObjectivePreservedParentColorCompilesThroughSingleTypedTerminalPath()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"QiNutRoom","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[{
+              "slot_index":2,"item_id":"348","qualified_item_id":"(O)348","stack":5,"is_empty":false,
+              "runtime_type":"StardewValley.Objects.ColoredObject","context_tags":["artisan_good","color_blue"],
+              "donate_color_context":{
+                "is_colored_object":true,"preserved_parent_item_id":"613",
+                "preserved_parent_base_context_tags":["color_red","item_apple"],
+                "projection_status":"exact_native_preserved_parent_base_context_tags"
+              }
+            }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "map": {"value":{"location_id":"QiNutRoom"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "drop_box_action_tiles": {"value":[{"tile_x":10,"tile_y":10,"action":"DropBox QiChallengeBox","action_type":"DropBox","box_id":"QiChallengeBox"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"QiNutRoom","width":40,"height":30,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "quests": {
+            "active_quests": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "special_orders": {"value":[{
+              "quest_key":"QiChallenge12","quest_name":"Qi's Prismatic Grange","quest_state":"InProgress","special_rule":"","is_island_order":1,
+              "objectives":[
+                {"description":"Red","current_count":0,"max_count":3,"runtime_type":"DonateObjective","fail_on_completion":false,"complete":false,
+                 "per_type_fields":{"available":true,"acceptable_context_tag_sets":["color_red/color_dark_red"],"drop_box":"QiChallengeBox","drop_box_game_location":"QiNutRoom","resolved_drop_box_game_location":"QiNutRoom","drop_box_tile_x":10,"drop_box_tile_y":10,"minimum_capacity":1,"confirmed":false}},
+                {"description":"Blue","current_count":0,"max_count":10,"runtime_type":"DonateObjective","fail_on_completion":false,"complete":false,
+                 "per_type_fields":{"available":true,"acceptable_context_tag_sets":["color_blue"],"drop_box":"QiChallengeBox","drop_box_game_location":"QiNutRoom","resolved_drop_box_game_location":"QiNutRoom","drop_box_tile_x":10,"drop_box_tile_y":10,"minimum_capacity":1,"confirmed":false}}
+              ],
+              "rewards":[]
+            }],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "completed_special_orders": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "accepted_special_order_types": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "mail_received": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {"active_menu": {"value":{"is_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+          "time": {"time": {"value":1200,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}},
+          "world_progress": {
+            "community_center": {"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "achievements": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "quest.advance" }, includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+
+        Assert.Equal("quest_drop_box_donation", candidate.Kind);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal(3, candidate.Quantity);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "quest_drop_box_expected_accepted_count" && parameter.Value == "3");
+
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var terminal = Assert.Single(queue.Items.Where(item =>
+            item.OptionId == "executor.quest_drop_box_donate"));
+        Assert.Empty(terminal.BlockingReasons);
+    }
+
+    [Fact]
     public void LostItemQuestBindsExactNativeSpawnedObjectPickup()
     {
         var snapshot = Snapshot("""

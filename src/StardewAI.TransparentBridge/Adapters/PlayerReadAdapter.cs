@@ -34,6 +34,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
                     : FarmReadAdapter.ReadItemSpecialState(item),
                 special_item = item?.specialItem,
                 context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
+                donate_color_context = ReadDonateColorContext(item),
                 base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
                 is_object = item is StardewValley.Object,
                 object_type = item is StardewValley.Object obj ? obj.Type : null,

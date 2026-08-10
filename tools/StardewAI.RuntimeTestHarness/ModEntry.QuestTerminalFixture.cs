@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Training;
 using StardewValley;
 using StardewValley.Quests;
+using StardewValley.Objects;
 using StardewValley.SpecialOrders;
 using StardewValley.SpecialOrders.Objectives;
 using StardewValley.Tools;
@@ -23,6 +24,7 @@ public sealed partial class ModEntry
         {
             "offer_item" => SetupItemDeliveryFixture(request),
             "drop_box" => SetupDropBoxFixture(request),
+            "drop_box_color" => SetupDropBoxFixture(request, usePreservedParentColor: true),
             _ => BlockedWithPrimitive(
                 request,
                 "debug_setup_quest_terminal_fixture",
@@ -106,26 +108,28 @@ public sealed partial class ModEntry
     }
 
     private TrainingExecutionResult SetupDropBoxFixture(
-        TrainingExecutionRequest request)
+        TrainingExecutionRequest request,
+        bool usePreservedParentColor = false)
     {
-        const string questKey = "Gunther";
-        const string dropBoxId = "GuntherBox";
-        const string qualifiedItemId = "(O)881";
+        var questKey = usePreservedParentColor ? "QiChallenge12" : "Gunther";
+        var dropBoxId = usePreservedParentColor ? "QiChallengeBox" : "GuntherBox";
+        var locationName = usePreservedParentColor ? "QiNutRoom" : "ArchaeologyHouse";
+        var qualifiedItemId = usePreservedParentColor ? "(O)348" : "(O)881";
         const int slot = 11;
-        if (Game1.getLocationFromName("ArchaeologyHouse") is not GameLocation museum ||
+        if (Game1.getLocationFromName(locationName) is not GameLocation targetLocation ||
             slot >= Game1.player.Items.Count)
         {
             return BlockedWithPrimitive(
                 request,
                 "debug_setup_quest_terminal_fixture",
                 "quest_terminal_fixture=ready",
-                "museum_or_slot=missing",
+                "drop_box_location_or_slot=missing",
                 "quest_drop_box_fixture_topology_missing");
         }
 
-        var actionTile = FindDropBoxActionTile(museum, dropBoxId);
+        var actionTile = FindDropBoxActionTile(targetLocation, dropBoxId);
         var standTile = actionTile.HasValue
-            ? FindQuestDropBoxStandTile(museum, actionTile.Value)
+            ? FindQuestDropBoxStandTile(targetLocation, actionTile.Value)
             : null;
         if (!actionTile.HasValue || !standTile.HasValue)
         {
@@ -139,9 +143,15 @@ public sealed partial class ModEntry
 
         ClearQuestFixtureState();
         var order = SpecialOrder.GetSpecialOrder(questKey, 0);
-        var collect = order.objectives.OfType<CollectObjective>().SingleOrDefault();
-        var donate = order.objectives.OfType<DonateObjective>().SingleOrDefault();
-        if (collect is null || donate is null ||
+        var collect = usePreservedParentColor
+            ? null
+            : order.objectives.OfType<CollectObjective>().SingleOrDefault();
+        var donate = usePreservedParentColor
+            ? order.objectives.OfType<DonateObjective>().FirstOrDefault(objective =>
+                objective.acceptableContextTagSets.Any(set =>
+                    set.Split(',').Any(group => group.StartsWith("color_red", StringComparison.Ordinal))))
+            : order.objectives.OfType<DonateObjective>().SingleOrDefault();
+        if ((!usePreservedParentColor && collect is null) || donate is null ||
             !string.Equals(donate.dropBox.Value, dropBoxId, StringComparison.Ordinal))
         {
             return BlockedWithPrimitive(
@@ -152,7 +162,7 @@ public sealed partial class ModEntry
                 "quest_drop_box_fixture_native_order_drifted");
         }
 
-        collect.SetCount(collect.GetMaxCount());
+        collect?.SetCount(collect.GetMaxCount());
         donate.SetCount(0);
         donate.confirmed.Value = false;
         order.donatedItems.Clear();
@@ -160,12 +170,42 @@ public sealed partial class ModEntry
         order.Update();
 
         PrepareQuestFixtureInventory(Game1.player, slot, qualifiedItemId, 1);
-        PrepareQuestFixturePlayer(Game1.player, museum, standTile.Value, actionTile.Value);
+        if (usePreservedParentColor)
+        {
+            const string parentItemId = "613";
+            var parentTags = ItemContextTagManager.GetBaseContextTags(parentItemId);
+            if (!parentTags.Contains("color_red"))
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_quest_terminal_fixture",
+                    "quest_terminal_fixture=ready",
+                    "preserved_parent_color=drifted",
+                    "quest_drop_box_fixture_parent_color_drifted");
+            }
+
+            var coloredObject = new ColoredObject("348", 1, Color.Red);
+            coloredObject.preservedParentSheetIndex.Value = parentItemId;
+            Game1.player.Items[slot] = coloredObject;
+            qualifiedItemId = coloredObject.QualifiedItemId;
+            if (!donate.IsValidItem(coloredObject))
+            {
+                return BlockedWithPrimitive(
+                    request,
+                    "debug_setup_quest_terminal_fixture",
+                    "quest_terminal_fixture=ready",
+                    "native_donate_color_match=false",
+                "quest_drop_box_fixture_native_color_match_drifted");
+            }
+
+            SuppressEligibleQuestFixtureLocationEvents(targetLocation);
+        }
+        PrepareQuestFixturePlayer(Game1.player, targetLocation, standTile.Value, actionTile.Value);
         var objectiveIndex = order.objectives.IndexOf(donate);
-        var verified = ReferenceEquals(Game1.currentLocation, museum) &&
+        var verified = ReferenceEquals(Game1.currentLocation, targetLocation) &&
             Game1.player.TilePoint == standTile.Value &&
             AreAdjacent(standTile.Value, actionTile.Value) &&
-            museum.doesTileHaveProperty(
+            targetLocation.doesTileHaveProperty(
                 actionTile.Value.X,
                 actionTile.Value.Y,
                 "Action",
@@ -181,7 +221,7 @@ public sealed partial class ModEntry
             string.Empty,
             questKey,
             "DonateObjective",
-            museum.NameOrUniqueName,
+            targetLocation.NameOrUniqueName,
             actionTile.Value,
             standTile.Value,
             string.Empty,
@@ -206,7 +246,9 @@ public sealed partial class ModEntry
             Game1.player.questLog.Remove(quest);
         }
         foreach (var order in Game1.player.team.specialOrders
-            .Where(order => string.Equals(order.questKey.Value, "Gunther", StringComparison.Ordinal))
+            .Where(order =>
+                string.Equals(order.questKey.Value, "Gunther", StringComparison.Ordinal) ||
+                string.Equals(order.questKey.Value, "QiChallenge12", StringComparison.Ordinal))
             .ToArray())
         {
             Game1.player.team.specialOrders.Remove(order);
@@ -244,6 +286,28 @@ public sealed partial class ModEntry
         player.canMove = true;
         player.Position = standTile.ToVector2() * Game1.tileSize;
         player.faceDirection(DirectionTo(standTile, targetTile));
+    }
+
+    private static void SuppressEligibleQuestFixtureLocationEvents(GameLocation location)
+    {
+        if (!location.TryGetLocationEvents(out _, out var events))
+        {
+            return;
+        }
+
+        foreach (var pair in events)
+        {
+            if (!GameLocation.IsValidLocationEvent(pair.Key, pair.Value))
+            {
+                continue;
+            }
+
+            var eventId = location.checkEventPrecondition(pair.Key);
+            if (!string.IsNullOrWhiteSpace(eventId) && eventId != "-1")
+            {
+                Game1.player.eventsSeen.Add(eventId);
+            }
+        }
     }
 
     private static (Point Stand, Point Npc)? FindQuestNpcFixturePlacement(
@@ -361,7 +425,9 @@ public sealed partial class ModEntry
             TargetTileY = targetTile.Y,
             SocialNpcName = npcName,
             QuestCandidateId = "runtime_fixture:" + (questId.Length > 0 ? questId : questKey),
-            QuestFamily = fixtureKind == "drop_box" ? "special_order" : "ordinary_quest",
+            QuestFamily = fixtureKind.StartsWith("drop_box", StringComparison.Ordinal)
+                ? "special_order"
+                : "ordinary_quest",
             QuestId = questId,
             QuestKey = questKey,
             QuestObjectiveIndex = objectiveIndex,

@@ -412,3 +412,17 @@ LiveTrainingLoop 丢弃实际成功样本。现统一使用标准 `verified`，�
 RegisteredOnly 且不进入训练白名单。下一步依次关闭 5 个明确阻塞阶段：普通制作、建造、秘密物品取得、type-11
 除草和 Junimo Kart 分数；同时补齐 preserved `ColoredObject` 父物品颜色标签透明投影。只有目录声明范围、编译、
 运行和输出反馈全部闭合后，才能重新评估 `quest.advance` 的训练准入。
+
+## 2026-08-10 Donate 父物品颜色透明闭环（EVD-234 已闭合）
+
+锁定版 1.6.15 反编译确认：只有 `DonateObjective.IsValidItem` 在标签组以 `color` 开头且物品为带
+`preservedParentSheetIndex` 的 `ColoredObject` 时，改用父物品 `GetBaseContextTags`；`CollectObjective`、
+`DeliverObjective`、`GiftObjective` 和 `FishObjective` 只读取当前物品 `GetContextTags`。透明桥现逐背包槽位保留
+`donate_color_context`，不把父物品标签错误并入普通 `context_tags`。核心匹配器按上述两个原生入口分流；父项
+投影缺失时失败关闭，父项颜色不匹配时不得回退到成品自身颜色。
+
+E 盘隐藏静音矩阵现为 `3/3`。新增案例使用原生 `QiChallenge12`、`QiChallengeBox`、运行时确认带
+`color_red` 的父物品和原生 `DonateObjective.IsValidItem`，再经候选、DailyPlan、动作队列和既有
+`executor.quest_drop_box_donate` 完成原生菜单点击与确认，目标进度增加并写入 verified 训练行。运行中暴露的
+未见 Mr. Qi 地点事件只在隔离测试夹具中按当前原生前置条件标记已见，生产执行器未放宽。下一步处理普通制作，
+其余明确阻塞阶段顺序不变。

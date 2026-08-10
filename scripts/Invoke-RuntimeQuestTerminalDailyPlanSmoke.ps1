@@ -67,7 +67,8 @@ function New-ExecutionRequest(
     [string] $QueueItemId,
     [string] $StateHash,
     [string] $FixtureKind,
-    [string] $QuestId) {
+    [string] $QuestId,
+    [string] $QuestKey) {
     [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $CaseRunId
@@ -82,6 +83,7 @@ function New-ExecutionRequest(
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         quest_interaction_kind = $FixtureKind
         quest_id = $QuestId
+        quest_key = $QuestKey
     }
 }
 
@@ -91,12 +93,18 @@ function Find-OrdinaryQuest($Snapshot, [string] $QuestId) {
     }) | Select-Object -First 1
 }
 
-function Find-GuntherDonateObjective($Snapshot) {
+function Find-DonateObjective($Snapshot, [string] $QuestKey, [string] $RequiredTagPrefix) {
     $order = @($Snapshot.state.quests.special_orders.value | Where-Object {
-        [string]$_.quest_key -eq "Gunther"
+        [string]$_.quest_key -eq $QuestKey
     }) | Select-Object -First 1
     if ($null -eq $order) { return $null }
-    @($order.objectives | Where-Object { [string]$_.runtime_type -eq "DonateObjective" }) |
+    @($order.objectives | Where-Object {
+        if ([string]$_.runtime_type -ne "DonateObjective") { return $false }
+        if ([string]::IsNullOrWhiteSpace($RequiredTagPrefix)) { return $true }
+        return @($_.per_type_fields.acceptable_context_tag_sets | Where-Object {
+            [string]$_ -like ($RequiredTagPrefix + "*")
+        }).Count -gt 0
+    }) |
         Select-Object -First 1
 }
 
@@ -128,7 +136,7 @@ function Invoke-QuestTerminalCase($Case) {
         $initial = Wait-WorldSnapshot { param($snapshot) $true } "world-ready snapshot"
         $setup = Invoke-JsonPost $executorUrl (New-ExecutionRequest `
             $caseRunId "fixture.$($Case.Name)" ([string]$initial.state_hash) `
-            $Case.FixtureKind $Case.QuestId)
+            $Case.FixtureKind $Case.QuestId $Case.QuestKey)
         Write-Json (Join-Path $caseDirectory "setup-result.json") $setup
         if ($setup.status -ne "applied" -or $setup.primitive_verification_status -ne "verified") {
             throw "Quest terminal fixture failed for $($Case.Name): $(@($setup.block_reasons) -join ',')"
@@ -139,7 +147,7 @@ function Invoke-QuestTerminalCase($Case) {
             if ($Case.Name -eq "item-delivery") {
                 return $null -ne (Find-OrdinaryQuest $snapshot $Case.QuestId)
             }
-            $objective = Find-GuntherDonateObjective $snapshot
+            $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 0
         } "ready quest terminal fixture $($Case.Name)"
         $snapshotPath = Join-Path $caseDirectory "before-snapshot.json"
@@ -215,7 +223,8 @@ function Invoke-QuestTerminalCase($Case) {
         if ($null -eq $queueItem -or $null -eq $stepResult -or
             $stepResult.status -ne "applied" -or
             $stepResult.primitive_verification_status -ne "verified") {
-            throw "Quest terminal execution failed for $($Case.Name): status=$($stepResult.status); verification=$($stepResult.primitive_verification_status); reasons=$(@($stepResult.block_reasons) -join ',')"
+            $firstResult = @($execution.step_results | Select-Object -First 1)
+            throw "Quest terminal execution failed for $($Case.Name): terminal_status=$($stepResult.status); terminal_verification=$($stepResult.primitive_verification_status); terminal_reasons=$(@($stepResult.block_reasons) -join ','); first_option=$($firstResult.option_id); first_status=$($firstResult.status); first_reasons=$(@($firstResult.block_reasons) -join ',')"
         }
         if (-not (Test-Path -LiteralPath $datasetPath -PathType Leaf)) {
             throw "Verified quest terminal dataset artifact missing: $datasetPath"
@@ -226,7 +235,7 @@ function Invoke-QuestTerminalCase($Case) {
             if ($Case.Name -eq "item-delivery") {
                 return $null -eq (Find-OrdinaryQuest $snapshot $Case.QuestId)
             }
-            $objective = Find-GuntherDonateObjective $snapshot
+            $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 1 -and
                 -not [bool]$snapshot.state.menus.active_menu.value.is_open
         } "verified quest terminal result $($Case.Name)"
@@ -327,6 +336,8 @@ try {
             Name = "item-delivery"
             FixtureKind = "offer_item"
             QuestId = "stardewai.runtime.item_delivery"
+            QuestKey = ""
+            RequiredTagPrefix = ""
             QuestCandidateId = "quest:stardewai.runtime.item_delivery:ItemDeliveryQuest"
             CandidateKind = "quest_npc_interaction"
             PrimitiveOptionId = "executor.quest_npc_interact"
@@ -335,7 +346,19 @@ try {
             Name = "drop-box"
             FixtureKind = "drop_box"
             QuestId = ""
+            QuestKey = "Gunther"
+            RequiredTagPrefix = ""
             QuestCandidateId = "special_order:Gunther"
+            CandidateKind = "quest_drop_box_donation"
+            PrimitiveOptionId = "executor.quest_drop_box_donate"
+        },
+        [pscustomobject]@{
+            Name = "drop-box-preserved-parent-color"
+            FixtureKind = "drop_box_color"
+            QuestId = ""
+            QuestKey = "QiChallenge12"
+            RequiredTagPrefix = "color_red"
+            QuestCandidateId = "special_order:QiChallenge12"
             CandidateKind = "quest_drop_box_donation"
             PrimitiveOptionId = "executor.quest_drop_box_donate"
         }

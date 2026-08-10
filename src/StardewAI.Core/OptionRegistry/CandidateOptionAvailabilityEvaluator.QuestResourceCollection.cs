@@ -292,11 +292,6 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_collect_context_tag_sets_missing") };
             }
-            if (QuestContextTagMatcher.ContainsUnprojectedColorTag(fields.AcceptableContextTagSets))
-            {
-                return new[] { BlockedQuestCandidate(snapshot, quest, "special_order_collect_has_unprojected_color_tags") };
-            }
-
             var matchingMonsterDropIds = MatchingMonsterDropQualifiedItemIds(
                 snapshot,
                 fields.AcceptableContextTagSets);
