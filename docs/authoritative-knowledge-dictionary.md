@@ -136,12 +136,15 @@ quests. The knowledge compiler scans the 1.6.15 `Quest` and `OrderObjective` sub
 joins them to `QuestActionCoverageCatalog`. A native subclass absent from the catalog is a
 blocking source-validation issue. The current scan found all 12 ordinary quest runtime
 types and all 9 special-order objective runtime types, with zero uncatalogued or
-catalog-only types. Their 28 action stages currently contain 23 bound stages, 2 explicit
-implementation gaps, and 3 native observation-only stages.
+catalog-only types. Their 28 action stages currently contain 23 bound stages, 1 explicit
+implementation gap, 3 native observation-only stages, and 1 native-unreachable compatibility stage.
 
 This matrix guarantees that the scanned native quest type surface is not silently omitted.
-It does not turn the 2 blocked stages into executable actions, cover mod-added runtime
+It does not turn the blocked Junimo Kart stage into an executable action, cover mod-added runtime
 types without rescanning the active mod set, or replace isolated runtime verification.
+The type-11 weeding constant is retained explicitly rather than omitted: locked `Data/Quests`
+contains no such row, the native factory has no branch, and the quest sources have no assignment.
+Knowledge compilation blocks if that reachability evidence changes.
 
 Candidate evaluation now exposes separate `read_eligible`, `binding_status`,
 `compile_status`, `execution_authorization`, `runtime_evidence_status`,

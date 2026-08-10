@@ -134,11 +134,10 @@ OK button, and verifies inventory, objective count, confirmation, and order stat
 The generated `quest-action-coverage-matrix.json` is the omission check for this surface.
 It scans native decompiled subclasses and reports 12 ordinary quest runtime types and 9
 special-order objective types, with no uncatalogued type. Its 28 stage rows currently
-contain 23 bound, 2 blocked, and 3 native observation-only stages.
+contain 23 bound, 1 blocked, 3 native observation-only, and 1 native-unreachable stage.
 
 The following objective bindings remain fail-closed:
 
-- type-11 weeding;
 - Junimo Kart score objectives;
 - modded or otherwise uncatalogued acquisition sources;
 
@@ -151,15 +150,23 @@ candidate and runtime start guard require one empty inventory slot, so the one-s
 catch can't strand the necklace in an unowned full-inventory `ItemGrabMenu`; storage transfer
 must run first.
 
+The retained `Quest.type_weeding = 11` constant is not a creatable vanilla quest stage.
+The locked 66-row `Data/Quests` payload has no Weeding type, `Quest.getQuestFromId` has no
+matching factory branch, and the complete native quest source directory has no assignment
+of 11 to `questType`. The catalog records this as `native_unreachable` instead of silently
+dropping it or inventing a clear-weeds executor. KnowledgeCompiler rechecks the constant,
+factory branch, and assignment sites on every reconciliation; an injected legacy or modded
+type-11 live row fails closed.
+
 The fallback `quest_candidate` and `special_order_candidate` kinds now mean
 objective-specific binding is absent. They are not blocked by the obsolete blanket
 `quest_native_executor_not_implemented` reason.
 
 ## Verification
 
-- full regression: Core 1,617 passed and Backend 121 passed;
+- full regression: Core 1,619 passed and Backend 121 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
-  differences, 28 stage rows with 23 bound, 2 blocked, and 3 observation-only;
+  differences, 28 stage rows with 23 bound, 1 blocked, 3 observation-only, and 1 native-unreachable;
 - full knowledge build: 585/585 exports and zero blocking rows;
 - capability reconciliation: 105 compiler-bound options, while five-gate closure stays
   at 39 and the training allowlist stays at 26;

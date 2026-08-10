@@ -526,6 +526,7 @@ namespace StardewAI.Core.OptionRegistry
                         ? "return_to_npc"
                         : "collect_resources";
                 case 11:
+                    diagnostics.Add("quest_type_11_unreachable_in_vanilla_1_6_15");
                     return "weeding_no_subclass";
                 default:
                     diagnostics.Add("unknown_quest_type_" + questType);

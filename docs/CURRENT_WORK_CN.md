@@ -6,7 +6,7 @@
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
 - 动作对账当前为 `106 registered / 173 semantic / 105 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
-- `quest.advance` 的 28 个目录阶段为 `23 bound / 2 blocked / 3 observation-only`；反编译扫描为
+- `quest.advance` 的 28 个目录阶段为 `23 bound / 1 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的
   `player.quest_crafting` 经 `quest.advance`、DailyPlan、动作队列和既有原生 `CraftingPage` 执行器完成，
@@ -20,8 +20,11 @@
   `itemFound=false` 任务行只是事务中的瞬态观察，不得再建第二套任务钓鱼执行器。候选与运行时均复用
   `player.inventory_capacity` 要求至少一个空格；满包必须先走既有存储转移链，避免唯一项链进入未接管的
   `ItemGrabMenu` 后无法重新取得。
-- 唯一紧接任务是按权威目录处理剩余 2 个明确阻塞阶段：type-11 除草、Junimo Kart 分数。
-  每个阶段仍按透明读取、候选、DailyPlan、
+- EVD-238 已关闭 type-11 假缺口：锁定 `Data/Quests` 的 66 行没有 Weeding 类型，`Quest.getQuestFromId`
+  没有对应工厂分支，原生任务源码没有任何 `questType=11` 写入点；它只是保留的兼容常量。目录使用独立
+  `native_unreachable` 状态，KnowledgeCompiler 每次对账复核常量、工厂分支和写入点；旧存档或模组强塞
+  type-11 时明确失败关闭，不生成除草执行器。
+- 唯一紧接任务是处理剩余 1 个明确阻塞阶段：Junimo Kart 分数。仍按透明读取、候选、DailyPlan、
   唯一既有或新增原语、原生运行反馈逐项闭合。
 - 最新运行证据：
   `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-173859/summary.json`。

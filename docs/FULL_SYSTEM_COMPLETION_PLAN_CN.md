@@ -463,6 +463,23 @@ Robin 服务、蓝图价格/材料/工期、在建状态和农场放置候选；
 起始校验统一要求 `player.inventory_capacity.has_empty_slot=true`；否则先由既有存储转移链腾位。本阶段
 不把未单独运行校准的项链案例外推为新五门准入。
 
-任务目录现为 23 bound、2 blocked、3 observation-only。下一步处理 type-11 除草，之后处理
-Junimo Kart 分数；在二者关闭并重新做完整任务矩阵前，`quest.advance` 仍保持 PartiallyBlocked、
+在 EVD-237 检查点，任务目录为 23 bound、2 blocked、3 observation-only；当时下一步是 type-11，
+之后处理 Junimo Kart 分数。在二者关闭并重新做完整任务矩阵前，`quest.advance` 仍保持 PartiallyBlocked、
 RegisteredOnly 且不进入训练白名单。
+
+## 2026-08-10 type-11 不可达兼容状态纠正（EVD-238 已闭合）
+
+实时复核锁定 1.6.15 后确认，`Quest.type_weeding = 11` 只是遗留兼容常量，不是缺失的原版动作族：
+哈希为 `591d29ecf742b2b9e258c271d1e5e55bcfcd9d7dc38c9d64972cd3faaf1b0c6a` 的 66 行
+`Data/Quests` 没有 Weeding 类型，`Quest.getQuestFromId` 没有对应字符串分支，任务源码目录中也没有
+任何把 `questType` 写成 11 的位置。基类所有进度回调默认返回 false，因此为它拼接清杂草动作既不能
+完成原生任务，也会制造不存在的训练标签。
+
+目录新增独立 `native_unreachable` 状态，不把它混入“观察后可自然结算”的 observation-only。
+KnowledgeCompiler 现在每轮扫描 `type_weeding=11` 常量、工厂分支和全部写入点；若未来版本让它可达，
+立即产生 blocking。透明桥仍完整读取任意 live `Quest.questType`；若旧存档或模组注入 type-11，候选层
+返回 `quest_type_11_unreachable_in_vanilla_1_6_15`，不会发明执行器。
+
+任务目录现为 23 bound、1 blocked、3 observation-only、1 native-unreachable。唯一剩余明确阻塞阶段是
+`JKScoreObjective` 的 Junimo Kart 分数；在该阶段完成并重跑任务矩阵前，`quest.advance` 继续保持
+PartiallyBlocked、RegisteredOnly 且不进入训练白名单。

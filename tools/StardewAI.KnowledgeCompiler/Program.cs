@@ -653,6 +653,18 @@ internal static class Program
                     runtimeType,
                     "native decompile contains an objective subclass with no declared action stages"));
             }
+            if (!questActionCoverage.TypeElevenCompatibilityConstantDeclared ||
+                questActionCoverage.TypeElevenFactoryBranchPresent ||
+                questActionCoverage.TypeElevenAssignmentSites.Length > 0)
+            {
+                issues.Add(new(
+                    "blocking",
+                    "quest_type_11_native_unreachable_claim_invalidated",
+                    "weeding_no_subclass",
+                    "constant_declared=" + questActionCoverage.TypeElevenCompatibilityConstantDeclared +
+                    ";factory_branch_present=" + questActionCoverage.TypeElevenFactoryBranchPresent +
+                    ";assignment_sites=" + string.Join(',', questActionCoverage.TypeElevenAssignmentSites)));
+            }
             Write(outputRoot, "quest-action-coverage-matrix.json", new
             {
                 schema_version = "stardewai.quest_action_coverage.v1",
@@ -666,10 +678,14 @@ internal static class Program
                 uncatalogued_special_order_objective_runtime_types = questActionCoverage.UncataloguedSpecialOrderObjectiveRuntimeTypes,
                 catalog_ordinary_types_missing_from_source = questActionCoverage.CatalogOrdinaryTypesMissingFromSource,
                 catalog_special_order_types_missing_from_source = questActionCoverage.CatalogSpecialOrderTypesMissingFromSource,
+                type_11_compatibility_constant_declared = questActionCoverage.TypeElevenCompatibilityConstantDeclared,
+                type_11_factory_branch_present = questActionCoverage.TypeElevenFactoryBranchPresent,
+                type_11_assignment_sites = questActionCoverage.TypeElevenAssignmentSites,
                 stage_count = QuestActionCoverageCatalog.All.Count,
                 bound_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.Bound),
                 blocked_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.Blocked),
                 native_observation_only_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.NativeObservationOnly),
+                native_unreachable_stage_count = QuestActionCoverageCatalog.All.Count(row => row.BindingStatus == QuestActionCoverageCatalog.NativeUnreachable),
                 stages = QuestActionCoverageCatalog.All
             });
 

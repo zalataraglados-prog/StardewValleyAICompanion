@@ -27,12 +27,13 @@ namespace StardewAI.Contracts.Capabilities
         public const string Bound = "bound";
         public const string Blocked = "blocked";
         public const string NativeObservationOnly = "native_observation_only";
+        public const string NativeUnreachable = "native_unreachable";
 
         public static IReadOnlyList<QuestActionCoverageDeclaration> All { get; } =
             new ReadOnlyCollection<QuestActionCoverageDeclaration>(new[]
             {
                 Row("ordinary_quest", "Quest", "basic_no_action", NativeObservationOnly, Array.Empty<string>(), "Quest has no objective-specific native action."),
-                Row("ordinary_quest", "Quest", "weeding_no_subclass", Blocked, Array.Empty<string>(), "Quest type 11 has no objective-specific transparent binding."),
+                Row("ordinary_quest", "Quest", "weeding_no_subclass", NativeUnreachable, Array.Empty<string>(), "Vanilla 1.6.15 retains the type_weeding=11 compatibility constant, but Data/Quests has no such row, Quest.getQuestFromId has no factory branch, and native quest sources never assign questType 11."),
                 Row("ordinary_quest", "CraftingQuest", "craft_item", Bound, new[] { "craft_quest_item" }),
                 Row("ordinary_quest", "ItemDeliveryQuest", "deliver_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),
                 Row("ordinary_quest", "SlayMonsterQuest", "slay_monsters", Bound, new[] { "mining_slay_monsters_plan_envelope" }),
@@ -96,7 +97,8 @@ namespace StardewAI.Contracts.Capabilities
             }
             if (All.Any(row => row.BindingStatus != Bound &&
                     row.BindingStatus != Blocked &&
-                    row.BindingStatus != NativeObservationOnly))
+                    row.BindingStatus != NativeObservationOnly &&
+                    row.BindingStatus != NativeUnreachable))
             {
                 throw new InvalidOperationException("Unknown quest action binding status.");
             }
@@ -104,9 +106,10 @@ namespace StardewAI.Contracts.Capabilities
             {
                 throw new InvalidOperationException("Bound quest action coverage requires candidate kinds.");
             }
-            if (All.Any(row => row.BindingStatus == Blocked && string.IsNullOrWhiteSpace(row.GapReason)))
+            if (All.Any(row => (row.BindingStatus == Blocked || row.BindingStatus == NativeUnreachable) &&
+                    string.IsNullOrWhiteSpace(row.GapReason)))
             {
-                throw new InvalidOperationException("Blocked quest action coverage requires a typed gap reason.");
+                throw new InvalidOperationException("Blocked or unreachable quest action coverage requires a typed reason.");
             }
         }
 

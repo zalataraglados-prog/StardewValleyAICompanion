@@ -1,3 +1,10 @@
+2026-08-10 EVD-238 vanilla type-11 unreachable compatibility-state correction
+- Locked `Data/Quests` payload `591d29ecf742b2b9e258c271d1e5e55bcfcd9d7dc38c9d64972cd3faaf1b0c6a` has 66 rows and no Weeding type. Decompiled `Quest.getQuestFromId` has no factory branch and the native quest source directory has no `questType=11` assignment; only `type_weeding=11` remains.
+- Added a distinct `native_unreachable` catalog status. A legacy/modded live type-11 row fails closed with `quest_type_11_unreachable_in_vanilla_1_6_15`; no clear-weeds candidate or executor was added.
+- KnowledgeCompiler now verifies the constant, factory branch, and assignment sites on every reconciliation. PASS: constant true, factory false, assignment sites empty; 585/585 exports and blocking 0.
+- Quest matrix is 28 stages: 23 bound, 1 blocked, 3 observation-only, and 1 native-unreachable. Junimo Kart is the sole remaining blocked task stage.
+- Focused catalog/injection PASS 6/6; full Core PASS 1619/1619; full Backend PASS 121/121; Release solution build 0 errors with one existing AvoidNetField warning.
+
 2026-08-10 EVD-237 vanilla secret lost-item state-machine correction
 - Locked 1.6.15 `Data/Quests` contains only SecretLostItemQuest 128/129 for `(O)191`; decompiled `Railroad.getFish` starts the necklace catch and creates both quests in one native call, before `OnItemReceived` sets `itemFound`.
 - The catalog now classifies `find_secret_lost_item` as native observation-only instead of an implementation blocker. Recasting after quest creation would be incorrect because `carolinesNecklace` is already pending.
