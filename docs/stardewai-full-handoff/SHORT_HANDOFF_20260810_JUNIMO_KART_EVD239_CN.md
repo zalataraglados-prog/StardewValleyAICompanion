@@ -17,16 +17,17 @@
 ## 仍未完成
 
 - 尚未取得 Junimo Kart Endless 50,000 分的真实运行验收证据。
-- 当前最好真实峰值是 `30,190/50,000`：
-  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260810-224026/`。这不是运行证据，只是控制器基线。
-- 已确认的剩余控制缺口是动态 `FallingBoulder` 等主题障碍预测和高速段精确落点控制；入口、模式选择、原生输入、
-  死亡重试和失败任务进度回写已经贯通。
+- `30,190/50,000` 历史运行加载了未声明的 `JunimoTestClient`，已拒绝作为证据和控制器基线。
+- smoke 已改成每次运行独立的两模组 `SMAPI_MODS_PATH` 白名单。首个干净矩阵是
+  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260811-002951/`，峰值 `10,940/50,000`，仍为 blocked。
+- `Bubble`、现存 `FallingBoulder` 和 spawner 下一颗落石已进入唯一控制器的只读预测；入口、模式选择、原生输入、
+  死亡重试和失败任务进度回写已经贯通。剩余主缺口是高速段精确落点与按主题可重复校准。
 - `executor.play_junimo_kart` 当前只有声明、编译和 Harness 实现，不得登记 runtime/output evidence。
 - `quest.advance` 是 `Declared / StepCompilerDeclared / RegisteredOnly`，仍不在训练 allowlist。
 
 ## 唯一下一步
 
-以 `30,190` 基线为回退点，先补动态主题障碍预测，再补高速段连续轨迹与精确落点控制。每个切片都在 E 盘精确
-`QiChallenge3` 夹具中后台运行，比较峰值、死亡位置、垂直速度和附近动态实体；回退则恢复基线，不把试验代码留成
-第二套控制器。最终必须由自然死亡路径提交至少 50,000 分，并取得同一目标 fresh after-state。只有这些条件全部
-成立，才登记五门证据并重新评估训练准入。
+以 `10,940` 干净两模组运行作为当前可比较检查点，补高速段连续轨迹与精确落点控制。每个切片都在 E 盘精确
+`QiChallenge3` 夹具中后台运行，使用同一白名单并比较峰值、主题、死亡位置、垂直速度和附近动态实体；回退时不把
+试验代码留成第二套控制器。最终必须由自然死亡路径提交至少 50,000 分，并取得同一目标 fresh after-state。只有
+这些条件全部成立，才登记五门证据并重新评估训练准入。

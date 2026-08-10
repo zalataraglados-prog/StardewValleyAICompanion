@@ -507,10 +507,14 @@ EVD-239 尚未完成运行验收：必须在隔离存档中真实进入 Saloon �
 在该证据产生前，`executor.play_junimo_kart` 与 `quest.advance` 均不得新增五门证据或训练准入；完成标志不是
 “目录无 blocked”，而是原生 50,000 分回调、fresh after-state 与可复核运行制品同时成立。
 
-2026-08-11 运行检查点：原生隔离实例的最好峰值为 `30,190/50,000`，对应制品
-`artifacts/runtime-junimo-kart/runtime-junimo-kart-20260810-224026/`。街机入口、Endless 模式、原生跳跃输入、
-死亡重试和失败后的 `JKScoreObjective` 进度输出均已实际贯通；短回归
-`runtime-junimo-kart-20260811-000649` 也确认恢复后的控制器仍能完整启动和收尾。50,000 之前不形成证据。
-下一控制切片只处理两类剩余动态问题：从原生实体集合识别并预测 `FallingBoulder` 等主题障碍，以及用连续轨迹预测
-替代高速段粗粒度落点判断。每次修改必须保留已知最好控制器作为回退基线，并使用同一夹具比较峰值、死亡位置、
-垂直速度和附近动态实体；不得再次引入分数、轨道、碰撞或目标状态写入。
+2026-08-11 运行复核：`runtime-junimo-kart-20260810-224026` 的 `30,190/50,000` 运行缺少每次运行独立的
+`SMAPI_MODS_PATH`，加载了正常 Mods 目录中的 `JunimoTestClient`，违反 `runtime-test-harness.md` 的模组隔离约束。
+该制品降级为受污染诊断样本，不可作为运行证据或控制器基线。Junimo Kart smoke 现复制且只加载
+`StardewAI.TransparentBridge` 与 `StardewAI.RuntimeTestHarness`，并在汇总中记录白名单与实际路径；源码守卫禁止
+重新引入 `JunimoTestClient`。
+
+首个干净两模组矩阵为 `runtime-junimo-kart-20260811-002951`，峰值 `10,940/50,000`，8 次自然死亡与任务进度
+回读完整，结果仍为 blocked。唯一控制器现从原生 `_entities` 读取 `Bubble`、现存 `FallingBoulder` 和
+`FallingBoulderSpawner` 的下一次生成时刻；落石预测复刻 `210 px/s²`、`96 px/s` 上限和剩余轨道反弹序列，
+不写任何游戏字段。下一切片用连续轨迹替代高速段粗粒度落点判断，并在相同两模组环境按主题做可重复比较。
+50,000 之前不形成证据；不得引入分数、轨道、碰撞或目标状态写入。

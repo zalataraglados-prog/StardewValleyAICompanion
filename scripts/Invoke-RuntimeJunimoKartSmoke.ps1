@@ -80,6 +80,16 @@ New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 
+$loadedModAllowlist = @("StardewAI.TransparentBridge", "StardewAI.RuntimeTestHarness")
+$smokeModsPath = Join-Path (Join-Path $RuntimeRoot "smoke-mods") $RunId
+New-Item -ItemType Directory -Force -Path $smokeModsPath | Out-Null
+foreach ($modName in $loadedModAllowlist) {
+    $sourceMod = Join-Path (Join-Path $gameDirectory "Mods") $modName
+    $targetMod = Join-Path $smokeModsPath $modName
+    New-Item -ItemType Directory -Force -Path $targetMod | Out-Null
+    Copy-Item -Path (Join-Path $sourceMod "*") -Destination $targetMod -Recurse -Force
+}
+
 $previousEnvironment = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
     STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
@@ -90,6 +100,7 @@ $previousEnvironment = @{
     STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS = $env:STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
+    SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
 }
 $gameProcess = $null
 try {
@@ -102,6 +113,7 @@ try {
     $env:STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS = $ExecutionTimeoutSeconds.ToString()
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
+    $env:SMAPI_MODS_PATH = $smokeModsPath
 
     $windowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }
     $gameProcess = Start-Process -FilePath $smapiExecutable -WorkingDirectory $gameDirectory -WindowStyle $windowStyle -PassThru
@@ -185,6 +197,8 @@ try {
         play_verification = $play.primitive_verification_status
         objective_after = $observedProgress
         target = 50000
+        loaded_mod_allowlist = $loadedModAllowlist
+        smoke_mods_path = $smokeModsPath
         output_directory = $runDirectory
     }
     Write-Json (Join-Path $runDirectory "summary.json") $summary

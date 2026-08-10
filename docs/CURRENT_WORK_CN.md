@@ -30,10 +30,13 @@
   禁止直接写分数、轨道、碰撞或任务进度。动作分母保持 `320/428/150`，语义动作增至 174 后重新冻结。
 - 唯一紧接任务是 EVD-239 运行验收：在隔离存档中由原生 Endless 模式达到 50,000 分并自然提交，验证精确
   `JKScoreObjective` 前后计数、失败重试和输出记录。通过前不得登记运行证据或加入训练白名单。
-- EVD-239 当前最好真实运行峰值为 `30,190/50,000`，制品位于
-  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260810-224026/`。已验证街机进入、Endless 原生输入、
-  多次死亡重试和目标进度回读；尚未达标的控制缺口收敛为动态 `FallingBoulder` 等主题障碍预测，以及高速段精确
-  落点控制。后续不得用直接改分、改轨道或改任务目标替代这两个控制问题。
+- 2026-08-11 复核发现 `30,190` 历史运行的 smoke 脚本没有设置 `SMAPI_MODS_PATH`，实际还加载了
+  `JunimoTestClient`，因此该制品只保留为受污染诊断样本，不再作为运行验收或回退基线。脚本现使用每次运行独立的
+  两模组白名单，并把白名单写入汇总。首个干净矩阵为
+  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260811-002951/`，峰值 `10,940/50,000`，仍为 blocked。
+- 当前唯一控制器已加入 `Bubble` 和 `FallingBoulder`/下一次 spawner 的只读轨迹预测，复刻落石原生加速度、
+  速度上限和逐轨道反弹顺序；干净矩阵证明这些实体进入运行轨迹。剩余主缺口是高速段精确落点控制，以及在同一
+  两模组环境下按主题进行可重复校准。不得用直接改分、改轨道或改任务目标替代控制问题。
 - 最新运行证据：
   `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-173859/summary.json`。
 

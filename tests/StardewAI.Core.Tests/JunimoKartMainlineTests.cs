@@ -76,6 +76,14 @@ public sealed class JunimoKartMainlineTests
         Assert.DoesNotContain("MineCartScoreField.SetValue", source, StringComparison.Ordinal);
         Assert.DoesNotContain("MineCartPlayerField.SetValue", source, StringComparison.Ordinal);
 
+        var hazards = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JunimoKartHazards.cs"));
+        Assert.Contains("MineCart.FallingBoulder", hazards, StringComparison.Ordinal);
+        Assert.Contains("MineCart.FallingBoulderSpawner", hazards, StringComparison.Ordinal);
+        Assert.Contains("spawner.period - spawner.currentTime", hazards, StringComparison.Ordinal);
+        Assert.Contains("speed + 210f * stepSeconds", hazards, StringComparison.Ordinal);
+        Assert.DoesNotContain("SetValue", hazards, StringComparison.Ordinal);
+
         var interact = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Interact.cs"));
         Assert.Contains("Arcade_Minecart", interact, StringComparison.Ordinal);
@@ -84,6 +92,14 @@ public sealed class JunimoKartMainlineTests
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.DialogueChoice.cs"));
         Assert.Contains("MinecartGame", dialogue, StringComparison.Ordinal);
         Assert.Contains("expected_native_minigame_started", dialogue, StringComparison.Ordinal);
+
+        var smoke = File.ReadAllText(FindRepositoryFile(
+            "scripts", "Invoke-RuntimeJunimoKartSmoke.ps1"));
+        Assert.Contains("SMAPI_MODS_PATH", smoke, StringComparison.Ordinal);
+        Assert.Contains("loaded_mod_allowlist", smoke, StringComparison.Ordinal);
+        Assert.Contains("StardewAI.TransparentBridge", smoke, StringComparison.Ordinal);
+        Assert.Contains("StardewAI.RuntimeTestHarness", smoke, StringComparison.Ordinal);
+        Assert.DoesNotContain("JunimoTestClient", smoke, StringComparison.Ordinal);
     }
 
     private static string StateJson(bool hasSkullKey) => """

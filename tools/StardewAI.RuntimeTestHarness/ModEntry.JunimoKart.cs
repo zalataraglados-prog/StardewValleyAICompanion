@@ -63,6 +63,7 @@ public sealed partial class ModEntry
         public float LastLiveY { get; set; }
         public float LastLiveVelocityY { get; set; }
         public int LastLiveBubbleCount { get; set; }
+        public int LastLiveFallingBoulderCount { get; set; }
         public List<string> AttemptTrace { get; } = new();
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 180000;
@@ -212,6 +213,12 @@ public sealed partial class ModEntry
         var firstGap = float.MaxValue;
         var firstObstacle = float.MaxValue;
         var firstBubble = FindJunimoKartBubbleHazardDistance(active.Game, player, lookahead);
+        var fallingBoulders = GetJunimoKartFallingBoulderProjections(active.Game);
+        var firstFallingBoulder = FindJunimoKartFallingBoulderHazardDistance(
+            active.Game,
+            player,
+            lookahead,
+            fallingBoulders);
         var pathY = playerY;
 
         for (var offset = 8f; offset <= lookahead; offset += 4f)
@@ -243,7 +250,9 @@ public sealed partial class ModEntry
             }
         }
 
-        var hazardDistance = Math.Min(firstBubble, Math.Min(firstObstacle, firstGap));
+        var hazardDistance = Math.Min(
+            Math.Min(firstBubble, firstFallingBoulder),
+            Math.Min(firstObstacle, firstGap));
         if (hazardDistance > triggerDistance)
         {
             return false;
@@ -282,6 +291,7 @@ public sealed partial class ModEntry
                     bounds.Height);
             })
             .ToArray();
+        var fallingBoulders = GetJunimoKartFallingBoulderProjections(game);
         for (var candidateHoldTicks = 2; candidateHoldTicks <= 90; candidateHoldTicks += 2)
         {
             var x = player.position.X;
@@ -329,6 +339,14 @@ public sealed partial class ModEntry
                 velocityY = Math.Min(velocityY, player.GetMaxFallSpeed());
 
                 if (JunimoKartSimulatedBubbleCollision(bubbles, tick * tickSeconds, x, y))
+                {
+                    break;
+                }
+                if (JunimoKartSimulatedFallingBoulderCollision(
+                        fallingBoulders,
+                        tick * tickSeconds,
+                        x,
+                        y))
                 {
                     break;
                 }
@@ -495,7 +513,8 @@ public sealed partial class ModEntry
                 ",x=" + Math.Round(active.LastLiveX, 1).ToString(CultureInfo.InvariantCulture) +
                 ",y=" + Math.Round(active.LastLiveY, 1).ToString(CultureInfo.InvariantCulture) +
                 ",vy=" + Math.Round(active.LastLiveVelocityY, 1).ToString(CultureInfo.InvariantCulture) +
-                ",bubbles=" + active.LastLiveBubbleCount);
+                ",bubbles=" + active.LastLiveBubbleCount +
+                ",falling_boulders=" + active.LastLiveFallingBoulderCount);
         }
         else if (player is not null && player.enabled)
         {
@@ -504,6 +523,7 @@ public sealed partial class ModEntry
             active.LastLiveY = player.position.Y;
             active.LastLiveVelocityY = player.velocity.Y;
             active.LastLiveBubbleCount = GetJunimoKartBubbles(active.Game).Count();
+            active.LastLiveFallingBoulderCount = GetJunimoKartFallingBoulders(active.Game).Count();
         }
         if (score < active.LastScore)
         {
