@@ -84,6 +84,16 @@ public sealed class JunimoKartMainlineTests
         Assert.Contains("speed + 210f * stepSeconds", hazards, StringComparison.Ordinal);
         Assert.DoesNotContain("SetValue", hazards, StringComparison.Ordinal);
 
+        var trajectory = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JunimoKartTrajectory.cs"));
+        Assert.Contains("_speedMultiplier", trajectory, StringComparison.Ordinal);
+        Assert.Contains("_jumpMomentumThreshhold", trajectory, StringComparison.Ordinal);
+        Assert.Contains("new[] { 0f, 4f, -4f }", trajectory, StringComparison.Ordinal);
+        Assert.Contains("MeasureJunimoKartForwardRunway", trajectory, StringComparison.Ordinal);
+        Assert.Contains("AdvanceJunimoKartGroundedSpeedMultiplier", trajectory, StringComparison.Ordinal);
+        Assert.Contains("gravity = 0f", trajectory, StringComparison.Ordinal);
+        Assert.DoesNotContain("SetValue", trajectory, StringComparison.Ordinal);
+
         var interact = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Interact.cs"));
         Assert.Contains("Arcade_Minecart", interact, StringComparison.Ordinal);

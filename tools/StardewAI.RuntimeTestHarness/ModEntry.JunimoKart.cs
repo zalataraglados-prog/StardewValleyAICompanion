@@ -64,7 +64,11 @@ public sealed partial class ModEntry
         public float LastLiveVelocityY { get; set; }
         public int LastLiveBubbleCount { get; set; }
         public int LastLiveFallingBoulderCount { get; set; }
+        public bool LastObservedGrounded { get; set; } = true;
+        public bool AwaitingPlannedLanding { get; set; }
+        public JunimoKartJumpPlan LastJumpPlan { get; set; }
         public List<string> AttemptTrace { get; } = new();
+        public List<string> LandingTrace { get; } = new();
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 180000;
     }
@@ -259,118 +263,17 @@ public sealed partial class ModEntry
         }
 
         var minimumLandingX = playerX + Math.Max(24f, hazardDistance + 18f);
-        if (!TryPlanJunimoKartJump(active.Game, player, minimumLandingX, out var holdTicks))
+        if (!TryPlanJunimoKartJump(active.Game, player, minimumLandingX, out var jumpPlan))
         {
             active.PlannerFallbacks++;
-            holdTicks = 90;
+            active.AwaitingPlannedLanding = false;
+            active.JumpHoldTicksRemaining = 89;
+            return true;
         }
-        active.JumpHoldTicksRemaining = Math.Max(0, holdTicks - 1);
+        active.LastJumpPlan = jumpPlan;
+        active.AwaitingPlannedLanding = true;
+        active.JumpHoldTicksRemaining = Math.Max(0, jumpPlan.HoldTicks - 1);
         return true;
-    }
-
-    private static bool TryPlanJunimoKartJump(
-        MineCart game,
-        MineCart.PlayerMineCartCharacter player,
-        float minimumLandingX,
-        out int holdTicks)
-    {
-        const float tickSeconds = 1f / 60f;
-        var horizontalSpeed = Math.Max(80f, Math.Abs(player.velocity.X));
-        var bubbles = GetJunimoKartBubbles(game)
-            .Select(bubble =>
-            {
-                var bounds = bubble.GetBounds();
-                return new JunimoKartBubbleProjection(
-                    bubble.position.X,
-                    bubble.position.Y,
-                    bubble._normalizedVelocity.X * bubble.moveSpeed,
-                    bubble._normalizedVelocity.Y * bubble.moveSpeed,
-                    bounds.X - (int)bubble.position.X,
-                    bounds.Y - (int)bubble.position.Y,
-                    bounds.Width,
-                    bounds.Height);
-            })
-            .ToArray();
-        var fallingBoulders = GetJunimoKartFallingBoulderProjections(game);
-        for (var candidateHoldTicks = 2; candidateHoldTicks <= 90; candidateHoldTicks += 2)
-        {
-            var x = player.position.X;
-            var y = player.position.Y;
-            var velocityY = -player.jumpStrength;
-            var gravity = 0f;
-            var jumpFloatAge = 0f;
-            var jumping = true;
-            for (var tick = 1; tick <= 240; tick++)
-            {
-                if (jumping && tick > candidateHoldTicks)
-                {
-                    jumping = false;
-                    gravity = 0f;
-                    velocityY = Math.Max(velocityY, -30f);
-                }
-
-                if (jumping)
-                {
-                    jumpFloatAge += tickSeconds;
-                    if (jumpFloatAge < player.jumpFloatDuration)
-                    {
-                        gravity = 0f;
-                        velocityY = -player.jumpStrength *
-                            (jumpFloatAge / player.jumpFloatDuration);
-                    }
-                    else if (velocityY <= -60f)
-                    {
-                        gravity += tickSeconds * player.jumpGravity;
-                    }
-                    else
-                    {
-                        velocityY = -30f;
-                        jumping = false;
-                    }
-                }
-                else
-                {
-                    gravity += tickSeconds * player.fallGravity;
-                }
-
-                velocityY += tickSeconds * gravity;
-                x += tickSeconds * horizontalSpeed;
-                y += tickSeconds * velocityY;
-                velocityY = Math.Min(velocityY, player.GetMaxFallSpeed());
-
-                if (JunimoKartSimulatedBubbleCollision(bubbles, tick * tickSeconds, x, y))
-                {
-                    break;
-                }
-                if (JunimoKartSimulatedFallingBoulderCollision(
-                        fallingBoulders,
-                        tick * tickSeconds,
-                        x,
-                        y))
-                {
-                    break;
-                }
-                if (JunimoKartSimulatedObstacleCollision(game, x, y))
-                {
-                    break;
-                }
-                if (velocityY < 0f || x < minimumLandingX)
-                {
-                    continue;
-                }
-
-                var tracks = game.GetTracksForXPosition(x);
-                if (tracks is not null && tracks.Any(track =>
-                        track.CanLandHere(new Microsoft.Xna.Framework.Vector2(x, y))))
-                {
-                    holdTicks = candidateHoldTicks;
-                    return true;
-                }
-            }
-        }
-
-        holdTicks = 0;
-        return false;
     }
 
     private static float FindJunimoKartBubbleHazardDistance(
@@ -506,6 +409,8 @@ public sealed partial class ModEntry
             !active.DeathObserved)
         {
             active.DeathObserved = true;
+            active.AwaitingPlannedLanding = false;
+            active.LastObservedGrounded = true;
             active.AttemptTrace.Add(
                 "attempt=" + active.Attempts +
                 ",score=" + score +
@@ -518,6 +423,19 @@ public sealed partial class ModEntry
         }
         else if (player is not null && player.enabled)
         {
+            var grounded = player.IsGrounded();
+            if (grounded && !active.LastObservedGrounded && active.AwaitingPlannedLanding)
+            {
+                active.LandingTrace.Add(
+                    "attempt=" + active.Attempts +
+                    ",predicted_x=" + Math.Round(active.LastJumpPlan.LandingX, 1).ToString(CultureInfo.InvariantCulture) +
+                    ",actual_x=" + Math.Round(player.position.X, 1).ToString(CultureInfo.InvariantCulture) +
+                    ",error=" + Math.Round(player.position.X - active.LastJumpPlan.LandingX, 1).ToString(CultureInfo.InvariantCulture) +
+                    ",runway=" + Math.Round(active.LastJumpPlan.ForwardRunway, 1).ToString(CultureInfo.InvariantCulture) +
+                    ",hold=" + active.LastJumpPlan.HoldTicks);
+                active.AwaitingPlannedLanding = false;
+            }
+            active.LastObservedGrounded = grounded;
             active.DeathObserved = false;
             active.LastLiveX = player.position.X;
             active.LastLiveY = player.position.Y;
@@ -585,7 +503,8 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "minigame.junimo_kart.peak_score", Before = "0", After = active.PeakScore.ToString(CultureInfo.InvariantCulture) },
                 new SimulatedFactChange { Path = "minigame.junimo_kart.attempts", Before = "0", After = active.Attempts.ToString(CultureInfo.InvariantCulture) },
                 new SimulatedFactChange { Path = "minigame.junimo_kart.input_transitions", Before = "0", After = active.InputTransitions.ToString(CultureInfo.InvariantCulture) },
-                new SimulatedFactChange { Path = "minigame.junimo_kart.attempt_trace", Before = "", After = string.Join(";", active.AttemptTrace) }
+                new SimulatedFactChange { Path = "minigame.junimo_kart.attempt_trace", Before = "", After = string.Join(";", active.AttemptTrace) },
+                new SimulatedFactChange { Path = "minigame.junimo_kart.landing_trace", Before = "", After = string.Join(";", active.LandingTrace) }
             }
         });
     }
@@ -611,7 +530,8 @@ public sealed partial class ModEntry
                 ";planner_fallbacks=" + active.PlannerFallbacks +
                 ";input_transitions=" + active.InputTransitions +
                 ";death_submissions=" + active.DeathSubmissions +
-                ";attempt_trace=" + string.Join("|", active.AttemptTrace),
+                ";attempt_trace=" + string.Join("|", active.AttemptTrace) +
+                ";landing_trace=" + string.Join("|", active.LandingTrace),
             reasons);
         result.QuestProgressBefore = active.ProgressBefore;
         result.QuestProgressAfter = active.Objective.GetCount();

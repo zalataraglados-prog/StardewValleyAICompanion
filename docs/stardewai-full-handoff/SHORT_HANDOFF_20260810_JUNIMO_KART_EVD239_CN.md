@@ -21,13 +21,15 @@
 - smoke 已改成每次运行独立的两模组 `SMAPI_MODS_PATH` 白名单。首个干净矩阵是
   `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260811-002951/`，峰值 `10,940/50,000`，仍为 blocked。
 - `Bubble`、现存 `FallingBoulder` 和 spawner 下一颗落石已进入唯一控制器的只读预测；入口、模式选择、原生输入、
-  死亡重试和失败任务进度回写已经贯通。剩余主缺口是高速段精确落点与按主题可重复校准。
+  死亡重试和失败任务进度回写已经贯通。
+- 连续轨迹与精确落点已校准：`runtime-junimo-kart-20260811-011601` 共观察 57 次落地，预测 X 与实际 X 的
+  最大绝对误差为 `0px`。本轮峰值 `9,320`，planner fallback 为 8；干净最高检查点仍是 `10,940`。
 - `executor.play_junimo_kart` 当前只有声明、编译和 Harness 实现，不得登记 runtime/output evidence。
 - `quest.advance` 是 `Declared / StepCompilerDeclared / RegisteredOnly`，仍不在训练 allowlist。
 
 ## 唯一下一步
 
-以 `10,940` 干净两模组运行作为当前可比较检查点，补高速段连续轨迹与精确落点控制。每个切片都在 E 盘精确
-`QiChallenge3` 夹具中后台运行，使用同一白名单并比较峰值、主题、死亡位置、垂直速度和附近动态实体；回退时不把
-试验代码留成第二套控制器。最终必须由自然死亡路径提交至少 50,000 分，并取得同一目标 fresh after-state。只有
-这些条件全部成立，才登记五门证据并重新评估训练准入。
+保持已实现的零误差运动方程，从原生轨道求 gap 后下一段的完整可行落地区间，替代固定 `hazard + 18px` 下界；
+把无物理解、动态障碍冲突和窗口过窄分别记录，消除当前 8 次 fallback。每个切片都在 E 盘精确 `QiChallenge3`
+夹具中后台运行，使用同一两模组白名单并比较峰值、主题、死亡位置、垂直速度和动态实体。最终必须由自然死亡路径
+提交至少 50,000 分，并取得同一目标 fresh after-state，才登记五门证据并重新评估训练准入。
