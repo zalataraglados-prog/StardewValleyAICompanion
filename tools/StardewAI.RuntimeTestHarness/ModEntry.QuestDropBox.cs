@@ -221,6 +221,20 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (active.InventoryClickIssued && Game1.activeClickableMenu is null)
+        {
+            active.SettlementTicks++;
+            if (QuestDropBoxPostconditionsSatisfied(active))
+            {
+                CompleteQuestDropBoxDonation(active);
+            }
+            else if (active.SettlementTicks > 240)
+            {
+                CompleteQuestDropBoxBlocked(active, "quest_drop_box_native_settlement_timeout_or_mismatch");
+            }
+            return;
+        }
+
         if (Game1.activeClickableMenu is not QuestContainerMenu menu)
         {
             active.OpenWaitTicks++;
@@ -277,11 +291,7 @@ public sealed partial class ModEntry
         }
 
         active.SettlementTicks++;
-        if (Game1.activeClickableMenu is null &&
-            DropBoxItemStack(active) == active.StackBefore - active.ExpectedAcceptedCount &&
-            active.Objective.GetCount() > active.ProgressBefore &&
-            (active.Objective.GetCount() < active.Objective.GetMaxCount() ||
-             active.Objective.confirmed.Value))
+        if (Game1.activeClickableMenu is null && QuestDropBoxPostconditionsSatisfied(active))
         {
             CompleteQuestDropBoxDonation(active);
         }
@@ -289,6 +299,14 @@ public sealed partial class ModEntry
         {
             CompleteQuestDropBoxBlocked(active, "quest_drop_box_native_settlement_timeout_or_mismatch");
         }
+    }
+
+    private static bool QuestDropBoxPostconditionsSatisfied(ActiveQuestDropBoxDonation active)
+    {
+        return DropBoxItemStack(active) == active.StackBefore - active.ExpectedAcceptedCount &&
+            active.Objective.GetCount() > active.ProgressBefore &&
+            (active.Objective.GetCount() < active.Objective.GetMaxCount() ||
+             active.Objective.confirmed.Value);
     }
 
     private void CompleteQuestDropBoxDonation(ActiveQuestDropBoxDonation active)
@@ -308,7 +326,7 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "quest_drop_box_donate",
-            PrimitiveVerificationStatus = "verified_native_QuestContainerMenu_lifecycle",
+            PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[]
             {
                 "GameLocation.checkAction_DropBox_handled",

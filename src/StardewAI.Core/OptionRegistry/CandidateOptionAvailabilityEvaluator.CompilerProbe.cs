@@ -151,7 +151,7 @@ namespace StardewAI.Core.OptionRegistry
 
             if (optionId == "quest.advance")
             {
-                return "quest_requires_typed_daily_candidate_binding";
+                return "quest_high_level_direct_executor_disabled_use_typed_daily_plan_compiler";
             }
 
             if (optionId == "executor.harvest_crop")

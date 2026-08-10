@@ -663,6 +663,12 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupCollectionTaskFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_quest_terminal_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupQuestTerminalFixture(pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_green_rain_resource_clump")
             {
                 pending.Completion.SetResult(

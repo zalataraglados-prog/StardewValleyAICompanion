@@ -51,8 +51,8 @@ completion methods with `probe:false` and does not write quest counters directly
 | ordinary lost/secret-lost item return | existing NPC route plus native report terminal |
 | ordinary slay quest | rolling ordinary-mine search plus exact-name native mining combat |
 | ordinary item-harvest quest | current mature `Grab` crop whose qualified item ID or category matches the native target |
-| ordinary resource-collection quest | exact current spawned-object, current-location debris, or ready-machine receipt; exact clearable wood/stone, current-location bush, or ginger source; or rolling current-mine resource source/debris receipt |
-| special-order `CollectObjective` | current mature `Grab` crop, current-location debris, or ready machine output as a matching native receipt; current-location bush or ginger as an exact context-tag-matched source-only step |
+| ordinary resource-collection quest | exact current spawned-object, current-location debris, or ready-machine receipt; clearable wood/stone, bush, ginger, scythe crop, giant crop, green-rain clump, fishing, deterministic machine load, or rolling mine resource source step |
+| special-order `CollectObjective` | matching mature crop, debris, or ready machine output as a native receipt; bush, ginger, scythe crop, giant crop, green-rain clump, fishing, deterministic machine load, or monster-drop mining as a context-tag-matched source step |
 | special-order `DeliverObjective` | context-tag-matched inventory item plus native NPC delivery |
 | special-order `DonateObjective` | exact `DropBox <box_id>` map Action, adjacent stand tile, and native `QuestContainerMenu` insertion/confirmation |
 | special-order `FishObjective` | existing fishing attempt whose projected native item context tags match the objective tag grammar |
@@ -109,11 +109,17 @@ item before execution, and verify the ordinary quest or special-order count only
 native machine collection updates the inventory.
 Current-location debris follows the same receipt rule and carries the live item's native
 context tags. For ordinary resource quests and special-order collect objectives, a
-matching bush or ginger crop is source-only: native shake or Hoe use produces the item,
-and a fresh snapshot must bind the exact debris before predicted receipt credit. The
-runtime request carries the source role separately, rechecks the live special-order
-identity and native item tags, and records any post-action count increase only as an
-observed natural auto-pickup rather than a promised source effect.
+matching bush, ginger crop, scythe crop, giant crop, green-rain clump, fishing attempt,
+deterministic machine load, or monster fight is source-only unless the native action
+itself delivers the item. A fresh snapshot must bind the resulting exact receipt before
+predicted task credit. The runtime request carries the source role separately, rechecks
+live task identity and native item/tag evidence, and records any post-action count
+increase only as an observed native receipt rather than a promised source effect.
+
+The DailyPlan compiler allowlist for `quest.advance` is derived directly from
+`QuestActionCoverageCatalog.BoundCandidateKinds`. This prevents the generated quest
+matrix, the capability registry, and the executable candidate kinds from drifting. A
+candidate whose kind is not owned by the option is rejected at the DailyPlan boundary.
 
 Drop-box candidates use the resolved native drop-box location and do not treat
 `dropBoxTileLocation` as the interaction tile. That field only positions the quest
@@ -132,16 +138,12 @@ contain 21 bound, 5 blocked, and 2 native observation-only stages.
 
 The following objective bindings remain fail-closed:
 
-- ordinary craft, construction, secret-item acquisition, accept,
-  and type-11 weeding stages;
+- ordinary craft, construction, secret-item acquisition, and type-11 weeding stages;
 - Junimo Kart score objectives;
-- acquisition families not yet attached to the bounded collect stages, including
-  scythe-created crop debris, fishing trash, giant crops, monster drops, resource
-  clumps, and modded sources;
+- modded or otherwise uncatalogued acquisition sources;
 - native color-tag matching for preserved `ColoredObject` inputs. The game checks
   base context tags of the preserved parent, which is not yet projected on inventory
-  rows;
-- runtime calibration of the NPC and drop-box quest terminals in an isolated save.
+  rows.
 
 The fallback `quest_candidate` and `special_order_candidate` kinds now mean
 objective-specific binding is absent. They are not blocked by the obsolete blanket
@@ -149,11 +151,21 @@ objective-specific binding is absent. They are not blocked by the obsolete blank
 
 ## Verification
 
-- focused resource/collect filter: 8 passed;
-- full regression: Core 1,315 passed and Backend 95 passed;
+- full regression: Core 1,601 passed and Backend 119 passed;
 - knowledge compiler native scan: 12 ordinary types, 9 objective types, zero catalog
   differences, 28 stage rows with 21 bound, 5 blocked, and 2 observation-only;
-- the full knowledge build retains two pre-existing Grandpa method identity blockers,
-  unrelated to the quest type scan;
-- serial full solution Release rebuild: zero errors and seven existing warnings emitted;
-- no live game mutation test was run for this slice.
+- full knowledge build: 585/585 exports and zero blocking rows;
+- capability reconciliation: 103 compiler-bound options, while five-gate closure stays
+  at 39 and the training allowlist stays at 26;
+- hidden/silent isolated runtime matrix PASS 2/2 at
+  `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-113150/summary.json`;
+- ordinary item delivery compiled through `quest.advance` to
+  `executor.quest_npc_interact`, completed through native `checkAction`, and wrote one
+  verified training row;
+- Gunther donation compiled through `quest.advance` to
+  `executor.quest_drop_box_donate`, completed the native `QuestContainerMenu`
+  lifecycle, advanced `DonateObjective` from 0 to 1, and wrote one verified training
+  row;
+- native-menu verification statuses are canonical `verified`; lifecycle detail remains
+  in verification reasons so LiveTrainingLoop does not discard valid museum, community
+  center, or quest drop-box rows.

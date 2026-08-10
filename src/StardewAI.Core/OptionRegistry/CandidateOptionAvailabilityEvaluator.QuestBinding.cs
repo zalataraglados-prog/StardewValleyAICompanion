@@ -545,7 +545,25 @@ namespace StardewAI.Core.OptionRegistry
             var kind = social.Kind == "social_talk_current"
                 ? "quest_npc_interaction"
                 : social.Kind;
-            return AttachQuest(CloneCandidate(social, kind: kind), quest, extra);
+            var terminal = social;
+            if (interactionKind == "offer_item" && social.Kind == "social_talk_current")
+            {
+                var terminalBlockReasons = social.BlockReasons
+                    .Where(reason => !string.Equals(
+                        reason,
+                        "social_talk_active_object_must_be_cleared_first",
+                        StringComparison.Ordinal))
+                    .ToArray();
+                terminal = CloneCandidate(
+                    social,
+                    available: terminalBlockReasons.Length == 0,
+                    availabilityClass: terminalBlockReasons.Length == 0
+                        ? "current_state_complete"
+                        : "current_state_blocked_with_diagnostics",
+                    blockReasons: terminalBlockReasons);
+            }
+
+            return AttachQuest(CloneCandidate(terminal, kind: kind), quest, extra);
         }
 
         private IEnumerable<EventCandidate> BindSpecialOrderShippingCandidates(
@@ -960,13 +978,16 @@ namespace StardewAI.Core.OptionRegistry
             string? candidateId = null,
             string? kind = null,
             string? expectedEffect = null,
-            SmallModelActionParameter[]? parameters = null)
+            SmallModelActionParameter[]? parameters = null,
+            bool? available = null,
+            string? availabilityClass = null,
+            string[]? blockReasons = null)
         {
             return new EventCandidate
             {
                 CandidateId = candidateId ?? source.CandidateId,
                 Kind = kind ?? source.Kind,
-                Available = source.Available,
+                Available = available ?? source.Available,
                 LocationId = source.LocationId,
                 TileX = source.TileX,
                 TileY = source.TileY,
@@ -981,7 +1002,7 @@ namespace StardewAI.Core.OptionRegistry
                 TotalValue = source.TotalValue,
                 EstimatedTicks = source.EstimatedTicks,
                 EnergyCost = source.EnergyCost,
-                AvailabilityClass = source.AvailabilityClass,
+                AvailabilityClass = availabilityClass ?? source.AvailabilityClass,
                 AllowedNow = source.AllowedNow,
                 AllowedToday = source.AllowedToday,
                 NextOpenTime = source.NextOpenTime,
@@ -989,7 +1010,7 @@ namespace StardewAI.Core.OptionRegistry
                 ClosesAt = source.ClosesAt,
                 WaitCost = source.WaitCost,
                 GateReasons = source.GateReasons,
-                BlockReasons = source.BlockReasons,
+                BlockReasons = blockReasons ?? source.BlockReasons,
                 Parameters = parameters ?? source.Parameters,
                 FullShipmentKnown = source.FullShipmentKnown,
                 FullShipmentEligible = source.FullShipmentEligible,

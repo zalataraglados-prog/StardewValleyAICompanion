@@ -379,3 +379,36 @@ E 盘隐藏静默矩阵已通过三条正例：普通任务的制作路径
 变化，并写入恰好 1 条训练特征。EVD-189 支持清障原语本身；清障后继续跨图仍必须由下一张新快照重新候选，
 本轮没有伪造组合运行负例。
 最终回归 Core 1530/1530、Backend 114/114 通过；整套 Release 构建 0 错误、5 个既有警告。
+
+## 2026-08-10 `quest.advance` 权威目录与 DailyPlan 编译链对齐
+
+`quest.advance` 的已绑定任务阶段现在由 `QuestActionCoverageCatalog` 直接提供 DailyPlan 候选 kind
+白名单，不再维护另一份容易漂移的手写注册表。锁定的 1.6.15 反编译扫描仍得到 12 种普通任务类型、
+9 种特别订单目标类型、28 个阶段，其中 21 个已绑定、5 个明确阻塞、2 个仅原生观察，未发现未登记类型。
+本轮修正了矿层目标和出货目标的真实候选名称，并补回已实现但旧目录遗漏的巨型作物、绿雨资源团块、
+钓鱼、机器投料和怪物掉落等收集来源。DailyPlan 入口会拒绝不属于 `quest.advance` 目录的候选 kind，
+防止跨领域动作被任务选项误编译。
+
+当前权威对账为 104 registered / 171 semantic / 103 compiler-bound / 39 five-gate / 26 allowlist /
+0 Product Executor，585/585 exports，blocking 0。`quest.advance` 只从 `Unbound` 提升为
+`StepCompilerDeclared`；候选状态仍为 `PartiallyBlocked`，运行状态仍为 `RegisteredOnly`，没有进入训练
+白名单。Core 1601/1601、Backend 119/119 通过。本切片未启动游戏，下一步是分别用隔离存档闭合
+`executor.quest_npc_interact` 与 `executor.quest_drop_box_donate` 的原生运行、结果校验和训练行证据；
+之后才处理 5 个明确阻塞阶段，不能把部分任务链外推为完整任务系统。
+
+## 2026-08-10 任务原生终端运行闭环（EVD-233 已闭合）
+
+`quest.advance` 的普通物品交付与特别订单投递箱两类终端现已通过隐藏、静音、E 盘隔离存档矩阵。普通任务由
+精确任务候选编译为既有 `executor.quest_npc_interact`，通过原生 `checkAction` 给 Robin 交付物品并观察任务消失；
+Gunther 特别订单由精确 `DonateObjective` 候选编译为既有 `executor.quest_drop_box_donate`，通过地图原生
+`DropBox GuntherBox`、订单互斥锁、`QuestContainerMenu` 背包点击与确认生命周期把进度从 `0` 增至 `1`。
+两条链均完成 DailyPlan、动作队列、原生执行、结果回读和各一条训练特征落盘，没有直接写任务计数。
+
+运行矩阵同时修复三项真实闭环缺陷：交付任务错误继承普通交谈的“手持物品阻塞”；投递物品后原生菜单自动关闭
+却被状态机误报失败；投递箱、博物馆与社区中心三个原生菜单执行器使用 `verified_native_*` 非标准状态，导致
+LiveTrainingLoop 丢弃实际成功样本。现统一使用标准 `verified`，原生生命周期细节保留在验证原因中。
+
+当前任务目录仍为 28 阶段、21 已绑定、5 明确阻塞、2 仅观察，`quest.advance` 仍保持 PartiallyBlocked、
+RegisteredOnly 且不进入训练白名单。下一步依次关闭 5 个明确阻塞阶段：普通制作、建造、秘密物品取得、type-11
+除草和 Junimo Kart 分数；同时补齐 preserved `ColoredObject` 父物品颜色标签透明投影。只有目录声明范围、编译、
+运行和输出反馈全部闭合后，才能重新评估 `quest.advance` 的训练准入。

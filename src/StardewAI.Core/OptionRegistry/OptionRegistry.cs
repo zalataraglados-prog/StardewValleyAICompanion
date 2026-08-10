@@ -175,12 +175,12 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "exact native partnership branch and relationship item verified", "native social executor handoff envelope produced" },
                 new[] { "explicit_player_confirmation_required", "block_unavailable_required_state", "block_rejected_native_partnership_branch", "block_unverified_relationship_item" }));
 
-            Register(Option("quest.advance", "quest", "Advance quest preview",
+            Register(Option("quest.advance", "quest", "Advance one transparent quest objective stage",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
                 TrainingRoles.StrategyValue,
                 new[] { "quests.active_quests", "quests.special_orders", "quests.completed_special_orders", "quests.accepted_special_order_types", "quests.mail_received", "player.inventory", "player.location_id", "time.time", "world_progress.community_center", "world_progress.achievements" },
-                new[] { "quest candidate selected", "quest compiler envelope produced with live evidence" },
+                new[] { "typed quest candidate selected", "bound objective stage compiled through the daily action queue" },
                 new[] { "block_unavailable_required_state", "block_state_hash_mismatch", "block_unbound_quest_objective_kind" }));
 
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",

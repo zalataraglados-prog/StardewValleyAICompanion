@@ -278,6 +278,9 @@ public sealed class QuestTypedExecutionTests
         Assert.Contains("Game1.activeClickableMenu is not QuestContainerMenu menu", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveLeftClick(component.bounds.Center.X, component.bounds.Center.Y)", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveLeftClick(menu.okButton.bounds.Center.X, menu.okButton.bounds.Center.Y)", source, StringComparison.Ordinal);
+        Assert.Contains("active.InventoryClickIssued && Game1.activeClickableMenu is null", source, StringComparison.Ordinal);
+        Assert.Contains("QuestDropBoxPostconditionsSatisfied(active)", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("PrimitiveVerificationStatus = \"verified_", source, StringComparison.Ordinal);
         Assert.DoesNotContain("objective.currentCount.Value =", source, StringComparison.Ordinal);
         Assert.DoesNotContain("order.donatedItems.Add", source, StringComparison.Ordinal);
     }
@@ -297,6 +300,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         {
           "player": {
             "location_id": {"value":"ScienceHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "active_object_qualified_id": {"value":"(O)388","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "inventory": {"value":[{"slot_index":2,"item_id":"388","qualified_item_id":"(O)388","stack":25,"is_empty":false,"context_tags":["item_wood"]}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "quests": {

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using StardewAI.Contracts.Capabilities;
+using StardewAI.Core.Training;
 using Xunit;
 
 namespace StardewAI.Core.Tests;
@@ -57,5 +58,19 @@ public sealed class QuestActionCoverageCatalogTests
             row => string.IsNullOrWhiteSpace(row.RuntimeType) ||
                 string.IsNullOrWhiteSpace(row.ActionStage) ||
                 string.IsNullOrWhiteSpace(row.Evidence));
+    }
+
+    [Fact]
+    public void BoundCatalogKindsExactlyMatchQuestDailyPlanCompilerDeclaration()
+    {
+        Assert.True(DailyPlanCompiler.HasOptionCompiler("quest.advance"));
+        Assert.Equal(
+            QuestActionCoverageCatalog.BoundCandidateKinds,
+            DailyPlanCompiler.OptionCompilerCandidateKinds("quest.advance")
+                .OrderBy(value => value, StringComparer.Ordinal));
+        Assert.Contains("mining_reach_depth_plan_envelope", QuestActionCoverageCatalog.BoundCandidateKinds);
+        Assert.Contains("ship_inventory_item_to_bin", QuestActionCoverageCatalog.BoundCandidateKinds);
+        Assert.DoesNotContain("reach_mine_depth", QuestActionCoverageCatalog.BoundCandidateKinds);
+        Assert.DoesNotContain("ship_inventory_item", QuestActionCoverageCatalog.BoundCandidateKinds);
     }
 }

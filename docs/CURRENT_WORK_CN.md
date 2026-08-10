@@ -1,6 +1,22 @@
 # StardewAI 当前工作
 
-更新时间：2026-08-02
+更新时间：2026-08-10
+
+## 当前权威检查点（优先于下方历史记录）
+
+- 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
+- 动作对账当前为 `104 registered / 171 semantic / 103 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
+- `quest.advance` 的 28 个目录阶段为 `21 bound / 5 blocked / 2 observation-only`；反编译扫描为
+  `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
+- EVD-233 已在 E 盘隐藏静音隔离矩阵完成普通物品交付和特别订单投递箱 `2/2` 原生闭环；两条链均从
+  `quest.advance` 经 DailyPlan、既有动作队列和原生执行器写入 verified 训练行。
+- `quest.advance` 仍为 `PartiallyBlocked / StepCompilerDeclared / RegisteredOnly`，没有进入训练白名单；
+  不得把两个终端成功外推为完整任务系统完成。
+- 唯一紧接任务是按权威目录处理 5 个明确阻塞阶段，并先补 preserved `ColoredObject` 父物品颜色标签投影：
+  普通制作、建造、秘密物品取得、type-11 除草、Junimo Kart 分数。每个阶段仍按透明读取、候选、DailyPlan、
+  唯一既有或新增原语、原生运行反馈逐项闭合。
+- 最新运行证据：
+  `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-113150/summary.json`。
 
 ## 当前阶段
 

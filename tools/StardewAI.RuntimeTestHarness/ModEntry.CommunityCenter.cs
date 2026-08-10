@@ -529,7 +529,7 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "donate_community_center_item",
-            PrimitiveVerificationStatus = "verified_native_junimo_note_menu_lifecycle",
+            PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[]
             {
                 "CommunityCenter.checkBundle_completed",

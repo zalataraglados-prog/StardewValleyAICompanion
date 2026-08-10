@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 
@@ -16,6 +17,7 @@ namespace StardewAI.Core.Training
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
                 ["joja.advance_development"] = new[] { "purchase_joja_membership", "purchase_joja_project" },
+                ["quest.advance"] = QuestActionCoverageCatalog.BoundCandidateKinds.ToArray(),
                 ["farm.maintain_crops"] = new[] { "water_crop_tile", "harvest_crop_tile", "harvest_giant_crop_tile", "plant_seed_tile", "apply_fertilizer_tile" },
                 ["farm.process_machines"] = new[]
                 {
@@ -57,8 +59,21 @@ namespace StardewAI.Core.Training
             return OptionCandidateCompilerKinds.ContainsKey(optionId);
         }
 
+        public static IReadOnlyCollection<string> OptionCompilerCandidateKinds(string optionId)
+        {
+            return OptionCandidateCompilerKinds.TryGetValue(optionId, out var kinds)
+                ? kinds.ToArray()
+                : Array.Empty<string>();
+        }
+
         private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate)
         {
+            if (OptionCandidateCompilerKinds.TryGetValue(candidate.OptionId, out var allowedKinds) &&
+                !allowedKinds.Contains(candidate.Kind, StringComparer.Ordinal))
+            {
+                return Array.Empty<SmallModelPlanStep>();
+            }
+
             if (candidate.Kind == "interact_endpoint")
             {
                 return InteractEndpointSteps(candidate);

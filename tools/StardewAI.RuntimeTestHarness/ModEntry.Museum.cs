@@ -374,7 +374,7 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "donate_museum_item",
-            PrimitiveVerificationStatus = "verified_native_museum_menu_lifecycle",
+            PrimitiveVerificationStatus = "verified",
             PrimitiveVerificationReasons = new[]
             {
                 "LibraryMuseum.OpenDonationMenu_completed",
