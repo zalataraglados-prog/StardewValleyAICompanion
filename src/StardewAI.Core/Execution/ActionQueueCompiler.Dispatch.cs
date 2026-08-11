@@ -19,6 +19,7 @@ namespace StardewAI.Core.Execution
                 ["executor.traverse_connector"] = (action, _) => CompileTraverseConnectorStep(action),
                 ["executor.face_direction"] = (action, _) => CompileFaceDirectionStep(action),
                 ["executor.interact"] = (action, _) => CompileInteractStep(action),
+                ["executor.accept_daily_quest"] = (action, _) => CompileAcceptDailyQuestStep(action),
                 ["executor.buy_shop_item"] = CompileBuyShopItemStep,
                 ["executor.sell_shop_item"] = (action, _) => CompileSellShopItemStep(action),
                 ["executor.choose_dialogue_response"] = (action, _) => CompileChooseDialogueResponseStep(action),

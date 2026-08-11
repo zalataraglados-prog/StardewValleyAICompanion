@@ -183,6 +183,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "typed quest candidate selected", "bound objective stage compiled through the daily action queue" },
                 new[] { "block_unavailable_required_state", "block_state_hash_mismatch", "block_unbound_quest_objective_kind" }));
 
+            Register(Option("quest.accept_daily", "quest", "Accept today's transparent help-wanted quest through the native board",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "quests.daily_quest_offer", "player.location_id", "player.tile_x", "player.tile_y", "locations.route_graph", "locations.route_connectors", "menus.active_menu" },
+                new[] { "exact offer identity rebound", "one route or native board acceptance stage compiled", "native quest-log receipt verified" },
+                new[] { "block_daily_quest_offer_missing", "block_offer_identity_drift", "block_unverified_board_endpoint", "block_direct_quest_state_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -383,6 +391,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.facing_direction", "current_location.route_context", "menus.active_menu", "locations.route_action_branch_coverage" },
                 new[] { "transparent adjacent interaction requested" },
                 new[] { "block_unknown_interaction", "block_unsupported_action_branch", "block_menu_unsafe_interaction" }));
+
+            Register(Option("executor.accept_daily_quest", "quest", "Accept the exact visible daily quest through the native Billboard button",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "quests.daily_quest_offer", "menus.active_menu" },
+                new[] { "native Billboard receiveLeftClick invoked", "offer appears in actor quest log", "acceptedDailyQuest and two-day deadline verified" },
+                new[] { "block_non_daily_billboard", "block_offer_identity_drift", "block_hidden_accept_button", "block_direct_quest_state_mutation" }));
 
             Register(Option("executor.buy_shop_item", "economy", "Buy one safe shop item",
                 OptionBehaviorCategories.Mechanical,

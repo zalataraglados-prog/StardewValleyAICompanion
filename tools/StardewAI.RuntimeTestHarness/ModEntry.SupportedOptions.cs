@@ -19,6 +19,7 @@ public sealed partial class ModEntry
             "debug.setup_community_center_donation",
             "debug.setup_crab_pot_target",
             "debug.setup_debris_target",
+            "debug.setup_daily_quest_acceptance",
             "debug.setup_farm_resource_clump",
             "debug.setup_fish_frenzy",
             "debug.setup_fish_pond",

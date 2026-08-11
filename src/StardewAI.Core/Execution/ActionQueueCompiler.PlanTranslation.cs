@@ -80,6 +80,7 @@ namespace StardewAI.Core.Execution
                 "traverse_connector" => "executor.traverse_connector",
                 "face_direction" => "executor.face_direction",
                 "interact" => "executor.interact",
+                "accept_daily_quest" => "executor.accept_daily_quest",
                 "sleep" => "executor.sleep",
                 "wait_ticks" => "executor.wait_ticks",
                 "close_menu" => "executor.close_menu",
@@ -167,6 +168,13 @@ namespace StardewAI.Core.Execution
 
         private static string InferredOpenedMenuType(SmallModelPlanStep step)
         {
+            if (step.ExpectedEffects.Any(effect =>
+                    effect.Contains("Billboard", StringComparison.OrdinalIgnoreCase) ||
+                    effect.Contains("daily_quest_board", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "Billboard";
+            }
+
             if (step.ExpectedEffects.Any(effect =>
                     effect.Contains("DialogueBox", StringComparison.OrdinalIgnoreCase) ||
                     effect.Contains("dialogue", StringComparison.OrdinalIgnoreCase) ||

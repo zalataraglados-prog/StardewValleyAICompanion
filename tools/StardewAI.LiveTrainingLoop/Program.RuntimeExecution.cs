@@ -1180,6 +1180,9 @@ static partial class Program
         var questKey = ReadQueueParameterString(item, "quest_key");
         var questRuntimeType = ReadQueueParameterString(item, "quest_runtime_type");
         var questInteractionKind = ReadQueueParameterString(item, "quest_interaction_kind");
+        var questOfferFingerprint = ReadQueueParameterString(item, "quest_offer_fingerprint");
+        var questOfferTitle = ReadQueueParameterString(item, "quest_offer_title");
+        var questOfferCurrentObjective = ReadQueueParameterString(item, "quest_offer_current_objective");
         var questObjectiveIndex = ReadQueueParameterInt(item, "quest_objective_index");
         var questExpectedCurrentCount = ReadQueueParameterInt(item, "quest_expected_current_count");
         var questExpectedTargetCount = ReadQueueParameterInt(item, "quest_expected_target_count");
@@ -1218,6 +1221,9 @@ static partial class Program
         executionRequest.QuestKey = questKey;
         executionRequest.QuestRuntimeType = questRuntimeType;
         executionRequest.QuestInteractionKind = questInteractionKind;
+        executionRequest.QuestOfferFingerprint = questOfferFingerprint;
+        executionRequest.QuestOfferTitle = questOfferTitle;
+        executionRequest.QuestOfferCurrentObjective = questOfferCurrentObjective;
         executionRequest.QuestObjectiveIndex = questObjectiveIndex;
         executionRequest.QuestExpectedCurrentCount = questExpectedCurrentCount;
         executionRequest.QuestExpectedTargetCount = questExpectedTargetCount;

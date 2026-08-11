@@ -339,3 +339,10 @@ EVD-215 已通过隐藏静默隔离运行 `runtime-supported-machine-capacity-20
 正式全量训练仍未准入：Product Executor 仍为 0，生产长 rollout、闭合跨度观测、正式 manifest、
 生产 checkpoint、独立存档评测和第三年 21 分长跑尚未完成。下一开发切片是任务/收集需求机器处理，
 之后继续按权威字典扩大五门范围并采集真实长期轨迹。
+
+## 2026-08-11 每日委托接受链更新
+
+`quest.accept_daily` 与 `executor.accept_daily_quest` 已注册并接通透明桥、上游候选排除、滚动跨地图接近、
+DailyPlan、动作队列和原生 Billboard 点击。隔离 E 盘运行已验证同一原生 offer 进入任务日志且保留两天期限；
+安装后的真实 full 快照为 required 103、blocking 0。两项仍为 RegisteredOnly，五门闭合数和训练白名单仍分别为
+39 与 26；需要重复跨日、无任务、过期及联机归属证据后才能改变准入状态。该闭环不解除正式全量训练阻塞。

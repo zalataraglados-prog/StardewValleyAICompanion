@@ -73,7 +73,6 @@ public static class PendingSemanticActionCatalog
             C("player.choose_jukebox_track", "player", "composite", "engine.interaction_menu", "GameLocation"),
             C("player.customize", "player", "composite", "engine.interaction_menu", "CharacterCustomization"),
             C("processing.crack_geode", "processing", "composite", "engine.crafting_processing", "GeodeMenu"),
-            C("quest.accept_daily", "quest", "composite", "engine.interaction_menu", "Billboard"),
             C("quest.accept_special_order", "quest", "composite", "engine.interaction_menu", "SpecialOrdersBoard"),
             C("quest.cancel", "quest", "composite", "engine.interaction_menu", "QuestLog"),
             C("quest.claim_reward", "quest", "composite", "engine.interaction_menu", "QuestLog"),

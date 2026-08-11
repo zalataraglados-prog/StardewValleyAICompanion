@@ -22,6 +22,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("quest_interaction_kind")]
         public string QuestInteractionKind { get; set; } = string.Empty;
 
+        [JsonPropertyName("quest_offer_fingerprint")]
+        public string QuestOfferFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_offer_title")]
+        public string QuestOfferTitle { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_offer_current_objective")]
+        public string QuestOfferCurrentObjective { get; set; } = string.Empty;
+
         [JsonPropertyName("quest_objective_index")]
         public int? QuestObjectiveIndex { get; set; }
 

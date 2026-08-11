@@ -42,6 +42,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> InteractionOptions = Set(
         "executor.interact",
+        "executor.accept_daily_quest",
         "executor.buy_shop_item",
         "executor.sell_shop_item",
         "executor.choose_dialogue_response",

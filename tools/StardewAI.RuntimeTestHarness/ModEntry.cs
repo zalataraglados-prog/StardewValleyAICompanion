@@ -673,6 +673,13 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupQuestTerminalFixture(pending.Request));
                 return;
             }
+
+            if (pending.Request.OptionId == "debug.setup_daily_quest_acceptance")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupDailyQuestAcceptanceFixture(pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
             {
                 pending.Completion.SetResult(
@@ -937,6 +944,13 @@ public sealed partial class ModEntry : Mod
                 {
                     StartWaterCrop(pending, new Point(pending.Request.TargetTileX.Value, pending.Request.TargetTileY.Value));
                 }
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.accept_daily_quest")
+            {
+                pending.Completion.SetResult(
+                    ExecuteAcceptDailyQuest(pending.Request));
                 return;
             }
 

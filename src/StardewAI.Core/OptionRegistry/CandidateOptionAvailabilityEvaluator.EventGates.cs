@@ -269,6 +269,13 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return QuestCandidateGateBlockingReasons(eventCandidates);
             }
+            if (optionId == "quest.accept_daily")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_daily_quest_acceptance_candidates",
+                    "no_available_daily_quest_acceptance_candidates");
+            }
 
             return Array.Empty<string>();
         }

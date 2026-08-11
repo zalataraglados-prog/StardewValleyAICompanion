@@ -5,7 +5,8 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `107 registered / 174 semantic / 106 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`。
+- 动作对账当前为 `109 registered / 175 semantic / 108 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
+  原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的
@@ -28,8 +29,8 @@
   `current_location.arcade_action_tiles` 可读且带来源；`JKScoreObjective` 绑定 Saloon 街机，复用移动、地图交互和
   `MinecartGame/Endless` 对话原语，唯一新增 `executor.play_junimo_kart` 只发送原生跳跃输入并观察原生分数提交回调，
   禁止直接写分数、轨道、碰撞或任务进度。动作分母保持 `320/428/150`，语义动作增至 174 后重新冻结。
-- 唯一紧接任务是 EVD-239 运行验收：在隔离存档中由原生 Endless 模式达到 50,000 分并自然提交，验证精确
-  `JKScoreObjective` 前后计数、失败重试和输出记录。通过前不得登记运行证据或加入训练白名单。
+- EVD-239 的运行验收仍未完成，但不再阻塞其他独立动作纵向闭环；Junimo Kart 可复用现有执行器继续校准，
+  只有达到原生 Endless 50,000 分并自然提交后才能登记五门证据或加入训练白名单。
 - 2026-08-11 复核发现 `30,190` 历史运行的 smoke 脚本没有设置 `SMAPI_MODS_PATH`，实际还加载了
   `JunimoTestClient`，因此该制品只保留为受污染诊断样本，不再作为运行验收或回退基线。脚本现使用每次运行独立的
   两模组白名单，并把白名单写入汇总。首个干净矩阵为
@@ -41,8 +42,13 @@
 - 当前干净最高分仍为 `10,940/50,000`；精确落点矩阵峰值为 `9,320`，其中 7/8 次为 theme 0，不能直接作为
   算法回退判断。剩余主缺口是 8 次 planner fallback：需要从原生轨道求下一段可行落地区间，替代固定
   `gap + 18px` 目标，并按主题进行可重复校准。不得用直接改分、改轨道或改任务目标替代控制问题。
+- EVD-240 已完成 `quest.accept_daily`：透明桥读取实时 `questOfTheDay`、接受许可、原生任务身份和从 Town
+  地图发现的 `Billboard 3` 入口；候选层先做上游许可排除，再按新快照逐连接器接近柜台，终端编译为原生
+  Billboard 交互与接受。隐藏静默隔离运行 `runtime-daily-quest-acceptance-20260811-125209` 已验证任务进入
+  quest log、`acceptedDailyQuest=true`、原生接受字段和 `daysLeft=2`。新快照基线为 required 103、blocking 0。
+  该高层项及原语暂保持 RegisteredOnly，不因一次通过直接进入训练白名单。
 - 最新运行证据：
-  `artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260810-173859/summary.json`。
+  `artifacts/runtime-daily-quest-acceptance/runtime-daily-quest-acceptance-20260811-125209/summary.json`。
 
 ## 当前阶段
 

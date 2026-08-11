@@ -3,6 +3,51 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.State
 {
+    public sealed class DailyQuestOfferRef
+    {
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("can_accept")]
+        public bool CanAccept { get; set; }
+
+        [JsonPropertyName("accepted_daily_quest")]
+        public bool AcceptedDailyQuest { get; set; }
+
+        [JsonPropertyName("offer_fingerprint")]
+        public string OfferFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest")]
+        public QuestProgressRef? Quest { get; set; }
+
+        [JsonPropertyName("board_location_id")]
+        public string BoardLocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("board_action_tile_x")]
+        public int? BoardActionTileX { get; set; }
+
+        [JsonPropertyName("board_action_tile_y")]
+        public int? BoardActionTileY { get; set; }
+
+        [JsonPropertyName("board_action_raw")]
+        public string BoardActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("stand_tile_x")]
+        public int? StandTileX { get; set; }
+
+        [JsonPropertyName("stand_tile_y")]
+        public int? StandTileY { get; set; }
+
+        [JsonPropertyName("menu_clear")]
+        public bool MenuClear { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
+    }
+
     public sealed class QuestProgressRef
     {
         [JsonPropertyName("id")]
