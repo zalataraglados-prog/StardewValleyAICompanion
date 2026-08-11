@@ -74,7 +74,6 @@ public static class PendingSemanticActionCatalog
             C("player.customize", "player", "composite", "engine.interaction_menu", "CharacterCustomization"),
             C("processing.crack_geode", "processing", "composite", "engine.crafting_processing", "GeodeMenu"),
             C("quest.cancel", "quest", "composite", "engine.interaction_menu", "QuestLog"),
-            C("quest.claim_reward", "quest", "composite", "engine.interaction_menu", "QuestLog"),
             C("recovery.sleep_in_tent", "recovery", "composite", "engine.recovery_timing", "Tent"),
             C("rewards.claim_adventure_guild_reward", "rewards", "composite", "engine.interaction_menu", "AdventureGuild"),
             C("rewards.claim_prize_ticket", "rewards", "composite", "engine.interaction_menu", "PrizeTicketMenu"),

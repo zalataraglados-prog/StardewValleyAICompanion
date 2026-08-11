@@ -1185,6 +1185,9 @@ static partial class Program
         var questOfferFingerprint = ReadQueueParameterString(item, "quest_offer_fingerprint");
         var questOfferTitle = ReadQueueParameterString(item, "quest_offer_title");
         var questOfferCurrentObjective = ReadQueueParameterString(item, "quest_offer_current_objective");
+        var questRewardFingerprint = ReadQueueParameterString(item, "quest_reward_fingerprint");
+        var questMoneyRewardExpected = ReadQueueParameterInt(item, "quest_money_reward_expected");
+        var questExpectedMoneyBefore = ReadQueueParameterInt(item, "expected_money_before");
         var specialOrderBoardType = ReadQueueParameterString(item, "special_order_board_type");
         var specialOrderSelectionIndex = ReadQueueParameterInt(item, "special_order_selection_index");
         var specialOrderSelectionSide = ReadQueueParameterString(item, "special_order_selection_side");
@@ -1232,6 +1235,9 @@ static partial class Program
         executionRequest.QuestOfferFingerprint = questOfferFingerprint;
         executionRequest.QuestOfferTitle = questOfferTitle;
         executionRequest.QuestOfferCurrentObjective = questOfferCurrentObjective;
+        executionRequest.QuestRewardFingerprint = questRewardFingerprint;
+        executionRequest.QuestMoneyRewardExpected = questMoneyRewardExpected;
+        executionRequest.QuestExpectedMoneyBefore = questExpectedMoneyBefore;
         executionRequest.SpecialOrderBoardType = specialOrderBoardType;
         executionRequest.SpecialOrderSelectionIndex = specialOrderSelectionIndex;
         executionRequest.SpecialOrderSelectionSide = specialOrderSelectionSide;

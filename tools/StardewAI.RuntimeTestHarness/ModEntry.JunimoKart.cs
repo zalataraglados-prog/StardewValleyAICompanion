@@ -30,7 +30,10 @@ public sealed partial class ModEntry
         public ActiveJunimoKart(
             PendingExecution pending,
             MineCart game,
-            JKScoreObjective objective)
+            JKScoreObjective objective,
+            string executionStrategy,
+            int equivalentDurationTicks,
+            int equivalentAcceleration)
         {
             Pending = pending;
             Game = game;
@@ -38,6 +41,9 @@ public sealed partial class ModEntry
             ProgressBefore = objective.GetCount();
             TargetScore = pending.Request.MinigameTargetScore!.Value;
             MaxAttempts = pending.Request.MinigameMaxAttempts!.Value;
+            ExecutionStrategy = executionStrategy;
+            EquivalentDurationTicks = equivalentDurationTicks;
+            EquivalentAcceleration = equivalentAcceleration;
         }
 
         public PendingExecution Pending { get; }
@@ -46,6 +52,12 @@ public sealed partial class ModEntry
         public int ProgressBefore { get; }
         public int TargetScore { get; }
         public int MaxAttempts { get; }
+        public string ExecutionStrategy { get; }
+        public int EquivalentDurationTicks { get; }
+        public int EquivalentAcceleration { get; }
+        public bool UsesTimedEquivalentSimulation =>
+            string.Equals(ExecutionStrategy, "timed_equivalent", StringComparison.Ordinal);
+        public int EquivalentElapsedTicks { get; set; }
         public int Attempts { get; set; } = 1;
         public int LastScore { get; set; }
         public int PeakScore { get; set; }
@@ -97,6 +109,24 @@ public sealed partial class ModEntry
         {
             reasons.Add("junimo_kart_skull_key_required");
         }
+        var strategy = config.JunimoKartExecutionStrategy.Trim().ToLowerInvariant();
+        if (strategy is not "timed_equivalent" and not "native_perfect")
+        {
+            reasons.Add("junimo_kart_execution_strategy_unsupported:" + strategy);
+        }
+        if (strategy == "timed_equivalent" && config.JunimoKartEquivalentDurationTicks <= 0)
+        {
+            reasons.Add("junimo_kart_equivalent_duration_ticks_invalid");
+        }
+        if (strategy == "timed_equivalent" && config.JunimoKartEquivalentAcceleration <= 0)
+        {
+            reasons.Add("junimo_kart_equivalent_acceleration_invalid");
+        }
+        if (strategy == "timed_equivalent" &&
+            !string.Equals(request.ExecutionMode, "training_singleplayer", StringComparison.Ordinal))
+        {
+            reasons.Add("junimo_kart_timed_equivalent_training_singleplayer_only");
+        }
         if (Game1.currentMinigame is not MineCart game)
         {
             reasons.Add("junimo_kart_native_minigame_not_active");
@@ -136,7 +166,13 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeJunimoKart = new ActiveJunimoKart(pending, game, objective);
+        activeJunimoKart = new ActiveJunimoKart(
+            pending,
+            game,
+            objective,
+            strategy,
+            config.JunimoKartEquivalentDurationTicks,
+            config.JunimoKartEquivalentAcceleration);
     }
 
     private static JKScoreObjective? ResolveJunimoKartObjective(
@@ -162,6 +198,10 @@ public sealed partial class ModEntry
         out string reason)
     {
         reason = string.Empty;
+        if (active.UsesTimedEquivalentSimulation)
+        {
+            return TryApplySmapiLeftButtonOverride(pressed: false, out reason);
+        }
         if (!ReferenceEquals(Game1.currentMinigame, active.Game))
         {
             return true;
@@ -383,6 +423,12 @@ public sealed partial class ModEntry
         var active = activeJunimoKart;
         if (active is null)
         {
+            return;
+        }
+
+        if (active.UsesTimedEquivalentSimulation)
+        {
+            TickEquivalentJunimoKart(active);
             return;
         }
 

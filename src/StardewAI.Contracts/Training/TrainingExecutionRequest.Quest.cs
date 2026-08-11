@@ -31,6 +31,15 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("quest_offer_current_objective")]
         public string QuestOfferCurrentObjective { get; set; } = string.Empty;
 
+        [JsonPropertyName("quest_reward_fingerprint")]
+        public string QuestRewardFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest_money_reward_expected")]
+        public int? QuestMoneyRewardExpected { get; set; }
+
+        [JsonPropertyName("quest_expected_money_before")]
+        public int? QuestExpectedMoneyBefore { get; set; }
+
         [JsonPropertyName("special_order_board_type")]
         public string SpecialOrderBoardType { get; set; } = string.Empty;
 

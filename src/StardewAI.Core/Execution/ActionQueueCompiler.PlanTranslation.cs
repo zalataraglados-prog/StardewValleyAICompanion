@@ -82,6 +82,7 @@ namespace StardewAI.Core.Execution
                 "interact" => "executor.interact",
                 "accept_daily_quest" => "executor.accept_daily_quest",
                 "accept_special_order" => "executor.accept_special_order",
+                "claim_quest_reward" => "executor.claim_quest_reward",
                 "sleep" => "executor.sleep",
                 "wait_ticks" => "executor.wait_ticks",
                 "close_menu" => "executor.close_menu",

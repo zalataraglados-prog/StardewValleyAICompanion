@@ -21,6 +21,7 @@ namespace StardewAI.Core.Execution
                 ["executor.interact"] = (action, _) => CompileInteractStep(action),
                 ["executor.accept_daily_quest"] = (action, _) => CompileAcceptDailyQuestStep(action),
                 ["executor.accept_special_order"] = (action, _) => CompileAcceptSpecialOrderStep(action),
+                ["executor.claim_quest_reward"] = (action, _) => CompileClaimQuestRewardStep(action),
                 ["executor.buy_shop_item"] = CompileBuyShopItemStep,
                 ["executor.sell_shop_item"] = (action, _) => CompileSellShopItemStep(action),
                 ["executor.choose_dialogue_response"] = (action, _) => CompileChooseDialogueResponseStep(action),

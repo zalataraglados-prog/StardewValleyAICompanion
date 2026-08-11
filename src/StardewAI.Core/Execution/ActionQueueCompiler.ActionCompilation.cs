@@ -190,6 +190,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateInteractPlan(action, snapshot));
             blocking.AddRange(ValidateAcceptDailyQuestPlan(action, snapshot));
             blocking.AddRange(ValidateAcceptSpecialOrderPlan(action, snapshot));
+            blocking.AddRange(ValidateClaimQuestRewardPlan(action, snapshot));
             blocking.AddRange(ValidateSleepPlan(action, snapshot));
             blocking.AddRange(ValidateWaitTicksPlan(action));
             blocking.AddRange(ValidateCatchFishPlan(action, snapshot));

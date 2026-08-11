@@ -80,6 +80,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("completed")]
         public bool Completed { get; set; }
 
+        [JsonPropertyName("hidden")]
+        public bool Hidden { get; set; }
+
         [JsonPropertyName("daily_quest")]
         public bool DailyQuest { get; set; }
 
@@ -118,6 +121,24 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("per_type_fields")]
         public PerTypeQuestFields PerTypeFields { get; set; } = new();
+    }
+
+    public sealed class QuestRewardClaimRef
+    {
+        [JsonPropertyName("reward_fingerprint")]
+        public string RewardFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("quest")]
+        public QuestProgressRef Quest { get; set; } = new();
+
+        [JsonPropertyName("claimable")]
+        public bool Claimable { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "blocked";
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
     }
 
     public sealed class PerTypeQuestFields

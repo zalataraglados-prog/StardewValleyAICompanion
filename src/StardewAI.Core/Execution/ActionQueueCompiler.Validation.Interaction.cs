@@ -27,6 +27,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.choose_dialogue_response" ||
                 action.OptionId == "executor.accept_daily_quest" ||
                 action.OptionId == "executor.accept_special_order" ||
+                action.OptionId == "executor.claim_quest_reward" ||
                 action.OptionId == "executor.name_hatched_animal" ||
                 (action.OptionId == "executor.sleep" &&
                     string.Equals(

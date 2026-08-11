@@ -199,6 +199,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact board and offer identity selected", "one rolling route, board, dialogue, or acceptance stage compiled", "native team special-order receipt verified" },
                 new[] { "block_board_locked_or_unloaded", "block_offer_identity_or_generation_seed_drift", "block_order_type_already_accepted", "block_unverified_board_endpoint", "block_direct_special_order_state_mutation" }));
 
+            Register(Option("quest.claim_reward", "quest", "Claim one exact completed ordinary quest money reward through the native QuestLog",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "quests.claimable_rewards", "quests.active_quests", "player.money", "menus.active_menu" },
+                new[] { "exact reward identity rebound", "native QuestLog selection and reward clicks compiled", "money and reward-consumption receipt verified" },
+                new[] { "block_hidden_or_incomplete_quest", "block_reward_identity_drift", "block_money_drift", "block_direct_money_or_quest_state_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -415,6 +423,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quests.special_order_boards", "quests.special_orders", "quests.accepted_special_order_types", "menus.active_menu" },
                 new[] { "native SpecialOrdersBoard receiveLeftClick invoked", "matching quest key and generation seed appear in team special orders", "matching order type becomes accepted" },
                 new[] { "block_non_special_orders_board", "block_offer_identity_or_selection_drift", "block_hidden_accept_button", "block_direct_special_order_state_mutation" }));
+
+            Register(Option("executor.claim_quest_reward", "quest", "Select and claim one exact ordinary quest money reward through native QuestLog clicks",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "quests.claimable_rewards", "quests.active_quests", "player.money", "menus.active_menu" },
+                new[] { "native QuestLog row and rewardBox receiveLeftClick invoked", "money increased by exact reward", "native OnMoneyRewardClaimed and OnLeaveQuestPage effects verified" },
+                new[] { "block_quest_log_identity_drift", "block_reward_not_claimable", "block_money_receipt_mismatch", "block_direct_money_or_quest_state_mutation" }));
 
             Register(Option("executor.buy_shop_item", "economy", "Buy one safe shop item",
                 OptionBehaviorCategories.Mechanical,

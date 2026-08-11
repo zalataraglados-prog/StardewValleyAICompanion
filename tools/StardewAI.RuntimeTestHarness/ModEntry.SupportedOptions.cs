@@ -55,6 +55,7 @@ public sealed partial class ModEntry
             "debug.setup_quest_monster_drop_fixture",
             "debug.setup_junimo_kart_quest",
             "debug.setup_quest_terminal_fixture",
+            "debug.setup_quest_reward",
             "debug.setup_sale_target",
             "debug.setup_shipping_target",
             "debug.setup_single_gift_item",

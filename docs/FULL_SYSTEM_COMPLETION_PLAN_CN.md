@@ -547,3 +547,28 @@ Town 隐藏静默隔离运行已通过；Qi 和沙漠节庆保留为同一实现
 动作对账更新为 111 registered / 176 semantic / 110 compiler-bound，剩余 65 个已编目未注册语义项。
 后续仍按“权威字典身份 -> 透明字段 -> 上游许可 -> 复用编译链 -> 原生回执 -> 独立运行证据”的顺序逐项闭合，
 不得以动作总数推进为理由复制移动、菜单、任务或执行器体系。
+
+## 2026-08-11 Junimo Kart 训练等价模式与完美模式分流（EVD-243）
+
+当前权威策略覆盖上方 EVD-239 的“禁止任何分数写入”运行约束，但不删除其原生控制器和诊断证据。训练默认使用
+`timed_equivalent`：以既有 15 分钟平均预算作为等价时长（54,000 游戏 tick），墙钟可配置加速；计时结束后只在
+`training_singleplayer` 隔离模式内设置本局 MineCart 分数，再调用原生 `UpdateScoreState()` 与
+`submitHighScore()`，并以同一个 `JKScoreObjective` 的精确进度作为收据。结果必须标记
+`simulated_equivalent` 和 `synthetic_score_assignment_not_native_perfect_play`，不得登记成原生完美五门证据。
+
+原有轨道、障碍、物理预测和跳跃输入控制器保留在独立 `native_perfect` 模式，且该文件不得包含分数或任务进度写入。
+它是后续“帮玩家打完美存档”的唯一继续校准路径；真实自然达到 50,000 分前，不增加 five-gate 或 allowlist。
+隐藏静默 E 盘矩阵 `runtime-junimo-kart-20260811-194648` 已验证等价计时、原生提交回调和目标 `0 -> 50000`。
+
+## 2026-08-11 普通任务奖励领取（EVD-242 已闭合）
+
+`quest.claim_reward` 使用独立于 `quest.advance` 的奖励结算链，但复用既有菜单安全门。透明桥从实时
+`Farmer.questLog` 枚举非隐藏、已完成且有金钱奖励的任务，使用 ID、运行时类型、标题、奖励、接受日和 daily 标记
+生成稳定指纹。菜单占用、字段缺失、身份/金额漂移均在候选或队列编译上游排除。
+
+唯一 `executor.claim_quest_reward` 构造原生 `QuestLog`，经原生 `receiveLeftClick` 选择精确行和 `rewardBox`，
+观察 `OnMoneyRewardClaimed` 的金额、`moneyReward=0`、`destroy=true` 以及原生离页移除。生产路径禁止直接
+`Money +=`、写 `moneyReward`/`destroy`、调用 `OnMoneyRewardClaimed()` 或手动删除任务。隐藏静默 E 盘矩阵
+`runtime-quest-reward-claim-20260811-195512` 已验证 750g 精确增量与任务消失。最新 full snapshot schema 为
+105 required、88 实时带来源可读、17 场景性、blocking 0；动作对账为 113 registered / 177 semantic /
+112 compiler-bound / 64 catalogued-blocked，原生 320/428/150 不变。

@@ -95,6 +95,7 @@ public sealed partial class ModEntry : Mod
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
+    private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
     public override void Entry(IModHelper helper)
     {
@@ -253,6 +254,27 @@ public sealed partial class ModEntry : Mod
         {
             config.FreezeClockWhileExecutorIdle =
                 freezeClockWhileIdleEnabled;
+        }
+
+        var junimoKartStrategy = Environment.GetEnvironmentVariable(
+            "STARDEWAI_JUNIMO_KART_EXECUTION_STRATEGY");
+        if (!string.IsNullOrWhiteSpace(junimoKartStrategy))
+        {
+            config.JunimoKartExecutionStrategy = junimoKartStrategy;
+        }
+
+        var junimoKartDuration = Environment.GetEnvironmentVariable(
+            "STARDEWAI_JUNIMO_KART_EQUIVALENT_DURATION_TICKS");
+        if (int.TryParse(junimoKartDuration, out var equivalentDurationTicks) && equivalentDurationTicks > 0)
+        {
+            config.JunimoKartEquivalentDurationTicks = equivalentDurationTicks;
+        }
+
+        var junimoKartAcceleration = Environment.GetEnvironmentVariable(
+            "STARDEWAI_JUNIMO_KART_EQUIVALENT_ACCELERATION");
+        if (int.TryParse(junimoKartAcceleration, out var equivalentAcceleration) && equivalentAcceleration > 0)
+        {
+            config.JunimoKartEquivalentAcceleration = equivalentAcceleration;
         }
 
         var diagnosticOutputPath = Environment.GetEnvironmentVariable(
@@ -442,6 +464,7 @@ public sealed partial class ModEntry : Mod
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
         TickSpecialOrderBoardOpen();
+        TickQuestRewardClaimSafely();
         TickAnimalProductHarvest();
         TickPetInteraction();
         TickMuseumDonation();
@@ -686,6 +709,11 @@ public sealed partial class ModEntry : Mod
             {
                 pending.Completion.SetResult(
                     ExecuteSetupSpecialOrderAcceptanceFixture(pending.Request));
+                return;
+            }
+            if (pending.Request.OptionId == "debug.setup_quest_reward")
+            {
+                pending.Completion.SetResult(ExecuteSetupQuestRewardFixture(pending.Request));
                 return;
             }
             if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
@@ -969,6 +997,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.accept_special_order")
             {
                 pending.Completion.SetResult(ExecuteAcceptSpecialOrder(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_quest_reward")
+            {
+                StartQuestRewardClaim(pending);
                 return;
             }
 
@@ -1280,6 +1314,7 @@ public sealed partial class ModEntry : Mod
             activeMaterialTransfer = null;
             activeWorkbenchCraft = null;
             activeSpecialOrderBoardOpen = null;
+            activeQuestRewardClaim = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -1476,7 +1511,8 @@ public sealed partial class ModEntry : Mod
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null ||
-            activeSpecialOrderBoardOpen is not null;
+            activeSpecialOrderBoardOpen is not null ||
+            activeQuestRewardClaim is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

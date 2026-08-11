@@ -6,7 +6,7 @@
   "surface_count": 320,
   "mapped_count": 47,
   "catalogued_blocked_surface_count": 122,
-  "catalogued_blocked_action_count": 65,
+  "catalogued_blocked_action_count": 64,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
     "animals.purchase",
@@ -61,7 +61,6 @@
     "player.customize",
     "processing.crack_geode",
     "quest.cancel",
-    "quest.claim_reward",
     "recovery.sleep_in_tent",
     "rewards.claim_adventure_guild_reward",
     "rewards.claim_prize_ticket",

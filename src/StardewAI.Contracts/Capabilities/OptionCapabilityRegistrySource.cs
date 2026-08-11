@@ -199,10 +199,10 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "quest.accept_daily", "quest.accept_special_order",
+            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
-            "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.buy_shop_item", "executor.sell_shop_item",
+            "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
             "executor.clear_obstacle", "executor.break_farm_resource_clump",
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.till_soil",
@@ -238,7 +238,7 @@ namespace StardewAI.Contracts.Capabilities
             "inventory.transfer_item", "executor.transfer_material");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
-            "executor.accept_daily_quest", "executor.accept_special_order",
+            "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward",
             "executor.move_to_tile", "executor.traverse_connector",
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.sleep",
@@ -268,7 +268,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
-            "quest.accept_daily", "quest.accept_special_order",
+            "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward",
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "housing.advance_farmhouse",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
@@ -284,9 +284,9 @@ namespace StardewAI.Contracts.Capabilities
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
-            "foraging.pan_ore_spot", "mining.claim_reward_chests", "recovery.stabilize_day",
+            "foraging.pan_ore_spot", "mining.claim_reward_chests", "quest.claim_reward", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
-            "executor.interact", "executor.close_menu", "executor.wait_ticks",
+            "executor.interact", "executor.claim_quest_reward", "executor.close_menu", "executor.wait_ticks",
             "executor.claim_mine_reward_chest", "executor.mine_stone", "executor.break_container",
             "executor.break_resource_clump", "executor.combat_monster", "executor.descend_ladder",
             "executor.exit_mine", "executor.cool_volcano_lava", "executor.break_volcano_stone",
@@ -315,7 +315,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly string[] RegisteredOptionIds =
         {
-            "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order",
+            "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products",
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
@@ -534,6 +534,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("accept_daily_quest"),
                 SupportedCandidate("daily_quest_board_approach"),
                 SupportedCandidate("accept_special_order"),
+                SupportedCandidate("claim_quest_reward"),
                 SupportedCandidate("special_order_board_approach"),
                 SupportedCandidate("special_order_board_open"),
                 SupportedCandidate("special_order_board_dialogue_advance"),

@@ -30,6 +30,12 @@ public sealed class HarnessConfig
 
     public bool FreezeClockWhileExecutorIdle { get; set; }
 
+    public string JunimoKartExecutionStrategy { get; set; } = "timed_equivalent";
+
+    public int JunimoKartEquivalentDurationTicks { get; set; } = 54000;
+
+    public int JunimoKartEquivalentAcceleration { get; set; } = 60;
+
     public string DiagnosticOutputPath { get; set; } =
         @"E:\StardewValleyAICompanion-runtime\diagnostics";
 }

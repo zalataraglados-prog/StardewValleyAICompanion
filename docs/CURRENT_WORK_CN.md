@@ -5,7 +5,7 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `111 registered / 176 semantic / 110 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `113 registered / 177 semantic / 112 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
@@ -27,10 +27,12 @@
   type-11 时明确失败关闭，不生成除草执行器。
 - EVD-239 已闭合 Junimo Kart 分数的静态主链：真实 full 快照验证
   `current_location.arcade_action_tiles` 可读且带来源；`JKScoreObjective` 绑定 Saloon 街机，复用移动、地图交互和
-  `MinecartGame/Endless` 对话原语，唯一新增 `executor.play_junimo_kart` 只发送原生跳跃输入并观察原生分数提交回调，
-  禁止直接写分数、轨道、碰撞或任务进度。动作分母保持 `320/428/150`，语义动作增至 174 后重新冻结。
-- EVD-239 的运行验收仍未完成，但不再阻塞其他独立动作纵向闭环；Junimo Kart 可复用现有执行器继续校准，
-  只有达到原生 Endless 50,000 分并自然提交后才能登记五门证据或加入训练白名单。
+  `MinecartGame/Endless` 对话原语和唯一 `executor.play_junimo_kart`。训练默认策略现为 `timed_equivalent`：按既有
+  15 分钟平均预算计时 54,000 tick，运行时可加速墙钟，但只通过原生 `MineCart.submitHighScore()` 提交并核对
+  `JKScoreObjective`，结果必须标记 `simulated_equivalent`，不得伪装成原生完美游玩证据。
+- 原有只发送跳跃输入的 `native_perfect` 控制器完整保留且与等价分数写入隔离；它后续用于帮玩家完成完美存档。
+  只有该模式真实达到 Endless 50,000 分并自然提交，才能登记 Junimo Kart 原生五门证据。训练等价模式不得增加
+  five-gate 或 allowlist 计数。
 - 2026-08-11 复核发现 `30,190` 历史运行的 smoke 脚本没有设置 `SMAPI_MODS_PATH`，实际还加载了
   `JunimoTestClient`，因此该制品只保留为受污染诊断样本，不再作为运行验收或回退基线。脚本现使用每次运行独立的
   两模组白名单，并把白名单写入汇总。首个干净矩阵为
@@ -39,7 +41,7 @@
   速度上限和逐轨道反弹顺序；干净矩阵证明这些实体进入运行轨迹。连续跳跃模拟现复刻原生释放时重力归零、
   位移前 `x/x+4/x-4` 落地检测、坡道/冰面/黏液速度倍率和落地帧水平位移。运行
   `runtime-junimo-kart-20260811-011601` 观察 57 次落地，预测与实际 X 的最大绝对误差为 `0px`。
-- 当前干净最高分仍为 `10,940/50,000`；精确落点矩阵峰值为 `9,320`，其中 7/8 次为 theme 0，不能直接作为
+- `native_perfect` 当前干净最高分仍为 `10,940/50,000`；精确落点矩阵峰值为 `9,320`，其中 7/8 次为 theme 0，不能直接作为
   算法回退判断。剩余主缺口是 8 次 planner fallback：需要从原生轨道求下一段可行落地区间，替代固定
   `gap + 18px` 目标，并按主题进行可重复校准。不得用直接改分、改轨道或改任务目标替代控制问题。
 - EVD-240 已完成 `quest.accept_daily`：透明桥读取实时 `questOfTheDay`、接受许可、原生任务身份和从 Town
@@ -52,13 +54,20 @@
   `runtime-special-order-acceptance-20260811-172636` 已通过，验证原生互斥锁延迟、`Robin2` 的 key/seed/指纹和
   accepted type；新快照基线为 required 104、blocking 0。Qi 与沙漠节庆目前只有反编译和结构覆盖，待独立运行
   校准，因此两项仍保持 RegisteredOnly，five-gate 与 allowlist 不变。
+- EVD-242 已完成 `quest.claim_reward`：透明桥实时枚举普通任务日志中的可领取金钱奖励，并用任务 ID、运行时类型、
+  标题、奖励、接受日和 daily 标记生成稳定指纹；候选层在菜单非空、身份或金额漂移时上游排除。唯一
+  `executor.claim_quest_reward` 构造原生 `QuestLog`、选择精确任务行、点击 `rewardBox`，验证原生
+  `OnMoneyRewardClaimed`/`OnLeaveQuestPage` 收据；生产代码没有直接写钱、`moneyReward`、`destroy` 或任务日志。
+  隐藏静默隔离运行 `runtime-quest-reward-claim-20260811-195512` 验证 `144755 -> 145505`、奖励 750g 和任务移除。
+  最新 full 快照基线为 required 105、blocking 0。
 - 最新运行证据：
-  `artifacts/runtime-special-order-acceptance/runtime-special-order-acceptance-20260811-172636/summary.json`。
+  `artifacts/runtime-quest-reward-claim/runtime-quest-reward-claim-20260811-195512/summary.json` 和
+  `artifacts/runtime-junimo-kart/runtime-junimo-kart-20260811-194648/summary.json`。
 
 ## 当前阶段
 
 锁定 Stardew Valley 1.6.15 的动作全集对账和独立分母冻结已经完成，现已转入逐动作纵向
-闭环。当前 111 个注册项是可复用的实现基线，不是被废弃的旧代码；65 个已编目未注册语义项
+闭环。当前 113 个注册项是可复用的实现基线，不是被废弃的旧代码；64 个已编目未注册语义项
 用于记录已证实但尚未实现的能力。正式训练保持阻塞。
 
 ## 已完成
@@ -89,7 +98,7 @@
 - 60 个宽入口全部生成分支目录，428 条分支中待语义审查 0、缺注册 0；
 - 150 个地图交互 token 中 142 个映射到语义动作，8 个经原生分支证实为无玩家语义、
   失效/遗留静态 token，待审查 0；
-- 语义动作目录共 165 项：97 项已有 `OptionSpec`，68 项为
+- 语义动作目录共 177 项：113 项已有 `OptionSpec`，64 项为
   `catalogued_blocked`，确认存在但尚未登记的动作数为 0。
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件

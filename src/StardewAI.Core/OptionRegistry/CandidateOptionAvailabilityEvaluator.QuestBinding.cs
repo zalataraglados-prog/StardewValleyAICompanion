@@ -384,10 +384,10 @@ namespace StardewAI.Core.OptionRegistry
                     LocationId = currentLocation,
                     TileX = actionX,
                     TileY = actionY,
-                    ExpectedEffect = "native_MineCart_endless_score_submitted_at_or_above=" + quest.RequiredTargetCount,
-                    EstimatedTicks = Math.Max(3600, distance * 60 + 3600),
+                    ExpectedEffect = "timed_equivalent_or_native_perfect_MineCart_score_submitted_at_or_above=" + quest.RequiredTargetCount,
+                    EstimatedTicks = Math.Max(54000, distance * 60 + 54000),
                     EnergyCost = 0,
-                    AvailabilityClass = "typed_native_junimo_kart_endless",
+                    AvailabilityClass = "typed_junimo_kart_endless_with_training_equivalent",
                     AllowedNow = true,
                     AllowedToday = true,
                     Parameters = new[]
@@ -403,6 +403,9 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("minigame_mode", "2"),
                         Parameter("minigame_target_score", quest.RequiredTargetCount.ToString(CultureInfo.InvariantCulture)),
                         Parameter("minigame_max_attempts", "8"),
+                        Parameter("minigame_default_execution_strategy", "timed_equivalent"),
+                        Parameter("minigame_equivalent_duration_ticks", "54000"),
+                        Parameter("minigame_native_perfect_available", "true"),
                         Parameter("max_movement_tiles", Math.Max(1, distance + 16).ToString(CultureInfo.InvariantCulture))
                     }
                 }, quest);

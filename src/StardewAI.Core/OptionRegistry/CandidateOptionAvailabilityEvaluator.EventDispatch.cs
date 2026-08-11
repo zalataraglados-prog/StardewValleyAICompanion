@@ -20,6 +20,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["joja.advance_development"] = (snapshot, _) => JojaDevelopmentCandidates(snapshot),
                 ["quest.accept_daily"] = (snapshot, _) => DailyQuestAcceptanceCandidates(snapshot),
                 ["quest.accept_special_order"] = (snapshot, _) => SpecialOrderAcceptanceCandidates(snapshot),
+                ["quest.claim_reward"] = (snapshot, _) => QuestRewardClaimCandidates(snapshot),
                 ["housing.advance_farmhouse"] = (snapshot, _) => FarmhouseUpgradeCandidates(snapshot),
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),

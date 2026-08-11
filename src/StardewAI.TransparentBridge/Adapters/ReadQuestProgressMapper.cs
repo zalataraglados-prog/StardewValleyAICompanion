@@ -23,6 +23,7 @@ public sealed class ReadQuestProgressMapper : IQuestProgressMapper
             QuestType = quest.questType.Value,
             Accepted = quest.accepted.Value,
             Completed = quest.completed.Value,
+            Hidden = quest.IsHidden(),
             DailyQuest = quest.dailyQuest.Value,
             CanBeCancelled = quest.canBeCancelled.Value,
             DayQuestAccepted = quest.dayQuestAccepted.Value,

@@ -92,10 +92,15 @@ public sealed partial class DailyPlanCompiler
             {
                 StepId = StepId(candidate, "junimo_kart_play", 3),
                 Kind = "play_junimo_kart",
-                EstimatedMinutes = 1,
+                EstimatedMinutes = 15,
                 Preconditions = new[] { "current_minigame=MineCart", "minigame_mode=2", "exact_special_order_objective_active=true" },
-                ExpectedEffects = new[] { "native_endless_score_submitted_at_or_above=" + targetScore, "quest_objective_progress_verified=true" },
-                SafetyConstraints = new[] { "native_input_only", "do_not_mutate_score_tracks_collision_or_objective" },
+                ExpectedEffects = new[] { "endless_score_submitted_at_or_above=" + targetScore, "quest_objective_progress_verified=true" },
+                SafetyConstraints = new[]
+                {
+                    "timed_equivalent_is_training_singleplayer_only",
+                    "timed_equivalent_must_be_labeled_simulated_equivalent",
+                    "native_perfect_controller_remains_available"
+                },
                 FailurePolicy = new[] { "block_with_minigame_trace", "refresh_snapshot_and_replan" },
                 Parameters = candidate.Parameters
             }

@@ -7,6 +7,12 @@ param(
     [string] $OutputDirectory = "artifacts\runtime-junimo-kart",
     [int] $StartupTimeoutSeconds = 150,
     [int] $ExecutionTimeoutSeconds = 3300,
+    [ValidateSet("timed_equivalent", "native_perfect")]
+    [string] $ExecutionStrategy = "timed_equivalent",
+    [ValidateRange(1, 2147483647)]
+    [int] $EquivalentDurationTicks = 54000,
+    [ValidateRange(1, 10000)]
+    [int] $EquivalentAcceleration = 60,
     [ValidateRange(1, 100)]
     [int] $MaxAttempts = 8,
     [switch] $VisibleGame,
@@ -98,6 +104,9 @@ $previousEnvironment = @{
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
     STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS = $env:STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS
+    STARDEWAI_JUNIMO_KART_EXECUTION_STRATEGY = $env:STARDEWAI_JUNIMO_KART_EXECUTION_STRATEGY
+    STARDEWAI_JUNIMO_KART_EQUIVALENT_DURATION_TICKS = $env:STARDEWAI_JUNIMO_KART_EQUIVALENT_DURATION_TICKS
+    STARDEWAI_JUNIMO_KART_EQUIVALENT_ACCELERATION = $env:STARDEWAI_JUNIMO_KART_EQUIVALENT_ACCELERATION
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
     SMAPI_MODS_PATH = $env:SMAPI_MODS_PATH
@@ -111,6 +120,9 @@ try {
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_EXECUTOR_REQUEST_TIMEOUT_SECONDS = $ExecutionTimeoutSeconds.ToString()
+    $env:STARDEWAI_JUNIMO_KART_EXECUTION_STRATEGY = $ExecutionStrategy
+    $env:STARDEWAI_JUNIMO_KART_EQUIVALENT_DURATION_TICKS = $EquivalentDurationTicks.ToString()
+    $env:STARDEWAI_JUNIMO_KART_EQUIVALENT_ACCELERATION = $EquivalentAcceleration.ToString()
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:SMAPI_MODS_PATH = $smokeModsPath
@@ -182,8 +194,13 @@ try {
     } else {
         $null
     }
+    $expectedVerification = if ($ExecutionStrategy -eq "timed_equivalent") {
+        "simulated_equivalent"
+    } else {
+        "verified"
+    }
     $passed = $play.status -eq "applied" -and
-        $play.primitive_verification_status -eq "verified" -and
+        $play.primitive_verification_status -eq $expectedVerification -and
         $null -ne $observedProgress -and
         $observedProgress -ge 50000
     $summary = [ordered]@{
@@ -195,6 +212,9 @@ try {
         dialogue_status = $dialogue.status
         play_status = $play.status
         play_verification = $play.primitive_verification_status
+        execution_strategy = $ExecutionStrategy
+        equivalent_duration_ticks = if ($ExecutionStrategy -eq "timed_equivalent") { $EquivalentDurationTicks } else { $null }
+        equivalent_acceleration = if ($ExecutionStrategy -eq "timed_equivalent") { $EquivalentAcceleration } else { $null }
         objective_after = $observedProgress
         target = 50000
         loaded_mod_allowlist = $loadedModAllowlist

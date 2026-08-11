@@ -29,6 +29,12 @@ public sealed class JunimoKartMainlineTests
         Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "minigame_target_score" && parameter.Value == "50000");
         Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "minigame_default_execution_strategy" && parameter.Value == "timed_equivalent");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "minigame_equivalent_duration_ticks" && parameter.Value == "54000");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "minigame_native_perfect_available" && parameter.Value == "true");
+        Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "quest_objective_index" && parameter.Value == "0");
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
@@ -61,7 +67,7 @@ public sealed class JunimoKartMainlineTests
     }
 
     [Fact]
-    public void RuntimeUsesNativeInputAndObservationWithoutDirectScoreSubmissionOrMutation()
+    public void RuntimeRetainsNativePerfectControllerAndIsolatesTimedEquivalentMutation()
     {
         var source = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JunimoKart.cs"));
@@ -75,6 +81,15 @@ public sealed class JunimoKartMainlineTests
         Assert.DoesNotContain(".SetCount(", source, StringComparison.Ordinal);
         Assert.DoesNotContain("MineCartScoreField.SetValue", source, StringComparison.Ordinal);
         Assert.DoesNotContain("MineCartPlayerField.SetValue", source, StringComparison.Ordinal);
+
+        var equivalent = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JunimoKartEquivalent.cs"));
+        Assert.Contains("training_singleplayer_timed_equivalent_elapsed", equivalent, StringComparison.Ordinal);
+        Assert.Contains("simulated_equivalent", equivalent, StringComparison.Ordinal);
+        Assert.Contains("MineCartScoreField.SetValue", equivalent, StringComparison.Ordinal);
+        Assert.Contains("active.Game.submitHighScore()", equivalent, StringComparison.Ordinal);
+        Assert.Contains("synthetic_score_assignment_not_native_perfect_play", equivalent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Objective.SetCount", equivalent, StringComparison.Ordinal);
 
         var hazards = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.JunimoKartHazards.cs"));
@@ -109,6 +124,9 @@ public sealed class JunimoKartMainlineTests
         Assert.Contains("loaded_mod_allowlist", smoke, StringComparison.Ordinal);
         Assert.Contains("StardewAI.TransparentBridge", smoke, StringComparison.Ordinal);
         Assert.Contains("StardewAI.RuntimeTestHarness", smoke, StringComparison.Ordinal);
+        Assert.Contains("ExecutionStrategy = \"timed_equivalent\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("EquivalentDurationTicks = 54000", smoke, StringComparison.Ordinal);
+        Assert.Contains("simulated_equivalent", smoke, StringComparison.Ordinal);
         Assert.DoesNotContain("JunimoTestClient", smoke, StringComparison.Ordinal);
     }
 
