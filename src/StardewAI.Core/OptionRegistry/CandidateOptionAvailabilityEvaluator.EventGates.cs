@@ -276,6 +276,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_daily_quest_acceptance_candidates",
                     "no_available_daily_quest_acceptance_candidates");
             }
+            if (optionId == "quest.accept_special_order")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_special_order_acceptance_candidates",
+                    "no_available_special_order_acceptance_candidates");
+            }
 
             return Array.Empty<string>();
         }

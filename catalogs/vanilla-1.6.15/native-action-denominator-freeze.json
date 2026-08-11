@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "b579ec4ded5fb50659aef668ff4c1facf09fae85df0358fd57e54db3906ac5ad",
+  "fingerprint_sha256": "d8cc80c59643d6ff1167dc0c2a5aab0742be1557af1a98abf2910afb32923364",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 175,
-  "approval_basis": "locked 1.6.15 decompile; quest.accept_daily moved from explicit blocked inventory to one registered rolling route/board composite plus one native Billboard acceptance primitive; hidden isolated runtime verified Billboard.receiveLeftClick, exact quest-log receipt, acceptedDailyQuest, and two-day deadline without direct quest-state mutation; native surfaces, branches, and map tokens unchanged"
+  "semantic_action_count": 176,
+  "approval_basis": "locked 1.6.15 decompile; quest.accept_special_order moved from explicit blocked inventory to one registered rolling board composite plus one native SpecialOrdersBoard acceptance primitive; Town, QiChallengeBoard, and DesertMarlon entry tokens are transparently classified; hidden isolated runtime verified mutex-delayed Town board opening, exact quest key and generation seed receipt, and accepted order type without direct special-order mutation; native surfaces, branches, and map tokens unchanged"
 }

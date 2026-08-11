@@ -595,6 +595,7 @@ static partial class Program
         var socialContinuationDialogueRecovery = bool.TryParse(
             ReadQueueParameterString(item, "social_continuation_dialogue_recovery"),
             out var parsedSocialContinuationDialogueRecovery) && parsedSocialContinuationDialogueRecovery;
+        var expectedMenuTypeAfterDialogue = ReadQueueParameterString(item, "expected_menu_type_after_dialogue");
         var professionChoiceId = ReadQueueParameterInt(item, "profession_choice_id");
         var professionChoiceSource = ReadQueueParameterString(item, "profession_choice_source");
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
@@ -969,6 +970,7 @@ static partial class Program
             executionRequest.ExpectedActionType = expectedActionType;
         }
         executionRequest.SocialContinuationDialogueRecovery = socialContinuationDialogueRecovery;
+        executionRequest.ExpectedMenuTypeAfterDialogue = expectedMenuTypeAfterDialogue;
         executionRequest.ProfessionChoiceId = professionChoiceId;
         executionRequest.ProfessionChoiceSource = professionChoiceSource;
         if (!string.IsNullOrWhiteSpace(connectorKind))
@@ -1183,6 +1185,12 @@ static partial class Program
         var questOfferFingerprint = ReadQueueParameterString(item, "quest_offer_fingerprint");
         var questOfferTitle = ReadQueueParameterString(item, "quest_offer_title");
         var questOfferCurrentObjective = ReadQueueParameterString(item, "quest_offer_current_objective");
+        var specialOrderBoardType = ReadQueueParameterString(item, "special_order_board_type");
+        var specialOrderSelectionIndex = ReadQueueParameterInt(item, "special_order_selection_index");
+        var specialOrderSelectionSide = ReadQueueParameterString(item, "special_order_selection_side");
+        var specialOrderGenerationSeed = ReadQueueParameterInt(item, "special_order_generation_seed");
+        var specialOrderDueDate = ReadQueueParameterInt(item, "special_order_due_date");
+        var specialOrderDuration = ReadQueueParameterString(item, "special_order_duration");
         var questObjectiveIndex = ReadQueueParameterInt(item, "quest_objective_index");
         var questExpectedCurrentCount = ReadQueueParameterInt(item, "quest_expected_current_count");
         var questExpectedTargetCount = ReadQueueParameterInt(item, "quest_expected_target_count");
@@ -1224,6 +1232,12 @@ static partial class Program
         executionRequest.QuestOfferFingerprint = questOfferFingerprint;
         executionRequest.QuestOfferTitle = questOfferTitle;
         executionRequest.QuestOfferCurrentObjective = questOfferCurrentObjective;
+        executionRequest.SpecialOrderBoardType = specialOrderBoardType;
+        executionRequest.SpecialOrderSelectionIndex = specialOrderSelectionIndex;
+        executionRequest.SpecialOrderSelectionSide = specialOrderSelectionSide;
+        executionRequest.SpecialOrderGenerationSeed = specialOrderGenerationSeed;
+        executionRequest.SpecialOrderDueDate = specialOrderDueDate;
+        executionRequest.SpecialOrderDuration = specialOrderDuration;
         executionRequest.QuestObjectiveIndex = questObjectiveIndex;
         executionRequest.QuestExpectedCurrentCount = questExpectedCurrentCount;
         executionRequest.QuestExpectedTargetCount = questExpectedTargetCount;

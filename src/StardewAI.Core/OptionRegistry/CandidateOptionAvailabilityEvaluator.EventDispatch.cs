@@ -19,6 +19,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["community_center.donate_bundle_items"] = (snapshot, _) => CommunityCenterDonationCandidates(snapshot),
                 ["joja.advance_development"] = (snapshot, _) => JojaDevelopmentCandidates(snapshot),
                 ["quest.accept_daily"] = (snapshot, _) => DailyQuestAcceptanceCandidates(snapshot),
+                ["quest.accept_special_order"] = (snapshot, _) => SpecialOrderAcceptanceCandidates(snapshot),
                 ["housing.advance_farmhouse"] = (snapshot, _) => FarmhouseUpgradeCandidates(snapshot),
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),

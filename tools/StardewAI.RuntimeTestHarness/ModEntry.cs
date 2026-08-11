@@ -94,6 +94,7 @@ public sealed partial class ModEntry : Mod
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
+    private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
 
     public override void Entry(IModHelper helper)
     {
@@ -440,6 +441,7 @@ public sealed partial class ModEntry : Mod
         TickShippingSummaryClose();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
+        TickSpecialOrderBoardOpen();
         TickAnimalProductHarvest();
         TickPetInteraction();
         TickMuseumDonation();
@@ -680,6 +682,12 @@ public sealed partial class ModEntry : Mod
                     ExecuteSetupDailyQuestAcceptanceFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_special_order_acceptance")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupSpecialOrderAcceptanceFixture(pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
             {
                 pending.Completion.SetResult(
@@ -898,7 +906,11 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.interact")
             {
-                if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
+                if (IsSpecialOrderBoardActionType(pending.Request.ExpectedActionType))
+                {
+                    StartSpecialOrderBoardOpen(pending);
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
                     string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
                 {
                     StartSkullKeyChestInteraction(pending);
@@ -951,6 +963,12 @@ public sealed partial class ModEntry : Mod
             {
                 pending.Completion.SetResult(
                     ExecuteAcceptDailyQuest(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.accept_special_order")
+            {
+                pending.Completion.SetResult(ExecuteAcceptSpecialOrder(pending.Request));
                 return;
             }
 
@@ -1261,6 +1279,7 @@ public sealed partial class ModEntry : Mod
             activeFishPondService = null;
             activeMaterialTransfer = null;
             activeWorkbenchCraft = null;
+            activeSpecialOrderBoardOpen = null;
             CrabPotCaughtFishPatch.Reset();
             ReleaseSmapiLeftButtonOverride();
             var activeDialogue = activeDialogueAdvance;
@@ -1456,7 +1475,8 @@ public sealed partial class ModEntry : Mod
             activeMenuClose is not null ||
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
-            activeMineRewardChest is not null;
+            activeMineRewardChest is not null ||
+            activeSpecialOrderBoardOpen is not null;
     }
 
     private static TrainingExecutionResult Blocked(TrainingExecutionRequest request, params string[] reasons)

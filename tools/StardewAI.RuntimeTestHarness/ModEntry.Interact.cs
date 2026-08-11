@@ -168,6 +168,6 @@ public sealed partial class ModEntry : Mod
 
     private static bool IsInteractActionTypeWhitelisted(string actionType)
     {
-        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard";
+        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard" or "SpecialOrders" or "QiChallengeBoard" or "DesertMarlon";
     }
 }

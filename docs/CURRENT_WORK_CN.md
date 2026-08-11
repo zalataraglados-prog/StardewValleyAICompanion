@@ -5,7 +5,7 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `109 registered / 175 semantic / 108 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `111 registered / 176 semantic / 110 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
@@ -47,13 +47,18 @@
   Billboard 交互与接受。隐藏静默隔离运行 `runtime-daily-quest-acceptance-20260811-125209` 已验证任务进入
   quest log、`acceptedDailyQuest=true`、原生接受字段和 `daysLeft=2`。新快照基线为 required 103、blocking 0。
   该高层项及原语暂保持 RegisteredOnly，不因一次通过直接进入训练白名单。
+- EVD-241 已完成统一的 `quest.accept_special_order` 链：Town、Qi 和沙漠节庆入口共享透明读取、滚动寻路、
+  原生开板和精确左右选择，不另建移动或菜单系统。Town 隐藏静默隔离运行
+  `runtime-special-order-acceptance-20260811-172636` 已通过，验证原生互斥锁延迟、`Robin2` 的 key/seed/指纹和
+  accepted type；新快照基线为 required 104、blocking 0。Qi 与沙漠节庆目前只有反编译和结构覆盖，待独立运行
+  校准，因此两项仍保持 RegisteredOnly，five-gate 与 allowlist 不变。
 - 最新运行证据：
-  `artifacts/runtime-daily-quest-acceptance/runtime-daily-quest-acceptance-20260811-125209/summary.json`。
+  `artifacts/runtime-special-order-acceptance/runtime-special-order-acceptance-20260811-172636/summary.json`。
 
 ## 当前阶段
 
 锁定 Stardew Valley 1.6.15 的动作全集对账和独立分母冻结已经完成，现已转入逐动作纵向
-闭环。当前 97 个注册项是可复用的实现基线，不是被废弃的旧代码；68 个显式 blocked 项
+闭环。当前 111 个注册项是可复用的实现基线，不是被废弃的旧代码；65 个已编目未注册语义项
 用于记录已证实但尚未实现的能力。正式训练保持阻塞。
 
 ## 已完成

@@ -191,6 +191,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "exact offer identity rebound", "one route or native board acceptance stage compiled", "native quest-log receipt verified" },
                 new[] { "block_daily_quest_offer_missing", "block_offer_identity_drift", "block_unverified_board_endpoint", "block_direct_quest_state_mutation" }));
 
+            Register(Option("quest.accept_special_order", "quest", "Select and accept one exact transparent special order through its native board",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "quests.special_order_boards", "quests.special_orders", "quests.accepted_special_order_types", "player.location_id", "player.tile_x", "player.tile_y", "locations.route_graph", "locations.route_connectors", "menus.active_menu" },
+                new[] { "one exact board and offer identity selected", "one rolling route, board, dialogue, or acceptance stage compiled", "native team special-order receipt verified" },
+                new[] { "block_board_locked_or_unloaded", "block_offer_identity_or_generation_seed_drift", "block_order_type_already_accepted", "block_unverified_board_endpoint", "block_direct_special_order_state_mutation" }));
+
             Register(Option("strategy.grandpa_progress", "strategy", "Improve Grandpa evaluation score",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -399,6 +407,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "quests.daily_quest_offer", "menus.active_menu" },
                 new[] { "native Billboard receiveLeftClick invoked", "offer appears in actor quest log", "acceptedDailyQuest and two-day deadline verified" },
                 new[] { "block_non_daily_billboard", "block_offer_identity_drift", "block_hidden_accept_button", "block_direct_quest_state_mutation" }));
+
+            Register(Option("executor.accept_special_order", "quest", "Accept one exact visible offer through the native SpecialOrdersBoard button",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "quests.special_order_boards", "quests.special_orders", "quests.accepted_special_order_types", "menus.active_menu" },
+                new[] { "native SpecialOrdersBoard receiveLeftClick invoked", "matching quest key and generation seed appear in team special orders", "matching order type becomes accepted" },
+                new[] { "block_non_special_orders_board", "block_offer_identity_or_selection_drift", "block_hidden_accept_button", "block_direct_special_order_state_mutation" }));
 
             Register(Option("executor.buy_shop_item", "economy", "Buy one safe shop item",
                 OptionBehaviorCategories.Mechanical,

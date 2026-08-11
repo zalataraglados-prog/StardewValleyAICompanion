@@ -206,14 +206,29 @@ public sealed partial class ModEntry : Mod
         {
             ReleaseSmapiLeftButtonOverride();
             activeDialogueAdvance = null;
-            var verified = Game1.activeClickableMenu is null;
+            var expectedMenuType = advance.Pending.Request.ExpectedMenuTypeAfterDialogue;
+            var actualMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
+            var verified = string.IsNullOrWhiteSpace(expectedMenuType)
+                ? Game1.activeClickableMenu is null
+                : string.Equals(actualMenuType, expectedMenuType, StringComparison.Ordinal);
             advance.Pending.Completion.SetResult(DialogueAdvanceResult(
                 advance,
                 verified ? "applied" : "blocked",
                 verified ? "verified" : "observed_mismatch",
-                verified ? "dialogue_advanced_and_closed_natively" : "dialogue_menu_instance_changed_during_advance",
                 verified
-                    ? new[] { "dialogue_advanced_and_closed_natively", "press_attempts=" + advance.PressAttempts, "advance_ticks=" + advance.ElapsedTicks }
+                    ? string.IsNullOrWhiteSpace(expectedMenuType)
+                        ? "dialogue_advanced_and_closed_natively"
+                        : "dialogue_advanced_to_expected_native_menu"
+                    : "dialogue_menu_instance_changed_during_advance",
+                verified
+                    ? new[]
+                    {
+                        string.IsNullOrWhiteSpace(expectedMenuType)
+                            ? "dialogue_advanced_and_closed_natively"
+                            : "dialogue_advanced_to_expected_native_menu:" + actualMenuType,
+                        "press_attempts=" + advance.PressAttempts,
+                        "advance_ticks=" + advance.ElapsedTicks
+                    }
                     : new[] { "dialogue_menu_instance_changed_during_advance", "type=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") }));
             return;
         }

@@ -31,6 +31,24 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("quest_offer_current_objective")]
         public string QuestOfferCurrentObjective { get; set; } = string.Empty;
 
+        [JsonPropertyName("special_order_board_type")]
+        public string SpecialOrderBoardType { get; set; } = string.Empty;
+
+        [JsonPropertyName("special_order_selection_index")]
+        public int? SpecialOrderSelectionIndex { get; set; }
+
+        [JsonPropertyName("special_order_selection_side")]
+        public string SpecialOrderSelectionSide { get; set; } = string.Empty;
+
+        [JsonPropertyName("special_order_generation_seed")]
+        public int? SpecialOrderGenerationSeed { get; set; }
+
+        [JsonPropertyName("special_order_due_date")]
+        public int? SpecialOrderDueDate { get; set; }
+
+        [JsonPropertyName("special_order_duration")]
+        public string SpecialOrderDuration { get; set; } = string.Empty;
+
         [JsonPropertyName("quest_objective_index")]
         public int? QuestObjectiveIndex { get; set; }
 

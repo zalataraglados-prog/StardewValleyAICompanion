@@ -333,6 +333,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("social_continuation_dialogue_recovery")]
         public bool SocialContinuationDialogueRecovery { get; set; }
 
+        [JsonPropertyName("expected_menu_type_after_dialogue")]
+        public string ExpectedMenuTypeAfterDialogue { get; set; } = string.Empty;
+
         [JsonPropertyName("profession_choice_id")]
         public int? ProfessionChoiceId { get; set; }
 

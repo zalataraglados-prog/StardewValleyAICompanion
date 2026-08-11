@@ -40,6 +40,7 @@ public sealed partial class ProgressQuestReadAdapter : ReadAdapterBase
         var fields = new Dictionary<string, object>
         {
             ["daily_quest_offer"] = Field(ReadDailyQuestOffer(player), "Game1.questOfTheDay; Game1.CanAcceptDailyQuest; Game1.player.acceptedDailyQuest; live Town Buildings Action=Billboard 3; GameLocation.IsTileBlockedBy read-only stand scan", tick),
+            ["special_order_boards"] = Field(ReadSpecialOrderBoards(team), "Utility.ForEachLocation live Buildings Action tokens SpecialOrders/QiChallengeBoard/DesertMarlon; FarmerTeam.availableSpecialOrders/acceptedSpecialOrderTypes; active SpecialOrdersBoard leftOrder/rightOrder", tick),
             ["active_quests"] = Field(ReadActiveQuests(player), "Game1.player.questLog", tick),
             ["completed_quests"] = Field(ReadCompletedQuests(player), "Game1.stats.QuestsCompleted; Game1.player.questLog where Quest.completed", tick),
             ["mail_received"] = Field(player?.mailReceived.OrderBy(id => id).ToArray(), "Game1.player.mailReceived", tick),

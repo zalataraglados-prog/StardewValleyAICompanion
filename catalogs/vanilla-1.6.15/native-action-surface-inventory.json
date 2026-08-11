@@ -4,9 +4,9 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 320,
-  "mapped_count": 45,
-  "catalogued_blocked_surface_count": 124,
-  "catalogued_blocked_action_count": 66,
+  "mapped_count": 47,
+  "catalogued_blocked_surface_count": 122,
+  "catalogued_blocked_action_count": 65,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
     "animals.purchase",
@@ -60,7 +60,6 @@
     "player.choose_jukebox_track",
     "player.customize",
     "processing.crack_geode",
-    "quest.accept_special_order",
     "quest.cancel",
     "quest.claim_reward",
     "recovery.sleep_in_tent",
@@ -3175,7 +3174,7 @@
       "mappedOptionIds": [
         "quest.accept_special_order"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3192,7 +3191,7 @@
       "mappedOptionIds": [
         "quest.accept_special_order"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

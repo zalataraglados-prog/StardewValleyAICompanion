@@ -346,3 +346,14 @@ EVD-215 已通过隐藏静默隔离运行 `runtime-supported-machine-capacity-20
 DailyPlan、动作队列和原生 Billboard 点击。隔离 E 盘运行已验证同一原生 offer 进入任务日志且保留两天期限；
 安装后的真实 full 快照为 required 103、blocking 0。两项仍为 RegisteredOnly，五门闭合数和训练白名单仍分别为
 39 与 26；需要重复跨日、无任务、过期及联机归属证据后才能改变准入状态。该闭环不解除正式全量训练阻塞。
+
+## 2026-08-11 特别订单接受链更新
+
+`quest.accept_special_order` 与 `executor.accept_special_order` 已按单一实现覆盖 Town、Qi 和沙漠节庆三种原生入口，
+接通实时左右 offer、上游许可排除、滚动接近、原生开板/对话以及精确选择。Town 隐藏静默隔离运行已验证原生
+互斥锁延迟和 key、generation seed、fingerprint、accepted type 的一致回执；安装后的真实 full 快照为
+required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结构覆盖，必须分别完成运行校准后才能形成对应证据。
+
+动作对账现为 111 registered / 176 semantic / 110 compiler-bound；five-gate 仍为 39，训练白名单仍为 26。
+特别订单高层项和原语继续保持 RegisteredOnly，一次 Town 通过不构成正式训练准入，也不解除 Product Executor、
+长期 rollout、独立存档评测和第三年 21 分长跑等全量训练阻塞项。

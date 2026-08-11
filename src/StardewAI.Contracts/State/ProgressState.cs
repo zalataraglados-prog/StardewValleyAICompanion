@@ -297,6 +297,69 @@ namespace StardewAI.Contracts.State
         public SpecialOrderRewardProgressRef[] Rewards { get; set; } = new SpecialOrderRewardProgressRef[0];
     }
 
+    public sealed class SpecialOrderOfferRef
+    {
+        [JsonPropertyName("selection_index")]
+        public int SelectionIndex { get; set; }
+
+        [JsonPropertyName("selection_side")]
+        public string SelectionSide { get; set; } = string.Empty;
+
+        [JsonPropertyName("offer_fingerprint")]
+        public string OfferFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("order")]
+        public SpecialOrderProgressRef Order { get; set; } = new();
+    }
+
+    public sealed class SpecialOrderBoardRef
+    {
+        [JsonPropertyName("board_type")]
+        public string BoardType { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("action_token")]
+        public string ActionToken { get; set; } = string.Empty;
+
+        [JsonPropertyName("action_raw")]
+        public string ActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("action_tile_x")]
+        public int? ActionTileX { get; set; }
+
+        [JsonPropertyName("action_tile_y")]
+        public int? ActionTileY { get; set; }
+
+        [JsonPropertyName("stand_tile_x")]
+        public int? StandTileX { get; set; }
+
+        [JsonPropertyName("stand_tile_y")]
+        public int? StandTileY { get; set; }
+
+        [JsonPropertyName("unlocked")]
+        public bool Unlocked { get; set; }
+
+        [JsonPropertyName("accepted_this_cycle")]
+        public bool AcceptedThisCycle { get; set; }
+
+        [JsonPropertyName("menu_open")]
+        public bool MenuOpen { get; set; }
+
+        [JsonPropertyName("dialogue_ready_for_board")]
+        public bool DialogueReadyForBoard { get; set; }
+
+        [JsonPropertyName("offers")]
+        public SpecialOrderOfferRef[] Offers { get; set; } = System.Array.Empty<SpecialOrderOfferRef>();
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "blocked";
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
+    }
+
     public sealed class SpecialOrderDonatedItemRef
     {
         [JsonPropertyName("is_null_entry")]
