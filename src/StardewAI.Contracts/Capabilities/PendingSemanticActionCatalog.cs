@@ -65,7 +65,6 @@ public static class PendingSemanticActionCatalog
             C("minigame.play_prairie_king", "minigame", "composite", "engine.minigame", "AbigailGame"),
             C("minigame.play_slots", "minigame", "composite", "engine.minigame", "Slots"),
             C("mining.activate_calico_statue", "mining", "composite", "engine.interaction_menu", "MineShaft"),
-            C("mining.use_elevator", "mining", "composite", "engine.dungeon_traversal", "MineElevatorMenu"),
             C("multiplayer.manage_wallet", "multiplayer", "composite", "engine.interaction_menu", "ManorHouse"),
             C("multiplayer.send_chat", "multiplayer", "composite", "engine.interaction_menu", "ChatBox"),
             C("player.choose_bobber", "player", "composite", "engine.interaction_menu", "GameLocation"),

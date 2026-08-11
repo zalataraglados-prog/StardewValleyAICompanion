@@ -462,6 +462,7 @@ public sealed partial class ModEntry : Mod
         TickDialogueAdvance();
         TickMenuClose();
         TickMailProcessing();
+        TickMineElevatorSelection();
         TickShippingSummaryClose();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
@@ -943,6 +944,10 @@ public sealed partial class ModEntry : Mod
                 if (Game1.activeClickableMenu is LetterViewerMenu letterViewerMenu)
                 {
                     StartMailProcessing(pending, letterViewerMenu);
+                }
+                else if (Game1.activeClickableMenu is MineElevatorMenu)
+                {
+                    StartMineElevatorSelection(pending);
                 }
                 else
                 {
@@ -1536,6 +1541,7 @@ public sealed partial class ModEntry : Mod
             activeDialogueAdvance is not null ||
             activeMenuClose is not null ||
             activeMailProcessing is not null ||
+            activeMineElevatorSelection is not null ||
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null ||

@@ -331,6 +331,19 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "rolling-horizon current-floor action compiled", "after-state replanning continues until target depth" },
                 new[] { "block_unavailable_required_state", "block_impossible_target_depth", "block_unsupported_current_floor_step" }));
 
+            Register(Option("mining.use_elevator", "mining", "Select one unlocked ordinary-mine elevator checkpoint through the native elevator menu",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[]
+                {
+                    "player.location_id", "player.tile_x", "player.tile_y", "player.deepest_mine_level", "player.current_mine_level",
+                    "current_location.mine_elevator_action_tiles", "locations.collision_grid", "locations.route_graph", "locations.route_connectors",
+                    "menus.active_menu", "menus.menu_specific_state"
+                },
+                new[] { "ordinary-mine elevator endpoint reached and opened natively", "one exact offered checkpoint selected through MineElevatorMenu", "native destination location and level verified" },
+                new[] { "block_non_ordinary_mine_family", "block_locked_or_non_checkpoint_floor", "block_current_floor", "block_floor_zero_outside_mineshaft", "block_menu_identity_drift", "block_direct_enter_mine_or_warp" }));
+
             Register(Option("mining.obtain_skull_key", "mining", "Reach ordinary mine floor 120 and claim the native Skull Key reward chest",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

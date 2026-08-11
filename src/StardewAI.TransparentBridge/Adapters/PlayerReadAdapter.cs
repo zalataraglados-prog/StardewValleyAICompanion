@@ -73,6 +73,8 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["luck_context"] = Field(ReadLuckContext(player), "Game1.player.team.sharedDailyLuck, Farmer.DailyLuck/LuckLevel, Farmer.hasSpecialCharm, BuffManager.AppliedBuffs", tick),
             ["trinket_loadout"] = Field(ReadTrinketLoadout(player), "Game1.player.stats.Get(\"trinketSlots\") unlock flag, Farmer.MaximumTrinkets, Game1.player.trinketItems and exact Trinket special state", tick),
             ["has_skull_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasSkullKey : null, "Game1.player.hasSkullKey", tick),
+            ["deepest_mine_level"] = Field(Context.IsWorldReady ? (int?)player?.deepestMineLevel : null, "Game1.player.deepestMineLevel", tick),
+            ["current_mine_level"] = Field(Context.IsWorldReady ? (int?)Game1.CurrentMineLevel : null, "Game1.CurrentMineLevel", tick),
             ["has_rusty_key"] = Field(Context.IsWorldReady ? (bool?)player?.hasRustyKey : null, "Game1.player.hasRustyKey", tick),
             ["married_or_roommate"] = Field(Context.IsWorldReady ? (bool?)player?.isMarriedOrRoommates() : null, "Game1.player.isMarriedOrRoommates()", tick),
             ["engaged"] = Field(Context.IsWorldReady ? (bool?)player?.isEngaged() : null, "Game1.player.isEngaged()", tick),

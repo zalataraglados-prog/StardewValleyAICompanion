@@ -66,6 +66,12 @@ public sealed partial class ModEntry : Mod
             beforeLocation,
             calibrationLoadout,
             createForcedShaft: false);
+        if (Environment.GetEnvironmentVariable("STARDEWAI_MINE_ELEVATOR_FIXTURE") == "1")
+        {
+            MineShaft.lowestLevelReached = Math.Max(MineShaft.lowestLevelReached, request.MineLevel.Value);
+            Game1.player.deepestMineLevel = Math.Max(Game1.player.deepestMineLevel, request.MineLevel.Value);
+            Game1.player.ridingMineElevator = true;
+        }
         Game1.enterMine(request.MineLevel.Value);
     }
 
@@ -519,6 +525,7 @@ public sealed partial class ModEntry : Mod
         if (loaded)
         {
             EnsureMineRewardChestFixtureIfEnabled(mine!);
+            PositionMineElevatorFixturePlayerIfEnabled(mine!);
         }
         if (loaded && active.CreateForcedShaft && !active.ShaftCreationIssued)
         {
@@ -564,6 +571,44 @@ public sealed partial class ModEntry : Mod
         }
 
         AddLevelChestsMethod?.Invoke(mine, null);
+    }
+
+    private static void PositionMineElevatorFixturePlayerIfEnabled(MineShaft mine)
+    {
+        var map = mine.map;
+        if (Environment.GetEnvironmentVariable("STARDEWAI_MINE_ELEVATOR_FIXTURE") != "1" || map is null || map.Layers.Count == 0)
+        {
+            return;
+        }
+
+        var width = map.Layers[0].LayerWidth;
+        var height = map.Layers[0].LayerHeight;
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                if (mine.getTileIndexAt(x, y, "Buildings", "mine") != 112)
+                {
+                    continue;
+                }
+
+                var stand = new[]
+                {
+                    new Point(x + 1, y),
+                    new Point(x - 1, y),
+                    new Point(x, y + 1),
+                    new Point(x, y - 1)
+                }.FirstOrDefault(tile =>
+                    IsTileOnMap(mine, tile) &&
+                    IsTileWalkable(mine, tile) &&
+                    !IsTileOccupiedByCharacter(mine, tile));
+                if (stand != Point.Zero)
+                {
+                    Game1.player.Position = stand.ToVector2() * Game1.tileSize;
+                }
+                return;
+            }
+        }
     }
 
     private void TickQuarrySetup()

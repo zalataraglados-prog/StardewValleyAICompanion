@@ -51,6 +51,7 @@ namespace StardewAI.Core.Training
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
+                ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
                 ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "process_open_letter" }
@@ -122,6 +123,21 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "process_open_letter")
             {
                 return ProcessOpenLetterSteps(candidate);
+            }
+
+            if (candidate.Kind == "mine_elevator_approach")
+            {
+                return MineElevatorApproachSteps(candidate);
+            }
+
+            if (candidate.Kind == "open_mine_elevator")
+            {
+                return OpenMineElevatorSteps(candidate);
+            }
+
+            if (candidate.Kind == "select_mine_elevator_floor")
+            {
+                return SelectMineElevatorFloorSteps(candidate);
             }
 
             if (candidate.Kind == "recovery_return_home" ||

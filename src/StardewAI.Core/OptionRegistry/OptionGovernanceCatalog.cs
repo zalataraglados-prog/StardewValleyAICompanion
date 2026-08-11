@@ -243,6 +243,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("foraging.clear_green_rain_bushes", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.pan_ore_spot", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.reach_depth", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
+                P("mining.use_elevator", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("mining.obtain_skull_key", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("mining.claim_reward_chests", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),

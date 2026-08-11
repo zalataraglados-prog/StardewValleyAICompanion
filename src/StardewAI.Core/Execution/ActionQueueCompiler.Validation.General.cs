@@ -127,6 +127,11 @@ namespace StardewAI.Core.Execution
                 return ValidateLetterViewerMenuPlan(action, snapshot);
             }
 
+            if (type == "MineElevatorMenu")
+            {
+                return ValidateMineElevatorMenuPlan(action, snapshot);
+            }
+
             if (IsSafeCloseMenuType(type))
             {
                 return Array.Empty<string>();

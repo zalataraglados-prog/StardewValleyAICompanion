@@ -1,12 +1,18 @@
 # StardewAI 当前工作
 
-更新时间：2026-08-11
+更新时间：2026-08-12
 
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `115 registered / 177 semantic / 114 compiler-bound / 41 five-gate / 28 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `116 registered / 177 semantic / 115 compiler-bound / 42 five-gate / 29 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
+- EVD-246 已闭合 `mining.use_elevator`：透明桥读取玩家最深/当前矿层、入口 `Action=MineElevator`、
+  楼层 `Buildings/mine` 索引 112 和精确 `MineElevatorMenu` 条目身份；DailyPlan 复用既有跨图移动、
+  `interact` 与 `close_menu`。运行时只点击原生端点和菜单，不直接调用 `enterMine`/`warpFarmer`，并跨帧
+  验证最终位置。隐藏静默隔离矩阵 `runtime-mine-elevator-20260812-004601` 为 2/2：25 层回入口及入口回
+  25 层均通过。`mining.reach_depth` 仅在实时端点存在且已解锁检查点能推进最终目标时复用该链，并保留
+  最终深度为 continuation；其余楼层继续使用原 current-floor planner。
 - EVD-245 已闭合 `mail.process_letter`。共享解析器覆盖锁定 `Data/mail` 的 179 封信和 107 条指令，
   解析阻塞为 0；透明桥公开原生顺序队列、玩家实际拥有的邮箱位置、附件容量上界和完整
   `LetterViewerMenu` 状态。DailyPlan 只组合既有移动、`interact` 与 `close_menu`，运行时只发送原生
@@ -14,9 +20,8 @@
   配方、任务或最大体力。严格隐藏静默矩阵
   `artifacts/runtime-mail-processing/runtime-mail-processing-20260811-221959/summary.json` 为 5/5；
   新 full 快照为 required 107、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。
-- 下一主切片是 `mining.use_elevator`。它必须先对账普通矿井现有的跨图移动、矿井入口、楼层变化和
-  新快照重规划链，只补电梯楼层选择这一项原生分支；不得复制普通矿井或火山执行循环。采石场金镰刀
-  洞窟继续保持独立身份，不得混入普通矿井电梯。
+- 下一主切片按动作对账中剩余语义依赖继续选择；普通矿井电梯已经闭合，不得再建立平行实现。采石场
+  金镰刀洞窟、Skull Cavern 和火山继续保持独立身份，不得混入普通矿井电梯。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的

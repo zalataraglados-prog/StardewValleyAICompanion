@@ -66,9 +66,12 @@ public sealed partial class ModEntry : Mod
         {
             return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "mailbox_native_target_mismatch");
         }
+        var requestedMineElevator = string.Equals(request.ExpectedActionType, "MineElevator", StringComparison.OrdinalIgnoreCase);
         var rawAction = requestedMailbox
             ? "Mailbox"
-            : Game1.currentLocation.doesTileHaveProperty(target.X, target.Y, "Action", "Buildings");
+            : requestedMineElevator && Game1.currentLocation is MineShaft mine && mine.getTileIndexAt(target.X, target.Y, "Buildings", "mine") == 112
+                ? "MineElevator"
+                : Game1.currentLocation.doesTileHaveProperty(target.X, target.Y, "Action", "Buildings");
         if (string.IsNullOrWhiteSpace(rawAction))
         {
             return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "interact_action_property_missing");
@@ -82,6 +85,7 @@ public sealed partial class ModEntry : Mod
 
         var isGoldenScytheAction = string.Equals(actionType, "GoldenScythe", StringComparison.OrdinalIgnoreCase);
         var isMailboxAction = string.Equals(actionType, "Mailbox", StringComparison.OrdinalIgnoreCase);
+        var isMineElevatorAction = string.Equals(actionType, "MineElevator", StringComparison.OrdinalIgnoreCase);
         var mailboxQueueBefore = isMailboxAction ? Game1.player.mailbox.ToArray() : Array.Empty<string>();
         var mailboxFirstBefore = mailboxQueueBefore.FirstOrDefault() ?? string.Empty;
         if (isMailboxAction && (mailboxQueueBefore.Length == 0 ||
@@ -117,6 +121,7 @@ public sealed partial class ModEntry : Mod
         var goldenScytheCountAfter = isGoldenScytheAction ? CountInventoryItems("(W)53") : 0;
         var mailboxQueueAfter = isMailboxAction ? Game1.player.mailbox.ToArray() : Array.Empty<string>();
         var openedLetter = Game1.activeClickableMenu as LetterViewerMenu;
+        var openedMineElevator = Game1.activeClickableMenu as MineElevatorMenu;
         var verified = handled && (afterMenuOpen != beforeMenuOpen ||
             !string.Equals(afterMenuType, beforeMenuType, StringComparison.Ordinal) ||
             !string.Equals(afterLocation, beforeLocation, StringComparison.Ordinal) ||
@@ -141,6 +146,13 @@ public sealed partial class ModEntry : Mod
             verificationReasons = verified
                 ? new[] { "mailbox_native_action_handled", "mailbox_first_removed", "exact_letter_viewer_opened" }
                 : new[] { handled ? "mailbox_native_result_mismatch" : "map_action_not_handled" };
+        }
+        else if (isMineElevatorAction)
+        {
+            verified = handled && openedMineElevator is not null && openedMineElevator.elevators.Count > 1;
+            verificationReasons = verified
+                ? new[] { "mine_elevator_native_action_handled", "exact_mine_elevator_menu_opened" }
+                : new[] { handled ? "mine_elevator_native_result_mismatch" : "map_action_not_handled" };
         }
         else
         {
@@ -213,6 +225,6 @@ public sealed partial class ModEntry : Mod
 
     private static bool IsInteractActionTypeWhitelisted(string actionType)
     {
-        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard" or "SpecialOrders" or "QiChallengeBoard" or "DesertMarlon" or "Mailbox";
+        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard" or "SpecialOrders" or "QiChallengeBoard" or "DesertMarlon" or "Mailbox" or "MineElevator";
     }
 }

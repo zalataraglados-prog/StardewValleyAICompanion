@@ -69,6 +69,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_mining_reach_depth_candidates");
             }
 
+            if (optionId == "mining.use_elevator")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mine_elevator_candidates",
+                    "no_available_mine_elevator_candidates");
+            }
+
             if (optionId == "mining.acquire_golden_scythe")
             {
                 return EventCandidateAvailabilityReasons(
