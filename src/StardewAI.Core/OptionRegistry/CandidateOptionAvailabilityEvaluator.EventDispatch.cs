@@ -24,6 +24,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["housing.advance_farmhouse"] = (snapshot, _) => FarmhouseUpgradeCandidates(snapshot),
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["skills.choose_profession"] = (snapshot, _) => ProfessionChoiceCandidates(snapshot),
+                ["mail.process_letter"] = (snapshot, _) => MailProcessingCandidates(snapshot),
                 ["executor.clear_obstacle"] = (snapshot, _) => ClearObstacleCandidates(snapshot),
                 ["executor.plant_seed"] = (snapshot, _) => PlantSeedCandidates(snapshot),
                 ["exploration.visit_location"] = (snapshot, _) => RouteConnectorCandidates(snapshot),

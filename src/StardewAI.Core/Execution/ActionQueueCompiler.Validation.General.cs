@@ -122,6 +122,11 @@ namespace StardewAI.Core.Execution
                 return new[] { "close_menu_type_unknown" };
             }
 
+            if (type == "LetterViewerMenu")
+            {
+                return ValidateLetterViewerMenuPlan(action, snapshot);
+            }
+
             if (IsSafeCloseMenuType(type))
             {
                 return Array.Empty<string>();

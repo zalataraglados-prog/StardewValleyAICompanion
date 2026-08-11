@@ -149,6 +149,17 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_kind_unsupported" };
             }
 
+            if (string.Equals(expectedActionType, "Mailbox", StringComparison.Ordinal))
+            {
+                var mailbox = ReadStateFieldValue(snapshot, "quests", "mailbox_processing");
+                return mailbox.HasValue && mailbox.Value.ValueKind == JsonValueKind.Object &&
+                    ReadInt(mailbox.Value, "mailbox_action_tile_x", int.MinValue) == targetX.Value &&
+                    ReadInt(mailbox.Value, "mailbox_action_tile_y", int.MinValue) == targetY.Value &&
+                    string.Equals(ReadString(mailbox.Value, "pending_mail_id"), ReadParameter(action, "target_runtime_identity"), StringComparison.Ordinal)
+                        ? Array.Empty<string>()
+                        : new[] { "mailbox_transparent_target_identity_mismatch" };
+            }
+
             if (string.Equals(expectedActionType, "GoldenScythe", StringComparison.Ordinal) &&
                 string.Equals(
                     ReadParameter(action, "required_executor_profile"),

@@ -36,7 +36,10 @@ namespace StardewAI.Core.Training
             var professionChoiceActive = availability.Options
                 .SelectMany(option => option.EventCandidates)
                 .Any(candidate => candidate.Available && candidate.Kind == "choose_profession");
-            var mandatoryMenuRecovery = !professionChoiceActive && availability.Options
+            var mailProcessingActive = availability.Options
+                .SelectMany(option => option.EventCandidates)
+                .Any(candidate => candidate.Available && candidate.Kind == "process_open_letter");
+            var mandatoryMenuRecovery = !professionChoiceActive && !mailProcessingActive && availability.Options
                 .SelectMany(option => option.EventCandidates)
                 .Any(candidate => candidate.Available && candidate.Kind == "recovery_close_menu");
             foreach (var option in availability.Options)
@@ -45,6 +48,7 @@ namespace StardewAI.Core.Training
                 var legalEventCandidates = option.EventCandidates
                     .Where(CanEnterTimeline)
                     .Where(candidate => !professionChoiceActive || candidate.Kind == "choose_profession")
+                    .Where(candidate => !mailProcessingActive || candidate.Kind == "process_open_letter")
                     .Where(candidate => !mandatoryMenuRecovery || candidate.Kind == "recovery_close_menu")
                     .ToArray();
                 foreach (var ec in legalEventCandidates)

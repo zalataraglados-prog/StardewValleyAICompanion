@@ -1,26 +1,11 @@
 using System.Globalization;
 using System.Text.Json;
+using StardewAI.Contracts.Mail;
 
 namespace StardewAI.KnowledgeCompiler;
 
 internal sealed class ProgressionDependencyIndexBuilder
 {
-    private static readonly HashSet<string> MailItemCommands = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "id",
-        "object",
-        "tools",
-        "bigobject",
-        "furniture",
-        "money",
-        "conversationtopic",
-        "cookingrecipe",
-        "craftingrecipe",
-        "itemrecovery",
-        "quest",
-        "specialorder"
-    };
-
     public ProgressionDependencyIndex Build(
         IReadOnlyDictionary<string, PayloadAsset> payloads,
         string runtimeSemanticsPath)
@@ -95,9 +80,8 @@ internal sealed class ProgressionDependencyIndexBuilder
             }
 
             var raw = entry.Value.GetString() ?? string.Empty;
-            var directives = ExtractMailDirectives(entry.Name, raw, issues)
-                .OrderBy(row => row.ExecutionPhase, StringComparer.Ordinal)
-                .ThenBy(row => row.SourceOffset)
+            var directives = MailDirectiveParser.Parse(raw)
+                .Select(directive => ConvertMailDirective(entry.Name, directive, issues))
                 .ToArray();
             result.Add(new(entry.Name, Hashing.Sha256(raw), directives));
         }
@@ -105,108 +89,34 @@ internal sealed class ProgressionDependencyIndexBuilder
         return result.OrderBy(row => row.MailId, StringComparer.Ordinal).ToArray();
     }
 
-    private static IEnumerable<MailDirective> ExtractMailDirectives(
+    private static MailDirective ConvertMailDirective(
         string mailId,
-        string raw,
+        ParsedMailDirective directive,
         ICollection<ProgressionIndexIssue> issues)
     {
-        foreach (var directive in ExtractMailDirectives(mailId, raw, "%action", "action", "0_action", issues))
-            yield return directive;
-        foreach (var directive in ExtractMailDirectives(mailId, raw, "%item", "item", "1_item", issues))
-            yield return directive;
-    }
-
-    private static IEnumerable<MailDirective> ExtractMailDirectives(
-        string mailId,
-        string raw,
-        string marker,
-        string kind,
-        string phase,
-        ICollection<ProgressionIndexIssue> issues)
-    {
-        var startIndex = 0;
-        while (true)
-        {
-            var start = raw.IndexOf(marker, startIndex, StringComparison.InvariantCulture);
-            if (start < 0)
-                yield break;
-            var end = raw.IndexOf("%%", start, StringComparison.InvariantCulture);
-            if (end < 0)
-            {
-                issues.Add(new(
-                    "blocking",
-                    "mail_directive_missing_terminator",
-                    mailId,
-                    $"marker={marker};offset={start}"));
-                yield break;
-            }
-
-            var full = raw.Substring(start, end + 2 - start);
-            var body = full.Substring(marker.Length, full.Length - marker.Length - 2);
-            yield return kind == "action"
-                ? ParseMailAction(mailId, start, phase, full, body, issues)
-                : ParseMailItem(mailId, start, phase, full, body, issues);
-            startIndex = end + 2;
-        }
-    }
-
-    private static MailDirective ParseMailAction(
-        string mailId,
-        int offset,
-        string phase,
-        string raw,
-        string body,
-        ICollection<ProgressionIndexIssue> issues)
-    {
-        var tokens = SplitQuoteAware(body);
-        if (tokens.Count == 0)
-        {
-            issues.Add(new("blocking", "mail_action_empty", mailId, $"offset={offset}"));
-        }
-        return new(
-            "action",
-            phase,
-            offset,
-            raw,
-            body,
-            tokens.FirstOrDefault() ?? string.Empty,
-            tokens,
-            "TriggerActionManager.ParseAction and TryRunAction",
-            TriggerReferences("mail", mailId, $"directive@{offset}", tokens));
-    }
-
-    private static MailDirective ParseMailItem(
-        string mailId,
-        int offset,
-        string phase,
-        string raw,
-        string body,
-        ICollection<ProgressionIndexIssue> issues)
-    {
-        var firstSplit = SplitBySpace(body, 2);
-        var command = firstSplit.FirstOrDefault() ?? string.Empty;
-        var tokens = firstSplit.Count > 1
-            ? SplitBySpace(firstSplit[1], int.MaxValue)
-            : Array.Empty<string>();
-        if (!MailItemCommands.Contains(command))
+        foreach (var error in directive.Errors)
         {
             issues.Add(new(
                 "blocking",
-                "mail_item_command_unknown",
+                error,
                 mailId,
-                $"offset={offset};command={command}"));
+                $"offset={directive.SourceOffset};command={directive.Command}"));
         }
 
-        var references = MailItemReferences(mailId, offset, command, tokens, issues);
-        return new(
-            "item",
-            phase,
-            offset,
-            raw,
-            body,
-            command,
-            tokens,
-            NativeMailResolution(command, tokens),
+        var references = directive.Kind == "action"
+            ? TriggerReferences("mail", mailId, $"directive@{directive.SourceOffset}", directive.Arguments)
+            : MailItemReferences(mailId, directive.SourceOffset, directive.Command, directive.Arguments, issues);
+        return new MailDirective(
+            directive.Kind,
+            directive.ExecutionPhase,
+            directive.SourceOffset,
+            directive.Raw,
+            directive.Body,
+            directive.Command,
+            directive.Arguments,
+            directive.Kind == "action"
+                ? "TriggerActionManager.ParseAction and TryRunAction"
+                : NativeMailResolution(directive.Command, directive.Arguments),
             references);
     }
 

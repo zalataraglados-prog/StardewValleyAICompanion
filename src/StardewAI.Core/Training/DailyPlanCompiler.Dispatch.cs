@@ -52,7 +52,8 @@ namespace StardewAI.Core.Training
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
-                ["skills.choose_profession"] = new[] { "choose_profession" }
+                ["skills.choose_profession"] = new[] { "choose_profession" },
+                ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "process_open_letter" }
             };
 
         public static IReadOnlyCollection<string> OptionCompilerIds =>
@@ -106,6 +107,21 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "choose_profession")
             {
                 return ProfessionChoiceSteps(candidate);
+            }
+
+            if (candidate.Kind == "mailbox_approach")
+            {
+                return MailboxApproachSteps(candidate);
+            }
+
+            if (candidate.Kind == "open_mailbox_letter")
+            {
+                return OpenMailboxLetterSteps(candidate);
+            }
+
+            if (candidate.Kind == "process_open_letter")
+            {
+                return ProcessOpenLetterSteps(candidate);
             }
 
             if (candidate.Kind == "recovery_return_home" ||

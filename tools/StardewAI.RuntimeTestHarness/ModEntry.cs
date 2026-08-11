@@ -91,6 +91,7 @@ public sealed partial class ModEntry : Mod
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
     private ActiveDialogueAdvance? activeDialogueAdvance;
     private ActiveMenuClose? activeMenuClose;
+    private ActiveMailProcessing? activeMailProcessing;
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
@@ -460,6 +461,7 @@ public sealed partial class ModEntry : Mod
         TickWorkbenchCraftSafely();
         TickDialogueAdvance();
         TickMenuClose();
+        TickMailProcessing();
         TickShippingSummaryClose();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
@@ -721,6 +723,11 @@ public sealed partial class ModEntry : Mod
                 pending.Completion.SetResult(ExecuteSetupLevelUpProfessionFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_mail")
+            {
+                pending.Completion.SetResult(ExecuteSetupMailFixture(pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
             {
                 pending.Completion.SetResult(
@@ -933,7 +940,14 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.close_menu")
             {
-                StartDialogueAdvance(pending);
+                if (Game1.activeClickableMenu is LetterViewerMenu letterViewerMenu)
+                {
+                    StartMailProcessing(pending, letterViewerMenu);
+                }
+                else
+                {
+                    StartDialogueAdvance(pending);
+                }
                 return;
             }
 
@@ -1332,6 +1346,14 @@ public sealed partial class ModEntry : Mod
                     CloseMenuObservedEffect(),
                     "dialogue_advance_exception:" + ex.GetType().Name));
             }
+            var activeMail = activeMailProcessing;
+            if (activeMail is not null)
+            {
+                activeMailProcessing = null;
+                activeMail.Pending.Completion.SetResult(MailBlocked(
+                    activeMail.Pending.Request,
+                    "mail_processing_outer_exception:" + ex.GetType().Name));
+            }
             Monitor.Log($"Training execution failed: {ex}", LogLevel.Error);
             pending.Completion.SetResult(Blocked(pending.Request, "execution_exception:" + ex.GetType().Name));
         }
@@ -1513,6 +1535,7 @@ public sealed partial class ModEntry : Mod
             activeWorkbenchCraft is not null ||
             activeDialogueAdvance is not null ||
             activeMenuClose is not null ||
+            activeMailProcessing is not null ||
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null ||

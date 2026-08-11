@@ -39,6 +39,7 @@ public sealed partial class ProgressQuestReadAdapter : ReadAdapterBase
 
         var fields = new Dictionary<string, object>
         {
+            ["mailbox_processing"] = Field(ReadMailboxProcessing(player), "Game1.player.mailbox native order; Data/mail; shared MailDirectiveParser; Farmer.getMailboxPosition over Farm BuildingData ActionTiles; GameLocation.mailbox/LetterViewerMenu", tick),
             ["daily_quest_offer"] = Field(ReadDailyQuestOffer(player), "Game1.questOfTheDay; Game1.CanAcceptDailyQuest; Game1.player.acceptedDailyQuest; live Town Buildings Action=Billboard 3; GameLocation.IsTileBlockedBy read-only stand scan", tick),
             ["special_order_boards"] = Field(ReadSpecialOrderBoards(team), "Utility.ForEachLocation live Buildings Action tokens SpecialOrders/QiChallengeBoard/DesertMarlon; FarmerTeam.availableSpecialOrders/acceptedSpecialOrderTypes; active SpecialOrdersBoard leftOrder/rightOrder", tick),
             ["active_quests"] = Field(ReadActiveQuests(player), "Game1.player.questLog", tick),

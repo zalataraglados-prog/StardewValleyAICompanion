@@ -4,7 +4,7 @@ using StardewValley.Menus;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
-public sealed class MenuReadAdapter : ReadAdapterBase
+public sealed partial class MenuReadAdapter : ReadAdapterBase
 {
     private const string AdapterId = "vanilla_1_6_menu";
 
@@ -259,6 +259,9 @@ public sealed class MenuReadAdapter : ReadAdapterBase
                     new[] { "menus.menu_specific_state.dialogue.current_text" }),
             LevelUpMenu levelUpMenu =>
                 (Field(ReadLevelUpMenuState(levelUpMenu), "LevelUpMenu public state and exact private currentSkill/currentLevel/professionsToChoose fields", tick, AdapterId),
+                    Array.Empty<string>()),
+            LetterViewerMenu letterViewerMenu =>
+                (Field(ReadLetterViewerMenuState(letterViewerMenu), "LetterViewerMenu public mail/page/interactable/attachment/quest fields", tick, AdapterId),
                     Array.Empty<string>()),
             NamingMenu namingMenu =>
                 (Field(

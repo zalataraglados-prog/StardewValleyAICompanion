@@ -290,6 +290,13 @@ namespace StardewAI.Core.OptionRegistry
                     "no_quest_reward_claim_candidates",
                     "no_available_quest_reward_claim_candidates");
             }
+            if (optionId == "mail.process_letter")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_mail_processing_candidates",
+                    "no_available_mail_processing_candidates");
+            }
 
             return Array.Empty<string>();
         }

@@ -127,6 +127,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "all exact offered profession identities projected", "one strategy-selected profession compiled to the shared native level-up completion executor", "profession, immediate perk, pending level and menu receipts verified" },
                 new[] { "block_non_profession_level_up", "block_incomplete_level_up_projection", "block_profession_identity_drift", "block_direct_duplicate_level_up_executor" }));
 
+            Register(Option("mail.process_letter", "mail", "Process the next exact mailbox letter through the native mailbox and LetterViewerMenu lifecycle",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.Mixed,
+                new[] { "quests.mailbox_processing", "quests.mailbox", "quests.mail_received", "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "locations.route_graph", "locations.route_connectors", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "native-order mailbox identity rebound", "one rolling route, approach, open, or exact LetterViewer completion stage compiled", "mailbox removal, attachment, quest, special-order and menu receipts verified" },
+                new[] { "block_mail_data_or_directive_parse_failure", "block_unowned_mailbox", "block_attachment_capacity_insufficient", "block_mail_identity_drift", "block_direct_mail_inventory_recipe_money_quest_or_special_order_mutation" }));
+
             Register(Option("economy.buy_supplies", "economy", "Buy one exact supply through a rolling shop route",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,

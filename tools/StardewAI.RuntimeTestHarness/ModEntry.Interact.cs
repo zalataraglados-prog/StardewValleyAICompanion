@@ -61,7 +61,14 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "interact_menu_must_be_clear");
         }
 
-        var rawAction = Game1.currentLocation.doesTileHaveProperty(target.X, target.Y, "Action", "Buildings");
+        var requestedMailbox = string.Equals(request.ExpectedActionType, "Mailbox", StringComparison.OrdinalIgnoreCase);
+        if (requestedMailbox && (Game1.currentLocation is not Farm || Game1.player.getMailboxPosition() != target))
+        {
+            return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "mailbox_native_target_mismatch");
+        }
+        var rawAction = requestedMailbox
+            ? "Mailbox"
+            : Game1.currentLocation.doesTileHaveProperty(target.X, target.Y, "Action", "Buildings");
         if (string.IsNullOrWhiteSpace(rawAction))
         {
             return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "interact_action_property_missing");
@@ -74,6 +81,14 @@ public sealed partial class ModEntry : Mod
         }
 
         var isGoldenScytheAction = string.Equals(actionType, "GoldenScythe", StringComparison.OrdinalIgnoreCase);
+        var isMailboxAction = string.Equals(actionType, "Mailbox", StringComparison.OrdinalIgnoreCase);
+        var mailboxQueueBefore = isMailboxAction ? Game1.player.mailbox.ToArray() : Array.Empty<string>();
+        var mailboxFirstBefore = mailboxQueueBefore.FirstOrDefault() ?? string.Empty;
+        if (isMailboxAction && (mailboxQueueBefore.Length == 0 ||
+            !string.Equals(request.TargetRuntimeIdentity, mailboxFirstBefore, StringComparison.Ordinal)))
+        {
+            return BlockedWithPrimitive(request, "interact", InteractRequestedEffect(request), InteractObservedEffect(), "mailbox_first_identity_mismatch");
+        }
         var goldenScytheClaimedBefore = isGoldenScytheAction && Game1.player.mailReceived.Contains("gotGoldenScythe");
         var goldenScytheCountBefore = isGoldenScytheAction ? CountInventoryItems("(W)53") : 0;
         if (isGoldenScytheAction && goldenScytheClaimedBefore)
@@ -100,6 +115,8 @@ public sealed partial class ModEntry : Mod
         var afterTile = Game1.player.TilePoint;
         var goldenScytheClaimedAfter = isGoldenScytheAction && Game1.player.mailReceived.Contains("gotGoldenScythe");
         var goldenScytheCountAfter = isGoldenScytheAction ? CountInventoryItems("(W)53") : 0;
+        var mailboxQueueAfter = isMailboxAction ? Game1.player.mailbox.ToArray() : Array.Empty<string>();
+        var openedLetter = Game1.activeClickableMenu as LetterViewerMenu;
         var verified = handled && (afterMenuOpen != beforeMenuOpen ||
             !string.Equals(afterMenuType, beforeMenuType, StringComparison.Ordinal) ||
             !string.Equals(afterLocation, beforeLocation, StringComparison.Ordinal) ||
@@ -111,6 +128,19 @@ public sealed partial class ModEntry : Mod
             verificationReasons = verified
                 ? new[] { "golden_scythe_native_action_handled", "gotGoldenScythe_mail_received", "golden_scythe_inventory_increased" }
                 : new[] { handled ? "golden_scythe_native_claim_not_observed" : "map_action_not_handled" };
+        }
+        else if (isMailboxAction)
+        {
+            verified = handled &&
+                mailboxQueueAfter.Length == mailboxQueueBefore.Length - 1 &&
+                mailboxQueueBefore.Skip(1).SequenceEqual(mailboxQueueAfter, StringComparer.Ordinal) &&
+                openedLetter is not null &&
+                openedLetter.isMail &&
+                !openedLetter.isFromCollection &&
+                string.Equals(openedLetter.mailTitle, mailboxFirstBefore, StringComparison.Ordinal);
+            verificationReasons = verified
+                ? new[] { "mailbox_native_action_handled", "mailbox_first_removed", "exact_letter_viewer_opened" }
+                : new[] { handled ? "mailbox_native_result_mismatch" : "map_action_not_handled" };
         }
         else
         {
@@ -141,6 +171,21 @@ public sealed partial class ModEntry : Mod
                 After = goldenScytheCountAfter.ToString()
             });
         }
+        if (isMailboxAction)
+        {
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "quests.mailbox_processing.queue_count",
+                Before = mailboxQueueBefore.Length.ToString(),
+                After = mailboxQueueAfter.Length.ToString()
+            });
+            changedFacts.Add(new SimulatedFactChange
+            {
+                Path = "quests.mailbox_processing.pending_mail_id",
+                Before = mailboxFirstBefore,
+                After = mailboxQueueAfter.FirstOrDefault() ?? string.Empty
+            });
+        }
 
         return new TrainingExecutionResult
         {
@@ -168,6 +213,6 @@ public sealed partial class ModEntry : Mod
 
     private static bool IsInteractActionTypeWhitelisted(string actionType)
     {
-        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard" or "SpecialOrders" or "QiChallengeBoard" or "DesertMarlon";
+        return actionType is "OpenShop" or "Buy" or "JojaShop" or "Blacksmith" or "Carpenter" or "AnimalShop" or "AdventureShop" or "GoldenScythe" or "Arcade_Minecart" or "Billboard" or "SpecialOrders" or "QiChallengeBoard" or "DesertMarlon" or "Mailbox";
     }
 }

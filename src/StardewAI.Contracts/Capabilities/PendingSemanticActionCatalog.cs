@@ -58,7 +58,6 @@ public static class PendingSemanticActionCatalog
             C("foraging.rummage_garbage", "foraging", "composite", "engine.interaction_menu", "GameLocation"),
             C("housing.renovate", "housing", "composite", "engine.building_management", "RenovateMenu"),
             C("island.field_office_donate", "island", "composite", "engine.interaction_menu", "FieldOfficeMenu"),
-            C("mail.process_letter", "mail", "composite", "engine.interaction_menu", "LetterViewerMenu"),
             C("minigame.play_calico_jack", "minigame", "composite", "engine.minigame", "CalicoJack"),
             C("minigame.play_crane_game", "minigame", "composite", "engine.minigame", "CraneGame"),
             C("minigame.play_darts", "minigame", "composite", "engine.minigame", "Darts"),

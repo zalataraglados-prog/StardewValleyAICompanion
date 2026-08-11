@@ -23,6 +23,13 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 触及领域时的渐进迁移，不是动作注册和执行器开发的前置项目。不得因架构整理暂停动作
 覆盖主线；相同机械机制第二次出现时检查复用边界，第三次出现前必须抽取共享引擎。
 
+2026-08-11 最新机器检查点：`115 registered / 177 semantic / 114 compiler-bound /
+41 five-gate / 28 training allowlist / 0 Product Executor`。原生分母保持
+`320 surfaces / 428 branches / 150 map tokens` 且 blocking 为 0。`mail.process_letter`
+已按 EVD-245 完成；新锁定 full 快照覆盖 107 个必需字段且 blocking 为 0，KnowledgeCompiler
+为 `585/585`、blocking 0。下一动作切片是 `mining.use_elevator`，只允许在普通矿井既有链上
+增加原生电梯选择与楼层收据，不得复制普通矿井、火山或金镰刀洞窟系统。
+
 动作数字只允许由机器看板生成。历史文档中的 89、95、96、190 或 210 不得再单独作为
 完成度口径；当前 97 是注册数，不是全游戏动作总数。
 

@@ -5,8 +5,18 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `114 registered / 177 semantic / 113 compiler-bound / 40 five-gate / 27 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `115 registered / 177 semantic / 114 compiler-bound / 41 five-gate / 28 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
+- EVD-245 已闭合 `mail.process_letter`。共享解析器覆盖锁定 `Data/mail` 的 179 封信和 107 条指令，
+  解析阻塞为 0；透明桥公开原生顺序队列、玩家实际拥有的邮箱位置、附件容量上界和完整
+  `LetterViewerMenu` 状态。DailyPlan 只组合既有移动、`interact` 与 `close_menu`，运行时只发送原生
+  菜单输入并核对附件、任务、特别订单和星之果实收据，没有第二套移动/菜单执行器，也不直接写钱、
+  配方、任务或最大体力。严格隐藏静默矩阵
+  `artifacts/runtime-mail-processing/runtime-mail-processing-20260811-221959/summary.json` 为 5/5；
+  新 full 快照为 required 107、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。
+- 下一主切片是 `mining.use_elevator`。它必须先对账普通矿井现有的跨图移动、矿井入口、楼层变化和
+  新快照重规划链，只补电梯楼层选择这一项原生分支；不得复制普通矿井或火山执行循环。采石场金镰刀
+  洞窟继续保持独立身份，不得混入普通矿井电梯。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
 - EVD-235 已把任务终端矩阵扩展为 `4/4`：新增普通 `CraftingQuest`，从目的限定的

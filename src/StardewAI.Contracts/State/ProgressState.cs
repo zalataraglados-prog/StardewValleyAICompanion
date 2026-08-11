@@ -3,6 +3,99 @@ using System.Text.Json.Serialization;
 
 namespace StardewAI.Contracts.State
 {
+    public sealed class MailboxProcessingRef
+    {
+        [JsonPropertyName("available")]
+        public bool Available { get; set; }
+
+        [JsonPropertyName("queue_count")]
+        public int QueueCount { get; set; }
+
+        [JsonPropertyName("queue_mail_ids_native_order")]
+        public string[] QueueMailIdsNativeOrder { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("pending_mail_id")]
+        public string PendingMailId { get; set; } = string.Empty;
+
+        [JsonPropertyName("mail_data_found")]
+        public bool MailDataFound { get; set; }
+
+        [JsonPropertyName("mail_data_sha256")]
+        public string MailDataSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("dynamic_native_resolution")]
+        public string DynamicNativeResolution { get; set; } = string.Empty;
+
+        [JsonPropertyName("directives")]
+        public MailDirectiveRef[] Directives { get; set; } = System.Array.Empty<MailDirectiveRef>();
+
+        [JsonPropertyName("constructor_effect_classes")]
+        public string[] ConstructorEffectClasses { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("attachment_slot_upper_bound")]
+        public int AttachmentSlotUpperBound { get; set; }
+
+        [JsonPropertyName("inventory_empty_slots")]
+        public int InventoryEmptySlots { get; set; }
+
+        [JsonPropertyName("attachment_capacity_sufficient")]
+        public bool AttachmentCapacitySufficient { get; set; }
+
+        [JsonPropertyName("mail_received_on_open")]
+        public bool MailReceivedOnOpen { get; set; }
+
+        [JsonPropertyName("mailbox_location_id")]
+        public string MailboxLocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("mailbox_action_tile_x")]
+        public int? MailboxActionTileX { get; set; }
+
+        [JsonPropertyName("mailbox_action_tile_y")]
+        public int? MailboxActionTileY { get; set; }
+
+        [JsonPropertyName("mailbox_action_raw")]
+        public string MailboxActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("stand_tile_x")]
+        public int? StandTileX { get; set; }
+
+        [JsonPropertyName("stand_tile_y")]
+        public int? StandTileY { get; set; }
+
+        [JsonPropertyName("menu_clear")]
+        public bool MenuClear { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("blocked_diagnostics")]
+        public string[] BlockedDiagnostics { get; set; } = System.Array.Empty<string>();
+    }
+
+    public sealed class MailDirectiveRef
+    {
+        [JsonPropertyName("kind")]
+        public string Kind { get; set; } = string.Empty;
+
+        [JsonPropertyName("execution_phase")]
+        public string ExecutionPhase { get; set; } = string.Empty;
+
+        [JsonPropertyName("source_offset")]
+        public int SourceOffset { get; set; }
+
+        [JsonPropertyName("raw")]
+        public string Raw { get; set; } = string.Empty;
+
+        [JsonPropertyName("command")]
+        public string Command { get; set; } = string.Empty;
+
+        [JsonPropertyName("arguments")]
+        public string[] Arguments { get; set; } = System.Array.Empty<string>();
+
+        [JsonPropertyName("errors")]
+        public string[] Errors { get; set; } = System.Array.Empty<string>();
+    }
+
     public sealed class DailyQuestOfferRef
     {
         [JsonPropertyName("available")]

@@ -72,6 +72,7 @@ namespace StardewAI.Core.Execution
             {
                 "LevelUpMenu" => "LevelUpMenu native completion path",
                 "ShippingMenu" => "ShippingMenu native OK-button completion path",
+                "LetterViewerMenu" => "LetterViewerMenu native page, attachment, quest and close-button input path",
                 "DialogueBox" when incubatorBirthMessage =>
                     "incubator birth message native input path",
                 _ => "Game1.exitActiveMenu"
