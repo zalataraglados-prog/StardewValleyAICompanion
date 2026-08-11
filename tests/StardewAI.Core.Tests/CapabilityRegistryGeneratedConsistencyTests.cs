@@ -166,7 +166,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
-                "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -207,6 +207,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps",
+                "skills.choose_profession" => "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
                 "skills.read_books" => "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",

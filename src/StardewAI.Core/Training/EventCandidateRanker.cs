@@ -33,7 +33,10 @@ namespace StardewAI.Core.Training
         {
             var optionScores = report.OptionScores.ToDictionary(score => score.OptionId, StringComparer.Ordinal);
             var ranked = new List<PolicyEventCandidatePrediction>();
-            var mandatoryMenuRecovery = availability.Options
+            var professionChoiceActive = availability.Options
+                .SelectMany(option => option.EventCandidates)
+                .Any(candidate => candidate.Available && candidate.Kind == "choose_profession");
+            var mandatoryMenuRecovery = !professionChoiceActive && availability.Options
                 .SelectMany(option => option.EventCandidates)
                 .Any(candidate => candidate.Available && candidate.Kind == "recovery_close_menu");
             foreach (var option in availability.Options)
@@ -41,6 +44,7 @@ namespace StardewAI.Core.Training
                 var seenCandidateIds = new HashSet<string>(StringComparer.Ordinal);
                 var legalEventCandidates = option.EventCandidates
                     .Where(CanEnterTimeline)
+                    .Where(candidate => !professionChoiceActive || candidate.Kind == "choose_profession")
                     .Where(candidate => !mandatoryMenuRecovery || candidate.Kind == "recovery_close_menu")
                     .ToArray();
                 foreach (var ec in legalEventCandidates)
@@ -167,6 +171,11 @@ namespace StardewAI.Core.Training
                     if (candidate.Kind == "recovery_close_menu")
                     {
                         urgencySignal = 0.25;
+                    }
+                    if (candidate.Kind == "choose_profession")
+                    {
+                        var preferenceRank = ParseInt(candidate.ExpectedEffect, "baseline_preference_rank=") ?? 99;
+                        urgencySignal = 0.30 + Math.Max(0, 10 - preferenceRank) * 0.001;
                     }
                     if (candidate.Kind == "recovery_return_home")
                     {

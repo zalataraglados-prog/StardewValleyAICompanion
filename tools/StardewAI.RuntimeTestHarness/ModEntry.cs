@@ -716,6 +716,11 @@ public sealed partial class ModEntry : Mod
                 pending.Completion.SetResult(ExecuteSetupQuestRewardFixture(pending.Request));
                 return;
             }
+            if (pending.Request.OptionId == "debug.setup_level_up_profession")
+            {
+                pending.Completion.SetResult(ExecuteSetupLevelUpProfessionFixture(pending.Request));
+                return;
+            }
             if (pending.Request.OptionId == "debug.setup_junimo_kart_quest")
             {
                 pending.Completion.SetResult(

@@ -5,7 +5,7 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `113 registered / 177 semantic / 112 compiler-bound / 39 five-gate / 26 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `114 registered / 177 semantic / 113 compiler-bound / 40 five-gate / 27 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - `quest.advance` 的 28 个目录阶段为 `24 bound / 0 blocked / 3 observation-only / 1 native-unreachable`；反编译扫描为
   `12` 种普通任务类型和 `9` 种特别订单目标类型，未发现未登记类型。
@@ -67,7 +67,7 @@
 ## 当前阶段
 
 锁定 Stardew Valley 1.6.15 的动作全集对账和独立分母冻结已经完成，现已转入逐动作纵向
-闭环。当前 113 个注册项是可复用的实现基线，不是被废弃的旧代码；64 个已编目未注册语义项
+闭环。当前 114 个注册项是可复用的实现基线，不是被废弃的旧代码；63 个已编目未注册语义项
 用于记录已证实但尚未实现的能力。正式训练保持阻塞。
 
 ## 已完成
@@ -98,7 +98,7 @@
 - 60 个宽入口全部生成分支目录，428 条分支中待语义审查 0、缺注册 0；
 - 150 个地图交互 token 中 142 个映射到语义动作，8 个经原生分支证实为无玩家语义、
   失效/遗留静态 token，待审查 0；
-- 语义动作目录共 177 项：113 项已有 `OptionSpec`，64 项为
+- 语义动作目录共 177 项：114 项已有 `OptionSpec`，63 项为
   `catalogued_blocked`，确认存在但尚未登记的动作数为 0。
 
 机器状态为 `native_action_denominator_frozen`，当前锁定扫描范围已闭合并通过独立审批文件
@@ -176,6 +176,23 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 七用例矩阵覆盖六类原版基础书籍分支，全部 applied/verified。当前 compiler-bound 为 77，五门闭环
 为 8，训练准入为 7；新增准入项是 `skills.read_books`。自定义 `performUseAction`、畸形模组标签和
 原版证据范围外分支继续失败关闭。
+
+## 2026-08-11 职业选择闭环（EVD-244）
+
+`skills.choose_profession` 已从恢复链中的隐式自动处理提升为正式语义动作。透明桥同时公开当前
+`LevelUpMenu` 的两个原生职业选项、精确 ID、标题、描述，以及玩家持久职业列表和待处理升级列表；候选层只在
+两个选项均完整可读时开放，并把同一选择界面的两个候选登记为互斥决策。DailyPlan 只把所选职业编译到既有
+`close_menu -> executor.close_menu`，没有新增第二套职业或菜单执行器。
+
+锁定版反编译确认 5 级分支为每技能 `skill * 6 + 0/1`，10 级分支按已有 5 级职业选择 `+2/+3` 或 `+4/+5`；
+运行回执记录选择前后的职业、待处理升级、生命、体力等即时变化。隐藏静默 E 盘全矩阵
+`runtime-profession-choice-20260811-203159` 覆盖原版 30 个职业 ID，修正前置即时 perk 的战斗复核矩阵
+`runtime-profession-choice-20260811-203610` 为 6/6 通过，并验证 Fighter `+15` 与 Defender `+25` 最大生命。
+最新 full snapshot schema 为 105 required、88 实时带来源可读、17 场景性、blocking 0；动作对账为
+114 registered / 177 semantic / 113 compiler-bound / 63 catalogued-blocked，five-gate 为 40，训练准入为 27。
+
+直接下一主切片是 `mail.process_letter`。`mining.use_elevator` 必须先按普通矿井既有移动、菜单和楼层切换链做
+复用对账，只有证明存在未覆盖的原生分支才允许新增实现。
 
 ## 禁止事项
 

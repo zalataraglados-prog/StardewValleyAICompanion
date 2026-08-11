@@ -77,7 +77,6 @@ public static class PendingSemanticActionCatalog
             C("recovery.sleep_in_tent", "recovery", "composite", "engine.recovery_timing", "Tent"),
             C("rewards.claim_adventure_guild_reward", "rewards", "composite", "engine.interaction_menu", "AdventureGuild"),
             C("rewards.claim_prize_ticket", "rewards", "composite", "engine.interaction_menu", "PrizeTicketMenu"),
-            C("skills.choose_profession", "skills", "composite", "engine.interaction_menu", "LevelUpMenu"),
             C("skills.claim_mastery", "skills", "composite", "engine.interaction_menu", "MasteryTrackerMenu"),
             C("social.emote", "social", "composite", "engine.interaction_menu", "EmoteMenu", "EmoteSelector"),
             C("social.watch_movie", "social", "composite", "engine.interaction_menu", "MovieTheater"),

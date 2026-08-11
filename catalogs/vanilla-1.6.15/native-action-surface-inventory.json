@@ -4,9 +4,9 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 320,
-  "mapped_count": 47,
-  "catalogued_blocked_surface_count": 122,
-  "catalogued_blocked_action_count": 64,
+  "mapped_count": 49,
+  "catalogued_blocked_surface_count": 120,
+  "catalogued_blocked_action_count": 63,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
     "animals.purchase",
@@ -64,7 +64,6 @@
     "recovery.sleep_in_tent",
     "rewards.claim_adventure_guild_reward",
     "rewards.claim_prize_ticket",
-    "skills.choose_profession",
     "skills.claim_mastery",
     "social.emote",
     "social.watch_movie",
@@ -2241,7 +2240,7 @@
       "mappedOptionIds": [
         "skills.choose_profession"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -2258,7 +2257,7 @@
       "mappedOptionIds": [
         "skills.choose_profession"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

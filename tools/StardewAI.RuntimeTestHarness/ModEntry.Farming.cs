@@ -804,6 +804,10 @@ public sealed partial class ModEntry : Mod
         }
 
         var professionsBefore = Game1.player.professions.ToHashSet();
+        var newLevelsBefore = Game1.player.newLevels.ToArray();
+        var maxHealthBefore = Game1.player.maxHealth;
+        var healthBefore = Game1.player.health;
+        var staminaBefore = Game1.player.stamina;
         if (menu.isProfessionChooser)
         {
             var choices = ReadLevelUpProfessionChoices(menu);
@@ -835,7 +839,7 @@ public sealed partial class ModEntry : Mod
             (!professionsBefore.Contains(request.ProfessionChoiceId.Value) &&
              Game1.player.professions.Contains(request.ProfessionChoiceId.Value));
         var verified = Game1.activeClickableMenu is null && choiceApplied;
-        return CompletedCloseMenu(
+        var result = CompletedCloseMenu(
             request,
             beforeOpen,
             beforeType,
@@ -844,6 +848,35 @@ public sealed partial class ModEntry : Mod
             verified
                 ? new[] { "level_up_menu_completed_with_native_perks" }
                 : new[] { "level_up_menu_completion_not_observed" });
+        if (request.ProfessionChoiceId.HasValue)
+        {
+            var choiceId = request.ProfessionChoiceId.Value;
+            result.RequestedEffect += ";player.professions_contains=" + choiceId + ";pending_level_removed=true";
+            result.ObservedEffect += ";player.professions_contains=" + Game1.player.professions.Contains(choiceId).ToString().ToLowerInvariant() +
+                ";pending_levels=" + Game1.player.newLevels.Count +
+                ";max_health=" + Game1.player.maxHealth +
+                ";health=" + Game1.player.health +
+                ";stamina=" + Game1.player.stamina;
+            result.ChangedFacts = result.ChangedFacts.Concat(new[]
+            {
+                new SimulatedFactChange
+                {
+                    Path = "player.professions[" + choiceId + "]",
+                    Before = professionsBefore.Contains(choiceId).ToString().ToLowerInvariant(),
+                    After = Game1.player.professions.Contains(choiceId).ToString().ToLowerInvariant()
+                },
+                new SimulatedFactChange
+                {
+                    Path = "player.new_levels",
+                    Before = string.Join(";", newLevelsBefore.Select(level => level.X + ":" + level.Y)),
+                    After = string.Join(";", Game1.player.newLevels.Select(level => level.X + ":" + level.Y))
+                },
+                new SimulatedFactChange { Path = "player.max_health", Before = maxHealthBefore.ToString(), After = Game1.player.maxHealth.ToString() },
+                new SimulatedFactChange { Path = "player.health", Before = healthBefore.ToString(), After = Game1.player.health.ToString() },
+                new SimulatedFactChange { Path = "player.stamina", Before = staminaBefore.ToString(), After = Game1.player.stamina.ToString() }
+            }).ToArray();
+        }
+        return result;
     }
 
     private static int[] ReadLevelUpProfessionChoices(LevelUpMenu menu)

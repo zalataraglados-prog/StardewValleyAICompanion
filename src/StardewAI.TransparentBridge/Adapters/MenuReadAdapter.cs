@@ -343,7 +343,8 @@ public sealed class MenuReadAdapter : ReadAdapterBase
                 .Select(id => new
                 {
                     profession_id = id,
-                    title = LevelUpMenu.getProfessionTitleFromNumber(id)
+                    title = LevelUpMenu.getProfessionTitleFromNumber(id),
+                    description_lines = LevelUpMenu.getProfessionDescription(id).ToArray()
                 })
                 .ToArray()
         };

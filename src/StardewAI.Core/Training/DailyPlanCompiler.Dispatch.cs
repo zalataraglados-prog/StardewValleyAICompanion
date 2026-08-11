@@ -51,7 +51,8 @@ namespace StardewAI.Core.Training
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
-                ["skills.read_books"] = new[] { "read_inventory_book" }
+                ["skills.read_books"] = new[] { "read_inventory_book" },
+                ["skills.choose_profession"] = new[] { "choose_profession" }
             };
 
         public static IReadOnlyCollection<string> OptionCompilerIds =>
@@ -100,6 +101,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "recovery_close_menu")
             {
                 return RecoveryCloseMenuSteps(candidate);
+            }
+
+            if (candidate.Kind == "choose_profession")
+            {
+                return ProfessionChoiceSteps(candidate);
             }
 
             if (candidate.Kind == "recovery_return_home" ||

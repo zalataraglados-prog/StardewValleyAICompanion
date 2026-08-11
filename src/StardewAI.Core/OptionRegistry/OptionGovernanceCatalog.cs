@@ -230,6 +230,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("quest.accept_daily", C, R3, CrossDay, PolicyConfirm, Actor, ActorState, Policy),
                 P("quest.accept_special_order", C, R3, CrossDay, PolicyConfirm, Actor, Mixed, Policy),
                 P("quest.claim_reward", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
+                P("skills.choose_profession", C, R4, Asset, PolicyConfirm, Actor, ActorState, Policy),
                 P("strategy.grandpa_progress", Goal, R1, None, NoConfirm, Actor, Mixed, Allowed),
                 P("exploration.visit_location", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("fishing.catch_fish", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),

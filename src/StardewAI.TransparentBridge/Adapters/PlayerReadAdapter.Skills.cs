@@ -26,6 +26,27 @@ public sealed partial class PlayerReadAdapter
             scoring_level = player.Level,
             scoring_formula = "floor((farming+fishing+foraging+combat+mining+luck)/2)",
             vanilla_level_cap = 10,
+            profession_ids = player.professions.OrderBy(id => id).ToArray(),
+            professions = player.professions
+                .OrderBy(id => id)
+                .Select(id => new
+                {
+                    profession_id = id,
+                    skill_index = id / 6,
+                    branch_index = id % 6,
+                    title = StardewValley.Menus.LevelUpMenu.getProfessionTitleFromNumber(id),
+                    description_lines = StardewValley.Menus.LevelUpMenu.getProfessionDescription(id).ToArray()
+                })
+                .ToArray(),
+            new_levels = player.newLevels
+                .OrderBy(level => level.X)
+                .ThenBy(level => level.Y)
+                .Select(level => new
+                {
+                    skill_index = level.X,
+                    level = level.Y
+                })
+                .ToArray(),
             skills
         };
     }

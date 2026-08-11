@@ -570,5 +570,22 @@ Town 隐藏静默隔离运行已通过；Qi 和沙漠节庆保留为同一实现
 观察 `OnMoneyRewardClaimed` 的金额、`moneyReward=0`、`destroy=true` 以及原生离页移除。生产路径禁止直接
 `Money +=`、写 `moneyReward`/`destroy`、调用 `OnMoneyRewardClaimed()` 或手动删除任务。隐藏静默 E 盘矩阵
 `runtime-quest-reward-claim-20260811-195512` 已验证 750g 精确增量与任务消失。最新 full snapshot schema 为
-105 required、88 实时带来源可读、17 场景性、blocking 0；动作对账为 113 registered / 177 semantic /
-112 compiler-bound / 64 catalogued-blocked，原生 320/428/150 不变。
+105 required、88 实时带来源可读、17 场景性、blocking 0；动作对账当时为 113 registered / 177 semantic /
+112 compiler-bound / 64 catalogued-blocked，原生 320/428/150 不变；后续 EVD-244 计数见下节。
+
+## 2026-08-11 原生职业选择（EVD-244 已闭合）
+
+`skills.choose_profession` 是小模型可选择的高层决策，不是新的机械菜单执行器。透明桥从实时
+`LevelUpMenu` 读取两个原生职业的 ID、标题和描述，并公开玩家已选职业与 `newLevels`；任何字段缺失、选项数量
+不是二、菜单身份漂移或待处理升级不匹配都在上游失败关闭。两个职业候选共享互斥决策键，因此同一日计划只能
+选择其中一个。
+
+DailyPlan 把决定编译为现有 `close_menu` 阶段，动作队列继续只产生唯一 `executor.close_menu`。运行层遵循
+锁定版 `LevelUpMenu` 的原生职业加入、即时 perk 和待处理升级移除顺序，回执对比职业、`newLevels`、生命和体力；
+不得增加第二套职业执行器，也不得让恢复候选在职业菜单打开时抢占业务候选。
+
+隐藏静默隔离矩阵 `runtime-profession-choice-20260811-203159` 覆盖 30/30 原版职业 ID；补齐 10 级战斗分支所需
+5 级前置即时 perk 后，`runtime-profession-choice-20260811-203610` 再覆盖 6/6 战斗职业，并验证 Fighter 与
+Defender 的最大生命增量。该动作进入训练准入后，总计为 114 registered / 177 semantic / 113 compiler-bound /
+63 catalogued-blocked / 40 five-gate / 27 allowlist；Product Executor 仍为 0。下一主切片为 `mail.process_letter`，矿井电梯仅做
+既有普通矿井链的复用核对，不另造矿井系统。

@@ -68,7 +68,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["energy"] = Field(player?.Stamina, "Game1.player.Stamina", tick),
             ["max_energy"] = Field(player?.MaxStamina, "Game1.player.MaxStamina", tick),
             ["level"] = Field(Context.IsWorldReady ? (int?)player?.Level : null, "Game1.player.Level", tick),
-            ["skills_detail"] = Field(ReadSkillsDetail(player), "Game1.player.GetUnmodifiedSkillLevel/GetSkillLevel/experiencePoints and Farmer.getBaseExperienceForLevel", tick),
+            ["skills_detail"] = Field(ReadSkillsDetail(player), "Game1.player.GetUnmodifiedSkillLevel/GetSkillLevel/experiencePoints/professions/newLevels; Farmer.getBaseExperienceForLevel; LevelUpMenu profession text", tick),
             ["book_candidates"] = Field(ReadBookCandidates(player), "Game1.player.Items and Object.performUseAction/readBook native branches", tick),
             ["luck_context"] = Field(ReadLuckContext(player), "Game1.player.team.sharedDailyLuck, Farmer.DailyLuck/LuckLevel, Farmer.hasSpecialCharm, BuffManager.AppliedBuffs", tick),
             ["trinket_loadout"] = Field(ReadTrinketLoadout(player), "Game1.player.stats.Get(\"trinketSlots\") unlock flag, Farmer.MaximumTrinkets, Game1.player.trinketItems and exact Trinket special state", tick),

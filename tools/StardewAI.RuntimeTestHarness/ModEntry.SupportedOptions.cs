@@ -40,6 +40,7 @@ public sealed partial class ModEntry
             "debug.setup_machine_output_target",
             "debug.setup_machine_placement_target",
             "debug.setup_joja_development",
+            "debug.setup_level_up_profession",
             "debug.setup_material_inventory_graph",
             "debug.setup_material_transfer_target",
             "debug.setup_mine_fishing_floor",

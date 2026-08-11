@@ -119,6 +119,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact inventory book branch selected", "native book use and item consumption handed to the mechanical executor" },
                 new[] { "block_native_book_use_gate", "block_incomplete_book_projection", "block_projection_drift", "block_direct_skill_stat_mail_or_recipe_mutation" }));
 
+            Register(Option("skills.choose_profession", "skills", "Choose one exact profession offered by the active native level-up menu",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "player.skills_detail", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "all exact offered profession identities projected", "one strategy-selected profession compiled to the shared native level-up completion executor", "profession, immediate perk, pending level and menu receipts verified" },
+                new[] { "block_non_profession_level_up", "block_incomplete_level_up_projection", "block_profession_identity_drift", "block_direct_duplicate_level_up_executor" }));
+
             Register(Option("economy.buy_supplies", "economy", "Buy one exact supply through a rolling shop route",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,

@@ -44,7 +44,7 @@ namespace StardewAI.Core.Tests
                     "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth",
-                    "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                    "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);

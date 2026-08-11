@@ -59,6 +59,7 @@ namespace StardewAI.Core.Training
             var reservedInventorySlots = new HashSet<int>();
             var reservedInventorySlotQuantities = new Dictionary<int, int>();
             var reservedDebrisTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var reservedDecisionGroups = new HashSet<string>(StringComparer.Ordinal);
             foreach (var candidate in OrderedCandidates(candidates))
             {
                 var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) &&
@@ -100,7 +101,8 @@ namespace StardewAI.Core.Training
                     reservedMachineAdditionalConsumedCounts,
                     reservedInventorySlots,
                     reservedInventorySlotQuantities,
-                    reservedDebrisTargets);
+                    reservedDebrisTargets,
+                    reservedDecisionGroups);
                 if (reservationConflicts.Length > 0)
                 {
                     audit.Add(CandidateAudit(
@@ -195,7 +197,7 @@ namespace StardewAI.Core.Training
 
                 if (!rollingDeferred)
                 {
-                    ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities, reservedDebrisTargets);
+                    ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities, reservedDebrisTargets, reservedDecisionGroups);
                 }
                 selected++;
             }
@@ -334,9 +336,15 @@ namespace StardewAI.Core.Training
             IReadOnlyDictionary<string, int> reservedMachineAdditionalConsumedCounts,
             ISet<int> reservedInventorySlots,
             IReadOnlyDictionary<int, int> reservedInventorySlotQuantities,
-            ISet<string> reservedDebrisTargets)
+            ISet<string> reservedDebrisTargets,
+            ISet<string> reservedDecisionGroups)
         {
             var reasons = new List<string>();
+            var decisionGroup = CandidateDecisionGroup(candidate);
+            if (!string.IsNullOrWhiteSpace(decisionGroup) && reservedDecisionGroups.Contains(decisionGroup))
+            {
+                reasons.Add("daily_plan_mutually_exclusive_decision_already_reserved");
+            }
             var plantTileKey = PlantTileReservationKey(candidate);
             if (!string.IsNullOrWhiteSpace(plantTileKey) && reservedPlantTiles.Contains(plantTileKey))
             {
@@ -412,8 +420,15 @@ namespace StardewAI.Core.Training
             IDictionary<string, int> reservedMachineAdditionalConsumedCounts,
             ISet<int> reservedInventorySlots,
             IDictionary<int, int> reservedInventorySlotQuantities,
-            ISet<string> reservedDebrisTargets)
+            ISet<string> reservedDebrisTargets,
+            ISet<string> reservedDecisionGroups)
         {
+            var decisionGroup = CandidateDecisionGroup(candidate);
+            if (!string.IsNullOrWhiteSpace(decisionGroup))
+            {
+                reservedDecisionGroups.Add(decisionGroup);
+            }
+
             var plantTileKey = PlantTileReservationKey(candidate);
             if (!string.IsNullOrWhiteSpace(plantTileKey))
             {
@@ -462,6 +477,13 @@ namespace StardewAI.Core.Training
             {
                 reservedDebrisTargets.Add(debrisTarget);
             }
+        }
+
+        private static string CandidateDecisionGroup(PolicyEventCandidatePrediction candidate)
+        {
+            return candidate.Kind == "choose_profession"
+                ? "active_level_up_profession_choice"
+                : string.Empty;
         }
 
         private static string DebrisReservationKey(

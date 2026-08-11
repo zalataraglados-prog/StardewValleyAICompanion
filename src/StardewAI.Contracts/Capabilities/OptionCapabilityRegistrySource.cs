@@ -200,7 +200,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly HashSet<string> StepCompilerIds = Set(
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.sleep", "executor.wait_ticks",
@@ -270,7 +270,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward",
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
-            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "housing.advance_farmhouse",
+            "farm.collect_animal_products", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -319,7 +319,7 @@ namespace StardewAI.Contracts.Capabilities
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products",
             "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
-            "housing.advance_farmhouse", "skills.read_books", "economy.buy_supplies",
+            "housing.advance_farmhouse", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
             "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "quest.advance", "strategy.grandpa_progress", "exploration.visit_location",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
@@ -511,6 +511,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["skills.read_books"] = VerifiedEvidence(
                         "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                         "EVD-124"),
+                    ["skills.choose_profession"] = VerifiedEvidence(
+                        "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
+                        "EVD-244"),
                     ["volcano.reach_caldera"] = VerifiedEvidence(
                         "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
                         "EVD-190",
@@ -571,6 +574,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("purchase_farmhouse_upgrade"),
                 SupportedCandidate("purchase_joja_membership"),
                 SupportedCandidate("purchase_joja_project"), SupportedCandidate("read_inventory_book"),
+                SupportedCandidate("choose_profession"),
                 SupportedCandidate("recovery_close_menu"), SupportedCandidate("recovery_refresh_plan"),
                 SupportedCandidate("recovery_resume_sleep_prompt"),
                 SupportedCandidate("recovery_return_home"),
