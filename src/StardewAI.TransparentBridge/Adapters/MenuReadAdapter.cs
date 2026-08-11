@@ -266,6 +266,13 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             MineElevatorMenu mineElevatorMenu =>
                 (Field(ReadMineElevatorMenuState(mineElevatorMenu), "MineElevatorMenu public elevators and locked native destination rules", tick, AdapterId),
                     Array.Empty<string>()),
+            PurchaseAnimalsMenu purchaseAnimalsMenu =>
+                (Field(
+                    ReadPurchaseAnimalsMenuState(purchaseAnimalsMenu),
+                    "PurchaseAnimalsMenu public stock, target location, placement, naming, and animal fields",
+                    tick,
+                    AdapterId),
+                    Array.Empty<string>()),
             NamingMenu namingMenu =>
                 (Field(
                     ReadNamingMenuState(namingMenu),
@@ -274,6 +281,60 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                     AdapterId),
                     Array.Empty<string>()),
             _ => (null, Array.Empty<string>())
+        };
+    }
+
+    private static object ReadPurchaseAnimalsMenuState(PurchaseAnimalsMenu menu)
+    {
+        return new
+        {
+            kind = "purchase_animals",
+            target_location_id = menu.TargetLocation?.NameOrUniqueName,
+            read_only = menu.readOnly,
+            on_target_location = menu.onFarm,
+            naming_animal = menu.namingAnimal,
+            frozen = menu.freeze,
+            current_scroll = menu.currentScroll,
+            scroll_rows = menu.scrollRows,
+            stock = menu.animalsToPurchase.Select((button, index) => new
+            {
+                index,
+                button_id = button.myID,
+                animal_type_id = button.hoverText,
+                price = button.item?.salePrice() ?? 0,
+                required_building_met = button.item is StardewValley.Object item && item.Type is null,
+                blocked_description = button.item is StardewValley.Object blockedItem ? blockedItem.Type : null,
+                visible = button.visible,
+                bounds = new
+                {
+                    x = button.bounds.X,
+                    y = button.bounds.Y,
+                    width = button.bounds.Width,
+                    height = button.bounds.Height
+                }
+            }).ToArray(),
+            animal_being_purchased = menu.animalBeingPurchased is null
+                ? null
+                : new
+                {
+                    animal_id = menu.animalBeingPurchased.myID.Value,
+                    animal_type_id = menu.animalBeingPurchased.type.Value,
+                    owner_id = menu.animalBeingPurchased.ownerID.Value,
+                    name = menu.animalBeingPurchased.Name,
+                    required_house_type = menu.animalBeingPurchased.buildingTypeILiveIn.Value
+                },
+            selected_home = menu.newAnimalHome is null
+                ? null
+                : new
+                {
+                    building_type = menu.newAnimalHome.buildingType.Value,
+                    building_tile_x = menu.newAnimalHome.tileX.Value,
+                    building_tile_y = menu.newAnimalHome.tileY.Value,
+                    indoor_location_id = menu.newAnimalHome.GetIndoors()?.NameOrUniqueName
+                },
+            price_of_animal = menu.priceOfAnimal,
+            name_text = menu.textBox?.Text ?? string.Empty,
+            native_transaction_contract = "stock_button->global_fade_to_target_location->compatible_nonfull_home->unique_name->AnimalHouse.adoptAnimal->money_deduction->warp_AnimalShop"
         };
     }
 

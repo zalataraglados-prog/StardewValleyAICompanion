@@ -127,6 +127,40 @@ namespace StardewAI.Core.Training
                     .Concat(continuation)
                     .ToArray()
             });
+            var isAnimalPurchase = string.Equals(
+                continuation.FirstOrDefault(parameter => string.Equals(parameter.Name, "continuation.option_id", StringComparison.Ordinal))?.Value,
+                "animals.purchase",
+                StringComparison.Ordinal);
+            if (isAnimalPurchase)
+            {
+                steps.Add(new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "animal_purchase_select_service", 2),
+                    Kind = "choose_animal_purchase_response",
+                    EstimatedMinutes = 1,
+                    Preconditions = new[] { "active_menu.type=DialogueBox", "active_menu.last_question_key=Marnie", "candidate_id:" + candidate.CandidateId },
+                    ExpectedEffects = new[] { "menus.active_menu.type=PurchaseAnimalsMenu|DialogueBox", "fresh_snapshot_replan_required=true" },
+                    SafetyConstraints = new[] { "exact_native_dialogue_response=Marnie_Purchase", "no_direct_menu_or_animal_state_mutation" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = new[]
+                        {
+                            Parameter("expected_dialogue_key", "Marnie"),
+                            Parameter("dialogue_response_key", "Purchase"),
+                            Parameter("expected_menu_type_after", "PurchaseAnimalsMenu|DialogueBox")
+                        }
+                        .Concat(continuation.Select(parameter => new SmallModelActionParameter
+                        {
+                            Name = parameter.Name.StartsWith("continuation.", StringComparison.Ordinal)
+                                ? parameter.Name["continuation.".Length..]
+                                : parameter.Name,
+                            Value = parameter.Value
+                        }))
+                        .GroupBy(parameter => parameter.Name, StringComparer.Ordinal)
+                        .Select(group => group.First())
+                        .ToArray()
+                });
+                return steps;
+            }
             if (dialogueResponse.HasValue)
             {
                 steps.Add(new SmallModelPlanStep

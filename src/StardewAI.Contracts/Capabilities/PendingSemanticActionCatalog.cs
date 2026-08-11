@@ -22,7 +22,6 @@ public static class PendingSemanticActionCatalog
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
             C("animals.manage_animal", "animals", "composite", "engine.animal_management", "AnimalQueryMenu"),
-            C("animals.purchase", "animals", "composite", "engine.animal_management", "PurchaseAnimalsMenu"),
             C("buildings.change_skin", "buildings", "composite", "engine.building_management", "BuildingSkinMenu"),
             C("buildings.construct", "buildings", "composite", "engine.building_management", "CarpenterMenu"),
             C("buildings.paint", "buildings", "composite", "engine.building_management", "BuildingPaintMenu"),

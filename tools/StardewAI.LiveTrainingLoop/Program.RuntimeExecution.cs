@@ -508,7 +508,8 @@ static partial class Program
         var ccMailId = ReadQueueParameterString(item, "cc_mail_id");
         var jojaMailId = ReadQueueParameterString(item, "joja_mail_id");
         var expectedMoneyBefore = ReadQueueParameterInt(item, "expected_money_before");
-        var price = ReadQueueParameterInt(item, "price");
+        var price = ReadQueueParameterInt(item, "price") ??
+            ReadQueueParameterInt(item, "expected_price");
         var expectedMoneyAfter = ReadQueueParameterInt(item, "expected_money_after");
         var expectedMailForTomorrow = ReadQueueParameterString(item, "expected_mail_for_tomorrow");
         var expectedGreetingBefore = ReadNullableBoolQueueParameter(item, "expected_greeting_before");
@@ -611,6 +612,18 @@ static partial class Program
         var expectedShopId = ReadQueueParameterString(item, "expected_shop_id");
         var expectedDialogueKey = ReadQueueParameterString(item, "expected_dialogue_key");
         var dialogueResponseKey = ReadQueueParameterString(item, "dialogue_response_key");
+        var expectedMenuTypeAfter = ReadQueueParameterString(item, "expected_menu_type_after");
+        var animalTypeId = ReadQueueParameterString(item, "animal_type_id");
+        var possibleActualTypeIdsJson = ReadQueueParameterString(item, "possible_actual_type_ids_json");
+        var animalPurchaseTargetLocationId = ReadQueueParameterString(item, "target_location_id");
+        var animalHomeBuildingType = ReadQueueParameterString(item, "home_building_type");
+        var animalHomeBuildingTileX = ReadQueueParameterInt(item, "home_building_tile_x");
+        var animalHomeBuildingTileY = ReadQueueParameterInt(item, "home_building_tile_y");
+        var animalHomeIndoorLocationId = ReadQueueParameterString(item, "home_indoor_location_id");
+        var generatedAnimalName = ReadQueueParameterString(item, "generated_animal_name");
+        var expectedAnimalHomeOccupantCountBefore = ReadQueueParameterInt(item, "expected_home_occupant_count_before");
+        var expectedAnimalHomeCapacity = ReadQueueParameterInt(item, "expected_home_capacity");
+        var animalPurchaseCandidateIdentitySha256 = ReadQueueParameterString(item, "candidate_identity_sha256");
         var seedId = ReadQueueParameterString(item, "seed_id");
         var harvestMethod = ReadQueueParameterString(item, "harvest_method");
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
@@ -1022,6 +1035,18 @@ static partial class Program
         {
             executionRequest.DialogueResponseKey = dialogueResponseKey;
         }
+        executionRequest.ExpectedMenuTypeAfter = expectedMenuTypeAfter;
+        executionRequest.AnimalTypeId = animalTypeId;
+        executionRequest.PossibleActualTypeIdsJson = possibleActualTypeIdsJson;
+        executionRequest.AnimalPurchaseTargetLocationId = animalPurchaseTargetLocationId;
+        executionRequest.AnimalHomeBuildingType = animalHomeBuildingType;
+        executionRequest.AnimalHomeBuildingTileX = animalHomeBuildingTileX;
+        executionRequest.AnimalHomeBuildingTileY = animalHomeBuildingTileY;
+        executionRequest.AnimalHomeIndoorLocationId = animalHomeIndoorLocationId;
+        executionRequest.GeneratedAnimalName = generatedAnimalName;
+        executionRequest.ExpectedAnimalHomeOccupantCountBefore = expectedAnimalHomeOccupantCountBefore;
+        executionRequest.ExpectedAnimalHomeCapacity = expectedAnimalHomeCapacity;
+        executionRequest.AnimalPurchaseCandidateIdentitySha256 = animalPurchaseCandidateIdentitySha256;
         if (!string.IsNullOrWhiteSpace(seedId))
         {
             executionRequest.SeedId = seedId;

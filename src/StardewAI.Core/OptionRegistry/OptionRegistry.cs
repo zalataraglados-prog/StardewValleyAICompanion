@@ -71,6 +71,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("animals.purchase", "animals", "Purchase one exact animal into one exact compatible home",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "time.time", "player.location_id", "player.tile_x", "player.tile_y", "player.money", "farm.animal_purchase_catalog", "locations.route_graph", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "one exact unlocked animal and compatible nonfull home selected", "rolling route and native Marnie dialogue stages compiled", "native PurchaseAnimalsMenu adoption and exact money, home, owner, type and name receipts verified" },
+                new[] { "block_closed_or_unbound_animal_shop", "block_missing_or_full_animal_home", "block_insufficient_money", "block_purchase_projection_drift", "block_direct_animal_adoption_or_money_mutation" }));
+
             Register(Option("farm.care_for_pets", "farm", "Perform one transparent pet-care obligation",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -484,6 +492,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "menus.active_menu", "menus.menu_specific_state" },
                 new[] { "whitelisted dialogue response selected" },
                 new[] { "block_unknown_dialogue_response", "block_unmodeled_dialogue_side_effects" }));
+
+            Register(Option("executor.choose_animal_purchase_response", "animals", "Choose one exact native animal-purchase dialogue response",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "farm.animal_purchase_catalog", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "exact Marnie Purchase or paged location response invoked through GameLocation.answerDialogue", "expected PurchaseAnimalsMenu or exact paged response transition observed" },
+                new[] { "block_non_animal_purchase_dialogue", "block_response_key_drift", "block_unexpected_menu_result", "block_direct_menu_state_mutation" }));
+
+            Register(Option("executor.purchase_animal", "animals", "Complete one exact native PurchaseAnimalsMenu transaction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.money", "farm.animal_purchase_catalog", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "exact stock button, compatible home and compiler-generated unique name selected", "native PurchaseAnimalsMenu lifecycle completed", "new animal identity, type, owner, home, name, occupancy and money delta verified" },
+                new[] { "block_stock_or_home_projection_drift", "block_animal_house_full", "block_insufficient_money", "block_nonunique_name", "block_direct_animal_adoption_or_money_mutation" }));
 
             Register(Option("executor.sleep", "recovery", "Terminal sleep macro",
                 OptionBehaviorCategories.Recovery,

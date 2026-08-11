@@ -11,6 +11,7 @@ public sealed partial class ModEntry
             "debug.prepare_joja_settlement_sleep",
             "debug.prepare_partnership_sleep",
             "debug.prepare_pet_bowl_sleep",
+            "debug.setup_animal_purchase",
             "debug.setup_animal_product_target",
             "debug.setup_book_fixture",
             "debug.setup_breakable_container",

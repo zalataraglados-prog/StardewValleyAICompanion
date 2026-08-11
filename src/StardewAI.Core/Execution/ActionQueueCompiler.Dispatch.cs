@@ -25,6 +25,8 @@ namespace StardewAI.Core.Execution
                 ["executor.buy_shop_item"] = CompileBuyShopItemStep,
                 ["executor.sell_shop_item"] = (action, _) => CompileSellShopItemStep(action),
                 ["executor.choose_dialogue_response"] = (action, _) => CompileChooseDialogueResponseStep(action),
+                ["executor.choose_animal_purchase_response"] = (action, _) => CompileChooseAnimalPurchaseResponseStep(action),
+                ["executor.purchase_animal"] = (action, _) => CompilePurchaseAnimalStep(action),
                 ["executor.sleep"] = (action, snapshot) => CompileSleepSteps(snapshot, action),
                 ["executor.wait_ticks"] = (action, _) => CompileWaitTicksStep(action),
                 ["executor.clear_obstacle"] = (action, _) => CompileClearObstacleStep(action),

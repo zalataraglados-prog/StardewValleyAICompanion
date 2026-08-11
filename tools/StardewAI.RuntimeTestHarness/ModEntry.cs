@@ -78,6 +78,7 @@ public sealed partial class ModEntry : Mod
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
     private ActiveBuildingConstruction? activeBuildingConstruction;
+    private ActiveAnimalPurchase? activeAnimalPurchase;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
     private ActiveDescendLadder? activeDescendLadder;
@@ -468,6 +469,7 @@ public sealed partial class ModEntry : Mod
         TickMineRewardChest();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
+        TickAnimalPurchase();
         TickAnimalProductHarvest();
         TickPetInteraction();
         TickMuseumDonation();
@@ -608,6 +610,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.advance_time_to")
             {
                 pending.Completion.SetResult(ExecuteAdvanceTimeTo(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_animal_purchase")
+            {
+                pending.Completion.SetResult(ExecuteSetupAnimalPurchase(pending.Request));
                 return;
             }
 
@@ -1274,6 +1282,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.choose_animal_purchase_response")
+            {
+                pending.Completion.SetResult(ExecuteChooseAnimalPurchaseResponse(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.purchase_animal")
+            {
+                StartAnimalPurchase(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.social_interact")
             {
                 pending.Completion.SetResult(ExecuteSocialInteract(pending.Request));
@@ -1333,6 +1353,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
             activeBuildingConstruction = null;
+            activeAnimalPurchase = null;
             activePanOreSpot = null;
             activeFishPondService = null;
             activeMaterialTransfer = null;
@@ -1530,6 +1551,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
             activeBuildingConstruction is not null ||
+            activeAnimalPurchase is not null ||
             activePanOreSpot is not null ||
             activeFishPondService is not null ||
             activeDescendLadder is not null ||

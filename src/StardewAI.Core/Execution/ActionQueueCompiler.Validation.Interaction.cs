@@ -25,6 +25,8 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.buy_shop_item" ||
                 action.OptionId == "executor.sell_shop_item" ||
                 action.OptionId == "executor.choose_dialogue_response" ||
+                action.OptionId == "executor.choose_animal_purchase_response" ||
+                action.OptionId == "executor.purchase_animal" ||
                 action.OptionId == "executor.accept_daily_quest" ||
                 action.OptionId == "executor.accept_special_order" ||
                 action.OptionId == "executor.claim_quest_reward" ||

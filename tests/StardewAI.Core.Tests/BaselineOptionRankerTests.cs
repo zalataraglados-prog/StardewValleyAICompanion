@@ -27,6 +27,7 @@ namespace StardewAI.Core.Tests
 
             Assert.Equal(29, prediction.RankedOptions.Length);
             Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "farm.maintain_crops");
+            Assert.DoesNotContain(prediction.RankedOptions, item => item.OptionId == "animals.purchase");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "economy.buy_supplies" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "economy.sell_items" && item.Evidence == "unseen_option");
             Assert.Contains(prediction.RankedOptions, item => item.OptionId == "economy.ship_items" && item.Evidence == "unseen_option");

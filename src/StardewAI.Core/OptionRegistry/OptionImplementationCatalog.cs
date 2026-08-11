@@ -48,6 +48,8 @@ public static class OptionImplementationCatalog
         "executor.buy_shop_item",
         "executor.sell_shop_item",
         "executor.choose_dialogue_response",
+        "executor.choose_animal_purchase_response",
+        "executor.purchase_animal",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",

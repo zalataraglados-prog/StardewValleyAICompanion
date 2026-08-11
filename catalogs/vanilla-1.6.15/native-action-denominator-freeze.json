@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "187e4cf8551646b7abaadc00233c99d5dac6cdf8d200fff4a85457d8bda2aa60",
+  "fingerprint_sha256": "841520a832f21f1f9daf24ed07d65ac12024f018ad85fc8fb668a774988a5931",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 177,
-  "approval_basis": "locked 1.6.15 decompile; quest.claim_reward moved from one explicit blocked semantic item to one registered high-level action plus one native QuestLog reward-claim primitive; transparent claim identity includes quest ID, runtime type, title, reward, accepted day, and daily flag; hidden isolated runtime verified exact native row selection, rewardBox click, 750g delta, destroy receipt, and quest removal without direct money or quest mutation; native surfaces, branches, and map tokens unchanged"
+  "semantic_action_count": 179,
+  "approval_basis": "locked 1.6.15 decompile; animals.purchase moved from one explicit blocked semantic item to one registered high-level action plus native dialogue-response and terminal purchase primitives; transparent purchase identity includes exact native stock, price, possible realized types, compatible home capacity, native home ordering, owner, and deterministic name; hidden isolated runtime verified the terminal native PurchaseAnimalsMenu transaction, exact realized type, owner, home, name, occupancy, money delta, and return to AnimalShop without direct money, animal, or building mutation; route, Marnie dialogue, and paged home navigation remain source- and unit-verified; native surfaces, branches, and map tokens unchanged"
 }
