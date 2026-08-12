@@ -1053,6 +1053,25 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] DailyRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations",
+        "npcs",
+        "quests",
+        "world_progress",
+        "mods",
+        "modded_state"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
         CancellationToken cancellationToken = default,
@@ -1177,6 +1196,11 @@ public static class SnapshotValidator
                 StringComparison.OrdinalIgnoreCase))
         {
             return TrainingMachineRequiredDomains;
+        }
+
+        if (string.Equals(profile, "daily", StringComparison.OrdinalIgnoreCase))
+        {
+            return DailyRequiredDomains;
         }
 
         errors.Add("unsupported snapshot profile: " + profile);

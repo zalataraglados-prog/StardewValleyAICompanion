@@ -14,6 +14,7 @@ public sealed partial class ModEntry
     private bool dedicatedHostRuntimeWarningLogged;
     private bool vanillaHostReadyLogged;
     private bool vanillaHostFailureLogged;
+    private bool vanillaHostTimePauseRecoveredLogged;
     private uint vanillaHostValidationTicks;
     private int? vanillaHostLastTime;
     private uint vanillaHostStalledTicks;
@@ -44,9 +45,11 @@ public sealed partial class ModEntry
         dedicatedHostRuntimeNormalized = false;
         vanillaHostReadyLogged = false;
         vanillaHostFailureLogged = false;
+        vanillaHostTimePauseRecoveredLogged = false;
         vanillaHostValidationTicks = 0;
         vanillaHostLastTime = null;
         vanillaHostStalledTicks = 0;
+        EnsureHeadlessInputPump();
         NormalizeDedicatedHostRuntime();
         EnsureJoinableCabin();
     }
@@ -188,7 +191,50 @@ public sealed partial class ModEntry
         }
 
         NormalizeDedicatedHostRuntime();
+        EnsureVanillaHostClockUnpaused();
         ValidateVanillaHostRuntime();
+    }
+
+    private void EnsureVanillaHostClockUnpaused()
+    {
+        var player = Game1.player;
+        if (!IsVanillaAiHostMode() ||
+            !Context.IsWorldReady ||
+            !Context.IsMainPlayer ||
+            !Game1.IsServer ||
+            player is null)
+        {
+            return;
+        }
+
+        // Preserve the native event/menu pause gates before clearing a stale
+        // multiplayer pause. Multiplayer shouldTimePass returns from the network
+        // pause branch before it evaluates the single-player CanMove gate.
+        if (Game1.isFestival() ||
+            Game1.CurrentEvent?.isWedding == true ||
+            Game1.farmEvent is not null ||
+            Game1.paused ||
+            Game1.freezeControls ||
+            Game1.overlayMenu is not null ||
+            Game1.isTimePaused ||
+            Game1.eventUp ||
+            Game1.activeClickableMenu is not null)
+        {
+            return;
+        }
+
+        var recovered = player.requestingTimePause.Value ||
+                        Game1.netWorldState.Value.IsTimePaused;
+        player.requestingTimePause.Value = false;
+        Game1.netWorldState.Value.IsTimePaused = false;
+
+        if (recovered && !vanillaHostTimePauseRecoveredLogged)
+        {
+            vanillaHostTimePauseRecoveredLogged = true;
+            Monitor.Log(
+                "Cleared stale native multiplayer time-pause state after all vanilla clock gates allowed time to pass.",
+                LogLevel.Info);
+        }
     }
 
     private void ValidateVanillaHostRuntime()
@@ -224,6 +270,7 @@ public sealed partial class ModEntry
         {
             Game1.options.pauseWhenOutOfFocus = false;
         }
+        EnsureHeadlessInputPump();
 
         if (Game1.activeClickableMenu is not null || Game1.eventUp || Game1.paused)
         {

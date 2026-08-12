@@ -20,7 +20,7 @@ static partial class Program
     {
         return (queue["items"] as JsonArray)?
             .Select(node => node?.AsObject())
-            .Where(item => item is not null && IsExecutableQueueItem(item))
+            .TakeWhile(item => item is not null && IsExecutableQueueItem(item))
             .Cast<JsonObject>()
             .ToArray() ?? Array.Empty<JsonObject>();
     }

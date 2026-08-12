@@ -9,22 +9,13 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CandidateOptionAvailabilityEvaluatorTests
 {
     [Fact]
-    public void RecoveryEmitsExecutableRefreshPlanCandidateBeforeLateNight()
+    public void RecoveryEmitsNoCandidateWhenNoStabilizationIsRequired()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(RecoverySnapshot(time: 1800, menuOpen: false), new[] { "recovery.stabilize_day" }, includeExecutorCalibrationOptions: true)
             .Options[0];
 
-        Assert.True(option.Available);
-        Assert.Equal("available", option.Status);
-        Assert.True(option.ExecutorEnabled);
-        var candidate = Assert.Single(option.EventCandidates);
-        Assert.Equal("recovery:refresh_plan_after_stabilization", candidate.CandidateId);
-        Assert.Equal("recovery_refresh_plan", candidate.Kind);
-        Assert.True(candidate.Available);
-        Assert.Equal("executor.wait_ticks=30;urgent_risks_rechecked", candidate.ExpectedEffect);
-        Assert.Equal(30, candidate.EstimatedTicks);
-        Assert.Empty(candidate.BlockReasons);
+        Assert.Empty(option.EventCandidates);
     }
 
     [Fact]

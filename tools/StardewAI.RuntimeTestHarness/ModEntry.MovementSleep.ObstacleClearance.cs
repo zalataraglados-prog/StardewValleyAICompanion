@@ -32,7 +32,14 @@ public sealed partial class ModEntry : Mod
     {
         var currentTile = Game1.player.TilePoint;
         var remainingTiles = Math.Max(1, 512 - move.PathIndex);
-        var path = TryBuildTilePath(Game1.currentLocation, currentTile, move.TargetTile, remainingTiles, out _, avoidSoftObstacles);
+        var path = TryBuildTilePath(
+            Game1.currentLocation,
+            currentTile,
+            move.TargetTile,
+            remainingTiles,
+            out _,
+            avoidSoftObstacles,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             return false;

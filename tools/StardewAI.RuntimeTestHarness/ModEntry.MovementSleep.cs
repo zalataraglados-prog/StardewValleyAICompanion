@@ -189,7 +189,13 @@ public sealed partial class ModEntry : Mod
         }
 
         var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? pending.Request.MaxCrops, 1, 512);
-        var path = TryBuildTilePath(Game1.currentLocation, startTile, targetTile, maxTiles, out var blockReason);
+        var path = TryBuildTilePath(
+            Game1.currentLocation,
+            startTile,
+            targetTile,
+            maxTiles,
+            out var blockReason,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(

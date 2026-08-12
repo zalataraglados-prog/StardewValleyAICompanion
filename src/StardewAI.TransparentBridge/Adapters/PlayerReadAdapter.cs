@@ -87,7 +87,10 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["days_until_farmhouse_upgrade"] = Field(Context.IsWorldReady ? (int?)player?.daysUntilHouseUpgrade.Value : null, "Game1.player.daysUntilHouseUpgrade.Value", tick),
             ["current_tool"] = Field(player?.CurrentTool?.QualifiedItemId ?? player?.CurrentTool?.DisplayName, "Game1.player.CurrentTool", tick),
             ["current_item_qualified_id"] = Field(player?.CurrentItem?.QualifiedItemId, "Game1.player.CurrentItem.QualifiedItemId", tick),
-            ["active_object_qualified_id"] = Field(player?.ActiveObject?.QualifiedItemId, "Game1.player.ActiveObject.QualifiedItemId", tick),
+            ["active_object_qualified_id"] = Field(
+                player is null ? null : player.ActiveObject?.QualifiedItemId ?? string.Empty,
+                "Game1.player.ActiveObject?.QualifiedItemId; empty string means no active object",
+                tick),
             ["multiplayer_runtime"] = Field(ReadMultiplayerRuntime(player), "Context.IsMultiplayer/IsMainPlayer; Game1.IsServer/displayFarmer/getAllFarmers/getOnlineFarmers; Farmer hidden/ignoreCollisions/location/position", tick),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
             ["storage_crafting"] = Field(ReadStorageCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, native Chest placement classification", tick),

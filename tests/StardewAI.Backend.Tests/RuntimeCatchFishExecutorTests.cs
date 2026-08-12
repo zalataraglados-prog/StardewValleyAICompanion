@@ -257,7 +257,9 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains("ChangedFacts = execution[\"changed_facts\"]", source);
         Assert.Contains("beforeSnapshot.ToJsonString(JsonlOptions)", source);
         Assert.Contains("iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)", source);
-        Assert.Contains("Timeout = TimeSpan.FromSeconds(180)", source);
+        Assert.Contains(
+            "Timeout = TimeSpan.FromSeconds(Math.Max(180, options.ExecutorTimeoutSeconds))",
+            source);
         Assert.Contains("PostJsonStringAsync(executorHttp, options.ExecutorUrl", source);
         var deploySource = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Deploy-RuntimeTestHarnessToRuntime.ps1"));
         Assert.Contains("dotnet build", deploySource);

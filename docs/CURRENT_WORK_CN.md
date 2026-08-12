@@ -240,3 +240,14 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 隐藏静音隔离运行 `runtime-quest-terminal-daily-plan-20260812-133245` 已通过：Farmhouse `Building` 区域原生点击到 H180/S37/L-30，目标精确匹配，另外两区域保持默认，训练行落盘。
 - 当前为 123 registered / 180 semantic / 122 compiler-bound / 57 catalogued-blocked；full snapshot 113 required、96 带来源可读、17 场景性、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1666/1666、Backend 121/121。
 - 下一切片应从剩余 57 个 `catalogued_blocked` 动作中，按权威字典依赖、已有机械引擎复用和可形成严格原生回执的顺序选择；不得以动作数量为理由复制执行系统。
+
+## 2026-08-12 119 展示循环检查点：EVD-251
+
+- 119 展示房间已改为版本化发布，继续使用原存档、原版联机房主、公开 UDP 24642 和既有可加入小屋；正式训练仍保持关闭，展示循环只运行目的受限的已实现候选集。
+- `daily` 快照现有精确域校验；无手持物品以可读空字符串表达，不再把“没有 ActiveObject”误判为字段不可用。队列只执行首个阻塞项之前的连续可执行前缀，控制层 HTTP 超时不早于执行器预算。
+- 无窗口房主通过原生 `IInputSimulator` 消费现有移动租约，不写坐标、不注入动作键；通用移动 BFS 避开可移除障碍，清障继续由唯一 `executor.clear_obstacle` 原语负责。
+- 锁定版反编译确认多人 `Game1.shouldTimePass()` 由 `netWorldState.IsTimePaused` 决定。专用原版 AI 房主只在原生事件、菜单与显式暂停门槛均允许时清除残留联网暂停位，不直接写 `timeOfDay`。119 实测 58 秒内 `08:20 -> 09:40`，最终版本再次实测 `06:50 -> 08:10`。
+- 服务器闭环先连续形成 6 条 applied/verified/fresh 执行记录；修复后无实际候选时只生成空队列并指数退避，不再以 `recovery:refresh_plan_after_stabilization` 制造永久 `wait_ticks` 样本。建筑施工中的等待仍由 `quest.advance` 在透明状态明确为 `construction_in_progress` 时局部复用。
+- 既有晚间恢复链在 119 完成 `22:00 -> 回家/睡觉 -> NewDay`。三项服务为 server healthy、planner healthy、host-ai running，透明 `daily` 快照完整且 unavailable 0；这证明展示日循环主体成立，不等于完整动作全集、Product Executor 或正式训练完成。
+- 本地最终回归：Core 1671/1671、Backend 122/122、Release solution build 0 errors；保留 1 个既有 `AvoidNetField` 警告。
+- 下一主开发切片为 `animals.manage_animal`：先补实时动物身份、位置、状态与原生交互结果字段，再接候选、DailyPlan、唯一机械执行链和严格回执，不从展示循环复制第二套移动或交互系统。

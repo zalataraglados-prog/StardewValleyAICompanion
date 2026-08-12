@@ -267,23 +267,30 @@ namespace StardewAI.Core.OptionRegistry
                 return candidates.ToArray();
             }
 
-            candidates.Add(new EventCandidate
+            return candidates.ToArray();
+        }
+
+        private static EventCandidate RecoveryRefreshCandidate(SnapshotEnvelope snapshot)
+        {
+            var menuOpen = ActiveMenuOpenForCandidate(snapshot);
+            return new EventCandidate
             {
                 CandidateId = "recovery:refresh_plan_after_stabilization",
                 Kind = "recovery_refresh_plan",
-                Available = !ActiveMenuOpenForCandidate(snapshot),
+                Available = !menuOpen,
                 LocationId = ReadStateFieldString(snapshot, "player", "location_id"),
                 ExpectedEffect = "executor.wait_ticks=30;urgent_risks_rechecked",
                 EstimatedTicks = 30,
                 EnergyCost = 0,
-                BlockReasons = ActiveMenuOpenForCandidate(snapshot) ? new[] { "intervening_menu_must_be_cleared_first" } : Array.Empty<string>(),
+                BlockReasons = menuOpen
+                    ? new[] { "intervening_menu_must_be_cleared_first" }
+                    : Array.Empty<string>(),
                 Parameters = new[]
                 {
                     Parameter("execution_option_id", "executor.wait_ticks"),
                     Parameter("wait_ticks", "30")
                 }
-            });
-            return candidates.ToArray();
+            };
         }
 
         private static OptionAvailabilityCandidate RecoveryRouteProbeCandidate()

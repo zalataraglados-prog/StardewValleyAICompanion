@@ -84,6 +84,55 @@ public sealed class MiningSnapshotValidationTests
         Assert.Contains("unsupported snapshot profile: anything", errors);
     }
 
+    [Fact]
+    public void SnapshotValidatorAcceptsDailyProfileAndKeepsItsDomainSetFailClosed()
+    {
+        var accepted = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(DailyProfileDomains),
+            out var snapshot,
+            "daily");
+
+        Assert.Empty(accepted);
+        Assert.NotNull(snapshot);
+        Assert.Equal(
+            DailyProfileDomains.OrderBy(value => value),
+            snapshot!.State.Keys.OrderBy(value => value));
+
+        var rejected = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(DailyProfileDomains, "farm"),
+            out _,
+            "daily");
+        Assert.Contains("missing state domain: farm", rejected);
+    }
+
+    private static string PurposeLimitedSnapshotJson(
+        IReadOnlyCollection<string> domains,
+        string? omittedDomain = null)
+    {
+        var state = domains
+            .Where(domain => domain != omittedDomain)
+            .ToDictionary(
+                domain => domain,
+                _ => JsonSerializer.SerializeToElement(
+                    new Dictionary<string, object>
+                    {
+                        ["marker"] = Field("available")
+                    },
+                    JsonOptions),
+                StringComparer.Ordinal);
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = "snapshot.v1",
+            BridgeVersion = "test",
+            GameTick = 813,
+            RealTimestamp = "2026-08-12T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return JsonSerializer.Serialize(snapshot, JsonOptions);
+    }
+
     private static string PurposeLimitedMiningSnapshotJson(
         string? omittedDomain = null)
     {
@@ -294,6 +343,25 @@ public sealed class MiningSnapshotValidationTests
         "menus",
         "transport",
         "mining"
+    };
+
+    private static readonly string[] DailyProfileDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations",
+        "npcs",
+        "quests",
+        "world_progress",
+        "mods",
+        "modded_state"
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

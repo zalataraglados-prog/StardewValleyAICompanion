@@ -3869,3 +3869,15 @@ Scope boundary:
 - Core full regression PASS: 1610/1610. Backend full regression PASS: 120/120.
 - Full solution Debug build PASS: 0 errors, 1 existing `AvoidNetField` warning in `MiningReadAdapter.Objects.cs`.
 - Snapshot schema validation: required 100, blocking 0. Authoritative reconciliation: 585/585 exports, blocking 0; registered 105, semantic 172, compiler-bound 104, five-gate 39, allowlist 26, Product Executor 0.
+
+2026-08-12 EVD-251 dedicated vanilla host display-loop closure
+
+- Added exact backend validation for the purpose-limited `daily` snapshot profile and truthful readable-empty ActiveObject state.
+- Queue execution now stops at the first blocked predecessor; runtime control requests cannot time out before the executor budget.
+- Dedicated hidden hosts consume the existing movement lease through the native `IInputSimulator`; no coordinate writes or action/tool button injection were added.
+- Generic movement avoids removable obstacles and leaves mutation to the existing explicit `executor.clear_obstacle` primitive.
+- Decompile-verified multiplayer clock recovery clears only stale native network pause state after event/menu/explicit pause gates pass; it never writes `Game1.timeOfDay`.
+- The unconditional recovery refresh candidate was removed. Construction-in-progress quests retain a local reuse of the same wait candidate, while ordinary no-candidate iterations produce empty queues and back off without execution records.
+- Server 119 live evidence: six consecutive applied/verified/fresh records before idle; natural clock movement `08:20 -> 09:40` and final-build `06:50 -> 08:10`; existing terminal sleep completed NewDay; daily snapshot complete with zero unavailable fields; server/planner healthy and host-ai running on public UDP 24642.
+- Final regression PASS: Core 1671/1671; Backend 122/122; full Release solution build 0 errors and one pre-existing `AvoidNetField` warning.
+- This closes the display-loop substrate only. Formal training, the full semantic action denominator and Product Executor remain incomplete; next implementation slice is `animals.manage_animal`.

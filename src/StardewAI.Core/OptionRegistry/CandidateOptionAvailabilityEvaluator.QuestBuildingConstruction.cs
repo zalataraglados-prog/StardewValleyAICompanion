@@ -37,8 +37,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var status = ReadString(row, "action_status");
         if (status == "construction_in_progress")
         {
-            var recovery = RecoveryCandidates(snapshot).FirstOrDefault(candidate => candidate.Available);
-            if (recovery is null)
+            var recovery = RecoveryRefreshCandidate(snapshot);
+            if (!recovery.Available)
             {
                 return new[] { BlockedQuestCandidate(snapshot, quest, "quest_building_day_settlement_unavailable") };
             }

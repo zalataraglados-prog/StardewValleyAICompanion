@@ -17,7 +17,7 @@ Directory.CreateDirectory(Path.GetDirectoryName(options.ProgressLogPath)!);
 
 using var http = new HttpClient
 {
-    Timeout = TimeSpan.FromSeconds(180)
+    Timeout = TimeSpan.FromSeconds(Math.Max(180, options.ExecutorTimeoutSeconds))
 };
 using var executorHttp = new HttpClient
 {

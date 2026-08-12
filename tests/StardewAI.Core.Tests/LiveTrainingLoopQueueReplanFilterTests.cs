@@ -15,6 +15,11 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("ExecutableQueueItems(queue).Length", source, StringComparison.Ordinal);
         Assert.Contains("executing_pending_subset", source, StringComparison.Ordinal);
         Assert.Contains("executableSubsetCount == 0", source, StringComparison.Ordinal);
+
+        var inspection = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.QueueInspection.cs"));
+        Assert.Contains(".TakeWhile(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
+        Assert.DoesNotContain(".Where(item => item is not null && IsExecutableQueueItem(item))", inspection, StringComparison.Ordinal);
     }
 
     [Theory]

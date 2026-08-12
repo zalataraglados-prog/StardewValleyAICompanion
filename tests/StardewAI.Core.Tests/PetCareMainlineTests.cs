@@ -9,6 +9,19 @@ namespace StardewAI.Core.Tests;
 
 public sealed class PetCareMainlineTests
 {
+    [Fact]
+    public void TransparentBridgePublishesNoActiveObjectAsReadableEmptyIdentity()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.cs"));
+
+        Assert.Contains(
+            "player is null ? null : player.ActiveObject?.QualifiedItemId ?? string.Empty",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains("empty string means no active object", source, StringComparison.Ordinal);
+    }
+
     private const string PetId = "11111111-2222-3333-4444-555555555555";
 
     [Fact]
@@ -144,6 +157,12 @@ public sealed class PetCareMainlineTests
             Completeness = "complete",
             State = state
         };
+    }
+
+    private static string FindRepositoryFile(params string[] parts)
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        return Path.Combine(new[] { root }.Concat(parts).ToArray());
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
