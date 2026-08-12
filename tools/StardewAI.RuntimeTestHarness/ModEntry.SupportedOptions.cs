@@ -33,6 +33,7 @@ public sealed partial class ModEntry
             "debug.setup_giant_crop_target",
             "debug.setup_green_rain_resource_clump",
             "debug.setup_farmhouse_upgrade",
+            "debug.setup_building_skin",
             "debug.setup_harvest_crop_target",
             "debug.setup_idle_machine_target",
             "debug.setup_incubator_hatch_naming",

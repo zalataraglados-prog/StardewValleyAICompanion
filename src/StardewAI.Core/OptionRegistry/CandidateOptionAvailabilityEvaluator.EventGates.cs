@@ -389,6 +389,11 @@ namespace StardewAI.Core.OptionRegistry
                 return BuildingConstructionCandidates(snapshot, parameters, commitmentLedger);
             }
 
+            if (string.Equals(optionId, "buildings.change_skin", StringComparison.Ordinal))
+            {
+                return BuildingSkinCandidates(snapshot, parameters);
+            }
+
             if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal))
             {
                 return QuestCandidates(snapshot, commitmentLedger);

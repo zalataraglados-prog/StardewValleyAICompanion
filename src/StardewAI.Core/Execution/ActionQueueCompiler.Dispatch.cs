@@ -62,6 +62,7 @@ namespace StardewAI.Core.Execution
                 ["executor.craft_storage_item"] = (action, _) => CompileCraftStorageItemStep(action),
                 ["executor.craft_quest_item"] = (action, _) => CompileCraftQuestItemStep(action),
                 ["executor.construct_building"] = (action, _) => CompileConstructBuildingStep(action),
+                ["executor.change_building_skin"] = (action, _) => CompileChangeBuildingSkinStep(action),
                 ["executor.place_machine"] = (action, _) => CompilePlaceMachineStep(action),
                 ["executor.remove_machine"] = (action, _) => CompileRemoveMachineStep(action),
                 ["executor.place_storage"] = (action, _) => CompilePlaceStorageStep(action),

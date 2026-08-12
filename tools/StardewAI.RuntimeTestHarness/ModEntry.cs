@@ -78,6 +78,7 @@ public sealed partial class ModEntry : Mod
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
     private ActiveBuildingConstruction? activeBuildingConstruction;
+    private ActiveBuildingSkinChange? activeBuildingSkinChange;
     private ActiveAnimalPurchase? activeAnimalPurchase;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
@@ -478,6 +479,7 @@ public sealed partial class ModEntry : Mod
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
         TickBuildingConstruction();
+        TickBuildingSkinChange();
         TickPanOreSpot();
         TickFishPondService();
         CaptureExecutorDiagnosticFrame("update_ticked");
@@ -1177,9 +1179,21 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.change_building_skin")
+            {
+                StartBuildingSkinChange(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_farmhouse_upgrade")
             {
                 pending.Completion.SetResult(ExecuteSetupFarmhouseUpgradeFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_building_skin")
+            {
+                pending.Completion.SetResult(ExecuteSetupBuildingSkinFixture(pending.Request));
                 return;
             }
 
@@ -1353,6 +1367,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
             activeBuildingConstruction = null;
+            activeBuildingSkinChange = null;
             activeAnimalPurchase = null;
             activePanOreSpot = null;
             activeFishPondService = null;
@@ -1551,6 +1566,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
             activeBuildingConstruction is not null ||
+            activeBuildingSkinChange is not null ||
             activeAnimalPurchase is not null ||
             activePanOreSpot is not null ||
             activeFishPondService is not null ||

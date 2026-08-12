@@ -616,3 +616,10 @@ DailyPlan 把决定编译为现有 `close_menu` 阶段，动作队列继续只�
 Defender 的最大生命增量。该动作进入训练准入后，总计为 114 registered / 177 semantic / 113 compiler-bound /
 63 catalogued-blocked / 40 five-gate / 27 allowlist；Product Executor 仍为 0。下一主切片为 `mail.process_letter`，矿井电梯仅做
 既有普通矿井链的复用核对，不另造矿井系统。
+## 2026-08-12 建筑换肤闭环（EVD-249 已闭合）
+
+`buildings.change_skin` 是小模型的外观策略出口，不是第二套 Robin 菜单系统。模型必须明确给出建筑地点、类型、坐标、目标皮肤和外观理由；透明桥负责读取当前皮肤、原生可用皮肤顺序、条件、权限、入口类型、最短点击方向与次数，以及换肤会重置三组油漆颜色这一副作用。缺少明确意图、权限、服务状态或实时菜单顺序发生漂移时，上游直接排除或执行前失败关闭。
+
+DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作队列只生成唯一 `executor.change_building_skin`。运行时通过原生 `Carpenter -> Construct -> Paint -> 建筑点击 -> BuildingSkinMenu` 完成；生产执行器不得直接写 `skinId`、油漆状态或建筑集合。EVD-249 在 E 盘隔离存档中完成 Pet Bowl 默认皮肤到 `Stone Pet Bowl` 的原生验证，精确使用一次 `next`，并验证返回 ScienceHouse、目标皮肤和三组默认油漆标志。
+
+当前看板为 `122 registered / 180 semantic / 121 compiler-bound / 49 five-gate / 32 training allowlist / 0 Product Executor`；原生分母仍为 `320 surfaces / 428 branches / 150 map tokens` 且三类 blocking 均为 0。真实 full 快照覆盖 112 个必需字段、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。证据只覆盖已声明的 Pet Bowl 分支；`buildings.paint` 仍是下一独立动作切片，必须复用本链的 Robin、建筑目标选择和菜单生命周期，不得复制第二套系统。

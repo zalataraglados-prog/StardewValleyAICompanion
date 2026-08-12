@@ -127,6 +127,7 @@ namespace StardewAI.Core.Execution
                 "craft_quest_item" => "executor.craft_quest_item",
                 "construct_quest_building" => "executor.construct_building",
                 "construct_building" => "executor.construct_building",
+                "change_building_skin" => "executor.change_building_skin",
                 "place_machine_item" => "executor.place_machine",
                 "remove_machine_item" => "executor.remove_machine",
                 "place_storage_item" => "executor.place_storage",

@@ -187,6 +187,15 @@ function Invoke-QuestTerminalCase($Case) {
                         [string]$_.action_status -eq "ready_for_native_construction"
                     }).Count -gt 0
             }
+            if ($Case.Name -eq "building-skin") {
+                return @($snapshot.state.player.building_skin_catalog.value.rows | Where-Object {
+                    [string]$_.building_location_id -eq "Farm" -and
+                    [string]$_.building_type -eq "Pet Bowl" -and
+                    [string]$_.target_skin_key -eq "Stone Pet Bowl" -and
+                    [string]$_.current_skin_key -eq "__default__" -and
+                    [string]$_.action_status -eq "ready_for_native_skin_change"
+                }).Count -eq 1
+            }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 0
         } "ready quest terminal fixture $($Case.Name)" $(if ($Case.Name -like "building-construction*") { 30 } else { 120 })
@@ -306,6 +315,16 @@ function Invoke-QuestTerminalCase($Case) {
                     [int]$_.matching_under_construction[0].days_of_construction_left -eq 3 -and
                     [string]$_.action_status -eq "another_building_under_construction"
                 }).Count -gt 0
+            }
+            if ($Case.Name -eq "building-skin") {
+                return @($snapshot.state.player.building_skin_catalog.value.rows | Where-Object {
+                    [string]$_.building_location_id -eq "Farm" -and
+                    [string]$_.building_type -eq "Pet Bowl" -and
+                    [string]$_.current_skin_key -eq "Stone Pet Bowl" -and
+                    [bool]$_.current_paint_color_1_default -and
+                    [bool]$_.current_paint_color_2_default -and
+                    [bool]$_.current_paint_color_3_default
+                }).Count -gt 0 -and -not [bool]$snapshot.state.menus.active_menu.value.is_open
             }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 1 -and
@@ -467,6 +486,25 @@ try {
             PrimitiveOptionId = "executor.quest_drop_box_donate"
             CandidateOptionId = "quest.advance"
             IntentParameters = @()
+        },
+        [pscustomobject]@{
+            Name = "building-skin"
+            FixtureKind = "building_skin"
+            QuestId = ""
+            QuestKey = ""
+            RequiredTagPrefix = ""
+            QuestCandidateId = ""
+            CandidateKind = "change_building_skin"
+            PrimitiveOptionId = "executor.change_building_skin"
+            CandidateOptionId = "buildings.change_skin"
+            IntentParameters = @(
+                [pscustomobject]@{ name = "building_location_id"; value = "Farm" },
+                [pscustomobject]@{ name = "building_type"; value = "Pet Bowl" },
+                [pscustomobject]@{ name = "building_tile_x"; value = "49" },
+                [pscustomobject]@{ name = "building_tile_y"; value = "40" },
+                [pscustomobject]@{ name = "target_skin_key"; value = "Stone Pet Bowl" },
+                [pscustomobject]@{ name = "appearance_reason"; value = "explicit_test_appearance_choice" }
+            )
         },
         [pscustomobject]@{
             Name = "drop-box-preserved-parent-color"
