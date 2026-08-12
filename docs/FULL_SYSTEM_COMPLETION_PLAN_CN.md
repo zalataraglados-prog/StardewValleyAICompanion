@@ -454,6 +454,26 @@ Robin 服务、蓝图价格/材料/工期、在建状态和农场放置候选；
 完成。在 EVD-236 检查点，任务目录为 23 bound、3 blocked、2 observation-only；当时的下一项是秘密物品取得，
 之后是 type-11 除草和 Junimo Kart 分数。该检查点不构成后续状态的当前声明。
 
+## 2026-08-12 通用目的限定建筑建造（EVD-248 已闭合）
+
+`buildings.construct` 不是第二套建造器。它是模型的策略出口，只接受明确的 `building_type`、
+`placement_location_id` 和 `construction_reason`；完全机械的寻路、服务交互、蓝图选择和原生落点点击仍由
+DailyPlan 与唯一 `executor.construct_building` 展开。任务建造继续从 `quest.advance` 进入同一执行器。
+
+透明桥的 `player.building_construction_catalog` 每张 full 快照枚举实时 `Game1.buildingData` 中所有非升级
+Robin/Wizard 基础蓝图和所有 `IsBuildableLocation()` 地点，逐项核验 `BuildCondition`、Cabin 原生地点限制、
+价格、原生库存扣除顺序、服务动作、静态合法落点、现有完成数量，以及同类型在建建筑的坐标和剩余天数。
+服务入口在单张快照内复用扫描结果；放置合法性不能跨快照缓存，因为建筑、物体、地形和角色会改变占用。
+
+候选层在上游排除无明确用途、蓝图/地点不存在、条件不满足、已有施工、钱或材料不足、落点不可用、菜单占用
+和材料承诺冲突。到达服务地点前只复用现有滚动连接器；到达后才生成一次精确建造原语。运行时只执行地图
+`Action`、原生问答、`CarpenterMenu` 蓝图/地点分页和放置点击，不直接修改钱、库存、建筑集合或任务。
+
+隐藏静默隔离验证：通用策略建造 `runtime-quest-terminal-daily-plan-20260812-105048` 与任务回归
+`runtime-quest-terminal-daily-plan-20260812-105331` 均 `applied/verified`。当前五门范围仅证明 Robin 当前服务点、
+原版 `Coop`、`Farm`、一次目的限定建造；Wizard、建筑升级、换皮、跨地点分页矩阵、多人所有权及长期建设策略
+仍需独立证据，不得由 EVD-248 外推。
+
 ## 2026-08-10 秘密物品取得状态机纠正（EVD-237 已闭合）
 
 锁定版 `Data/Quests` 只有 128/129 两条 `SecretLostItemQuest`，均要求 `(O)191`。反编译确认

@@ -9,7 +9,8 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
-    private const string BuildingConstructionNativeContract = "GameLocation.checkAction_Carpenter->answerDialogue_carpenter_Construct->CarpenterMenu.receiveLeftClick->tryToBuild->Building.FinishConstruction->HaveBuildingQuest.OnBuildingExists";
+    private const string QuestBuildingConstructionNativeContract = "GameLocation.checkAction_Carpenter->answerDialogue_carpenter_Construct->CarpenterMenu.receiveLeftClick->tryToBuild->Building.FinishConstruction->HaveBuildingQuest.OnBuildingExists";
+    private const string GeneralBuildingConstructionNativeContract = "GameLocation.checkAction->ShowConstructOptions->CarpenterMenu.receiveLeftClick->tryToBuild->ConsumeResources->Building.FinishConstruction";
 
     private sealed class ActiveBuildingConstruction
     {
@@ -41,6 +42,7 @@ public sealed partial class ModEntry
         public bool OkClicked { get; set; }
         public bool CursorPositioned { get; set; }
         public bool PlacementClicked { get; set; }
+        public int LocationPageTransitions { get; set; }
         public int Cooldown { get; set; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
     }
@@ -66,7 +68,8 @@ public sealed partial class ModEntry
             return;
         }
         var service = Game1.currentLocation;
-        if (service is null || service.NameOrUniqueName != "ScienceHouse" ||
+        if (service is null || string.IsNullOrWhiteSpace(request.LocationId) ||
+            service.NameOrUniqueName != request.LocationId ||
             !request.TargetTileX.HasValue || !request.TargetTileY.HasValue ||
             !request.StandTileX.HasValue || !request.StandTileY.HasValue)
         {
@@ -75,7 +78,7 @@ public sealed partial class ModEntry
         }
         var action = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
         var stand = new Point(request.StandTileX.Value, request.StandTileY.Value);
-        if (!AreAdjacent(action, stand) || service.doesTileHaveProperty(action.X, action.Y, "Action", "Buildings") != "Carpenter")
+        if (!AreAdjacent(action, stand) || service.doesTileHaveProperty(action.X, action.Y, "Action", "Buildings") != ExpectedBuildingServiceAction(request))
         {
             pending.Completion.SetResult(BuildingConstructionBlocked(request, "construct_building_carpenter_action_drifted"));
             return;
@@ -104,6 +107,7 @@ public sealed partial class ModEntry
         }
         try
         {
+            var request = active.Pending.Request;
             active.ElapsedTicks++;
             if (active.ElapsedTicks > 4200)
             {
@@ -154,6 +158,10 @@ public sealed partial class ModEntry
                     return;
                 }
                 active.CarpenterOpened = true;
+                if (request.ConstructionBuilder == "Wizard")
+                {
+                    active.ConstructChosen = true;
+                }
                 active.Cooldown = 8;
                 return;
             }
@@ -176,10 +184,16 @@ public sealed partial class ModEntry
             }
             if (Game1.activeClickableMenu is DialogueBox locationDialogue && locationDialogue.isQuestion)
             {
-                var farmResponse = locationDialogue.responses?.FirstOrDefault(value => value.responseKey == "Farm");
-                if (farmResponse is null || !active.Service.answerDialogue(farmResponse))
+                var locationResponse = locationDialogue.responses?.FirstOrDefault(value => value.responseKey == request.PlacementLocationId);
+                if (locationResponse is not null && active.Service.answerDialogue(locationResponse))
                 {
-                    CompleteBuildingConstructionBlocked(active, "construct_building_farm_location_response_failed");
+                    active.Cooldown = 8;
+                    return;
+                }
+                var nextPage = locationDialogue.responses?.FirstOrDefault(value => value.responseKey == "nextPage");
+                if (nextPage is null || active.LocationPageTransitions++ >= 32 || !active.Service.answerDialogue(nextPage))
+                {
+                    CompleteBuildingConstructionBlocked(active, "construct_building_target_location_response_failed");
                 }
                 active.Cooldown = 8;
                 return;
@@ -193,7 +207,6 @@ public sealed partial class ModEntry
                 }
                 return;
             }
-            var request = active.Pending.Request;
             if (!active.BlueprintChosen)
             {
                 var blueprint = menu.Blueprints.FirstOrDefault(value => value.Id == request.ConstructionBuildingType && value.Skin is null);
@@ -298,8 +311,8 @@ public sealed partial class ModEntry
             QuestCandidateId = request.QuestCandidateId,
             QuestFamily = request.QuestFamily,
             QuestId = request.QuestId,
-            QuestPresentBefore = true,
-            QuestPresentAfter = Game1.player.questLog.Any(value => value.id.Value == request.QuestId),
+            QuestPresentBefore = request.ConstructionPurpose != "general_strategy",
+            QuestPresentAfter = request.ConstructionPurpose != "general_strategy" && Game1.player.questLog.Any(value => value.id.Value == request.QuestId),
             QuestCompletedBefore = false,
             QuestCompletedAfter = false
         });
@@ -309,9 +322,15 @@ public sealed partial class ModEntry
     {
         materials = new Dictionary<string, int>(StringComparer.Ordinal);
         reason = "construct_building_typed_request_invalid";
-        if (request.QuestFamily != "ordinary_quest" || request.QuestRuntimeType != "HaveBuildingQuest" ||
-            request.ConstructionBuildingType != request.ProjectId || request.NativeContract != BuildingConstructionNativeContract ||
-            request.PlacementLocationId != "Farm" || !request.BuildingTileX.HasValue || !request.BuildingTileY.HasValue ||
+        var questPurpose = request.ConstructionPurpose != "general_strategy";
+        var purposeExact = questPurpose
+            ? request.QuestFamily == "ordinary_quest" && request.QuestRuntimeType == "HaveBuildingQuest" && request.NativeContract == QuestBuildingConstructionNativeContract
+            : request.QuestFamily.Length == 0 && request.QuestRuntimeType.Length == 0 && request.QuestId.Length == 0 &&
+              !string.IsNullOrWhiteSpace(request.ConstructionReason) && request.NativeContract == GeneralBuildingConstructionNativeContract;
+        if (!purposeExact || request.ConstructionBuilder is not ("Robin" or "Wizard") ||
+            request.BuilderActionRaw != ExpectedBuildingServiceAction(request) ||
+            request.ConstructionBuildingType != request.ProjectId || string.IsNullOrWhiteSpace(request.PlacementLocationId) ||
+            !request.BuildingTileX.HasValue || !request.BuildingTileY.HasValue ||
             !request.ConstructionBuildDays.HasValue || !request.Price.HasValue || request.Price < 0 ||
             request.ExpectedMoneyAfter != request.ExpectedMoneyBefore - request.Price ||
             request.PlacementVerification != "static_native_predicates_passed_runtime_recheck_required")
@@ -343,13 +362,16 @@ public sealed partial class ModEntry
 
     private static bool BuildingConstructionLivePreconditions(TrainingExecutionRequest request, IReadOnlyDictionary<string, int> materials)
     {
-        var quest = Game1.player.questLog.OfType<HaveBuildingQuest>().SingleOrDefault(value =>
+        var purposeReady = request.ConstructionPurpose == "general_strategy" || Game1.player.questLog.OfType<HaveBuildingQuest>().Any(value =>
             value.id.Value == request.QuestId && value.buildingType.Value == request.ConstructionBuildingType &&
             value.accepted.Value && !value.completed.Value);
-        return quest is not null && !Game1.IsThereABuildingUnderConstruction() &&
+        return purposeReady && !Game1.IsThereABuildingUnderConstruction() &&
             Game1.player.Money == request.ExpectedMoneyBefore &&
             materials.All(pair => Game1.player.Items.CountId(pair.Key) == pair.Value);
     }
+
+    private static string ExpectedBuildingServiceAction(TrainingExecutionRequest request) =>
+        request.ConstructionBuilder == "Wizard" ? "WizardBook" : "Carpenter";
 
     private static int RequiredMaterialCount(TrainingExecutionRequest request, string itemId)
     {

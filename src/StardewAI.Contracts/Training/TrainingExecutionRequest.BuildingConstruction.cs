@@ -18,4 +18,16 @@ public sealed partial class TrainingExecutionRequest
 
     [JsonPropertyName("placement_verification")]
     public string PlacementVerification { get; set; } = string.Empty;
+
+    [JsonPropertyName("construction_purpose")]
+    public string ConstructionPurpose { get; set; } = string.Empty;
+
+    [JsonPropertyName("construction_reason")]
+    public string ConstructionReason { get; set; } = string.Empty;
+
+    [JsonPropertyName("construction_builder")]
+    public string ConstructionBuilder { get; set; } = string.Empty;
+
+    [JsonPropertyName("builder_action_raw")]
+    public string BuilderActionRaw { get; set; } = string.Empty;
 }

@@ -32,6 +32,7 @@ namespace StardewAI.Core.Tests
                 new[]
                 {
                     "animals.purchase",
+                    "buildings.construct",
                     "economy.buy_supplies",
                     "economy.sell_items",
                     "economy.ship_items",

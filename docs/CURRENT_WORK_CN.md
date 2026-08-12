@@ -5,8 +5,16 @@
 ## 当前权威检查点（优先于下方历史记录）
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `116 registered / 177 semantic / 115 compiler-bound / 42 five-gate / 29 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `120 registered / 179 semantic / 119 compiler-bound / 47 five-gate / 31 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
+- EVD-248 已闭合 `buildings.construct` 的第一个严格范围：模型必须明确给出建筑类型、目标地点和建设理由；
+  透明桥从实时 `Game1.buildingData` 与全部原生可建地点读取基础蓝图、Builder、条件、价格、材料、现有与在建
+  建筑、服务动作和原生合法落点。候选在上游排除缺意图、条件/资源/落点漂移、在建冲突和材料预留冲突，
+  再经 DailyPlan 汇入 EVD-236 已存在的唯一 `executor.construct_building`。隐藏静默隔离运行分别验证了
+  无任务策略建造 `runtime-quest-terminal-daily-plan-20260812-105048` 和原 `HaveBuildingQuest` 回归
+  `runtime-quest-terminal-daily-plan-20260812-105331`，均由原生 Robin/`CarpenterMenu` 建造 `Farm` 上的
+  `Coop`，核对钱、材料、坐标和三天倒计时。证据不外推到 Wizard、升级、换皮或长期建筑策略。
+- 最新 full 快照覆盖 `111` 个必需字段，blocking `0`；KnowledgeCompiler 仍为 `585/585`、blocking `0`。
 - EVD-246 已闭合 `mining.use_elevator`：透明桥读取玩家最深/当前矿层、入口 `Action=MineElevator`、
   楼层 `Buildings/mine` 索引 112 和精确 `MineElevatorMenu` 条目身份；DailyPlan 复用既有跨图移动、
   `interact` 与 `close_menu`。运行时只点击原生端点和菜单，不直接调用 `enterMine`/`warpFarmer`，并跨帧

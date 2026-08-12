@@ -24,7 +24,8 @@ public sealed partial class ModEntry
         {
             "craft_item" => SetupCraftingQuestFixture(request),
             "offer_item" => SetupItemDeliveryFixture(request),
-            "building_construction" => SetupBuildingConstructionQuestFixture(request),
+            "building_construction" => SetupBuildingConstructionFixture(request, createQuest: true),
+            "building_construction_general" => SetupBuildingConstructionFixture(request, createQuest: false),
             "drop_box" => SetupDropBoxFixture(request),
             "drop_box_color" => SetupDropBoxFixture(request, usePreservedParentColor: true),
             _ => BlockedWithPrimitive(
@@ -36,8 +37,9 @@ public sealed partial class ModEntry
         };
     }
 
-    private TrainingExecutionResult SetupBuildingConstructionQuestFixture(
-        TrainingExecutionRequest request)
+    private TrainingExecutionResult SetupBuildingConstructionFixture(
+        TrainingExecutionRequest request,
+        bool createQuest)
     {
         const string buildingType = "Coop";
         var player = Game1.player;
@@ -98,13 +100,19 @@ public sealed partial class ModEntry
             InstallFixtureItem(player, ItemRegistry.Create(material.ItemId, material.Amount + 25));
         }
 
-        var questId = string.IsNullOrWhiteSpace(request.QuestId)
-            ? "stardewai.runtime.building"
-            : request.QuestId;
-        var quest = new HaveBuildingQuest(buildingType);
-        quest.id.Value = questId;
-        quest.accepted.Value = true;
-        player.questLog.Add(quest);
+        var questId = createQuest
+            ? string.IsNullOrWhiteSpace(request.QuestId)
+                ? "stardewai.runtime.building"
+                : request.QuestId
+            : string.Empty;
+        HaveBuildingQuest? quest = null;
+        if (createQuest)
+        {
+            quest = new HaveBuildingQuest(buildingType);
+            quest.id.Value = questId;
+            quest.accepted.Value = true;
+            player.questLog.Add(quest);
+        }
         player.Money = data.BuildCost + 5000;
         Game1.timeOfDay = 1200;
         Game1.activeClickableMenu = null;
@@ -134,7 +142,7 @@ public sealed partial class ModEntry
 
         var verified = ReferenceEquals(Game1.currentLocation, house) &&
             player.TilePoint == standTile.Value &&
-            player.questLog.Contains(quest) &&
+            (createQuest ? quest is not null && player.questLog.Contains(quest) : !player.questLog.OfType<HaveBuildingQuest>().Any()) &&
             !player.team.constructedBuildings.Contains(buildingType) &&
             !Game1.IsThereABuildingUnderConstruction() &&
             player.Money == data.BuildCost + 5000 &&
@@ -145,10 +153,10 @@ public sealed partial class ModEntry
         return QuestTerminalFixtureResult(
             request,
             verified,
-            "building_construction",
+            createQuest ? "building_construction" : "building_construction_general",
             questId,
             string.Empty,
-            nameof(HaveBuildingQuest),
+            createQuest ? nameof(HaveBuildingQuest) : string.Empty,
             house.NameOrUniqueName,
             actionTile.Value,
             standTile.Value,

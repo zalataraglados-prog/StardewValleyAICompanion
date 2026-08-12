@@ -525,6 +525,10 @@ static partial class Program
         var constructionMaterialsJson = ReadQueueParameterString(item, "construction_materials_json");
         var placementLocationId = ReadQueueParameterString(item, "placement_location_id");
         var placementVerification = ReadQueueParameterString(item, "placement_verification");
+        var constructionPurpose = ReadQueueParameterString(item, "construction_purpose");
+        var constructionReason = ReadQueueParameterString(item, "construction_reason");
+        var constructionBuilder = ReadQueueParameterString(item, "construction_builder");
+        var builderActionRaw = ReadQueueParameterString(item, "builder_action_raw");
         var bundleDataKey = ReadQueueParameterString(item, "bundle_data_key");
         var communityCenterNoteTileX = ReadQueueParameterInt(item, "community_center_note_tile_x");
         var communityCenterNoteTileY = ReadQueueParameterInt(item, "community_center_note_tile_y");
@@ -908,6 +912,10 @@ static partial class Program
         executionRequest.ConstructionMaterialsJson = constructionMaterialsJson;
         executionRequest.PlacementLocationId = placementLocationId;
         executionRequest.PlacementVerification = placementVerification;
+        executionRequest.ConstructionPurpose = constructionPurpose;
+        executionRequest.ConstructionReason = constructionReason;
+        executionRequest.ConstructionBuilder = constructionBuilder;
+        executionRequest.BuilderActionRaw = builderActionRaw;
         executionRequest.BundleDataKey = bundleDataKey;
         executionRequest.CommunityCenterNoteTileX = communityCenterNoteTileX;
         executionRequest.CommunityCenterNoteTileY = communityCenterNoteTileY;

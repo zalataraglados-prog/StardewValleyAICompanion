@@ -179,27 +179,41 @@ function Invoke-QuestTerminalCase($Case) {
                         [string]$_.action_status -eq "ready_for_native_carpenter_menu"
                     }).Count -gt 0
             }
+            if ($Case.Name -eq "building-construction-general") {
+                return $null -eq (Find-BuildingQuest $snapshot $Case.QuestId) -and
+                    @($snapshot.state.player.building_construction_catalog.value.rows | Where-Object {
+                        [string]$_.building_type -eq "Coop" -and
+                        [string]$_.placement_location_id -eq "Farm" -and
+                        [string]$_.action_status -eq "ready_for_native_construction"
+                    }).Count -gt 0
+            }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 0
-        } "ready quest terminal fixture $($Case.Name)" $(if ($Case.Name -eq "building-construction") { 30 } else { 120 })
+        } "ready quest terminal fixture $($Case.Name)" $(if ($Case.Name -like "building-construction*") { 30 } else { 120 })
         $snapshotPath = Join-Path $caseDirectory "before-snapshot.json"
         Write-Json $snapshotPath $before
         Invoke-JsonPostRaw "$backendUrl/api/v1/snapshots" `
             (Get-Content -LiteralPath $snapshotPath -Raw) | Out-Null
 
+        $availabilityCandidate = [ordered]@{
+            option_id = $Case.CandidateOptionId
+            parameters = @($Case.IntentParameters)
+            actor_is_host = $true
+        }
         $availability = Invoke-JsonPost "$backendUrl/api/v1/planner/options/availability" ([ordered]@{
             state_hash = [string]$before.state_hash
-            candidate_option_ids = @("quest.advance")
-            candidates = @()
+            candidate_option_ids = @()
+            candidates = @($availabilityCandidate)
             include_executor_calibration_options = $true
         })
         Write-Json (Join-Path $caseDirectory "availability.json") $availability
         $candidate = @($availability.options |
-            Where-Object { $_.option_id -eq "quest.advance" } |
+            Where-Object { $_.option_id -eq $Case.CandidateOptionId } |
             ForEach-Object { $_.event_candidates } |
             Where-Object {
                 [bool]$_.available -and
-                [string](Get-CandidateParameter $_ "quest_candidate_id") -eq $Case.QuestCandidateId -and
+                ([string]::IsNullOrWhiteSpace($Case.QuestCandidateId) -or
+                 [string](Get-CandidateParameter $_ "quest_candidate_id") -eq $Case.QuestCandidateId) -and
                 [string]$_.kind -eq $Case.CandidateKind
             }) | Select-Object -First 1
         if ($null -eq $candidate) {
@@ -207,25 +221,30 @@ function Invoke-QuestTerminalCase($Case) {
         }
         $candidateId = [string]$candidate.candidate_id
 
-        dotnet run --no-restore --project `
-            (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
-            --root $caseLoopRoot `
-            --backend-url $backendUrl `
-            --bridge-snapshot-url $snapshotUrl `
-            --executor-url $executorBaseUrl `
-            --snapshot-file $snapshotPath `
-            --no-manifest `
-            --run-id $caseRunId `
-            --save-isolation-path $isolatedSavesPath `
-            --iterations 1 `
-            --train-every 1 `
-            --sleep-ms 0 `
-            --use-daily-plan `
-            --daily-plan-max-candidates 1 `
-            --daily-plan-candidate-options "quest.advance" `
-            --daily-plan-candidate-kind $Case.CandidateKind `
-            --daily-plan-candidate-id $candidateId `
-            --after-snapshot-wait-ms 1000 | Out-Null
+        $loopArguments = @(
+            "run", "--no-restore", "--project",
+            (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"), "--",
+            "--root", $caseLoopRoot,
+            "--backend-url", $backendUrl,
+            "--bridge-snapshot-url", $snapshotUrl,
+            "--executor-url", $executorBaseUrl,
+            "--snapshot-file", $snapshotPath,
+            "--no-manifest",
+            "--run-id", $caseRunId,
+            "--save-isolation-path", $isolatedSavesPath,
+            "--iterations", "1",
+            "--train-every", "1",
+            "--sleep-ms", "0",
+            "--use-daily-plan",
+            "--daily-plan-max-candidates", "1",
+            "--daily-plan-candidate-options", $Case.CandidateOptionId,
+            "--daily-plan-candidate-kind", $Case.CandidateKind,
+            "--daily-plan-candidate-id", $candidateId,
+            "--after-snapshot-wait-ms", "1000")
+        foreach ($parameter in @($Case.IntentParameters)) {
+            $loopArguments += @("--daily-plan-candidate-parameter", ([string]$parameter.name + "=" + [string]$parameter.value))
+        }
+        & dotnet @loopArguments | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "LiveTrainingLoop failed for $($Case.Name) with exit code $LASTEXITCODE"
         }
@@ -278,6 +297,15 @@ function Invoke-QuestTerminalCase($Case) {
                         [string]$_.action_status -eq "construction_in_progress" -and
                         [int]$_.construction_days_left -eq 3
                     }).Count -gt 0
+            }
+            if ($Case.Name -eq "building-construction-general") {
+                return @($snapshot.state.player.building_construction_catalog.value.rows | Where-Object {
+                    [string]$_.building_type -eq "Coop" -and
+                    [string]$_.placement_location_id -eq "Farm" -and
+                    [int]$_.matching_under_construction_count -eq 1 -and
+                    [int]$_.matching_under_construction[0].days_of_construction_left -eq 3 -and
+                    [string]$_.action_status -eq "another_building_under_construction"
+                }).Count -gt 0
             }
             $objective = Find-DonateObjective $snapshot $Case.QuestKey $Case.RequiredTagPrefix
             return $null -ne $objective -and [int]$objective.current_count -eq 1 -and
@@ -385,6 +413,8 @@ try {
             QuestCandidateId = "quest:stardewai.runtime.crafting:CraftingQuest"
             CandidateKind = "craft_quest_item"
             PrimitiveOptionId = "executor.craft_quest_item"
+            CandidateOptionId = "quest.advance"
+            IntentParameters = @()
         },
         [pscustomobject]@{
             Name = "item-delivery"
@@ -395,6 +425,8 @@ try {
             QuestCandidateId = "quest:stardewai.runtime.item_delivery:ItemDeliveryQuest"
             CandidateKind = "quest_npc_interaction"
             PrimitiveOptionId = "executor.quest_npc_interact"
+            CandidateOptionId = "quest.advance"
+            IntentParameters = @()
         },
         [pscustomobject]@{
             Name = "building-construction"
@@ -405,6 +437,24 @@ try {
             QuestCandidateId = "quest:stardewai.runtime.building:HaveBuildingQuest"
             CandidateKind = "construct_quest_building"
             PrimitiveOptionId = "executor.construct_building"
+            CandidateOptionId = "quest.advance"
+            IntentParameters = @()
+        },
+        [pscustomobject]@{
+            Name = "building-construction-general"
+            FixtureKind = "building_construction_general"
+            QuestId = ""
+            QuestKey = ""
+            RequiredTagPrefix = ""
+            QuestCandidateId = ""
+            CandidateKind = "construct_building"
+            PrimitiveOptionId = "executor.construct_building"
+            CandidateOptionId = "buildings.construct"
+            IntentParameters = @(
+                [pscustomobject]@{ name = "building_type"; value = "Coop" },
+                [pscustomobject]@{ name = "placement_location_id"; value = "Farm" },
+                [pscustomobject]@{ name = "construction_reason"; value = "animal_capacity" }
+            )
         },
         [pscustomobject]@{
             Name = "drop-box"
@@ -415,6 +465,8 @@ try {
             QuestCandidateId = "special_order:Gunther"
             CandidateKind = "quest_drop_box_donation"
             PrimitiveOptionId = "executor.quest_drop_box_donate"
+            CandidateOptionId = "quest.advance"
+            IntentParameters = @()
         },
         [pscustomobject]@{
             Name = "drop-box-preserved-parent-color"
@@ -425,6 +477,8 @@ try {
             QuestCandidateId = "special_order:QiChallenge12"
             CandidateKind = "quest_drop_box_donation"
             PrimitiveOptionId = "executor.quest_drop_box_donate"
+            CandidateOptionId = "quest.advance"
+            IntentParameters = @()
         }
     )
     if ($CaseName.Count -gt 0) {

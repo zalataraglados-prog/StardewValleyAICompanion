@@ -384,6 +384,11 @@ namespace StardewAI.Core.OptionRegistry
                 return TaskMachineDemandCandidates(snapshot, commitmentLedger);
             }
 
+            if (string.Equals(optionId, "buildings.construct", StringComparison.Ordinal))
+            {
+                return BuildingConstructionCandidates(snapshot, parameters, commitmentLedger);
+            }
+
             if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal))
             {
                 return QuestCandidates(snapshot, commitmentLedger);

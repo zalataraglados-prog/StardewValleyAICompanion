@@ -95,8 +95,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             BlockReasons = reservation.BlockingReasons,
             Parameters = new[]
             {
+                Parameter("construction_purpose", "ordinary_building_quest"),
+                Parameter("construction_reason", "active_quest_requirement"),
                 Parameter("construction_building_type", ReadString(row, "target_building_type")),
                 Parameter("project_id", ReadString(row, "target_building_type")),
+                Parameter("construction_builder", "Robin"),
                 Parameter("construction_build_days", ReadInt(row, "build_days").ToString(CultureInfo.InvariantCulture)),
                 Parameter("construction_build_cost", ReadInt(row, "build_cost").ToString(CultureInfo.InvariantCulture)),
                 Parameter("price", ReadInt(row, "build_cost").ToString(CultureInfo.InvariantCulture)),
@@ -119,6 +122,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Parameter("building_tile_y", placementY.Value.ToString(CultureInfo.InvariantCulture)),
                 Parameter("placement_verification", ReadString(row, "placement_verification")),
                 Parameter("carpenter_action_raw", ReadString(row, "carpenter_action_raw")),
+                Parameter("builder_action_raw", ReadString(row, "carpenter_action_raw")),
                 Parameter("native_contract", "GameLocation.checkAction_Carpenter->answerDialogue_carpenter_Construct->CarpenterMenu.receiveLeftClick->tryToBuild->Building.FinishConstruction->HaveBuildingQuest.OnBuildingExists")
             }
         };

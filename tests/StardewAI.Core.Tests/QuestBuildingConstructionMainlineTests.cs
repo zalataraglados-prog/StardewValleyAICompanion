@@ -30,7 +30,7 @@ public sealed class QuestBuildingConstructionMainlineTests
 
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         var item = Assert.Single(queue.Items);
-        Assert.Equal("pending", item.Status);
+        Assert.True(item.Status == "pending", string.Join(";", item.BlockingReasons));
         Assert.Equal("executor.construct_building", item.OptionId);
         Assert.Equal("construct_building", Assert.Single(item.NormalizedCommand.Steps).StepType);
     }

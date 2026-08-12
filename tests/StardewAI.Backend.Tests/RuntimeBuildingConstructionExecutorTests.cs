@@ -9,6 +9,8 @@ public sealed class RuntimeBuildingConstructionExecutorTests
         Assert.Contains("answerDialogue(response)", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveLeftClick", source, StringComparison.Ordinal);
         Assert.Contains("menu.SetNewActiveBlueprint", source, StringComparison.Ordinal);
+        Assert.Contains("ExpectedBuildingServiceAction(request)", source, StringComparison.Ordinal);
+        Assert.Contains("request.PlacementLocationId", source, StringComparison.Ordinal);
         Assert.DoesNotContain("buildStructure(", source, StringComparison.Ordinal);
         Assert.DoesNotContain("questComplete(", source, StringComparison.Ordinal);
     }
