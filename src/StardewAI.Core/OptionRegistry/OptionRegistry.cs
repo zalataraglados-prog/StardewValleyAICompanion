@@ -95,6 +95,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact building, target skin and appearance reason selected", "compiler freezes the live native menu order and shortest mutation-safe click sequence", "native Robin and BuildingSkinMenu flow applies the skin and verifies paint reset" },
                 new[] { "block_missing_explicit_building_skin_identity_or_reason", "block_permission_condition_or_menu_order_drift", "block_active_construction_or_upgrade", "block_unverified_route", "block_direct_skin_or_paint_mutation" }));
 
+            Register(Option("buildings.paint", "buildings", "Paint one exact native building region to an explicitly selected color or default",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.building_paint_catalog", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact building, paint region, mouse-reachable color or default and appearance reason selected", "compiler freezes the live native ranges, current values and Robin service", "shared native Carpenter target flow applies and verifies the exact region" },
+                new[] { "block_missing_explicit_building_region_color_or_reason", "block_permission_condition_or_mouse_quantization_drift", "block_active_construction_or_upgrade", "block_unverified_route", "block_direct_paint_mutation" }));
+
             Register(Option("farm.care_for_pets", "farm", "Perform one transparent pet-care obligation",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -939,13 +947,13 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches the verified builder service", "native builder menu selects the exact blueprint", "native placement starts the exact construction countdown" },
                 new[] { "block_missing_authorized_quest_or_general_strategy_purpose", "block_blueprint_resource_or_placement_drift", "block_active_construction", "block_direct_money_inventory_building_or_quest_mutation" }));
 
-            Register(Option("executor.change_building_skin", "buildings", "Apply one exact verified building skin through native Carpenter and appearance menus",
+            Register(Option("executor.change_building_skin", "buildings", "Apply one exact verified building skin or paint region through native Carpenter appearance menus",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
-                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.building_skin_catalog", "locations.collision_grid", "menus.active_menu" },
-                new[] { "BFS reaches Robin's counter", "native Carpenter paint target flow reaches the exact BuildingSkinMenu", "only the precomputed shortest clicks run and exact skin plus default paint colors are verified" },
-                new[] { "block_building_identity_skin_menu_or_permission_drift", "block_nonshortest_or_trial_navigation", "block_unacknowledged_paint_reset", "block_direct_skin_or_paint_mutation" }));
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.building_skin_catalog", "player.building_paint_catalog", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches Robin's counter through one shared lifecycle", "frozen parameters select exact BuildingSkinMenu or BuildingPaintMenu native controls", "exact skin or target paint region plus sibling-region invariants are verified" },
+                new[] { "block_building_identity_appearance_menu_or_permission_drift", "block_nonshortest_skin_or_mouse_unreachable_paint_target", "block_unacknowledged_paint_reset_or_sibling_mutation", "block_direct_skin_or_paint_mutation" }));
 
             Register(Option("executor.pan_ore_spot", "foraging", "Pan one verified active ore spot with the native Pan",
                 OptionBehaviorCategories.Mechanical,

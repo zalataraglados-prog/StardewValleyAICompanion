@@ -231,3 +231,12 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 当前动作对账：122 registered、180 semantic、121 compiler-bound、49 five-gate、32 training allowlist、0 Product Executor；320/428/150 原生分母 blocking 均为 0。
 - 当前 full 快照 required 112、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1663/1663、Backend 121/121。
 - 下一切片为 `buildings.paint`。它必须复用现有 Robin 服务、Carpenter 建筑选择和菜单退出链，只新增实时颜色参数、上游外观意图约束和 `BuildingPaintMenu` 原生滑杆/回执，不得新增平行建筑菜单执行器。
+
+## 2026-08-12 当前权威检查点：EVD-250
+
+- `buildings.paint` 已完成透明读取、上游许可、DailyPlan、共享动作队列、类型化请求、原生 `BuildingPaintMenu` 控件与严格回执。
+- 透明桥公开每栋可涂装建筑的一至三区域、原生 H/S/L 范围、当前值、默认标志、权限、Robin 服务入口，以及 284 像素滑杆的精确鼠标可达整数集合；上游拒绝不可达、无效果和默认显示值无法解除默认标志的目标。
+- DailyPlan 生成 `paint_building_region`，但动作队列继续映射到唯一 `executor.change_building_skin`。共享 `ActiveBuildingAppearanceChange` 复用 Robin、Carpenter、建筑选择和退出生命周期，只在子菜单内部按冻结参数分流；不存在第二套 Robin 状态机。
+- 隐藏静音隔离运行 `runtime-quest-terminal-daily-plan-20260812-133245` 已通过：Farmhouse `Building` 区域原生点击到 H180/S37/L-30，目标精确匹配，另外两区域保持默认，训练行落盘。
+- 当前为 123 registered / 180 semantic / 122 compiler-bound / 57 catalogued-blocked；full snapshot 113 required、96 带来源可读、17 场景性、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1666/1666、Backend 121/121。
+- 下一切片应从剩余 57 个 `catalogued_blocked` 动作中，按权威字典依赖、已有机械引擎复用和可形成严格原生回执的顺序选择；不得以动作数量为理由复制执行系统。

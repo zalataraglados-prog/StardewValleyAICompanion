@@ -97,6 +97,7 @@ public sealed class BuildingSkinMainlineTests
             "location_id":{"value":"ScienceHouse","status":"available"},
             "tile_x":{"value":8,"status":"available"},
             "tile_y":{"value":20,"status":"available"},
+            "building_paint_catalog":{"value":{"projection_status":"complete_live_native_building_paint_catalog","rows":[]},"status":"available"},
             "building_skin_catalog":{"value":{"projection_status":"complete_live_native_building_skin_catalog","rows":[{
               "building_identity":"Farm:Pet Bowl:49,40","building_location_id":"Farm","building_type":"Pet Bowl",
               "building_tile_x":49,"building_tile_y":40,"permission_to_change_appearance":true,"can_be_painted":false,

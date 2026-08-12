@@ -27,6 +27,7 @@ public sealed partial class ModEntry
             "building_construction" => SetupBuildingConstructionFixture(request, createQuest: true),
             "building_construction_general" => SetupBuildingConstructionFixture(request, createQuest: false),
             "building_skin" => ExecuteSetupBuildingSkinFixture(request),
+            "building_paint" => ExecuteSetupBuildingPaintFixture(request),
             "drop_box" => SetupDropBoxFixture(request),
             "drop_box_color" => SetupDropBoxFixture(request, usePreservedParentColor: true),
             _ => BlockedWithPrimitive(

@@ -623,3 +623,11 @@ Defender 的最大生命增量。该动作进入训练准入后，总计为 114 
 DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作队列只生成唯一 `executor.change_building_skin`。运行时通过原生 `Carpenter -> Construct -> Paint -> 建筑点击 -> BuildingSkinMenu` 完成；生产执行器不得直接写 `skinId`、油漆状态或建筑集合。EVD-249 在 E 盘隔离存档中完成 Pet Bowl 默认皮肤到 `Stone Pet Bowl` 的原生验证，精确使用一次 `next`，并验证返回 ScienceHouse、目标皮肤和三组默认油漆标志。
 
 当前看板为 `122 registered / 180 semantic / 121 compiler-bound / 49 five-gate / 32 training allowlist / 0 Product Executor`；原生分母仍为 `320 surfaces / 428 branches / 150 map tokens` 且三类 blocking 均为 0。真实 full 快照覆盖 112 个必需字段、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。证据只覆盖已声明的 Pet Bowl 分支；`buildings.paint` 仍是下一独立动作切片，必须复用本链的 Robin、建筑目标选择和菜单生命周期，不得复制第二套系统。
+
+## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
+
+`buildings.paint` 是高层外观选择，不是新的机械执行系统。小模型必须明确建筑身份、涂装区域、恢复默认或自定义 H/S/L，以及外观理由。透明桥实时读取 `Data/PaintData`、权限、区域顺序、亮度边界、当前三组颜色和 Robin 服务入口；同时根据锁定版原生 284 像素滑杆公式公开每个通道的精确鼠标可达值。上游候选与队列编译均拒绝不可达整数、无效果目标、默认显示值无法解除默认标志的三元组、菜单占用和投影漂移。
+
+DailyPlan 的语义步骤为 `paint_building_region`，但动作队列仍进入唯一 `executor.change_building_skin`。共享 `ActiveBuildingAppearanceChange` 负责 Robin 路由、Carpenter 对话、农场建筑选择和菜单收尾；参数存在 `paint_target_mode` 时才进入 `BuildingPaintMenu` 区域/滑杆/默认按钮分支。结算必须同时证明目标区域精确匹配和所有兄弟区域不变。生产代码禁止直接写 `BuildingPaintColor`；直接设定仅允许隔离 fixture 建立前态。
+
+EVD-250 在隐藏、静音、E 盘隔离存档中完成 `Farmhouse/Building -> H180/S37/L-30` 原生全链，训练行已落盘。冻结语义分母保持 180：`123 registered + 57 catalogued_blocked`，说明本切片替换待办项而没有制造第 181 个重复动作；compiler-bound 为 122，Product Executor 仍为 0。最新 full snapshot 为 113 required、96 带来源可读、17 场景性、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1666/1666、Backend 121/121。

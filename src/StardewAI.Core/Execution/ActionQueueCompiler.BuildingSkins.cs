@@ -10,6 +10,11 @@ namespace StardewAI.Core.Execution;
 
 public sealed partial class ActionQueueCompiler
 {
+    private static CompiledActionStep[] CompileBuildingAppearanceStep(SmallModelAction action) =>
+        string.IsNullOrWhiteSpace(ReadParameter(action, "paint_target_mode"))
+            ? CompileChangeBuildingSkinStep(action)
+            : CompilePaintBuildingRegionStep(action);
+
     private static CompiledActionStep[] CompileChangeBuildingSkinStep(SmallModelAction action)
     {
         var identity = ReadParameter(action, "building_identity");
@@ -25,7 +30,7 @@ public sealed partial class ActionQueueCompiler
 
     private static string[] ValidateChangeBuildingSkinPlan(SmallModelAction action, SnapshotEnvelope snapshot)
     {
-        if (action.OptionId != "executor.change_building_skin")
+        if (action.OptionId != "executor.change_building_skin" || !string.IsNullOrWhiteSpace(ReadParameter(action, "paint_target_mode")))
             return Array.Empty<string>();
         var reasons = new List<string>();
         if (ActionSeesActiveMenuOpen(action, snapshot))

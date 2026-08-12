@@ -199,7 +199,7 @@ namespace StardewAI.Contracts.Capabilities
         }
 
         private static readonly HashSet<string> StepCompilerIds = Set(
-            "buildings.change_skin", "executor.change_building_skin",
+            "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
@@ -270,7 +270,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.transfer_material");
 
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
-            "buildings.change_skin",
+            "buildings.change_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
@@ -318,7 +318,7 @@ namespace StardewAI.Contracts.Capabilities
 
         private static readonly string[] RegisteredOptionIds =
         {
-            "buildings.change_skin", "executor.change_building_skin",
+            "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "mail.process_letter",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase",
             "buildings.construct", "farm.care_for_pets", "museum.donate_items",
@@ -375,8 +375,11 @@ namespace StardewAI.Contracts.Capabilities
                         "vanilla_actor_exact_live_Pet_Bowl_default_to_Stone_skin_current_Robin_service_native_CarpenterMenu_shortest_click_and_paint_reset_receipt",
                         "EVD-249"),
                     ["executor.change_building_skin"] = VerifiedEvidence(
-                        "vanilla_actor_exact_live_Pet_Bowl_default_to_Stone_skin_native_Carpenter_Paint_BuildingSkinMenu_shortest_click_and_paint_reset_receipt",
-                        "EVD-249"),
+                        "vanilla_actor_shared_native_building_appearance_executor_exact_Pet_Bowl_skin_or_Farmhouse_first_region_mouse_reachable_custom_paint_with_strict_receipt",
+                        "EVD-249", "EVD-250"),
+                    ["buildings.paint"] = VerifiedEvidence(
+                        "vanilla_actor_exact_live_Farmhouse_first_paint_region_current_Robin_service_native_CarpenterMenu_mouse_reachable_custom_HSL_and_unchanged_sibling_receipt",
+                        "EVD-250"),
                     ["buildings.construct"] = VerifiedEvidence(
                         "vanilla_host_purpose_bound_exact_live_base_blueprint_current_Robin_service_native_CarpenterMenu_Coop_on_Farm_money_material_placement_and_countdown_receipt",
                         "EVD-248"),
@@ -589,6 +592,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("construct_quest_building"),
                 SupportedCandidate("construct_building"),
                 SupportedCandidate("change_building_skin"),
+                SupportedCandidate("paint_building_region"),
                 SupportedCandidate("craft_machine_item"),
                 SupportedCandidate("craft_storage_item"),
                 SupportedCandidate("craft_quest_item"),

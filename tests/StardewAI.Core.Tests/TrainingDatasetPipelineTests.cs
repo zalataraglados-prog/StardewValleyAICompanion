@@ -34,6 +34,7 @@ namespace StardewAI.Core.Tests
                     "animals.purchase",
                     "buildings.change_skin",
                     "buildings.construct",
+                    "buildings.paint",
                     "economy.buy_supplies",
                     "economy.sell_items",
                     "economy.ship_items",

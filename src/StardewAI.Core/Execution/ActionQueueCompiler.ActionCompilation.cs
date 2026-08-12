@@ -179,6 +179,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateCraftQuestItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateConstructBuildingPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateChangeBuildingSkinPlan(action, snapshot));
+            blocking.AddRange(ValidatePaintBuildingRegionPlan(action, snapshot));
             blocking.AddRange(ValidatePlaceMachinePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateRemoveMachinePlan(
                 action,

@@ -10,10 +10,11 @@ namespace StardewAI.RuntimeTestHarness;
 public sealed partial class ModEntry
 {
     private const string BuildingSkinNativeContract = "GameLocation.checkAction->carpenter_Construct->CarpenterMenu.Paint->building_target_click->BuildingPaintMenu.appearance(optional)->BuildingSkinMenu.shortest_exact_clicks->BuildingSkinMenu.Ok";
+    private const string BuildingPaintNativeContract = "GameLocation.checkAction->carpenter_Construct->CarpenterMenu.Paint->building_target_click->BuildingPaintMenu.region_navigation->native_slider_or_default_clicks->BuildingPaintMenu.Ok";
 
-    private sealed class ActiveBuildingSkinChange
+    private sealed class ActiveBuildingAppearanceChange
     {
-        public ActiveBuildingSkinChange(PendingExecution pending, GameLocation service, Point action, Point stand, List<Point> path, Building building)
+        public ActiveBuildingAppearanceChange(PendingExecution pending, GameLocation service, Point action, Point stand, List<Point> path, Building building)
         {
             Pending = pending;
             Service = service;
@@ -21,6 +22,7 @@ public sealed partial class ModEntry
             Stand = stand;
             Path = path;
             Building = building;
+            InitialPaint = CaptureBuildingPaint(building);
             LastTile = Game1.player.TilePoint;
         }
         public PendingExecution Pending { get; }
@@ -29,6 +31,7 @@ public sealed partial class ModEntry
         public Point Stand { get; }
         public List<Point> Path { get; }
         public Building Building { get; }
+        public (bool Default, int Hue, int Saturation, int Lightness)[] InitialPaint { get; }
         public Point LastTile { get; set; }
         public int PathIndex { get; set; }
         public int ElapsedTicks { get; set; }
@@ -36,6 +39,8 @@ public sealed partial class ModEntry
         public int Cooldown { get; set; }
         public int LocationPageTransitions { get; set; }
         public int SkinClicks { get; set; }
+        public int PaintRegionClicks { get; set; }
+        public int PaintControlStage { get; set; }
         public bool CarpenterOpened { get; set; }
         public bool ConstructChosen { get; set; }
         public bool PaintChosen { get; set; }
@@ -44,12 +49,13 @@ public sealed partial class ModEntry
         public bool BuildingClicked { get; set; }
         public bool AppearanceClicked { get; set; }
         public bool SkinOkClicked { get; set; }
+        public bool PaintOkClicked { get; set; }
         public bool ParentReturnRequested { get; set; }
         public bool ParentExitClicked { get; set; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
     }
 
-    private void StartBuildingSkinChange(PendingExecution pending)
+    private void StartBuildingAppearanceChange(PendingExecution pending)
     {
         var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
@@ -58,12 +64,12 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(Blocked(request, reasons.ToArray()));
             return;
         }
-        if (activeBuildingSkinChange is not null || HasActiveExecutorOperation() || Game1.activeClickableMenu is not null || Game1.dialogueUp || !Game1.player.CanMove)
+        if (activeBuildingAppearanceChange is not null || HasActiveExecutorOperation() || Game1.activeClickableMenu is not null || Game1.dialogueUp || !Game1.player.CanMove)
         {
             pending.Completion.SetResult(BuildingSkinBlocked(request, "change_building_skin_player_busy"));
             return;
         }
-        if (!BuildingSkinRequestExact(request, out var targetBuilding, out var requestReason))
+        if (!BuildingAppearanceRequestExact(request, out var targetBuilding, out var requestReason))
         {
             pending.Completion.SetResult(BuildingSkinBlocked(request, requestReason));
             return;
@@ -89,12 +95,12 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BuildingSkinBlocked(request, "change_building_skin_path_unavailable:" + pathReason));
             return;
         }
-        activeBuildingSkinChange = new ActiveBuildingSkinChange(pending, service, action, stand, path, targetBuilding!);
+        activeBuildingAppearanceChange = new ActiveBuildingAppearanceChange(pending, service, action, stand, path, targetBuilding!);
     }
 
-    private void TickBuildingSkinChange()
+    private void TickBuildingAppearanceChange()
     {
-        var active = activeBuildingSkinChange;
+        var active = activeBuildingAppearanceChange;
         if (active is null)
             return;
         try
@@ -179,7 +185,7 @@ public sealed partial class ModEntry
             if (Game1.activeClickableMenu is not CarpenterMenu menu)
             {
                 if (active.ParentExitClicked && Game1.activeClickableMenu is null)
-                    VerifyBuildingSkinSettlement(active);
+                    VerifyBuildingAppearanceSettlement(active);
                 return;
             }
             if (!active.PaintChosen)
@@ -219,9 +225,9 @@ public sealed partial class ModEntry
                 }
                 menu.receiveLeftClick(screenX, screenY);
                 var opened = menu.GetChildMenu();
-                var expectedMenuOpened = request.EntryRoute == "building_paint_menu_then_appearance"
+                var expectedMenuOpened = !string.IsNullOrWhiteSpace(request.PaintTargetMode)
                     ? opened is BuildingPaintMenu
-                    : opened is BuildingSkinMenu;
+                    : request.EntryRoute == "building_paint_menu_then_appearance" ? opened is BuildingPaintMenu : opened is BuildingSkinMenu;
                 if (!expectedMenuOpened)
                 {
                     if (++active.BuildingClickAttempts >= 3)
@@ -238,6 +244,18 @@ public sealed partial class ModEntry
                 return;
             }
             var child = menu.GetChildMenu();
+            if (!string.IsNullOrWhiteSpace(request.PaintTargetMode) && child is BuildingPaintMenu buildingPaint && !active.PaintOkClicked)
+            {
+                if (!AdvanceBuildingPaintMenu(active, buildingPaint, out var paintReason))
+                {
+                    if (!string.IsNullOrEmpty(paintReason))
+                        CompleteBuildingSkinBlocked(active, paintReason);
+                    return;
+                }
+                active.PaintOkClicked = true;
+                active.Cooldown = 8;
+                return;
+            }
             if (child is BuildingPaintMenu paint && !active.AppearanceClicked)
             {
                 if (request.EntryRoute != "building_paint_menu_then_appearance" || !paint.appearanceButton.visible || !ReferenceEquals(paint.building, active.Building))
@@ -281,7 +299,7 @@ public sealed partial class ModEntry
                 active.Cooldown = 8;
                 return;
             }
-            if (active.SkinOkClicked && !active.ParentReturnRequested)
+            if ((active.SkinOkClicked || active.PaintOkClicked) && !active.ParentReturnRequested)
             {
                 child = menu.GetChildMenu();
                 if (child is BuildingPaintMenu returnedPaint)
@@ -357,10 +375,12 @@ public sealed partial class ModEntry
         return true;
     }
 
-    private static bool BuildingSkinRequestExact(TrainingExecutionRequest request, out Building? building, out string reason)
+    private static bool BuildingAppearanceRequestExact(TrainingExecutionRequest request, out Building? building, out string reason)
     {
         building = Game1.getLocationFromName(request.BuildingLocationId)?.buildings.FirstOrDefault(value =>
             value.buildingType.Value == request.BuildingType && value.tileX.Value == request.BuildingTileX && value.tileY.Value == request.BuildingTileY);
+        if (!string.IsNullOrWhiteSpace(request.PaintTargetMode))
+            return BuildingPaintRequestExact(request, building, out reason);
         reason = "change_building_skin_typed_request_invalid";
         if (building is null || request.NativeContract != BuildingSkinNativeContract || request.BuilderActionRaw != "Carpenter" ||
             string.IsNullOrWhiteSpace(request.AppearanceReason) || request.BuildingIdentity != request.BuildingLocationId + ":" + request.BuildingType + ":" + request.BuildingTileX + "," + request.BuildingTileY ||
@@ -377,9 +397,14 @@ public sealed partial class ModEntry
 
     private static string SkinKey(string? skinId) => skinId ?? "__default__";
 
-    private void VerifyBuildingSkinSettlement(ActiveBuildingSkinChange active)
+    private void VerifyBuildingAppearanceSettlement(ActiveBuildingAppearanceChange active)
     {
         var request = active.Pending.Request;
+        if (!string.IsNullOrWhiteSpace(request.PaintTargetMode))
+        {
+            VerifyBuildingPaintSettlement(active);
+            return;
+        }
         var colors = active.Building.netBuildingPaintColor.Value;
         if (SkinKey(active.Building.skinId.Value) != request.TargetSkinKey ||
             !colors.Color1Default.Value || !colors.Color2Default.Value || !colors.Color3Default.Value ||
@@ -388,7 +413,7 @@ public sealed partial class ModEntry
             CompleteBuildingSkinBlocked(active, "change_building_skin_native_postconditions_mismatch");
             return;
         }
-        activeBuildingSkinChange = null;
+        activeBuildingAppearanceChange = null;
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId, QueueId = request.QueueId, QueueItemId = request.QueueItemId,
@@ -402,15 +427,16 @@ public sealed partial class ModEntry
         });
     }
 
-    private void CompleteBuildingSkinBlocked(ActiveBuildingSkinChange active, string reason)
+    private void CompleteBuildingSkinBlocked(ActiveBuildingAppearanceChange active, string reason)
     {
         StopAllMovement();
-        activeBuildingSkinChange = null;
+        activeBuildingAppearanceChange = null;
         active.Pending.Completion.SetResult(BuildingSkinBlocked(active.Pending.Request, reason));
     }
 
     private static TrainingExecutionResult BuildingSkinBlocked(TrainingExecutionRequest request, string reason) =>
-        BlockedWithPrimitive(request, "change_building_skin", "building=" + request.BuildingIdentity + ";skin=" + request.TargetSkinKey,
+        BlockedWithPrimitive(request, string.IsNullOrWhiteSpace(request.PaintTargetMode) ? "change_building_skin" : "paint_building_region",
+            string.IsNullOrWhiteSpace(request.PaintTargetMode) ? "building=" + request.BuildingIdentity + ";skin=" + request.TargetSkinKey : "building=" + request.BuildingIdentity + ";region=" + request.PaintRegionId,
             "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none"), reason);
 
 }

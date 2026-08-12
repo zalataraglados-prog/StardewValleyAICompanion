@@ -4,12 +4,11 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 320,
-  "mapped_count": 58,
-  "catalogued_blocked_surface_count": 111,
-  "catalogued_blocked_action_count": 58,
+  "mapped_count": 60,
+  "catalogued_blocked_surface_count": 109,
+  "catalogued_blocked_action_count": 57,
   "catalogued_blocked_action_ids": [
     "animals.manage_animal",
-    "buildings.paint",
     "crafting.cook_recipe",
     "crafting.forge_item",
     "executor.apply_tree_treatment",
@@ -1198,7 +1197,7 @@
       "mappedOptionIds": [
         "buildings.paint"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -1215,7 +1214,7 @@
       "mappedOptionIds": [
         "buildings.paint"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

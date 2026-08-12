@@ -78,7 +78,7 @@ public sealed partial class ModEntry : Mod
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
     private ActiveBuildingConstruction? activeBuildingConstruction;
-    private ActiveBuildingSkinChange? activeBuildingSkinChange;
+    private ActiveBuildingAppearanceChange? activeBuildingAppearanceChange;
     private ActiveAnimalPurchase? activeAnimalPurchase;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
@@ -479,7 +479,7 @@ public sealed partial class ModEntry : Mod
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
         TickBuildingConstruction();
-        TickBuildingSkinChange();
+        TickBuildingAppearanceChange();
         TickPanOreSpot();
         TickFishPondService();
         CaptureExecutorDiagnosticFrame("update_ticked");
@@ -1181,7 +1181,7 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.change_building_skin")
             {
-                StartBuildingSkinChange(pending);
+                StartBuildingAppearanceChange(pending);
                 return;
             }
 
@@ -1367,7 +1367,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
             activeBuildingConstruction = null;
-            activeBuildingSkinChange = null;
+            activeBuildingAppearanceChange = null;
             activeAnimalPurchase = null;
             activePanOreSpot = null;
             activeFishPondService = null;
@@ -1566,7 +1566,7 @@ public sealed partial class ModEntry : Mod
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
             activeBuildingConstruction is not null ||
-            activeBuildingSkinChange is not null ||
+            activeBuildingAppearanceChange is not null ||
             activeAnimalPurchase is not null ||
             activePanOreSpot is not null ||
             activeFishPondService is not null ||

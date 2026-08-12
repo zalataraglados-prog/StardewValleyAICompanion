@@ -128,6 +128,7 @@ namespace StardewAI.Core.Execution
                 "construct_quest_building" => "executor.construct_building",
                 "construct_building" => "executor.construct_building",
                 "change_building_skin" => "executor.change_building_skin",
+                "paint_building_region" => "executor.change_building_skin",
                 "place_machine_item" => "executor.place_machine",
                 "remove_machine_item" => "executor.remove_machine",
                 "place_storage_item" => "executor.place_storage",

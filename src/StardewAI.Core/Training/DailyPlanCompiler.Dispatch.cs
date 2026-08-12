@@ -16,6 +16,7 @@ namespace StardewAI.Core.Training
                 ["animals.purchase"] = new[] { "route_connector_tile", "interact_endpoint", "animal_purchase_select_service", "animal_purchase_navigate_location_page", "animal_purchase_select_location", "purchase_animal" },
                 ["buildings.construct"] = new[] { "route_connector_tile", "construct_building" },
                 ["buildings.change_skin"] = new[] { "route_connector_tile", "change_building_skin" },
+                ["buildings.paint"] = new[] { "route_connector_tile", "paint_building_region" },
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
@@ -371,6 +372,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "change_building_skin")
             {
                 return ChangeBuildingSkinSteps(candidate);
+            }
+
+            if (candidate.Kind == "paint_building_region")
+            {
+                return PaintBuildingRegionSteps(candidate);
             }
 
             if (candidate.Kind == "place_machine_item")
