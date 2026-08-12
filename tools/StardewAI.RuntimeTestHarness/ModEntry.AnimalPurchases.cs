@@ -9,11 +9,18 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private const string PagedAnimalPurchaseFixturePrefix = "StardewAIAnimalPurchaseFixture";
+
     private TrainingExecutionResult ExecuteSetupAnimalPurchase(TrainingExecutionRequest request)
     {
         var reasons = ValidateExecutionRequest(request);
         if (reasons.Count > 0)
             return AnimalPurchaseBlocked(request, "debug_setup_animal_purchase", reasons.ToArray());
+
+        if (string.Equals(request.TargetRuntimeIdentity, "full_chain_paged", StringComparison.Ordinal))
+        {
+            return ExecuteSetupPagedAnimalPurchaseChain(request);
+        }
 
         var farm = Game1.getFarm();
         var requestedType = string.IsNullOrWhiteSpace(request.AnimalTypeId) ? "White Chicken" : request.AnimalTypeId;
@@ -82,6 +89,96 @@ public sealed partial class ModEntry
                 ";occupancy=" + animalHouse.animalsThatLiveHere.Count + "/" + animalHouse.animalLimit.Value +
                 ";money=" + Game1.player.Money,
             BlockReasons = verified ? Array.Empty<string>() : new[] { "animal_purchase_fixture_postcondition_mismatch" }
+        };
+    }
+
+    private TrainingExecutionResult ExecuteSetupPagedAnimalPurchaseChain(TrainingExecutionRequest request)
+    {
+        var requestedType = string.IsNullOrWhiteSpace(request.AnimalTypeId) ? "White Chicken" : request.AnimalTypeId;
+        var possibleTypes = ReadPossibleFixtureAnimalTypes(requestedType);
+        var targetLocationId = PagedAnimalPurchaseFixturePrefix + "7";
+        foreach (var stale in Game1.locations
+            .Where(location => location.Name.StartsWith(PagedAnimalPurchaseFixturePrefix, StringComparison.Ordinal))
+            .ToArray())
+        {
+            Game1.locations.Remove(stale);
+        }
+
+        for (var index = 1; index <= 7; index++)
+        {
+            var location = new GameLocation("Maps\\Farm", PagedAnimalPurchaseFixturePrefix + index);
+            var home = new Building("Coop", new Vector2(2, 2));
+            home.FinishConstruction(onGameStart: true);
+            home.LoadFromBuildingData(home.GetData(), forUpgrade: false, forConstruction: true);
+            home.load();
+            location.buildings.Add(home);
+            Game1.locations.Add(location);
+        }
+
+        var targetLocation = Game1.getLocationFromName(targetLocationId);
+        var targetHome = targetLocation?.buildings.SingleOrDefault();
+        if (targetLocation is null || targetHome?.GetIndoors() is not AnimalHouse targetHouse ||
+            targetHouse.isFull() || !FixtureHomeAcceptsAll(targetHome, possibleTypes))
+        {
+            return AnimalPurchaseBlocked(request, "debug_setup_animal_purchase", "animal_purchase_paged_fixture_home_unavailable");
+        }
+
+        var animalShop = Game1.getLocationFromName("AnimalShop");
+        var marnie = Game1.getCharacterFromName("Marnie");
+        if (animalShop is null || marnie is null)
+        {
+            return AnimalPurchaseBlocked(request, "debug_setup_animal_purchase", "animal_purchase_paged_fixture_shop_or_marnie_missing");
+        }
+
+        Game1.exitActiveMenu();
+        Game1.player.forceCanMove();
+        Game1.player.Halt();
+        Game1.player.Money = Math.Max(Game1.player.Money, 50000);
+        Game1.timeOfDay = 1000;
+        Game1.currentLocation = animalShop;
+        Game1.player.currentLocation = animalShop;
+        Game1.player.Position = new Vector2(12, 16) * Game1.tileSize;
+        Game1.warpCharacter(marnie, animalShop.NameOrUniqueName, new Vector2(12, 14));
+
+        var action = animalShop.doesTileHaveProperty(12, 15, "Action", "Buildings") ?? string.Empty;
+        var eligibleLocations = Game1.locations.Count(location =>
+            location.buildings.Any(building => building.GetIndoors() is AnimalHouse) &&
+            (!Game1.IsClient || location.CanBeRemotedlyViewed()));
+        var stockAvailable = Utility.getPurchaseAnimalStock(targetLocation)
+            .Any(item => item.Name == requestedType && item.Type is null);
+        var verified = Game1.activeClickableMenu is null && Game1.timeOfDay == 1000 &&
+            Game1.currentLocation.NameOrUniqueName == "AnimalShop" &&
+            Game1.player.TilePoint == new Point(12, 16) &&
+            marnie.currentLocation?.NameOrUniqueName == "AnimalShop" &&
+            marnie.TilePoint == new Point(12, 14) &&
+            action.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() is "AnimalShop" or "Marnie" &&
+            eligibleLocations >= 7 && stockAvailable;
+        return new TrainingExecutionResult
+        {
+            RunId = request.RunId,
+            QueueId = request.QueueId,
+            QueueItemId = request.QueueItemId,
+            BeforeStateHash = request.BeforeStateHash,
+            OptionId = request.OptionId,
+            Status = verified ? "applied" : "blocked",
+            FeedbackAvailable = true,
+            StartedAt = DateTimeOffset.UtcNow.ToString("O"),
+            CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
+            PrimitiveKind = "debug_setup_animal_purchase_full_chain_paged",
+            PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
+            PrimitiveVerificationReasons = verified
+                ? new[]
+                {
+                    "isolated_fixture_seven_or_more_native_animal_home_locations_available",
+                    "native_AnimalShop_counter_and_Marnie_ready_without_open_menu"
+                }
+                : new[] { "animal_purchase_paged_fixture_postcondition_mismatch" },
+            RequestedEffect = "menu=none;counter=AnimalShop@12,15;target_location=" + targetLocationId,
+            ObservedEffect = "menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
+                ";player=" + Game1.currentLocation.NameOrUniqueName + "@" + Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y +
+                ";marnie=" + (marnie.currentLocation?.NameOrUniqueName ?? "none") + "@" + marnie.TilePoint.X + "," + marnie.TilePoint.Y +
+                ";time=" + Game1.timeOfDay + ";action=" + action + ";eligible_locations=" + eligibleLocations + ";target_location=" + targetLocationId,
+            BlockReasons = verified ? Array.Empty<string>() : new[] { "animal_purchase_paged_fixture_postcondition_mismatch" }
         };
     }
 

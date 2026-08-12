@@ -31,6 +31,7 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
+                    "animals.purchase",
                     "economy.buy_supplies",
                     "economy.sell_items",
                     "economy.ship_items",

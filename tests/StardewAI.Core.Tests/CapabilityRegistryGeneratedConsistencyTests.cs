@@ -153,6 +153,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
+                "animals.purchase",
                 "economy.buy_supplies",
                 "economy.sell_items",
                 "economy.ship_items",
@@ -186,6 +187,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Empty(declaration.TrainingExclusionReasons);
             var expectedScope = optionId switch
             {
+                "animals.purchase" => "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
                 "exploration.visit_location" => "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
                 "economy.buy_supplies" => "vanilla_safe_single_money_purchase_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_buy_and_menu_cleanup",
                 "economy.sell_items" => "vanilla_one_explicitly_authorized_unprotected_positive_value_stack_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_sale_and_background_safe_menu_cleanup",

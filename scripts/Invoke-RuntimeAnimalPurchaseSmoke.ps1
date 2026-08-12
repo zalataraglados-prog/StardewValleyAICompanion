@@ -52,20 +52,98 @@ function Wait-WorldSnapshot([int] $TimeoutSeconds = 180) {
     throw "Timed out waiting for a world-ready snapshot. Last status: $lastStatus"
 }
 
-function Wait-PurchaseSnapshot([int] $TimeoutSeconds = 60) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastStatus = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        $snapshot = Wait-WorldSnapshot 15
-        $menuType = [string]$snapshot.state.menus.active_menu.value.type
-        $catalogStatus = [string]$snapshot.state.farm.animal_purchase_catalog.status
-        $lastStatus = "menu=$menuType;catalog=$catalogStatus;location=$($snapshot.state.player.location_id.value)"
-        if ($menuType -eq "PurchaseAnimalsMenu" -and $catalogStatus -in @("available", "derived")) {
-            return $snapshot
-        }
-        Start-Sleep -Milliseconds 500
+function Get-CandidateParameter($Candidate, [string] $Name) {
+    $row = @($Candidate.parameters | Where-Object { [string]$_.name -eq $Name }) | Select-Object -First 1
+    if ($null -eq $row) { return "" }
+    return [string]$row.value
+}
+
+function Invoke-AnimalPurchaseStage(
+    [int] $Ordinal,
+    [string] $CandidateKind,
+    [string] $TargetLocationId,
+    [string] $ExpectedQueueOptionId) {
+    $stageName = ("{0:D2}-{1}" -f $Ordinal, $CandidateKind)
+    $stageDirectory = Join-Path $artifactDirectory ("stages\" + $stageName)
+    $stageLoopRoot = Join-Path $stageDirectory "loop"
+    $stageRunId = $RunId
+    New-Item -ItemType Directory -Force -Path $stageDirectory | Out-Null
+
+    $snapshot = Wait-WorldSnapshot 60
+    $snapshotPath = Join-Path $stageDirectory "before-snapshot.json"
+    Write-Json $snapshotPath $snapshot
+    Invoke-RestMethod -Method Post -Uri "$backendUrl/api/v1/snapshots" `
+        -ContentType "application/json; charset=utf-8" -Body (Get-Content -LiteralPath $snapshotPath -Raw) `
+        -TimeoutSec 120 | Out-Null
+    $availability = Invoke-JsonPost "$backendUrl/api/v1/planner/options/availability" ([ordered]@{
+        state_hash = [string]$snapshot.state_hash
+        candidate_option_ids = @("animals.purchase")
+        candidates = @()
+        include_executor_calibration_options = $true
+    })
+    Write-Json (Join-Path $stageDirectory "availability.json") $availability
+    $candidates = @($availability.options | Where-Object { $_.option_id -eq "animals.purchase" } |
+        ForEach-Object { $_.event_candidates })
+    $candidate = @($candidates | Where-Object {
+        [bool]$_.available -and [string]$_.kind -eq $CandidateKind -and
+        ((Get-CandidateParameter $_ "continuation.target_location_id") -eq $TargetLocationId -or
+         (Get-CandidateParameter $_ "target_location_id") -eq $TargetLocationId)
+    }) | Select-Object -First 1
+    if ($null -eq $candidate) {
+        $observedKinds = @($candidates | Where-Object { [bool]$_.available } | ForEach-Object { [string]$_.kind } | Sort-Object -Unique)
+        throw "No bound animals.purchase candidate for stage=$stageName target=$TargetLocationId; observed=$($observedKinds -join ',')"
     }
-    throw "Timed out waiting for transparent animal purchase state. Last status: $lastStatus"
+
+    $loopOutput = & dotnet (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll") `
+        --root $stageLoopRoot `
+        --backend-url $backendUrl `
+        --bridge-snapshot-url $snapshotUrl `
+        --executor-url $executorBaseUrl `
+        --snapshot-file $snapshotPath `
+        --no-manifest `
+        --run-id $stageRunId `
+        --save-isolation-path $savesPath `
+        --iterations 1 `
+        --skip-training `
+        --sleep-ms 0 `
+        --use-daily-plan `
+        --daily-plan-max-candidates 1 `
+        --daily-plan-candidate-options animals.purchase `
+        --daily-plan-candidate-kind $CandidateKind `
+        --daily-plan-candidate-id ([string]$candidate.candidate_id) `
+        --after-snapshot-wait-ms 500
+    $loopOutput | Set-Content -LiteralPath (Join-Path $stageDirectory "live-training-loop.stdout.log") -Encoding utf8
+    if ($LASTEXITCODE -ne 0) { throw "Animal purchase stage $stageName failed with exit code $LASTEXITCODE." }
+
+    $snapshotDirectory = Join-Path $stageLoopRoot "runs\$stageRunId\live-snapshots"
+    $queuePath = Join-Path $snapshotDirectory "compiled-queue-0001.json"
+    $executionPath = Join-Path $snapshotDirectory "execution-0001.json"
+    $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
+    $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
+    $queueItem = @($queue.items | Where-Object { $_.option_id -eq $ExpectedQueueOptionId }) | Select-Object -First 1
+    $stepResult = @($execution.step_results | Where-Object { $_.option_id -eq $ExpectedQueueOptionId }) | Select-Object -Last 1
+    $allApplied = @($execution.step_results).Count -gt 0 -and
+        @($execution.step_results | Where-Object { $_.status -ne "applied" }).Count -eq 0
+    $passed = $null -ne $queueItem -and $null -ne $stepResult -and $allApplied -and
+        [string]$stepResult.primitive_verification_status -eq "verified"
+    $stageSummary = [ordered]@{
+        ordinal = $Ordinal
+        candidate_kind = $CandidateKind
+        candidate_id = [string]$candidate.candidate_id
+        target_location_id = $TargetLocationId
+        expected_queue_option_id = $ExpectedQueueOptionId
+        status = if ($passed) { "passed" } else { "failed" }
+        queue_option_ids = @($queue.items | ForEach-Object { [string]$_.option_id })
+        execution_statuses = @($execution.step_results | ForEach-Object { [string]$_.option_id + ":" + [string]$_.status })
+        verification_status = [string]$stepResult.primitive_verification_status
+        verification_reasons = @($stepResult.primitive_verification_reasons)
+        observed_effect = [string]$stepResult.observed_effect
+        queue_path = $queuePath
+        execution_path = $executionPath
+    }
+    Write-Json (Join-Path $stageDirectory "summary.json") $stageSummary
+    if (-not $passed) { throw "Runtime animal purchase stage failed: $stageDirectory" }
+    return [pscustomobject]$stageSummary
 }
 
 $gameDirectory = Join-Path $RuntimeRoot "Stardew Valley"
@@ -91,7 +169,6 @@ if ($null -ne (Get-Process -Name "StardewModdingAPI" -ErrorAction SilentlyContin
 }
 
 $artifactDirectory = Join-Path $ProjectRoot ("artifacts\runtime-animal-purchase\" + $RunId)
-$loopRoot = Join-Path $artifactDirectory "loop"
 New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
@@ -148,6 +225,7 @@ try {
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         animal_type_id = "White Chicken"
+        target_runtime_identity = "full_chain_paged"
     }
     $fixture = Invoke-JsonPost $executorUrl $fixtureRequest
     Write-Json (Join-Path $artifactDirectory "fixture-result.json") $fixture
@@ -155,74 +233,31 @@ try {
         throw "Animal purchase fixture failed: $(@($fixture.block_reasons) -join ',')"
     }
 
-    $before = Wait-PurchaseSnapshot 60
-    $snapshotPath = Join-Path $artifactDirectory "before-snapshot.json"
-    Write-Json $snapshotPath $before
-    Invoke-RestMethod -Method Post -Uri "$backendUrl/api/v1/snapshots" `
-        -ContentType "application/json; charset=utf-8" -Body (Get-Content -LiteralPath $snapshotPath -Raw) `
-        -TimeoutSec 120 | Out-Null
-    $availability = Invoke-JsonPost "$backendUrl/api/v1/planner/options/availability" ([ordered]@{
-        state_hash = [string]$before.state_hash
-        candidate_option_ids = @("animals.purchase")
-        candidates = @()
-        include_executor_calibration_options = $true
-    })
-    Write-Json (Join-Path $artifactDirectory "availability.json") $availability
-    $candidate = @($availability.options | Where-Object { $_.option_id -eq "animals.purchase" } |
-        ForEach-Object { $_.event_candidates } | Where-Object {
-            [bool]$_.available -and [string]$_.kind -eq "purchase_animal"
-        }) | Select-Object -First 1
-    if ($null -eq $candidate) { throw "No available terminal animals.purchase candidate was compiled." }
-
-    & dotnet (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll") `
-        --root $loopRoot `
-        --backend-url $backendUrl `
-        --bridge-snapshot-url $snapshotUrl `
-        --executor-url $executorBaseUrl `
-        --snapshot-file $snapshotPath `
-        --no-manifest `
-        --run-id $RunId `
-        --save-isolation-path $savesPath `
-        --iterations 1 `
-        --skip-training `
-        --sleep-ms 0 `
-        --use-daily-plan `
-        --daily-plan-max-candidates 1 `
-        --daily-plan-candidate-options animals.purchase `
-        --daily-plan-candidate-kind purchase_animal `
-        --daily-plan-candidate-id ([string]$candidate.candidate_id) `
-        --after-snapshot-wait-ms 1000
-    if ($LASTEXITCODE -ne 0) { throw "Animal purchase LiveTrainingLoop failed with exit code $LASTEXITCODE." }
-
-    $snapshotDirectory = Join-Path $loopRoot "runs\$RunId\live-snapshots"
-    $queuePath = Join-Path $snapshotDirectory "compiled-queue-0001.json"
-    $executionPath = Join-Path $snapshotDirectory "execution-0001.json"
-    $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
-    $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
-    $queueItem = @($queue.items | Where-Object { $_.option_id -eq "executor.purchase_animal" }) | Select-Object -First 1
-    $stepResult = @($execution.step_results | Where-Object { $_.option_id -eq "executor.purchase_animal" }) | Select-Object -First 1
+    $targetLocationId = "StardewAIAnimalPurchaseFixture7"
+    $stages = @(
+        Invoke-AnimalPurchaseStage 1 "interact_endpoint" $targetLocationId "executor.interact"
+        Invoke-AnimalPurchaseStage 2 "animal_purchase_select_service" $targetLocationId "executor.choose_animal_purchase_response"
+        Invoke-AnimalPurchaseStage 3 "animal_purchase_navigate_location_page" $targetLocationId "executor.choose_animal_purchase_response"
+        Invoke-AnimalPurchaseStage 4 "animal_purchase_select_location" $targetLocationId "executor.choose_animal_purchase_response"
+        Invoke-AnimalPurchaseStage 5 "purchase_animal" $targetLocationId "executor.purchase_animal"
+    )
     $after = Wait-WorldSnapshot 30
     Write-Json (Join-Path $artifactDirectory "after-snapshot.json") $after
-    $passed = $null -ne $queueItem -and $null -ne $stepResult -and
-        $stepResult.status -eq "applied" -and
-        $stepResult.primitive_verification_status -eq "verified" -and
-        @($stepResult.primitive_verification_reasons) -contains "native_PurchaseAnimalsMenu_stock_home_and_name_controls_used" -and
-        @($stepResult.primitive_verification_reasons) -contains "exact_new_animal_type_owner_home_name_occupancy_and_money_receipt_verified"
+    $terminal = $stages[-1]
+    $passed = @($stages).Count -eq 5 -and
+        @($stages | Where-Object { $_.status -ne "passed" }).Count -eq 0 -and
+        @($terminal.verification_reasons) -contains "native_PurchaseAnimalsMenu_stock_home_and_name_controls_used" -and
+        @($terminal.verification_reasons) -contains "exact_new_animal_type_owner_home_name_occupancy_and_money_receipt_verified"
     $summary = [ordered]@{
         schema_version = "stardewai.runtime_animal_purchase_smoke.v1"
         status = if ($passed) { "passed" } else { "failed" }
         evidence_id = "EVD-247"
         run_id = $RunId
         save_slot = $SaveSlot
-        candidate_id = [string]$candidate.candidate_id
-        queue_option_id = [string]$queueItem.option_id
-        execution_status = [string]$stepResult.status
-        verification_status = [string]$stepResult.primitive_verification_status
-        verification_reasons = @($stepResult.primitive_verification_reasons)
-        observed_effect = [string]$stepResult.observed_effect
+        scope = "full_rolling_counter_service_native_paging_location_selection_and_terminal_purchase"
+        target_location_id = $targetLocationId
+        stages = $stages
         final_location = [string]$after.state.player.location_id.value
-        queue_path = $queuePath
-        execution_path = $executionPath
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 64

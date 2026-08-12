@@ -107,23 +107,26 @@ public sealed class AnimalPurchaseMainlineTests
     }
 
     [Fact]
-    public void HighLevelPurchaseRemainsOutsideTrainingUntilDialogueAndPagingRuntimeCalibration()
+    public void FullRollingRuntimeEvidenceAdmitsHighLevelPurchaseAndBothNativePrimitives()
     {
         var highLevel = OptionCapabilityRegistrySource.GetRequired("animals.purchase");
+        var response = OptionCapabilityRegistrySource.GetRequired("executor.choose_animal_purchase_response");
         var terminal = OptionCapabilityRegistrySource.GetRequired("executor.purchase_animal");
 
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, highLevel.ReadTrainingGate);
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, highLevel.CandidateTrainingGate);
         Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, highLevel.CompilerTrainingGate);
-        Assert.Equal(TrainingEvidenceGateStatus.Missing, highLevel.RuntimeTrainingGate);
-        Assert.Equal(TrainingEvidenceGateStatus.Missing, highLevel.OutputTrainingGate);
-        Assert.DoesNotContain("animals.purchase", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, highLevel.RuntimeTrainingGate);
+        Assert.Equal(TrainingEvidenceGateStatus.RuntimeVerified, highLevel.OutputTrainingGate);
+        Assert.Contains("animals.purchase", OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.Equal(new[] { "EVD-247" }, response.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-247" }, response.OutputEvidenceIds);
         Assert.Equal(new[] { "EVD-247" }, terminal.RuntimeEvidenceIds);
         Assert.Equal(new[] { "EVD-247" }, terminal.OutputEvidenceIds);
     }
 
     [Fact]
-    public void OffPageAnimalHomeCompilesOneNativeNextPageResponse()
+    public void SeventhAnimalHomeCompilesOneNativeNextPageResponse()
     {
         var snapshot = PagedDialogueSnapshot();
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
@@ -145,6 +148,20 @@ public sealed class AnimalPurchaseMainlineTests
         var item = Assert.Single(queue.Items);
         Assert.Equal("executor.choose_animal_purchase_response", item.OptionId);
         Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void CounterInteractionStopsAtFreshSnapshotBoundaryBeforePurchaseResponse()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "StardewAI.Core", "Training", "DailyPlanCompiler.FishingShopping.cs"));
+
+        var animalBranch = source.IndexOf("if (isAnimalPurchase)", StringComparison.Ordinal);
+        Assert.True(animalBranch >= 0);
+        var branchTail = source[animalBranch..];
+        var beforeGenericDialogue = branchTail.Split("if (dialogueResponse.HasValue)", 2)[0];
+        Assert.Contains("return steps;", beforeGenericDialogue, StringComparison.Ordinal);
+        Assert.DoesNotContain("animal_purchase_select_service", beforeGenericDialogue, StringComparison.Ordinal);
     }
 
     private static SnapshotEnvelope Snapshot(int occupants, int capacity)
@@ -241,7 +258,7 @@ public sealed class AnimalPurchaseMainlineTests
             read_at_tick = 1,
             confidence = 1
         };
-        var locations = Enumerable.Range(0, 6).Select(index => new
+        var locations = Enumerable.Range(0, 7).Select(index => new
         {
             target_location_id = "Farm" + index,
             native_location_choice_index = index,

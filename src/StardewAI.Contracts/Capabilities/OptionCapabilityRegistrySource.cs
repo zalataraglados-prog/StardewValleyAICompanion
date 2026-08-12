@@ -379,11 +379,12 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.purchase_farmhouse_upgrade"] = VerifiedEvidence(
                         "vanilla_host_exact_level_0_to_1_level_1_to_2_and_level_2_to_3_native_Carpenter_action_Upgrade_Yes_money_material_and_three_day_countdown_receipt",
                         "EVD-229"),
-                    ["animals.purchase"] = BoundedEvidence(
+                    ["animals.purchase"] = VerifiedEvidence(
                         "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
-                        readEvidenceIds: new[] { "EVD-247" },
-                        candidateEvidenceIds: new[] { "EVD-247" },
-                        compilerEvidenceIds: new[] { "EVD-247" }),
+                        "EVD-247"),
+                    ["executor.choose_animal_purchase_response"] = VerifiedEvidence(
+                        "vanilla_exact_native_Marnie_Purchase_paged_next_previous_and_exact_location_response_with_expected_menu_stage_receipt",
+                        "EVD-247"),
                     ["executor.purchase_animal"] = VerifiedEvidence(
                         "vanilla_exact_native_PurchaseAnimalsMenu_stock_scroll_random_actual_type_home_selection_unique_name_money_owner_occupancy_and_return_to_shop_receipt",
                         "EVD-247"),
