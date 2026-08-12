@@ -229,5 +229,5 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - `buildings.change_skin` 已完成透明读取、上游候选、DailyPlan、共享动作队列、类型化请求、原生 Robin/CarpenterMenu 执行与严格回执。
 - 隔离运行 `runtime-quest-terminal-daily-plan-20260812-122957` 为 `applied/verified`：Pet Bowl 默认皮肤通过一次最短 `next` 切换到 `Stone Pet Bowl`，返回 ScienceHouse，并验证三组油漆颜色重置为默认。
 - 当前动作对账：122 registered、180 semantic、121 compiler-bound、49 five-gate、32 training allowlist、0 Product Executor；320/428/150 原生分母 blocking 均为 0。
-- 当前 full 快照 required 112、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1662/1662、Backend 121/121。
+- 当前 full 快照 required 112、blocking 0；KnowledgeCompiler 585/585、blocking 0；Core 1663/1663、Backend 121/121。
 - 下一切片为 `buildings.paint`。它必须复用现有 Robin 服务、Carpenter 建筑选择和菜单退出链，只新增实时颜色参数、上游外观意图约束和 `BuildingPaintMenu` 原生滑杆/回执，不得新增平行建筑菜单执行器。

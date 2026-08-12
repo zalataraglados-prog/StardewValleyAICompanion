@@ -12,7 +12,7 @@
 - 隐藏静音 E 盘隔离运行：`artifacts/runtime-quest-terminal-daily-plan/runtime-quest-terminal-daily-plan-20260812-122957/summary.json`。
 - Pet Bowl `__default__ -> Stone Pet Bowl`，一次最短 `next`，原生 Robin `Construct -> Paint -> BuildingSkinMenu -> OK`，最终 `applied/verified`。
 - full 快照 required 112、blocking 0；KnowledgeCompiler 585/585、blocking 0。
-- Core 1662/1662；Backend 121/121。项目仅有既存 `mine.isFarm` 分析警告。
+- Core 1663/1663；Backend 121/121。项目仅有既存 `mine.isFarm` 分析警告。
 
 ## 范围与下一步
 
