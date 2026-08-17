@@ -211,6 +211,8 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateSellShopItemPlan(action, snapshot));
             blocking.AddRange(ValidateChooseDialogueResponsePlan(action, snapshot));
             blocking.AddRange(ValidateAnimalPurchasePlan(action, snapshot));
+            blocking.AddRange(ValidateAnimalManagementPlan(action, snapshot));
+            blocking.AddRange(ValidateCookRecipePlan(action, snapshot));
             blocking.AddRange(ValidateQuestAdvancePlan(action, snapshot));
             blocking.AddRange(ValidateActiveMenuBracket(action, snapshot, option));
 

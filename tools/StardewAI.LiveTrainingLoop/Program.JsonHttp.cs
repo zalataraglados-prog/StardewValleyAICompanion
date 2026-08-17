@@ -117,6 +117,18 @@ static partial class Program
         return null;
     }
 
+    private static long? ReadQueueParameterLong(JsonObject? item, string name)
+    {
+        var value = ReadQueueParameterString(item, name);
+        return long.TryParse(value, out var result) ? result : null;
+    }
+
+    private static bool? ReadQueueParameterBool(JsonObject? item, string name)
+    {
+        var value = ReadQueueParameterString(item, name);
+        return bool.TryParse(value, out var result) ? result : null;
+    }
+
     private static string ReadQueueParameterString(JsonObject? item, string name)
     {
         var parameters = item?["normalized_command"]?["parameters"]?.AsArray();

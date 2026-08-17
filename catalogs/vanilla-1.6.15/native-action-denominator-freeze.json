@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "113797fa4d89f8214c2886764c425af1d758eacbc7a0d1de972ace29981ebee2",
+  "fingerprint_sha256": "f878003c63b7e1a19f65d7c1709ce21d84b0b4372065b5e4bdb35d263ae7d882",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 180,
-  "approval_basis": "locked 1.6.15 decompile; buildings.change_skin moved from one explicit blocked semantic item to one registered high-level action plus one exact terminal primitive; BuildingSkinMenu is the sole native skin mutation owner and its ordered entries, conditions, separate-construction filter, immediate mutation, paint reset, shortest click sequence and Robin Carpenter paint entry routes are explicitly represented; native surfaces, branches, and map tokens unchanged; runtime admission remains independently gated"
+  "semantic_action_count": 182,
+  "approval_basis": "locked 1.6.15 decompile; crafting.cook_recipe moved from one explicit blocked semantic item to one registered high-level action plus one exact terminal primitive; kitchen GameLocation.checkAction and Cookout Kit Torch.checkForAction both converge on the shared native CraftingPage recipe click while retaining distinct container and mutex semantics; native surfaces, branches, and map tokens unchanged; runtime admission remains independently gated"
 }

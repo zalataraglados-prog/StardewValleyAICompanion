@@ -173,6 +173,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_animal_product_candidates");
             }
 
+            if (optionId == "crafting.cook_recipe")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "explicit_cooking_recipe_count_and_reason_required",
+                    "no_available_native_cooking_candidate");
+            }
+
             if (optionId == "farm.process_machines")
             {
                 return EventCandidateAvailabilityReasons(

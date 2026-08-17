@@ -91,6 +91,8 @@ namespace StardewAI.Core.Execution
                 "choose_dialogue_response" => "executor.choose_dialogue_response",
                 "choose_animal_purchase_response" => "executor.choose_animal_purchase_response",
                 "purchase_animal" => "executor.purchase_animal",
+                "manage_animal" => "executor.manage_animal",
+                "cook_recipe" => "executor.cook_recipe",
                 "water_crop" => "executor.water_crop",
                 "apply_fertilizer" => "executor.apply_fertilizer",
                 "clear_obstacle" => "executor.clear_obstacle",

@@ -168,6 +168,9 @@ namespace StardewAI.Core.Execution
                 case "executor.choose_animal_purchase_response":
                 case "executor.purchase_animal":
                     return EstimateCompiledSteps(item, "native_animal_purchase_menu_steps.v1");
+                case "animals.manage_animal":
+                case "executor.manage_animal":
+                    return EstimateCompiledSteps(item, "native_animal_query_menu_steps.v1");
                 case "farm.care_for_pets":
                 case "executor.pet_interact":
                 case "executor.fill_pet_bowl":
@@ -343,6 +346,7 @@ namespace StardewAI.Core.Execution
 
             if (item.OptionId is "farm.collect_animal_products" or "executor.collect_animal_product" or
                 "animals.purchase" or "executor.choose_animal_purchase_response" or "executor.purchase_animal" or
+                "animals.manage_animal" or "executor.manage_animal" or
                 "farm.care_for_pets" or "executor.pet_interact" or "executor.fill_pet_bowl")
             {
                 return assumptionRegistry.GetRequired("animals");

@@ -36,11 +36,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
 
         return animals
             .OrderBy(entry => entry.AnimalId)
-            .Select(entry => ReadAnimal(entry.AnimalId, entry.Animal, entry.LocationId, Game1.player))
+            .Select(entry => ReadAnimal(entry.AnimalId, entry.Animal, entry.LocationId, Game1.player, farm))
             .ToArray();
     }
 
-    private static object ReadAnimal(long animalId, FarmAnimal animal, string locationId, Farmer player)
+    private static object ReadAnimal(long animalId, FarmAnimal animal, string locationId, Farmer player, Farm farm)
     {
         var data = animal.GetAnimalData();
         var harvestTool = data?.HarvestTool ?? string.Empty;
@@ -83,6 +83,29 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var adult = animal.isAdult();
         var friendshipAfterHarvest = Math.Min(1000, animal.friendshipTowardFarmer.Value + 5);
         var supportedTool = harvestTool is "Milk Pail" or "Shears";
+        var home = animal.home;
+        var safeSlot = PlayerReadAdapter.FindSafeItemSlot(player);
+        var compatibleMoveHomes = farm.buildings
+            .Where(building => !ReferenceEquals(building, home) && animal.CanLiveIn(building))
+            .Select(building => new
+            {
+                building_type = building.buildingType.Value,
+                building_tile_x = building.tileX.Value,
+                building_tile_y = building.tileY.Value,
+                indoor_location_id = building.GetIndoors()?.NameOrUniqueName ?? string.Empty,
+                is_under_construction = building.isUnderConstruction(),
+                occupant_count = (building.GetIndoors() as AnimalHouse)?.animalsThatLiveHere.Count ?? 0,
+                capacity = (building.GetIndoors() as AnimalHouse)?.animalLimit.Value ?? 0,
+                available_slots = building.GetIndoors() is AnimalHouse house
+                    ? Math.Max(0, house.animalLimit.Value - house.animalsThatLiveHere.Count)
+                    : 0
+            })
+            .OrderBy(building => building.building_tile_y)
+            .ThenBy(building => building.building_tile_x)
+            .ThenBy(building => building.building_type, StringComparer.Ordinal)
+            .ToArray();
+        var canToggleReproduction = !animal.isBaby() && animal.CanHavePregnancy();
+        var queryBlockedForNight = !animal.wasPet.Value && Game1.timeOfDay >= 1900 && !animal.isMoving();
         var harvestStatus = data is null
             ? "animal_data_unavailable"
             : data.HarvestType != FarmAnimalHarvestType.HarvestWithTool
@@ -112,6 +135,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             age = animal.age.Value,
             days_to_mature = data?.DaysToMature,
             is_adult = adult,
+            is_baby = animal.isBaby(),
+            was_pet_today = animal.wasPet.Value,
+            is_moving = animal.isMoving(),
             friendship_toward_farmer = animal.friendshipTowardFarmer.Value,
             friendship_after_harvest = friendshipAfterHarvest,
             produce_quality = animal.produceQuality.Value,
@@ -136,6 +162,23 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             harvest_farming_experience_delta = 5,
             harvest_friendship_delta = friendshipAfterHarvest - animal.friendshipTowardFarmer.Value,
             harvest_projection_status = outputProjection is null ? "unavailable" : "exact",
+            management_safe_slot_index = safeSlot,
+            management_query_status = safeSlot is null
+                ? "safe_slot_unavailable"
+                : queryBlockedForNight
+                    ? "unpetted_sleeping_animal"
+                    : "ready",
+            management_requires_initial_pet = !animal.wasPet.Value,
+            management_sell_price = animal.getSellPrice(),
+            management_can_toggle_reproduction = canToggleReproduction,
+            management_allow_reproduction = animal.allowReproduction.Value,
+            management_home_building_type = home?.buildingType.Value ?? string.Empty,
+            management_home_building_tile_x = home?.tileX.Value,
+            management_home_building_tile_y = home?.tileY.Value,
+            management_home_indoor_location_id = animal.homeInterior?.NameOrUniqueName ?? string.Empty,
+            management_compatible_move_homes = compatibleMoveHomes,
+            management_compatible_move_home_count = compatibleMoveHomes.Count(target =>
+                !target.is_under_construction && target.available_slots > 0),
             tile_x = animal.TilePoint.X,
             tile_y = animal.TilePoint.Y
         };

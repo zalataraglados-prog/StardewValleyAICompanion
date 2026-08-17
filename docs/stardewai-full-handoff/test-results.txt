@@ -3881,3 +3881,18 @@ Scope boundary:
 - Server 119 live evidence: six consecutive applied/verified/fresh records before idle; natural clock movement `08:20 -> 09:40` and final-build `06:50 -> 08:10`; existing terminal sleep completed NewDay; daily snapshot complete with zero unavailable fields; server/planner healthy and host-ai running on public UDP 24642.
 - Final regression PASS: Core 1671/1671; Backend 122/122; full Release solution build 0 errors and one pre-existing `AvoidNetField` warning.
 - This closes the display-loop substrate only. Formal training, the full semantic action denominator and Product Executor remain incomplete; next implementation slice is `animals.manage_animal`.
+2026-08-16 EVD-252 native animal-management five-gate closure
+
+- Added exact loaded vanilla animal management projection and one explicit `animals.manage_animal -> manage_animal -> executor.manage_animal` chain for rename, reproduction toggle, compatible-home move and confirmed sale.
+- Production execution uses native pet/query interaction plus `AnimalQueryMenu` controls only; direct animal, home, money and health mutations are fixture-only.
+- Hidden/silent isolated runtime PASS 4/4: `artifacts/runtime-animal-management/runtime-animal-management-20260816-012959/summary.json`.
+- Focused animal-management chain PASS and the subsequent combined full regression is recorded under EVD-253 below.
+
+2026-08-17 EVD-253 native cooking five-gate closure
+
+- Added `player.cooking` full-profile projection for every learned deterministic vanilla recipe across every loaded kitchen and Cookout Kit source, including exact native source order, reverse-slot material use, mutex ownership, Qi Seasoning, output capacity, quality/order data and `recipesCooked`.
+- Added one explicit `crafting.cook_recipe -> cook_recipe -> executor.cook_recipe` candidate/DailyPlan/queue/runtime chain. Multi-craft requests are excluded upstream and replan after every native click.
+- Ordinary inventory crafting, Workbench crafting and cooking now share one `CraftingPage` recipe-click helper; kitchen container/lock/seasoning semantics remain isolated rather than duplicated or flattened.
+- Hidden/silent isolated runtime PASS 2/2: `artifacts/runtime-cooking/runtime-cooking-20260817-202809/summary.json`. The kitchen case consumed a fridge egg plus player Qi Seasoning and produced quality 2 Fried Egg; the Cookout Kit case consumed a player egg and produced quality 0 Fried Egg. Both verified the native menu lifecycle and `recipesCooked +1`.
+- Focused cooking chain PASS 5/5; full Core PASS 1681/1681; full Backend PASS 122/122; full Release solution build PASS with 0 errors and one pre-existing `AvoidNetField` warning. Snapshot schema validation PASS with 114 required factors and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Authoritative reconciliation: 127 registered, 182 semantic, 126 compiler-bound, 54 five-gate, 35 training-allowlisted, Product Executor 0. Next semantic slice is `crafting.forge_item`.

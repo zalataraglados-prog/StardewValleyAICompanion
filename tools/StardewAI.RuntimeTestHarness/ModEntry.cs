@@ -71,6 +71,7 @@ public sealed partial class ModEntry : Mod
     private ActiveBushHarvest? activeBushHarvest;
     private ActiveCrabPotCollect? activeCrabPotCollect;
     private ActiveAnimalProductHarvest? activeAnimalProductHarvest;
+    private ActiveAnimalManagement? activeAnimalManagement;
     private ActivePetInteraction? activePetInteraction;
     private ActiveMuseumDonation? activeMuseumDonation;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
@@ -91,6 +92,7 @@ public sealed partial class ModEntry : Mod
     private ActiveShipInventoryToBin? activeShipInventoryToBin;
     private ActiveMaterialTransfer? activeMaterialTransfer;
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
+    private ActiveCooking? activeCooking;
     private ActiveDialogueAdvance? activeDialogueAdvance;
     private ActiveMenuClose? activeMenuClose;
     private ActiveMailProcessing? activeMailProcessing;
@@ -128,6 +130,12 @@ public sealed partial class ModEntry : Mod
             prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseXPrefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), Type.EmptyTypes),
+            prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseYPrefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseX), new[] { typeof(bool) }),
+            prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseXPrefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), new[] { typeof(bool) }),
             prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseYPrefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
@@ -461,6 +469,7 @@ public sealed partial class ModEntry : Mod
         TickShipInventoryToBin();
         TickMaterialTransferSafely();
         TickWorkbenchCraftSafely();
+        TickCookingSafely();
         TickDialogueAdvance();
         TickMenuClose();
         TickMailProcessing();
@@ -472,6 +481,7 @@ public sealed partial class ModEntry : Mod
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
         TickAnimalProductHarvest();
+        TickAnimalManagement();
         TickPetInteraction();
         TickMuseumDonation();
         TickQuestDropBoxDonation();
@@ -618,6 +628,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_animal_purchase")
             {
                 pending.Completion.SetResult(ExecuteSetupAnimalPurchase(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_animal_management")
+            {
+                pending.Completion.SetResult(ExecuteSetupAnimalManagement(pending.Request));
                 return;
             }
 
@@ -1251,6 +1267,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.cook_recipe")
+            {
+                StartCooking(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_cooking_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupCookingFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.place_machine")
             {
                 pending.Completion.SetResult(
@@ -1308,6 +1336,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.manage_animal")
+            {
+                StartAnimalManagement(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.social_interact")
             {
                 pending.Completion.SetResult(ExecuteSocialInteract(pending.Request));
@@ -1360,6 +1394,7 @@ public sealed partial class ModEntry : Mod
             activeBushHarvest = null;
             activeMineRewardChest = null;
             activeAnimalProductHarvest = null;
+            activeAnimalManagement = null;
             activePetInteraction = null;
             activeMuseumDonation = null;
             activeQuestDropBoxDonation = null;
@@ -1373,6 +1408,7 @@ public sealed partial class ModEntry : Mod
             activeFishPondService = null;
             activeMaterialTransfer = null;
             activeWorkbenchCraft = null;
+            activeCooking = null;
             activeSpecialOrderBoardOpen = null;
             activeQuestRewardClaim = null;
             CrabPotCaughtFishPatch.Reset();
@@ -1559,6 +1595,7 @@ public sealed partial class ModEntry : Mod
             activeBushHarvest is not null ||
             activeCrabPotCollect is not null ||
             activeAnimalProductHarvest is not null ||
+            activeAnimalManagement is not null ||
             activePetInteraction is not null ||
             activeMuseumDonation is not null ||
             activeQuestDropBoxDonation is not null ||
@@ -1576,6 +1613,7 @@ public sealed partial class ModEntry : Mod
             activeShipInventoryToBin is not null ||
             activeMaterialTransfer is not null ||
             activeWorkbenchCraft is not null ||
+            activeCooking is not null ||
             activeDialogueAdvance is not null ||
             activeMenuClose is not null ||
             activeMailProcessing is not null ||

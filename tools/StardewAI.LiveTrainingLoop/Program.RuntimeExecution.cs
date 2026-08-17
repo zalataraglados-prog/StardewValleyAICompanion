@@ -663,6 +663,25 @@ static partial class Program
         var expectedAnimalHomeOccupantCountBefore = ReadQueueParameterInt(item, "expected_home_occupant_count_before");
         var expectedAnimalHomeCapacity = ReadQueueParameterInt(item, "expected_home_capacity");
         var animalPurchaseCandidateIdentitySha256 = ReadQueueParameterString(item, "candidate_identity_sha256");
+        var animalManagementIntent = ReadQueueParameterString(item, "management_intent");
+        var animalManagementReason = ReadQueueParameterString(item, "management_reason");
+        var managedAnimalId = ReadQueueParameterLong(item, "animal_id");
+        var expectedAnimalNameBefore = ReadQueueParameterString(item, "expected_name_before");
+        var targetAnimalName = ReadQueueParameterString(item, "target_name");
+        var animalManagementRequiresInitialPet = ReadQueueParameterBool(item, "requires_initial_pet");
+        var expectedAllowReproductionBefore = ReadQueueParameterBool(item, "expected_allow_reproduction_before");
+        var targetAllowReproduction = ReadQueueParameterBool(item, "target_allow_reproduction");
+        var expectedAnimalSellPrice = ReadQueueParameterInt(item, "expected_sell_price");
+        var confirmIrreversibleAnimalSale = ReadQueueParameterBool(item, "confirm_irreversible_sale") == true;
+        var expectedAnimalHomeBuildingTypeBefore = ReadQueueParameterString(item, "expected_home_building_type_before");
+        var expectedAnimalHomeBuildingTileXBefore = ReadQueueParameterInt(item, "expected_home_building_tile_x_before");
+        var expectedAnimalHomeBuildingTileYBefore = ReadQueueParameterInt(item, "expected_home_building_tile_y_before");
+        var targetAnimalHomeBuildingType = ReadQueueParameterString(item, "target_home_building_type");
+        var targetAnimalHomeBuildingTileX = ReadQueueParameterInt(item, "target_home_building_tile_x");
+        var targetAnimalHomeBuildingTileY = ReadQueueParameterInt(item, "target_home_building_tile_y");
+        var targetAnimalHomeIndoorLocationId = ReadQueueParameterString(item, "target_home_indoor_location_id");
+        var expectedTargetAnimalHomeOccupantCountBefore = ReadQueueParameterInt(item, "expected_target_home_occupant_count_before");
+        var expectedTargetAnimalHomeCapacity = ReadQueueParameterInt(item, "expected_target_home_capacity");
         var seedId = ReadQueueParameterString(item, "seed_id");
         var harvestMethod = ReadQueueParameterString(item, "harvest_method");
         var giantCropId = ReadQueueParameterString(item, "giant_crop_id");
@@ -731,6 +750,14 @@ static partial class Program
         var craftingSource = ReadQueueParameterString(item, "crafting_source");
         var workbenchAccessPointId = ReadQueueParameterString(item, "workbench_access_point_id");
         var workbenchContainerNodeIdsJson = ReadQueueParameterString(item, "workbench_container_node_ids_json");
+        var craftCount = ReadQueueParameterInt(item, "craft_count");
+        var cookingReason = ReadQueueParameterString(item, "cooking_reason");
+        var cookingSourceId = ReadQueueParameterString(item, "cooking_source_id");
+        var cookingSourceKind = ReadQueueParameterString(item, "cooking_source_kind");
+        var recipesCookedBefore = ReadQueueParameterInt(item, "recipes_cooked_before");
+        var seasoningRowsJson = ReadQueueParameterString(item, "seasoning_rows_json");
+        var materialContainerIdsJson = ReadQueueParameterString(item, "material_container_ids_json");
+        var expectedOutputOrderData = ReadQueueParameterString(item, "expected_output_order_data");
         var slotIndex = ReadQueueParameterInt(item, "slot_index");
         var bookRuntimeType = ReadQueueParameterString(item, "book_runtime_type");
         var bookCategory = ReadQueueParameterInt(item, "book_category");
@@ -1125,6 +1152,25 @@ static partial class Program
         executionRequest.ExpectedAnimalHomeOccupantCountBefore = expectedAnimalHomeOccupantCountBefore;
         executionRequest.ExpectedAnimalHomeCapacity = expectedAnimalHomeCapacity;
         executionRequest.AnimalPurchaseCandidateIdentitySha256 = animalPurchaseCandidateIdentitySha256;
+        executionRequest.AnimalManagementIntent = animalManagementIntent;
+        executionRequest.AnimalManagementReason = animalManagementReason;
+        executionRequest.ManagedAnimalId = managedAnimalId;
+        executionRequest.ExpectedAnimalNameBefore = expectedAnimalNameBefore;
+        executionRequest.TargetName = targetAnimalName;
+        executionRequest.AnimalManagementRequiresInitialPet = animalManagementRequiresInitialPet;
+        executionRequest.ExpectedAllowReproductionBefore = expectedAllowReproductionBefore;
+        executionRequest.TargetAllowReproduction = targetAllowReproduction;
+        executionRequest.ExpectedAnimalSellPrice = expectedAnimalSellPrice;
+        executionRequest.ConfirmIrreversibleAnimalSale = confirmIrreversibleAnimalSale;
+        executionRequest.ExpectedAnimalHomeBuildingTypeBefore = expectedAnimalHomeBuildingTypeBefore;
+        executionRequest.ExpectedAnimalHomeBuildingTileXBefore = expectedAnimalHomeBuildingTileXBefore;
+        executionRequest.ExpectedAnimalHomeBuildingTileYBefore = expectedAnimalHomeBuildingTileYBefore;
+        executionRequest.TargetAnimalHomeBuildingType = targetAnimalHomeBuildingType;
+        executionRequest.TargetAnimalHomeBuildingTileX = targetAnimalHomeBuildingTileX;
+        executionRequest.TargetAnimalHomeBuildingTileY = targetAnimalHomeBuildingTileY;
+        executionRequest.TargetAnimalHomeIndoorLocationId = targetAnimalHomeIndoorLocationId;
+        executionRequest.ExpectedTargetAnimalHomeOccupantCountBefore = expectedTargetAnimalHomeOccupantCountBefore;
+        executionRequest.ExpectedTargetAnimalHomeCapacity = expectedTargetAnimalHomeCapacity;
         if (!string.IsNullOrWhiteSpace(seedId))
         {
             executionRequest.SeedId = seedId;
@@ -1180,6 +1226,14 @@ static partial class Program
         executionRequest.CraftingSource = craftingSource;
         executionRequest.WorkbenchAccessPointId = workbenchAccessPointId;
         executionRequest.WorkbenchContainerNodeIdsJson = workbenchContainerNodeIdsJson;
+        executionRequest.CraftCount = craftCount;
+        executionRequest.CookingReason = cookingReason;
+        executionRequest.CookingSourceId = cookingSourceId;
+        executionRequest.CookingSourceKind = cookingSourceKind;
+        executionRequest.RecipesCookedBefore = recipesCookedBefore;
+        executionRequest.SeasoningRowsJson = seasoningRowsJson;
+        executionRequest.MaterialContainerIdsJson = materialContainerIdsJson;
+        executionRequest.ExpectedOutputOrderData = expectedOutputOrderData;
         if (slotIndex.HasValue)
         {
             executionRequest.SlotIndex = slotIndex.Value;

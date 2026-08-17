@@ -79,6 +79,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact unlocked animal and compatible nonfull home selected", "rolling route and native Marnie dialogue stages compiled", "native PurchaseAnimalsMenu adoption and exact money, home, owner, type and name receipts verified" },
                 new[] { "block_closed_or_unbound_animal_shop", "block_missing_or_full_animal_home", "block_insufficient_money", "block_purchase_projection_drift", "block_direct_animal_adoption_or_money_mutation" }));
 
+            Register(Option("animals.manage_animal", "animals", "Apply one explicit native management operation to one exact animal",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.PlanValidation,
+                TrainingRoles.Mixed,
+                new[] { "time.time", "player.location_id", "player.tile_x", "player.tile_y", "player.money", "farm.animals", "locations.route_graph", "locations.collision_grid", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "one exact animal and rename, reproduction, move-home, or sell intent selected", "rolling route reaches the moving animal and native AnimalQueryMenu performs the operation", "exact animal identity, home, money, name, or reproduction receipt verified" },
+                new[] { "block_missing_explicit_animal_management_intent_or_reason", "block_unavailable_animal_query", "block_duplicate_name_or_invalid_reproduction_target", "block_incompatible_or_full_home", "block_unconfirmed_sale", "block_projection_drift", "block_direct_animal_or_money_mutation" }));
+
+            Register(Option("crafting.cook_recipe", "crafting", "Cook one explicitly selected learned recipe for one stated purpose",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.cooking", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact learned recipe, count, purpose and native kitchen or cookout source selected", "rolling route reaches the selected source", "shared native CraftingPage mechanics consume exact materials and seasoning and verify output, recipe count, quests and achievements" },
+                new[] { "block_missing_explicit_recipe_count_or_purpose", "block_unknown_recipe_or_unavailable_source", "block_material_container_or_mutex_drift", "block_insufficient_materials_or_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
+
             Register(Option("buildings.construct", "buildings", "Construct one exact purpose-bound building through the native builder service",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -532,6 +548,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.money", "farm.animal_purchase_catalog", "menus.active_menu", "menus.menu_specific_state" },
                 new[] { "exact stock button, compatible home and compiler-generated unique name selected", "native PurchaseAnimalsMenu lifecycle completed", "new animal identity, type, owner, home, name, occupancy and money delta verified" },
                 new[] { "block_stock_or_home_projection_drift", "block_animal_house_full", "block_insufficient_money", "block_nonunique_name", "block_direct_animal_adoption_or_money_mutation" }));
+
+            Register(Option("executor.manage_animal", "animals", "Drive one exact operation through the native AnimalQueryMenu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "time.time", "player.location_id", "player.tile_x", "player.tile_y", "player.money", "farm.animals", "locations.collision_grid", "menus.active_menu", "menus.menu_specific_state" },
+                new[] { "shared moving-target navigation reaches the exact animal", "native pet/check-action opens AnimalQueryMenu", "native menu control applies and verifies the requested operation" },
+                new[] { "block_animal_or_stand_tile_drift", "block_animal_query_menu_drift", "block_rename_reproduction_home_or_sale_projection_drift", "block_direct_animal_or_money_mutation" }));
+
+            Register(Option("executor.cook_recipe", "crafting", "Cook one rebound recipe through the native kitchen or Cookout Kit CraftingPage",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.cooking", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native source interaction opens cooking CraftingPage", "native ingredient and Qi Seasoning consumption occurs in exact source order", "exact output, quality, order data, recipesCooked, quest callbacks and cooking achievements are verified" },
+                new[] { "block_recipe_source_or_material_projection_drift", "block_foreign_kitchen_mutex", "block_output_capacity", "block_native_menu_or_postcondition_mismatch", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
             Register(Option("executor.sleep", "recovery", "Terminal sleep macro",
                 OptionBehaviorCategories.Recovery,

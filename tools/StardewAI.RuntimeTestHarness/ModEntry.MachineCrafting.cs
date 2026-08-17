@@ -453,20 +453,7 @@ public sealed partial class ModEntry
                 standaloneMenu: false,
                 materialContainers: null);
             Game1.activeClickableMenu = page;
-            for (var pageIndex = 0; pageIndex < page.pagesOfCraftingRecipes.Count && !clickFound; pageIndex++)
-            {
-                foreach (var pair in page.pagesOfCraftingRecipes[pageIndex])
-                {
-                    if (!string.Equals(pair.Value.name, request.RecipeName, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-                    page.currentCraftingPage = pageIndex;
-                    page.receiveLeftClick(pair.Key.bounds.Center.X, pair.Key.bounds.Center.Y, playSound: false);
-                    clickFound = true;
-                    break;
-                }
-            }
+            clickFound = TryClickCraftingRecipe(page, request.RecipeName);
             if (!clickFound || page.heldItem is null ||
                 !string.Equals(page.heldItem.QualifiedItemId, request.OutputQualifiedItemId, StringComparison.Ordinal) ||
                 page.heldItem.Stack != request.OutputCount.Value)

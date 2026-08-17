@@ -31,10 +31,12 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
+                    "animals.manage_animal",
                     "animals.purchase",
                     "buildings.change_skin",
                     "buildings.construct",
                     "buildings.paint",
+                    "crafting.cook_recipe",
                     "economy.buy_supplies",
                     "economy.sell_items",
                     "economy.ship_items",

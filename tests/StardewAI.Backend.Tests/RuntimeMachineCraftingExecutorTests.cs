@@ -9,10 +9,12 @@ public sealed class RuntimeMachineCraftingExecutorTests
     {
         var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
         var executor = RuntimeHarnessSources.File("ModEntry.MachineCrafting.cs");
+        var sharedPage = RuntimeHarnessSources.File("ModEntry.CraftingPage.cs");
 
         Assert.Contains("ExecuteCraftMachineItem(pending.Request)", dispatch);
         Assert.Contains("new CraftingPage(", executor);
-        Assert.Contains("page.receiveLeftClick(pair.Key.bounds.Center.X", executor);
+        Assert.Contains("TryClickCraftingRecipe(page, request.RecipeName)", executor);
+        Assert.Contains("page.receiveLeftClick(pair.Key.bounds.Center.X", sharedPage);
         Assert.Contains("page.receiveLeftClick(target.X, target.Y", executor);
         Assert.Contains("ProjectNativePersonalCraftIngredients", executor);
         Assert.Contains("unit_sale_price = unitSalePrice", executor);

@@ -273,6 +273,13 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                     tick,
                     AdapterId),
                     Array.Empty<string>()),
+            AnimalQueryMenu animalQueryMenu =>
+                (Field(
+                    ReadAnimalQueryMenuState(animalQueryMenu),
+                    "AnimalQueryMenu public animal, textbox, management buttons, confirmation, and placement state",
+                    tick,
+                    AdapterId),
+                    Array.Empty<string>()),
             NamingMenu namingMenu =>
                 (Field(
                     ReadNamingMenuState(namingMenu),
@@ -281,6 +288,32 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                     AdapterId),
                     Array.Empty<string>()),
             _ => (null, Array.Empty<string>())
+        };
+    }
+
+    private static object ReadAnimalQueryMenuState(AnimalQueryMenu menu)
+    {
+        var animal = menu.animal;
+        return new
+        {
+            kind = "animal_query",
+            animal_id = animal.myID.Value,
+            animal_name = animal.Name,
+            animal_display_name = animal.displayName,
+            text_box_value = menu.textBox?.Text ?? string.Empty,
+            confirming_sell = menu.confirmingSell,
+            moving_animal = menu.movingAnimal,
+            global_fade = Game1.globalFade,
+            sell_price = animal.getSellPrice(),
+            allow_reproduction = animal.allowReproduction.Value,
+            allow_reproduction_button_available = menu.allowReproductionButton is not null,
+            ok_button_available = menu.okButton is not null,
+            sell_button_available = menu.sellButton is not null,
+            move_home_button_available = menu.moveHomeButton is not null,
+            yes_button_available = menu.yesButton is not null,
+            no_button_available = menu.noButton is not null,
+            viewed_location_id = Game1.currentLocation?.NameOrUniqueName ?? string.Empty,
+            player_physical_location_id = Game1.player.currentLocation?.NameOrUniqueName ?? string.Empty
         };
     }
 

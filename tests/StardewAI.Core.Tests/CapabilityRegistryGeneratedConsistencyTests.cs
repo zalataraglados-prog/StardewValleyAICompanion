@@ -153,10 +153,12 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
+                "animals.manage_animal",
                 "animals.purchase",
                 "buildings.change_skin",
                 "buildings.construct",
                 "buildings.paint",
+                "crafting.cook_recipe",
                 "economy.buy_supplies",
                 "economy.sell_items",
                 "economy.ship_items",
@@ -190,10 +192,12 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Empty(declaration.TrainingExclusionReasons);
             var expectedScope = optionId switch
             {
+                "animals.manage_animal" => "vanilla_exact_loaded_base_animal_explicit_rename_reproduction_toggle_move_home_or_irreversible_sale_through_native_pet_and_AnimalQueryMenu_with_strict_receipt",
                 "animals.purchase" => "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
                 "buildings.change_skin" => "vanilla_actor_exact_live_Pet_Bowl_default_to_Stone_skin_current_Robin_service_native_CarpenterMenu_shortest_click_and_paint_reset_receipt",
                 "buildings.construct" => "vanilla_host_purpose_bound_exact_live_base_blueprint_current_Robin_service_native_CarpenterMenu_Coop_on_Farm_money_material_placement_and_countdown_receipt",
                 "buildings.paint" => "vanilla_actor_exact_live_Farmhouse_first_paint_region_current_Robin_service_native_CarpenterMenu_mouse_reachable_custom_HSL_and_unchanged_sibling_receipt",
+                "crafting.cook_recipe" => "vanilla_exact_learned_recipe_explicit_purpose_native_kitchen_or_cookout_source_material_and_qi_seasoning_consumption_output_quality_recipesCooked_quest_and_achievement_callback_receipt",
                 "exploration.visit_location" => "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",
                 "economy.buy_supplies" => "vanilla_safe_single_money_purchase_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_buy_and_menu_cleanup",
                 "economy.sell_items" => "vanilla_one_explicitly_authorized_unprotected_positive_value_stack_rolling_resolved_route_exact_shop_endpoint_optional_whitelisted_dialogue_native_sale_and_background_safe_menu_cleanup",

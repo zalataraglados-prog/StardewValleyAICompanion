@@ -369,24 +369,7 @@ public sealed partial class ModEntry
             active.Projection.ConsumedBySourceAndId.Keys,
             active.Chests);
         active.OutputBefore = InventoryQualifiedCount(request.OutputQualifiedItemId);
-        var clicked = false;
-        for (var pageIndex = 0; pageIndex < page.pagesOfCraftingRecipes.Count && !clicked; pageIndex++)
-        {
-            foreach (var pair in page.pagesOfCraftingRecipes[pageIndex])
-            {
-                if (pair.Value.name != request.RecipeName)
-                {
-                    continue;
-                }
-                page.currentCraftingPage = pageIndex;
-                page.receiveLeftClick(
-                    pair.Key.bounds.Center.X,
-                    pair.Key.bounds.Center.Y,
-                    playSound: false);
-                clicked = true;
-                break;
-            }
-        }
+        var clicked = TryClickCraftingRecipe(page, request.RecipeName);
         if (!clicked ||
             page.heldItem is null ||
             page.heldItem.QualifiedItemId != request.OutputQualifiedItemId ||

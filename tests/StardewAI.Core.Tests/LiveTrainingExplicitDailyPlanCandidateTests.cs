@@ -8,11 +8,13 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
         var options = LiveTrainingOptions.Parse(new[]
         {
             "--daily-plan-candidate-options", "inventory.transfer_item",
+            "--daily-plan-explicit-confirmation",
             "--daily-plan-candidate-parameter", "source_node_id=chest:Farm:60,15",
             "--daily-plan-candidate-parameter", "quantity=2"
         });
 
         Assert.Equal(new[] { "inventory.transfer_item" }, options.DailyPlanCandidateOptionIds);
+        Assert.True(options.DailyPlanExplicitConfirmationGranted);
         Assert.Collection(
             options.DailyPlanCandidateParameters,
             parameter =>
@@ -99,6 +101,7 @@ public sealed class LiveTrainingExplicitDailyPlanCandidateTests
 
         Assert.Contains("options.DailyPlanCandidateParameters.Count > 0", source, StringComparison.Ordinal);
         Assert.Contains("parameters = options.DailyPlanCandidateParameters", source, StringComparison.Ordinal);
+        Assert.Contains("explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted", source, StringComparison.Ordinal);
         Assert.Contains("explicitCandidates.Length == 0", source, StringComparison.Ordinal);
     }
 

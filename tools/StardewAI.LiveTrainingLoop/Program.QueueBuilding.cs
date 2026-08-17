@@ -65,6 +65,7 @@ static partial class Program
                     new
                     {
                         option_id = options.DailyPlanCandidateOptionIds[0],
+                        explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
                         parameters = options.DailyPlanCandidateParameters
                     }
                 }

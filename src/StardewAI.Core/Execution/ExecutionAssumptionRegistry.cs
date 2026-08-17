@@ -118,7 +118,7 @@ namespace StardewAI.Core.Execution
                 new[] { "MachineDataUtility" }),
             Assumption(
                 "animals",
-                new[] { "farm.collect_animal_products", "executor.collect_animal_product", "animals.purchase", "executor.choose_animal_purchase_response", "executor.purchase_animal", "farm.care_for_pets", "executor.pet_interact", "executor.fill_pet_bowl" },
+                new[] { "farm.collect_animal_products", "executor.collect_animal_product", "animals.purchase", "executor.choose_animal_purchase_response", "executor.purchase_animal", "animals.manage_animal", "executor.manage_animal", "farm.care_for_pets", "executor.pet_interact", "executor.fill_pet_bowl" },
                 new[] { "animal_location_verified", "tool_or_item_available", "inventory_capacity", "time_budget", "pet_daily_grant_state", "pet_bowl_assignment" },
                 new[] { "produce_quality", "friendship_mood", "incubator_or_birth_timing", "pet_gift_trigger_and_runtime_observed_selection" },
                 new[] { "missed_pet", "poor_milking_shearing_micro", "failed_moving_pet_replan", "missed_pet_bowl_action_tile" },

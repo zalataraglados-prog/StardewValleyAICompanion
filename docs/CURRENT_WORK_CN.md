@@ -1,11 +1,15 @@
 # StardewAI 当前工作
 
-更新时间：2026-08-12
+更新时间：2026-08-17
 
 ## 当前权威检查点（优先于下方历史记录）
 
+- EVD-253 已闭合 `crafting.cook_recipe`：完整快照发布所有已学配方在每个实时厨房/野炊工具来源上的精确材料消费顺序、主冰箱与原生枚举顺序的小冰箱拓扑、互斥锁、齐氏调味料、输出品质/订单标记和历史烹饪次数。显式单次烹饪意图经唯一 DailyPlan/队列链进入 `executor.cook_recipe`；普通制作、工作台和烹饪共用一个原生 `CraftingPage` 配方点击辅助函数，但厨房保留独立的容器、锁和 `recipesCooked` 语义。隐藏静默隔离运行 `runtime-cooking-20260817-202809` 对厨房银星煎蛋和野炊工具普通煎蛋均返回 `applied/verified`。
+- EVD-252 已闭合 `animals.manage_animal`：透明桥发布精确动物、原生查询许可、繁殖、售价、当前家园和兼容家园；显式意图经唯一 DailyPlan/队列链进入 `executor.manage_animal`。隐藏静默隔离运行 `runtime-animal-management-20260816-012959` 对首次抚摸后改名、繁殖开关、搬家和确认出售四支均返回 `applied/verified`。生产执行器只发送原生动物交互和 `AnimalQueryMenu` 点击，不直接写动物或金钱字段；过宽名字在确认前阻塞。
+- 当前机器对账为 `127 registered / 182 semantic / 126 compiler-bound / 54 five-gate / 35 training allowlist / 0 Product Executor`；权威 full 快照要求 `114` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `120 registered / 179 semantic / 119 compiler-bound / 47 five-gate / 31 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `127 registered / 182 semantic / 126 compiler-bound / 54 five-gate / 35 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - EVD-248 已闭合 `buildings.construct` 的第一个严格范围：模型必须明确给出建筑类型、目标地点和建设理由；
   透明桥从实时 `Game1.buildingData` 与全部原生可建地点读取基础蓝图、Builder、条件、价格、材料、现有与在建
@@ -14,7 +18,7 @@
   无任务策略建造 `runtime-quest-terminal-daily-plan-20260812-105048` 和原 `HaveBuildingQuest` 回归
   `runtime-quest-terminal-daily-plan-20260812-105331`，均由原生 Robin/`CarpenterMenu` 建造 `Farm` 上的
   `Coop`，核对钱、材料、坐标和三天倒计时。证据不外推到 Wizard、升级、换皮或长期建筑策略。
-- 最新 full 快照覆盖 `111` 个必需字段，blocking `0`；KnowledgeCompiler 仍为 `585/585`、blocking `0`。
+- 最新 full 快照覆盖 `114` 个必需字段，blocking `0`；KnowledgeCompiler 仍为 `585/585`、blocking `0`。
 - EVD-246 已闭合 `mining.use_elevator`：透明桥读取玩家最深/当前矿层、入口 `Action=MineElevator`、
   楼层 `Buildings/mine` 索引 112 和精确 `MineElevatorMenu` 条目身份；DailyPlan 复用既有跨图移动、
   `interact` 与 `close_menu`。运行时只点击原生端点和菜单，不直接调用 `enterMine`/`warpFarmer`，并跨帧
@@ -250,4 +254,4 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 服务器闭环先连续形成 6 条 applied/verified/fresh 执行记录；修复后无实际候选时只生成空队列并指数退避，不再以 `recovery:refresh_plan_after_stabilization` 制造永久 `wait_ticks` 样本。建筑施工中的等待仍由 `quest.advance` 在透明状态明确为 `construction_in_progress` 时局部复用。
 - 既有晚间恢复链在 119 完成 `22:00 -> 回家/睡觉 -> NewDay`。三项服务为 server healthy、planner healthy、host-ai running，透明 `daily` 快照完整且 unavailable 0；这证明展示日循环主体成立，不等于完整动作全集、Product Executor 或正式训练完成。
 - 本地最终回归：Core 1671/1671、Backend 122/122、Release solution build 0 errors；保留 1 个既有 `AvoidNetField` 警告。
-- 下一主开发切片为 `animals.manage_animal`：先补实时动物身份、位置、状态与原生交互结果字段，再接候选、DailyPlan、唯一机械执行链和严格回执，不从展示循环复制第二套移动或交互系统。
+- 下一主开发切片为 `crafting.forge_item`：先按锁定 1.6.15 `ForgeMenu` 反编译结果补齐锻造、附魔与戒指合并的实时输入/输出分支，再接目的限定候选、DailyPlan、唯一原生菜单执行链和严格回执；不得从普通制作或烹饪复制第二套材料、菜单或移动系统。

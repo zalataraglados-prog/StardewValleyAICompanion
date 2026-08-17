@@ -56,6 +56,7 @@ public sealed class LiveTrainingOptions
     public string PolicyCheckpointPath { get; set; } = string.Empty;
     public bool RequireStructuredPolicy { get; set; }
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
+    public bool DailyPlanExplicitConfirmationGranted { get; set; }
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterObjectiveComplete { get; set; }
@@ -331,6 +332,10 @@ public sealed class LiveTrainingOptions
                     Name = pair[..separator],
                     Value = pair[(separator + 1)..]
                 });
+            }
+            else if (current == "--daily-plan-explicit-confirmation")
+            {
+                options.DailyPlanExplicitConfirmationGranted = true;
             }
             else if (current == "--daily-plan-candidate-kind" &&
                 i + 1 < args.Length)

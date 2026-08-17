@@ -18,6 +18,8 @@ public static class ImplementationEngineIds
     public const string InventoryTransfer = "engine.inventory_transfer";
     public const string ToolHarvest = "engine.tool_harvest";
     public const string FarmMachine = "engine.farm_machine";
+    public const string AnimalManagement = "engine.animal_management";
+    public const string CraftingProcessing = "engine.crafting_processing";
     public const string Minigame = "engine.minigame";
 }
 
@@ -50,6 +52,7 @@ public static class OptionImplementationCatalog
         "executor.choose_dialogue_response",
         "executor.choose_animal_purchase_response",
         "executor.purchase_animal",
+        "executor.manage_animal",
         "executor.close_menu",
         "executor.social_interact",
         "executor.quest_npc_interact",
@@ -131,6 +134,9 @@ public static class OptionImplementationCatalog
         "executor.remove_machine",
         "executor.place_storage");
 
+    private static readonly HashSet<string> CraftingOptions = Set(
+        "executor.cook_recipe");
+
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =
         new ReadOnlyDictionary<string, OptionImplementationBinding>(
@@ -181,6 +187,10 @@ public static class OptionImplementationCatalog
 
     private static string ResolveEngine(string optionId)
     {
+        if (optionId is "animals.manage_animal" or "executor.manage_animal")
+            return ImplementationEngineIds.AnimalManagement;
+        if (optionId is "crafting.cook_recipe" or "executor.cook_recipe")
+            return ImplementationEngineIds.CraftingProcessing;
         if (optionId == "inventory.transfer_item")
             return ImplementationEngineIds.InventoryTransfer;
         if (!optionId.StartsWith("executor.", StringComparison.Ordinal))
@@ -205,6 +215,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.ToolHarvest;
         if (FarmMachineOptions.Contains(optionId))
             return ImplementationEngineIds.FarmMachine;
+        if (CraftingOptions.Contains(optionId))
+            return ImplementationEngineIds.CraftingProcessing;
 
         throw new InvalidOperationException(
             $"Executor option '{optionId}' has no explicit primary implementation engine.");
