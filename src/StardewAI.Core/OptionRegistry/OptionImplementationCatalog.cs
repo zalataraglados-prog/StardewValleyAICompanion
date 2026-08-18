@@ -110,6 +110,7 @@ public static class OptionImplementationCatalog
         "executor.break_current_location_resource_clump",
         "executor.water_crop",
         "executor.apply_fertilizer",
+        "executor.apply_tree_treatment",
         "executor.plant_seed",
         "executor.till_soil",
         "executor.harvest_crop",

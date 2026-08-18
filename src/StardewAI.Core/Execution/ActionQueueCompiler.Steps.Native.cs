@@ -264,6 +264,26 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        private static CompiledActionStep[] CompileApplyTreeTreatmentStep(SmallModelAction action)
+        {
+            var x = ReadIntParameter(action, "target_tile_x");
+            var y = ReadIntParameter(action, "target_tile_y");
+            var qualifiedItemId = ReadParameter(action, "qualified_item_id");
+            if (!x.HasValue || !y.HasValue || string.IsNullOrWhiteSpace(qualifiedItemId))
+            {
+                return Array.Empty<CompiledActionStep>();
+            }
+
+            return new[]
+            {
+                Step(
+                    "apply_tree_treatment",
+                    (ReadParameter(action, "target_location") ?? "current_location") + "(" + x.Value + "," + y.Value + "):" + qualifiedItemId,
+                    "current_location.terrain_features[" + x.Value + "," + y.Value + "].has_moss=false;current_location.terrain_features[" + x.Value + "," + y.Value + "].stop_growing_moss=true;player.inventory[" + (ReadIntParameter(action, "slot_index")?.ToString() ?? "unknown") + "].stack_decreases=1",
+                    60)
+            };
+        }
+
         private static CompiledActionStep[] CompileCollectSpawnedObjectStep(SmallModelAction action)
         {
             var x = ReadIntParameter(action, "target_tile_x");

@@ -206,7 +206,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
             "executor.clear_obstacle", "executor.break_farm_resource_clump",
-            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.till_soil",
+            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
@@ -245,7 +245,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep",
             "executor.wait_ticks", "executor.clear_obstacle", "executor.break_farm_resource_clump",
-            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.till_soil",
+            "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
@@ -347,7 +347,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.clear_obstacle",
             "executor.break_farm_resource_clump", "executor.break_current_location_resource_clump",
-            "executor.water_crop", "executor.apply_fertilizer", "executor.plant_seed", "executor.till_soil", "executor.harvest_crop",
+            "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.plant_seed", "executor.till_soil", "executor.harvest_crop",
             "executor.harvest_giant_crop", "executor.pickup_debris",
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
@@ -425,6 +425,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.forge_item"] = VerifiedEvidence(
                         "vanilla_native_ForgeMenu_inventory_or_equipment_slot_click_start_or_unforge_1600ms_lifecycle_exact_shard_timesEnchanted_input_and_output_domain_receipt",
                         "EVD-254"),
+                    ["executor.apply_tree_treatment"] = VerifiedEvidence(
+                        "vanilla_exact_current_location_Tree_and_inventory_vinegar_native_Object_placementAction_permanent_moss_suppression_stack_and_tree_flag_receipt",
+                        "EVD-255"),
                     ["joja.advance_development"] = VerifiedEvidence(
                         "vanilla_host_exact_undecided_route_membership_with_or_without_first_Morris_greeting_and_all_five_joja_project_candidates_daily_plan_native_purchase_immediate_money_pending_mail_and_next_day_settlement",
                         "EVD-232"),

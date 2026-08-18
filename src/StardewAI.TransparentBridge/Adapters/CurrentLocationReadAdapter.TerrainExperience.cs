@@ -45,7 +45,17 @@ public sealed partial class CurrentLocationReadAdapter
             health = tree.health.Value,
             stump = tree.stump.Value,
             tapped = tree.tapped.Value,
+            fertilized = tree.fertilized.Value,
             has_moss = tree.hasMoss.Value,
+            stop_growing_moss = tree.stopGrowingMoss.Value,
+            tree_treatment_required_qualified_item_id = "(O)419",
+            tree_treatment_native_allowed = tree.GetType() == typeof(Tree) && !tree.stopGrowingMoss.Value,
+            tree_treatment_executor_status = tree.GetType() != typeof(Tree)
+                ? "blocked_custom_tree_runtime_type"
+                : tree.stopGrowingMoss.Value
+                    ? "blocked_moss_growth_already_stopped"
+                    : "ready_if_vinegar_inventory_source_available",
+            tree_treatment_effect = "has_moss=false;stop_growing_moss=true",
             moss_stack_on_next_axe_hit = mossExperience,
             best_axe_upgrade_level = bestAxe?.UpgradeLevel,
             expected_axe_hits_to_clear = expectedHits,
@@ -68,7 +78,7 @@ public sealed partial class CurrentLocationReadAdapter
             harvest_experience_projection_status = tree.GetType() == typeof(Tree)
                 ? "exact_from_decompiled_native_tree_branches"
                 : "unavailable_custom_tree_runtime_type",
-            source = "Tree live net fields; Tree.performToolAction/performTreeFall/CreateMossItem"
+            source = "Tree live net fields; Tree.performToolAction/performTreeFall/CreateMossItem; Object.placementAction (O)419"
         };
     }
 

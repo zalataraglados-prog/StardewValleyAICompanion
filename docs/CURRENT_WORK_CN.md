@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-18 当前权威检查点：EVD-255
+
+- `executor.apply_tree_treatment` 已完成透明读取、严格编译、共享 BFS 邻接移动、原生物品放置与逐字段回执。锁定 1.6.15 的真实语义是 `(O)419` 醋永久禁止一棵树长苔，不是 `(O)805` 树肥；原生分支没有成长阶段限制。
+- 隐藏静默隔离运行 `runtime-tree-treatment-20260818-162145` 已验证 `has_moss true -> false`、`stop_growing_moss false -> true` 和醋堆叠减一。生产执行器只调用 `Object.placementAction`，直接树字段写入仅存在于测试夹具。
+- 该项保持 executor calibration / evaluation-only，不进入自主候选。上层以后必须提供 `tree_treatment_reason` 和策略授权，不能因为背包有醋、地图有树就自动安排永久处理。
+- 当前机器对账为 `130 registered / 183 semantic / 129 compiler-bound / 57 five-gate / 36 training allowlist / 0 Product Executor`；权威 full 快照仍要求 `115` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片从重生成后的 `catalogued_blocked` 清单选择；优先检查 `executor.place_cookout_kit` 是否应复用现有物品放置、布局安全与烹饪来源投影，禁止复制机器/储物放置或野炊烹饪执行器。
+
 更新时间：2026-08-18
 
 ## 当前权威检查点（优先于下方历史记录）
@@ -7,10 +15,10 @@
 - EVD-254 已闭合 `crafting.forge_item`：完整快照发布全部已加载原生锻造来源、实时背包工具/戒指与已装备戒指输入、原生碎片成本/返还、统计变化、精确确定性输出及 Diamond/Dragon Tooth 完整随机结果域。显式单次意图经唯一 DailyPlan/队列链进入 `executor.forge_item`，生产执行器只使用原生 `ForgeMenu` 输入与按钮并等待 1600 ms 生命周期。隐藏静默隔离运行 `runtime-forge-20260818-122957` 的九个操作族全部返回 `applied/verified`。
 - EVD-253 已闭合 `crafting.cook_recipe`：完整快照发布所有已学配方在每个实时厨房/野炊工具来源上的精确材料消费顺序、主冰箱与原生枚举顺序的小冰箱拓扑、互斥锁、齐氏调味料、输出品质/订单标记和历史烹饪次数。显式单次烹饪意图经唯一 DailyPlan/队列链进入 `executor.cook_recipe`；普通制作、工作台和烹饪共用一个原生 `CraftingPage` 配方点击辅助函数，但厨房保留独立的容器、锁和 `recipesCooked` 语义。隐藏静默隔离运行 `runtime-cooking-20260817-202809` 对厨房银星煎蛋和野炊工具普通煎蛋均返回 `applied/verified`。
 - EVD-252 已闭合 `animals.manage_animal`：透明桥发布精确动物、原生查询许可、繁殖、售价、当前家园和兼容家园；显式意图经唯一 DailyPlan/队列链进入 `executor.manage_animal`。隐藏静默隔离运行 `runtime-animal-management-20260816-012959` 对首次抚摸后改名、繁殖开关、搬家和确认出售四支均返回 `applied/verified`。生产执行器只发送原生动物交互和 `AnimalQueryMenu` 点击，不直接写动物或金钱字段；过宽名字在确认前阻塞。
-- 当前机器对账为 `129 registered / 183 semantic / 128 compiler-bound / 56 five-gate / 36 training allowlist / 0 Product Executor`；权威 full 快照要求 `115` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 当前机器对账为 `130 registered / 183 semantic / 129 compiler-bound / 57 five-gate / 36 training allowlist / 0 Product Executor`；权威 full 快照要求 `115` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
 
 - 锁定版本仍为 Stardew Valley 1.6.15；KnowledgeCompiler 当前为 `585/585` exports、blocking `0`。
-- 动作对账当前为 `129 registered / 183 semantic / 128 compiler-bound / 56 five-gate / 36 training allowlist / 0 Product Executor`；
+- 动作对账当前为 `130 registered / 183 semantic / 129 compiler-bound / 57 five-gate / 36 training allowlist / 0 Product Executor`；
   原生分母仍为 `320 surfaces / 428 branches / 150 map tokens`，三类 blocking 均为 `0`。
 - EVD-248 已闭合 `buildings.construct` 的第一个严格范围：模型必须明确给出建筑类型、目标地点和建设理由；
   透明桥从实时 `Game1.buildingData` 与全部原生可建地点读取基础蓝图、Builder、条件、价格、材料、现有与在建

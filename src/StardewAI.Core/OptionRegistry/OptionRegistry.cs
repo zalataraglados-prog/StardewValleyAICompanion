@@ -843,6 +843,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact fertilizer stack decreases and the target HoeDirt records that fertilizer through native placement" },
                 new[] { "block_unverified_fertilizer_rule", "block_inventory_identity_drift", "block_unverified_route", "block_menu_unsafe_item_use" }));
 
+            Register(Option("executor.apply_tree_treatment", "foraging", "Apply one verified vinegar item to permanently stop moss growth on one verified tree",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "current_location.terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact vinegar stack decreases", "target tree moss is cleared", "target tree permanently stops growing moss through native placement" },
+                new[] { "block_missing_treatment_reason", "block_unverified_tree_runtime_type", "block_moss_growth_already_stopped", "block_vinegar_inventory_identity_drift", "block_unverified_route", "block_menu_unsafe_item_use" }));
+
             Register(Option("executor.till_soil", "farm", "Till one eligible farm tile with the native hoe",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

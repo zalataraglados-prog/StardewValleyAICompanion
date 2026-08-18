@@ -37,6 +37,7 @@ namespace StardewAI.Core.Execution
                 ["executor.break_current_location_resource_clump"] = (action, _) => CompileCurrentLocationResourceClumpStep(action),
                 ["executor.water_crop"] = CompileWaterCropStep,
                 ["executor.apply_fertilizer"] = (action, _) => CompileApplyFertilizerStep(action),
+                ["executor.apply_tree_treatment"] = (action, _) => CompileApplyTreeTreatmentStep(action),
                 ["executor.till_soil"] = CompileTillSoilStep,
                 ["executor.plant_seed"] = (action, _) => CompilePlantSeedStep(action),
                 ["executor.harvest_crop"] = (action, _) => CompileHarvestCropStep(action),

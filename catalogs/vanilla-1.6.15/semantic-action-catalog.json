@@ -3,8 +3,8 @@
   "denominator_status": "native_action_denominator_frozen",
   "denominator_fingerprint_sha256": "8b9736994b2ccbdd15fe3fb7725971142956ef3ae977991616226c118d98c259",
   "action_count": 183,
-  "registered_option_spec_count": 129,
-  "catalogued_blocked_count": 54,
+  "registered_option_spec_count": 130,
+  "catalogued_blocked_count": 53,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -138,13 +138,11 @@
     {
       "action_id": "executor.apply_tree_treatment",
       "domain": "foraging",
-      "semantic_kind": "primitive",
+      "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.tool_harvest",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "Object"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "executor.break_container",

@@ -1,7 +1,7 @@
 {
   "schema_version": "stardewai.action_implementation_reconciliation.v1",
   "authority_policy": "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
-  "registered_option_count": 129,
+  "registered_option_count": 130,
   "primary_engine_count": 13,
   "orphan_compiler_count": 0,
   "orphan_compiler_ids": [],
@@ -20,7 +20,7 @@
     "engine.movement_navigation": 3,
     "engine.recovery_timing": 3,
     "engine.strategy_orchestration": 46,
-    "engine.tool_harvest": 17
+    "engine.tool_harvest": 18
   },
   "options": [
     {
@@ -330,6 +330,28 @@
       "compilerTrainingGate": "DeclaredOnly",
       "runtimeTrainingGate": "Missing",
       "outputTrainingGate": "Missing"
+    },
+    {
+      "optionId": "executor.apply_tree_treatment",
+      "domain": "foraging",
+      "primaryEngineId": "engine.tool_harvest",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "not_applicable",
+      "compilerBinding": "step",
+      "runtimeBinding": "runtime_test_harness",
+      "verifierBinding": "runtime_before_after_verifier",
+      "evidenceBinding": "EVD-255",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "NotApplicable",
+      "compilerStatus": "StepCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RuntimeVerified",
+      "readTrainingGate": "RuntimeVerified",
+      "candidateTrainingGate": "RuntimeVerified",
+      "compilerTrainingGate": "RuntimeVerified",
+      "runtimeTrainingGate": "RuntimeVerified",
+      "outputTrainingGate": "RuntimeVerified"
     },
     {
       "optionId": "executor.break_container",

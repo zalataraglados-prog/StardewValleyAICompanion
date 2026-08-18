@@ -114,6 +114,7 @@ public sealed partial class ModEntry
             {
                 "plant_seed" => ExecutePlantSeed(action.Pending.Request),
                 "apply_fertilizer" => ExecuteApplyFertilizer(action.Pending.Request),
+                "apply_tree_treatment" => ExecuteApplyTreeTreatment(action.Pending.Request),
                 "harvest_crop" => ExecuteHarvestCrop(action.Pending.Request),
                 _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.crop_tile_action=applied", "unsupported", "unsupported_crop_tile_action")
             };

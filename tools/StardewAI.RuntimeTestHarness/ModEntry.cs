@@ -808,6 +808,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_tree_treatment_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupTreeTreatmentTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_indoor_pot_fertilizer_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFertilizerTarget(pending.Request, useIndoorPot: true));
@@ -1061,6 +1067,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.apply_fertilizer")
             {
                 StartCropTileAction(pending, "apply_fertilizer");
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.apply_tree_treatment")
+            {
+                StartCropTileAction(pending, "apply_tree_treatment");
                 return;
             }
 
