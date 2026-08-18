@@ -181,6 +181,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_native_cooking_candidate");
             }
 
+            if (optionId == "crafting.forge_item")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "explicit_forge_operation_inputs_and_reason_required",
+                    "no_available_native_forge_candidate");
+            }
+
             if (optionId == "farm.process_machines")
             {
                 return EventCandidateAvailabilityReasons(

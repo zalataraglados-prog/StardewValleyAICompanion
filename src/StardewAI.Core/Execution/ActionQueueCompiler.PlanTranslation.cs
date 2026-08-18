@@ -93,6 +93,7 @@ namespace StardewAI.Core.Execution
                 "purchase_animal" => "executor.purchase_animal",
                 "manage_animal" => "executor.manage_animal",
                 "cook_recipe" => "executor.cook_recipe",
+                "forge_item" => "executor.forge_item",
                 "water_crop" => "executor.water_crop",
                 "apply_fertilizer" => "executor.apply_fertilizer",
                 "clear_obstacle" => "executor.clear_obstacle",

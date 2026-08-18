@@ -16,6 +16,7 @@ namespace StardewAI.Core.Training
                 ["animals.purchase"] = new[] { "route_connector_tile", "interact_endpoint", "animal_purchase_select_service", "animal_purchase_navigate_location_page", "animal_purchase_select_location", "purchase_animal" },
                 ["animals.manage_animal"] = new[] { "route_connector_tile", "manage_animal" },
                 ["crafting.cook_recipe"] = new[] { "route_connector_tile", "cook_recipe" },
+                ["crafting.forge_item"] = new[] { "route_connector_tile", "forge_item" },
                 ["buildings.construct"] = new[] { "route_connector_tile", "construct_building" },
                 ["buildings.change_skin"] = new[] { "route_connector_tile", "change_building_skin" },
                 ["buildings.paint"] = new[] { "route_connector_tile", "paint_building_region" },
@@ -111,6 +112,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "cook_recipe")
             {
                 return CookingSteps(candidate);
+            }
+
+            if (candidate.Kind == "forge_item")
+            {
+                return ForgeSteps(candidate);
             }
 
             if (candidate.Kind == "buy_shop_item")

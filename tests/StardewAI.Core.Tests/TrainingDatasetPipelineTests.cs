@@ -37,6 +37,7 @@ namespace StardewAI.Core.Tests
                     "buildings.construct",
                     "buildings.paint",
                     "crafting.cook_recipe",
+                    "crafting.forge_item",
                     "economy.buy_supplies",
                     "economy.sell_items",
                     "economy.ship_items",

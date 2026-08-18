@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "f878003c63b7e1a19f65d7c1709ce21d84b0b4372065b5e4bdb35d263ae7d882",
+  "fingerprint_sha256": "8b9736994b2ccbdd15fe3fb7725971142956ef3ae977991616226c118d98c259",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 182,
-  "approval_basis": "locked 1.6.15 decompile; crafting.cook_recipe moved from one explicit blocked semantic item to one registered high-level action plus one exact terminal primitive; kitchen GameLocation.checkAction and Cookout Kit Torch.checkForAction both converge on the shared native CraftingPage recipe click while retaining distinct container and mutex semantics; native surfaces, branches, and map tokens unchanged; runtime admission remains independently gated"
+  "semantic_action_count": 183,
+  "approval_basis": "locked 1.6.15 decompile; crafting.forge_item moved from one explicit blocked semantic item to one registered high-level action plus one exact terminal primitive; loaded Action=Forge tiles and (BC)MiniForge objects converge on the native ForgeMenu while all nine operation families retain exact input, cost, output or complete random-domain, and unforge-refund semantics; native surfaces, branches, and map tokens unchanged; runtime admission remains independently gated"
 }

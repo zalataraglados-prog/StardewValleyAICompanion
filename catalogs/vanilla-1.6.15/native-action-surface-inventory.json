@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 320,
-  "mapped_count": 63,
-  "catalogued_blocked_surface_count": 106,
-  "catalogued_blocked_action_count": 55,
+  "mapped_count": 66,
+  "catalogued_blocked_surface_count": 103,
+  "catalogued_blocked_action_count": 54,
   "catalogued_blocked_action_ids": [
-    "crafting.forge_item",
     "executor.apply_tree_treatment",
     "executor.place_cookout_kit",
     "executor.place_crab_pot",
@@ -1797,7 +1796,7 @@
       "mappedOptionIds": [
         "crafting.forge_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -1814,7 +1813,7 @@
       "mappedOptionIds": [
         "crafting.forge_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -1831,7 +1830,7 @@
       "mappedOptionIds": [
         "crafting.forge_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

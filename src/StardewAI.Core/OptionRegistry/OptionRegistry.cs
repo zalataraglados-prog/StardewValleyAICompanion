@@ -95,6 +95,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact learned recipe, count, purpose and native kitchen or cookout source selected", "rolling route reaches the selected source", "shared native CraftingPage mechanics consume exact materials and seasoning and verify output, recipe count, quests and achievements" },
                 new[] { "block_missing_explicit_recipe_count_or_purpose", "block_unknown_recipe_or_unavailable_source", "block_material_container_or_mutex_drift", "block_insufficient_materials_or_output_capacity", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
 
+            Register(Option("crafting.forge_item", "crafting", "Forge, enchant, combine, or unforge one exact live item pair for one stated purpose",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.forge", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact operation, live input source set, purpose and loaded native forge selected", "rolling route reaches the selected forge", "shared native ForgeMenu mechanics consume exact inputs and shards and verify deterministic output or complete random result domain" },
+                new[] { "block_missing_explicit_operation_inputs_or_purpose", "block_unknown_input_or_unavailable_forge", "block_insufficient_shards_or_output_capacity", "block_projection_or_random_domain_drift", "block_direct_inventory_enchantment_ring_stat_or_achievement_mutation" }));
+
             Register(Option("buildings.construct", "buildings", "Construct one exact purpose-bound building through the native builder service",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -564,6 +572,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.cooking", "locations.collision_grid", "menus.active_menu" },
                 new[] { "native source interaction opens cooking CraftingPage", "native ingredient and Qi Seasoning consumption occurs in exact source order", "exact output, quality, order data, recipesCooked, quest callbacks and cooking achievements are verified" },
                 new[] { "block_recipe_source_or_material_projection_drift", "block_foreign_kitchen_mutex", "block_output_capacity", "block_native_menu_or_postcondition_mismatch", "block_direct_inventory_recipe_stat_quest_or_achievement_mutation" }));
+
+            Register(Option("executor.forge_item", "crafting", "Drive one rebound forge, enchant, ring combine, or unforge operation through the native ForgeMenu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.inventory_capacity", "player.forge", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native forge action or Mini-Forge opens ForgeMenu", "native inventory or equipped-ring clicks fill exact slots and run one 1600ms operation", "exact input, shard, timesEnchanted, output state or complete native random-domain receipt is verified" },
+                new[] { "block_forge_source_input_or_state_projection_drift", "block_insufficient_shards_or_output_capacity", "block_native_menu_or_postcondition_mismatch", "block_random_output_outside_native_domain", "block_direct_inventory_enchantment_ring_stat_or_achievement_mutation" }));
 
             Register(Option("executor.sleep", "recovery", "Terminal sleep macro",
                 OptionBehaviorCategories.Recovery,

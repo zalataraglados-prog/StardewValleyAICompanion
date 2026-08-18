@@ -135,7 +135,8 @@ public static class OptionImplementationCatalog
         "executor.place_storage");
 
     private static readonly HashSet<string> CraftingOptions = Set(
-        "executor.cook_recipe");
+        "executor.cook_recipe",
+        "executor.forge_item");
 
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =
@@ -189,7 +190,7 @@ public static class OptionImplementationCatalog
     {
         if (optionId is "animals.manage_animal" or "executor.manage_animal")
             return ImplementationEngineIds.AnimalManagement;
-        if (optionId is "crafting.cook_recipe" or "executor.cook_recipe")
+        if (optionId is "crafting.cook_recipe" or "executor.cook_recipe" or "crafting.forge_item" or "executor.forge_item")
             return ImplementationEngineIds.CraftingProcessing;
         if (optionId == "inventory.transfer_item")
             return ImplementationEngineIds.InventoryTransfer;

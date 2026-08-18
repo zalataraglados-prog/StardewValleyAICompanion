@@ -93,6 +93,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMaterialTransfer? activeMaterialTransfer;
     private ActiveWorkbenchCraft? activeWorkbenchCraft;
     private ActiveCooking? activeCooking;
+    private ActiveForge? activeForge;
     private ActiveDialogueAdvance? activeDialogueAdvance;
     private ActiveMenuClose? activeMenuClose;
     private ActiveMailProcessing? activeMailProcessing;
@@ -470,6 +471,7 @@ public sealed partial class ModEntry : Mod
         TickMaterialTransferSafely();
         TickWorkbenchCraftSafely();
         TickCookingSafely();
+        TickForgeSafely();
         TickDialogueAdvance();
         TickMenuClose();
         TickMailProcessing();
@@ -1273,9 +1275,21 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.forge_item")
+            {
+                StartForge(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_cooking_fixture")
             {
                 pending.Completion.SetResult(ExecuteSetupCookingFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_forge_fixture")
+            {
+                pending.Completion.SetResult(ExecuteSetupForgeFixture(pending.Request));
                 return;
             }
 
@@ -1409,6 +1423,7 @@ public sealed partial class ModEntry : Mod
             activeMaterialTransfer = null;
             activeWorkbenchCraft = null;
             activeCooking = null;
+            activeForge = null;
             activeSpecialOrderBoardOpen = null;
             activeQuestRewardClaim = null;
             CrabPotCaughtFishPatch.Reset();
@@ -1614,6 +1629,7 @@ public sealed partial class ModEntry : Mod
             activeMaterialTransfer is not null ||
             activeWorkbenchCraft is not null ||
             activeCooking is not null ||
+            activeForge is not null ||
             activeDialogueAdvance is not null ||
             activeMenuClose is not null ||
             activeMailProcessing is not null ||

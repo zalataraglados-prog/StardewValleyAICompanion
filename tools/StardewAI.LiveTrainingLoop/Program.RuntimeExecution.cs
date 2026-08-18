@@ -758,6 +758,23 @@ static partial class Program
         var seasoningRowsJson = ReadQueueParameterString(item, "seasoning_rows_json");
         var materialContainerIdsJson = ReadQueueParameterString(item, "material_container_ids_json");
         var expectedOutputOrderData = ReadQueueParameterString(item, "expected_output_order_data");
+        var forgeCandidateId = ReadQueueParameterString(item, "forge_candidate_id");
+        var forgeOperation = ReadQueueParameterString(item, "forge_operation");
+        var forgeReason = ReadQueueParameterString(item, "forge_reason");
+        var forgeSourceId = ReadQueueParameterString(item, "forge_source_id");
+        var forgeSourceKind = ReadQueueParameterString(item, "forge_source_kind");
+        var leftSourceId = ReadQueueParameterString(item, "left_source_id");
+        var leftStateJson = ReadQueueParameterString(item, "left_state_json");
+        var rightSourceId = ReadQueueParameterString(item, "right_source_id");
+        var rightStateJson = ReadQueueParameterString(item, "right_state_json");
+        var forgeShardCost = ReadQueueParameterInt(item, "forge_shard_cost");
+        var forgeShardRefund = ReadQueueParameterInt(item, "forge_shard_refund");
+        var forgeShardCountBefore = ReadQueueParameterInt(item, "forge_shard_count_before");
+        var timesEnchantedBefore = ReadQueueParameterInt(item, "times_enchanted_before");
+        var timesEnchantedAfter = ReadQueueParameterInt(item, "times_enchanted_after");
+        var forgeOutputContractKind = ReadQueueParameterString(item, "forge_output_contract_kind");
+        var expectedOutputStateJson = ReadQueueParameterString(item, "expected_output_state_json");
+        var randomOutcomeContractJson = ReadQueueParameterString(item, "random_outcome_contract_json");
         var slotIndex = ReadQueueParameterInt(item, "slot_index");
         var bookRuntimeType = ReadQueueParameterString(item, "book_runtime_type");
         var bookCategory = ReadQueueParameterInt(item, "book_category");
@@ -1234,6 +1251,23 @@ static partial class Program
         executionRequest.SeasoningRowsJson = seasoningRowsJson;
         executionRequest.MaterialContainerIdsJson = materialContainerIdsJson;
         executionRequest.ExpectedOutputOrderData = expectedOutputOrderData;
+        executionRequest.ForgeCandidateId = forgeCandidateId;
+        executionRequest.ForgeOperation = forgeOperation;
+        executionRequest.ForgeReason = forgeReason;
+        executionRequest.ForgeSourceId = forgeSourceId;
+        executionRequest.ForgeSourceKind = forgeSourceKind;
+        executionRequest.LeftSourceId = leftSourceId;
+        executionRequest.LeftStateJson = leftStateJson;
+        executionRequest.RightSourceId = rightSourceId;
+        executionRequest.RightStateJson = rightStateJson;
+        executionRequest.ForgeShardCost = forgeShardCost;
+        executionRequest.ForgeShardRefund = forgeShardRefund;
+        executionRequest.ForgeShardCountBefore = forgeShardCountBefore;
+        executionRequest.TimesEnchantedBefore = timesEnchantedBefore;
+        executionRequest.TimesEnchantedAfter = timesEnchantedAfter;
+        executionRequest.ForgeOutputContractKind = forgeOutputContractKind;
+        executionRequest.ExpectedOutputStateJson = expectedOutputStateJson;
+        executionRequest.RandomOutcomeContractJson = randomOutcomeContractJson;
         if (slotIndex.HasValue)
         {
             executionRequest.SlotIndex = slotIndex.Value;
