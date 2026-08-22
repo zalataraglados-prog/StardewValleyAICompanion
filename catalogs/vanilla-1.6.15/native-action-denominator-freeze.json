@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "8b9736994b2ccbdd15fe3fb7725971142956ef3ae977991616226c118d98c259",
+  "fingerprint_sha256": "13651869c7c200d6cee62d59de9cc5fc731f063015097accf61910a5814d264b",
   "surface_count": 320,
   "branch_count": 428,
   "map_token_count": 150,
-  "semantic_action_count": 183,
-  "approval_basis": "locked 1.6.15 decompile; crafting.forge_item moved from one explicit blocked semantic item to one registered high-level action plus one exact terminal primitive; loaded Action=Forge tiles and (BC)MiniForge objects converge on the native ForgeMenu while all nine operation families retain exact input, cost, output or complete random-domain, and unforge-refund semantics; native surfaces, branches, and map tokens unchanged; runtime admission remains independently gated"
+  "semantic_action_count": 184,
+  "approval_basis": "locked 1.6.15 decompile; executor.place_crab_pot moved from pending to one exact native placement primitive, and the separate previously omitted executor.load_crab_pot_bait action was added as catalogued_blocked after confirming CrabPot.performObjectDropInAction Category=-21 bait semantics through the GameLocation.checkAction object drop-in surface; native surface, branch, and map-token counts are unchanged; bait runtime admission remains independently gated"
 }

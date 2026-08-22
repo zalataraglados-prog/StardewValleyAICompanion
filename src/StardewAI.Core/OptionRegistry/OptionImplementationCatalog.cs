@@ -141,7 +141,8 @@ public static class OptionImplementationCatalog
         "executor.forge_item");
 
     private static readonly HashSet<string> PlacementOptions = Set(
-        "executor.place_cookout_kit");
+        "executor.place_cookout_kit",
+        "executor.place_crab_pot");
 
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =

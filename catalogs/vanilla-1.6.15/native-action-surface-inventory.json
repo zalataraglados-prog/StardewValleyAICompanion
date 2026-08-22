@@ -8,7 +8,7 @@
   "catalogued_blocked_surface_count": 103,
   "catalogued_blocked_action_count": 52,
   "catalogued_blocked_action_ids": [
-    "executor.place_crab_pot",
+    "executor.load_crab_pot_bait",
     "executor.place_fence",
     "executor.place_flooring",
     "executor.place_furniture",

@@ -19,6 +19,7 @@ public sealed partial class ModEntry
             "debug.setup_clear_obstacle",
             "debug.setup_cooking_fixture",
             "debug.setup_cookout_kit_placement_target",
+            "debug.setup_crab_pot_placement_target",
             "debug.setup_forge_fixture",
             "debug.setup_collection_task_fixture",
             "debug.setup_community_center_donation",

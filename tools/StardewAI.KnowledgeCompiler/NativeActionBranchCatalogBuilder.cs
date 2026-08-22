@@ -599,6 +599,7 @@ internal static class NativeBranchSemanticClassifier
                 result.Add("executor.collect_spawned_object");
                 result.Add("executor.collect_machine_output");
                 result.Add("executor.load_machine_input");
+                result.Add("executor.load_crab_pot_bait");
                 result.Add("executor.interact");
             }
         }

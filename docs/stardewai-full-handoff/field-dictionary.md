@@ -10,6 +10,13 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Crab Pot Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.crab_pot_placement` | Bind one capacity/layout intent to an exact inventory pot, persistent loaded location, legal water tile and tile-specific production context | `Object.canBePlacedHere` and `placementAction` `(O)710` branches; `CrabPot.IsValidCrabPotLocationTile`, `placementAction`, `NeedsBait`, `DayUpdate`; `GameLocation.GetCrabPotFishForTile`; `Data/Fish` trap rows | n/a; locked decompile and runtime are authoritative for execution | covered_for_read / covered_for_gate / native_runtime_verified / evaluation_only | Publishes compressed legal water ranges grouped by production signature, owner and Mariner/Luremaster state, fish area/habitats, base/effective junk chance, native-order eligible catches and fallback trash domain. Compiler freezes exact slot/stack/location/target/stand/fingerprint/signature/reason; runtime rechecks the loaded tile and initial state. |
+| `current_location.objects[].crab_pot_*` / `fishing.collect_crab_pots` | Continue from placement into normal bait/production/collection without a second lifecycle implementation | `CrabPot` live fields and EVD-209 native collection chain | n/a | covered_for_read / native_placement_handoff_verified / native_collection_verified / bait_loading_catalogued_blocked | EVD-257 verifies owner, no bait, no output and not-ready immediately after placement. EVD-209 remains authoritative for ready output, Book of Crabbing doubling, inventory receipt, Fishing XP, collection and ready/bait reset. Native `CrabPot.performObjectDropInAction` bait insertion is not covered by the generic machine chain; it is explicitly tracked as pending `executor.load_crab_pot_bait`. |
+
 ## Cookout Kit Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

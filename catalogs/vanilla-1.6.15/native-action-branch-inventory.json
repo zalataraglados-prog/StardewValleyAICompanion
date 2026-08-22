@@ -2784,6 +2784,7 @@
         "executor.collect_machine_output",
         "executor.collect_spawned_object",
         "executor.interact",
+        "executor.load_crab_pot_bait",
         "executor.load_machine_input"
       ],
       "semanticDisposition": "player_semantic_action",

@@ -45,7 +45,8 @@ public sealed partial class PlayerReadAdapter
         var fingerprint = PersistentPlacementTopologyFingerprint(
             inventoryKits.Select(row =>
                 "cookout_kit|" + row.SlotIndex + "|" + row.Item.QualifiedItemId + "|" +
-                row.Item.Stack + "|" + row.Item.GetType().FullName),
+                row.Item.Stack + "|" + row.Item.GetType().FullName)
+                .Append("current_location|" + (Game1.currentLocation?.NameOrUniqueName ?? string.Empty)),
             locations);
         lock (CookoutKitPlacementCacheLock)
         {

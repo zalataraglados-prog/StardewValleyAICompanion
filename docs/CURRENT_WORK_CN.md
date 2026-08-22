@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-08-22 当前权威检查点：EVD-257
+
+- `executor.place_crab_pot` 已闭合透明读取、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。源物品与放置结果均为 `(O)710`，但库存中的普通 `StardewValley.Object` 必须经原生 `Object.placementAction` 转成由当前玩家拥有的精确 `StardewValley.Objects.CrabPot`。
+- `player.crab_pot_placement` 在 full profile 中枚举每个背包蟹笼、所有已加载持久地点的原生合法水格区间，以及每个区间的鱼区、栖息地、垃圾概率、Mariner/Luremaster 修正、原生顺序捕获行和生产签名。编译器绑定精确库存、地点、水格、邻接站位、拓扑指纹、生产签名、放置理由和原生契约；运行时再次执行原生合法性检查。
+- 放置复用唯一 `PlaceInventoryObjectNative` 与既有邻接移动；后续收取继续复用已经由 EVD-209 闭合的 `fishing.collect_crab_pots -> executor.collect_crab_pot`，没有第二套蟹笼收取、移动或物品放置系统。该放置 primitive 保持 calibration/evaluation-only，上层策略负责布局、产能与放置理由。
+- 隐藏、静默、E 盘隔离运行 `runtime-crab-pot-placement-20260822-152201` 返回 `applied/verified`：目标 `Farm:73,31` 生成精确 base `CrabPot`，owner、空饵料、空产出、未 ready 与库存减一均通过；下一份透明快照读回同一蟹笼及淡水生产签名 `|0.2|freshwater|721,716,722`。
+- 复核 EVD-209 与锁定反编译时发现，原冻结分母遗漏了独立的原生上饵动作：`CrabPot.performObjectDropInAction` 接受 `Category=-21` 饵料并写入 owner/bait，它不属于通用机器输入链。现已把 `executor.load_crab_pot_bait` 作为 `catalogued_blocked` 显式补回分母，未伪装成已实现。
+- 当前权威对账为 `132 registered / 184 semantic / 131 compiler-bound / 59 five-gate / 36 training allowlist / 0 Product Executor`；full 快照要求 `117` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。下一语义切片先闭合 `executor.load_crab_pot_bait`，再进入 `executor.place_fence`。
+
+更新时间：2026-08-22
+
 ## 2026-08-22 当前权威检查点：EVD-256
 
 - `executor.place_cookout_kit` 已闭合透明读取、严格编译、共享邻接移动、原生物品放置和逐字段回执。锁定 1.6.15 的源物品是 `(O)926`，`Object.placementAction` 落地的是 `StardewValley.Torch` / `(BC)278`，并带有 `Fragility=1`、`destroyOvernight=true`；两者不得混作同一个物品身份。

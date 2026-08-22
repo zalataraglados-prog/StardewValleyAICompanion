@@ -1099,6 +1099,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates exact Torch (BC)278 with fragility 1 and destroyOvernight true", "one Cookout Kit is consumed", "the placed Torch becomes a native same-day cooking endpoint" },
                 new[] { "block_missing_cookout_reason", "block_inventory_or_projection_identity_drift", "block_unreachable_adjacent_stand", "block_native_placement_recheck", "block_cross_day_use_plan" }));
 
+            Register(Option("executor.place_crab_pot", "fishing", "Place one verified inventory Crab Pot at one exact native-legal water tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.crab_pot_placement", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates one exact owned CrabPot at the rebound water tile", "one inventory Crab Pot is consumed", "initial bait output and harvest state match the current owner professions and native constructor" },
+                new[] { "block_missing_crab_pot_reason_or_production_signature", "block_inventory_owner_or_projection_identity_drift", "block_nonwater_or_native_excluded_location", "block_unreachable_adjacent_shore_stand", "block_native_placement_recheck" }));
+
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
