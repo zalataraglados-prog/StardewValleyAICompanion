@@ -1,11 +1,98 @@
 using StardewValley;
 using StardewValley.Objects;
+using StardewAI.TransparentBridge.State;
 using StardewObject = StardewValley.Object;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class CurrentLocationReadAdapter
 {
+    internal const string CrabPotBaitLoadNativeContract =
+        "GameLocation.checkAction->CrabPot.performObjectDropInAction(Category=-21,probe:false,owner=current_player)->Farmer.reduceActiveItemByOne";
+
+    private static CrabPotBaitLoadProjection ReadCrabPotBaitLoad(StardewObject item, Farmer player)
+    {
+        if (item is not CrabPot pot)
+        {
+            return CrabPotBaitLoadProjection.NotApplicable();
+        }
+
+        var currentBait = pot.bait.Value is null ? null : ClearanceOutputItemProjection.From(pot.bait.Value);
+        var owner = Game1.GetPlayer(pot.owner.Value) ?? player;
+        var ownerHasLuremaster = owner.professions.Contains(11);
+        if (item.GetType() != typeof(CrabPot))
+        {
+            return CrabPotBaitLoadProjection.Blocked(
+                "unsupported_crab_pot_runtime_type",
+                pot,
+                currentBait,
+                ownerHasLuremaster,
+                player.UniqueMultiplayerID);
+        }
+        if (SnapshotProfileContext.Current is not "full")
+        {
+            return CrabPotBaitLoadProjection.Blocked(
+                "blocked_requires_full_profile",
+                pot,
+                currentBait,
+                ownerHasLuremaster,
+                player.UniqueMultiplayerID);
+        }
+
+        var inventoryRows = player.Items
+            .Select((candidate, slot) => new { candidate, slot })
+            .Where(entry => entry.candidate is StardewObject { Category: StardewObject.baitCategory })
+            .Select(entry =>
+            {
+                var candidate = (StardewObject)entry.candidate!;
+                var state = ClearanceOutputItemProjection.From(candidate);
+                var accepted = pot.performObjectDropInAction(candidate, probe: true, player);
+                return new
+                {
+                    inventory_slot_index = entry.slot,
+                    item_id = candidate.ItemId,
+                    qualified_item_id = candidate.QualifiedItemId,
+                    display_name = candidate.DisplayName,
+                    stack = candidate.Stack,
+                    quality = candidate.Quality,
+                    category = candidate.Category,
+                    runtime_type = candidate.GetType().FullName,
+                    unit_state_sha256 = state.UnitStateSha256,
+                    native_probe_accepts = accepted,
+                    expected_container_bait_qualified_item_id = state.QualifiedItemId,
+                    expected_container_bait_runtime_type = state.RuntimeType,
+                    expected_container_bait_quality = state.Quality,
+                    expected_container_bait_unit_state_sha256 = state.UnitStateSha256,
+                    expected_consumed_quantity = 1
+                };
+            })
+            .ToArray();
+        var acceptedCount = inventoryRows.Count(row => row.native_probe_accepts);
+        var status = currentBait is not null
+            ? "already_baited"
+            : ownerHasLuremaster
+                ? "owner_luremaster_no_bait_required"
+                : pot.readyForHarvest.Value || pot.heldObject.Value is not null
+                    ? "collect_before_bait"
+                    : acceptedCount > 0
+                        ? "ready"
+                        : "bait_required_but_inventory_unavailable";
+        return new CrabPotBaitLoadProjection
+        {
+            Status = status,
+            NeedsBait = pot.NeedsBait(player),
+            OwnerHasLuremaster = ownerHasLuremaster,
+            OwnerPlayerIdBefore = pot.owner.Value,
+            ExpectedOwnerPlayerIdAfter = player.UniqueMultiplayerID,
+            CurrentBaitQualifiedItemId = currentBait?.QualifiedItemId ?? string.Empty,
+            CurrentBaitRuntimeType = currentBait?.RuntimeType ?? string.Empty,
+            CurrentBaitQuality = currentBait?.Quality ?? 0,
+            CurrentBaitUnitStateSha256 = currentBait?.UnitStateSha256 ?? string.Empty,
+            InventoryBaitRows = inventoryRows.Cast<object>().ToArray(),
+            NativeContract = CrabPotBaitLoadNativeContract
+        };
+    }
+
     private static CrabPotHarvestProjection ReadCrabPotHarvest(
         Microsoft.Xna.Framework.Vector2 tile,
         StardewObject item,
@@ -117,6 +204,43 @@ public sealed partial class CurrentLocationReadAdapter
         inventoryUnit.HasBeenInInventory = true;
         return ClearanceOutputItemProjection.From(inventoryUnit);
     }
+}
+
+internal sealed record CrabPotBaitLoadProjection
+{
+    public string Status { get; init; } = "not_applicable";
+    public bool NeedsBait { get; init; }
+    public bool OwnerHasLuremaster { get; init; }
+    public long OwnerPlayerIdBefore { get; init; }
+    public long ExpectedOwnerPlayerIdAfter { get; init; }
+    public string CurrentBaitQualifiedItemId { get; init; } = string.Empty;
+    public string CurrentBaitRuntimeType { get; init; } = string.Empty;
+    public int CurrentBaitQuality { get; init; }
+    public string CurrentBaitUnitStateSha256 { get; init; } = string.Empty;
+    public object[] InventoryBaitRows { get; init; } = Array.Empty<object>();
+    public string NativeContract { get; init; } = string.Empty;
+
+    public static CrabPotBaitLoadProjection NotApplicable() => new();
+
+    public static CrabPotBaitLoadProjection Blocked(
+        string status,
+        CrabPot pot,
+        ClearanceOutputItemProjection? currentBait,
+        bool ownerHasLuremaster,
+        long expectedOwnerPlayerIdAfter) =>
+        new()
+        {
+            Status = status,
+            NeedsBait = pot.NeedsBait(Game1.player),
+            OwnerHasLuremaster = ownerHasLuremaster,
+            OwnerPlayerIdBefore = pot.owner.Value,
+            ExpectedOwnerPlayerIdAfter = expectedOwnerPlayerIdAfter,
+            CurrentBaitQualifiedItemId = currentBait?.QualifiedItemId ?? string.Empty,
+            CurrentBaitRuntimeType = currentBait?.RuntimeType ?? string.Empty,
+            CurrentBaitQuality = currentBait?.Quality ?? 0,
+            CurrentBaitUnitStateSha256 = currentBait?.UnitStateSha256 ?? string.Empty,
+            NativeContract = CurrentLocationReadAdapter.CrabPotBaitLoadNativeContract
+        };
 }
 
 internal sealed record CrabPotHarvestProjection

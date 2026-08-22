@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-08-22 当前权威检查点：EVD-258
+
+- `executor.load_crab_pot_bait` 已闭合透明读取、严格编译、共享邻接移动、原生 `GameLocation.checkAction` 执行和逐字段回执。它是独立的蟹笼上饵 primitive，不并入通用机器投料，也不复制 EVD-209 的蟹笼收取链。
+- full 快照对每个精确 base `CrabPot` 发布生命周期、owner/Luremaster 状态和背包内所有 `Category=-21` 饵料的槽位、堆叠、运行时类型、品质、单位状态哈希及原生 probe 结果。编译器绑定目标、邻接站位、owner before/after、饵料身份、理由与原生契约；任一漂移即失败关闭。
+- 隐藏、静默、E 盘隔离运行 `runtime-crab-pot-bait-20260822-164015` 为 5/5 PASS：普通、豪华、万能、魔法和特定目标鱼饵均由原生 checkAction 装入，原生 `reduceActiveItemByOne` 精确消耗一件，下一份透明快照读回相同 qid、运行时类型、品质、单位状态哈希与 owner。
+- 当前权威对账为 `133 registered / 184 semantic / 132 compiler-bound / 60 five-gate / 36 training allowlist / 51 catalogued blocked / 0 Product Executor`；full 快照要求 `117` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片进入 `executor.place_fence`。必须先审查并复用现有物品放置、邻接移动、碰撞与布局安全实现，禁止形成第二套放置系统。
+
+更新时间：2026-08-22
+
 ## 2026-08-22 当前权威检查点：EVD-257
 
 - `executor.place_crab_pot` 已闭合透明读取、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。源物品与放置结果均为 `(O)710`，但库存中的普通 `StardewValley.Object` 必须经原生 `Object.placementAction` 转成由当前玩家拥有的精确 `StardewValley.Objects.CrabPot`。

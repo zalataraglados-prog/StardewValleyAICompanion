@@ -54,4 +54,45 @@ public sealed class RuntimeCrabPotExecutorTests
         Assert.DoesNotContain("active.Pot.heldObject.Value = null", source, StringComparison.Ordinal);
         Assert.DoesNotContain("active.Pot.bait.Value = null", source, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void CrabPotBaitRequestCarriesOwnerAndExactUnitStateFields()
+    {
+        var request = new TrainingExecutionRequest
+        {
+            OptionId = "executor.load_crab_pot_bait",
+            InventorySlotIndex = 2,
+            ExpectedStackBefore = 2,
+            QualifiedItemId = "(O)SpecificBait",
+            ExpectedContainerBaitQualifiedItemId = "(O)SpecificBait",
+            ExpectedContainerBaitUnitStateSha256 = new string('a', 64),
+            ExpectedContainerOwnerPlayerIdBefore = 1234,
+            ExpectedContainerOwnerPlayerIdAfter = 1234,
+            BaitRuntimeType = "StardewValley.Object",
+            BaitQuality = 0
+        };
+
+        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+
+        Assert.Equal("executor.load_crab_pot_bait", roundTrip.OptionId);
+        Assert.Equal("(O)SpecificBait", roundTrip.ExpectedContainerBaitQualifiedItemId);
+        Assert.Equal(new string('a', 64), roundTrip.ExpectedContainerBaitUnitStateSha256);
+        Assert.Equal(1234, roundTrip.ExpectedContainerOwnerPlayerIdBefore);
+        Assert.Equal(1234, roundTrip.ExpectedContainerOwnerPlayerIdAfter);
+        Assert.Equal("StardewValley.Object", roundTrip.BaitRuntimeType);
+        Assert.Equal(0, roundTrip.BaitQuality);
+    }
+
+    [Fact]
+    public void CrabPotBaitRuntimeUsesNativeCheckActionWithoutDirectProductionMutation()
+    {
+        var source = RuntimeHarnessSources.All;
+
+        Assert.Contains("ExecuteLoadCrabPotBait", source);
+        Assert.Contains("pot.performObjectDropInAction(bait, probe: true, Game1.player)", source);
+        Assert.Contains("handled = location.checkAction(", source);
+        Assert.Contains("native_reduceActiveItemByOne_consumed_exactly_one", source);
+        Assert.DoesNotContain("pot.bait.Value = bait", source, StringComparison.Ordinal);
+    }
 }

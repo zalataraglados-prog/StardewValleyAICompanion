@@ -95,15 +95,12 @@ public sealed class CrabPotPlacementMainlineTests
     }
 
     [Fact]
-    public void NativeBaitLoadingRemainsAnExplicitFailClosedSemanticAction()
+    public void NativeBaitLoadingIsRegisteredSeparatelyFromPlacement()
     {
-        Assert.True(PendingSemanticActionCatalog.TryGet("executor.load_crab_pot_bait", out var pending));
-
-        Assert.Equal("fishing", pending.Domain);
-        Assert.Equal("engine.farm_machine", pending.PrimaryEngineId);
-        Assert.Equal("catalogued_blocked", pending.CatalogStatus);
-        Assert.Contains("CrabPot", pending.NativeRuntimeTypes);
-        Assert.False(OptionCapabilityRegistrySource.TryGet("executor.load_crab_pot_bait", out _));
+        Assert.False(PendingSemanticActionCatalog.TryGet("executor.load_crab_pot_bait", out _));
+        var capability = OptionCapabilityRegistrySource.GetRequired("executor.load_crab_pot_bait");
+        Assert.True(capability.HarnessDispatchSupported);
+        Assert.Equal(ImplementationEngineIds.FarmMachine, OptionImplementationCatalog.GetRequired("executor.load_crab_pot_bait").PrimaryEngineId);
     }
 
     private static SmallModelActionEnvelope Request(SnapshotEnvelope snapshot, string productionSignature = ProductionSignature) => new()

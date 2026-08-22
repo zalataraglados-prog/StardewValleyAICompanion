@@ -217,7 +217,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
-            "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot",
+            "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -256,7 +256,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
-            "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot",
+            "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -358,7 +358,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
-            "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot",
+            "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.select_safe_item_slot"
         };
 
@@ -434,6 +434,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.place_crab_pot"] = VerifiedEvidence(
                         "vanilla_exact_current_location_inventory_Crab_Pot_native_Utility_tryToPlaceItem_CrabPot_owner_initial_state_stack_and_transparent_production_context_receipt",
                         "EVD-257"),
+                    ["executor.load_crab_pot_bait"] = VerifiedEvidence(
+                        "vanilla_exact_current_location_empty_base_CrabPot_native_Category_minus_21_probe_GameLocation_checkAction_bait_owner_inventory_unit_state_and_lifecycle_receipt",
+                        "EVD-258"),
                     ["joja.advance_development"] = VerifiedEvidence(
                         "vanilla_host_exact_undecided_route_membership_with_or_without_first_Morris_greeting_and_all_five_joja_project_candidates_daily_plan_native_purchase_immediate_money_pending_mail_and_next_day_settlement",
                         "EVD-232"),

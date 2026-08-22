@@ -270,6 +270,21 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("expected_container_bait_qualified_item_id")]
         public string ExpectedContainerBaitQualifiedItemId { get; set; } = string.Empty;
 
+        [JsonPropertyName("expected_container_bait_unit_state_sha256")]
+        public string ExpectedContainerBaitUnitStateSha256 { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_container_owner_player_id_before")]
+        public long? ExpectedContainerOwnerPlayerIdBefore { get; set; }
+
+        [JsonPropertyName("expected_container_owner_player_id_after")]
+        public long? ExpectedContainerOwnerPlayerIdAfter { get; set; }
+
+        [JsonPropertyName("bait_runtime_type")]
+        public string BaitRuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("bait_quality")]
+        public int? BaitQuality { get; set; }
+
         [JsonPropertyName("expected_fish_collection_eligible")]
         public int? ExpectedFishCollectionEligible { get; set; }
 

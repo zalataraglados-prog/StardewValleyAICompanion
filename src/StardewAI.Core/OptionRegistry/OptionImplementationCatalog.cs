@@ -134,7 +134,8 @@ public static class OptionImplementationCatalog
         "executor.craft_quest_item",
         "executor.place_machine",
         "executor.remove_machine",
-        "executor.place_storage");
+        "executor.place_storage",
+        "executor.load_crab_pot_bait");
 
     private static readonly HashSet<string> CraftingOptions = Set(
         "executor.cook_recipe",

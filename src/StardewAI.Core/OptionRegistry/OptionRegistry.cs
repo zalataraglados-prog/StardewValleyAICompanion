@@ -1107,6 +1107,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates one exact owned CrabPot at the rebound water tile", "one inventory Crab Pot is consumed", "initial bait output and harvest state match the current owner professions and native constructor" },
                 new[] { "block_missing_crab_pot_reason_or_production_signature", "block_inventory_owner_or_projection_identity_drift", "block_nonwater_or_native_excluded_location", "block_unreachable_adjacent_shore_stand", "block_native_placement_recheck" }));
 
+            Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native GameLocation checkAction assigns one exact bait unit and current player ownership", "native active-item reduction consumes exactly one matching bait", "ready and held-output state remain empty" },
+                new[] { "block_missing_bait_reason_or_native_contract", "block_crab_pot_lifecycle_owner_or_runtime_type_drift", "block_inventory_bait_identity_or_unit_state_drift", "block_unreachable_adjacent_stand", "block_native_drop_in_probe_recheck" }));
+
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

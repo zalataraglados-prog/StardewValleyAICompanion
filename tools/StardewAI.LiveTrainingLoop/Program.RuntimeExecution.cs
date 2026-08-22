@@ -612,6 +612,11 @@ static partial class Program
         var requestItemToolbarSlotsJson = ReadQueueParameterString(item, "request_item_toolbar_slots_json");
         var nativeReceiptCallbacksStatus = ReadQueueParameterString(item, "native_receipt_callbacks_status");
         var expectedContainerBaitQualifiedItemId = ReadQueueParameterString(item, "expected_container_bait_qualified_item_id");
+        var expectedContainerBaitUnitStateSha256 = ReadQueueParameterString(item, "expected_container_bait_unit_state_sha256");
+        var expectedContainerOwnerPlayerIdBefore = ReadQueueParameterLong(item, "expected_container_owner_player_id_before");
+        var expectedContainerOwnerPlayerIdAfter = ReadQueueParameterLong(item, "expected_container_owner_player_id_after");
+        var baitRuntimeType = ReadQueueParameterString(item, "bait_runtime_type");
+        var baitQuality = ReadQueueParameterInt(item, "bait_quality");
         var expectedFishCollectionEligible = ReadQueueParameterInt(item, "expected_fish_collection_eligible");
         var expectedFishCaughtCountBefore = ReadQueueParameterInt(item, "expected_fish_caught_count_before");
         var expectedFishCaughtCountAfter = ReadQueueParameterInt(item, "expected_fish_caught_count_after");
@@ -1078,6 +1083,11 @@ static partial class Program
         executionRequest.RequestItemToolbarSlotsJson = requestItemToolbarSlotsJson;
         executionRequest.NativeReceiptCallbacksStatus = nativeReceiptCallbacksStatus;
         executionRequest.ExpectedContainerBaitQualifiedItemId = expectedContainerBaitQualifiedItemId;
+        executionRequest.ExpectedContainerBaitUnitStateSha256 = expectedContainerBaitUnitStateSha256;
+        executionRequest.ExpectedContainerOwnerPlayerIdBefore = expectedContainerOwnerPlayerIdBefore;
+        executionRequest.ExpectedContainerOwnerPlayerIdAfter = expectedContainerOwnerPlayerIdAfter;
+        executionRequest.BaitRuntimeType = baitRuntimeType;
+        executionRequest.BaitQuality = baitQuality;
         executionRequest.ExpectedFishCollectionEligible = expectedFishCollectionEligible;
         executionRequest.ExpectedFishCaughtCountBefore = expectedFishCaughtCountBefore;
         executionRequest.ExpectedFishCaughtCountAfter = expectedFishCaughtCountAfter;

@@ -146,6 +146,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var harvest = ReadSpawnedObjectHarvest(location, tile, item, player);
         var clearance = ReadObjectClearance(location, tile, item, player);
         var crabPot = ReadCrabPotHarvest(tile, item, player);
+        var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -210,6 +211,16 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_owner_id = crabPot.OwnerId,
             crab_pot_bait_qualified_item_id = crabPot.BaitQualifiedItemId,
             crab_pot_bait_unit_state_sha256 = crabPot.BaitUnitStateSha256,
+            crab_pot_bait_load_status = crabPotBaitLoad.Status,
+            crab_pot_needs_bait = crabPotBaitLoad.NeedsBait,
+            crab_pot_owner_has_luremaster = crabPotBaitLoad.OwnerHasLuremaster,
+            crab_pot_owner_player_id_before_bait = crabPotBaitLoad.OwnerPlayerIdBefore,
+            crab_pot_expected_owner_player_id_after_bait = crabPotBaitLoad.ExpectedOwnerPlayerIdAfter,
+            crab_pot_current_bait_runtime_type = crabPotBaitLoad.CurrentBaitRuntimeType,
+            crab_pot_current_bait_quality = crabPotBaitLoad.CurrentBaitQuality,
+            crab_pot_bait_load_inventory_rows = crabPotBaitLoad.InventoryBaitRows,
+            crab_pot_bait_load_inventory_rows_json = System.Text.Json.JsonSerializer.Serialize(crabPotBaitLoad.InventoryBaitRows),
+            crab_pot_bait_load_native_contract = crabPotBaitLoad.NativeContract,
             crab_pot_output_runtime_type = crabPot.OutputRuntimeType,
             crab_pot_output_qualified_item_id = crabPot.OutputQualifiedItemId,
             crab_pot_output_quality = crabPot.OutputQuality,

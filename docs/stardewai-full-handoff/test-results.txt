@@ -3919,5 +3919,13 @@ Scope boundary:
 - Added one strict purpose-bound `executor.place_crab_pot` compiler/runtime chain. It reuses shared adjacent movement and `PlaceInventoryObjectNative`; EVD-209 remains the only crab-pot collection chain.
 - Hidden/silent isolated runtime PASS: `artifacts/runtime-crab-pot-placement/runtime-crab-pot-placement-20260822-152201/summary.json`. Native placement at `Farm:73,31` consumed one pot, created exact base `StardewValley.Objects.CrabPot`, verified owner and empty bait/output/not-ready state, and the next transparent snapshot read back the same object and freshwater production signature.
 - Installed live full snapshot schema PASS: 117 required factors, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0. A post-runtime source audit found that native `CrabPot.performObjectDropInAction` bait insertion was absent from the frozen semantic denominator and is not covered by generic machine input; `executor.load_crab_pot_bait` is now explicitly catalogued blocked instead of being hidden.
+
+## 2026-08-22 EVD-258 Crab Pot Native Bait Loading
+
+- Added one strict `executor.load_crab_pot_bait` chain over exact base `CrabPot` and exact live `Category=-21` inventory bait rows. It reuses shared adjacent movement, invokes `GameLocation.checkAction`, and does not duplicate generic machine input or EVD-209 collection.
+- Focused Core/capability suite PASS: 64/64 before evidence and 46/46 after evidence registration. Final Core PASS 1710/1710; Backend PASS 124/124; full solution build has 0 errors and one pre-existing AvoidNetField warning.
+- Hidden/silent isolated E-drive runtime PASS 5/5: `artifacts/runtime-crab-pot-bait/runtime-crab-pot-bait-20260822-164015/summary.json`. Normal, Deluxe, Wild, Magic and Specific bait all matched native probe, inventory decrement, owner and transparent post-state identity/unit hash.
+- Installed live full snapshot schema PASS: 117 required factors, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 133 registered / 184 semantic / 132 compiler-bound / 60 five-gate / 36 training allowlist / 51 catalogued blocked / 0 Product Executor.
 - Authoritative reconciliation after the denominator repair: 132 registered, 184 semantic, 131 compiler-bound, 59 five-gate, 36 training-allowlisted, Product Executor 0; 52 catalogued actions remain blocked.
 - Focused Crab Pot placement and denominator regression PASS 8/8; full Core regression PASS 1704/1704; Backend PASS 122/122; full solution build 0 errors with one pre-existing `AvoidNetField` warning.
