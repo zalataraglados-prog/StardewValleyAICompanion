@@ -1091,6 +1091,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates one player chest at the rebound tile", "one matching inventory item is consumed through native placement callbacks", "existing route and storage access remain connected in the pre-dispatch projection" },
                 new[] { "block_inventory_storage_identity_drift", "block_location_layout_or_projection_drift", "block_unreachable_or_route_disconnect_placement", "block_material_reservation_drift", "block_native_placement_recheck" }));
 
+            Register(Option("executor.place_cookout_kit", "crafting", "Place one verified Cookout Kit at one exact native-legal tile for same-day cooking",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.cookout_kit_placement", "player.cooking", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates exact Torch (BC)278 with fragility 1 and destroyOvernight true", "one Cookout Kit is consumed", "the placed Torch becomes a native same-day cooking endpoint" },
+                new[] { "block_missing_cookout_reason", "block_inventory_or_projection_identity_drift", "block_unreachable_adjacent_stand", "block_native_placement_recheck", "block_cross_day_use_plan" }));
+
             Register(Option("executor.read_book", "skills", "Read one verified inventory book through native performUseAction",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

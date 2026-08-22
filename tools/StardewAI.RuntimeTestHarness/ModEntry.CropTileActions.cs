@@ -10,7 +10,7 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
-    private void StartCropTileAction(PendingExecution pending, string primitiveKind)
+    private void StartAdjacentTileAction(PendingExecution pending, string primitiveKind)
     {
         var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
@@ -21,7 +21,7 @@ public sealed partial class ModEntry
         }
         if (!request.TargetTileX.HasValue || !request.TargetTileY.HasValue)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.crop_tile_action=applied", "target_tile=missing", "target_tile_required"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.adjacent_tile_action=applied", "target_tile=missing", "target_tile_required"));
             return;
         }
 
@@ -29,7 +29,7 @@ public sealed partial class ModEntry
         if (!string.IsNullOrWhiteSpace(request.LocationId) &&
             !string.Equals(request.LocationId, location.NameOrUniqueName, StringComparison.OrdinalIgnoreCase))
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.crop_tile_action=applied", "location=" + location.NameOrUniqueName, "wrong_location"));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.adjacent_tile_action=applied", "location=" + location.NameOrUniqueName, "wrong_location"));
             return;
         }
 
@@ -37,16 +37,16 @@ public sealed partial class ModEntry
         var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
         if (path is null)
         {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.crop_tile_action=applied", "target=" + target.X + "," + target.Y, moveReason));
+            pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.adjacent_tile_action=applied", "target=" + target.X + "," + target.Y, moveReason));
             return;
         }
 
-        activeCropTileAction = new ActiveCropTileAction(pending, primitiveKind, location.NameOrUniqueName, target, path);
+        activeAdjacentTileAction = new ActiveAdjacentTileAction(pending, primitiveKind, location.NameOrUniqueName, target, path);
     }
 
-    private void TickCropTileAction()
+    private void TickAdjacentTileAction()
     {
-        if (activeCropTileAction is not { } action)
+        if (activeAdjacentTileAction is not { } action)
         {
             return;
         }
@@ -56,12 +56,12 @@ public sealed partial class ModEntry
         if (!Context.IsWorldReady || location is null ||
             !string.Equals(location.NameOrUniqueName, action.LocationId, StringComparison.OrdinalIgnoreCase))
         {
-            CompleteCropTileActionBlocked(action, "location_changed_during_crop_action");
+            CompleteAdjacentTileActionBlocked(action, "location_changed_during_adjacent_action");
             return;
         }
         if (action.ElapsedTicks > action.MaxTicks)
         {
-            CompleteCropTileActionBlocked(action, "crop_action_movement_timeout");
+            CompleteAdjacentTileActionBlocked(action, "adjacent_action_movement_timeout");
             return;
         }
 
@@ -69,7 +69,7 @@ public sealed partial class ModEntry
         {
             if (action.PathIndex >= action.Path.Count)
             {
-                CompleteCropTileActionBlocked(action, "crop_action_target_not_adjacent");
+                CompleteAdjacentTileActionBlocked(action, "adjacent_action_target_not_adjacent");
                 return;
             }
 
@@ -83,7 +83,7 @@ public sealed partial class ModEntry
             }
             if (!IsTileWalkable(location, next) || IsTileOccupiedByCharacter(location, next))
             {
-                CompleteCropTileActionBlocked(action, "crop_action_route_drifted");
+                CompleteAdjacentTileActionBlocked(action, "adjacent_action_route_drifted");
                 return;
             }
 
@@ -99,14 +99,14 @@ public sealed partial class ModEntry
             action.StuckTicks = moved ? 0 : action.StuckTicks + 1;
             if (action.StuckTicks > 45)
             {
-                CompleteCropTileActionBlocked(action, "crop_action_movement_stuck");
+                CompleteAdjacentTileActionBlocked(action, "adjacent_action_movement_stuck");
             }
             return;
         }
 
         StopAllMovement();
         Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, action.Target));
-        activeCropTileAction = null;
+        activeAdjacentTileAction = null;
         TrainingExecutionResult result;
         try
         {
@@ -115,31 +115,32 @@ public sealed partial class ModEntry
                 "plant_seed" => ExecutePlantSeed(action.Pending.Request),
                 "apply_fertilizer" => ExecuteApplyFertilizer(action.Pending.Request),
                 "apply_tree_treatment" => ExecuteApplyTreeTreatment(action.Pending.Request),
+                "place_cookout_kit" => ExecutePlaceCookoutKit(action.Pending.Request),
                 "harvest_crop" => ExecuteHarvestCrop(action.Pending.Request),
-                _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.crop_tile_action=applied", "unsupported", "unsupported_crop_tile_action")
+                _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.adjacent_tile_action=applied", "unsupported", "unsupported_adjacent_tile_action")
             };
         }
         catch (Exception ex)
         {
-            Monitor.Log($"Crop tile action '{action.PrimitiveKind}' failed: {ex}", LogLevel.Error);
+            Monitor.Log($"Adjacent tile action '{action.PrimitiveKind}' failed: {ex}", LogLevel.Error);
             result = BlockedWithPrimitive(
                 action.Pending.Request,
                 action.PrimitiveKind,
-                "current_location.crop_tile_action=applied",
+                "current_location.adjacent_tile_action=applied",
                 "exception=" + ex.GetType().Name,
-                "crop_action_execution_exception:" + ex.GetType().Name);
+                "adjacent_action_execution_exception:" + ex.GetType().Name);
         }
         action.Pending.Completion.SetResult(result);
     }
 
-    private void CompleteCropTileActionBlocked(ActiveCropTileAction action, string reason)
+    private void CompleteAdjacentTileActionBlocked(ActiveAdjacentTileAction action, string reason)
     {
         StopAllMovement();
-        activeCropTileAction = null;
+        activeAdjacentTileAction = null;
         action.Pending.Completion.SetResult(BlockedWithPrimitive(
             action.Pending.Request,
             action.PrimitiveKind,
-            "current_location.crop_tile_action=applied",
+            "current_location.adjacent_tile_action=applied",
             "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";target=" + action.Target.X + "," + action.Target.Y,
             reason));
     }

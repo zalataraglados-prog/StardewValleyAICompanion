@@ -21,6 +21,7 @@ public static class ImplementationEngineIds
     public const string AnimalManagement = "engine.animal_management";
     public const string CraftingProcessing = "engine.crafting_processing";
     public const string Minigame = "engine.minigame";
+    public const string PlacementLayout = "engine.placement_layout";
 }
 
 public sealed class OptionImplementationBinding
@@ -139,6 +140,9 @@ public static class OptionImplementationCatalog
         "executor.cook_recipe",
         "executor.forge_item");
 
+    private static readonly HashSet<string> PlacementOptions = Set(
+        "executor.place_cookout_kit");
+
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =
         new ReadOnlyDictionary<string, OptionImplementationBinding>(
@@ -219,6 +223,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.FarmMachine;
         if (CraftingOptions.Contains(optionId))
             return ImplementationEngineIds.CraftingProcessing;
+        if (PlacementOptions.Contains(optionId))
+            return ImplementationEngineIds.PlacementLayout;
 
         throw new InvalidOperationException(
             $"Executor option '{optionId}' has no explicit primary implementation engine.");

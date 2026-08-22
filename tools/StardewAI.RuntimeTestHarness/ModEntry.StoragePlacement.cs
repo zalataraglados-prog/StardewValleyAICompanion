@@ -473,35 +473,11 @@ public sealed partial class ModEntry
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var selectedSlotBefore =
-            Game1.player.CurrentToolIndex;
-        var stackBefore = storageItem.Stack;
-        Game1.player.CurrentToolIndex = slotIndex;
-        var placed = Utility.tryToPlaceItem(
-            location,
-            storageItem,
-            pixelX,
-            pixelY);
-        if (selectedSlotBefore >= 0 &&
-            selectedSlotBefore <
-                Game1.player.Items.Count)
-        {
-            Game1.player.CurrentToolIndex =
-                selectedSlotBefore;
-        }
-
-        location.objects.TryGetValue(
-            targetVector,
-            out var placedObject);
-        var afterSlot =
-            slotIndex < Game1.player.Items.Count
-                ? Game1.player.Items[slotIndex]
-                : null;
-        var stackAfter = afterSlot?.Stack ?? 0;
+        var attempt = PlaceInventoryObjectNative(location, storageItem, slotIndex, target);
         var inventoryConsumed =
-            stackAfter == stackBefore - 1;
+            attempt.StackAfter == attempt.StackBefore - 1;
         var placedStorageMatches =
-            placedObject is Chest placedChest &&
+            attempt.PlacedObject is Chest placedChest &&
             placedChest.playerChest.Value &&
             string.Equals(
                 placedChest.QualifiedItemId,
@@ -516,7 +492,7 @@ public sealed partial class ModEntry
             StorageRoleMatches(
                 placedChest,
                 request.StorageRole);
-        var verified = placed &&
+        var verified = attempt.Placed &&
             placedStorageMatches &&
             inventoryConsumed;
 
@@ -546,7 +522,7 @@ public sealed partial class ModEntry
                 }
                 : new[]
                 {
-                    placed
+                    attempt.Placed
                         ? "native_place_returned_true"
                         : "native_place_returned_false",
                     placedStorageMatches
@@ -563,23 +539,23 @@ public sealed partial class ModEntry
                 ";target_tile=" + target.X +
                 "," + target.Y +
                 ";placed_qualified_item_id=" +
-                (placedObject?.QualifiedItemId ?? "null") +
+                (attempt.PlacedObject?.QualifiedItemId ?? "null") +
                 ";placed_runtime_type=" +
-                (placedObject?.GetType().FullName ?? "null") +
+                (attempt.PlacedObject?.GetType().FullName ?? "null") +
                 ";placed_special_chest_type=" +
-                (placedObject is Chest observedChest
+                (attempt.PlacedObject is Chest observedChest
                     ? observedChest.SpecialChestType.ToString()
                     : "null") +
                 ";placed_capacity=" +
-                (placedObject is Chest capacityChest
+                (attempt.PlacedObject is Chest capacityChest
                     ? capacityChest.GetActualCapacity().ToString()
                     : "null") +
                 ";expected_storage_role=" +
                 request.StorageRole +
                 ";inventory_stack_before=" +
-                stackBefore +
+                attempt.StackBefore +
                 ";inventory_stack_after=" +
-                stackAfter,
+                attempt.StackAfter,
             BlockReasons = verified
                 ? Array.Empty<string>()
                 : new[]
@@ -604,8 +580,8 @@ public sealed partial class ModEntry
                         Path =
                             "player.inventory[" +
                             slotIndex + "].stack",
-                        Before = stackBefore.ToString(),
-                        After = stackAfter.ToString()
+                        Before = attempt.StackBefore.ToString(),
+                        After = attempt.StackAfter.ToString()
                     }
                 }
                 : Array.Empty<SimulatedFactChange>()

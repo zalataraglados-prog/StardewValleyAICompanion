@@ -251,34 +251,14 @@ public sealed partial class ModEntry
         }
 
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var selectedSlotBefore = Game1.player.CurrentToolIndex;
-        var stackBefore = machine.Stack;
-        Game1.player.CurrentToolIndex = slotIndex;
-        var placed = Utility.tryToPlaceItem(
-            location,
-            machine,
-            pixelX,
-            pixelY);
-        if (selectedSlotBefore >= 0 &&
-            selectedSlotBefore < Game1.player.Items.Count)
-        {
-            Game1.player.CurrentToolIndex = selectedSlotBefore;
-        }
-
-        location.objects.TryGetValue(
-            targetVector,
-            out var placedObject);
-        var afterSlot = slotIndex < Game1.player.Items.Count
-            ? Game1.player.Items[slotIndex]
-            : null;
-        var stackAfter = afterSlot?.Stack ?? 0;
-        var inventoryConsumed = stackAfter == stackBefore - 1;
-        var placedIdentityMatches = placedObject is not null &&
+        var attempt = PlaceInventoryObjectNative(location, machine, slotIndex, target);
+        var inventoryConsumed = attempt.StackAfter == attempt.StackBefore - 1;
+        var placedIdentityMatches = attempt.PlacedObject is not null &&
             string.Equals(
-                placedObject.QualifiedItemId,
+                attempt.PlacedObject.QualifiedItemId,
                 request.QualifiedItemId,
                 StringComparison.OrdinalIgnoreCase);
-        var verified = placed &&
+        var verified = attempt.Placed &&
             placedIdentityMatches &&
             inventoryConsumed;
 
@@ -307,7 +287,7 @@ public sealed partial class ModEntry
                 }
                 : new[]
                 {
-                    placed
+                    attempt.Placed
                         ? "native_place_returned_true"
                         : "native_place_returned_false",
                     placedIdentityMatches
@@ -322,9 +302,9 @@ public sealed partial class ModEntry
                 location.NameOrUniqueName +
                 ";target_tile=" + target.X + "," + target.Y +
                 ";placed_qualified_item_id=" +
-                (placedObject?.QualifiedItemId ?? "null") +
-                ";inventory_stack_before=" + stackBefore +
-                ";inventory_stack_after=" + stackAfter,
+                (attempt.PlacedObject?.QualifiedItemId ?? "null") +
+                ";inventory_stack_before=" + attempt.StackBefore +
+                ";inventory_stack_after=" + attempt.StackAfter,
             BlockReasons = verified
                 ? Array.Empty<string>()
                 : new[] { "place_machine_post_state_mismatch" },
@@ -342,8 +322,8 @@ public sealed partial class ModEntry
                     new SimulatedFactChange
                     {
                         Path = "player.inventory[" + slotIndex + "].stack",
-                        Before = stackBefore.ToString(),
-                        After = stackAfter.ToString()
+                        Before = attempt.StackBefore.ToString(),
+                        After = attempt.StackAfter.ToString()
                     }
                 }
                 : Array.Empty<SimulatedFactChange>()

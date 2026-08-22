@@ -154,9 +154,9 @@ public sealed partial class ModEntry : Mod
         public NativeToolActionLifecycle Lifecycle { get; } = new();
     }
 
-    private sealed class ActiveCropTileAction
+    private sealed class ActiveAdjacentTileAction
     {
-        public ActiveCropTileAction(
+        public ActiveAdjacentTileAction(
             PendingExecution pending,
             string primitiveKind,
             string locationId,

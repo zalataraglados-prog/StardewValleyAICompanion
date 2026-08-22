@@ -10,6 +10,13 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Cookout Kit Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.cookout_kit_placement` | Bind a same-day cooking plan to one exact inventory kit, persistent loaded location, legal layout tile and native result | `Object.placementAction` `(O)926` branch; `Utility.playerCanPlaceItemHere`; `Utility.tryToPlaceItem`; `Torch.checkForAction` | n/a; locked decompile and runtime are authoritative for execution | covered_for_read / covered_for_gate / native_runtime_verified / evaluation_only | Source is `(O)926`; placed object is `StardewValley.Torch` / `(BC)278`, `Fragility=1`, `destroyOvernight=true`. The projection publishes compressed legal ranges and a topology fingerprint; the compiler requires exact slot/stack/location/target/stand/reason and the runtime rechecks the loaded tile. |
+| `player.cooking.sources[source_kind=cookout_kit]` | Hand a newly placed kit to the existing cooking chain instead of inventing a second cooker | native `Torch.checkForAction` opens `CraftingPage(cooking:true)`; EVD-253 cooking source projection | n/a | covered_for_read / native_handoff_verified | EVD-256 verifies the next full snapshot exposes `cookout:Farm:62,15`; recipe materials, output and `recipesCooked` remain owned by EVD-253. |
+
 ## Mining Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

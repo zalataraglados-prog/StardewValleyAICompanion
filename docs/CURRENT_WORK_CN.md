@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-08-22 当前权威检查点：EVD-256
+
+- `executor.place_cookout_kit` 已闭合透明读取、严格编译、共享邻接移动、原生物品放置和逐字段回执。锁定 1.6.15 的源物品是 `(O)926`，`Object.placementAction` 落地的是 `StardewValley.Torch` / `(BC)278`，并带有 `Fragility=1`、`destroyOvernight=true`；两者不得混作同一个物品身份。
+- `player.cookout_kit_placement` 在 full profile 中枚举背包内每个野炊工具和所有已加载持久地点的原生合法区间、布局指纹、当日生命周期及烹饪交接契约。编译器必须绑定精确槽位、堆叠、地点、落点、邻接站位、投影指纹、放置理由和原生契约；运行时仍会重新调用 `Utility.playerCanPlaceItemHere`。
+- 机器、储物和野炊工具现在共用唯一 `PlaceInventoryObjectNative` 内核；野炊工具放置后由既有 `player.cooking` 立即识别为 `cookout:location:tile` 来源，没有复制烹饪、移动或布局系统。该底层 primitive 保持 calibration/evaluation-only，只有上层同日烹饪目的才能授权消耗。
+- 隐藏、静默、E 盘隔离运行 `runtime-cookout-kit-placement-20260822-105210` 返回 `applied/verified`：库存 `1 -> 0`、目标生成精确 `(BC)278`、当日销毁标志为 true，且透明烹饪端点交接成功。
+- 当前权威对账为 `131 registered / 183 semantic / 130 compiler-bound / 58 five-gate / 36 training allowlist / 0 Product Executor`；full 快照要求 `116` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。下一切片从 `executor.place_crab_pot` 开始，先审查是否能复用现有蟹笼读取、收取、物品放置和水域边界实现。
+
+更新时间：2026-08-22
+
 ## 2026-08-18 当前权威检查点：EVD-255
 
 - `executor.apply_tree_treatment` 已完成透明读取、严格编译、共享 BFS 邻接移动、原生物品放置与逐字段回执。锁定 1.6.15 的真实语义是 `(O)419` 醋永久禁止一棵树长苔，不是 `(O)805` 树肥；原生分支没有成长阶段限制。

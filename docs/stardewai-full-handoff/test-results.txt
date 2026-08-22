@@ -3904,3 +3904,11 @@ Scope boundary:
 - Hidden/silent isolated runtime PASS 9/9: `artifacts/runtime-forge/runtime-forge-20260818-122957/summary.json`. Gem forge, Prismatic enchant, Galaxy Soul, Diamond forge, Dragon Tooth innate reroll, weapon appearance, ring combine, weapon unforge and combined-ring unforge all returned `applied/verified`.
 - Installed live full snapshot schema PASS: 115 required factors, blocking 0. Authoritative reconciliation: 129 registered, 183 semantic, 128 compiler-bound, 56 five-gate, 36 training-allowlisted, Product Executor 0; native denominator remains 320 surfaces / 428 branches / 150 map tokens.
 - Final regression PASS: Core 1686/1686; Backend 122/122; full Release solution build 0 errors with one pre-existing `AvoidNetField` warning.
+
+2026-08-22 EVD-256 native Cookout Kit placement closure
+
+- Added `player.cookout_kit_placement` full-profile projection over every inventory `(O)926` and every loaded persistent location, including exact compressed native-legal tile ranges, topology fingerprint, current-day lifetime and the distinct placed identity `StardewValley.Torch` / `(BC)278`.
+- Added one strict purpose-bound `executor.place_cookout_kit` compiler/runtime chain. Machine, storage and Cookout Kit placement now share one `PlaceInventoryObjectNative` kernel; movement and cooking remain the existing shared systems.
+- Hidden/silent isolated runtime PASS: `artifacts/runtime-cookout-kit-placement/runtime-cookout-kit-placement-20260822-105210/summary.json`. Native placement consumed inventory `1 -> 0`, produced exact `(BC)278` with fragility 1 and overnight destruction, and the next full snapshot exposed `cookout:Farm:62,15` through the existing cooking projection.
+- Installed live full snapshot schema PASS: 116 required factors, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0. Authoritative reconciliation: 131 registered, 183 semantic, 130 compiler-bound, 58 five-gate, 36 training-allowlisted, Product Executor 0; native denominator remains 320 surfaces / 428 branches / 150 map tokens.
+- Full Core regression PASS 1696/1696; Backend PASS 122/122; full solution build 0 errors with one pre-existing `AvoidNetField` warning. The post-type-correction focused Cookout Kit regression also passed 5/5.

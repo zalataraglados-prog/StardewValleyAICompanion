@@ -53,7 +53,7 @@ public sealed partial class ModEntry : Mod
     private ActiveQuarrySetup? activeQuarrySetup;
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeTool? activeNativeTool;
-    private ActiveCropTileAction? activeCropTileAction;
+    private ActiveAdjacentTileAction? activeAdjacentTileAction;
     private ActiveClearObstacle? activeClearObstacle;
     private ActiveMineStone? activeMineStone;
     private ActiveResourceClump? activeResourceClump;
@@ -444,7 +444,7 @@ public sealed partial class ModEntry : Mod
         TickVolcanoSetup();
         TickDeferredCombatRestore();
         TickNativeTool();
-        TickCropTileAction();
+        TickAdjacentTileAction();
         TickClearObstacle();
         TickMineStone();
         TickResourceClump();
@@ -814,6 +814,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_cookout_kit_placement_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupCookoutKitPlacementTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_indoor_pot_fertilizer_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFertilizerTarget(pending.Request, useIndoorPot: true));
@@ -1022,7 +1028,7 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.plant_seed")
             {
-                StartCropTileAction(pending, "plant_seed");
+                StartAdjacentTileAction(pending, "plant_seed");
                 return;
             }
 
@@ -1066,19 +1072,25 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.apply_fertilizer")
             {
-                StartCropTileAction(pending, "apply_fertilizer");
+                StartAdjacentTileAction(pending, "apply_fertilizer");
                 return;
             }
 
             if (pending.Request.OptionId == "executor.apply_tree_treatment")
             {
-                StartCropTileAction(pending, "apply_tree_treatment");
+                StartAdjacentTileAction(pending, "apply_tree_treatment");
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.place_cookout_kit")
+            {
+                StartAdjacentTileAction(pending, "place_cookout_kit");
                 return;
             }
 
             if (pending.Request.OptionId == "executor.harvest_crop")
             {
-                StartCropTileAction(pending, "harvest_crop");
+                StartAdjacentTileAction(pending, "harvest_crop");
                 return;
             }
 
@@ -1604,7 +1616,7 @@ public sealed partial class ModEntry : Mod
             activeQuarrySetup is not null ||
             activeVolcanoSetup is not null ||
             activeNativeTool is not null ||
-            activeCropTileAction is not null ||
+            activeAdjacentTileAction is not null ||
             activeClearObstacle is not null ||
             activeMineStone is not null ||
             activeResourceClump is not null ||

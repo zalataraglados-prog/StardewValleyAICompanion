@@ -1,8 +1,8 @@
 {
   "schema_version": "stardewai.action_implementation_reconciliation.v1",
   "authority_policy": "Every registered semantic action has exactly one primary engine. Harness support is not product execution.",
-  "registered_option_count": 130,
-  "primary_engine_count": 13,
+  "registered_option_count": 131,
+  "primary_engine_count": 14,
   "orphan_compiler_count": 0,
   "orphan_compiler_ids": [],
   "orphan_runtime_count": 0,
@@ -18,6 +18,7 @@
     "engine.inventory_transfer": 4,
     "engine.minigame": 1,
     "engine.movement_navigation": 3,
+    "engine.placement_layout": 1,
     "engine.recovery_timing": 3,
     "engine.strategy_orchestration": 46,
     "engine.tool_harvest": 18
@@ -1496,6 +1497,28 @@
       "compilerTrainingGate": "DeclaredOnly",
       "runtimeTrainingGate": "Missing",
       "outputTrainingGate": "Missing"
+    },
+    {
+      "optionId": "executor.place_cookout_kit",
+      "domain": "crafting",
+      "primaryEngineId": "engine.placement_layout",
+      "adapterId": "vanilla_native",
+      "candidateBinding": "not_applicable",
+      "compilerBinding": "step",
+      "runtimeBinding": "runtime_test_harness",
+      "verifierBinding": "runtime_before_after_verifier",
+      "evidenceBinding": "EVD-256",
+      "registrationStatus": "Registered",
+      "readStatus": "RequiredFactContractDeclared",
+      "candidateStatus": "NotApplicable",
+      "compilerStatus": "StepCompilerDeclared",
+      "productExecutorSupported": false,
+      "runtimeStatus": "RuntimeVerified",
+      "readTrainingGate": "RuntimeVerified",
+      "candidateTrainingGate": "RuntimeVerified",
+      "compilerTrainingGate": "RuntimeVerified",
+      "runtimeTrainingGate": "RuntimeVerified",
+      "outputTrainingGate": "RuntimeVerified"
     },
     {
       "optionId": "executor.place_machine",
