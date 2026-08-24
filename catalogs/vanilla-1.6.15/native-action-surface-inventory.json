@@ -6,9 +6,8 @@
   "surface_count": 320,
   "mapped_count": 66,
   "catalogued_blocked_surface_count": 103,
-  "catalogued_blocked_action_count": 50,
+  "catalogued_blocked_action_count": 49,
   "catalogued_blocked_action_ids": [
-    "executor.place_flooring",
     "executor.place_furniture",
     "executor.place_sign",
     "executor.place_tent",

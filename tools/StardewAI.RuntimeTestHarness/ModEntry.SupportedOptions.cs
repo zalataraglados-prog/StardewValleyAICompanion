@@ -21,6 +21,7 @@ public sealed partial class ModEntry
             "debug.setup_cookout_kit_placement_target",
             "debug.setup_crab_pot_placement_target",
             "debug.setup_fence_placement_target",
+            "debug.setup_flooring_placement_target",
             "debug.setup_crab_pot_bait_target",
             "debug.setup_forge_fixture",
             "debug.setup_collection_task_fixture",

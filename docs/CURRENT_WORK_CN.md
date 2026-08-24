@@ -1,13 +1,13 @@
 # StardewAI 当前工作
 
-## 2026-08-25 当前权威检查点：EVD-259
+## 2026-08-25 当前权威检查点：EVD-260
 
-- `executor.place_fence` 已闭合五种原版围栏物品的透明读取、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。库存源必须是精确 base `StardewValley.Object`，原生 `Object.placementAction(IsFenceItem)` 生成精确 base `StardewValley.Fence`；生产执行器不直接写对象表、健康、门状态或库存。
-- `player.fence_placement` 从实时 `Fence.GetFenceLookup()` / `Data/Fences` 读取身份、声音、拆除工具和健康规则，对所有已加载持久地点发布按邻接拓扑压缩的原生合法区间。编译器绑定槽位/堆叠、qid/data key、目标/站位、健康区间、绘制和门功能状态、拓扑指纹、布局理由及原生契约，任一漂移均失败关闭。
-- 门的“原生允许放下”不等同于“可用”：上游只允许邻接绘制和为 `10/100/500/1000/110/1500` 的门目标。围栏和关闭门都由共享碰撞网格执行虚拟占格 BFS，要求可达域仅减少目标格且所有地图端点与现有储物访问点继续可达；没有第二套 BFS、移动或放置实现。
-- 隐藏、静默、E 盘隔离运行 `runtime-fence-placement-20260825-005827` 为 5/5 PASS：`(O)322/323/324/298/325` 均返回 `applied/verified`，透明回读精确验证 qid、base Fence、健康范围、绘制和、门关闭且不可通行及库存减一；门案例为功能拓扑 `draw_sum=110`。
-- 当前权威对账为 `134 registered / 184 semantic / 133 compiler-bound / 61 five-gate / 36 training allowlist / 50 catalogued blocked / 0 Product Executor`；full 快照要求 `118` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
-- 下一语义切片进入 `executor.place_flooring`，继续复用本轮的原生物品放置、邻接移动和指定格路网校验，只为地板独有的替换/连接/可通行规则增加透明字段与严格回执。
+- `executor.place_flooring` 已闭合实时地板目录、当前地图合法区间、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。库存源必须是精确 base `StardewValley.Object`；原生 `Object.placementAction(IsFloorPathItem)` 在 `terrainFeatures` 中生成精确 base `StardewValley.TerrainFeatures.Flooring`，生产执行器不直接写地形表、视图或库存。
+- `player.flooring_placement` 从实时 `Game1.floorPathData` 与 `Flooring.GetFloorPathItemLookup()` 发布完整目录。只有当前已加载地图按地板身份压缩原生合法区间，跨图必须到达后重新绑定；这保留全量数据透明，同时避免无关日程扫描所有持久地图。每个区间绑定同类八邻接掩码；`Random` 连接只绑定完整 `whichView=0..15` 结果域，非随机构造值为 `0`。
+- 原生放置拒绝任何已有 `TerrainFeature` 的目标格，不存在放置时替换地板的能力。拆除仍是独立 Axe/Pickaxe/damage 工具语义。`Flooring.isPassable` 恒为 true，因此共享布局校验要求目标、邻接站位位于当前 BFS 可达域，放置前后可达格计数相同；不得错误复用围栏的虚拟阻塞规则。
+- 隐藏、静默、E 盘隔离运行 `runtime-flooring-placement-20260825-015659` 从实时目录枚举 13 个规范物品并 `13/13 PASS`。全部返回 `applied/verified`，透明回读验证 data key、base Flooring、同类邻接掩码、可通行、视图域与库存减一；随机 `(O)415` 本轮实际视图为 `5`。
+- 当前权威对账为 `135 registered / 184 semantic / 134 compiler-bound / 62 five-gate / 36 training allowlist / 49 catalogued blocked / 0 Product Executor`；fresh full 快照要求 `119` 个状态因子、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片进入 `executor.place_furniture`。必须先反编译区分普通家具、壁挂/地毯/旋转、室内地点限制与原生 `Furniture.placementAction`，继续复用共享移动和原生物品放置内核，不得复制第二套放置系统。
 
 更新时间：2026-08-25
 

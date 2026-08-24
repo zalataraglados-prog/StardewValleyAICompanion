@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.TerrainFeatures;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -46,7 +47,7 @@ public sealed partial class ModEntry
             Game1.player.CurrentToolIndex = slotIndex;
             if (!ReferenceEquals(Game1.player.ActiveObject, inventoryItem))
             {
-                return new NativeObjectPlacementAttempt(false, null, stackBefore, stackBefore);
+                return new NativeObjectPlacementAttempt(false, null, null, stackBefore, stackBefore);
             }
             placed = Utility.tryToPlaceItem(
                 location,
@@ -63,13 +64,15 @@ public sealed partial class ModEntry
         }
 
         location.objects.TryGetValue(new Vector2(target.X, target.Y), out var placedObject);
+        location.terrainFeatures.TryGetValue(new Vector2(target.X, target.Y), out var placedTerrainFeature);
         var stackAfter = Game1.player.Items.ElementAtOrDefault(slotIndex)?.Stack ?? 0;
-        return new NativeObjectPlacementAttempt(placed, placedObject, stackBefore, stackAfter);
+        return new NativeObjectPlacementAttempt(placed, placedObject, placedTerrainFeature, stackBefore, stackAfter);
     }
 
     private sealed record NativeObjectPlacementAttempt(
         bool Placed,
         StardewValley.Object? PlacedObject,
+        TerrainFeature? PlacedTerrainFeature,
         int StackBefore,
         int StackAfter);
 }

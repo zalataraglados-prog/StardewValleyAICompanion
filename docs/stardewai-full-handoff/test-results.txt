@@ -3939,3 +3939,12 @@ Scope boundary:
 - Final regression PASS: Core 1722/1722; Backend 124/124; full Release solution build 0 errors with one pre-existing `AvoidNetField` warning.
 - Authoritative reconciliation after the denominator repair: 132 registered, 184 semantic, 131 compiler-bound, 59 five-gate, 36 training-allowlisted, Product Executor 0; 52 catalogued actions remain blocked.
 - Focused Crab Pot placement and denominator regression PASS 8/8; full Core regression PASS 1704/1704; Backend PASS 122/122; full solution build 0 errors with one pre-existing `AvoidNetField` warning.
+## 2026-08-25 EVD-260 Native Flooring Placement
+- Locked decompile confirms `Object.IsFloorPathItem -> Flooring.GetFloorPathItemLookup`, native placement rejection for every existing TerrainFeature, `terrainFeatures.Add(new Flooring(dataKey))`, eight-neighbor same-key connection callbacks, unconditional passability and the random-only `whichView=0..15` contract.
+- Hidden/silent isolated E-drive runtime PASS 13/13: `artifacts/runtime-flooring-placement/runtime-flooring-placement-20260825-015659/summary.json`. Cases were discovered from the live `Game1.floorPathData` catalog rather than a hardcoded list; all returned `applied/verified`, exact base Flooring, expected neighbor mask, passability, valid view and inventory `-1`.
+- Focused flooring plus governance tests PASS 20/20. Release solution build PASS with 0 errors and one existing AvoidNetField warning.
+- Final full regression PASS: Core 1732/1732; Backend 124/124; Release solution build 0 errors with one existing `AvoidNetField` warning.
+- Fresh full snapshot `artifacts/live-full-snapshot/full-schema-snapshot-flooring.json` installed with 119 required factors, 103 readable with provenance, 16 contextual/stale and 0 blocking.
+- KnowledgeCompiler action reconciliation PASS 585/585 with blocking 0: 135 registered, 184 semantic, 134 compiler-bound, 62 five-gate, 36 training-allowlisted, 49 pending and 0 Product Executor.
+- The reconciliation exposed an O(n^2) node-index defect in `RuntimeDependencyGraphBuilder`; replacing repeated `List.RemoveAll/Any` scans with an ID dictionary preserved placeholder-replacement and sorted-output semantics and reduced the authoritative compiler stage from an unbounded tens-of-minutes run to a completed roughly 90-second run.
+- Next semantic slice is `executor.place_furniture`.

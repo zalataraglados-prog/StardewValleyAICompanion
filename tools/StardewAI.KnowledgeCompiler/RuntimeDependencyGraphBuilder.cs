@@ -5,7 +5,7 @@ namespace StardewAI.KnowledgeCompiler;
 
 internal sealed class RuntimeDependencyGraphBuilder
 {
-    private readonly List<GraphNode> nodes = new();
+    private readonly Dictionary<string, GraphNode> nodes = new(StringComparer.Ordinal);
     private readonly List<GraphEdge> edges = new();
 
     public RuntimeDependencyGraph Build(IReadOnlyDictionary<string, PayloadAsset> assets)
@@ -25,7 +25,7 @@ internal sealed class RuntimeDependencyGraphBuilder
             "stardewai.runtime_dependency_graph.v1",
             "runtime-loaded game content",
             "Only directly encoded relationships are edges. Conditions and custom methods are joined in authoritative-dependency-graph.json.",
-            nodes.OrderBy(row => row.Id, StringComparer.Ordinal).ToArray(),
+            nodes.Values.OrderBy(row => row.Id, StringComparer.Ordinal).ToArray(),
             edges.OrderBy(row => row.From, StringComparer.Ordinal)
                 .ThenBy(row => row.To, StringComparer.Ordinal)
                 .ThenBy(row => row.Kind, StringComparer.Ordinal)
@@ -34,7 +34,7 @@ internal sealed class RuntimeDependencyGraphBuilder
 
     private void AddReferencedEntityNodes()
     {
-        var known = nodes.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
+        var known = nodes.Keys.ToHashSet(StringComparer.Ordinal);
         foreach (var edge in edges)
         {
             AddReference(edge.From, edge.SourceAsset, edge.SourcePath, known);
@@ -63,7 +63,7 @@ internal sealed class RuntimeDependencyGraphBuilder
             "item_category" => "item_category",
             _ => "dependency_reference"
         };
-        nodes.Add(new(
+        nodes[id] = new(
             id,
             kind,
             sourceAsset,
@@ -72,7 +72,7 @@ internal sealed class RuntimeDependencyGraphBuilder
             {
                 ["reference_origin"] = sourcePath,
                 ["identity_status"] = "runtime_data_reference"
-            }));
+            });
     }
 
     private void AddTopLevelNodes(IReadOnlyDictionary<string, PayloadAsset> assets)
@@ -504,9 +504,12 @@ internal sealed class RuntimeDependencyGraphBuilder
 
     private void AddNode(string id, string kind, string asset, string key, IReadOnlyDictionary<string, object?>? attributes = null)
     {
-        nodes.RemoveAll(row => row.Id == id && row.Kind == "runtime_asset_entry");
-        if (nodes.Any(row => row.Id == id)) return;
-        nodes.Add(new(id, kind, asset, key, attributes ?? new Dictionary<string, object?>()));
+        if (nodes.TryGetValue(id, out var existing) &&
+            !string.Equals(existing.Kind, "runtime_asset_entry", StringComparison.Ordinal))
+        {
+            return;
+        }
+        nodes[id] = new(id, kind, asset, key, attributes ?? new Dictionary<string, object?>());
     }
 
     private void AddEdge(string from, string to, string kind, string asset, string path, IReadOnlyDictionary<string, object?>? attributes = null)

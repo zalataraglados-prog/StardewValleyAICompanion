@@ -1493,6 +1493,9 @@ static partial class Program
         ApplyFencePlacementRequestFields(
             executionRequest,
             item);
+        ApplyFlooringPlacementRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }

@@ -10,6 +10,14 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Flooring Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.flooring_placement.floor_path_catalog` | Enumerate every live floor/path identity and complete placement/removal/movement metadata without a hardcoded item list | `Game1.floorPathData`; `Flooring.GetFloorPathItemLookup`; `FloorPathData` locked 1.6.15 type | n/a; locked decompile plus runtime are authoritative for execution | covered_for_read / runtime_all_catalog_rows_verified | Publishes data key/id, item/qid, connect/shadow type, placement/removal/footstep sounds, debris, corner size, farm speed buff and canonical lookup status. |
+| `player.flooring_placement.rows[].locations[].static_legal_tile_ranges` | Bind one exact inventory slot to a current-map native-legal target and same-floor eight-neighbor connection mask | `Object.canBePlacedHere`; `Object.placementAction(IsFloorPathItem)`; `Flooring.gatherNeighbors/OnAdded` | n/a | covered_for_read / covered_for_gate / current_location_rebind | Only the current loaded map is scanned. Any existing TerrainFeature makes the target illegal. Random floors bind the complete `whichView=0..15` domain; other floors bind constructor value zero. |
+| `current_location.terrain_features[].flooring_state` | Verify native result identity, data key, view domain, passability and derived connection topology | live base `Flooring` fields plus `GetData`, `isPassable`, `getFootstepSound` | n/a | covered_for_read / native_post_state_verified | Placement never replaces existing terrain features. Removal remains a separate Axe/Pickaxe/damage action. |
+
 ## Fence Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
