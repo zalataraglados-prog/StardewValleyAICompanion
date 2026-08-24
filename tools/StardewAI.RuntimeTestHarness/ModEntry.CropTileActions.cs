@@ -117,6 +117,7 @@ public sealed partial class ModEntry
                 "apply_tree_treatment" => ExecuteApplyTreeTreatment(action.Pending.Request),
                 "place_cookout_kit" => ExecutePlaceCookoutKit(action.Pending.Request),
                 "place_crab_pot" => ExecutePlaceCrabPot(action.Pending.Request),
+                "place_fence" => ExecutePlaceFence(action.Pending.Request),
                 "load_crab_pot_bait" => ExecuteLoadCrabPotBait(action.Pending.Request),
                 "harvest_crop" => ExecuteHarvestCrop(action.Pending.Request),
                 _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.adjacent_tile_action=applied", "unsupported", "unsupported_adjacent_tile_action")

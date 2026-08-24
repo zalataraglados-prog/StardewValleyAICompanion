@@ -1107,6 +1107,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates one exact owned CrabPot at the rebound water tile", "one inventory Crab Pot is consumed", "initial bait output and harvest state match the current owner professions and native constructor" },
                 new[] { "block_missing_crab_pot_reason_or_production_signature", "block_inventory_owner_or_projection_identity_drift", "block_nonwater_or_native_excluded_location", "block_unreachable_adjacent_shore_stand", "block_native_placement_recheck" }));
 
+            Register(Option("executor.place_fence", "farming", "Place one verified inventory fence or functional gate at one exact route-safe native-legal tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.fence_placement", "current_location.objects", "current_location.chests", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates one exact base Fence with live Data/Fences health bounds", "one matching inventory item is consumed", "neighbor draw topology and closed placement state match", "virtual occupancy preserves the reachable domain and protected access" },
+                new[] { "block_missing_layout_reason_or_native_contract", "block_inventory_data_or_projection_identity_drift", "block_nonfunctional_gate_topology", "block_route_or_protected_access_disconnect", "block_native_placement_recheck" }));
+
             Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

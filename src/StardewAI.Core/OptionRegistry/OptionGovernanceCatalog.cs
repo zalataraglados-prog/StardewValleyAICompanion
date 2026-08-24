@@ -337,6 +337,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.place_storage", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_cookout_kit", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_crab_pot", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
+                P("executor.place_fence", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.load_crab_pot_bait", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.read_book", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("executor.select_safe_item_slot", Primitive, R0, None, NoConfirm, Actor, ActorState, Allowed)

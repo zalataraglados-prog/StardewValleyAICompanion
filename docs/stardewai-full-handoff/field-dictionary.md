@@ -10,6 +10,13 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fence Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.fence_placement` | Bind one enclosure/layout intent to an exact inventory fence, loaded persistent location, native-legal tile, neighbor topology and route-safe stand | `Object.IsFenceItem`, `Object.canBePlacedHere`, `Object.placementAction`; `Fence.GetFenceLookup`, constructor, `ResetHealth`, `getDrawSum`, `countsForDrawing`, `toggleGate`, `isPassable` | n/a; locked decompile plus runtime are authoritative for execution | covered_for_read / covered_for_gate / native_runtime_verified / evaluation_only | Reads every live `Data/Fences` row rather than a hardcoded identity list. Legal ranges are split whenever expected draw sum or gate functionality changes. Compiler additionally virtual-blocks the exact closed placement and preserves the whole reachable domain, map endpoints and existing storage access. |
+| `current_location.objects[].fence_state` | Verify the placed object's exact post-state and expose later fence service decisions | live base `Fence` net fields plus `GetData`, `getDrawSum`, `isPassable` | n/a | covered_for_read / native_post_state_verified | Exposes exact runtime support status, gate flag/position, draw sum, health/max health, repair queue, passability and data key. Gate conversion/repair, removal and toggle/open are intentionally not folded into placement. |
+
 ## Crab Pot Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

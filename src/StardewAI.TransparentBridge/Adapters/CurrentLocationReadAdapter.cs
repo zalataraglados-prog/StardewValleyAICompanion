@@ -147,6 +147,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var clearance = ReadObjectClearance(location, tile, item, player);
         var crabPot = ReadCrabPotHarvest(tile, item, player);
         var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
+        var fence = ReadFenceState(item);
         return new
         {
             tile_x = (int)tile.X,
@@ -243,7 +244,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_fish_caught_max_size_before = crabPot.FishCaughtMaxSizeBefore,
             crab_pot_catch_size_min = crabPot.CatchSizeMin,
             crab_pot_catch_size_max = crabPot.CatchSizeMax,
-            crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus
+            crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus,
+            fence_state = fence
         };
     }
 

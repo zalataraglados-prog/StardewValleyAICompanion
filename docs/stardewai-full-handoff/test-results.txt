@@ -3927,5 +3927,15 @@ Scope boundary:
 - Hidden/silent isolated E-drive runtime PASS 5/5: `artifacts/runtime-crab-pot-bait/runtime-crab-pot-bait-20260822-164015/summary.json`. Normal, Deluxe, Wild, Magic and Specific bait all matched native probe, inventory decrement, owner and transparent post-state identity/unit hash.
 - Installed live full snapshot schema PASS: 117 required factors, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 133 registered / 184 semantic / 132 compiler-bound / 60 five-gate / 36 training allowlist / 51 catalogued blocked / 0 Product Executor.
+
+## 2026-08-25 EVD-259 Native Fence Placement
+
+- Added one strict `executor.place_fence` chain over every live exact base `Object.IsFenceItem` inventory row. It reads `Data/Fences`, native health ranges and cardinal draw topology, and reuses shared adjacent movement plus `PlaceInventoryObjectNative`.
+- Added exact-target virtual-occupancy validation to the existing storage placement route-safety projection. Closed fence/gate placement must reduce the reachable domain by exactly one tile and preserve every map endpoint and existing storage access group; no second BFS implementation was introduced.
+- Focused fence and governance suite PASS 22/22. TransparentBridge, Core, LiveTrainingLoop and RuntimeTestHarness builds PASS before runtime.
+- Hidden/silent isolated E-drive runtime PASS 5/5: `artifacts/runtime-fence-placement/runtime-fence-placement-20260825-005827/summary.json`. Wood, Stone, Iron, Hardwood and Gate all returned `applied/verified`; the gate used functional draw sum 110 and every next snapshot verified exact Fence state.
+- Installed live full snapshot schema PASS: required 118, readable with provenance 102, contextual 16, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 134 registered / 184 semantic / 133 compiler-bound / 61 five-gate / 36 training allowlist / 50 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1722/1722; Backend 124/124; full Release solution build 0 errors with one pre-existing `AvoidNetField` warning.
 - Authoritative reconciliation after the denominator repair: 132 registered, 184 semantic, 131 compiler-bound, 59 five-gate, 36 training-allowlisted, Product Executor 0; 52 catalogued actions remain blocked.
 - Focused Crab Pot placement and denominator regression PASS 8/8; full Core regression PASS 1704/1704; Backend PASS 122/122; full solution build 0 errors with one pre-existing `AvoidNetField` warning.

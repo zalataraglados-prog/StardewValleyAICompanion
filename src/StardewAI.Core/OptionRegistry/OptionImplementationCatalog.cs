@@ -143,7 +143,8 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> PlacementOptions = Set(
         "executor.place_cookout_kit",
-        "executor.place_crab_pot");
+        "executor.place_crab_pot",
+        "executor.place_fence");
 
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =
