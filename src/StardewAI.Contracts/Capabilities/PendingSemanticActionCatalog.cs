@@ -21,7 +21,21 @@ public static class PendingSemanticActionCatalog
     private static readonly IReadOnlyList<PendingSemanticActionDeclaration> Rows =
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
-            P("executor.place_sign", "farming", "engine.placement_layout", "Object"),
+            P("recovery.escape_object_trap", "recovery", "engine.interaction_menu", "Object"),
+            P("rewards.claim_pot_of_gold", "rewards", "engine.inventory_transfer", "Object"),
+            P("mining.choose_dwarf_statue_power", "mining", "engine.interaction_menu", "Object", "ChooseFromIconsMenu"),
+            P("rewards.claim_statue_blessing", "rewards", "engine.interaction_menu", "Object"),
+            P("world.rotate_house_plant", "world", "engine.interaction_menu", "Object"),
+            P("farming.collect_slime_ball", "farming", "engine.inventory_transfer", "Object"),
+            P("world.play_singing_stone", "world", "engine.interaction_menu", "Object"),
+            P("animals.withdraw_feed_hopper_hay", "animals", "engine.inventory_transfer", "Object"),
+            P("animals.collect_auto_grabber_contents", "animals", "engine.inventory_transfer", "Object", "ItemGrabMenu"),
+            P("movement.use_mini_obelisk", "movement", "engine.movement_navigation", "Object"),
+            P("farming.read_farm_computer_report", "farming", "engine.interaction_menu", "Object"),
+            P("world.tune_flute_block", "world", "engine.interaction_menu", "Object"),
+            P("world.tune_drum_block", "world", "engine.interaction_menu", "Object"),
+            P("executor.set_sign_display_item", "farming", "engine.inventory_transfer", "Sign"),
+            P("executor.edit_text_sign", "farming", "engine.interaction_menu", "Object", "TitleTextInputMenu"),
             P("executor.place_tent", "recovery", "engine.placement_layout", "Object"),
             P("executor.plant_grass", "farming", "engine.placement_layout", "Object"),
             P("executor.toggle_lantern", "tool", "engine.tool_harvest", "Lantern"),

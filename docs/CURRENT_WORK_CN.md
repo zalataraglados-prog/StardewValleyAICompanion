@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-08-25 当前权威检查点：EVD-262
+
+- `executor.place_sign` 已闭合实时标牌目录、精确库存、当前地图原生合法格、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。锁定 1.6.15 存在两条不同原生分支：带 `sign_item` 标签的三种展示牌生成精确 `StardewValley.Objects.Sign`；`(BC)TextSign` 生成精确 base `StardewValley.Object`。两者均只放置空牌且库存精确 `-1`。
+- `player.sign_placement` 从实时 `Game1.bigCraftableData` 枚举全部 `4` 行，不硬编码标牌 ID 或数量。候选绑定数据行、运行时类型、分支、当前地图合法格、邻接站位、布局安全、空载荷预期和拓扑指纹；`current_location.objects[].sign_state` 回读展示物类型/身份、文字、`showNextIndex`、可通行性和运行时支持状态。
+- 生产执行器只复用 `Utility.playerCanPlaceItemHere -> Utility.tryToPlaceItem -> Object.placementAction` 与既有 `PlaceInventoryObjectNative`，不直接写 `location.objects`、标牌载荷、文字或库存。隐藏、静默、E 盘隔离运行 `runtime-sign-placement-20260825-160744` 对实时目录全部 `4/4 PASS`，覆盖三种展示牌和文字牌两条分支。
+- 反编译复核同时修复动作分母遗漏：`checkForAction` 与 `Objects/Sign.cs` 已进入扫描，新增 Object/Sign 动作面及 `20` 个原生分支。全部分支已逐项映射到已有能力或显式 `catalogued_blocked` 语义，不以通用交互伪装成完整支持。当前分母为 `322 surfaces / 448 branches / 150 map tokens`，三类 blocking 均为 `0`。
+- 当前权威对账为 `137 registered / 199 semantic / 136 compiler-bound / 64 five-gate / 36 training allowlist / 62 catalogued blocked / 0 Product Executor`；fresh full 快照要求 `122` 个状态因子，其中 readable `106`、contextual/stale `16`、blocking `0`；KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片固定为 `executor.set_sign_display_item`，只实现 `Sign.checkForAction` 的展示物绑定和逐字段回执；其后独立实现 `executor.edit_text_sign` 的 `TitleTextInputMenu`、trim、60 字限制和 `showNextIndex` 语义。两者不得并入摆放动作。
+
+更新时间：2026-08-25
+
 ## 2026-08-25 当前权威检查点：EVD-261
 
 - `executor.place_furniture` 已闭合实时 `Data/Furniture` 全目录、精确库存家具、当前地图家具拓扑、严格编译、共享移动、共享原生物品放置和逐字段回执。普通落地家具进入 `location.furniture`；在空桌面放置的 1x1 家具进入该桌子的 `heldObject`，两种原生终点不得混淆。

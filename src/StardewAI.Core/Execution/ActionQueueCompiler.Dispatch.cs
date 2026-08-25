@@ -75,6 +75,7 @@ namespace StardewAI.Core.Execution
                 ["executor.place_fence"] = (action, _) => CompilePlaceFenceStep(action),
                 ["executor.place_flooring"] = (action, _) => CompilePlaceFlooringStep(action),
                 ["executor.place_furniture"] = (action, _) => CompilePlaceFurnitureStep(action),
+                ["executor.place_sign"] = (action, _) => CompilePlaceSignStep(action),
                 ["executor.load_crab_pot_bait"] = (action, _) => CompileLoadCrabPotBaitStep(action),
                 ["executor.read_book"] = (action, _) => CompileReadBookStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),

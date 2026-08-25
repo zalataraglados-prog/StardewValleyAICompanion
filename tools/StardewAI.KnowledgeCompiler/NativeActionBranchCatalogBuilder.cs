@@ -632,6 +632,74 @@ internal static class NativeBranchSemanticClassifier
                 result.Add("executor.interact");
         }
 
+        if (surface.RuntimeType == "Sign" && surface.Member == "checkForAction")
+        {
+            result.Add("executor.set_sign_display_item");
+        }
+        if (surface.RuntimeType == "Object" && surface.Member == "checkForAction" &&
+            (anchor.Contains("IsTextSign()", StringComparison.Ordinal) ||
+             calls.Any(value => value.EndsWith("CheckForActionOnTextSign", StringComparison.Ordinal))))
+        {
+            result.Add("executor.edit_text_sign");
+        }
+        if (surface.RuntimeType == "Object" && surface.Member == "checkForAction")
+        {
+            switch (anchor)
+            {
+                case "!justCheckingForActivity && who != null":
+                    result.Add("recovery.escape_object_trap");
+                    break;
+                case "case \"(O)PotOfGold\"":
+                    result.Add("rewards.claim_pot_of_gold");
+                    break;
+                case "case \"(BC)StatueOfTheDwarfKing\"":
+                    result.Add("mining.choose_dwarf_statue_power");
+                    break;
+                case "case \"(BC)StatueOfBlessings\"":
+                    result.Add("rewards.claim_statue_blessing");
+                    break;
+                case "case \"(BC)0\" | case \"(BC)1\" | case \"(BC)2\" | case \"(BC)3\" | case \"(BC)4\" | case \"(BC)5\" | case \"(BC)6\" | case \"(BC)7\"":
+                    result.Add("world.rotate_house_plant");
+                    break;
+                case "case \"(BC)56\"":
+                    result.Add("farming.collect_slime_ball");
+                    break;
+                case "case \"(BC)71\"":
+                    result.Add("executor.descend_ladder");
+                    break;
+                case "case \"(BC)94\"":
+                    result.Add("world.play_singing_stone");
+                    break;
+                case "case \"(BC)99\"":
+                    result.Add("animals.withdraw_feed_hopper_hay");
+                    break;
+                case "case \"(BC)141\"":
+                    result.Add("minigame.play_prairie_king");
+                    break;
+                case "case \"(BC)159\"":
+                    result.Add("minigame.play_junimo_kart");
+                    break;
+                case "case \"(BC)165\"":
+                    result.Add("animals.collect_auto_grabber_contents");
+                    break;
+                case "case \"(BC)238\"":
+                    result.Add("movement.use_mini_obelisk");
+                    break;
+                case "case \"(BC)239\"":
+                    result.Add("farming.read_farm_computer_report");
+                    break;
+                case "case \"(BC)247\"":
+                    result.Add("tailoring.sew_item");
+                    break;
+                case "case \"(O)464\"":
+                    result.Add("world.tune_flute_block");
+                    break;
+                case "case \"(O)463\"":
+                    result.Add("world.tune_drum_block");
+                    break;
+            }
+        }
+
         if (surface.RuntimeType is "IslandEast" or "IslandFarmCave" or "IslandSecret" or
             "IslandWest" or "IslandWestCave1" or "Railroad" or "VolcanoDungeon")
         {
@@ -743,6 +811,11 @@ internal static class NativeBranchSemanticClassifier
             result.Add("executor.place_fence");
         if (calls.Any(value => value.EndsWith("IsFloorPathItem", StringComparison.Ordinal)))
             result.Add("executor.place_flooring");
+        if (calls.Any(value => value.EndsWith("HasContextTag", StringComparison.Ordinal)) &&
+            literals.Contains("sign_item", StringComparer.Ordinal))
+        {
+            result.Add("executor.place_sign");
+        }
         if (literals.Contains("(BC)BigChest", StringComparer.Ordinal))
             result.Add("executor.place_storage");
         if (anchor.Contains("(BC)", StringComparison.Ordinal))

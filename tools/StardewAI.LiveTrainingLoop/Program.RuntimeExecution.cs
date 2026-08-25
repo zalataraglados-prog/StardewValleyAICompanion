@@ -1499,6 +1499,9 @@ static partial class Program
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);
+        ApplySignPlacementRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }

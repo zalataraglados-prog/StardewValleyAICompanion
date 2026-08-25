@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "13651869c7c200d6cee62d59de9cc5fc731f063015097accf61910a5814d264b",
-  "surface_count": 320,
-  "branch_count": 428,
+  "fingerprint_sha256": "9c0b9d492f2865d47ffe48586afd9c62d8b87672a806c1ecb09f7bea2034c427",
+  "surface_count": 322,
+  "branch_count": 448,
   "map_token_count": 150,
-  "semantic_action_count": 184,
-  "approval_basis": "locked 1.6.15 decompile; executor.place_crab_pot moved from pending to one exact native placement primitive, and the separate previously omitted executor.load_crab_pot_bait action was added as catalogued_blocked after confirming CrabPot.performObjectDropInAction Category=-21 bait semantics through the GameLocation.checkAction object drop-in surface; native surface, branch, and map-token counts are unchanged; bait runtime admission remains independently gated"
+  "semantic_action_count": 199,
+  "approval_basis": "locked 1.6.15 decompile; executor.place_sign moved from pending to one exact native placement primitive covering all live sign_item and TextSign rows; checkForAction and Objects/Sign.cs were added to the native source denominator, exposing Object and Sign action surfaces plus 20 branches; every added Object branch is explicitly mapped to an existing or catalogued-blocked semantic action, with zero unresolved or missing registrations"
 }

@@ -191,6 +191,7 @@ internal sealed class NativeActionSurfaceCatalogBuilder
             "ResourceClump" => new[] { "executor.break_current_location_resource_clump" },
             "Tent" => new[] { "recovery.sleep_in_tent" },
             "Tree" => new[] { "foraging.harvest_tree_product", "executor.clear_obstacle" },
+            "Sign" => new[] { "executor.set_sign_display_item" },
             "AbigailGame" => new[] { "minigame.play_prairie_king" },
             "CalicoJack" => new[] { "minigame.play_calico_jack" },
             "CraneGame" => new[] { "minigame.play_crane_game" },

@@ -1131,6 +1131,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement preserves the exact vanilla furniture runtime identity and virtual rotation result", "the result appears in location furniture or the exact empty table held-object endpoint", "one matching inventory item is consumed", "nonpassable footprints preserve routes and existing access" },
                 new[] { "block_custom_or_missing_furniture_factory", "block_inventory_rotation_or_projection_drift", "block_invalid_wall_table_or_location_endpoint", "block_route_or_protected_access_disconnect", "block_native_placement_recheck" }));
 
+            Register(Option("executor.place_sign", "farming", "Place one exact empty display-item sign or text sign through its native branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.sign_placement", "current_location.objects", "current_location.chests", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates the exact display-sign or text-sign runtime branch", "the placed sign starts with no display item or text", "one matching inventory item is consumed", "the nonpassable target preserves routes and existing access" },
+                new[] { "block_missing_sign_layout_reason", "block_inventory_catalog_or_branch_drift", "block_nonempty_payload_request", "block_route_or_protected_access_disconnect", "block_native_placement_recheck" }));
+
             Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

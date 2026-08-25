@@ -27,6 +27,7 @@ internal sealed class DecompiledActionSourceIndex
     private static readonly HashSet<string> PlayerEntryMembers = new(StringComparer.Ordinal)
     {
         "checkAction",
+        "checkForAction",
         "performAction",
         "performTouchAction",
         "DoFunction",
@@ -154,6 +155,7 @@ internal sealed class DecompiledActionSourceIndex
             relative.EndsWith("/GameLocation.cs", StringComparison.Ordinal) ||
             relative.EndsWith("/Event.cs", StringComparison.Ordinal) ||
             relative.EndsWith("/Object.cs", StringComparison.Ordinal) ||
+            relative.EndsWith("/Objects/Sign.cs", StringComparison.Ordinal) ||
             relative.EndsWith("/Item.cs", StringComparison.Ordinal);
     }
 }

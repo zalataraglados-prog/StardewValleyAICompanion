@@ -2,13 +2,13 @@
   "schema_version": "stardewai.native_action_branch_inventory.v1",
   "authority": "locked Stardew Valley 1.6.15 decompile parsed as C# syntax; branch evidence is not an implementation claim",
   "source_status": "native_branch_syntax_scanned",
-  "broad_surface_count": 60,
-  "covered_surface_count": 60,
+  "broad_surface_count": 61,
+  "covered_surface_count": 61,
   "missing_surface_count": 0,
   "missing_surface_ids": [],
-  "branch_count": 428,
-  "mapped_branch_count": 309,
-  "classified_non_semantic_branch_count": 119,
+  "branch_count": 448,
+  "mapped_branch_count": 328,
+  "classified_non_semantic_branch_count": 120,
   "semantic_review_required_count": 0,
   "missing_registration_branch_count": 0,
   "branches": [
@@ -15176,6 +15176,620 @@
       "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
     },
     {
+      "branchId": "native_branch.5b7fe6661bdad6df",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "conditional_true",
+      "anchor": "isTemporarilyInvisible",
+      "startLine": 4346,
+      "endLine": 4348,
+      "sourceSha256": "88e6fe463d8fc50a715f646d609278636b37f8b659a8d10d0c4094be89ca1f64",
+      "invokedMembers": [],
+      "constructedTypes": [],
+      "stringLiterals": [],
+      "itemIds": [],
+      "mappedActionIds": [],
+      "semanticDisposition": "guard_or_local_state_outcome",
+      "coverageStatus": "classified_non_semantic_branch",
+      "evidenceBasis": "branch has no invocation or constructed gameplay/menu surface"
+    },
+    {
+      "branchId": "native_branch.e6d5ecea891fc2e2",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "conditional_true",
+      "anchor": "!justCheckingForActivity \u0026\u0026 who != null",
+      "startLine": 4350,
+      "endLine": 4357,
+      "sourceSha256": "6ac3fa01ba8e16d2cc569852f198ffb5cef147c092f4e35a8d6257d417a7a5a0",
+      "invokedMembers": [
+        "location.getObjectAtTile",
+        "location.getObjectAtTile(tilePoint.X \u002B 1, tilePoint.Y).isPassable",
+        "location.getObjectAtTile(tilePoint.X - 1, tilePoint.Y).isPassable",
+        "location.getObjectAtTile(tilePoint.X, tilePoint.Y \u002B 1).isPassable",
+        "location.getObjectAtTile(tilePoint.X, tilePoint.Y - 1).isPassable",
+        "location.isObjectAtTile",
+        "performToolAction"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [],
+      "itemIds": [],
+      "mappedActionIds": [
+        "recovery.escape_object_trap"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.4cd1593521bd4a10",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(O)PotOfGold\u0022",
+      "startLine": 4360,
+      "endLine": 4371,
+      "sourceSha256": "48d3e37e57a6b14612b7f4338d32b93718899d1cbcc34d2c6e130c945f508177",
+      "invokedMembers": [
+        "Game1.createMultipleItemDebris",
+        "Game1.playSound",
+        "ItemRegistry.Create",
+        "Location.removeObject",
+        "Math.Min",
+        "Utility.addDirtPuffs",
+        "Utility.addStarsAndSpirals"
+      ],
+      "constructedTypes": [
+        "Vector2"
+      ],
+      "stringLiterals": [
+        "(H)LeprechuanHat",
+        "(O)GoldCoin",
+        "(O)PotOfGold",
+        "hammer",
+        "moneyDial"
+      ],
+      "itemIds": [
+        "(H)LeprechuanHat",
+        "(O)GoldCoin",
+        "(O)PotOfGold"
+      ],
+      "mappedActionIds": [
+        "rewards.claim_pot_of_gold"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.169c2d79bed25d49",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)MiniForge\u0022",
+      "startLine": 4372,
+      "endLine": 4377,
+      "sourceSha256": "cb48ea7b7135b945c189f00e15d2e883a93dc1cab567c7d3dee7bffc0aff1c47",
+      "invokedMembers": [],
+      "constructedTypes": [
+        "ForgeMenu"
+      ],
+      "stringLiterals": [
+        "(BC)MiniForge"
+      ],
+      "itemIds": [
+        "(BC)MiniForge"
+      ],
+      "mappedActionIds": [
+        "crafting.forge_item"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.299726917abbab77",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)StatueOfTheDwarfKing\u0022",
+      "startLine": 4378,
+      "endLine": 4397,
+      "sourceSha256": "00eafa87778d533df7d3b0caf1a7a41bd71dbd16cbc786f951853b9f022e200a",
+      "invokedMembers": [
+        "Game1.content.LoadString",
+        "Game1.playSound",
+        "Game1.showGlobalMessage",
+        "StatKeys.Mastery",
+        "who.hasBuffWithNameContainingString",
+        "who.stats.Get"
+      ],
+      "constructedTypes": [
+        "ChooseFromIconsMenu"
+      ],
+      "stringLiterals": [
+        "(BC)StatueOfTheDwarfKing",
+        "Strings\\1_6_Strings:MasteryRequirement",
+        "cancel",
+        "dwarfStatue"
+      ],
+      "itemIds": [
+        "(BC)StatueOfTheDwarfKing"
+      ],
+      "mappedActionIds": [
+        "mining.choose_dwarf_statue_power"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.719800b4cdb610e6",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)StatueOfBlessings\u0022",
+      "startLine": 4398,
+      "endLine": 4399,
+      "sourceSha256": "161266ee53047854ef21097e6bf86abad2d41e1bfc2c97cc79b6c1dbb9b699cc",
+      "invokedMembers": [
+        "CheckForActionOnBlessedStatue"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)StatueOfBlessings"
+      ],
+      "itemIds": [
+        "(BC)StatueOfBlessings"
+      ],
+      "mappedActionIds": [
+        "rewards.claim_statue_blessing"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.7a2bb1bfa135620d",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)0\u0022 | case \u0022(BC)1\u0022 | case \u0022(BC)2\u0022 | case \u0022(BC)3\u0022 | case \u0022(BC)4\u0022 | case \u0022(BC)5\u0022 | case \u0022(BC)6\u0022 | case \u0022(BC)7\u0022",
+      "startLine": 4400,
+      "endLine": 4408,
+      "sourceSha256": "2f6aeee96e6bec9351d1eaf4afc66ed653e451ea10c0210d06ce13b8d058056f",
+      "invokedMembers": [
+        "CheckForActionOnHousePlant"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)0",
+        "(BC)1",
+        "(BC)2",
+        "(BC)3",
+        "(BC)4",
+        "(BC)5",
+        "(BC)6",
+        "(BC)7"
+      ],
+      "itemIds": [
+        "(BC)0",
+        "(BC)1",
+        "(BC)2",
+        "(BC)3",
+        "(BC)4",
+        "(BC)5",
+        "(BC)6",
+        "(BC)7"
+      ],
+      "mappedActionIds": [
+        "world.rotate_house_plant"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.c97dc9f445644348",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)56\u0022",
+      "startLine": 4409,
+      "endLine": 4410,
+      "sourceSha256": "f7c9e77800bf435e189c710c3d993866d8aa25c3cee86c02fea7d9635f9777d8",
+      "invokedMembers": [
+        "CheckForActionOnSlimeBall"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)56"
+      ],
+      "itemIds": [
+        "(BC)56"
+      ],
+      "mappedActionIds": [
+        "farming.collect_slime_ball"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.772a63105076a1b2",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)71\u0022",
+      "startLine": 4411,
+      "endLine": 4412,
+      "sourceSha256": "6b4b0dfb8f4e4efec302d791f10bbb39772cd03e6f6f9f39b59f68250c939f91",
+      "invokedMembers": [
+        "CheckForActionOnStaircase"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)71"
+      ],
+      "itemIds": [
+        "(BC)71"
+      ],
+      "mappedActionIds": [
+        "executor.descend_ladder"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.eef5b60eaaf99e00",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)94\u0022",
+      "startLine": 4413,
+      "endLine": 4414,
+      "sourceSha256": "b3a22b21f026dff74b5b68cc7e9c695d80a3facce85b8ce942cccb0c43681dea",
+      "invokedMembers": [
+        "CheckForActionOnSingingStone"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)94"
+      ],
+      "itemIds": [
+        "(BC)94"
+      ],
+      "mappedActionIds": [
+        "world.play_singing_stone"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.3c06527ace88e2ae",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)99\u0022",
+      "startLine": 4415,
+      "endLine": 4416,
+      "sourceSha256": "5d3e9313080217d15a8e5c5c405bb4935ca93f03eb685d1244efe733427c9776",
+      "invokedMembers": [
+        "CheckForActionOnFeedHopper"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)99"
+      ],
+      "itemIds": [
+        "(BC)99"
+      ],
+      "mappedActionIds": [
+        "animals.withdraw_feed_hopper_hay"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.0def780738e131f0",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)141\u0022",
+      "startLine": 4417,
+      "endLine": 4418,
+      "sourceSha256": "b56cae35f7c1246637d5e9797e2e17cab1c29fa62e824ba8c6d598591ea95821",
+      "invokedMembers": [
+        "CheckForActionOnPrairieKingArcadeSystem"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)141"
+      ],
+      "itemIds": [
+        "(BC)141"
+      ],
+      "mappedActionIds": [
+        "minigame.play_prairie_king"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.24703f2953ed062e",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)159\u0022",
+      "startLine": 4419,
+      "endLine": 4420,
+      "sourceSha256": "7ccaab55e5e863ecf2a75d9010393b1d0cd5fa6368114195156281a352b6fab2",
+      "invokedMembers": [
+        "CheckForActionOnJunimoKartArcadeSystem"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)159"
+      ],
+      "itemIds": [
+        "(BC)159"
+      ],
+      "mappedActionIds": [
+        "minigame.play_junimo_kart"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.9bf208acc7601433",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)165\u0022",
+      "startLine": 4421,
+      "endLine": 4422,
+      "sourceSha256": "d1607329682434dd1370c503d17b6bb10cd775fe6a91105dd8757f76bbe63145",
+      "invokedMembers": [
+        "CheckForActionOnAutoGrabber"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)165"
+      ],
+      "itemIds": [
+        "(BC)165"
+      ],
+      "mappedActionIds": [
+        "animals.collect_auto_grabber_contents"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.4a226d56d3b6e84c",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)238\u0022",
+      "startLine": 4423,
+      "endLine": 4424,
+      "sourceSha256": "bfd88580063933652a99e42b485238c34c3eefd3eb1df53f32d18aed6c8a9a5f",
+      "invokedMembers": [
+        "CheckForActionOnMiniObelisk"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)238"
+      ],
+      "itemIds": [
+        "(BC)238"
+      ],
+      "mappedActionIds": [
+        "movement.use_mini_obelisk"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.4ecf4c225c4124e7",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)239\u0022",
+      "startLine": 4425,
+      "endLine": 4426,
+      "sourceSha256": "e1b1ae689326cb3e3ead41c05da8d05a94790affd4e5d1a82ac99fe7122e12c3",
+      "invokedMembers": [
+        "CheckForActionOnFarmComputer"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)239"
+      ],
+      "itemIds": [
+        "(BC)239"
+      ],
+      "mappedActionIds": [
+        "farming.read_farm_computer_report"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.81954a83df52e781",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(BC)247\u0022",
+      "startLine": 4427,
+      "endLine": 4428,
+      "sourceSha256": "d7c2a61ca22dad7517f74a12cdac3f6f570f959dea5cfbd7e056956e6722b662",
+      "invokedMembers": [
+        "CheckForActionOnSewingMachine"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(BC)247"
+      ],
+      "itemIds": [
+        "(BC)247"
+      ],
+      "mappedActionIds": [
+        "tailoring.sew_item"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.595e48c409a077c8",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(O)464\u0022",
+      "startLine": 4429,
+      "endLine": 4430,
+      "sourceSha256": "429f255125fc6d77af1cfa40290750939bbcca36e6f019b8a8db043d4046ffcf",
+      "invokedMembers": [
+        "CheckForActionOnFluteBlock"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(O)464"
+      ],
+      "itemIds": [
+        "(O)464"
+      ],
+      "mappedActionIds": [
+        "world.tune_flute_block"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.dfaf7d31caaa3630",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "case \u0022(O)463\u0022",
+      "startLine": 4431,
+      "endLine": 4432,
+      "sourceSha256": "681b0afe9220737da624182e2ec39ed300f82aaa143a18e3fa2757da400fc977",
+      "invokedMembers": [
+        "CheckForActionOnDrumBlock"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [
+        "(O)463"
+      ],
+      "itemIds": [
+        "(O)463"
+      ],
+      "mappedActionIds": [
+        "world.tune_drum_block"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
+      "branchId": "native_branch.5a53962c86d44f72",
+      "surfaceId": "native.5766790fc9d5e524",
+      "runtimeType": "Object",
+      "member": "checkForAction",
+      "signature": "public virtual bool checkForAction(Farmer who, bool justCheckingForActivity)",
+      "relativeSourcePath": "StardewValley/StardewValley/Object.cs",
+      "branchKind": "switch_section",
+      "anchor": "default",
+      "startLine": 4433,
+      "endLine": 4446,
+      "sourceSha256": "57c4d9ab18e58ceb5abaf6dec53e3dbfb69af55f7ad5a10e9a6abf27326a8534",
+      "invokedMembers": [
+        "CheckForActionOnMachine",
+        "CheckForActionOnScarecrow",
+        "CheckForActionOnSprinkler",
+        "CheckForActionOnTextSign",
+        "IsScarecrow",
+        "IsSprinkler",
+        "IsTextSign"
+      ],
+      "constructedTypes": [],
+      "stringLiterals": [],
+      "itemIds": [],
+      "mappedActionIds": [
+        "executor.edit_text_sign"
+      ],
+      "semanticDisposition": "player_semantic_action",
+      "coverageStatus": "mapped_to_semantic_action",
+      "evidenceBasis": "native branch syntax plus explicit menu/call/action-token mapping"
+    },
+    {
       "branchId": "native_branch.95c5ff91ac316b7a",
       "surfaceId": "native.5501ceb06f071225",
       "runtimeType": "Object",
@@ -16242,6 +16856,7 @@
         "executor.place_crab_pot",
         "executor.place_fence",
         "executor.place_flooring",
+        "executor.place_sign",
         "executor.place_storage",
         "executor.place_tent",
         "executor.plant_grass",

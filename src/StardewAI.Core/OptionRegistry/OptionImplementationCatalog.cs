@@ -146,7 +146,8 @@ public static class OptionImplementationCatalog
         "executor.place_crab_pot",
         "executor.place_fence",
         "executor.place_flooring",
-        "executor.place_furniture");
+        "executor.place_furniture",
+        "executor.place_sign");
 
     private static readonly IReadOnlyList<OptionImplementationBinding> Bindings = Build();
     private static readonly IReadOnlyDictionary<string, OptionImplementationBinding> ByOptionId =

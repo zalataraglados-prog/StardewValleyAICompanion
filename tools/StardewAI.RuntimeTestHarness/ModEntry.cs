@@ -844,6 +844,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_sign_placement_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupSignPlacementTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_crab_pot_bait_target")
             {
                 pending.Completion.SetResult(ExecuteSetupCrabPotBaitTarget(pending.Request));
@@ -1146,6 +1152,12 @@ public sealed partial class ModEntry : Mod
                 {
                     StartAdjacentTileAction(pending, "place_furniture");
                 }
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.place_sign")
+            {
+                StartAdjacentTileAction(pending, "place_sign");
                 return;
             }
 

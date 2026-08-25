@@ -10,6 +10,14 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Sign Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.sign_placement.sign_catalog` | Enumerate every live vanilla display-item sign and text sign without hardcoded IDs or counts | `Game1.bigCraftableData`; exact `sign_item` context tag; exact `TextSign` identity; detached `ItemRegistry.Create<Object>` probes | n/a; locked decompile plus runtime are authoritative for execution | covered_for_read / all_live_catalog_rows_verified | Publishes raw data, qid, branch kind, expected runtime type, passability and empty payload/text contract for all four live rows. |
+| `player.sign_placement.rows[].locations[].static_legal_tile_ranges` | Bind one exact inventory sign to current-map native legality, reachable adjacent stand and route-safe blocking layout | `Utility.playerCanPlaceItemHere`; `Object.canBePlacedHere`; `Object.placementAction` sign branches | n/a | covered_for_read / covered_for_gate / current_location_rebind / native_runtime_verified | Only the current loaded map is scanned. Fingerprints include live sign data, exact inventory state and current sign topology. Cross-map plans must rebind after arrival. |
+| `current_location.objects[].sign_state` | Verify the exact native sign subtype and empty post-placement payload while exposing later display/text actions | live `Sign.displayItem/displayType`; base Object `signText/showNextIndex`; `isPassable` | n/a | covered_for_read / native_post_state_verified | Display assignment and text editing remain separate catalogued-blocked semantics; placement cannot smuggle either payload. |
+
 ## Furniture Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
