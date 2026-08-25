@@ -10,6 +10,14 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Furniture Placement Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.furniture_placement.furniture_catalog` | Enumerate the complete live furniture data surface and canonical runtime factory result without hardcoded item or subtype lists | `Data/Furniture`; `Furniture.GetFurnitureInstance`; `FurnitureData`; locked 1.6.15 furniture subclasses | n/a; locked decompile plus runtime are authoritative for execution | covered_for_read / all_live_catalog_rows_read | Publishes all 645 live rows, raw data fields, qualified identity, canonical runtime subtype, furniture type, dimensions, rotations, passability, placement restriction and source rectangles. Catalog reading never calls source-mutating `Furniture.getOne()`. |
+| `player.furniture_placement.rows[].rotations[].static_legal_tile_ranges` | Bind one exact inventory furniture unit and virtual rotation to current-map native legality, rectangular layout safety and its exact native endpoint | `Furniture.canBePlacedHere`; `CanPlaceThisFurnitureHere`; `placementAction`; virtual `rotate`; `InitializeAtTile`; `GameLocation.CanFreePlaceFurniture` | n/a | covered_for_read / covered_for_gate / current_location_rebind / native_runtime_verified | Only the current loaded map is scanned. Each tile uses a fresh detached factory probe initialized at that tile. Rows carry wall-anchor correction, footprint, passability, free-placement/proximity contract, location restriction, `location_furniture` or `table_held_object`, and exact empty-table identity. |
+| `current_location.furniture` | Verify native result and expose current furniture topology, storage and table payloads to later planning | live `location.furniture`, furniture virtual geometry/state, `heldObject`, storage items and mutex | n/a | covered_for_read / native_post_state_verified | Exposes runtime subtype, qid, tile, rotation, furniture type/restriction, footprint/bounds, passability, on/flipped state, held object, storage content and mutex. Production placement does not write these fields directly. |
+
 ## Flooring Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

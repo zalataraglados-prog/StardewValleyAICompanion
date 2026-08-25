@@ -119,6 +119,7 @@ public sealed partial class ModEntry
                 "place_crab_pot" => ExecutePlaceCrabPot(action.Pending.Request),
                 "place_fence" => ExecutePlaceFence(action.Pending.Request),
                 "place_flooring" => ExecutePlaceFlooring(action.Pending.Request),
+                "place_furniture" => ExecutePlaceFurniture(action.Pending.Request),
                 "load_crab_pot_bait" => ExecuteLoadCrabPotBait(action.Pending.Request),
                 "harvest_crop" => ExecuteHarvestCrop(action.Pending.Request),
                 _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.adjacent_tile_action=applied", "unsupported", "unsupported_adjacent_tile_action")

@@ -1496,6 +1496,9 @@ static partial class Program
         ApplyFlooringPlacementRequestFields(
             executionRequest,
             item);
+        ApplyFurniturePlacementRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }

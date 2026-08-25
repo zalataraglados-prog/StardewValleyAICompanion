@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-08-25 当前权威检查点：EVD-261
+
+- `executor.place_furniture` 已闭合实时 `Data/Furniture` 全目录、精确库存家具、当前地图家具拓扑、严格编译、共享移动、共享原生物品放置和逐字段回执。普通落地家具进入 `location.furniture`；在空桌面放置的 1x1 家具进入该桌子的 `heldObject`，两种原生终点不得混淆。
+- `player.furniture_placement` 发布实时目录中的 `645` 行，并只对当前已加载地图执行目的限定的原生合法格扫描。每个候选绑定运行时子类、地点限制、墙面锚点修正、矩形占地、可通行性、所有虚拟旋转状态、原生终点、空桌身份和拓扑指纹。`current_location.furniture` 回读相同身份、旋转、占地、碰撞、容器内容与桌面载荷。
+- 读取探针禁止调用可能改变源家具旋转状态的 `Furniture.getOne()`；统一使用 `Furniture.GetFurnitureInstance` 创建脱离源对象的规范实例。每个候选格都必须重新创建探针并调用 `InitializeAtTile`，防止旧 bounding box 污染后续格子和桌面判断。生产执行器只调用虚拟 `rotate()` 与既有 `PlaceInventoryObjectNative`，不直接写 `currentRotation`、`location.furniture`、桌面载荷或库存。
+- 隐藏、静默、E 盘隔离运行 `runtime-furniture-placement-20260825-101457` 从实时目录选择完整代表集并 `25/25 PASS`：覆盖 `Furniture`、`StorageFurniture`、`FishTankFurniture`、`BedFurniture`、`RandomizedPlantFurniture`、`TV` 六种规范运行时子类，家具类型 `0..17`，旋转步数 `0..3`，以及 `location_furniture` 与 `table_held_object` 两种终点。
+- 当前权威对账为 `136 registered / 184 semantic / 135 compiler-bound / 63 five-gate / 36 training allowlist / 48 catalogued blocked / 0 Product Executor`；fresh full 快照要求 `121` 个状态因子，其中 readable `105`、contextual/stale `16`、blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片固定为 `executor.place_sign`。先反编译锁定标牌身份、显示物绑定和交互/文字语义是否与普通物品放置重叠；复用既有共享移动和唯一原生放置内核，只新增标牌特有的透明字段、严格校验与回执，不建立第二套放置系统。
+
+更新时间：2026-08-25
+
 ## 2026-08-25 当前权威检查点：EVD-260
 
 - `executor.place_flooring` 已闭合实时地板目录、当前地图合法区间、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。库存源必须是精确 base `StardewValley.Object`；原生 `Object.placementAction(IsFloorPathItem)` 在 `terrainFeatures` 中生成精确 base `StardewValley.TerrainFeatures.Flooring`，生产执行器不直接写地形表、视图或库存。

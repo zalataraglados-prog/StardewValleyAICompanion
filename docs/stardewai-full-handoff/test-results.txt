@@ -1,3 +1,10 @@
+2026-08-25 EVD-261 complete native furniture placement admission
+- Locked 1.6.15 semantics cover `Furniture.canBePlacedHere`, wall-anchor correction, rectangular footprint, location restrictions, `CanFreePlaceFurniture`, virtual rotation, normal `location.furniture` placement and empty-table `heldObject` placement. Production continues through the sole shared native placement path and never writes furniture collections, table payload, rotation or inventory directly.
+- Read-side diagnostics fixed two correctness defects before admission: `Furniture.getOne()` could mutate source rotation state, so all probes now use detached `Furniture.GetFurnitureInstance`; every candidate tile now receives a fresh probe plus `InitializeAtTile`, preventing stale bounding boxes and false table endpoints.
+- Hidden/silent isolated E-drive runtime PASS 25/25: `artifacts/runtime-furniture-placement/runtime-furniture-placement-20260825-101457/summary.json`. The live catalog had 645 rows; the matrix covered all six canonical runtime subclasses, furniture types 0..17, rotation steps 0..3, normal location placement and table-held placement.
+- Focused furniture/governance PASS 21/21; full Core PASS 1743/1743; Backend PASS 124/124; Release solution build 0 errors with one existing AvoidNetField warning.
+- Fresh full snapshot requires 121 factors: readable 105, contextual/stale 16, blocking 0. KnowledgeCompiler PASS 585/585 with blocking 0. Reconciliation is 136 registered, 184 semantic, 135 compiler-bound, 63 five-gate, 36 training-allowlisted, 48 catalogued-blocked and 0 Product Executor.
+
 2026-08-10 EVD-238 vanilla type-11 unreachable compatibility-state correction
 - Locked `Data/Quests` payload `591d29ecf742b2b9e258c271d1e5e55bcfcd9d7dc38c9d64972cd3faaf1b0c6a` has 66 rows and no Weeding type. Decompiled `Quest.getQuestFromId` has no factory branch and the native quest source directory has no `questType=11` assignment; only `type_weeding=11` remains.
 - Added a distinct `native_unreachable` catalog status. A legacy/modded live type-11 row fails closed with `quest_type_11_unreachable_in_vanilla_1_6_15`; no clear-weeds candidate or executor was added.

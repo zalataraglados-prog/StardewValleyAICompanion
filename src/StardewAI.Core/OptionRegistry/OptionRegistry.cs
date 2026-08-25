@@ -1123,6 +1123,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates one exact base TerrainFeatures.Flooring from live Data/FloorsAndPaths", "one matching inventory item is consumed", "same-floor eight-neighbor topology and native random view domain match", "the passable target preserves the current reachable domain" },
                 new[] { "block_missing_layout_reason_or_native_contract", "block_inventory_data_or_projection_identity_drift", "block_existing_terrain_feature_or_neighbor_topology_drift", "block_unreachable_target_or_adjacent_stand", "block_native_placement_recheck" }));
 
+            Register(Option("executor.place_furniture", "housing", "Place one exact inventory furniture item with a verified native rotation, footprint and endpoint",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.furniture_placement", "current_location.furniture", "current_location.chests", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement preserves the exact vanilla furniture runtime identity and virtual rotation result", "the result appears in location furniture or the exact empty table held-object endpoint", "one matching inventory item is consumed", "nonpassable footprints preserve routes and existing access" },
+                new[] { "block_custom_or_missing_furniture_factory", "block_inventory_rotation_or_projection_drift", "block_invalid_wall_table_or_location_endpoint", "block_route_or_protected_access_disconnect", "block_native_placement_recheck" }));
+
             Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
