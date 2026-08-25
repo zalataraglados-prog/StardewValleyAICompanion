@@ -4,9 +4,9 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 66,
-  "catalogued_blocked_surface_count": 104,
-  "catalogued_blocked_action_count": 62,
+  "mapped_count": 67,
+  "catalogued_blocked_surface_count": 103,
+  "catalogued_blocked_action_count": 61,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -14,7 +14,6 @@
     "executor.place_tent",
     "executor.plant_grass",
     "executor.read_secret_note",
-    "executor.set_sign_display_item",
     "executor.toggle_lantern",
     "executor.use_firework",
     "executor.use_horse_flute",
@@ -918,7 +917,7 @@
       "mappedOptionIds": [
         "executor.set_sign_display_item"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

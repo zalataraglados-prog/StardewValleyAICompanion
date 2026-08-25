@@ -217,7 +217,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
-            "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.load_crab_pot_bait",
+            "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -256,7 +256,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
-            "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.load_crab_pot_bait",
+            "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
@@ -358,7 +358,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
-            "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.load_crab_pot_bait",
+            "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.load_crab_pot_bait",
             "executor.read_book", "executor.select_safe_item_slot"
         };
 
@@ -446,6 +446,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.place_sign"] = VerifiedEvidence(
                         "vanilla_all_live_sign_item_and_TextSign_inventory_identities_native_Utility_tryToPlaceItem_exact_empty_runtime_branch_stack_and_route_safe_receipt",
                         "EVD-262"),
+                    ["executor.set_sign_display_item"] = VerifiedEvidence(
+                        "vanilla_exact_base_Sign_selected_inventory_item_native_GameLocation_checkAction_getOne_display_type_source_state_preservation_and_authorized_replacement_receipt",
+                        "EVD-263"),
                     ["executor.load_crab_pot_bait"] = VerifiedEvidence(
                         "vanilla_exact_current_location_empty_base_CrabPot_native_Category_minus_21_probe_GameLocation_checkAction_bait_owner_inventory_unit_state_and_lifecycle_receipt",
                         "EVD-258"),

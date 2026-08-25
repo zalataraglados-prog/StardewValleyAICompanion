@@ -3962,3 +3962,10 @@ Scope boundary:
 - KnowledgeCompiler action reconciliation PASS 585/585 with blocking 0: 135 registered, 184 semantic, 134 compiler-bound, 62 five-gate, 36 training-allowlisted, 49 pending and 0 Product Executor.
 - The reconciliation exposed an O(n^2) node-index defect in `RuntimeDependencyGraphBuilder`; replacing repeated `List.RemoveAll/Any` scans with an ID dictionary preserved placeholder-replacement and sorted-output semantics and reduced the authoritative compiler stage from an unbounded tens-of-minutes run to a completed roughly 90-second run.
 - Next semantic slice is `executor.place_furniture`.
+2026-08-25 EVD-263 complete native sign display-item admission
+- Locked 1.6.15 semantics accept every non-null CurrentItem and map Hat=2, Ring=4, Furniture=5, big Object=3 and all other Item types=1 through Sign.checkForAction. Source inventory is not consumed.
+- Transparent reads directly serialize live source and previous payload objects; they never call getOne(), so snapshot capture cannot consume RNG or mutate inventory state.
+- Hidden/silent isolated E-drive runtime PASS 6/6: `artifacts/runtime-sign-display-item/runtime-sign-display-item-20260825-170751/summary.json`. All five display types plus the non-Object default branch applied/verified; five cases replaced an existing display under explicit authorization. Source references, stacks and serialized hashes remained unchanged.
+- Focused sign/governance PASS 32/32; full Core PASS 1765/1765; Backend PASS 124/124; Release solution build 0 errors with one existing AvoidNetField warning.
+- Reconciliation is 138 registered, 199 semantic, 137 compiler-bound, 65 five-gate, 36 training-allowlisted, 61 catalogued-blocked and 0 Product Executor. Native denominator remains frozen at 322 surfaces / 448 branches / 150 map tokens with blocking 0; KnowledgeCompiler remains 585/585.
+- Next slice: `executor.edit_text_sign`, preserving the separate native TitleTextInputMenu, trim, 60-character limit and showNextIndex semantics.

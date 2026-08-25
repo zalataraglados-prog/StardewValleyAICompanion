@@ -1139,6 +1139,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates the exact display-sign or text-sign runtime branch", "the placed sign starts with no display item or text", "one matching inventory item is consumed", "the nonpassable target preserves routes and existing access" },
                 new[] { "block_missing_sign_layout_reason", "block_inventory_catalog_or_branch_drift", "block_nonempty_payload_request", "block_route_or_protected_access_disconnect", "block_native_placement_recheck" }));
 
+            Register(Option("executor.set_sign_display_item", "farming", "Set or replace one placed display-item sign payload through its native interaction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native Sign interaction copies the selected item into the exact base display sign", "display type matches the native item family", "the source inventory reference, stack and serialized state remain unchanged", "replacement of an existing display payload is explicitly authorized" },
+                new[] { "block_text_or_custom_sign_target", "block_source_or_target_projection_drift", "block_unapproved_existing_payload_replacement", "block_unreachable_adjacent_stand", "block_native_interaction_or_post_state_mismatch" }));
+
             Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

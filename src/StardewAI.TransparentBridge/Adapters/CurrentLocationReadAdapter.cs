@@ -150,7 +150,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var crabPot = ReadCrabPotHarvest(tile, item, player);
         var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
         var fence = ReadFenceState(item);
-        var sign = ReadSignState(item);
+        var sign = ReadSignState(location, tile, item, player);
         return new
         {
             tile_x = (int)tile.X,

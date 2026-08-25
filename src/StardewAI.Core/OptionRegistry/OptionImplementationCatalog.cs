@@ -103,7 +103,8 @@ public static class OptionImplementationCatalog
     private static readonly HashSet<string> InventoryOptions = Set(
         "executor.ship_inventory_item_to_bin",
         "executor.transfer_material",
-        "executor.select_safe_item_slot");
+        "executor.select_safe_item_slot",
+        "executor.set_sign_display_item");
 
     private static readonly HashSet<string> ToolOptions = Set(
         "executor.clear_obstacle",

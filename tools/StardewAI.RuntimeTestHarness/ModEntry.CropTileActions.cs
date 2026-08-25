@@ -121,6 +121,7 @@ public sealed partial class ModEntry
                 "place_flooring" => ExecutePlaceFlooring(action.Pending.Request),
                 "place_furniture" => ExecutePlaceFurniture(action.Pending.Request),
                 "place_sign" => ExecutePlaceSign(action.Pending.Request),
+                "set_sign_display_item" => ExecuteSetSignDisplayItem(action.Pending.Request),
                 "load_crab_pot_bait" => ExecuteLoadCrabPotBait(action.Pending.Request),
                 "harvest_crop" => ExecuteHarvestCrop(action.Pending.Request),
                 _ => BlockedWithPrimitive(action.Pending.Request, action.PrimitiveKind, "current_location.adjacent_tile_action=applied", "unsupported", "unsupported_adjacent_tile_action")

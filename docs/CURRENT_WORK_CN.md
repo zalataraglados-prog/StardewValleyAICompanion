@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-08-25 当前权威检查点：EVD-263
+
+- `executor.set_sign_display_item` 已闭合：full 快照对每个精确 base `Sign` 发布全部非空背包物品、源对象直接序列化 SHA-256、原生展示类型、旧展示载荷和替换要求；读取端禁止调用 `getOne()`，避免构造副本时消耗 RNG。
+- 编译器逐项绑定目标、相邻站位、源槽位/身份/品质/堆叠/状态哈希、旧载荷和替换授权。生产执行只复用共享相邻移动并调用 `GameLocation.checkAction -> Sign.checkForAction`，不直接写 `displayItem`、`displayType` 或背包。
+- 隐藏、静音、E 盘隔离运行 `runtime-sign-display-item-20260825-170751` 为 `6/6 PASS`：覆盖展示类型 `1..5` 与非 Object 默认分支，后五例覆盖已有展示替换；源物品引用、数量和完整序列化状态全部不变。
+- 当前权威对账为 `138 registered / 199 semantic / 137 compiler-bound / 65 five-gate / 36 training allowlist / 61 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens`、blocking `0`，KnowledgeCompiler 为 `585/585`。
+- 下一语义切片固定为 `executor.edit_text_sign`：独立闭合原生 `TitleTextInputMenu`、trim、60 字限制和 `showNextIndex`，不得并入标牌放置或展示物赋值。
+
+更新时间：2026-08-25
+
 ## 2026-08-25 当前权威检查点：EVD-262
 
 - `executor.place_sign` 已闭合实时标牌目录、精确库存、当前地图原生合法格、严格编译、共享邻接移动、共享原生物品放置和逐字段回执。锁定 1.6.15 存在两条不同原生分支：带 `sign_item` 标签的三种展示牌生成精确 `StardewValley.Objects.Sign`；`(BC)TextSign` 生成精确 base `StardewValley.Object`。两者均只放置空牌且库存精确 `-1`。

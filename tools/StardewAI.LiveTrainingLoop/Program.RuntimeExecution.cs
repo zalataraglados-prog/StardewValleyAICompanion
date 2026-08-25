@@ -1502,6 +1502,9 @@ static partial class Program
         ApplySignPlacementRequestFields(
             executionRequest,
             item);
+        ApplySignDisplayItemRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }
