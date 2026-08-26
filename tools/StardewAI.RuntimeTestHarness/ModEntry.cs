@@ -1519,6 +1519,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "recovery.sleep_in_tent")
+            {
+                StartTentSleep(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.ship_inventory_item_to_bin")
             {
                 StartShipInventoryItemToBin(pending);

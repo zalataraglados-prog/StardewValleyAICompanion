@@ -84,6 +84,7 @@ namespace StardewAI.Core.Execution
                 "accept_special_order" => "executor.accept_special_order",
                 "claim_quest_reward" => "executor.claim_quest_reward",
                 "sleep" => "executor.sleep",
+                "sleep_in_tent" => "recovery.sleep_in_tent",
                 "wait_ticks" => "executor.wait_ticks",
                 "close_menu" => "executor.close_menu",
                 "buy_shop_item" => "executor.buy_shop_item",

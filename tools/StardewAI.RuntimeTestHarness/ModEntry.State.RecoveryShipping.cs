@@ -27,7 +27,8 @@ public sealed partial class ModEntry : Mod
 {
     private sealed class ActiveSleep
     {
-        public ActiveSleep(PendingExecution pending, Point startTile, Point bedTile, Point standTile, List<Point> path, int startYear, int startDay, int startTime, string startSeason)
+        public ActiveSleep(PendingExecution pending, Point startTile, Point bedTile, Point standTile, List<Point> path, int startYear, int startDay, int startTime, string startSeason,
+            SleepMode mode = SleepMode.HomeBed, string startLocationId = "", Point? tentAnchor = null)
         {
             Pending = pending;
             StartTile = startTile;
@@ -38,6 +39,12 @@ public sealed partial class ModEntry : Mod
             StartDay = startDay;
             StartTime = startTime;
             StartSeason = startSeason;
+            StartTotalDays = Game1.Date.TotalDays;
+            Mode = mode;
+            StartLocationId = string.IsNullOrWhiteSpace(startLocationId)
+                ? Game1.currentLocation?.NameOrUniqueName ?? string.Empty
+                : startLocationId;
+            TentAnchor = tentAnchor;
             StartMenuOpen = Game1.activeClickableMenu is not null;
             MaxTicks = Math.Max(2400, path.Count * 90 + 2400);
             BedStepLastPosition = Game1.player.Position;
@@ -52,6 +59,12 @@ public sealed partial class ModEntry : Mod
         public int StartDay { get; }
         public int StartTime { get; }
         public string StartSeason { get; }
+        public int StartTotalDays { get; }
+        public SleepMode Mode { get; }
+        public string StartLocationId { get; }
+        public Point? TentAnchor { get; }
+        public bool SawTemporaryBedFlag { get; set; }
+        public bool NativeTentPromptDispatched { get; set; }
         public bool StartMenuOpen { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public SleepStage Stage { get; set; } = SleepStage.MoveToStand;
@@ -88,6 +101,7 @@ public sealed partial class ModEntry : Mod
     private enum SleepStage
     {
         MoveToStand,
+        OpenTentPrompt,
         StepOntoSleepTouchTile,
         WaitForNativePrompt,
         ConfirmPromptPress,
@@ -217,6 +231,12 @@ public sealed partial class ModEntry : Mod
         public int BeforeResponseCount { get; }
         public string BeforeSpeakerName { get; }
         public bool BeforeEventUp { get; }
+    }
+
+    private enum SleepMode
+    {
+        HomeBed,
+        Tent
     }
 
     private sealed class ActiveMenuClose

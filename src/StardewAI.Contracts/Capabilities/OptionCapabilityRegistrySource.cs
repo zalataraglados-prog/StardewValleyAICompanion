@@ -201,7 +201,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -243,7 +243,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward",
             "executor.move_to_tile", "executor.traverse_connector",
             "executor.face_direction", "executor.interact", "executor.buy_shop_item",
-            "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep",
+            "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "recovery.sleep_in_tent",
             "executor.wait_ticks", "executor.clear_obstacle", "executor.break_farm_resource_clump",
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
@@ -331,7 +331,7 @@ namespace StardewAI.Contracts.Capabilities
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
             "mining.claim_reward_chests", "mining.acquire_golden_scythe",
-            "volcano.reach_caldera", "recovery.stabilize_day",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.sleep_in_tent",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.close_menu",
@@ -365,7 +365,8 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> CalibrationOnlyHighLevelIds = Set(
             "farm.maintain_crops",
             "farm.process_machines",
-            "recovery.stabilize_day");
+            "recovery.stabilize_day",
+            "recovery.sleep_in_tent");
 
         private static readonly IReadOnlyDictionary<string, TrainingEvidence> TrainingEvidenceByOptionId =
             new ReadOnlyDictionary<string, TrainingEvidence>(
@@ -434,6 +435,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.place_tent"] = VerifiedEvidence(
                         "vanilla_exact_base_TentKit_native_directional_3x2_outdoor_tomorrow_festival_area_clear_TerrainFeatures_Tent_stack_and_sleep_handoff_receipt",
                         "EVD-265"),
+                    ["recovery.sleep_in_tent"] = VerifiedEvidence(
+                        "vanilla_exact_loaded_Tent_canonical_grab_geometry_native_SleepTent_prompt_SleepTent_Yes_shared_cross_day_save_same_location_tile_wake_temporary_flag_reset_and_overnight_destruction_receipt",
+                        "EVD-266"),
                     ["executor.place_crab_pot"] = VerifiedEvidence(
                         "vanilla_exact_current_location_inventory_Crab_Pot_native_Utility_tryToPlaceItem_CrabPot_owner_initial_state_stack_and_transparent_production_context_receipt",
                         "EVD-257"),

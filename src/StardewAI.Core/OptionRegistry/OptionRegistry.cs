@@ -589,6 +589,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "terminal sleep touch-action macro compiled" },
                 new[] { "block_sleep_not_terminal", "block_sleep_target_unverified", "block_sleep_prompt_unsafe" }));
 
+            Register(Option("recovery.sleep_in_tent", "recovery", "End the day in one exact placed Tent through the native temporary-bed branch",
+                OptionBehaviorCategories.Recovery,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "time.time", "time.total_days", "player.location_id", "player.tile_x", "player.tile_y", "player.temporary_sleep", "current_location.large_terrain_features", "menus.active_menu", "menus.tent_sleep_prompt_context", "locations.collision_grid", "locations.route_action_branch_coverage" },
+                new[] { "native SleepTent prompt and SleepTent_Yes start the shared sleep lifecycle", "date advances exactly one day and the player wakes at the same location and tile", "post-sleep save settles, the temporary-bed flag resets, and the exact Tent is destroyed" },
+                new[] { "block_tent_sleep_not_terminal", "block_tent_identity_health_geometry_or_path_drift", "block_native_prompt_gate_closed", "block_cross_day_wake_save_or_destruction_receipt_mismatch", "block_direct_sleep_flag_date_location_or_tent_mutation" }));
+
             Register(Option("executor.close_menu", "recovery", "Close safe active menu",
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,

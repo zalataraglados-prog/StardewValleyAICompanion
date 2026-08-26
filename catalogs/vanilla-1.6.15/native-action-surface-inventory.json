@@ -4,9 +4,9 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 67,
-  "catalogued_blocked_surface_count": 103,
-  "catalogued_blocked_action_count": 59,
+  "mapped_count": 68,
+  "catalogued_blocked_surface_count": 102,
+  "catalogued_blocked_action_count": 58,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -51,7 +51,6 @@
     "processing.crack_geode",
     "quest.cancel",
     "recovery.escape_object_trap",
-    "recovery.sleep_in_tent",
     "rewards.claim_adventure_guild_reward",
     "rewards.claim_pot_of_gold",
     "rewards.claim_prize_ticket",
@@ -4882,7 +4881,7 @@
       "mappedOptionIds": [
         "recovery.sleep_in_tent"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

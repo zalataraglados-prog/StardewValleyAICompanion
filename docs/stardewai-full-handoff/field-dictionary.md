@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Tent Sleep Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.large_terrain_features[type=Tent]` sleep contract | Bind one exact loaded base Tent to its native interaction geometry and overnight lifecycle | `Tent.performUseAction`, `Tent.getBoundingBox`, `Tent.isPassable`, `Tent.dayUpdate`, `Tent.tickUpdate`; live runtime type/health/anchor | n/a; locked 1.6.15 decompile plus runtime are authoritative | covered_for_read / covered_for_gate / native_runtime_verified | Publishes sleep location, anchor, native 3x2 bounds, canonical interaction tile, canonical stand `anchor+(0,1)`, direction up, health, passability, question `SleepTent`, confirm action `SleepTent_Yes`, native gates and overnight destruction contract. |
+| `player.temporary_sleep` | Distinguish a temporary-bed transaction from farmhouse sleep and verify the exact wake/reset lifecycle | `Farmer.isInBed`, `sleptInTemporaryBed`, `lastSleepLocation`, `lastSleepPoint`, `timeWentToBed`; `GameLocation.doSleep/CanWakeUpHere`; `SaveGame` and client reset | n/a | covered_for_read / covered_for_gate / cross_day_receipt_verified | Before execution the flag must be false. Runtime must observe it true after native confirmation, then exactly one new day, the same sleep location/point, visible farmer and the flag reset after save settlement. |
+| `menus.tent_sleep_prompt_context` | Verify that native Tent interaction opened the exact prompt before confirmation | `Game1.activeClickableMenu as DialogueBox`; `GameLocation.lastQuestionKey`; `SleepTent_Yes` response branch | n/a | covered_for_read / covered_for_gate / native_runtime_verified | Carries prompt-open state, exact question/action keys and whether confirmation is currently legal. It is separate from `menus.sleep_prompt_context` for a farmhouse bed. |
+| `recovery.sleep_in_tent` | Compile and execute the exact terminal temporary-bed transaction without model-generated mechanical input | strict Tent compiler; shared adjacent movement/input; native `GameLocation.checkAction`; shared sleep/shipping/save settlement | n/a | covered_for_compile / terminal_only / native_runtime_verified / evaluation_only | Production code does not write date, player position, temporary-bed state, Tent health or terrain-feature tables. Interrupted or stale requests fail closed and require a fresh snapshot/replan. |
+
 ## Sign Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

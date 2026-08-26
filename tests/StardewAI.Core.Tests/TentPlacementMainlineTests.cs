@@ -75,7 +75,8 @@ public sealed class TentPlacementMainlineTests
         Assert.Contains("Utility.tryToPlaceItem", sharedPlacement, StringComparison.Ordinal);
         Assert.DoesNotContain("location.largeTerrainFeatures.Add", runtime, StringComparison.Ordinal);
         Assert.Contains("recovery.sleep_in_tent remains a separate semantic action", projection, StringComparison.Ordinal);
-        Assert.True(PendingSemanticActionCatalog.TryGet("recovery.sleep_in_tent", out _));
+        Assert.False(PendingSemanticActionCatalog.TryGet("recovery.sleep_in_tent", out _));
+        Assert.True(OptionCapabilityRegistrySource.GetRequired("recovery.sleep_in_tent").HarnessDispatchSupported);
         Assert.False(PendingSemanticActionCatalog.TryGet("executor.place_tent", out _));
     }
 

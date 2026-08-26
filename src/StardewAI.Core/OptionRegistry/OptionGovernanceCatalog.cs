@@ -256,6 +256,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),
+                P("recovery.sleep_in_tent", C, R3, CrossDay, PolicyConfirm, Actor, World, Policy),
 
                 P("executor.move_to_tile", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.traverse_connector", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),

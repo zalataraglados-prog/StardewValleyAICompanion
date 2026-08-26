@@ -12,6 +12,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
     {
         "active_menu",
         "sleep_prompt_context",
+        "tent_sleep_prompt_context",
         "identity",
         "screen_bounds",
         "public_state",
@@ -36,9 +37,11 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                     type = "none",
                     full_type = (string?)null,
                     last_question_key = Game1.currentLocation?.lastQuestionKey,
-                    is_sleep_prompt = false
+                    is_sleep_prompt = false,
+                    is_tent_sleep_prompt = false
                 }, "Game1.activeClickableMenu", tick, AdapterId),
                 ["sleep_prompt_context"] = Field(ReadSleepPromptContext(null), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
+                ["tent_sleep_prompt_context"] = Field(ReadTentSleepPromptContext(null), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
                 ["identity"] = Field(new
                 {
                     is_applicable = false,
@@ -88,6 +91,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
         {
             ["active_menu"] = Field(ReadActiveMenu(menu), "Game1.activeClickableMenu", tick, AdapterId),
             ["sleep_prompt_context"] = Field(ReadSleepPromptContext(menu), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
+            ["tent_sleep_prompt_context"] = Field(ReadTentSleepPromptContext(menu), "Game1.activeClickableMenu as DialogueBox; Game1.currentLocation.lastQuestionKey", tick, AdapterId),
             ["identity"] = Field(ReadIdentity(menu), "Game1.activeClickableMenu.GetType()", tick, AdapterId),
             ["screen_bounds"] = ReadScreenBounds(menu, tick),
             ["public_state"] = ReadPublicState(menu, tick),
@@ -121,6 +125,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 full_type = type.FullName,
                 last_question_key = Game1.currentLocation?.lastQuestionKey,
                 is_sleep_prompt = string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal),
+                is_tent_sleep_prompt = string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal),
                 event_up = (bool?)Game1.eventUp,
                 dialogue_is_question = (bool?)dialogueBox.isQuestion,
                 dialogue_response_count = (int?)dialogueBox.responses?.Length,
@@ -140,6 +145,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             full_type = type.FullName,
             last_question_key = Game1.currentLocation?.lastQuestionKey,
             is_sleep_prompt = false,
+            is_tent_sleep_prompt = false,
             event_up = (bool?)null,
             dialogue_is_question = (bool?)null,
             dialogue_response_count = (int?)null,
@@ -167,6 +173,24 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             confirm_executor_enabled = promptOpen,
             confirm_action_key = "Sleep_Yes",
             block_reason = promptOpen ? (string?)null : "sleep_prompt_not_open"
+        };
+    }
+
+    private static object ReadTentSleepPromptContext(IClickableMenu? menu)
+    {
+        var lastQuestionKey = Game1.currentLocation?.lastQuestionKey;
+        var promptOpen = menu is DialogueBox && string.Equals(lastQuestionKey, "SleepTent", StringComparison.Ordinal);
+        return new
+        {
+            prompt_open = promptOpen,
+            active_menu_open = menu is not null,
+            active_menu_type = menu?.GetType().Name ?? "none",
+            last_question_key = lastQuestionKey,
+            expected_question_key = "SleepTent",
+            can_confirm_sleep = promptOpen,
+            confirm_executor_enabled = promptOpen,
+            confirm_action_key = "SleepTent_Yes",
+            block_reason = promptOpen ? (string?)null : "tent_sleep_prompt_not_open"
         };
     }
 

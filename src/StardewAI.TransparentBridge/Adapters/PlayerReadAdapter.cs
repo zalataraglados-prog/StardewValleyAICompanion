@@ -91,6 +91,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
                 player is null ? null : player.ActiveObject?.QualifiedItemId ?? string.Empty,
                 "Game1.player.ActiveObject?.QualifiedItemId; empty string means no active object",
                 tick),
+            ["temporary_sleep"] = Field(ReadTemporarySleepContext(player), "Farmer.isInBed/sleptInTemporaryBed/lastSleepLocation/lastSleepPoint/timeWentToBed; Game1.displayFarmer", tick),
             ["multiplayer_runtime"] = Field(ReadMultiplayerRuntime(player), "Context.IsMultiplayer/IsMainPlayer; Game1.IsServer/displayFarmer/getAllFarmers/getOnlineFarmers; Farmer hidden/ignoreCollisions/location/position", tick),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
             ["storage_crafting"] = Field(ReadStorageCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, native Chest placement classification", tick),
@@ -120,6 +121,22 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["inventory"] = Field(inventory, "Game1.player.Items", tick),
             ["seed_inventory"] = Field(seedInventory, "Game1.player.Items filtered by Object.SeedsCategory and Game1.cropData", tick)
         }).ToDictionary(item => item.Key, item => item.Value));
+    }
+
+    private static object ReadTemporarySleepContext(Farmer? player)
+    {
+        return new
+        {
+            is_applicable = player is not null,
+            is_in_bed = player?.isInBed.Value,
+            slept_in_temporary_bed = player?.sleptInTemporaryBed.Value,
+            last_sleep_location = player?.lastSleepLocation.Value,
+            last_sleep_point_x = player is null ? (int?)null : player.lastSleepPoint.Value.X,
+            last_sleep_point_y = player is null ? (int?)null : player.lastSleepPoint.Value.Y,
+            time_went_to_bed = player?.timeWentToBed.Value,
+            display_farmer = Context.IsWorldReady ? Game1.displayFarmer : (bool?)null,
+            current_location_can_wake_here = player?.currentLocation?.CanWakeUpHere(player)
+        };
     }
 
     private static object ReadMultiplayerRuntime(Farmer? localPlayer)

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-26 当前权威检查点：EVD-266
+
+- `recovery.sleep_in_tent` 已作为独立的终端跨日语义闭合；它复用共享移动、原生交互、确认输入、跨日等待、保存/出货结算和稳定世界判定，不并入 `executor.place_tent` 或普通床 `executor.sleep`。
+- full 快照新增 `player.temporary_sleep`、`menus.tent_sleep_prompt_context`，并扩展精确 base `Tent` 行的睡眠地点、锚点、规范交互格、规范站位、朝向、问题键和原生许可。编译器冻结这些字段以及运行时身份、血量、可通行性和路径，只允许最后一个计划步骤执行。
+- 生产执行器先走到 `anchor+(0,1)`、面朝上，再调用原生 `GameLocation.checkAction` 打开 `SleepTent`，随后发送原生确认输入。它不直接写日期、`sleptInTemporaryBed`、Tent health、玩家位置或 Tent 表；共享跨日结算必须观测 temporary-bed 标志、日期恰好增加一天、同地点同格醒来、保存菜单关闭、标志复位和 Tent 隔夜销毁。
+- 隐藏、静音、E 盘隔离运行 `runtime-tent-sleep-20260826-164032` 返回 `applied/verified`：总日数 `222 -> 223`，在 `Farm:66,19` 同地点同格醒来，观测到 `SleepTent_Yes`、temporary-bed 标志先置位后复位、世界稳定且精确 Tent 消失。
+- 当前权威对账为 `141 registered / 199 semantic / 140 compiler-bound / 68 five-gate / 36 training allowlist / 58 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens`，三类 blocking 均为 `0`；full 快照为 `126 required / 110 readable / 16 contextual / 0 blocking`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片从未闭合目录首项 `recovery.escape_object_trap` 开始：先锁定原生脱困分支与透明状态，再判断是否能复用现有移动/交互内核；在反编译和严格状态契约完成前不建立泛化执行器。
+
 ## 2026-08-26 当前权威检查点：EVD-265
 
 - `executor.place_tent` 已作为独立放置语义闭合；它不包含 `recovery.sleep_in_tent`。full 快照的 `player.tent_placement` 仅接受精确 base `(O)TentKit`，逐方向压缩发布原生合法站位，并绑定室外限制、跨季节明日日期、普通节日、被动节日地图替换/多日窗口、3x2 矩形、中心锚点、初始 `Tent` 状态、日更销毁和后续睡眠交接。

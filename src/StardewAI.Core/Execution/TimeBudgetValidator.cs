@@ -214,6 +214,8 @@ namespace StardewAI.Core.Execution
                     return EstimateConnector(item);
                 case "executor.sleep":
                     return EstimateCompiledSteps(item, "native_sleep_macro_steps.v1");
+                case "recovery.sleep_in_tent":
+                    return EstimateCompiledSteps(item, "native_tent_sleep_macro_steps.v1");
                 case "mining.reach_depth":
                     return miningModel.Estimate(item);
                 case "mining.acquire_golden_scythe":

@@ -111,13 +111,17 @@ public sealed partial class ModEntry : Mod
         }
 
         sleep.ElapsedTicks++;
+        if (sleep.Mode == SleepMode.Tent && Game1.player.sleptInTemporaryBed.Value)
+        {
+            sleep.SawTemporaryBedFlag = true;
+        }
         if (sleep.ElapsedTicks > sleep.MaxTicks)
         {
             CompleteBlockedSleep(sleep, "sleep_macro_timeout");
             return;
         }
 
-        if ((sleep.Stage == SleepStage.MoveToStand || sleep.Stage == SleepStage.StepOntoSleepTouchTile) && SleepPromptOpen())
+        if ((sleep.Stage == SleepStage.MoveToStand || sleep.Stage == SleepStage.StepOntoSleepTouchTile || sleep.Stage == SleepStage.OpenTentPrompt) && SleepPromptOpen(sleep))
         {
             StopAllMovement();
             sleep.BedStepStuckTicks = 0;
@@ -131,7 +135,20 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
-            sleep.Stage = SleepStage.StepOntoSleepTouchTile;
+            sleep.Stage = sleep.Mode == SleepMode.Tent
+                ? SleepStage.OpenTentPrompt
+                : SleepStage.StepOntoSleepTouchTile;
+        }
+
+        if (sleep.Stage == SleepStage.OpenTentPrompt)
+        {
+            if (!TryOpenNativeTentSleepPrompt(sleep, out var promptReason))
+            {
+                CompleteBlockedSleep(sleep, promptReason);
+                return;
+            }
+            sleep.Stage = SleepStage.WaitForNativePrompt;
+            return;
         }
 
         if (sleep.Stage == SleepStage.StepOntoSleepTouchTile)
@@ -169,7 +186,7 @@ public sealed partial class ModEntry : Mod
 
         if (sleep.Stage == SleepStage.WaitForNativePrompt)
         {
-            if (SleepPromptOpen())
+            if (SleepPromptOpen(sleep))
             {
                 sleep.Stage = SleepStage.ConfirmPromptPress;
                 return;
@@ -178,7 +195,9 @@ public sealed partial class ModEntry : Mod
             sleep.PromptWaitTicks++;
             if (sleep.PromptWaitTicks > 60)
             {
-                CompleteBlockedSleep(sleep, "sleep_prompt_not_open_after_native_bed_step");
+                CompleteBlockedSleep(sleep, sleep.Mode == SleepMode.Tent
+                    ? "tent_sleep_prompt_not_open_after_native_check_action"
+                    : "sleep_prompt_not_open_after_native_bed_step");
             }
             return;
         }
@@ -191,7 +210,7 @@ public sealed partial class ModEntry : Mod
 
         if (sleep.Stage == SleepStage.WaitForPromptClose)
         {
-            if (SleepPromptOpen())
+            if (SleepPromptOpen(sleep))
             {
                 sleep.PromptCloseWaitTicks++;
                 if (sleep.PromptCloseWaitTicks > 120)
@@ -218,7 +237,7 @@ public sealed partial class ModEntry : Mod
             var menu = Game1.activeClickableMenu;
             if (menu is null)
             {
-                if (!NativeNewDayWorldStable())
+                if (!NativeNewDayWorldStable(sleep))
                 {
                     sleep.PostSleepWaitTicks++;
                     if (sleep.PostSleepWaitTicks > 1800)
@@ -241,7 +260,10 @@ public sealed partial class ModEntry : Mod
                     CompleteBlockedSleep(sleep, "post_sleep_receipt_settlement_threw:" + ex.GetType().Name);
                     return;
                 }
-                CompleteSleep(sleep, "verified", new[] { "sleep_yes_confirmed", "new_day_observed", "post_sleep_menu_closed", "native_new_day_world_stable" });
+                var reasons = sleep.Mode == SleepMode.Tent
+                    ? new[] { "SleepTent_Yes_confirmed", "temporary_bed_flag_observed", "new_day_observed", "same_location_and_tile_wake_observed", "post_sleep_menu_closed", "temporary_bed_flag_reset", "tent_destroyed_overnight" }
+                    : new[] { "sleep_yes_confirmed", "new_day_observed", "post_sleep_menu_closed", "native_new_day_world_stable" };
+                CompleteSleep(sleep, "verified", reasons);
                 return;
             }
 
@@ -283,8 +305,7 @@ public sealed partial class ModEntry : Mod
     {
         if (sleep.Stage == SleepStage.ConfirmPromptPress)
         {
-            if (Game1.activeClickableMenu is not DialogueBox prompt ||
-                !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal))
+            if (Game1.activeClickableMenu is not DialogueBox prompt || !SleepPromptOpen(sleep))
             {
                 CompleteBlockedSleep(sleep, "sleep_prompt_closed_before_native_confirm");
                 return false;
@@ -474,7 +495,12 @@ public sealed partial class ModEntry : Mod
         ReleaseSmapiLeftButtonOverride();
         StopAllMovement();
         activeSleep = null;
-        sleep.Pending.Completion.SetResult(BlockedWithPrimitive(sleep.Pending.Request, "sleep", "day_transition=new_day", SleepObservedEffect(), reason));
+        sleep.Pending.Completion.SetResult(BlockedWithPrimitive(
+            sleep.Pending.Request,
+            sleep.Mode == SleepMode.Tent ? "sleep_in_tent" : "sleep",
+            SleepRequestedEffect(sleep),
+            SleepObservedEffect(sleep),
+            reason));
     }
 
     private static TrainingExecutionResult CompletedSleep(ActiveSleep sleep, string verificationStatus, string[] verificationReasons)
@@ -491,21 +517,13 @@ public sealed partial class ModEntry : Mod
             FeedbackAvailable = true,
             StartedAt = sleep.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "sleep",
+            PrimitiveKind = sleep.Mode == SleepMode.Tent ? "sleep_in_tent" : "sleep",
             PrimitiveVerificationStatus = verificationStatus,
             PrimitiveVerificationReasons = verificationReasons,
-            RequestedEffect = "day_transition=new_day",
-            ObservedEffect = SleepObservedEffect(),
+            RequestedEffect = SleepRequestedEffect(sleep),
+            ObservedEffect = SleepObservedEffect(sleep),
             BlockReasons = verificationStatus == "verified" ? Array.Empty<string>() : verificationReasons,
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange { Path = "player.tile", Before = sleep.StartTile.X + "," + sleep.StartTile.Y, After = Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y },
-                new SimulatedFactChange { Path = "time.year", Before = sleep.StartYear.ToString(), After = Game1.year.ToString() },
-                new SimulatedFactChange { Path = "time.season", Before = sleep.StartSeason, After = Game1.currentSeason },
-                new SimulatedFactChange { Path = "time.day", Before = sleep.StartDay.ToString(), After = Game1.dayOfMonth.ToString() },
-                new SimulatedFactChange { Path = "time.time", Before = sleep.StartTime.ToString(), After = Game1.timeOfDay.ToString() },
-                new SimulatedFactChange { Path = "menus.active_menu.is_open", Before = sleep.StartMenuOpen.ToString().ToLowerInvariant(), After = (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() }
-            }
+            ChangedFacts = SleepChangedFacts(sleep)
         };
     }
 
@@ -546,12 +564,20 @@ public sealed partial class ModEntry : Mod
         return new SleepTarget(bedTile, stand);
     }
 
-    private static bool NativeNewDayWorldStable()
+    private static bool NativeNewDayWorldStable(ActiveSleep sleep)
     {
-        var home = Utility.getHomeOfFarmer(Game1.player);
-        return home is not null &&
-            ReferenceEquals(Game1.currentLocation, home) &&
-            ReferenceEquals(Game1.player.currentLocation, home) &&
+        var location = Game1.currentLocation;
+        var expectedLocation = sleep.Mode == SleepMode.Tent
+            ? string.Equals(location?.NameOrUniqueName, sleep.StartLocationId, StringComparison.Ordinal) &&
+                string.Equals(Game1.player.currentLocation?.NameOrUniqueName, sleep.StartLocationId, StringComparison.Ordinal) &&
+                string.Equals(Game1.player.lastSleepLocation.Value, sleep.StartLocationId, StringComparison.Ordinal) &&
+                Game1.player.lastSleepPoint.Value == sleep.StandTile && Game1.player.TilePoint == sleep.StandTile &&
+                sleep.SawTemporaryBedFlag && !Game1.player.sleptInTemporaryBed.Value && Game1.displayFarmer &&
+                sleep.TentAnchor is Point anchor &&
+                !location!.largeTerrainFeatures.Any(feature => feature.GetType() == typeof(Tent) && feature.Tile == anchor.ToVector2())
+            : Utility.getHomeOfFarmer(Game1.player) is { } home &&
+                ReferenceEquals(location, home) && ReferenceEquals(Game1.player.currentLocation, home);
+        return expectedLocation && Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
             Game1.timeOfDay >= 600 && Game1.timeOfDay < 700 &&
             !Game1.eventUp &&
             Game1.activeClickableMenu is null &&
@@ -562,6 +588,54 @@ public sealed partial class ModEntry : Mod
     private static bool SleepPromptOpen()
     {
         return Game1.activeClickableMenu is DialogueBox && string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal);
+    }
+
+    private static bool SleepPromptOpen(ActiveSleep sleep)
+    {
+        var expected = sleep.Mode == SleepMode.Tent ? "SleepTent" : "Sleep";
+        return Game1.activeClickableMenu is DialogueBox &&
+            string.Equals(Game1.currentLocation?.lastQuestionKey, expected, StringComparison.Ordinal);
+    }
+
+    private static string SleepRequestedEffect(ActiveSleep sleep)
+    {
+        return sleep.Mode == SleepMode.Tent && sleep.TentAnchor is Point anchor
+            ? "time.total_days=before+1;player.location_id=" + sleep.StartLocationId +
+                ";player.tile=" + sleep.StandTile.X + "," + sleep.StandTile.Y +
+                ";current_location.large_terrain_features[" + anchor.X + "," + anchor.Y + "]=destroyed"
+            : "day_transition=new_day";
+    }
+
+    private static string SleepObservedEffect(ActiveSleep sleep)
+    {
+        var tentPresent = sleep.TentAnchor is Point anchor && Game1.currentLocation is { } location &&
+            location.largeTerrainFeatures.Any(feature => feature.GetType() == typeof(Tent) && feature.Tile == anchor.ToVector2());
+        return SleepObservedEffect() + ";total_days=" + Game1.Date.TotalDays +
+            ";temporary_bed=" + Game1.player.sleptInTemporaryBed.Value.ToString().ToLowerInvariant() +
+            ";last_sleep_location=" + Game1.player.lastSleepLocation.Value +
+            ";last_sleep_point=" + Game1.player.lastSleepPoint.Value.X + "," + Game1.player.lastSleepPoint.Value.Y +
+            ";tent_present=" + tentPresent.ToString().ToLowerInvariant();
+    }
+
+    private static SimulatedFactChange[] SleepChangedFacts(ActiveSleep sleep)
+    {
+        var changes = new List<SimulatedFactChange>
+        {
+            new() { Path = "player.tile", Before = sleep.StartTile.X + "," + sleep.StartTile.Y, After = Game1.player.TilePoint.X + "," + Game1.player.TilePoint.Y },
+            new() { Path = "time.total_days", Before = sleep.StartTotalDays.ToString(), After = Game1.Date.TotalDays.ToString() },
+            new() { Path = "time.year", Before = sleep.StartYear.ToString(), After = Game1.year.ToString() },
+            new() { Path = "time.season", Before = sleep.StartSeason, After = Game1.currentSeason },
+            new() { Path = "time.day", Before = sleep.StartDay.ToString(), After = Game1.dayOfMonth.ToString() },
+            new() { Path = "time.time", Before = sleep.StartTime.ToString(), After = Game1.timeOfDay.ToString() },
+            new() { Path = "menus.active_menu.is_open", Before = sleep.StartMenuOpen.ToString().ToLowerInvariant(), After = (Game1.activeClickableMenu is not null).ToString().ToLowerInvariant() }
+        };
+        if (sleep.Mode == SleepMode.Tent && sleep.TentAnchor is Point anchor)
+        {
+            changes.Add(new SimulatedFactChange { Path = "player.location_id", Before = sleep.StartLocationId, After = Game1.currentLocation?.NameOrUniqueName ?? "none" });
+            changes.Add(new SimulatedFactChange { Path = "player.temporary_sleep.slept_in_temporary_bed", Before = "false", After = Game1.player.sleptInTemporaryBed.Value.ToString().ToLowerInvariant() });
+            changes.Add(new SimulatedFactChange { Path = "current_location.large_terrain_features[" + anchor.X + "," + anchor.Y + "]", Before = typeof(Tent).FullName ?? "StardewValley.TerrainFeatures.Tent", After = "destroyed" });
+        }
+        return changes.ToArray();
     }
 
     private static string SleepObservedEffect()

@@ -71,6 +71,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> RecoveryOptions = Set(
         "executor.sleep",
+        "recovery.sleep_in_tent",
         "executor.wait_ticks",
         "executor.consume_food");
 
@@ -209,14 +210,14 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.CraftingProcessing;
         if (optionId == "inventory.transfer_item")
             return ImplementationEngineIds.InventoryTransfer;
+        if (RecoveryOptions.Contains(optionId))
+            return ImplementationEngineIds.RecoveryTiming;
         if (!optionId.StartsWith("executor.", StringComparison.Ordinal))
             return ImplementationEngineIds.StrategyOrchestration;
         if (MovementOptions.Contains(optionId))
             return ImplementationEngineIds.MovementNavigation;
         if (InteractionOptions.Contains(optionId))
             return ImplementationEngineIds.InteractionMenu;
-        if (RecoveryOptions.Contains(optionId))
-            return ImplementationEngineIds.RecoveryTiming;
         if (DungeonOptions.Contains(optionId))
             return ImplementationEngineIds.DungeonTraversal;
         if (CombatOptions.Contains(optionId))

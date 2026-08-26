@@ -1,3 +1,9 @@
+2026-08-26 EVD-266 complete native Tent sleep admission
+- Locked 1.6.15 semantics keep `recovery.sleep_in_tent`, `executor.place_tent` and farmhouse `executor.sleep` separate while sharing movement, native interaction/input and cross-day save/shipping settlement.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-tent-sleep/runtime-tent-sleep-20260826-164032/summary.json`. Native `SleepTent_Yes` changed total days 222 -> 223, observed and reset `sleptInTemporaryBed`, woke at the exact same `Farm:66,19` tile, settled the post-sleep world/menu and destroyed the exact Tent overnight.
+- Installed full snapshot requires 126 factors: readable 110, contextual/stale 16, blocking 0. KnowledgeCompiler PASS 585/585 with blocking 0. Reconciliation is 141 registered, 199 semantic, 140 compiler-bound, 68 five-gate, 36 training-allowlisted, 58 catalogued-blocked and 0 Product Executor.
+- Focused Tent sleep PASS 7/7; full Core PASS 1788/1788; Backend PASS 124/124; Release solution build 0 errors with one existing AvoidNetField warning.
+
 2026-08-25 EVD-262 complete native sign placement admission
 - Locked 1.6.15 semantics distinguish three live `sign_item` display signs from `(BC)TextSign`. Production uses only the shared native placement path; it never writes `location.objects`, display payload, text or inventory directly.
 - Hidden/silent isolated E-drive runtime PASS 4/4: `artifacts/runtime-sign-placement/runtime-sign-placement-20260825-160744/summary.json`. All live catalog rows applied/verified; display signs became exact `StardewValley.Objects.Sign` with null display/type 0, TextSign became exact base `StardewValley.Object` with empty text and `showNextIndex=true`, and every stack changed `1 -> 0`.

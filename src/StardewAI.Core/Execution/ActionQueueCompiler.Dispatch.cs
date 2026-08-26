@@ -31,6 +31,7 @@ namespace StardewAI.Core.Execution
                 ["executor.cook_recipe"] = (action, _) => CompileCookRecipeStep(action),
                 ["executor.forge_item"] = (action, _) => CompileForgeItemStep(action),
                 ["executor.sleep"] = (action, snapshot) => CompileSleepSteps(snapshot, action),
+                ["recovery.sleep_in_tent"] = (action, _) => CompileSleepInTentSteps(action),
                 ["executor.wait_ticks"] = (action, _) => CompileWaitTicksStep(action),
                 ["executor.clear_obstacle"] = (action, _) => CompileClearObstacleStep(action),
                 ["executor.break_farm_resource_clump"] = (action, _) => CompileFarmResourceClumpStep(action),

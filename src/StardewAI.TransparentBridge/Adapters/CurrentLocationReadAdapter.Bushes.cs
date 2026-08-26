@@ -19,7 +19,7 @@ public sealed partial class CurrentLocationReadAdapter
     {
         if (feature.GetType() == typeof(Tent))
         {
-            return ReadTent((Tent)feature);
+            return ReadTent(location, (Tent)feature);
         }
         if (feature is not Bush bush)
         {
@@ -38,7 +38,7 @@ public sealed partial class CurrentLocationReadAdapter
         return ReadBush(location, bush);
     }
 
-    private static object ReadTent(Tent tent)
+    private static object ReadTent(GameLocation location, Tent tent)
     {
         var bounds = tent.getBoundingBox();
         var player = Game1.player;
@@ -68,11 +68,18 @@ public sealed partial class CurrentLocationReadAdapter
             game_new_day = Game1.newDay,
             time_should_pass = Game1.shouldTimePass(),
             native_sleep_prompt_available = nativeGrabGeometry && !Game1.newDay && Game1.shouldTimePass() && player.hasMoved && !player.passedOut,
+            sleep_location_id = location.NameOrUniqueName,
+            sleep_interaction_tile_x = (int)anchor.X,
+            sleep_interaction_tile_y = (int)anchor.Y,
+            canonical_sleep_stand_tile_x = (int)anchor.X,
+            canonical_sleep_stand_tile_y = (int)anchor.Y + 1,
+            canonical_sleep_facing_direction = 0,
             native_sleep_question_key = "SleepTent",
+            native_sleep_confirm_action_key = "SleepTent_Yes",
             slept_in_temporary_bed = player.sleptInTemporaryBed.Value,
             last_tent_touched_tile_x = (int)Tent.lastTentTouchedByPlayer.X,
             last_tent_touched_tile_y = (int)Tent.lastTentTouchedByPlayer.Y,
-            overnight_contract = "dayUpdate sets health=0; tickUpdate destroys tent; temporary-bed wake remains at the tent location"
+            overnight_contract = "startSleep records current location and tile; CanWakeUpHere accepts sleptInTemporaryBed; dayUpdate sets health=0; tickUpdate destroys tent; SaveGame resets sleptInTemporaryBed"
         };
     }
 
