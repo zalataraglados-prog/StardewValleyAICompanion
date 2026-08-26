@@ -1147,6 +1147,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native Sign interaction copies the selected item into the exact base display sign", "display type matches the native item family", "the source inventory reference, stack and serialized state remain unchanged", "replacement of an existing display payload is explicitly authorized" },
                 new[] { "block_text_or_custom_sign_target", "block_source_or_target_projection_drift", "block_unapproved_existing_payload_replacement", "block_unreachable_adjacent_stand", "block_native_interaction_or_post_state_mismatch" }));
 
+            Register(Option("executor.edit_text_sign", "farming", "Edit one exact placed text sign through its native text input menu",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "current_location.objects", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native text-sign interaction opens the exact TitleTextInputMenu contract", "keyboard input obeys the 60 UTF-16-code-unit limit and native filtering", "the native callback trims and updates raw and displayed sign text", "showNextIndex exactly matches whether displayed text is empty" },
+                new[] { "block_display_or_custom_sign_target", "block_target_or_previous_text_projection_drift", "block_unapproved_existing_text_replacement", "block_unreachable_adjacent_stand_or_open_menu", "block_native_menu_or_post_state_mismatch" }));
+
             Register(Option("executor.load_crab_pot_bait", "fishing", "Load one exact native-accepted bait item into one verified empty Crab Pot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

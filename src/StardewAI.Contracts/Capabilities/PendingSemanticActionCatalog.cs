@@ -34,7 +34,6 @@ public static class PendingSemanticActionCatalog
             P("farming.read_farm_computer_report", "farming", "engine.interaction_menu", "Object"),
             P("world.tune_flute_block", "world", "engine.interaction_menu", "Object"),
             P("world.tune_drum_block", "world", "engine.interaction_menu", "Object"),
-            P("executor.edit_text_sign", "farming", "engine.interaction_menu", "Object", "TitleTextInputMenu"),
             P("executor.place_tent", "recovery", "engine.placement_layout", "Object"),
             P("executor.plant_grass", "farming", "engine.placement_layout", "Object"),
             P("executor.toggle_lantern", "tool", "engine.tool_harvest", "Lantern"),

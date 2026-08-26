@@ -1505,6 +1505,9 @@ static partial class Program
         ApplySignDisplayItemRequestFields(
             executionRequest,
             item);
+        ApplyTextSignEditingRequestFields(
+            executionRequest,
+            item);
         return executionRequest;
     }
 }

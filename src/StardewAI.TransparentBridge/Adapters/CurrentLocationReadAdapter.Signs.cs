@@ -13,6 +13,8 @@ public sealed partial class CurrentLocationReadAdapter
 {
     internal const string SignDisplayItemNativeContract =
         "GameLocation.checkAction->Sign.checkForAction(CurrentItem.getOne,no_inventory_consumption)->displayItem/displayType";
+    internal const string TextSignEditNativeContract =
+        "GameLocation.checkAction->Object.CheckForActionOnTextSign->TitleTextInputMenu(textLimit=60,minLength=0,paste=false)->NamingMenu.textBoxEnter(FilterDirtyWords)->signText=text.Trim()->TokenParser.ParseText+FilterDirtyWords->showNextIndex=IsNullOrEmpty(SignText)";
 
     private static object ReadSignState(GameLocation location, Vector2 tile, StardewObject item, Farmer player)
     {
@@ -51,12 +53,69 @@ public sealed partial class CurrentLocationReadAdapter
                 display_item_state = (object?)null,
                 display_item_special_state = (object?)null,
                 display_assignment = new { status = "not_applicable_text_sign" },
+                text_editing = ReadTextSignEditing(location, tile, item),
                 sign_text = item.SignText ?? string.Empty,
                 show_next_index = item.showNextIndex.Value,
                 is_passable = item.isPassable()
             };
         }
         return new { status = "not_sign", runtime_type_supported = false };
+    }
+
+    private static object ReadTextSignEditing(GameLocation location, Vector2 tile, StardewObject sign)
+    {
+        if (sign.GetType() != typeof(StardewObject))
+        {
+            return new { status = "unsupported_text_sign_runtime_type" };
+        }
+        if (SnapshotProfileContext.Current is not "full")
+        {
+            return new { status = "blocked_requires_full_profile" };
+        }
+
+        var targetState = ReadDirectItemState(sign)!;
+        var rawText = sign.signText.Value ?? string.Empty;
+        var displayText = sign.SignText ?? string.Empty;
+        var fingerprintText = string.Join("|", new[]
+        {
+            location.NameOrUniqueName,
+            ((int)tile.X).ToString(),
+            ((int)tile.Y).ToString(),
+            sign.GetType().FullName ?? string.Empty,
+            sign.QualifiedItemId,
+            targetState.StateStatus,
+            targetState.StateSha256,
+            rawText,
+            displayText,
+            sign.showNextIndex.Value.ToString(),
+            TextSignEditNativeContract
+        });
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprintText))).ToLowerInvariant();
+        return new
+        {
+            status = string.Equals(targetState.StateStatus, "exact_live_direct_serialization", StringComparison.Ordinal)
+                ? "ready"
+                : "target_sign_state_unavailable",
+            target_location = location.NameOrUniqueName,
+            target_tile_x = (int)tile.X,
+            target_tile_y = (int)tile.Y,
+            target_runtime_type = typeof(StardewObject).FullName,
+            target_qualified_item_id = sign.QualifiedItemId,
+            target_state_sha256 = targetState.StateSha256,
+            target_projection_fingerprint = fingerprint,
+            raw_sign_text_before = rawText,
+            display_sign_text_before = displayText,
+            show_next_index_before = sign.showNextIndex.Value,
+            replaces_existing_text = !string.IsNullOrEmpty(rawText),
+            text_limit_utf16_code_units = 60,
+            minimum_length = 0,
+            paste_button_visible = false,
+            input_filter = "Utility.FilterDirtyWords",
+            display_pipeline = "TokenParser.ParseText_then_Utility.FilterDirtyWords",
+            trim_pipeline = "System.String.Trim",
+            show_next_index_rule = "string.IsNullOrEmpty(SignText)",
+            native_contract = TextSignEditNativeContract
+        };
     }
 
     private static object ReadSignDisplayAssignment(GameLocation location, Vector2 tile, Sign sign, Farmer player)

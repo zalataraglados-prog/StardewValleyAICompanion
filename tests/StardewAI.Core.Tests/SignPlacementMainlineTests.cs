@@ -67,7 +67,7 @@ public sealed class SignPlacementMainlineTests
         Assert.False(capability.AutonomousCandidateEnabled);
         Assert.False(PendingSemanticActionCatalog.TryGet("executor.place_sign", out _));
         Assert.False(PendingSemanticActionCatalog.TryGet("executor.set_sign_display_item", out _));
-        Assert.True(PendingSemanticActionCatalog.TryGet("executor.edit_text_sign", out _));
+        Assert.False(PendingSemanticActionCatalog.TryGet("executor.edit_text_sign", out _));
         Assert.Equal(ImplementationEngineIds.PlacementLayout,
             OptionImplementationCatalog.GetRequired("executor.place_sign").PrimaryEngineId);
 

@@ -65,7 +65,9 @@ public static class OptionImplementationCatalog
         "executor.purchase_farmhouse_upgrade",
         "executor.construct_building",
         "executor.change_building_skin",
-        "executor.read_book");
+        "executor.read_book",
+        "executor.edit_text_sign");
+
 
     private static readonly HashSet<string> RecoveryOptions = Set(
         "executor.sleep",

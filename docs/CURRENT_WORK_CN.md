@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-08-26 当前权威检查点：EVD-264
+
+- `executor.edit_text_sign` 已作为独立语义闭合，不与标牌放置或展示物赋值合并。full 快照对精确 base `StardewValley.Object` 文字牌发布 raw/display 文本、`showNextIndex`、直接序列化 SHA-256、替换要求、60 UTF-16 code-unit 限制及完整原生菜单管线。
+- 编译器严格绑定目标地点/格子/运行时类型/qid/状态哈希/投影指纹、相邻站位、旧文本与覆盖授权，并拒绝超过 60 code units、双引号或控制字符的非原生键盘输入。生产执行器仅复用共享相邻移动，调用 `GameLocation.checkAction`，逐字符输入 `TitleTextInputMenu.textBox` 并点击原生完成按钮；不直接写 `signText` 或 `showNextIndex`。
+- 原生回执按实际顺序验证 `NamingMenu.FilterInput -> Utility.FilterDirtyWords -> Trim -> NetString -> TokenParser.ParseText -> Utility.FilterDirtyWords`，并验证 `showNextIndex == string.IsNullOrEmpty(SignText)`。隐藏、静音、E 盘隔离运行 `runtime-text-sign-editing-20260826-104822` 为 `5/5 PASS`，覆盖首次写入、旧文本替换、首尾空白裁剪、清空、中文 UTF-16 输入和 60 code-unit 边界。
+- 当前权威对账为 `139 registered / 199 semantic / 138 compiler-bound / 66 five-gate / 36 training allowlist / 60 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens`、三类 blocking `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 标牌三条独立链现已全部闭合：`executor.place_sign`、`executor.set_sign_display_item`、`executor.edit_text_sign`。下一语义切片固定为 `executor.place_tent`，继续复用共享原生物品放置与布局安全，不建立第二套移动或放置系统。
+
+更新时间：2026-08-26
+
 ## 2026-08-25 当前权威检查点：EVD-263
 
 - `executor.set_sign_display_item` 已闭合：full 快照对每个精确 base `Sign` 发布全部非空背包物品、源对象直接序列化 SHA-256、原生展示类型、旧展示载荷和替换要求；读取端禁止调用 `getOne()`，避免构造副本时消耗 RNG。

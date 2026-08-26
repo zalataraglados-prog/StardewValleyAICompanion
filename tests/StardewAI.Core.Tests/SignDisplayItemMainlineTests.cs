@@ -67,7 +67,7 @@ public sealed class SignDisplayItemMainlineTests
         Assert.True(capability.HarnessDispatchSupported);
         Assert.False(capability.AutonomousCandidateEnabled);
         Assert.False(PendingSemanticActionCatalog.TryGet("executor.set_sign_display_item", out _));
-        Assert.True(PendingSemanticActionCatalog.TryGet("executor.edit_text_sign", out _));
+        Assert.False(PendingSemanticActionCatalog.TryGet("executor.edit_text_sign", out _));
         Assert.Equal(ImplementationEngineIds.InventoryTransfer,
             OptionImplementationCatalog.GetRequired("executor.set_sign_display_item").PrimaryEngineId);
 

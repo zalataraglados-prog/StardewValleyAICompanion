@@ -3969,3 +3969,13 @@ Scope boundary:
 - Focused sign/governance PASS 32/32; full Core PASS 1765/1765; Backend PASS 124/124; Release solution build 0 errors with one existing AvoidNetField warning.
 - Reconciliation is 138 registered, 199 semantic, 137 compiler-bound, 65 five-gate, 36 training-allowlisted, 61 catalogued-blocked and 0 Product Executor. Native denominator remains frozen at 322 surfaces / 448 branches / 150 map tokens with blocking 0; KnowledgeCompiler remains 585/585.
 - Next slice: `executor.edit_text_sign`, preserving the separate native TitleTextInputMenu, trim, 60-character limit and showNextIndex semantics.
+
+2026-08-26 EVD-264 complete native text-sign editing admission
+- Locked 1.6.15 semantics: exact base TextSign interaction opens TitleTextInputMenu, hides paste, uses minLength 0 and textLimit 60, filters through NamingMenu, trims the raw NetString, token-parses/filters displayed SignText, and sets showNextIndex from displayed-text emptiness.
+- Transparent full projection binds target direct-state SHA-256/fingerprint, raw/display prior text, showNextIndex, replacement requirement and every native menu normalization rule. Strict compiler rejects stale, custom/display-sign, open-menu, unreachable, unapproved replacement and non-keyboard-representable requests.
+- Production runtime uses shared adjacent movement plus GameLocation.checkAction, TextBox.RecieveTextInput and the native done button only. It contains no direct signText or showNextIndex assignments.
+- Hidden/silent isolated E-drive runtime PASS 5/5: `artifacts/runtime-text-sign-editing/runtime-text-sign-editing-20260826-104822/summary.json`. First write, trim replacement, clear, Chinese UTF-16 and exact 60-code-unit cases all returned applied/verified and matched the next full snapshot.
+- Focused sign/governance/catalog suite PASS 52/52. KnowledgeCompiler PASS 585/585 with zero denominator blockers.
+- Reconciliation is 139 registered, 199 semantic, 138 compiler-bound, 66 five-gate, 36 training-allowlisted, 60 catalogued-blocked and 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with all blocking counts zero.
+- Next slice: `executor.place_tent`, reusing shared native placement and layout safety.
+- Final regression PASS: Core 1776/1776; Backend 124/124; Release solution build 0 errors with one pre-existing `AvoidNetField` warning.
