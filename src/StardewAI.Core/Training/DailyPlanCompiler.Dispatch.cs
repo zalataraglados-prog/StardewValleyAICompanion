@@ -58,6 +58,7 @@ namespace StardewAI.Core.Training
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
+                ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
@@ -288,6 +289,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClaimMineRewardChestSteps(candidate);
+            }
+
+            if (candidate.Kind == "claim_pot_of_gold" &&
+                OptionCandidateCompilerKinds["rewards.claim_pot_of_gold"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return ClaimPotOfGoldSteps(candidate);
             }
 
             if (candidate.Kind == "collect_crab_pot" &&

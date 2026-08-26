@@ -1,3 +1,10 @@
+2026-08-27 EVD-268 native Spring 17 Pot of Gold admission
+- Locked 1.6.15 decompile confirms `Forest.DayUpdate` installs `(O)PotOfGold` only at `Forest:52,98` on Spring 17 and removes an unclaimed pot on Spring 18. Native `Object.checkForAction` removes it and creates `min(100, 7 + year)` individual `(O)GoldCoin` debris plus one `(H)LeprechuanHat` debris; claim has no backpack-capacity gate.
+- The no-parameter high-level intent binds exact live location/object/stand/date/output fields, compiles through one native `GameLocation.checkAction`, and leaves ordinary debris pickup to the existing `executor.pickup_debris` chain. Production does not directly remove the object, create debris, or add inventory.
+- Hidden/silent isolated E-drive PASS: `artifacts/runtime-pot-of-gold/runtime-pot-of-gold-20260827-010119/summary.json`. With a full inventory in year 2, the exact target tile became empty and 9 coin debris plus 1 hat debris were conserved. Only TransparentBridge and RuntimeTestHarness were loaded.
+- Installed full snapshot validates 128 required factors: 112 readable, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 training allowlist / 56 catalogued blocked / 0 Product Executor.
+- Final Release regression PASS: Core 1797/1797; Backend 125/125; solution build 0 errors with one existing `AvoidNetField` warning.
+
 2026-08-26 EVD-267 transparent object-trap recovery composition
 - Locked 1.6.15 decompile confirms the base Object four-cardinal anti-trap preamble invokes `performToolAction(null)`; base Object removal does not return the asset. The production policy keeps this fallback disabled.
 - Added `player.object_trap_recovery`, deterministic compiler-owned safe-target selection, one recovery candidate, daily-plan binding and strict delegation to the existing `executor.remove_machine` step/runtime. The small model supplies no target coordinates for this mechanical recovery.

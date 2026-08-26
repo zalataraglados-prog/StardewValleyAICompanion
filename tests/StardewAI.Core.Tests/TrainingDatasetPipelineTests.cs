@@ -52,6 +52,7 @@ namespace StardewAI.Core.Tests
                     "inventory.transfer_item",
                     "mail.process_letter",
                     "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
+                    "rewards.claim_pot_of_gold",
                     "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);

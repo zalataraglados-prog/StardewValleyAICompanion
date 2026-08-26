@@ -48,6 +48,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.acquire_golden_scythe"] = MiningGoldenScytheCandidateBuilder.Build,
                 ["mining.obtain_skull_key"] = MiningSkullKeyCandidateBuilder.Build,
                 ["mining.claim_reward_chests"] = (snapshot, _) => MineRewardChestCandidates(snapshot),
+                ["rewards.claim_pot_of_gold"] = (snapshot, _) => PotOfGoldCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
                 ["economy.sell_items"] = SellItemStageCandidates,

@@ -54,6 +54,7 @@ namespace StardewAI.Core.OptionRegistry
             "farm.process_machines",
             "recovery.stabilize_day",
             "recovery.escape_object_trap",
+            "rewards.claim_pot_of_gold",
             "executor.close_menu"
         };
 
@@ -254,6 +255,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("mining.use_elevator", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("mining.obtain_skull_key", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("mining.claim_reward_chests", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("rewards.claim_pot_of_gold", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),

@@ -105,6 +105,7 @@ public static class OptionImplementationCatalog
         "executor.play_junimo_kart");
 
     private static readonly HashSet<string> InventoryOptions = Set(
+        "rewards.claim_pot_of_gold",
         "executor.ship_inventory_item_to_bin",
         "executor.transfer_material",
         "executor.select_safe_item_slot",
@@ -213,6 +214,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.InventoryTransfer;
         if (RecoveryOptions.Contains(optionId))
             return ImplementationEngineIds.RecoveryTiming;
+        if (InventoryOptions.Contains(optionId))
+            return ImplementationEngineIds.InventoryTransfer;
         if (!optionId.StartsWith("executor.", StringComparison.Ordinal))
             return ImplementationEngineIds.StrategyOrchestration;
         if (MovementOptions.Contains(optionId))
@@ -227,8 +230,6 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.Fishing;
         if (MinigameOptions.Contains(optionId))
             return ImplementationEngineIds.Minigame;
-        if (InventoryOptions.Contains(optionId))
-            return ImplementationEngineIds.InventoryTransfer;
         if (ToolOptions.Contains(optionId))
             return ImplementationEngineIds.ToolHarvest;
         if (FarmMachineOptions.Contains(optionId))

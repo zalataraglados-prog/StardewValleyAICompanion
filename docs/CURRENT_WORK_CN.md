@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-27 当前权威检查点：EVD-268
+
+- `rewards.claim_pot_of_gold` 已闭合透明读取、上游候选排除、DailyPlan、无参数模型意图重绑定、动作编译、原生运行与输出回执。小模型只输出领取目标；目标地点、`52,98` 对象、相邻站位、年份奖励数量和原生契约全部由最新快照与编译器绑定。
+- 锁定 1.6.15 反编译确认 `Forest.DayUpdate` 仅在春 17 日放置 `(O)PotOfGold`，春 18 日删除未领取对象；`Object.checkForAction` 原生移除对象并生成 `min(100, 7 + year)` 个独立 `(O)GoldCoin` debris 和一个 `(H)LeprechuanHat` debris。领取本身没有背包容量门，后续收取只复用既有 `executor.pickup_debris`。
+- 隐藏、静音、E 盘隔离运行 `runtime-pot-of-gold-20260827-010119` 在满背包、第二年场景返回 `applied/verified`：目标格为空，9 个金币 debris 与 1 顶帽子精确守恒，且仅加载 TransparentBridge 与 RuntimeTestHarness。生产执行器只调用原生 `GameLocation.checkAction`，不直接删除对象、增加 debris 或写背包。
+- 最新真实 full 快照已安装：`128 required / 112 readable / 16 contextual / 0 blocking`；KnowledgeCompiler 为 `585/585`、blocking `0`。权威对账为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 training allowlist / 56 catalogued blocked / 0 Product Executor`，原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 `0`。
+- 最终 Release 回归为 Core `1797/1797`、Backend `125/125`；解决方案构建 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。
+- 下一语义切片固定为 `mining.choose_dwarf_statue_power`。先按锁定反编译确认雕像对象身份、可用时段、菜单图标顺序、每日选择持久状态与实际增益，再决定复用现有对象交互和菜单选择内核；不得把火山、普通矿井或采石场矿洞的执行逻辑混入该菜单动作。
+
 ## 2026-08-26 当前权威检查点：EVD-267
 
 - `recovery.escape_object_trap` 已贯通透明读取、候选、日计划和动作编译链。小模型只需发出该高层恢复命令；编译器从玩家四个基数方向的对象行与 `farm.machines` 中按固定方向顺序选择首个 `removal_safe_now=true` 的相邻机器，不要求模型生成拆除坐标或工具细节。

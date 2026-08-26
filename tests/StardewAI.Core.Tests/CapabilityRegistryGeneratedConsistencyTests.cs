@@ -174,6 +174,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "inventory.transfer_item",
                 "mail.process_letter",
                 "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
+                "rewards.claim_pot_of_gold",
                 "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
@@ -224,6 +225,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps_and_unlocked_native_elevator_checkpoint_shortcut",
                 "mining.use_elevator" => "vanilla_ordinary_mines_unlocked_checkpoint_exact_endpoint_native_MineElevatorMenu_selection_and_bidirectional_destination_receipt",
+                "rewards.claim_pot_of_gold" => "vanilla_spring_17_Forest_exact_PotOfGold_native_checkAction_full_inventory_year_scaled_GoldCoin_and_LeprechuanHat_debris_conservation_and_shared_pickup_handoff",
                 "skills.choose_profession" => "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
                 "skills.read_books" => "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",

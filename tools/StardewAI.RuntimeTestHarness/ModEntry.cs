@@ -100,6 +100,7 @@ public sealed partial class ModEntry : Mod
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
+    private ActivePotOfGoldClaim? activePotOfGoldClaim;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -479,6 +480,7 @@ public sealed partial class ModEntry : Mod
         TickShippingSummaryClose();
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
+        TickPotOfGoldClaim();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1414,6 +1416,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_pot_of_gold")
+            {
+                pending.Completion.SetResult(ExecuteSetupPotOfGoldFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "rewards.claim_pot_of_gold")
+            {
+                StartPotOfGoldClaim(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.forge_item")
             {
                 StartForge(pending);
@@ -1552,6 +1566,7 @@ public sealed partial class ModEntry : Mod
             activeCrabPotCollect = null;
             activeBushHarvest = null;
             activeMineRewardChest = null;
+            activePotOfGoldClaim = null;
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
             activePetInteraction = null;
@@ -1782,6 +1797,7 @@ public sealed partial class ModEntry : Mod
             activeShippingSummaryClose is not null ||
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null ||
+            activePotOfGoldClaim is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

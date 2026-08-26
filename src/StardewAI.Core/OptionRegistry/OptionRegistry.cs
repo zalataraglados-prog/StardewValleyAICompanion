@@ -420,6 +420,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact live reward chest selected", "one native reward-open starts the lid animation", "after dumpContents empties the chest a separate empty-chest cleanup removes it" },
                 new[] { "block_skull_key_specialized_chain", "block_unknown_chest_family", "block_non_vanilla_chest_shape", "block_inventory_full", "block_projection_drift", "block_claim_click_before_dump" }));
 
+            Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.pot_of_gold_reward", "current_location.debris", "menus.active_menu" },
+                new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction removes the Pot of Gold", "the exact year-scaled GoldCoin and LeprechuanHat rewards remain conserved across inventory and ordinary debris pickup" },
+                new[] { "block_not_spring_17_forest", "block_exact_pot_missing_or_drifted", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_reward_debris_receipt_mismatch", "block_direct_object_inventory_or_debris_mutation" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

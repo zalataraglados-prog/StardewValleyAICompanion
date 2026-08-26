@@ -624,6 +624,12 @@ DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作
 
 当前看板为 `122 registered / 180 semantic / 121 compiler-bound / 49 five-gate / 32 training allowlist / 0 Product Executor`；原生分母仍为 `320 surfaces / 428 branches / 150 map tokens` 且三类 blocking 均为 0。真实 full 快照覆盖 112 个必需字段、blocking 0，KnowledgeCompiler 为 585/585、blocking 0。证据只覆盖已声明的 Pet Bowl 分支；`buildings.paint` 仍是下一独立动作切片，必须复用本链的 Robin、建筑目标选择和菜单生命周期，不得复制第二套系统。
 
+## 2026-08-27 彩虹尽头奖励闭环（EVD-268）
+
+`rewards.claim_pot_of_gold` 已从待办分母替换为唯一高层实现：透明桥实时发布春 17 日 Forest 精确对象、四个站位、年份奖励数量、春 18 日失效与原生输出契约；候选、DailyPlan 和动作编译器在上游排除错误日期、缺失对象、菜单占用与不可达站位。小模型只发出领取意图，所有机械字段由新快照重绑定。
+
+生产运行只复用共享 BFS 并调用原生 `GameLocation.checkAction`。满背包不会阻止领取，金币和帽子先进入 debris，后续只交给现有 `executor.pickup_debris`；禁止新增直接背包转移或第二套奖励拾取实现。E 盘隐藏静音运行在第二年验证 9 个金币与 1 顶帽子精确守恒。当前权威状态为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 allowlist / 56 catalogued blocked / 0 Product Executor`，full 快照 `128 required / 112 readable / 16 contextual / 0 blocking`。下一切片为 `mining.choose_dwarf_statue_power`。
+
 ## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
 
 `buildings.paint` 是高层外观选择，不是新的机械执行系统。小模型必须明确建筑身份、涂装区域、恢复默认或自定义 H/S/L，以及外观理由。透明桥实时读取 `Data/PaintData`、权限、区域顺序、亮度边界、当前三组颜色和 Robin 服务入口；同时根据锁定版原生 284 像素滑杆公式公开每个通道的精确鼠标可达值。上游候选与队列编译均拒绝不可达整数、无效果目标、默认显示值无法解除默认标志的三元组、菜单占用和投影漂移。

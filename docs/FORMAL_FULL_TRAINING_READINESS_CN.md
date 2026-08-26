@@ -357,3 +357,9 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 动作对账现为 111 registered / 176 semantic / 110 compiler-bound；five-gate 仍为 39，训练白名单仍为 26。
 特别订单高层项和原语继续保持 RegisteredOnly，一次 Town 通过不构成正式训练准入，也不解除 Product Executor、
 长期 rollout、独立存档评测和第三年 21 分长跑等全量训练阻塞项。
+
+## 2026-08-27 彩虹尽头奖励准入（EVD-268）
+
+`rewards.claim_pot_of_gold` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。模型不输出坐标、站位、数量或领取细节；编译器从最新 `current_location.pot_of_gold_reward` 绑定 Forest、`52,98`、可用相邻格、春 17 日、`min(100, 7 + year)` 金币和帽子契约。隐藏静音满背包运行验证原生 `GameLocation.checkAction` 产生第二年 9 个金币 debris 与 1 顶帽子，随后由既有 debris 拾取链处理，不建立第二套奖励转移系统。
+
+最新 full 快照为 `128 required / 112 readable / 16 contextual / 0 blocking`；权威对账为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 allowlist / 56 catalogued blocked / 0 Product Executor`。该单项准入不解除正式全量训练对 Product Executor、生产长 rollout、冻结正式数据 manifest、独立存档评测和第三年 21 分长跑的总体阻塞。
