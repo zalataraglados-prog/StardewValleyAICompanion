@@ -10,6 +10,14 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Object Trap Recovery Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.object_trap_recovery` | Detect the exact native four-cardinal object trap without guessing from failed movement | locked 1.6.15 `Object.checkForAction`; live `Game1.player.TilePoint`; current-location object table and virtual `isPassable` results | n/a; decompile is authoritative for the hidden branch | covered_for_read / covered_for_gate / live_snapshot_schema_verified | Publishes each N/E/S/W tile, object presence/passability, qid, runtime/object type, `checkForAction` declaring type, interaction-state gates and the destructive null-tool contract. |
+| `player.object_trap_recovery.destructive_native_fallback_enabled` | Prevent the original anti-trap branch from silently destroying a placed asset | base `Object.performToolAction(null)` removes the exact object and emits cosmetic radial debris without returning the asset | n/a | covered_for_read / hard_disabled | Always false. Subclass-specific null-tool behavior is not generalized into a recovery executor. |
+| `recovery.escape_object_trap` | Turn one fully mechanical recovery command into a deterministic safe machine-removal action | strict recovery compiler; candidate and daily-plan bindings; existing `executor.remove_machine` contract | n/a | covered_for_candidate / covered_for_daily_plan / covered_for_compile / policy_authorization_required / dedicated_runtime_calibration_pending | If no target is supplied, the compiler selects the first direction-ordered adjacent row whose exact machine projection is currently safe. It then reuses the sole machine-removal runtime. No second mutation path exists. |
+
 ## Tent Sleep Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

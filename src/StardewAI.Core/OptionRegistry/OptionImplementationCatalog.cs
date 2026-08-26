@@ -72,6 +72,7 @@ public static class OptionImplementationCatalog
     private static readonly HashSet<string> RecoveryOptions = Set(
         "executor.sleep",
         "recovery.sleep_in_tent",
+        "recovery.escape_object_trap",
         "executor.wait_ticks",
         "executor.consume_food");
 

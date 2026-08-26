@@ -92,6 +92,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
                 "Game1.player.ActiveObject?.QualifiedItemId; empty string means no active object",
                 tick),
             ["temporary_sleep"] = Field(ReadTemporarySleepContext(player), "Farmer.isInBed/sleptInTemporaryBed/lastSleepLocation/lastSleepPoint/timeWentToBed; Game1.displayFarmer", tick),
+            ["object_trap_recovery"] = Field(ReadObjectTrapRecovery(player), "Game1.player.TilePoint; current location four cardinal objects and Object.checkForAction performToolAction(null) anti-trap branch", tick),
             ["multiplayer_runtime"] = Field(ReadMultiplayerRuntime(player), "Context.IsMultiplayer/IsMainPlayer; Game1.IsServer/displayFarmer/getAllFarmers/getOnlineFarmers; Farmer hidden/ignoreCollisions/location/position", tick),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
             ["storage_crafting"] = Field(ReadStorageCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, native Chest placement classification", tick),

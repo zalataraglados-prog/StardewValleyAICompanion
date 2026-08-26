@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-26 当前权威检查点：EVD-267
+
+- `recovery.escape_object_trap` 已贯通透明读取、候选、日计划和动作编译链。小模型只需发出该高层恢复命令；编译器从玩家四个基数方向的对象行与 `farm.machines` 中按固定方向顺序选择首个 `removal_safe_now=true` 的相邻机器，不要求模型生成拆除坐标或工具细节。
+- 锁定 1.6.15 反编译确认 `Object.checkForAction` 的四向封闭前导分支会调用目标 `performToolAction(null)`；base `Object` 随即从 `location.objects` 移除且只产生装饰 debris，不返还资产，并可能继续执行目标交互。透明桥发布四向存在性、可通行性、运行时/声明类型、交互状态及该破坏性契约，但 `destructive_native_fallback_enabled=false`。
+- 安全恢复只编译到既有 `executor.remove_machine`：复用其精确机器身份、所有权、空闲/无产出/无附件、fragility、Pickaxe、指纹和原生 debris/自动回收验证；没有第二套移除运行时。非四向封闭、菜单/手持物/骑马冲突、无安全相邻机器或机器状态漂移均关闭失败。
+- 隐藏、静音、E 盘隔离环境已采集真实 full 快照并安装：`127 required / 111 readable / 16 contextual / 0 blocking`。聚焦候选/日计划/编译/治理测试与全量 Core 回归通过；KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 当前权威对账为 `142 registered / 199 semantic / 141 compiler-bound / 68 five-gate / 36 training allowlist / 57 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens`，三类 blocking 均为 `0`。five-gate 未增加，因为尚未伪造一份专用四向陷阱运行回执；实际资产移除内核沿用已验证的 EVD-147/EVD-148。
+- 下一语义切片固定为 `rewards.claim_pot_of_gold`：先从锁定反编译确定彩虹尽头奖励对象的生成、可领取状态、背包满分支、一次性状态与原生转移路径，再决定复用对象交互/背包转移内核；不把通用拾取冒充特殊奖励领取。
+
 ## 2026-08-26 当前权威检查点：EVD-266
 
 - `recovery.sleep_in_tent` 已作为独立的终端跨日语义闭合；它复用共享移动、原生交互、确认输入、跨日等待、保存/出货结算和稳定世界判定，不并入 `executor.place_tent` 或普通床 `executor.sleep`。

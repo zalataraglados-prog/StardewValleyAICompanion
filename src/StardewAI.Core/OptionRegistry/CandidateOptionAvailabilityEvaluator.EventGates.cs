@@ -181,6 +181,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_native_cooking_candidate");
             }
 
+            if (optionId == "recovery.escape_object_trap")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "object_trap_not_observed",
+                    "no_safe_object_trap_recovery_candidate");
+            }
+
             if (optionId == "crafting.forge_item")
             {
                 return EventCandidateAvailabilityReasons(

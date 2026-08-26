@@ -201,7 +201,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -234,7 +234,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
-            "volcano.reach_caldera", "recovery.stabilize_day", "executor.buy_shop_item",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "inventory.transfer_item", "executor.transfer_material");
 
@@ -272,7 +272,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> InternalHighLevelExecutionIds = Set(
             "buildings.change_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
-            "recovery.stabilize_day", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
+            "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
@@ -331,7 +331,7 @@ namespace StardewAI.Contracts.Capabilities
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
             "mining.claim_reward_chests", "mining.acquire_golden_scythe",
-            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.sleep_in_tent",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.close_menu",
@@ -366,7 +366,8 @@ namespace StardewAI.Contracts.Capabilities
             "farm.maintain_crops",
             "farm.process_machines",
             "recovery.stabilize_day",
-            "recovery.sleep_in_tent");
+            "recovery.sleep_in_tent",
+            "recovery.escape_object_trap");
 
         private static readonly IReadOnlyDictionary<string, TrainingEvidence> TrainingEvidenceByOptionId =
             new ReadOnlyDictionary<string, TrainingEvidence>(
@@ -685,7 +686,8 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("recovery_resume_sleep_prompt"),
                 SupportedCandidate("recovery_return_home"),
                 SupportedCandidate("recovery_sleep_before_collapse"),
-                SupportedCandidate("recovery_sleep_immediately"), SupportedCandidate("route_connector_tile"),
+                SupportedCandidate("recovery_sleep_immediately"),
+                SupportedCandidate("recovery_escape_object_trap"), SupportedCandidate("route_connector_tile"),
                 SupportedCandidate("quest_drop_box_donation"),
                 SupportedCandidate("play_junimo_kart"),
                 SupportedCandidate("quest_npc_interaction"),

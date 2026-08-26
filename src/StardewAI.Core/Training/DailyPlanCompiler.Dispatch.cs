@@ -61,7 +61,8 @@ namespace StardewAI.Core.Training
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
-                ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "process_open_letter" }
+                ["mail.process_letter"] = new[] { "route_connector_tile", "mailbox_approach", "open_mailbox_letter", "process_open_letter" },
+                ["recovery.escape_object_trap"] = new[] { "recovery_escape_object_trap" }
             };
 
         public static IReadOnlyCollection<string> OptionCompilerIds =>
@@ -137,6 +138,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "recovery_close_menu")
             {
                 return RecoveryCloseMenuSteps(candidate);
+            }
+
+            if (candidate.Kind == "recovery_escape_object_trap")
+            {
+                return ObjectTrapRecoverySteps(candidate);
             }
 
             if (candidate.Kind == "choose_profession")

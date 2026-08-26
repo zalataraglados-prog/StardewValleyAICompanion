@@ -1,3 +1,11 @@
+2026-08-26 EVD-267 transparent object-trap recovery composition
+- Locked 1.6.15 decompile confirms the base Object four-cardinal anti-trap preamble invokes `performToolAction(null)`; base Object removal does not return the asset. The production policy keeps this fallback disabled.
+- Added `player.object_trap_recovery`, deterministic compiler-owned safe-target selection, one recovery candidate, daily-plan binding and strict delegation to the existing `executor.remove_machine` step/runtime. The small model supplies no target coordinates for this mechanical recovery.
+- Focused candidate/compiler/governance/capability suite PASS 55/55. Final full Core regression PASS 1793/1793 after candidate-to-plan integration and reconciliation.
+- Hidden/silent isolated full snapshot capture and install PASS: 127 required, 111 readable, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 142 registered / 199 semantic / 141 compiler-bound / 68 five-gate / 36 training allowlist / 57 catalogued blocked / 0 Product Executor. A dedicated four-machine high-level runtime receipt remains pending; the reused machine-removal runtime is covered by EVD-147/EVD-148.
+- Backend regression PASS 124/124. Release solution build PASS with 0 errors and one pre-existing `AvoidNetField` warning.
+
 2026-08-26 EVD-266 complete native Tent sleep admission
 - Locked 1.6.15 semantics keep `recovery.sleep_in_tent`, `executor.place_tent` and farmhouse `executor.sleep` separate while sharing movement, native interaction/input and cross-day save/shipping settlement.
 - Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-tent-sleep/runtime-tent-sleep-20260826-164032/summary.json`. Native `SleepTent_Yes` changed total days 222 -> 223, observed and reset `sleptInTemporaryBed`, woke at the exact same `Farm:66,19` tile, settled the post-sleep world/menu and destroyed the exact Tent overnight.

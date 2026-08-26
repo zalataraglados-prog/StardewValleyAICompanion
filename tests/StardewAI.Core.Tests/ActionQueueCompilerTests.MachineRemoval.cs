@@ -124,13 +124,17 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     private static StardewAI.Contracts.State.SnapshotEnvelope
-        MachineRemovalSnapshot(bool safe)
+        MachineRemovalSnapshot(bool safe, bool trapped = true)
     {
         return Snapshot(
             """
             {
               "player": {
                 "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_x": {"value":61,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_y": {"value":15,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "active_object_qualified_id": {"value":"","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "object_trap_recovery": {"value":{"is_applicable":true,"location_id":"Farm","player_tile_x":61,"player_tile_y":15,"active_menu_clear":true,"active_object_clear":true,"player_not_riding_horse":true,"trapped_by_four_non_passable_objects":TRAPPED,"recovery_mode":"prefer_existing_recoverable_machine_removal","destructive_native_fallback_enabled":false,"adjacent_objects":[{"tile_x":61,"tile_y":14,"direction_from_player":0,"object_present":true,"object_passable":false},{"tile_x":62,"tile_y":15,"direction_from_player":1,"object_present":true,"object_passable":false},{"tile_x":61,"tile_y":16,"direction_from_player":2,"object_present":true,"object_passable":false},{"tile_x":60,"tile_y":15,"direction_from_player":3,"object_present":true,"object_passable":false,"qualified_item_id":"(BC)13"}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
                 "inventory": {"value":[{"slot_index":1,"qualified_item_id":"(T)Pickaxe","stack":1,"is_empty":false}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
               "menus": {
@@ -139,12 +143,16 @@ public sealed partial class ActionQueueCompilerTests
               "locations": {
                 "collision_grid": {"value":{"width":120,"height":80,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               },
+              "current_location": {
+                "objects": {"value":[{"tile_x":61,"tile_y":14},{"tile_x":62,"tile_y":15},{"tile_x":61,"tile_y":16},{"tile_x":60,"tile_y":15}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
               "farm": {
                 "machines": {"value":[{"location_id":"Farm","location_is_current":true,"tile_x":60,"tile_y":15,"qualified_item_id":"(BC)13","runtime_type":"StardewValley.Object","object_type":"Crafting","fragility":0,"ready_for_harvest":false,"minutes_until_ready":MINUTES,"held_item":HELD_ITEM,"removal_status":"REMOVAL_STATUS","removal_safe_now":SAFE,"removal_block_reasons":BLOCK_REASONS,"removal_tool_slot_index":1,"removal_tool_qualified_item_id":"(T)Pickaxe","removal_native_contract":"NATIVE_CONTRACT","removal_projection_fingerprint":"fingerprint:test"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
               }
             }
             """
             .Replace("MINUTES", safe ? "-1" : "20")
+            .Replace("TRAPPED", trapped ? "true" : "false")
             .Replace("HELD_ITEM", safe ? "null" : """{"qualified_item_id":"(O)334"}""")
             .Replace(
                 "REMOVAL_STATUS",

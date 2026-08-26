@@ -37,6 +37,37 @@ namespace StardewAI.Core.Training
             };
         }
 
+        private static IEnumerable<SmallModelPlanStep> ObjectTrapRecoverySteps(
+            PolicyEventCandidatePrediction candidate)
+        {
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "escape_object_trap", 0),
+                    Kind = "escape_object_trap",
+                    TargetLocation = candidate.LocationId,
+                    TargetTileX = candidate.TileX,
+                    TargetTileY = candidate.TileY,
+                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    Preconditions = new[]
+                    {
+                        "candidate_id:" + candidate.CandidateId,
+                        "four_cardinal_non_passable_objects_observed=true",
+                        "selected_adjacent_machine_removal_safe_now=true"
+                    },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[]
+                    {
+                        "reuse_executor_remove_machine_only",
+                        "native_null_tool_destructive_fallback_disabled"
+                    },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = candidate.Parameters
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> RecoveryCloseMenuSteps(PolicyEventCandidatePrediction candidate)
         {
             return new[]

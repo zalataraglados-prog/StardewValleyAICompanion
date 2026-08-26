@@ -597,6 +597,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native SleepTent prompt and SleepTent_Yes start the shared sleep lifecycle", "date advances exactly one day and the player wakes at the same location and tile", "post-sleep save settles, the temporary-bed flag resets, and the exact Tent is destroyed" },
                 new[] { "block_tent_sleep_not_terminal", "block_tent_identity_health_geometry_or_path_drift", "block_native_prompt_gate_closed", "block_cross_day_wake_save_or_destruction_receipt_mismatch", "block_direct_sleep_flag_date_location_or_tent_mutation" }));
 
+            Register(Option("recovery.escape_object_trap", "recovery", "Recover from four cardinal blocking objects by removing one exact safely recoverable adjacent machine",
+                OptionBehaviorCategories.Recovery,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.object_trap_recovery", "player.active_object_qualified_id", "menus.active_menu", "current_location.objects", "farm.machines" },
+                new[] { "four cardinal non-passable objects are observed", "one selected adjacent machine is removed through the existing recoverable native Pickaxe/debris executor", "the destructive Object.checkForAction null-tool fallback remains disabled" },
+                new[] { "block_not_trapped", "block_no_safe_adjacent_machine", "block_machine_removal_projection_drift", "block_destructive_null_tool_fallback" }));
+
             Register(Option("executor.close_menu", "recovery", "Close safe active menu",
                 OptionBehaviorCategories.Recovery,
                 CompilerResponsibilities.FullActionExpansion,

@@ -53,6 +53,7 @@ namespace StardewAI.Core.OptionRegistry
             "farm.maintain_crops",
             "farm.process_machines",
             "recovery.stabilize_day",
+            "recovery.escape_object_trap",
             "executor.close_menu"
         };
 
@@ -257,6 +258,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),
                 P("recovery.sleep_in_tent", C, R3, CrossDay, PolicyConfirm, Actor, World, Policy),
+                P("recovery.escape_object_trap", C, R3, Asset, PolicyConfirm, Actor, World, Policy),
 
                 P("executor.move_to_tile", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("executor.traverse_connector", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
