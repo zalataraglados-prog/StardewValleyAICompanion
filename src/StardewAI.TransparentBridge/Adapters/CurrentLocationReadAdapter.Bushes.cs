@@ -17,6 +17,10 @@ public sealed partial class CurrentLocationReadAdapter
 
     private static object ReadLargeTerrainFeature(GameLocation location, LargeTerrainFeature feature)
     {
+        if (feature.GetType() == typeof(Tent))
+        {
+            return ReadTent((Tent)feature);
+        }
         if (feature is not Bush bush)
         {
             var bounds = feature.getBoundingBox();
@@ -32,6 +36,44 @@ public sealed partial class CurrentLocationReadAdapter
         }
 
         return ReadBush(location, bush);
+    }
+
+    private static object ReadTent(Tent tent)
+    {
+        var bounds = tent.getBoundingBox();
+        var player = Game1.player;
+        var grabTile = player.GetGrabTile();
+        var anchor = tent.Tile;
+        var nativeGrabGeometry = grabTile == anchor ||
+            (grabTile.X == anchor.X && grabTile.Y >= anchor.Y);
+        return new
+        {
+            tile_x = (int)anchor.X,
+            tile_y = (int)anchor.Y,
+            runtime_type = tent.GetType().FullName,
+            bounding_tile_x = bounds.X / Game1.tileSize,
+            bounding_tile_y = bounds.Y / Game1.tileSize,
+            bounding_tile_width = bounds.Width / Game1.tileSize,
+            bounding_tile_height = bounds.Height / Game1.tileSize,
+            is_bush = false,
+            is_tent = true,
+            health = tent.health.Value,
+            passable_for_player = tent.isPassable(player),
+            passable_without_character = tent.isPassable(),
+            native_grab_geometry_satisfied = nativeGrabGeometry,
+            player_grab_tile_x = (int)grabTile.X,
+            player_grab_tile_y = (int)grabTile.Y,
+            player_has_moved = player.hasMoved,
+            player_passed_out = player.passedOut,
+            game_new_day = Game1.newDay,
+            time_should_pass = Game1.shouldTimePass(),
+            native_sleep_prompt_available = nativeGrabGeometry && !Game1.newDay && Game1.shouldTimePass() && player.hasMoved && !player.passedOut,
+            native_sleep_question_key = "SleepTent",
+            slept_in_temporary_bed = player.sleptInTemporaryBed.Value,
+            last_tent_touched_tile_x = (int)Tent.lastTentTouchedByPlayer.X,
+            last_tent_touched_tile_y = (int)Tent.lastTentTouchedByPlayer.Y,
+            overnight_contract = "dayUpdate sets health=0; tickUpdate destroys tent; temporary-bed wake remains at the tent location"
+        };
     }
 
     private static object ReadBush(GameLocation location, Bush bush)

@@ -1490,6 +1490,9 @@ static partial class Program
         ApplyStoragePlacementRequestFields(
             executionRequest,
             item);
+        ApplyTentPlacementRequestFields(
+            executionRequest,
+            item);
         ApplyFencePlacementRequestFields(
             executionRequest,
             item);

@@ -1099,6 +1099,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native placement creates exact Torch (BC)278 with fragility 1 and destroyOvernight true", "one Cookout Kit is consumed", "the placed Torch becomes a native same-day cooking endpoint" },
                 new[] { "block_missing_cookout_reason", "block_inventory_or_projection_identity_drift", "block_unreachable_adjacent_stand", "block_native_placement_recheck", "block_cross_day_use_plan" }));
 
+            Register(Option("executor.place_tent", "recovery", "Place one verified Tent Kit through the native directional 3x2 outdoor placement branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.tent_placement", "current_location.large_terrain_features", "locations.collision_grid", "menus.active_menu" },
+                new[] { "native placement creates one exact TerrainFeatures.Tent at the direction-derived center anchor", "one exact base Tent Kit is consumed", "the 3x2 footprint, initial health, passability and separate sleep handoff match the native branch" },
+                new[] { "block_missing_tent_reason_or_native_contract", "block_inventory_projection_or_calendar_drift", "block_indoor_festival_or_illegal_directional_rectangle", "block_unreachable_or_protected_footprint", "block_native_placement_recheck" }));
+
             Register(Option("executor.place_crab_pot", "fishing", "Place one verified inventory Crab Pot at one exact native-legal water tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

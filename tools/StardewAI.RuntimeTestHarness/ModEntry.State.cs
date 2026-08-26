@@ -161,13 +161,15 @@ public sealed partial class ModEntry : Mod
             string primitiveKind,
             string locationId,
             Point target,
-            List<Point> path)
+            List<Point> path,
+            Point? requiredStand = null)
         {
             Pending = pending;
             PrimitiveKind = primitiveKind;
             LocationId = locationId;
             Target = target;
             Path = path;
+            RequiredStand = requiredStand;
             LastPosition = Game1.player.Position;
             MaxTicks = Math.Max(180, path.Count * 90 + 180);
         }
@@ -176,6 +178,7 @@ public sealed partial class ModEntry : Mod
         public string PrimitiveKind { get; }
         public string LocationId { get; }
         public Point Target { get; }
+        public Point? RequiredStand { get; }
         public List<Point> Path { get; }
         public int PathIndex { get; set; }
         public int ElapsedTicks { get; set; }

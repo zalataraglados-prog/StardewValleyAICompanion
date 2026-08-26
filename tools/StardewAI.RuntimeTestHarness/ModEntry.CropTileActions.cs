@@ -34,14 +34,61 @@ public sealed partial class ModEntry
         }
 
         var target = new Point(request.TargetTileX.Value, request.TargetTileY.Value);
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var requiredStand = request.StandTileX.HasValue && request.StandTileY.HasValue
+            ? new Point(request.StandTileX.Value, request.StandTileY.Value)
+            : (Point?)null;
+        var path = BuildRequestedAdjacentPath(
+            location,
+            target,
+            requiredStand,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, primitiveKind, "current_location.adjacent_tile_action=applied", "target=" + target.X + "," + target.Y, moveReason));
             return;
         }
 
-        activeAdjacentTileAction = new ActiveAdjacentTileAction(pending, primitiveKind, location.NameOrUniqueName, target, path);
+        activeAdjacentTileAction = new ActiveAdjacentTileAction(
+            pending,
+            primitiveKind,
+            location.NameOrUniqueName,
+            target,
+            path,
+            requiredStand);
+    }
+
+    private static List<Point>? BuildRequestedAdjacentPath(
+        GameLocation location,
+        Point target,
+        Point? requestedStand,
+        int maxMovementTiles,
+        out string blockReason)
+    {
+        if (requestedStand.HasValue)
+        {
+            if (!AreAdjacent(requestedStand.Value, target) ||
+                !IsTileOnMap(location, requestedStand.Value) ||
+                !IsTileWalkable(location, requestedStand.Value) ||
+                IsTileOccupiedByCharacter(location, requestedStand.Value))
+            {
+                blockReason = "requested_adjacent_stand_invalid";
+                return null;
+            }
+            return TryBuildTilePath(
+                location,
+                Game1.player.TilePoint,
+                requestedStand.Value,
+                Math.Clamp(maxMovementTiles, 1, 512),
+                out blockReason,
+                avoidSoftObstacles: true,
+                allowRemovableObstacles: false);
+        }
+        return BuildAdjacentToolPath(
+            location,
+            target,
+            maxMovementTiles,
+            out blockReason);
     }
 
     private void TickAdjacentTileAction()
@@ -65,7 +112,10 @@ public sealed partial class ModEntry
             return;
         }
 
-        if (!AreAdjacent(Game1.player.TilePoint, action.Target))
+        var reachedStand = action.RequiredStand.HasValue
+            ? Game1.player.TilePoint == action.RequiredStand.Value
+            : AreAdjacent(Game1.player.TilePoint, action.Target);
+        if (!reachedStand)
         {
             if (action.PathIndex >= action.Path.Count)
             {
@@ -116,6 +166,7 @@ public sealed partial class ModEntry
                 "apply_fertilizer" => ExecuteApplyFertilizer(action.Pending.Request),
                 "apply_tree_treatment" => ExecuteApplyTreeTreatment(action.Pending.Request),
                 "place_cookout_kit" => ExecutePlaceCookoutKit(action.Pending.Request),
+                "place_tent" => ExecutePlaceTent(action.Pending.Request),
                 "place_crab_pot" => ExecutePlaceCrabPot(action.Pending.Request),
                 "place_fence" => ExecutePlaceFence(action.Pending.Request),
                 "place_flooring" => ExecutePlaceFlooring(action.Pending.Request),

@@ -71,6 +71,7 @@ namespace StardewAI.Core.Execution
                 ["executor.remove_machine"] = (action, _) => CompileRemoveMachineStep(action),
                 ["executor.place_storage"] = (action, _) => CompilePlaceStorageStep(action),
                 ["executor.place_cookout_kit"] = (action, _) => CompilePlaceCookoutKitStep(action),
+                ["executor.place_tent"] = (action, _) => CompilePlaceTentStep(action),
                 ["executor.place_crab_pot"] = (action, _) => CompilePlaceCrabPotStep(action),
                 ["executor.place_fence"] = (action, _) => CompilePlaceFenceStep(action),
                 ["executor.place_flooring"] = (action, _) => CompilePlaceFlooringStep(action),

@@ -3979,3 +3979,12 @@ Scope boundary:
 - Reconciliation is 139 registered, 199 semantic, 138 compiler-bound, 66 five-gate, 36 training-allowlisted, 60 catalogued-blocked and 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with all blocking counts zero.
 - Next slice: `executor.place_tent`, reusing shared native placement and layout safety.
 - Final regression PASS: Core 1776/1776; Backend 124/124; Release solution build 0 errors with one pre-existing `AvoidNetField` warning.
+
+2026-08-26 EVD-265 complete native Tent Kit placement admission
+- Locked 1.6.15 semantics cover the exact base `(O)TentKit`, outdoors-only gate, tomorrow active festival, passive-festival map replacement and Trout Derby/SquidFest multi-day blockers, all four direction-derived 3x2 rectangles, native `isAreaClear`, center anchor and one-item consumption.
+- Added `player.tent_placement` full projection and exact Tent rows. The strict compiler freezes inventory, calendar, stand/probe/direction, rectangle/anchor, layout metrics, purpose and native contract. `recovery.sleep_in_tent` remains separate and blocked.
+- Shared adjacent execution now respects a compiler-frozen stand tile. Production placement still uses the sole `PlaceInventoryObjectNative -> Utility.tryToPlaceItem` kernel and contains no direct terrain-feature or inventory mutation.
+- Hidden/silent isolated E-drive runtime PASS 4/4: `artifacts/runtime-tent-placement/runtime-tent-placement-20260826-160613/summary.json`. Directions 0..3 all applied/verified; every next snapshot read exact base Tent anchor, health 5 and passability.
+- Installed full snapshot schema PASS: 123 required, 107 readable with provenance, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 140 registered / 199 semantic / 139 compiler-bound / 67 five-gate / 36 training allowlist / 59 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Focused/full Core regression PASS 1781/1781. Next slice is `recovery.sleep_in_tent`, reusing normal movement, native interaction/confirmation and terminal cross-day settlement without merging it into `executor.sleep` or placement.

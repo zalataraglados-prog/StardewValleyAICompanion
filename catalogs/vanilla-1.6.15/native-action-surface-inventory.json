@@ -6,11 +6,10 @@
   "surface_count": 322,
   "mapped_count": 67,
   "catalogued_blocked_surface_count": 103,
-  "catalogued_blocked_action_count": 60,
+  "catalogued_blocked_action_count": 59,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
-    "executor.place_tent",
     "executor.plant_grass",
     "executor.read_secret_note",
     "executor.toggle_lantern",

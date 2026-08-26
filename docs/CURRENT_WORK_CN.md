@@ -1,6 +1,14 @@
 # StardewAI 当前工作
 
-## 2026-08-26 当前权威检查点：EVD-264
+## 2026-08-26 当前权威检查点：EVD-265
+
+- `executor.place_tent` 已作为独立放置语义闭合；它不包含 `recovery.sleep_in_tent`。full 快照的 `player.tent_placement` 仅接受精确 base `(O)TentKit`，逐方向压缩发布原生合法站位，并绑定室外限制、跨季节明日日期、普通节日、被动节日地图替换/多日窗口、3x2 矩形、中心锚点、初始 `Tent` 状态、日更销毁和后续睡眠交接。
+- 编译器冻结精确槽位/堆叠/地点/站位/朝向探针/矩形/锚点/日历/投影指纹/布局指标/放置理由与原生契约。共享邻接执行器现会尊重已冻结的 `stand_tile`，再由唯一 `PlaceInventoryObjectNative` 调用 `Utility.tryToPlaceItem -> Object.placementAction`；生产代码不直接写 `largeTerrainFeatures` 或库存。
+- 隐藏、静音、E 盘隔离运行 `runtime-tent-placement-20260826-160613` 为 `4/4 PASS`，覆盖方向 `0..3`。每例均验证原生返回、库存减一、精确 base `Tent`、方向派生锚点/3x2 边界、`health=5`、玩家可通行性及下一份透明快照回读。
+- 当前权威对账为 `140 registered / 199 semantic / 139 compiler-bound / 67 five-gate / 36 training allowlist / 59 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens`，三类 blocking 均为 `0`；full 快照为 `123 required / 107 readable / 16 contextual / 0 blocking`，KnowledgeCompiler 为 `585/585`、blocking `0`。
+- 下一语义切片固定为 `recovery.sleep_in_tent`：复用现有移动、交互、确认、跨日等待和 `executor.sleep` 的终止性规则，只新增 `Tent.performUseAction -> SleepTent_Yes -> sleptInTemporaryBed`、同地点醒来及隔夜销毁回执；不得把它重新并入放置动作或普通床睡眠。
+
+## 2026-08-26 上一权威检查点：EVD-264
 
 - `executor.edit_text_sign` 已作为独立语义闭合，不与标牌放置或展示物赋值合并。full 快照对精确 base `StardewValley.Object` 文字牌发布 raw/display 文本、`showNextIndex`、直接序列化 SHA-256、替换要求、60 UTF-16 code-unit 限制及完整原生菜单管线。
 - 编译器严格绑定目标地点/格子/运行时类型/qid/状态哈希/投影指纹、相邻站位、旧文本与覆盖授权，并拒绝超过 60 code units、双引号或控制字符的非原生键盘输入。生产执行器仅复用共享相邻移动，调用 `GameLocation.checkAction`，逐字符输入 `TitleTextInputMenu.textBox` 并点击原生完成按钮；不直接写 `signText` 或 `showNextIndex`。

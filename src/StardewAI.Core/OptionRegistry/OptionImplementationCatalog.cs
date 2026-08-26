@@ -146,6 +146,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> PlacementOptions = Set(
         "executor.place_cookout_kit",
+        "executor.place_tent",
         "executor.place_crab_pot",
         "executor.place_fence",
         "executor.place_flooring",
