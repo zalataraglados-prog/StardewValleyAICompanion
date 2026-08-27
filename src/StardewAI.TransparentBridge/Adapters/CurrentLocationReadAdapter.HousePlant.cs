@@ -22,7 +22,7 @@ public sealed partial class CurrentLocationReadAdapter
         }
 
         var target = tile.ToPoint();
-        var stands = ReadHousePlantAdjacentStands(location, target);
+        var stands = ReadSafeObjectInteractionStands(location, target);
         var currentSpriteIndex = item.ParentSheetIndex;
         return new
         {
@@ -48,7 +48,7 @@ public sealed partial class CurrentLocationReadAdapter
         qualifiedItemId is "(BC)0" or "(BC)1" or "(BC)2" or "(BC)3" or
             "(BC)4" or "(BC)5" or "(BC)6" or "(BC)7";
 
-    private static HousePlantStandProjection[] ReadHousePlantAdjacentStands(GameLocation location, Point target) =>
+    private static ObjectInteractionStandProjection[] ReadSafeObjectInteractionStands(GameLocation location, Point target) =>
         new[]
         {
             new Point(target.X, target.Y - 1),
@@ -66,11 +66,11 @@ public sealed partial class CurrentLocationReadAdapter
                     Game1.tileSize - 2),
                 Game1.viewport,
                 Game1.player);
-            var objectTrapBlocked = IsHousePlantObjectTrap(location, stand);
-            return new HousePlantStandProjection(stand.X, stand.Y, onMap, collisionBlocked, objectTrapBlocked);
+            var objectTrapBlocked = IsDestructiveObjectTrapPreamble(location, stand);
+            return new ObjectInteractionStandProjection(stand.X, stand.Y, onMap, collisionBlocked, objectTrapBlocked);
         }).ToArray();
 
-    private static bool IsHousePlantObjectTrap(GameLocation location, Point stand) =>
+    private static bool IsDestructiveObjectTrapPreamble(GameLocation location, Point stand) =>
         new[]
         {
             new Point(stand.X, stand.Y - 1),
@@ -81,7 +81,7 @@ public sealed partial class CurrentLocationReadAdapter
             location.objects.TryGetValue(tile.ToVector2(), out var item) &&
             !item.isPassable());
 
-    private sealed record HousePlantStandProjection(
+    private sealed record ObjectInteractionStandProjection(
         int tile_x,
         int tile_y,
         bool on_map,

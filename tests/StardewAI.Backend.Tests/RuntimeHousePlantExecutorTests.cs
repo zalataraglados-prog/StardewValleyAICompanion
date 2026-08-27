@@ -17,7 +17,7 @@ public sealed class RuntimeHousePlantExecutorTests
         Assert.Contains("Game1.player.CurrentItem is not null", source);
         Assert.Contains("Game1.player.CurrentToolIndex = active.SafeSlotIndex", source);
         Assert.Contains("Game1.player.CurrentToolIndex = active.RestoreSlotIndex", source);
-        Assert.Contains("IsHousePlantObjectTrap(active.Location, active.Stand)", source);
+        Assert.Contains("IsDestructiveObjectTrap(active.Location, active.Stand)", source);
         Assert.Contains("house_plant_destructive_object_trap_preamble_blocked", source);
         Assert.DoesNotMatch(@"ParentSheetIndex\s*=(?!=)", source);
         Assert.DoesNotContain("checkForAction(", source, StringComparison.Ordinal);

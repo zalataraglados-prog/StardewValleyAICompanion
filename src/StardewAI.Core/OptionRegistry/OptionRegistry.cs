@@ -71,6 +71,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("farming.collect_slime_ball", "farming", "Collect one exact natural Slime Hutch Slime Ball through its native object action",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "player.inventory", "current_location.objects", "current_location.debris", "menus.active_menu" },
+                new[] { "one exact natural fragility-2 Slime Ball and adjacent stand selected", "compiler rebinds the deterministic day seed and both predicted outputs", "one native GameLocation.checkAction removes the ball and creates debris", "shared debris pickup owns subsequent collection" },
+                new[] { "block_non_natural_or_drifted_slime_ball", "block_destructive_object_trap_preamble", "block_no_empty_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_seed_or_output_projection_drift", "block_direct_object_removal_or_debris_creation" }));
+
             Register(Option("animals.purchase", "animals", "Purchase one exact animal into one exact compatible home",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
@@ -114,7 +122,7 @@ namespace StardewAI.Core.OptionRegistry
             Register(Option("buildings.change_skin", "buildings", "Change one exact building to one explicitly selected native skin",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
-                TrainingRoles.StrategyValue,
+                TrainingRoles.PlayerCommandOnly,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.building_skin_catalog", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
                 new[] { "one exact building, target skin and appearance reason selected", "compiler freezes the live native menu order and shortest mutation-safe click sequence", "native Robin and BuildingSkinMenu flow applies the skin and verifies paint reset" },
                 new[] { "block_missing_explicit_building_skin_identity_or_reason", "block_permission_condition_or_menu_order_drift", "block_active_construction_or_upgrade", "block_unverified_route", "block_direct_skin_or_paint_mutation" }));
@@ -122,7 +130,7 @@ namespace StardewAI.Core.OptionRegistry
             Register(Option("buildings.paint", "buildings", "Paint one exact native building region to an explicitly selected color or default",
                 OptionBehaviorCategories.EconomicStrategic,
                 CompilerResponsibilities.PlanValidation,
-                TrainingRoles.StrategyValue,
+                TrainingRoles.PlayerCommandOnly,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.building_paint_catalog", "locations.route_graph", "locations.collision_grid", "menus.active_menu" },
                 new[] { "one exact building, paint region, mouse-reachable color or default and appearance reason selected", "compiler freezes the live native ranges, current values and Robin service", "shared native Carpenter target flow applies and verifies the exact region" },
                 new[] { "block_missing_explicit_building_region_color_or_reason", "block_permission_condition_or_mouse_quantization_drift", "block_active_construction_or_upgrade", "block_unverified_route", "block_direct_paint_mutation" }));
@@ -447,7 +455,7 @@ namespace StardewAI.Core.OptionRegistry
             Register(Option("world.rotate_house_plant", "world", "Rotate one exact placed House Plant through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
-                TrainingRoles.Mixed,
+                TrainingRoles.PlayerCommandOnly,
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "current_location.objects", "menus.active_menu" },
                 new[] { "one exact base House Plant and adjacent stand selected", "compiler binds an empty toolbar slot and current visual frame", "one native GameLocation.checkAction advances the observed frame", "permanent item identity and selected toolbar slot are preserved" },
                 new[] { "block_not_explicitly_authorized", "block_non_base_or_non_house_plant_object", "block_no_empty_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_object_frame_or_identity_drift", "block_direct_parent_sheet_index_mutation" }));

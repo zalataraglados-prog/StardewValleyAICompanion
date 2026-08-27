@@ -181,8 +181,8 @@ public sealed class StructuredPolicyTrainerTests
     private static PolicyTrajectoryVersions Versions() => new()
     {
         FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
-        CandidateVocabulary = "capability_registry.v2",
-        CapabilityRegistry = "capability_registry.v2",
+        CandidateVocabulary = "capability_registry.v3",
+        CapabilityRegistry = "capability_registry.v3",
         KnowledgeDictionary = PolicyTrajectoryVersionPins.KnowledgeDictionary,
         Compiler = "action_queue.v1",
         Executor = "runtime_test_harness_executor.v1"

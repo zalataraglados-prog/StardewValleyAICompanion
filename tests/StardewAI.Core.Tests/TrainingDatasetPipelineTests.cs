@@ -33,9 +33,7 @@ namespace StardewAI.Core.Tests
                 {
                     "animals.manage_animal",
                     "animals.purchase",
-                    "buildings.change_skin",
                     "buildings.construct",
-                    "buildings.paint",
                     "crafting.cook_recipe",
                     "crafting.forge_item",
                     "economy.buy_supplies",
@@ -48,12 +46,13 @@ namespace StardewAI.Core.Tests
                     "farm.establish_supported_machine_capacity",
                     "farm.fulfill_machine_task_demand",
                     "farm.load_supported_machine_input",
+                    "farming.collect_slime_ball",
                     "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mail.process_letter",
                     "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                     "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
-                    "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera", "world.rotate_house_plant"
+                    "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);

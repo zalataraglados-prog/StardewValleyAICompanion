@@ -1,12 +1,22 @@
 # StardewAI 当前工作
 
+## 2026-08-27 当前权威检查点：EVD-272 / EVD-273
+
+- `farming.collect_slime_ball` 已闭合透明读取、逐对象候选、DailyPlan、机械字段重绑定、动作编译、原生运行与产物守恒回执。锁定 1.6.15 反编译确认自然史莱姆球必须是精确 `SlimeHutch` 中的基础 `StardewValley.Object`、`(BC)56`、`Fragility=2`；`CheckForActionOnSlimeBall` 先移除对象，再按 `DaysPlayed`、`uniqueIDForThisGame` 和目标格生成 `10..20` 个 `(O)766`，并按 `NextDouble()<0.33` 的几何分布生成 `(O)557`。
+- 透明桥在 `current_location.objects[].slime_ball_collection` 发布来源类型、永久身份、随机种子、两类精确预期产量、原生返回值、生成契约、共享 debris 拾取交接和安全相邻站位。候选仅选择“收取哪一个球”；种子、产量、站位、空槽和原生调用细节均由编译器在新鲜快照上重绑定，指定坐标漂移时不得改选另一个球。
+- 生产执行器复用共享 BFS 和通用破坏性四向物体陷阱检查，临时切到真实空工具栏槽位，只调用一次 `GameLocation.checkAction`。它不直接删对象、不直接造 debris，也不复制拾取器；回执以“背包 + 当前地点 debris”的 `(O)766`/`(O)557` 守恒量验证生成，剩余地面物品继续交给唯一 `executor.pickup_debris`。
+- 隐藏、静音、E 盘隔离运行 `runtime-slime-ball-20260827-174122` 为 PASS：目标 `(2,3)` 原生移除，种子投影与实际守恒输出均为 `(O)766 x11`、`(O)557 x0`，工具栏槽恢复，只加载 TransparentBridge 与 RuntimeTestHarness。
+- EVD-273 新增调用来源硬分类。`PlayerCommandOnly` 动作可以保留透明读取、编译和原生执行能力，但默认候选生成会排除，策略来源会被 SafetyPolicyGate 阻断，训练准入会给出 `PlayerCommandOnly` 类型化排除。当前包括 `buildings.change_skin`、`buildings.paint`、`world.rotate_house_plant`、`executor.change_building_skin`、`executor.place_furniture`、`executor.set_sign_display_item`、`executor.edit_text_sign`；只有 `InvocationSource=PlayerCommand` 且满足原有确认/权限门时才能执行。
+- 权威对账为 `147 registered / 199 semantic / 146 compiler-bound / 73 five-gate / 38 training allowlist / 52 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 均为 `0`。本切片复用 `current_location.objects`、`current_location.debris` 和 `player.inventory`，不新增 full 快照顶层必需字段。
+- 最终回归为 Core `1833/1833`、Backend `129/129`；Release 解决方案构建 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。下一语义切片按未闭合目录顺序为 `world.play_singing_stone`；必须先锁定原生声音石交互和可观测结果，再决定它属于自主策略、机械日计划还是 `PlayerCommandOnly`，不得由“能执行”反推训练准入。
+
 ## 2026-08-27 当前权威检查点：EVD-271
 
 - `world.rotate_house_plant` 已闭合透明读取、逐对象候选、DailyPlan、机械字段重绑定、动作编译、原生运行与八帧回执。模型只选择“轮转哪一盆”这一有意义的装饰目标；当前贴图帧、预期帧、相邻站位、空工具栏槽位、恢复槽位和原生调用契约全部由最新快照与编译器绑定。
 - 锁定 1.6.15 反编译与 `Data/BigCraftables` 确认：`(BC)0..7` 都是基础 `House Plant`，永久 `ItemId/QualifiedItemId` 与当前 `ParentSheetIndex` 相互独立。`CheckForActionOnHousePlant` 通常执行 `0→1→…→7→0`；但通过真实 `GameLocation.checkAction` 且空手交互时，起始帧 `7` 的第一次对象调用变为 `0` 并返回 `false`，地点层随后再次调用对象，所以一次玩家交互的最终结果是 `7→1`。
 - 透明桥在 `current_location.objects[]` 中分别发布永久身份、当前帧、一次原生地点交互后的精确帧、预期对象调用次数、地点返回值与邻格。只有精确基础对象、`Crafting` 类型、`0..7` 有效帧、可达邻格、菜单关闭且存在真正空工具栏槽位时才开放候选；工具槽回退被拒绝，以冻结空手双调用语义。
 - 生产执行器复用共享 BFS，临时切到编译器绑定的空槽，只调用一次 `GameLocation.checkAction`，然后恢复原槽位。生产文件不写 `ParentSheetIndex`，也不直接调用对象 `checkForAction`；成功必须同时观察预期帧、同一对象引用、永久 ID 不变、菜单为空和槽位恢复。
-- 该装饰动作采用 `PolicyConfirm`，不会进入自主日计划；训练可学习“明确装饰目标下选择哪一盆”，但普通陪玩日循环不会随意修改玩家布局。
+- 该装饰动作是严格 `PlayerCommandOnly`：不会进入默认候选、自主日计划或策略训练；只有玩家显式指令并通过原有确认门后，现有编译与原生执行链才可运行。
 - 原生 `Object.checkForAction` 还存在四个基数方向均被不可通行对象封闭时对目标调用 `performToolAction(null)` 的破坏性前导分支。透明桥为每个站位发布 `object_trap_blocked`，候选在上游排除，运行时在寻路前和交互前再次核对并失败关闭，绝不让装饰轮转误删目标。
 - 隐藏、静音、E 盘隔离运行 `runtime-house-plant-20260827-123652` 为 `8/8 PASS`：起始帧 `0..7` 分别得到 `1,2,3,4,5,6,7,1`，最后一例验证对象调用次数为 `2`；每例 `item_id=0`、`qualified_item_id=(BC)0` 与选中槽位均保持/恢复。
 - 权威对账更新为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 training allowlist / 53 catalogued blocked / 0 Product Executor`；原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`，blocking 均为 `0`。full 快照顶层因本切片复用 `current_location.objects`，仍为 `130 required / 114 readable / 16 contextual / 0 blocking`。

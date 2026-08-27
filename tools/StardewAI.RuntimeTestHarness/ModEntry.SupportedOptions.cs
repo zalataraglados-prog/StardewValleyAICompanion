@@ -70,6 +70,7 @@ public sealed partial class ModEntry
             "debug.setup_dwarf_king_statue",
             "debug.setup_statue_blessing",
             "debug.setup_house_plant_rotation",
+            "debug.setup_slime_ball",
             "debug.setup_partnership_fixture",
             "debug.setup_pet_care_target",
             "debug.setup_plant_seed_target",

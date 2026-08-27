@@ -38,6 +38,12 @@ namespace StardewAI.Core.Verifier
                 reasons.Add("autonomous_candidate_forbidden");
             }
 
+            if (option.InvocationPolicy == OptionInvocationPolicy.PlayerCommandOnly &&
+                candidate.InvocationSource != OptionInvocationSource.PlayerCommand)
+            {
+                reasons.Add("player_command_only_option_requires_player_command_source");
+            }
+
             if (reasons.Count > 0)
             {
                 return new SafetyPolicyResult

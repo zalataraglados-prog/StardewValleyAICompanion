@@ -47,6 +47,8 @@ public sealed class BuildingPaintMainlineTests
     private static OptionAvailabilityCandidate Intent(int hue) => new()
     {
         OptionId = "buildings.paint", ActorIsHost = true,
+        InvocationSource = OptionInvocationSource.PlayerCommand,
+        ExplicitConfirmationGranted = true,
         Parameters = new[]
         {
             P("building_location_id", "Farm"), P("building_type", "Farmhouse"), P("building_tile_x", "59"), P("building_tile_y", "12"),

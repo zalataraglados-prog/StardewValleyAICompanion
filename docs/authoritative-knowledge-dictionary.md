@@ -84,13 +84,13 @@ The locked artifact's historical 95-option count is not the whole-game semantic 
 denominator. The live source contains 97 registered options as of 2026-08-01; generated
 reconciliation output, rather than this prose, owns the current count. Risk,
 irreversibility, confirmation, host, ownership,
-adapter, compiler/verifier binding, evidence status, autonomous-candidate policy, training
+adapter, compiler/verifier binding, evidence status, autonomous-candidate policy, invocation policy, training
 eligibility, and product status are explicit for every entry. Unknown policies, duplicate
 IDs, missing bindings, and irreversible actions without confirmation fail registry
 initialization. Compiler or Harness registration does not promote an option to runtime
 verified or training eligible; those statuses require separately indexed E3 or E4 evidence.
 
-`capability_registry.v2` is the versioned machine-readable source for operational capability
+`capability_registry.v3` is the versioned machine-readable source for operational capability
 stages. `OptionRegistry`, compiler-binding checks, RuntimeTestHarness dispatch projection,
 product-executor projection, daily-candidate classification, bridge capability output,
 knowledge matrices, and the training allowlist consume or validate that source. The current
@@ -108,6 +108,15 @@ None of these scopes implies
 broader completion. `recovery.stabilize_day` has verified read/candidate/compile/runtime/output
 evidence through EVD-195, but remains excluded because it is a calibration-only high-level
 option.
+
+Invocation policy is orthogonal to runtime capability. `PlayerCommandOnly` options remain in
+the semantic dictionary and may retain complete compiler/runtime evidence, but are excluded
+from default candidates and policy training. Only an availability request carrying
+`InvocationSource=PlayerCommand` may enter their existing confirmation and safety gates.
+Current examples include House Plant rotation, building appearance, furniture placement, and
+sign content changes. By contrast, EVD-272 admits exact natural Slime Ball collection because
+the model chooses only a legal target while the compiler binds all RNG, movement, interaction,
+and output mechanics.
 The legacy `executor_enabled`
 availability field means only that the internal compiler/Harness or candidate chain is
 enabled; `product_executor_supported` is the separate product claim. Harness dispatch,

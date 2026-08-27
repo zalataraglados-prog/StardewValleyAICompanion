@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 102,
-  "catalogued_blocked_action_count": 53,
+  "catalogued_blocked_action_count": 52,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -21,7 +21,6 @@
     "executor.use_return_scepter",
     "executor.use_treasure_totem",
     "executor.use_warp_totem",
-    "farming.collect_slime_ball",
     "farming.read_farm_computer_report",
     "festival.manage_grange_display",
     "festival.play_fishing_game",

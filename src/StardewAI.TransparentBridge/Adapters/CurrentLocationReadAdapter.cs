@@ -158,6 +158,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var fence = ReadFenceState(item);
         var sign = ReadSignState(location, tile, item, player);
         var housePlantRotation = ReadHousePlantRotation(location, tile, item);
+        var slimeBallCollection = ReadSlimeBallCollection(location, tile, item);
         return new
         {
             tile_x = (int)tile.X,
@@ -166,6 +167,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             qualified_item_id = item.QualifiedItemId,
             parent_sheet_index = item.ParentSheetIndex,
             big_craftable = item.bigCraftable.Value,
+            fragility = item.Fragility,
             name = item.Name,
             display_name = item.DisplayName,
             stack = item.Stack,
@@ -259,7 +261,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus,
             fence_state = fence,
             sign_state = sign,
-            house_plant_rotation = housePlantRotation
+            house_plant_rotation = housePlantRotation,
+            slime_ball_collection = slimeBallCollection
         };
     }
 

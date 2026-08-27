@@ -29,6 +29,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Equal(declaration.RuntimeEvidenceStatus, option.RuntimeStatus);
             Assert.Equal(declaration.TrainingEligibility, option.TrainingEligibility);
             Assert.Equal(declaration.PolicyTrainingCandidate, option.PolicyTrainingCandidate);
+            Assert.Equal(declaration.InvocationPolicy, option.InvocationPolicy);
             Assert.Equal(declaration.ReadTrainingGate, option.ReadTrainingGate);
             Assert.Equal(declaration.CandidateTrainingGate, option.CandidateTrainingGate);
             Assert.Equal(declaration.CompilerTrainingGate, option.CompilerTrainingGate);
@@ -42,7 +43,8 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Equal(declaration.TrainingExclusionReasons, option.TrainingExclusionReasons);
             Assert.Equal(declaration.TrainingEvidenceScope, option.TrainingEvidenceScope);
             Assert.Equal(
-                option.TrainingRole != TrainingRoles.ExecutorCalibration,
+                option.TrainingRole != TrainingRoles.ExecutorCalibration &&
+                option.TrainingRole != TrainingRoles.PlayerCommandOnly,
                 declaration.PolicyTrainingCandidate);
         }
     }
@@ -155,9 +157,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "animals.manage_animal",
                 "animals.purchase",
-                "buildings.change_skin",
                 "buildings.construct",
-                "buildings.paint",
                 "crafting.cook_recipe",
                 "crafting.forge_item",
                 "economy.buy_supplies",
@@ -170,12 +170,13 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "farm.establish_supported_machine_capacity",
                 "farm.fulfill_machine_task_demand",
                 "farm.load_supported_machine_input",
+                "farming.collect_slime_ball",
                 "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mail.process_letter",
                 "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
-                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera", "world.rotate_house_plant"
+                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -211,6 +212,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "farm.establish_supported_machine_capacity" => "vanilla_current_location_single_bounded_positive_machine_capacity_craft_exact_placement_binding_deterministic_input_load_processing_completion_and_training_rows_or_exact_ordinary_or_special_collection_task_capacity_craft_or_inventory_placement_zero_additional_consumption_natural_collect_receipt",
                 "farm.fulfill_machine_task_demand" => "vanilla_current_location_existing_machine_exact_zero_additional_consumption_input_source_natural_processing_and_native_ordinary_or_special_collection_receipt",
                 "farm.load_supported_machine_input" => "vanilla_current_location_exact_placement_bound_positive_deterministic_machine_support_input_no_additional_consumption_unreserved_native_load_and_processing_completion",
+                "farming.collect_slime_ball" => "vanilla_exact_SlimeHutch_base_fragility_2_slime_ball_seeded_slime_and_petrified_slime_projection_native_location_action_object_removal_conserved_inventory_plus_debris_output_and_shared_pickup_handoff",
                 "fishing.catch_fish" => "vanilla_current_or_resolved_route_exact_fishable_cast_native_max_power_stochastic_distribution_bobber_bar_or_special_no_minigame_receipt_and_idle_cleanup",
                 "fishing.collect_crab_pots" => "vanilla_current_location_exact_ready_base_crab_pot_native_collect_book_double_inventory_receipt_fishing_xp_caught_fish_bait_and_ready_reset",
                 "fishing.service_fish_ponds" => "vanilla_exact_completed_fish_pond_native_output_collect_and_authorized_population_request_inventory_fishing_xp_gate_and_reset_lifecycle",

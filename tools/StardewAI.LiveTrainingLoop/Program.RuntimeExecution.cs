@@ -666,6 +666,16 @@ static partial class Program
             out var parsedHousePlantExpectedLocationActionReturn)
                 ? parsedHousePlantExpectedLocationActionReturn
                 : (bool?)null;
+        var requiredFragility = ReadQueueParameterInt(item, "required_fragility");
+        var slimeBallSeedDaysPlayed = ReadQueueParameterInt(item, "slime_ball_seed_days_played");
+        var slimeBallSeedUniqueGameId = ReadQueueParameterLong(item, "slime_ball_seed_unique_game_id");
+        var slimeBallExpectedSlimeQuantity = ReadQueueParameterInt(item, "slime_ball_expected_slime_quantity");
+        var slimeBallExpectedPetrifiedSlimeQuantity = ReadQueueParameterInt(item, "slime_ball_expected_petrified_slime_quantity");
+        var slimeBallExpectedLocationActionReturn = bool.TryParse(
+            ReadQueueParameterString(item, "slime_ball_expected_location_action_return"),
+            out var parsedSlimeBallExpectedLocationActionReturn)
+                ? parsedSlimeBallExpectedLocationActionReturn
+                : (bool?)null;
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1160,6 +1170,12 @@ static partial class Program
         executionRequest.HousePlantExpectedSpriteIndex = housePlantExpectedSpriteIndex;
         executionRequest.HousePlantExpectedObjectActionCalls = housePlantExpectedObjectActionCalls;
         executionRequest.HousePlantExpectedLocationActionReturn = housePlantExpectedLocationActionReturn;
+        executionRequest.RequiredFragility = requiredFragility;
+        executionRequest.SlimeBallSeedDaysPlayed = slimeBallSeedDaysPlayed;
+        executionRequest.SlimeBallSeedUniqueGameId = slimeBallSeedUniqueGameId;
+        executionRequest.SlimeBallExpectedSlimeQuantity = slimeBallExpectedSlimeQuantity;
+        executionRequest.SlimeBallExpectedPetrifiedSlimeQuantity = slimeBallExpectedPetrifiedSlimeQuantity;
+        executionRequest.SlimeBallExpectedLocationActionReturn = slimeBallExpectedLocationActionReturn;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

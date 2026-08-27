@@ -89,7 +89,7 @@ public sealed partial class ModEntry
         {
             reasons.Add("house_plant_interaction_geometry_drifted");
         }
-        if (IsHousePlantObjectTrap(location, stand))
+        if (IsDestructiveObjectTrap(location, stand))
         {
             reasons.Add("house_plant_destructive_object_trap_preamble_blocked");
         }
@@ -207,7 +207,7 @@ public sealed partial class ModEntry
             CompleteHousePlantRotation(active, false, "house_plant_safe_slot_filled_while_moving");
             return;
         }
-        if (IsHousePlantObjectTrap(active.Location, active.Stand))
+        if (IsDestructiveObjectTrap(active.Location, active.Stand))
         {
             CompleteHousePlantRotation(active, false, "house_plant_destructive_object_trap_preamble_blocked");
             return;
@@ -317,7 +317,7 @@ public sealed partial class ModEntry
         qualifiedItemId is "(BC)0" or "(BC)1" or "(BC)2" or "(BC)3" or
             "(BC)4" or "(BC)5" or "(BC)6" or "(BC)7";
 
-    private static bool IsHousePlantObjectTrap(GameLocation location, Point stand) =>
+    private static bool IsDestructiveObjectTrap(GameLocation location, Point stand) =>
         Neighbors(stand).All(tile =>
             location.objects.TryGetValue(tile.ToVector2(), out var item) &&
             !item.isPassable());

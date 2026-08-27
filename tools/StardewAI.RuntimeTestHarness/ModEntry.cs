@@ -104,6 +104,7 @@ public sealed partial class ModEntry : Mod
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
     private ActiveHousePlantRotation? activeHousePlantRotation;
+    private ActiveSlimeBallCollection? activeSlimeBallCollection;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -487,6 +488,7 @@ public sealed partial class ModEntry : Mod
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
         TickHousePlantRotation();
+        TickSlimeBallCollection();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1470,6 +1472,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "farming.collect_slime_ball")
+            {
+                StartSlimeBallCollection(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_slime_ball")
+            {
+                pending.Completion.SetResult(ExecuteSetupSlimeBallFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.forge_item")
             {
                 StartForge(pending);
@@ -1615,6 +1629,11 @@ public sealed partial class ModEntry : Mod
             {
                 Game1.player.CurrentToolIndex = activeHousePlantRotation.RestoreSlotIndex;
                 activeHousePlantRotation = null;
+            }
+            if (activeSlimeBallCollection is not null)
+            {
+                Game1.player.CurrentToolIndex = activeSlimeBallCollection.RestoreSlotIndex;
+                activeSlimeBallCollection = null;
             }
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
@@ -1850,6 +1869,7 @@ public sealed partial class ModEntry : Mod
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
             activeHousePlantRotation is not null ||
+            activeSlimeBallCollection is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

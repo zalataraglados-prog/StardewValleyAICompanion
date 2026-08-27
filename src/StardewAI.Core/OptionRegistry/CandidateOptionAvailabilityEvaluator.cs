@@ -66,6 +66,7 @@ namespace StardewAI.Core.OptionRegistry
         {
             return optionRegistry.All
                 .Where(option => includeExecutorCalibrationOptions || option.TrainingRole != TrainingRoles.ExecutorCalibration)
+                .Where(option => option.InvocationPolicy != OptionInvocationPolicy.PlayerCommandOnly)
                 .Select(option => new OptionAvailabilityCandidate { OptionId = option.OptionId })
                 .OrderBy(candidate => candidate.OptionId, StringComparer.Ordinal)
                 .ToArray();
@@ -157,6 +158,11 @@ namespace StardewAI.Core.OptionRegistry
                 notes.Add("executor_calibration_option_excluded_from_default_policy_ranking");
             }
 
+            if (option.InvocationPolicy == OptionInvocationPolicy.PlayerCommandOnly)
+            {
+                notes.Add("player_command_only_excluded_from_default_candidates_and_policy_training");
+            }
+
             var hasMissingState = safety.MissingStateFactors.Length > 0;
             var hasParameterBlock = compilerReasons.Length > 0;
             var hasValueBlock = valueReasons.Length > 0;
@@ -199,6 +205,7 @@ namespace StardewAI.Core.OptionRegistry
                 ExecutionAuthorization = safetyPolicy.ExecutionAuthorization,
                 RuntimeEvidenceStatus = option.RuntimeStatus,
                 TrainingEligibility = option.TrainingEligibility,
+                InvocationPolicy = option.InvocationPolicy,
                 ProductStatus = option.ProductStatus,
                 ProductIntegrationStatus = option.ProductIntegrationStatus,
                 HarnessDispatchSupported = option.HarnessDispatchSupported,

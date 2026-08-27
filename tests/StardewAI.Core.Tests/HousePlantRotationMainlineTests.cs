@@ -17,16 +17,41 @@ public sealed class HousePlantRotationMainlineTests
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("world.rotate_house_plant");
 
-        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
         Assert.Equal(new[] { "EVD-271" }, declaration.ReadEvidenceIds);
         Assert.Equal(new[] { "EVD-271" }, declaration.CandidateEvidenceIds);
         Assert.Equal(new[] { "EVD-271" }, declaration.CompilerEvidenceIds);
         Assert.Equal(new[] { "EVD-271" }, declaration.RuntimeEvidenceIds);
         Assert.Equal(new[] { "EVD-271" }, declaration.OutputEvidenceIds);
         Assert.False(declaration.AutonomousCandidateEnabled);
-        Assert.Contains(declaration.OptionId, OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.True(declaration.PlayerConfirmationRequired);
+        Assert.Equal(OptionInvocationPolicy.PlayerCommandOnly, declaration.InvocationPolicy);
+        Assert.Contains(TrainingAdmissionExclusionReason.PlayerCommandOnly, declaration.TrainingExclusionReasons);
+        Assert.DoesNotContain(declaration.OptionId, OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.True(RuntimeTestHarnessDispatchCatalog.IsSupported(declaration.OptionId));
         Assert.False(PendingSemanticActionCatalog.TryGet(declaration.OptionId, out _));
+    }
+
+    [Fact]
+    public void HousePlantRotationRequiresAnExplicitPlayerCommandAndNeverEntersDefaultCandidates()
+    {
+        var snapshot = Snapshot(3, safeSlotKind: "empty");
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+
+        Assert.DoesNotContain(
+            evaluator.Evaluate(snapshot, Array.Empty<string>()).Options,
+            option => option.OptionId == "world.rotate_house_plant");
+
+        var policyAttempt = Assert.Single(evaluator.Evaluate(
+            snapshot,
+            new[] { "world.rotate_house_plant" },
+            includeExecutorCalibrationOptions: true).Options);
+        Assert.False(policyAttempt.Available);
+        Assert.Contains("player_command_only_option_requires_player_command_source", policyAttempt.BlockingReasons);
+
+        var explicitCommand = Assert.Single(EvaluatePlayerCommand(snapshot).Options);
+        Assert.Equal(OptionInvocationPolicy.PlayerCommandOnly, explicitCommand.InvocationPolicy);
+        Assert.Equal("authorized", explicitCommand.ExecutionAuthorization);
     }
 
     [Theory]
@@ -44,10 +69,7 @@ public sealed class HousePlantRotationMainlineTests
         int expectedObjectCalls)
     {
         var snapshot = Snapshot(currentSprite, safeSlotKind: "empty");
-        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator().Evaluate(
-            snapshot,
-            new[] { "world.rotate_house_plant" },
-            includeExecutorCalibrationOptions: true).Options.Single().EventCandidates);
+        var candidate = Assert.Single(EvaluatePlayerCommand(snapshot).Options.Single().EventCandidates);
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Contains(candidate.Parameters, parameter =>
@@ -116,10 +138,7 @@ public sealed class HousePlantRotationMainlineTests
     public void ToolFallbackIsNotAcceptedBecauseTheNativeDoubleCallRequiresKnownEmptyHandState()
     {
         var snapshot = Snapshot(7, safeSlotKind: "tool");
-        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator().Evaluate(
-            snapshot,
-            new[] { "world.rotate_house_plant" },
-            includeExecutorCalibrationOptions: true).Options.Single().EventCandidates);
+        var candidate = Assert.Single(EvaluatePlayerCommand(snapshot).Options.Single().EventCandidates);
 
         Assert.False(candidate.Available);
         Assert.Contains("house_plant_empty_toolbar_slot_required", candidate.BlockReasons);
@@ -129,10 +148,7 @@ public sealed class HousePlantRotationMainlineTests
     public void FourCardinalObjectTrapStandIsExcludedBeforeNativeInteraction()
     {
         var snapshot = Snapshot(3, safeSlotKind: "empty", standsAvailable: false);
-        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator().Evaluate(
-            snapshot,
-            new[] { "world.rotate_house_plant" },
-            includeExecutorCalibrationOptions: true).Options.Single().EventCandidates);
+        var candidate = Assert.Single(EvaluatePlayerCommand(snapshot).Options.Single().EventCandidates);
 
         Assert.False(candidate.Available);
         Assert.Contains("house_plant_no_reachable_adjacent_stand", candidate.BlockReasons);
@@ -151,6 +167,20 @@ public sealed class HousePlantRotationMainlineTests
         EstimatedTicks = candidate.EstimatedTicks,
         Parameters = candidate.Parameters
     };
+
+    private static OptionAvailabilityEnvelope EvaluatePlayerCommand(SnapshotEnvelope snapshot) =>
+        new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "world.rotate_house_plant",
+                    InvocationSource = OptionInvocationSource.PlayerCommand,
+                    ExplicitConfirmationGranted = true
+                }
+            },
+            includeExecutorCalibrationOptions: true);
 
     private static SmallModelActionEnvelope Action(SnapshotEnvelope snapshot, SmallModelActionParameter[] parameters) => new()
     {

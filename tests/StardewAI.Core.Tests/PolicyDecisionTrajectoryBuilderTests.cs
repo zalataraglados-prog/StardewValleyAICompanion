@@ -179,8 +179,8 @@ public sealed class PolicyDecisionTrajectoryBuilderTests
     private static PolicyTrajectoryVersions Versions() => new()
     {
         FeatureSchema = PolicyTrajectoryVersionPins.FeatureSchema,
-        CandidateVocabulary = "capability_registry.v2",
-        CapabilityRegistry = "capability_registry.v2",
+        CandidateVocabulary = "capability_registry.v3",
+        CapabilityRegistry = "capability_registry.v3",
         KnowledgeDictionary = "game-1.6.15-20260723T093543Z-linux-v24",
         Compiler = "action_queue.v1",
         Executor = "runtime_test_harness.v1"

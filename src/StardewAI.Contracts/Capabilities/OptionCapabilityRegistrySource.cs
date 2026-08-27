@@ -75,7 +75,8 @@ namespace StardewAI.Contracts.Capabilities
         CompilerEvidenceMissing,
         RuntimeEvidenceMissing,
         OutputEvidenceMissing,
-        ExplicitPlayerConfirmationRequired
+        ExplicitPlayerConfirmationRequired,
+        PlayerCommandOnly
     }
 
     public sealed class OptionCapabilityDeclaration
@@ -134,6 +135,9 @@ namespace StardewAI.Contracts.Capabilities
         [JsonPropertyName("policy_training_candidate")]
         public bool PolicyTrainingCandidate { get; internal set; }
 
+        [JsonPropertyName("invocation_policy")]
+        public OptionInvocationPolicy InvocationPolicy { get; internal set; } = OptionInvocationPolicy.Unknown;
+
         [JsonPropertyName("read_training_gate")]
         public TrainingEvidenceGateStatus ReadTrainingGate { get; internal set; }
 
@@ -186,7 +190,7 @@ namespace StardewAI.Contracts.Capabilities
 
     public static class OptionCapabilityRegistrySource
     {
-        public const string SchemaVersion = "capability_registry.v2";
+        public const string SchemaVersion = "capability_registry.v3";
 
         private sealed class TrainingEvidence
         {
@@ -201,7 +205,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farming.collect_slime_ball", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -234,7 +238,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
-            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "executor.buy_shop_item",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "inventory.transfer_item", "executor.transfer_material");
 
@@ -248,7 +252,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
-            "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "executor.collect_crab_pot",
+            "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.donate_community_center_item",
@@ -274,7 +278,7 @@ namespace StardewAI.Contracts.Capabilities
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
-            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant",
+            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
@@ -283,7 +287,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
-            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets",
+            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farming.collect_slime_ball", "farm.care_for_pets",
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -301,15 +305,23 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.pan_ore_spot", "executor.collect_machine_output",
-            "executor.name_hatched_animal", "executor.edit_text_sign", "executor.select_safe_item_slot",
+            "executor.name_hatched_animal", "executor.select_safe_item_slot",
             "executor.transfer_material");
 
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
             "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe", "social.advance_partnership",
+            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant",
+            "executor.change_building_skin", "executor.place_furniture",
+            "executor.set_sign_display_item", "executor.edit_text_sign",
             "executor.choose_dialogue_response", "executor.donate_museum_item",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building");
+
+        private static readonly HashSet<string> PlayerCommandOnlyIds = Set(
+            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant",
+            "executor.change_building_skin", "executor.place_furniture",
+            "executor.set_sign_display_item", "executor.edit_text_sign");
 
         private static readonly HashSet<string> HostOnlyIds = Set(
             "buildings.construct", "joja.advance_development", "housing.advance_farmhouse",
@@ -320,7 +332,7 @@ namespace StardewAI.Contracts.Capabilities
         {
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "mail.process_letter",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farming.collect_slime_ball", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
             "buildings.construct", "farm.care_for_pets", "museum.donate_items",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
@@ -574,6 +586,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["world.rotate_house_plant"] = VerifiedEvidence(
                         "vanilla_all_eight_base_house_plant_visual_frames_empty_hand_native_location_object_interaction_double_call_edge_permanent_identity_and_selected_slot_receipt",
                         "EVD-271"),
+                    ["farming.collect_slime_ball"] = VerifiedEvidence(
+                        "vanilla_exact_SlimeHutch_base_fragility_2_slime_ball_seeded_slime_and_petrified_slime_projection_native_location_action_object_removal_conserved_inventory_plus_debris_output_and_shared_pickup_handoff",
+                        "EVD-272"),
                     ["mining.reach_depth"] = VerifiedEvidence(
                         "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps_and_unlocked_native_elevator_checkpoint_shortcut",
                         "EVD-095",
@@ -650,6 +665,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("choose_dwarf_statue_power"),
                 SupportedCandidate("claim_statue_blessing"),
                 SupportedCandidate("rotate_house_plant"),
+                SupportedCandidate("collect_slime_ball"),
                 SupportedCandidate("clear_farm_resource_clump"),
                 SupportedCandidate("clear_green_rain_resource_clump"),
                 SupportedCandidate("clear_obstacle_tile"), SupportedCandidate("collect_animal_product"),
@@ -810,7 +826,8 @@ namespace StardewAI.Contracts.Capabilities
                             : CapabilityCompilerStatus.Unbound;
                 var policyTrainingCandidate =
                     !id.StartsWith("executor.", StringComparison.Ordinal) &&
-                    !CalibrationOnlyHighLevelIds.Contains(id);
+                    !CalibrationOnlyHighLevelIds.Contains(id) &&
+                    !PlayerCommandOnlyIds.Contains(id);
                 TrainingEvidenceByOptionId.TryGetValue(id, out var evidence);
                 evidence ??= new TrainingEvidence();
                 var readGate = Gate(evidence.ReadEvidenceIds, declared: true);
@@ -826,6 +843,7 @@ namespace StardewAI.Contracts.Capabilities
                 var exclusions = BuildTrainingExclusionReasons(
                     policyTrainingCandidate,
                     PlayerConfirmationIds.Contains(id),
+                    PlayerCommandOnlyIds.Contains(id),
                     readGate,
                     candidateGate,
                     compilerGate,
@@ -866,6 +884,9 @@ namespace StardewAI.Contracts.Capabilities
                     HostOnly = HostOnlyIds.Contains(id),
                     ProductIntegrationStatus = CapabilityProductIntegrationStatus.NotIntegrated,
                     PolicyTrainingCandidate = policyTrainingCandidate,
+                    InvocationPolicy = PlayerCommandOnlyIds.Contains(id)
+                        ? OptionInvocationPolicy.PlayerCommandOnly
+                        : OptionInvocationPolicy.PolicyOrAutonomous,
                     ReadTrainingGate = readGate,
                     CandidateTrainingGate = candidateGate,
                     CompilerTrainingGate = compilerGate,
@@ -899,6 +920,7 @@ namespace StardewAI.Contracts.Capabilities
                 .Concat(InternalHighLevelExecutionIds)
                 .Concat(AutonomousCandidateIds)
                 .Concat(PlayerConfirmationIds)
+                .Concat(PlayerCommandOnlyIds)
                 .Concat(HostOnlyIds)
                 .Concat(CalibrationOnlyHighLevelIds)
                 .Concat(TrainingEvidenceByOptionId.Keys)
@@ -983,6 +1005,7 @@ namespace StardewAI.Contracts.Capabilities
         private static TrainingAdmissionExclusionReason[] BuildTrainingExclusionReasons(
             bool policyTrainingCandidate,
             bool playerConfirmationRequired,
+            bool playerCommandOnly,
             TrainingEvidenceGateStatus readGate,
             TrainingEvidenceGateStatus candidateGate,
             TrainingEvidenceGateStatus compilerGate,
@@ -1004,6 +1027,8 @@ namespace StardewAI.Contracts.Capabilities
                 reasons.Add(TrainingAdmissionExclusionReason.OutputEvidenceMissing);
             if (playerConfirmationRequired)
                 reasons.Add(TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired);
+            if (playerCommandOnly)
+                reasons.Add(TrainingAdmissionExclusionReason.PlayerCommandOnly);
             return reasons.Distinct().ToArray();
         }
 
@@ -1030,6 +1055,7 @@ namespace StardewAI.Contracts.Capabilities
             return declaration.RuntimeEvidenceStatus >= OptionRuntimeStatus.RuntimeVerified &&
                 declaration.TrainingEligibility == OptionTrainingEligibility.Eligible &&
                 declaration.PolicyTrainingCandidate &&
+                declaration.InvocationPolicy != OptionInvocationPolicy.PlayerCommandOnly &&
                 !declaration.PlayerConfirmationRequired &&
                 declaration.ReadTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&
                 declaration.CandidateTrainingGate == TrainingEvidenceGateStatus.RuntimeVerified &&

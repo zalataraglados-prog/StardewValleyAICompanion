@@ -31,6 +31,7 @@ namespace StardewAI.Contracts.Options
     public static class TrainingRoles
     {
         public const string ExecutorCalibration = "executor_calibration";
+        public const string PlayerCommandOnly = "player_command_only";
         public const string StrategyValue = "strategy_value";
         public const string Mixed = "mixed";
         public const string Unknown = "unknown";
@@ -187,6 +188,23 @@ namespace StardewAI.Contracts.Options
         PolicyAuthorizationRequired,
         ExplicitUserConfirmationRequired,
         Forbidden
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionInvocationPolicy
+    {
+        Unknown,
+        PolicyOrAutonomous,
+        PlayerCommandOnly
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OptionInvocationSource
+    {
+        Unknown,
+        Policy,
+        PlayerCommand,
+        InternalCompiler
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -358,6 +376,9 @@ namespace StardewAI.Contracts.Options
         [JsonPropertyName("autonomous_candidate_policy")]
         public AutonomousCandidatePolicy AutonomousCandidatePolicy { get; set; } = AutonomousCandidatePolicy.Unknown;
 
+        [JsonPropertyName("invocation_policy")]
+        public OptionInvocationPolicy InvocationPolicy { get; set; } = OptionInvocationPolicy.Unknown;
+
         [JsonPropertyName("product_status")]
         public OptionProductStatus ProductStatus { get; set; } = OptionProductStatus.Unknown;
     }
@@ -405,6 +426,9 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("explicit_confirmation_granted")]
         public bool ExplicitConfirmationGranted { get; set; }
+
+        [JsonPropertyName("invocation_source")]
+        public OptionInvocationSource InvocationSource { get; set; } = OptionInvocationSource.Policy;
 
         [JsonPropertyName("actor_is_host")]
         public bool ActorIsHost { get; set; }
@@ -460,6 +484,9 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("training_eligibility")]
         public OptionTrainingEligibility TrainingEligibility { get; set; } = OptionTrainingEligibility.Unknown;
+
+        [JsonPropertyName("invocation_policy")]
+        public OptionInvocationPolicy InvocationPolicy { get; set; } = OptionInvocationPolicy.Unknown;
 
         [JsonPropertyName("product_status")]
         public OptionProductStatus ProductStatus { get; set; } = OptionProductStatus.Unknown;

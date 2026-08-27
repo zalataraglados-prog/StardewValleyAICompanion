@@ -58,6 +58,8 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 ## 行为分类
 
+调用来源与机械复杂度是两条正交轴。一个动作即使完全机械，也可能因会修改玩家布局、外观或文字而标记为 `PlayerCommandOnly`。此类动作保留编译/执行能力，但默认候选、自动日计划和策略训练必须全部排除；只有显式玩家指令可以进入安全授权链。不得把运行时已验证误写成训练已准入。
+
 1. 机械动作
    - 例：浇水、收机器、回家睡觉。
    - 小模型只发 option，动作编译器全权展开步骤。
@@ -67,6 +69,15 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
    - 例：去矿洞第 N 层、去某地点钓鱼。
    - 小模型给目标参数，动作编译器做路径、风险、时间、资源校验并生成动作队列。
    - 训练角色：mixed，策略层只学选择目标，不学低层操作。
+
+3. 玩家指令专属动作
+   - 例：旋转家具/House Plant、改变或粉刷建筑外观、放置家具、设置标牌展示物、编辑文字标牌。
+   - 只在玩家显式请求时编译执行；不生成默认自动候选，不参与策略训练，也不作为自主陪玩日程的一部分。
+   - 分类字段：`InvocationPolicy=PlayerCommandOnly`；调用字段：`InvocationSource=PlayerCommand`。两者缺一即失败关闭。
+
+4. 自主策略动作
+   - 例：收取自然史莱姆球、选择当日资源目标、购买或长期建设。
+   - 模型只在透明、合法、时间与资源约束完整的候选中做有意义选择；确定性机械细节仍由编译器和共享执行引擎负责。
 
 3. 策略动作
    - 例：爷爷四蜡烛目标方向、采购、社交、全出货、社区中心、技能成长。
@@ -204,7 +215,7 @@ Issue #85（Harness Handler 状态所有权）和 #86（`TrainingExecutionReques
 
 训练证据注册表和由证据生成的 allowlist 已于 2026-07-28 完成首版，权威字典的当前锁定版本为 `game-1.6.15-20260723T093543Z-linux-v24`。火山 0 到 Caldera 的隔离运行已经证明一条状态闭环，但不等于移动连续性、工具动画和全部生成种子均已通过：
 
-1. `capability_registry.v2` 独立记录五门、证据 ID、证据范围和类型化排除原因；
+1. `capability_registry.v3` 独立记录五门、证据 ID、证据范围、调用来源策略和类型化排除原因；
 2. 空 allowlist 会使注册表初始化失败；
 3. 该阶段准入项为 EVD-095 范围内的 `mining.reach_depth`、EVD-106 普通矿井 119 -> 120 层范围内的 `mining.obtain_skull_key`、EVD-192 明确意图范围内的 `inventory.transfer_item`、EVD-076/EVD-105 当前已加载原版 NPC 对话范围内的 `social.talk_npc`，以及 EVD-196 当前已加载原版 NPC 滚动追踪和普通单件送礼范围内的 `social.gift_npc`；
 4. 执行器原语和校准型高层 option 不进入策略训练；

@@ -848,11 +848,11 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(40, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(38, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "animals.purchase");
-            Assert.Contains(
+            Assert.DoesNotContain(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "buildings.paint");
             Assert.Contains(
@@ -873,9 +873,12 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "rewards.claim_statue_blessing");
-            Assert.Contains(
+            Assert.DoesNotContain(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "world.rotate_house_plant");
+            Assert.Contains(
+                trainRoot.GetProperty("training_allowlist").EnumerateArray(),
+                item => item.GetString() == "farming.collect_slime_ball");
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "skills.choose_profession");

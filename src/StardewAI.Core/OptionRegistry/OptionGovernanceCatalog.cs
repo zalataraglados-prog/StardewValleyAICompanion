@@ -16,6 +16,7 @@ namespace StardewAI.Core.OptionRegistry
         public OptionHostPolicy HostPolicy { get; init; }
         public OptionOwnershipPolicy OwnershipPolicy { get; init; }
         public AutonomousCandidatePolicy AutonomousCandidatePolicy { get; init; }
+        public OptionInvocationPolicy InvocationPolicy { get; init; }
     }
 
     internal static class OptionGovernanceCatalog
@@ -48,6 +49,7 @@ namespace StardewAI.Core.OptionRegistry
         private static readonly AutonomousCandidatePolicy Allowed = AutonomousCandidatePolicy.Allowed;
         private static readonly AutonomousCandidatePolicy Policy = AutonomousCandidatePolicy.PolicyAuthorizationRequired;
         private static readonly AutonomousCandidatePolicy Explicit = AutonomousCandidatePolicy.ExplicitUserConfirmationRequired;
+        private static readonly OptionInvocationPolicy PlayerCommand = OptionInvocationPolicy.PlayerCommandOnly;
         private static readonly HashSet<string> NoParameterOptionIds = new HashSet<string>(StringComparer.Ordinal)
         {
             "farm.maintain_crops",
@@ -78,7 +80,8 @@ namespace StardewAI.Core.OptionRegistry
                     (policy.AutonomousCandidatePolicy == AutonomousCandidatePolicy.Allowed) ||
                 capability.PlayerConfirmationRequired !=
                     (policy.ConfirmationPolicy == OptionConfirmationPolicy.ExplicitUserConfirmationRequired) ||
-                capability.HostOnly != (policy.HostPolicy == OptionHostPolicy.HostOnly))
+                capability.HostOnly != (policy.HostPolicy == OptionHostPolicy.HostOnly) ||
+                capability.InvocationPolicy != policy.InvocationPolicy)
             {
                 throw new InvalidOperationException(
                     $"Option '{spec.OptionId}' capability safety flags do not match its governance policy.");
@@ -135,6 +138,7 @@ namespace StardewAI.Core.OptionRegistry
             spec.TrainingExclusionReasons = capability.TrainingExclusionReasons;
             spec.TrainingEvidenceScope = capability.TrainingEvidenceScope;
             spec.AutonomousCandidatePolicy = policy.AutonomousCandidatePolicy;
+            spec.InvocationPolicy = policy.InvocationPolicy;
             spec.ProductStatus = OptionProductStatus.Registered;
             spec.IrreversibleEffects = policy.Irreversibility == OptionIrreversibility.None
                 ? Array.Empty<string>()
@@ -221,8 +225,8 @@ namespace StardewAI.Core.OptionRegistry
                 P("crafting.cook_recipe", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("crafting.forge_item", C, R2, Asset, PolicyConfirm, Actor, Inventory, Policy),
                 P("buildings.construct", C, R3, CrossDay, PolicyConfirm, Host, Farm, Policy),
-                P("buildings.change_skin", C, R2, Asset, PolicyConfirm, Actor, Farm, Policy),
-                P("buildings.paint", C, R2, Asset, PolicyConfirm, Actor, Farm, Policy),
+                P("buildings.change_skin", C, R2, Asset, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
+                P("buildings.paint", C, R2, Asset, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("farm.care_for_pets", C, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("museum.donate_items", C, R4, Asset, ExplicitConfirm, Actor, World, Explicit),
                 P("community_center.donate_bundle_items", C, R4, Asset, ExplicitConfirm, Actor, World, Explicit),
@@ -259,7 +263,8 @@ namespace StardewAI.Core.OptionRegistry
                 P("rewards.claim_pot_of_gold", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.choose_dwarf_statue_power", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("rewards.claim_statue_blessing", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
-                P("world.rotate_house_plant", Primitive, R1, None, PolicyConfirm, Actor, World, Policy),
+                P("world.rotate_house_plant", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
+                P("farming.collect_slime_ball", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),
@@ -333,7 +338,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.purchase_joja_project", Primitive, R5, Route, ExplicitConfirm, Host, World, Explicit),
                 P("executor.purchase_farmhouse_upgrade", Primitive, R3, CrossDay, ExplicitConfirm, Host, Farm, Explicit),
                 P("executor.construct_building", Primitive, R3, CrossDay, ExplicitConfirm, Host, Farm, Explicit),
-                P("executor.change_building_skin", Primitive, R2, Asset, PolicyConfirm, Actor, Farm, Policy),
+                P("executor.change_building_skin", Primitive, R2, Asset, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("executor.pan_ore_spot", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.collect_machine_output", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.load_machine_input", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
@@ -349,11 +354,11 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.place_crab_pot", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_fence", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_flooring", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
-                P("executor.place_furniture", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
+                P("executor.place_furniture", Primitive, R2, Consume, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("executor.place_sign", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 // The source is preserved, but native replacement discards the previous, non-returned display copy.
-                P("executor.set_sign_display_item", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
-                P("executor.edit_text_sign", Primitive, R1, None, NoConfirm, Actor, Farm, Allowed),
+                P("executor.set_sign_display_item", Primitive, R2, Consume, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
+                P("executor.edit_text_sign", Primitive, R1, None, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("executor.load_crab_pot_bait", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.read_book", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("executor.select_safe_item_slot", Primitive, R0, None, NoConfirm, Actor, ActorState, Allowed)
@@ -454,7 +459,8 @@ namespace StardewAI.Core.OptionRegistry
             OptionConfirmationPolicy confirmationPolicy,
             OptionHostPolicy hostPolicy,
             OptionOwnershipPolicy ownershipPolicy,
-            AutonomousCandidatePolicy autonomousCandidatePolicy)
+            AutonomousCandidatePolicy autonomousCandidatePolicy,
+            OptionInvocationPolicy invocationPolicy = OptionInvocationPolicy.PolicyOrAutonomous)
         {
             return new KeyValuePair<string, OptionGovernancePolicy>(
                 id,
@@ -466,7 +472,8 @@ namespace StardewAI.Core.OptionRegistry
                     ConfirmationPolicy = confirmationPolicy,
                     HostPolicy = hostPolicy,
                     OwnershipPolicy = ownershipPolicy,
-                    AutonomousCandidatePolicy = autonomousCandidatePolicy
+                    AutonomousCandidatePolicy = autonomousCandidatePolicy,
+                    InvocationPolicy = invocationPolicy
                 });
         }
 

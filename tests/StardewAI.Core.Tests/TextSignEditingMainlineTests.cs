@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
@@ -72,7 +73,9 @@ public sealed class TextSignEditingMainlineTests
     {
         var capability = OptionCapabilityRegistrySource.GetRequired("executor.edit_text_sign");
         Assert.True(capability.HarnessDispatchSupported);
-        Assert.True(capability.AutonomousCandidateEnabled);
+        Assert.False(capability.AutonomousCandidateEnabled);
+        Assert.Equal(OptionInvocationPolicy.PlayerCommandOnly, capability.InvocationPolicy);
+        Assert.Contains(TrainingAdmissionExclusionReason.PlayerCommandOnly, capability.TrainingExclusionReasons);
         Assert.False(PendingSemanticActionCatalog.TryGet("executor.edit_text_sign", out _));
         Assert.Equal(ImplementationEngineIds.InteractionMenu,
             OptionImplementationCatalog.GetRequired("executor.edit_text_sign").PrimaryEngineId);

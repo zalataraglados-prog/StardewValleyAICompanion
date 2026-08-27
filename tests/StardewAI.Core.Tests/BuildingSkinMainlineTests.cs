@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -16,7 +17,7 @@ public sealed class BuildingSkinMainlineTests
     {
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
             Snapshot(),
-            new[] { new OptionAvailabilityCandidate { OptionId = "buildings.change_skin", ActorIsHost = true } },
+            new[] { new OptionAvailabilityCandidate { OptionId = "buildings.change_skin", ActorIsHost = true, InvocationSource = OptionInvocationSource.PlayerCommand, ExplicitConfirmationGranted = true } },
             true);
 
         Assert.Empty(Assert.Single(availability.Options).EventCandidates);
@@ -53,9 +54,11 @@ public sealed class BuildingSkinMainlineTests
 
         Assert.Contains("EVD-249", highLevel.RuntimeEvidenceIds);
         Assert.Contains("EVD-249", executor.RuntimeEvidenceIds);
-        Assert.Contains("buildings.change_skin", StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.TrainingAllowlist);
+        Assert.Equal(OptionInvocationPolicy.PlayerCommandOnly, highLevel.InvocationPolicy);
+        Assert.DoesNotContain("buildings.change_skin", StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.TrainingAllowlist);
         Assert.DoesNotContain("executor.change_building_skin", StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.TrainingAllowlist);
-        Assert.Contains("Pet_Bowl_default_to_Stone", highLevel.TrainingEvidenceScope);
+        Assert.Equal("not_admitted", highLevel.TrainingEvidenceScope);
+        Assert.Contains(TrainingAdmissionExclusionReason.PlayerCommandOnly, highLevel.TrainingExclusionReasons);
     }
 
     [Fact]
@@ -78,6 +81,8 @@ public sealed class BuildingSkinMainlineTests
     {
         OptionId = "buildings.change_skin",
         ActorIsHost = true,
+        InvocationSource = OptionInvocationSource.PlayerCommand,
+        ExplicitConfirmationGranted = true,
         Parameters = new[]
         {
             Parameter("building_location_id", "Farm"),

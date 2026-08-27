@@ -10,6 +10,22 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Invocation Source Governance
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `OptionSpec.InvocationPolicy` / `OptionCapabilityDeclaration.InvocationPolicy` | Separate executable actions from actions the policy model may autonomously select | `OptionContracts.cs`; generated capability registry v3; governance catalog | n/a; project governance is authoritative | covered_for_registry / covered_for_generation / fail_closed_on_mismatch | Values are `PolicyOrAutonomous` and `PlayerCommandOnly`. Governance and generated capability declarations must agree during registry initialization. |
+| `OptionAvailabilityCandidate.InvocationSource` | Prove that a player-command-only request actually came from the explicit player command surface | availability evaluator and `SafetyPolicyGate` | n/a | covered_for_gate / explicit_player_command_required | `Unknown` and `Policy` are rejected for `PlayerCommandOnly`; only `PlayerCommand` may continue to the existing confirmation and runtime gates. `InternalCompiler` is not a bypass. |
+| `TrainingAdmissionExclusionReason.PlayerCommandOnly` | Prevent executable decoration/layout actions from contaminating strategy training | capability registry v3, KnowledgeCompiler manifest, dataset admission filter | n/a | covered_for_training_exclusion / typed_reason_required | Runtime evidence remains useful for executor verification but its training evidence scope is `not_admitted`. Current IDs cover building appearance, House Plant rotation, furniture placement, sign display assignment and text editing. |
+
+## Slime Ball Collection Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.objects[].slime_ball_collection` | Select one exact natural ready Slime Hutch output without guessing identity, RNG or output | locked 1.6.15 `SlimeHutch.DayUpdate`, `Object.checkForAction`, `CheckForActionOnSlimeBall`; live object/location/player state | n/a; hidden RNG and native dispatch are decompile/runtime authoritative | covered_for_read / covered_for_candidate / native_runtime_verified | Requires exact base `SlimeHutch`, exact base Object, `(BC)56`, `Fragility=2`. Publishes generation contract, day/game/tile seed, exact `(O)766` and `(O)557` quantities, stands and native action contract. |
+| `farming.collect_slime_ball` | Compile one high-level collection goal into shared movement plus one native object interaction | DailyPlan and ActionQueue compiler; shared BFS; runtime harness | n/a | covered_for_daily_plan / covered_for_compile_rebind / five_gate_closed_EVD_272 / training_admitted | The compiler rebinds the exact requested tile and never substitutes another ball. Production does not remove the object or create debris directly. |
+| `conserved_output[(O)766]` / `conserved_output[(O)557]` | Verify native generation even if some debris enters inventory before the receipt is sampled | live inventory plus current-location debris multiset | n/a | covered_for_output_receipt / shared_pickup_handoff | Success requires exact deltas across inventory and debris. Remaining debris belongs to the existing `executor.pickup_debris`; no second pickup implementation exists. |
+
 ## Object Trap Recovery Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
