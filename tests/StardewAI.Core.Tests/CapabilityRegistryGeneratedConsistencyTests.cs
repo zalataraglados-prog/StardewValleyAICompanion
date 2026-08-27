@@ -175,7 +175,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "mail.process_letter",
                 "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
-                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera", "world.rotate_house_plant"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
 
@@ -233,6 +233,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "social.gift_npc" => "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                 "social.talk_npc" => "vanilla_current_loaded_npc_talk_same_map_or_rolling_resolved_route_with_safe_dialogue_close",
                 "volcano.reach_caldera" => "vanilla_volcano_generated_levels_0_to_9_rolling_native_actions_typed_combat_intent_to_caldera",
+                "world.rotate_house_plant" => "vanilla_all_eight_base_house_plant_visual_frames_empty_hand_native_location_object_interaction_double_call_edge_permanent_identity_and_selected_slot_receipt",
                 _ => throw new InvalidOperationException("Unexpected training option: " + optionId)
             };
             Assert.Equal(expectedScope, declaration.TrainingEvidenceScope);

@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
+    private ActiveHousePlantRotation? activeHousePlantRotation;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -485,6 +486,7 @@ public sealed partial class ModEntry : Mod
         TickPotOfGoldClaim();
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
+        TickHousePlantRotation();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1456,6 +1458,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_house_plant_rotation")
+            {
+                pending.Completion.SetResult(ExecuteSetupHousePlantFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "world.rotate_house_plant")
+            {
+                StartHousePlantRotation(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.forge_item")
             {
                 StartForge(pending);
@@ -1597,6 +1611,11 @@ public sealed partial class ModEntry : Mod
             activePotOfGoldClaim = null;
             activeDwarfKingStatueChoice = null;
             activeStatueBlessingClaim = null;
+            if (activeHousePlantRotation is not null)
+            {
+                Game1.player.CurrentToolIndex = activeHousePlantRotation.RestoreSlotIndex;
+                activeHousePlantRotation = null;
+            }
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
             activePetInteraction = null;
@@ -1830,6 +1849,7 @@ public sealed partial class ModEntry : Mod
             activePotOfGoldClaim is not null ||
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
+            activeHousePlantRotation is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

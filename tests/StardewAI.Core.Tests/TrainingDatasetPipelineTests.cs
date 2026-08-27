@@ -53,7 +53,7 @@ namespace StardewAI.Core.Tests
                     "mail.process_letter",
                     "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                     "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",
-                    "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
+                    "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera", "world.rotate_house_plant"
                 },
                 report.TrainingAllowlist);
             Assert.Contains(PolicyTrainingAdmissionFilter.CalibrationExcludedReason, report.ExcludedReasons);

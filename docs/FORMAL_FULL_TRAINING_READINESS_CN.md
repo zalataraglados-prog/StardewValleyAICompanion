@@ -374,4 +374,10 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 
 `rewards.claim_statue_blessing` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。它是无参数领取目标，不是策略选择菜单：透明桥预测当天唯一祝福，并发布农业精通、日锁、天气/节日分母、七种效果、当前地图精确基础雕像和相邻站位；编译器覆盖模型伪造的所有机械字段。
 
+## 2026-08-27 House Plant 原生轮转准入（EVD-271）
+
+`world.rotate_house_plant` 已按锁定 1.6.15 原生规则闭合五门。它是显式装饰目标，不是自主维护候选：模型选择当前地图中的一盆精确基础 House Plant，编译器从最新 `current_location.objects[]` 重绑永久物品身份、当前/预期 `ParentSheetIndex`、相邻站位、真正空工具栏槽位、恢复槽位和原生契约。工具槽不能替代空槽，因为起始帧 7 在空手 `GameLocation.checkAction` 下会触发地点层第二次对象调用，一次交互的真实结果为 `7→1`。
+
+生产执行只复用共享 BFS 和一次地点级原生交互，不直接写贴图帧或调用对象级方法。透明桥、候选和运行时同时防守原生四向不可通行对象包围时会触发的 `performToolAction(null)` 破坏性前导分支。隐藏静音 E 盘矩阵对 0..7 全部通过，并验证永久 ID 与槽位不变。该项进入证据白名单但 `AutonomousCandidateEnabled=false`，普通日计划不会擅自改变玩家装饰。当前对账为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 allowlist / 53 catalogued blocked / 0 Product Executor`；下一切片是 `farming.collect_slime_ball`。
+
 生产执行只复用共享 BFS 和原生 `GameLocation.checkAction`，不直接施加 buff 或写日锁。隐藏静音 E 盘运行验证当天 `statue_of_blessings_1` 唯一回执和 `hasBeenBlessedByStatueToday=true`。最新 full 快照为 `130 required / 114 readable / 16 contextual / 0 blocking`；权威对账为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`。该单项准入仍不解除 Product Executor、生产长 rollout、正式 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。

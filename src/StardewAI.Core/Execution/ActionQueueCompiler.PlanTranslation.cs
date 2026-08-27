@@ -113,6 +113,7 @@ namespace StardewAI.Core.Execution
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "claim_statue_blessing" => "rewards.claim_statue_blessing",
+                "rotate_house_plant" => "world.rotate_house_plant",
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",

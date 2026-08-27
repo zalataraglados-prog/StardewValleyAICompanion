@@ -658,6 +658,14 @@ static partial class Program
         var statueBlessingExactEffect = ReadQueueParameterString(item, "statue_blessing_exact_effect");
         var statueBlessingDaysPlayed = ReadQueueParameterInt(item, "statue_blessing_days_played");
         var statueBlessingRandomUpperBoundExclusive = ReadQueueParameterInt(item, "statue_blessing_random_upper_bound_exclusive");
+        var housePlantCurrentSpriteIndex = ReadQueueParameterInt(item, "house_plant_current_sprite_index");
+        var housePlantExpectedSpriteIndex = ReadQueueParameterInt(item, "house_plant_expected_sprite_index");
+        var housePlantExpectedObjectActionCalls = ReadQueueParameterInt(item, "house_plant_expected_object_action_calls");
+        var housePlantExpectedLocationActionReturn = bool.TryParse(
+            ReadQueueParameterString(item, "house_plant_expected_location_action_return"),
+            out var parsedHousePlantExpectedLocationActionReturn)
+                ? parsedHousePlantExpectedLocationActionReturn
+                : (bool?)null;
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1148,6 +1156,10 @@ static partial class Program
         executionRequest.StatueBlessingExactEffect = statueBlessingExactEffect;
         executionRequest.StatueBlessingDaysPlayed = statueBlessingDaysPlayed;
         executionRequest.StatueBlessingRandomUpperBoundExclusive = statueBlessingRandomUpperBoundExclusive;
+        executionRequest.HousePlantCurrentSpriteIndex = housePlantCurrentSpriteIndex;
+        executionRequest.HousePlantExpectedSpriteIndex = housePlantExpectedSpriteIndex;
+        executionRequest.HousePlantExpectedObjectActionCalls = housePlantExpectedObjectActionCalls;
+        executionRequest.HousePlantExpectedLocationActionReturn = housePlantExpectedLocationActionReturn;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

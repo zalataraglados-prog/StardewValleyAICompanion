@@ -4025,3 +4025,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 130 required, 114 readable with provenance, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 training allowlist / 54 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
 - Full regression PASS: Core 1813/1813; Backend 127/127; Release solution build 0 errors with one pre-existing `AvoidNetField` warning. Next slice is `world.rotate_house_plant`.
+
+2026-08-27 EVD-271 complete native House Plant rotation admission
+- Locked 1.6.15 source/data audit PASS: BigCraftable IDs 0..7 are base House Plant; visual ParentSheetIndex is independent of permanent identity; empty-hand GameLocation.checkAction maps starts 0..6 to +1 and start 7 to 1 through the native second object call.
+- Candidate/DailyPlan/compiler/governance matrix PASS for all eight start frames, exact selected target preservation, fresh mechanical-field rebind, true-empty-slot requirement and non-autonomous policy.
+- Runtime source guard PASS: shared BFS, one native GameLocation.checkAction, four-cardinal destructive object-trap rejection and selected-slot restoration are required; direct production ParentSheetIndex assignment and object-level checkForAction calls are absent.
+- Hidden/silent isolated E-drive PASS 8/8: `artifacts/runtime-house-plant/runtime-house-plant-20260827-123652/summary.json`. Observed sequence was `1,2,3,4,5,6,7,1`; every case preserved item ID `(BC)0` and restored the selected slot.
+- Reconciliation: 146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 training allowlist / 53 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Full regression PASS: Core 1826/1826; Backend 128/128; Release solution build 0 errors with one pre-existing `AvoidNetField` warning. Next slice is `farming.collect_slime_ball`.

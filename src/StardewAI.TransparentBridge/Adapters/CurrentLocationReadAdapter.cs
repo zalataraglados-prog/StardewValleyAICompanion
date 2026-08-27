@@ -157,12 +157,15 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var crabPotBaitLoad = ReadCrabPotBaitLoad(item, player);
         var fence = ReadFenceState(item);
         var sign = ReadSignState(location, tile, item, player);
+        var housePlantRotation = ReadHousePlantRotation(location, tile, item);
         return new
         {
             tile_x = (int)tile.X,
             tile_y = (int)tile.Y,
             item_id = item.ItemId,
             qualified_item_id = item.QualifiedItemId,
+            parent_sheet_index = item.ParentSheetIndex,
+            big_craftable = item.bigCraftable.Value,
             name = item.Name,
             display_name = item.DisplayName,
             stack = item.Stack,
@@ -255,7 +258,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             crab_pot_catch_size_max = crabPot.CatchSizeMax,
             crab_pot_catch_size_projection_status = crabPot.CatchSizeProjectionStatus,
             fence_state = fence,
-            sign_state = sign
+            sign_state = sign,
+            house_plant_rotation = housePlantRotation
         };
     }
 

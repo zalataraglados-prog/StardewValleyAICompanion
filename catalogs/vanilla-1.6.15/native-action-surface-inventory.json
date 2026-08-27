@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 102,
-  "catalogued_blocked_action_count": 54,
+  "catalogued_blocked_action_count": 53,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -59,7 +59,6 @@
     "tailoring.dye_item",
     "tailoring.sew_item",
     "world.play_singing_stone",
-    "world.rotate_house_plant",
     "world.tune_drum_block",
     "world.tune_flute_block"
   ],

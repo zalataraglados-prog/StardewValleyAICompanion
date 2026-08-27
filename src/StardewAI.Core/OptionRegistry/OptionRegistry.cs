@@ -444,6 +444,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "small model emits one parameterless claim goal", "compiler binds the exact deterministic daily blessing and one live statue stand", "native object action applies the blessing and daily claim lock", "post-state verifies exactly the predicted blessing buff" },
                 new[] { "block_farming_mastery_locked", "block_already_blessed_today", "block_no_exact_live_statue_or_adjacent_stand", "block_menu_or_player_busy", "block_day_weather_festival_or_object_drift", "block_direct_production_buff_mutation" }));
 
+            Register(Option("world.rotate_house_plant", "world", "Rotate one exact placed House Plant through its native object interaction",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "current_location.objects", "menus.active_menu" },
+                new[] { "one exact base House Plant and adjacent stand selected", "compiler binds an empty toolbar slot and current visual frame", "one native GameLocation.checkAction advances the observed frame", "permanent item identity and selected toolbar slot are preserved" },
+                new[] { "block_not_explicitly_authorized", "block_non_base_or_non_house_plant_object", "block_no_empty_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_object_frame_or_identity_drift", "block_direct_parent_sheet_index_mutation" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

@@ -61,6 +61,7 @@ namespace StardewAI.Core.Training
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
+                ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
@@ -315,6 +316,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return StatueBlessingSteps(candidate);
+            }
+
+            if (candidate.Kind == "rotate_house_plant" &&
+                OptionCandidateCompilerKinds["world.rotate_house_plant"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return HousePlantRotationSteps(candidate);
             }
 
             if (candidate.Kind == "collect_crab_pot" &&

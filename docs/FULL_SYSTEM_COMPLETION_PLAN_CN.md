@@ -640,6 +640,12 @@ DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作
 
 `rewards.claim_statue_blessing` 已从待办分母替换为唯一高层实现。它不要求小模型选择祝福：原生日期种子已唯一决定结果，模型只输出无参数领取目标。透明桥与编译器冻结农业精通、日锁、天气/节日导致的 `6/7` 分母、当天祝福、七种原生效果、精确雕像和相邻站位；任何日期、分母、对象、站位或 buff 漂移都失败关闭。
 
+## 2026-08-27 House Plant 轮转闭环（EVD-271）
+
+`world.rotate_house_plant` 已从待办分母替换为一个显式授权的高层装饰动作。候选按当前地图每一盆精确基础 House Plant 展开，模型只负责选择目标盆；编译器重绑所有机械字段。永久 `ItemId/QualifiedItemId` 与可视 `ParentSheetIndex` 分开建模，防止把轮转误记为物品身份变化。
+
+执行器固定空手语义，并保留原生地点层的边界行为：0..6 各调用对象一次并前进一帧；7 的首次对象调用回到 0 且返回 false，地点层再次调用后最终到 1。运行器只发一次 `GameLocation.checkAction`，不自己模拟 `%8`。四向不可通行对象包围会触发原生破坏性 `performToolAction(null)` 前导分支，因此透明站位、上游候选和运行时双检均在该条件下失败关闭。隐藏静音 E 盘 8/8 通过后，当前权威状态为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 allowlist / 53 catalogued blocked / 0 Product Executor`。本动作不进入自主日计划；下一闭环为 `farming.collect_slime_ball`。
+
 运行时只复用共享 BFS 并调用原生对象交互；七种效果继续由现有钓鱼、社交、战斗、体力和世界 critter 代码消费，不复制下游系统。隐藏静音 E 盘运行验证唯一幸运祝福与日锁。当前权威状态为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`，full 快照 `130 required / 114 readable / 16 contextual / 0 blocking`。下一切片为 `world.rotate_house_plant`。
 
 ## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）

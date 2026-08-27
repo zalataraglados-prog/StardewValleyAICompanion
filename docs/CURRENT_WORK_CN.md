@@ -1,5 +1,17 @@
 # StardewAI 当前工作
 
+## 2026-08-27 当前权威检查点：EVD-271
+
+- `world.rotate_house_plant` 已闭合透明读取、逐对象候选、DailyPlan、机械字段重绑定、动作编译、原生运行与八帧回执。模型只选择“轮转哪一盆”这一有意义的装饰目标；当前贴图帧、预期帧、相邻站位、空工具栏槽位、恢复槽位和原生调用契约全部由最新快照与编译器绑定。
+- 锁定 1.6.15 反编译与 `Data/BigCraftables` 确认：`(BC)0..7` 都是基础 `House Plant`，永久 `ItemId/QualifiedItemId` 与当前 `ParentSheetIndex` 相互独立。`CheckForActionOnHousePlant` 通常执行 `0→1→…→7→0`；但通过真实 `GameLocation.checkAction` 且空手交互时，起始帧 `7` 的第一次对象调用变为 `0` 并返回 `false`，地点层随后再次调用对象，所以一次玩家交互的最终结果是 `7→1`。
+- 透明桥在 `current_location.objects[]` 中分别发布永久身份、当前帧、一次原生地点交互后的精确帧、预期对象调用次数、地点返回值与邻格。只有精确基础对象、`Crafting` 类型、`0..7` 有效帧、可达邻格、菜单关闭且存在真正空工具栏槽位时才开放候选；工具槽回退被拒绝，以冻结空手双调用语义。
+- 生产执行器复用共享 BFS，临时切到编译器绑定的空槽，只调用一次 `GameLocation.checkAction`，然后恢复原槽位。生产文件不写 `ParentSheetIndex`，也不直接调用对象 `checkForAction`；成功必须同时观察预期帧、同一对象引用、永久 ID 不变、菜单为空和槽位恢复。
+- 该装饰动作采用 `PolicyConfirm`，不会进入自主日计划；训练可学习“明确装饰目标下选择哪一盆”，但普通陪玩日循环不会随意修改玩家布局。
+- 原生 `Object.checkForAction` 还存在四个基数方向均被不可通行对象封闭时对目标调用 `performToolAction(null)` 的破坏性前导分支。透明桥为每个站位发布 `object_trap_blocked`，候选在上游排除，运行时在寻路前和交互前再次核对并失败关闭，绝不让装饰轮转误删目标。
+- 隐藏、静音、E 盘隔离运行 `runtime-house-plant-20260827-123652` 为 `8/8 PASS`：起始帧 `0..7` 分别得到 `1,2,3,4,5,6,7,1`，最后一例验证对象调用次数为 `2`；每例 `item_id=0`、`qualified_item_id=(BC)0` 与选中槽位均保持/恢复。
+- 权威对账更新为 `146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 training allowlist / 53 catalogued blocked / 0 Product Executor`；原生分母仍为 `322 surfaces / 448 branches / 150 map tokens`，blocking 均为 `0`。full 快照顶层因本切片复用 `current_location.objects`，仍为 `130 required / 114 readable / 16 contextual / 0 blocking`。
+- 最终回归为 Core `1826/1826`、Backend `128/128`；Release 解决方案构建 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。下一语义切片固定为 `farming.collect_slime_ball`：必须先核对史莱姆球的生成条件、每日状态、原生收取产物与背包/掉落分支，再决定复用对象交互还是库存转移内核。
+
 ## 2026-08-27 当前权威检查点：EVD-270
 
 - `rewards.claim_statue_blessing` 已闭合透明读取、无参数日级候选、DailyPlan、机械字段重绑定、动作编译、原生运行与全天 buff 回执。小模型只输出“领取今日祝福”这一语义目标；祝福编号、雕像、站位、日期、天气/节日分母与对象交互全部由最新快照和编译器绑定。
