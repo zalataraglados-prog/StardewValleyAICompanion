@@ -59,6 +59,7 @@ namespace StardewAI.Core.Training
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
+                ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
@@ -297,6 +298,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClaimPotOfGoldSteps(candidate);
+            }
+
+            if (candidate.Kind == "choose_dwarf_statue_power" &&
+                OptionCandidateCompilerKinds["mining.choose_dwarf_statue_power"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return DwarfKingStatuePowerSteps(candidate);
             }
 
             if (candidate.Kind == "collect_crab_pot" &&

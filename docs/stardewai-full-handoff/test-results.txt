@@ -1,3 +1,10 @@
+2026-08-27 EVD-269 native Dwarf King Statue daily power admission
+- Locked 1.6.15 decompile confirms mining mastery `mastery_3 >= 1`, exact base `(BC)StatueOfTheDwarfKing`, two distinct daily choices from `Utility.CreateRandom(DaysPlayed*77, uniqueID)`, the existing-buff lock, and five effect use-site families.
+- The model selects one exact offered `power_id`; the compiler rebinds statue, stand, menu index, buff and day identity. Production reuses shared BFS and native `GameLocation.checkAction` plus `ChooseFromIconsMenu.receiveLeftClick`, with no direct production `applyBuff` or `AppliedBuffs` write.
+- Hidden/silent isolated E-drive PASS: `artifacts/runtime-dwarf-king-statue/runtime-dwarf-king-statue-20260827-111935/summary.json`. Both daily offers `0/3` returned applied/verified, produced only `dwarfStatue_0`/`dwarfStatue_3`, and closed the native menu.
+- Installed full snapshot validates 129 required factors: 113 readable, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 training allowlist / 55 catalogued blocked / 0 Product Executor.
+- Final Release regression PASS: Core 1802/1802; Backend 126/126; solution build 0 errors with one existing `AvoidNetField` warning.
+
 2026-08-27 EVD-268 native Spring 17 Pot of Gold admission
 - Locked 1.6.15 decompile confirms `Forest.DayUpdate` installs `(O)PotOfGold` only at `Forest:52,98` on Spring 17 and removes an unclaimed pot on Spring 18. Native `Object.checkForAction` removes it and creates `min(100, 7 + year)` individual `(O)GoldCoin` debris plus one `(H)LeprechuanHat` debris; claim has no backpack-capacity gate.
 - The no-parameter high-level intent binds exact live location/object/stand/date/output fields, compiles through one native `GameLocation.checkAction`, and leaves ordinary debris pickup to the existing `executor.pickup_debris` chain. Production does not directly remove the object, create debris, or add inventory.

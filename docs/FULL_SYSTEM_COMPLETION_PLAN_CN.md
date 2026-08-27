@@ -630,6 +630,12 @@ DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作
 
 生产运行只复用共享 BFS 并调用原生 `GameLocation.checkAction`。满背包不会阻止领取，金币和帽子先进入 debris，后续只交给现有 `executor.pickup_debris`；禁止新增直接背包转移或第二套奖励拾取实现。E 盘隐藏静音运行在第二年验证 9 个金币与 1 顶帽子精确守恒。当前权威状态为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 allowlist / 56 catalogued blocked / 0 Product Executor`，full 快照 `128 required / 112 readable / 16 contextual / 0 blocking`。下一切片为 `mining.choose_dwarf_statue_power`。
 
+## 2026-08-27 矮人王雕像能力选择闭环（EVD-269）
+
+`mining.choose_dwarf_statue_power` 已从待办分母替换为唯一高层实现。透明桥按原生日种子发布两个不同选项、五类真实效果、采矿精通门、已有全天 buff 锁、当前地图精确基础雕像和相邻站位。模型只负责在两个真实候选中选 `power_id`；编译器保留该策略选择，并覆盖模型提供的所有机械字段。
+
+运行时复用共享 BFS 和原生对象/菜单 API，不直接写生产 buff。普通矿井、骷髅洞、火山和地图外石头继续消费同一个 `dwarfStatue_*` 状态，不复制执行器。隐藏静音 E 盘运行对当天两个菜单项均验证唯一 buff 和菜单关闭。当前权威状态为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 allowlist / 55 catalogued blocked / 0 Product Executor`，full 快照 `129 required / 113 readable / 16 contextual / 0 blocking`。下一切片为 `rewards.claim_statue_blessing`，可复用对象交互与菜单生命周期，但必须独立反编译其随机规则和七种祝福。
+
 ## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
 
 `buildings.paint` 是高层外观选择，不是新的机械执行系统。小模型必须明确建筑身份、涂装区域、恢复默认或自定义 H/S/L，以及外观理由。透明桥实时读取 `Data/PaintData`、权限、区域顺序、亮度边界、当前三组颜色和 Robin 服务入口；同时根据锁定版原生 284 像素滑杆公式公开每个通道的精确鼠标可达值。上游候选与队列编译均拒绝不可达整数、无效果目标、默认显示值无法解除默认标志的三元组、菜单占用和投影漂移。

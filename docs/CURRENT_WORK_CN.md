@@ -1,13 +1,14 @@
 # StardewAI 当前工作
 
-## 2026-08-27 当前权威检查点：EVD-268
+## 2026-08-27 当前权威检查点：EVD-269
 
-- `rewards.claim_pot_of_gold` 已闭合透明读取、上游候选排除、DailyPlan、无参数模型意图重绑定、动作编译、原生运行与输出回执。小模型只输出领取目标；目标地点、`52,98` 对象、相邻站位、年份奖励数量和原生契约全部由最新快照与编译器绑定。
-- 锁定 1.6.15 反编译确认 `Forest.DayUpdate` 仅在春 17 日放置 `(O)PotOfGold`，春 18 日删除未领取对象；`Object.checkForAction` 原生移除对象并生成 `min(100, 7 + year)` 个独立 `(O)GoldCoin` debris 和一个 `(H)LeprechuanHat` debris。领取本身没有背包容量门，后续收取只复用既有 `executor.pickup_debris`。
-- 隐藏、静音、E 盘隔离运行 `runtime-pot-of-gold-20260827-010119` 在满背包、第二年场景返回 `applied/verified`：目标格为空，9 个金币 debris 与 1 顶帽子精确守恒，且仅加载 TransparentBridge 与 RuntimeTestHarness。生产执行器只调用原生 `GameLocation.checkAction`，不直接删除对象、增加 debris 或写背包。
-- 最新真实 full 快照已安装：`128 required / 112 readable / 16 contextual / 0 blocking`；KnowledgeCompiler 为 `585/585`、blocking `0`。权威对账为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 training allowlist / 56 catalogued blocked / 0 Product Executor`，原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 `0`。
-- 最终 Release 回归为 Core `1797/1797`、Backend `125/125`；解决方案构建 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。
-- 下一语义切片固定为 `mining.choose_dwarf_statue_power`。先按锁定反编译确认雕像对象身份、可用时段、菜单图标顺序、每日选择持久状态与实际增益，再决定复用现有对象交互和菜单选择内核；不得把火山、普通矿井或采石场矿洞的执行逻辑混入该菜单动作。
+- `mining.choose_dwarf_statue_power` 已闭合透明读取、两个策略候选、DailyPlan、选择保留与机械字段重绑定、动作编译、原生运行和全天 buff 回执。小模型只从当天两个精确选项中输出 `dwarf_statue_power_id`；雕像、站位、菜单索引、buff ID、日期指纹和点击细节全部由最新快照与编译器绑定。
+- 锁定 1.6.15 反编译确认 `(BC)StatueOfTheDwarfKing` 需要 `StatKeys.Mastery(3) >= 1`，以 `Utility.CreateRandom(DaysPlayed*77, uniqueID)` 每天固定生成两个不同的 `0..4` 选项。五种效果分别落在额外矿石、楼梯/竖井、煤炭、炸弹免伤和晶球概率的原生分支；已有任一 `dwarfStatue_*` buff 时当日不能重选。
+- 生产执行器只复用共享 BFS，调用原生 `GameLocation.checkAction` 打开 `ChooseFromIconsMenu`，核对两个图标身份和顺序后调用原生 `receiveLeftClick`。禁止生产路径直接 `applyBuff` 或写 `AppliedBuffs`；普通矿井、骷髅洞和火山继续读取同一个 buff，不新增第二套矿洞或战斗系统。
+- 隐藏、静音、E 盘隔离运行 `runtime-dwarf-king-statue-20260827-111935` 对当天两个选项 `0/3` 均返回 `applied/verified`，分别只观察到 `dwarfStatue_0` 和 `dwarfStatue_3`，原生菜单在 800ms 销毁后关闭。
+- 最新真实 full 快照已安装：`129 required / 113 readable / 16 contextual / 0 blocking`；KnowledgeCompiler 为 `585/585`、blocking `0`。权威对账为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 training allowlist / 55 catalogued blocked / 0 Product Executor`，原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 `0`。
+- 最终 Release 回归为 Core `1802/1802`、Backend `126/126`；解决方案构建 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。
+- 下一语义切片固定为 `rewards.claim_statue_blessing`。必须先锁定祝福雕像的每日随机状态、领取锁、全部祝福效果和原生菜单/对象路径；可以复用本切片的对象定位、日级候选和原生菜单生命周期，但不得把两个雕像的随机分母、buff ID 或规则混用。
 
 ## 2026-08-26 当前权威检查点：EVD-267
 

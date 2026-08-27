@@ -428,6 +428,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction removes the Pot of Gold", "the exact year-scaled GoldCoin and LeprechuanHat rewards remain conserved across inventory and ordinary debris pickup" },
                 new[] { "block_not_spring_17_forest", "block_exact_pot_missing_or_drifted", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_reward_debris_receipt_mismatch", "block_direct_object_inventory_or_debris_mutation" }));
 
+            Register(Option("mining.choose_dwarf_statue_power", "mining", "Choose one exact daily power offered by a Dwarf King Statue",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.StrategyValue,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.dwarf_king_statue_power", "menus.active_menu" },
+                new[] { "small model selects one of exactly two deterministic daily powers", "compiler rebinds an exact live statue and adjacent stand", "native object action opens the exact icon menu", "native menu click applies the selected day buff" },
+                new[] { "block_mining_mastery_locked", "block_existing_dwarf_statue_buff", "block_selected_power_not_offered", "block_no_exact_live_statue_or_adjacent_stand", "block_menu_or_player_busy", "block_offer_or_menu_drift", "block_direct_production_buff_mutation" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

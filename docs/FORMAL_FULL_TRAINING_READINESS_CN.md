@@ -363,3 +363,9 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 `rewards.claim_pot_of_gold` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。模型不输出坐标、站位、数量或领取细节；编译器从最新 `current_location.pot_of_gold_reward` 绑定 Forest、`52,98`、可用相邻格、春 17 日、`min(100, 7 + year)` 金币和帽子契约。隐藏静音满背包运行验证原生 `GameLocation.checkAction` 产生第二年 9 个金币 debris 与 1 顶帽子，随后由既有 debris 拾取链处理，不建立第二套奖励转移系统。
 
 最新 full 快照为 `128 required / 112 readable / 16 contextual / 0 blocking`；权威对账为 `143 registered / 199 semantic / 142 compiler-bound / 69 five-gate / 37 allowlist / 56 catalogued blocked / 0 Product Executor`。该单项准入不解除正式全量训练对 Product Executor、生产长 rollout、冻结正式数据 manifest、独立存档评测和第三年 21 分长跑的总体阻塞。
+
+## 2026-08-27 矮人王雕像每日能力准入（EVD-269）
+
+`mining.choose_dwarf_statue_power` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。透明桥实时发布采矿精通门、当前地图全部精确基础雕像、可达站位、由 `DaysPlayed*77 + uniqueID` 生成的两个不同选项、五种原生效果分支和已有 buff 锁。模型必须选择一个当天真实提供的 `power_id`；编译器拒绝缺失或伪造的 ID，并从新快照重绑菜单索引、buff、雕像和站位。
+
+隐藏静音 E 盘运行对当天两个选项 `0/3` 分别验证了原生 `Object.checkForAction -> ChooseFromIconsMenu.receiveLeftClick`、唯一选中 buff 和菜单关闭回执。最新 full 快照为 `129 required / 113 readable / 16 contextual / 0 blocking`；权威对账为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 allowlist / 55 catalogued blocked / 0 Product Executor`。该单项准入不解除正式全量训练对 Product Executor、生产长 rollout、冻结正式数据 manifest、独立存档评测和第三年 21 分长跑的总体阻塞。

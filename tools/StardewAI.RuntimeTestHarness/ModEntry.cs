@@ -101,6 +101,7 @@ public sealed partial class ModEntry : Mod
     private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
+    private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -481,6 +482,7 @@ public sealed partial class ModEntry : Mod
         TickSkullKeyChestInteraction();
         TickMineRewardChest();
         TickPotOfGoldClaim();
+        TickDwarfKingStatuePowerChoice();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1428,6 +1430,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_dwarf_king_statue")
+            {
+                pending.Completion.SetResult(ExecuteSetupDwarfKingStatueFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "mining.choose_dwarf_statue_power")
+            {
+                StartDwarfKingStatuePowerChoice(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.forge_item")
             {
                 StartForge(pending);
@@ -1567,6 +1581,7 @@ public sealed partial class ModEntry : Mod
             activeBushHarvest = null;
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
+            activeDwarfKingStatueChoice = null;
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
             activePetInteraction = null;
@@ -1798,6 +1813,7 @@ public sealed partial class ModEntry : Mod
             activeSkullKeyChestInteraction is not null ||
             activeMineRewardChest is not null ||
             activePotOfGoldClaim is not null ||
+            activeDwarfKingStatueChoice is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

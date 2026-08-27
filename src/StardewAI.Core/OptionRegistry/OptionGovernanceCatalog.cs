@@ -256,6 +256,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("mining.obtain_skull_key", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("mining.claim_reward_chests", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("rewards.claim_pot_of_gold", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("mining.choose_dwarf_statue_power", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),

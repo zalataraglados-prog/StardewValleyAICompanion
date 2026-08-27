@@ -173,7 +173,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                 "inventory.transfer_item",
                 "mail.process_letter",
-                "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
+                "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "rewards.claim_pot_of_gold",
                 "skills.choose_profession", "skills.read_books", "social.gift_npc", "social.talk_npc", "volcano.reach_caldera"
             },
@@ -221,6 +221,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "foraging.pan_ore_spot" => "vanilla_current_location_exact_active_ore_spot_live_pan_reward_projection_copper_steel_lifecycle_receipt_xp_times_panned_and_respawn_observation",
                 "inventory.transfer_item" => "explicit_bidirectional_player_normal_chest_transfer",
                 "mail.process_letter" => "vanilla_native_order_owned_farm_mailbox_all_locked_Data_mail_directives_exact_LetterViewer_pages_attachments_quests_special_orders_stardrop_overflow_and_native_receipts",
+                "mining.choose_dwarf_statue_power" => "vanilla_mining_mastery_exact_daily_two_offer_rng_all_five_power_projections_native_object_menu_click_and_selected_day_buff_receipt",
                 "mining.claim_reward_chests" => "loaded_vanilla_mineshaft_exact_reward_chests_fixed_stardrop_forced_random_receipt_and_cleanup_matrix",
                 "mining.obtain_skull_key" => "ordinary_mines_floor_119_to_120_native_skull_key_chest_claim_false_to_true_and_exit",
                 "mining.reach_depth" => "candidate_bound_ordinary_mine_rolling_current_floor_supported_steps_and_unlocked_native_elevator_checkpoint_shortcut",

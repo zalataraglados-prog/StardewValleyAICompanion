@@ -111,6 +111,7 @@ namespace StardewAI.Core.Execution
                 "harvest_bush" => "executor.harvest_bush",
                 "claim_mine_reward_chest" => "executor.claim_mine_reward_chest",
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
+                "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",

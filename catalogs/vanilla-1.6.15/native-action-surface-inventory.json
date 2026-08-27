@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 102,
-  "catalogued_blocked_action_count": 56,
+  "catalogued_blocked_action_count": 55,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -41,7 +41,6 @@
     "minigame.play_prairie_king",
     "minigame.play_slots",
     "mining.activate_calico_statue",
-    "mining.choose_dwarf_statue_power",
     "movement.use_mini_obelisk",
     "multiplayer.manage_wallet",
     "multiplayer.send_chat",

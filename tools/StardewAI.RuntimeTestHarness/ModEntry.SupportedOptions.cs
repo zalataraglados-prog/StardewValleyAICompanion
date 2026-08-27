@@ -67,6 +67,7 @@ public sealed partial class ModEntry
             "debug.setup_museum_donation",
             "debug.setup_pan_ore_spot",
             "debug.setup_pot_of_gold",
+            "debug.setup_dwarf_king_statue",
             "debug.setup_partnership_fixture",
             "debug.setup_pet_care_target",
             "debug.setup_plant_seed_target",

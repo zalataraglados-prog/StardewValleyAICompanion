@@ -643,6 +643,15 @@ static partial class Program
         var expectedMenuTypeAfterDialogue = ReadQueueParameterString(item, "expected_menu_type_after_dialogue");
         var professionChoiceId = ReadQueueParameterInt(item, "profession_choice_id");
         var professionChoiceSource = ReadQueueParameterString(item, "profession_choice_source");
+        var dwarfStatuePowerId = ReadQueueParameterInt(item, "dwarf_statue_power_id");
+        var dwarfStatuePowerSource = ReadQueueParameterString(item, "dwarf_statue_power_source");
+        var dwarfStatueMenuIndex = ReadQueueParameterInt(item, "dwarf_statue_menu_index");
+        var dwarfStatueBuffId = ReadQueueParameterString(item, "dwarf_statue_buff_id");
+        var dwarfStatueDisplayText = ReadQueueParameterString(item, "dwarf_statue_display_text");
+        var dwarfStatueEffectKind = ReadQueueParameterString(item, "dwarf_statue_effect_kind");
+        var dwarfStatueExactEffect = ReadQueueParameterString(item, "dwarf_statue_exact_effect");
+        var dwarfStatueOfferedPowerIdsCsv = ReadQueueParameterString(item, "dwarf_statue_offered_power_ids_csv");
+        var dwarfStatueDaysPlayed = ReadQueueParameterInt(item, "dwarf_statue_days_played");
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1118,6 +1127,15 @@ static partial class Program
         executionRequest.ExpectedMenuTypeAfterDialogue = expectedMenuTypeAfterDialogue;
         executionRequest.ProfessionChoiceId = professionChoiceId;
         executionRequest.ProfessionChoiceSource = professionChoiceSource;
+        executionRequest.DwarfStatuePowerId = dwarfStatuePowerId;
+        executionRequest.DwarfStatuePowerSource = dwarfStatuePowerSource;
+        executionRequest.DwarfStatueMenuIndex = dwarfStatueMenuIndex;
+        executionRequest.DwarfStatueBuffId = dwarfStatueBuffId;
+        executionRequest.DwarfStatueDisplayText = dwarfStatueDisplayText;
+        executionRequest.DwarfStatueEffectKind = dwarfStatueEffectKind;
+        executionRequest.DwarfStatueExactEffect = dwarfStatueExactEffect;
+        executionRequest.DwarfStatueOfferedPowerIdsCsv = dwarfStatueOfferedPowerIdsCsv;
+        executionRequest.DwarfStatueDaysPlayed = dwarfStatueDaysPlayed;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;
