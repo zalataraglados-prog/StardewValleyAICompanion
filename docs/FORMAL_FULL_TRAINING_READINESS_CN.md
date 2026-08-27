@@ -369,3 +369,9 @@ required 104、blocking 0。Qi 与沙漠节庆只有锁定版本反编译和结�
 `mining.choose_dwarf_statue_power` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。透明桥实时发布采矿精通门、当前地图全部精确基础雕像、可达站位、由 `DaysPlayed*77 + uniqueID` 生成的两个不同选项、五种原生效果分支和已有 buff 锁。模型必须选择一个当天真实提供的 `power_id`；编译器拒绝缺失或伪造的 ID，并从新快照重绑菜单索引、buff、雕像和站位。
 
 隐藏静音 E 盘运行对当天两个选项 `0/3` 分别验证了原生 `Object.checkForAction -> ChooseFromIconsMenu.receiveLeftClick`、唯一选中 buff 和菜单关闭回执。最新 full 快照为 `129 required / 113 readable / 16 contextual / 0 blocking`；权威对账为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 allowlist / 55 catalogued blocked / 0 Product Executor`。该单项准入不解除正式全量训练对 Product Executor、生产长 rollout、冻结正式数据 manifest、独立存档评测和第三年 21 分长跑的总体阻塞。
+
+## 2026-08-27 祝福雕像每日奖励准入（EVD-270）
+
+`rewards.claim_statue_blessing` 已按锁定 1.6.15 原生规则闭合五门并进入训练白名单。它是无参数领取目标，不是策略选择菜单：透明桥预测当天唯一祝福，并发布农业精通、日锁、天气/节日分母、七种效果、当前地图精确基础雕像和相邻站位；编译器覆盖模型伪造的所有机械字段。
+
+生产执行只复用共享 BFS 和原生 `GameLocation.checkAction`，不直接施加 buff 或写日锁。隐藏静音 E 盘运行验证当天 `statue_of_blessings_1` 唯一回执和 `hasBeenBlessedByStatueToday=true`。最新 full 快照为 `130 required / 114 readable / 16 contextual / 0 blocking`；权威对账为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`。该单项准入仍不解除 Product Executor、生产长 rollout、正式 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。

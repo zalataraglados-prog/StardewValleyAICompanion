@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-08-27 当前权威检查点：EVD-270
+
+- `rewards.claim_statue_blessing` 已闭合透明读取、无参数日级候选、DailyPlan、机械字段重绑定、动作编译、原生运行与全天 buff 回执。小模型只输出“领取今日祝福”这一语义目标；祝福编号、雕像、站位、日期、天气/节日分母与对象交互全部由最新快照和编译器绑定。
+- 锁定 1.6.15 反编译确认 `(BC)StatueOfBlessings` 需要 `StatKeys.Mastery(0) >= 1`，并以 `CreateDaySaveRandom(DaysPlayed*777)` 丢弃八次后抽取。普通日为 `Next(7)`；雨天或节日为 `Next(6)`，因此不会抽到蝴蝶祝福。`hasBeenBlessedByStatueToday` 或任一 `statue_of_blessings_*` buff 都会在上游排除重复领取。
+- 透明投影覆盖七种原生效果：速度 `+0.5`、幸运 `+1`、体力不下降、前三次钓鱼减难度、交谈友谊 `20 -> 60`、暴击率 `+0.1`、17:00 前棱彩蝴蝶及其金钱/棱彩碎片结算。效果仍由原生 Buff、Farmer、BobberBar、NPC、GameLocation 和 Butterfly 分支消费，没有复制战斗、钓鱼或社交执行器。
+- 生产执行器复用共享 BFS，到精确相邻格后只调用一次 `GameLocation.checkAction`。禁止生产路径直接 `applyBuff`、改写 `hasBeenBlessedByStatueToday` 或写 `AppliedBuffs`；结果同时要求唯一预测 buff、日锁为真、菜单为空。
+- 隐藏、静音、E 盘隔离运行 `runtime-statue-blessing-20260827-115317` 返回 `applied/verified`：当天普通日预测并实际得到 `statue_of_blessings_1`，只观察到该幸运祝福，日领取锁变为 `true`。
+- 最新真实 full 快照已安装：`130 required / 114 readable / 16 contextual / 0 blocking`；KnowledgeCompiler 为 `585/585`、blocking `0`。权威对账为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 training allowlist / 54 catalogued blocked / 0 Product Executor`，原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且三类 blocking 均为 `0`。
+- 最终回归为 Core `1813/1813`、Backend `127/127`；Release 解决方案构建保持 `0` 错误，仅保留既有 `MiningReadAdapter.Objects.cs` 的一条 `AvoidNetField` 警告。
+- 下一语义切片固定为 `world.rotate_house_plant`：先反编译八帧轮转、对象子类和交互返回值，再复用当前地图对象定位与原生直接交互；不得把装饰轮转伪装成长线策略，也不得建立第二套移动器。
+
 ## 2026-08-27 当前权威检查点：EVD-269
 
 - `mining.choose_dwarf_statue_power` 已闭合透明读取、两个策略候选、DailyPlan、选择保留与机械字段重绑定、动作编译、原生运行和全天 buff 回执。小模型只从当天两个精确选项中输出 `dwarf_statue_power_id`；雕像、站位、菜单索引、buff ID、日期指纹和点击细节全部由最新快照与编译器绑定。

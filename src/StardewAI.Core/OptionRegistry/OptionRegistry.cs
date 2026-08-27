@@ -436,6 +436,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "small model selects one of exactly two deterministic daily powers", "compiler rebinds an exact live statue and adjacent stand", "native object action opens the exact icon menu", "native menu click applies the selected day buff" },
                 new[] { "block_mining_mastery_locked", "block_existing_dwarf_statue_buff", "block_selected_power_not_offered", "block_no_exact_live_statue_or_adjacent_stand", "block_menu_or_player_busy", "block_offer_or_menu_drift", "block_direct_production_buff_mutation" }));
 
+            Register(Option("rewards.claim_statue_blessing", "rewards", "Claim the deterministic daily farming-mastery Statue of Blessings reward",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.statue_blessing", "menus.active_menu" },
+                new[] { "small model emits one parameterless claim goal", "compiler binds the exact deterministic daily blessing and one live statue stand", "native object action applies the blessing and daily claim lock", "post-state verifies exactly the predicted blessing buff" },
+                new[] { "block_farming_mastery_locked", "block_already_blessed_today", "block_no_exact_live_statue_or_adjacent_stand", "block_menu_or_player_busy", "block_day_weather_festival_or_object_drift", "block_direct_production_buff_mutation" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

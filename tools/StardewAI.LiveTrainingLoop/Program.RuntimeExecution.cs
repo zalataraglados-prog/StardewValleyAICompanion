@@ -652,6 +652,12 @@ static partial class Program
         var dwarfStatueExactEffect = ReadQueueParameterString(item, "dwarf_statue_exact_effect");
         var dwarfStatueOfferedPowerIdsCsv = ReadQueueParameterString(item, "dwarf_statue_offered_power_ids_csv");
         var dwarfStatueDaysPlayed = ReadQueueParameterInt(item, "dwarf_statue_days_played");
+        var statueBlessingId = ReadQueueParameterInt(item, "statue_blessing_id");
+        var statueBlessingBuffId = ReadQueueParameterString(item, "statue_blessing_buff_id");
+        var statueBlessingEffectKind = ReadQueueParameterString(item, "statue_blessing_effect_kind");
+        var statueBlessingExactEffect = ReadQueueParameterString(item, "statue_blessing_exact_effect");
+        var statueBlessingDaysPlayed = ReadQueueParameterInt(item, "statue_blessing_days_played");
+        var statueBlessingRandomUpperBoundExclusive = ReadQueueParameterInt(item, "statue_blessing_random_upper_bound_exclusive");
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1136,6 +1142,12 @@ static partial class Program
         executionRequest.DwarfStatueExactEffect = dwarfStatueExactEffect;
         executionRequest.DwarfStatueOfferedPowerIdsCsv = dwarfStatueOfferedPowerIdsCsv;
         executionRequest.DwarfStatueDaysPlayed = dwarfStatueDaysPlayed;
+        executionRequest.StatueBlessingId = statueBlessingId;
+        executionRequest.StatueBlessingBuffId = statueBlessingBuffId;
+        executionRequest.StatueBlessingEffectKind = statueBlessingEffectKind;
+        executionRequest.StatueBlessingExactEffect = statueBlessingExactEffect;
+        executionRequest.StatueBlessingDaysPlayed = statueBlessingDaysPlayed;
+        executionRequest.StatueBlessingRandomUpperBoundExclusive = statueBlessingRandomUpperBoundExclusive;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

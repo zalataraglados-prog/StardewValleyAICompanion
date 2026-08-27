@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 102,
-  "catalogued_blocked_action_count": 55,
+  "catalogued_blocked_action_count": 54,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
     "animals.withdraw_feed_hopper_hay",
@@ -51,7 +51,6 @@
     "quest.cancel",
     "rewards.claim_adventure_guild_reward",
     "rewards.claim_prize_ticket",
-    "rewards.claim_statue_blessing",
     "skills.claim_mastery",
     "social.emote",
     "social.watch_movie",

@@ -50,6 +50,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.claim_reward_chests"] = (snapshot, _) => MineRewardChestCandidates(snapshot),
                 ["rewards.claim_pot_of_gold"] = (snapshot, _) => PotOfGoldCandidates(snapshot),
                 ["mining.choose_dwarf_statue_power"] = (snapshot, _) => DwarfKingStatuePowerCandidates(snapshot),
+                ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
                 ["economy.sell_items"] = SellItemStageCandidates,

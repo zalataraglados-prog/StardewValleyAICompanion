@@ -636,6 +636,12 @@ DailyPlan 只负责滚动到 Robin 服务点并生成一次终端动作，动作
 
 运行时复用共享 BFS 和原生对象/菜单 API，不直接写生产 buff。普通矿井、骷髅洞、火山和地图外石头继续消费同一个 `dwarfStatue_*` 状态，不复制执行器。隐藏静音 E 盘运行对当天两个菜单项均验证唯一 buff 和菜单关闭。当前权威状态为 `144 registered / 199 semantic / 143 compiler-bound / 70 five-gate / 38 allowlist / 55 catalogued blocked / 0 Product Executor`，full 快照 `129 required / 113 readable / 16 contextual / 0 blocking`。下一切片为 `rewards.claim_statue_blessing`，可复用对象交互与菜单生命周期，但必须独立反编译其随机规则和七种祝福。
 
+## 2026-08-27 祝福雕像领取闭环（EVD-270）
+
+`rewards.claim_statue_blessing` 已从待办分母替换为唯一高层实现。它不要求小模型选择祝福：原生日期种子已唯一决定结果，模型只输出无参数领取目标。透明桥与编译器冻结农业精通、日锁、天气/节日导致的 `6/7` 分母、当天祝福、七种原生效果、精确雕像和相邻站位；任何日期、分母、对象、站位或 buff 漂移都失败关闭。
+
+运行时只复用共享 BFS 并调用原生对象交互；七种效果继续由现有钓鱼、社交、战斗、体力和世界 critter 代码消费，不复制下游系统。隐藏静音 E 盘运行验证唯一幸运祝福与日锁。当前权威状态为 `145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 allowlist / 54 catalogued blocked / 0 Product Executor`，full 快照 `130 required / 114 readable / 16 contextual / 0 blocking`。下一切片为 `world.rotate_house_plant`。
+
 ## 2026-08-12 建筑涂装闭环（EVD-250 已闭合）
 
 `buildings.paint` 是高层外观选择，不是新的机械执行系统。小模型必须明确建筑身份、涂装区域、恢复默认或自定义 H/S/L，以及外观理由。透明桥实时读取 `Data/PaintData`、权限、区域顺序、亮度边界、当前三组颜色和 Robin 服务入口；同时根据锁定版原生 284 像素滑杆公式公开每个通道的精确鼠标可达值。上游候选与队列编译均拒绝不可达整数、无效果目标、默认显示值无法解除默认标志的三元组、菜单占用和投影漂移。

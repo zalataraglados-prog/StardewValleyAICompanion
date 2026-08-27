@@ -4016,3 +4016,12 @@ Scope boundary:
 - Installed full snapshot schema PASS: 123 required, 107 readable with provenance, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 140 registered / 199 semantic / 139 compiler-bound / 67 five-gate / 36 training allowlist / 59 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
 - Focused/full Core regression PASS 1781/1781. Next slice is `recovery.sleep_in_tent`, reusing normal movement, native interaction/confirmation and terminal cross-day settlement without merging it into `executor.sleep` or placement.
+
+2026-08-27 EVD-270 complete native Statue of Blessings admission
+- Locked 1.6.15 source audit PASS: farming mastery gate, native daily lock, `CreateDaySaveRandom(DaysPlayed*777)` with eight discarded values, rain/festival `Next(6)` versus ordinary `Next(7)`, and all seven Buff/Farmer/BobberBar/NPC/GameLocation/Butterfly effect consumers are covered.
+- Candidate/DailyPlan/compiler/governance tests PASS for all seven identities, parameterless model intent, mechanical-field rebind, already-claimed exclusion, rain/festival denominator and stale-field rejection.
+- Runtime source guard PASS: shared BFS and native `GameLocation.checkAction` are required; direct production `applyBuff`, `AppliedBuffs` mutation and day-lock mutation are absent.
+- Hidden/silent isolated E-drive PASS: `artifacts/runtime-statue-blessing/runtime-statue-blessing-20260827-115317/summary.json`. Predicted and observed buff were both `statue_of_blessings_1`; exactly one blessing was active and the native daily lock became true.
+- Installed full snapshot schema PASS: 130 required, 114 readable with provenance, 16 contextual/stale, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 145 registered / 199 semantic / 144 compiler-bound / 71 five-gate / 39 training allowlist / 54 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Full regression PASS: Core 1813/1813; Backend 127/127; Release solution build 0 errors with one pre-existing `AvoidNetField` warning. Next slice is `world.rotate_house_plant`.
