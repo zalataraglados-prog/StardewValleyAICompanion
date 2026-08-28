@@ -64,6 +64,10 @@ public sealed class NativeObjectExecutionPayload
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SingingStoneExecutionProjection? SingingStone { get; set; }
 
+    [JsonPropertyName("flute_block")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FluteBlockExecutionProjection? FluteBlock { get; set; }
+
     [JsonPropertyName("slime_ball")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SlimeBallExecutionProjection? SlimeBall { get; set; }
@@ -103,6 +107,21 @@ public sealed class SingingStoneExecutionProjection
     public int? PitchStep { get; set; }
     public int? PitchOutcomeCount { get; set; }
     public int? ExpectedShakeTimer { get; set; }
+    public bool? ExpectedLocationActionReturn { get; set; }
+}
+
+public sealed class FluteBlockExecutionProjection
+{
+    public string CurrentPitchRaw { get; set; } = string.Empty;
+    public int? CurrentPitch { get; set; }
+    public int? NextPitch { get; set; }
+    public int? PitchMin { get; set; }
+    public int? PitchMax { get; set; }
+    public int? PitchStep { get; set; }
+    public int? PitchStateCount { get; set; }
+    public string SoundCue { get; set; } = string.Empty;
+    public int? ExpectedShakeTimer { get; set; }
+    public float? ExpectedScaleY { get; set; }
     public bool? ExpectedLocationActionReturn { get; set; }
 }
 

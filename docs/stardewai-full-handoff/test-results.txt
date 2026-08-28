@@ -1,3 +1,10 @@
+2026-08-29 EVD-281 native Flute Block tuning
+- Locked 1.6.15 source audit PASS: exact base `(O)464`, persistent raw pitch parsing, complete `0..2400 step 100` cycle, special `2300->2400->0` edges, held-object cue override, shake/scale receipt and separate adjacent playback are covered.
+- TDD RED observed 7/7 Core failures from unknown registration/compiler and 1/1 Backend failure from missing runtime; focused GREEN PASS is Core 7/7 and Backend 1/1.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-flute-block/runtime-flute-block-20260829-034718/summary.json`. One native action mapped `2300->2400`, observed shake 200/scale 1.3, preserved identity/restored slot and loaded only Bridge plus Harness.
+- KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 153 registered / 197 semantic / 152 compiler-bound / 79 five-gate / 40 training allowlist / 44 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1873/1873; Backend 137/137; Release solution build 0 warnings / 0 errors. Next slice is `world.tune_drum_block`.
+
 2026-08-29 EVD-280 native Farm Computer report
 - Locked 1.6.15 source audit PASS: exact base `(BC)239`, root-location aggregate sources, conditional greenhouse row, localized report construction, immediate `shakeTimer=500` / `freezePause=500`, 500ms delayed `DialogueBox`, and location-dependent placement semantics are covered.
 - Candidate/DailyPlan/compiler/governance tests PASS for explicit-player-only invocation, direct structured transparency, fresh mechanical/report-field rebind and stale-target/report rejection. The action is excluded from autonomous ranking and training admission.

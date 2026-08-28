@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 45,
+  "catalogued_blocked_action_count": 44,
   "catalogued_blocked_action_ids": [
     "executor.plant_grass",
     "executor.read_secret_note",
@@ -51,8 +51,7 @@
     "story.advance_event_minigame",
     "tailoring.dye_item",
     "tailoring.sew_item",
-    "world.tune_drum_block",
-    "world.tune_flute_block"
+    "world.tune_drum_block"
   ],
   "compatibility_placeholder_surface_count": 2,
   "compatibility_placeholder_action_count": 2,

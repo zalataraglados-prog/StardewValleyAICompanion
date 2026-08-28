@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 Flute Block 原生调音闭环（EVD-281）
+
+`world.tune_flute_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布 `preservedParentSheetIndex` 原始/解析值、下一档、完整 25 档循环、基础音色与独立路过播放入口；编译器只允许空槽/工具槽并发起一次原生地点交互，不直接写音高、摇动或缩放。
+
+隐藏静音 E 盘运行 `runtime-flute-block-20260829-034718` 已验证 `2300->2400` 特殊边、`shakeTimer=200`、`scale.Y=1.3`、身份与槽位恢复。该动作是 `PlayerCommandOnly`，不进入自主候选和训练。当前对账为 `153 registered / 197 semantic / 152 compiler-bound / 79 five-gate / 40 allowlist / 44 catalogued blocked / 0 Product Executor`。下一纵向切片固定为 `world.tune_drum_block`。
+
 ## 2026-08-29 Farm Computer 原生报告闭环（EVD-280）
 
 `farming.read_farm_computer_report` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。透明桥按锁定 1.6.15 的 `GetRootLocation()` 语义直接发布作物、耕地、成熟/未浇水作物、温室、采集物、机器、干草和农场洞穴字段，同时发布精确本地化报告摘要；模型不需要通过菜单读取策略信息。

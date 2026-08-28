@@ -1487,6 +1487,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_flute_block")
+            {
+                pending.Completion.SetResult(ExecuteSetupFluteBlockFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "world.tune_flute_block")
+            {
+                StartFluteBlockTuning(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "farming.read_farm_computer_report")
             {
                 StartFarmComputerReport(pending);

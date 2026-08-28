@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-281
+
+- `world.tune_flute_block` 已闭合透明读取、显式玩家候选、DailyPlan、新鲜字段重绑定、动作编译、v1/v2 类型请求、共享原生运行和持久化音高回执。锁定 1.6.15 反编译确认 `(O)464` 每次右键按 `0..2400`、步长 `100`、共 25 档推进，特殊边为 `2300->2400->0`。
+- 该动作严格为 `PlayerCommandOnly`。编译器选择空槽或工具槽以禁用手持物音色覆盖，执行一次原生 `GameLocation.checkAction`；路过触发的 `farmerAdjacentAction` 是独立播放入口，不得混入调音命令或训练。
+- 隐藏、静音、E 盘隔离运行 `runtime-flute-block-20260829-034718` 为 PASS：`2300->2400`、`shakeTimer=200`、`scale.Y=1.3`、原生返回 true、对象身份与槽位保持，只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新权威对账为 `153 registered / 197 semantic / 152 compiler-bound / 79 five-gate / 40 training allowlist / 44 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `world.tune_drum_block`，继续复用同一共享移动/交互骨架并单独锁定七档鼓声音色循环。
+
 ## 2026-08-29 当前权威检查点：EVD-280
 
 - `farming.read_farm_computer_report` 已闭合透明读取、显式玩家候选、DailyPlan、机械字段新鲜重绑定、动作编译、v1/v2 类型请求、原生延迟对话和报告摘要回执。锁定 1.6.15 反编译确认原生 `(BC)239` 以对象所在地点的 `GetRootLocation()` 为报告根，精确读取作物、空闲耕地、成熟/未浇水作物、温室、采集物、已完成机器、干草与农场洞穴状态。

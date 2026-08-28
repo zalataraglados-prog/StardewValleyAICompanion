@@ -9,6 +9,7 @@ public sealed partial class ModEntry
     {
         TickHousePlantRotation();
         TickSingingStone();
+        TickFluteBlockTuning();
         TickSlimeBallCollection();
         TickFeedHopperWithdrawal();
         TickAutoGrabberCollection();
@@ -20,6 +21,7 @@ public sealed partial class ModEntry
     {
         var restoreSlot = nativeObjectInteractions.HousePlant?.RestoreSlotIndex ??
             nativeObjectInteractions.SingingStone?.RestoreSlotIndex ??
+            nativeObjectInteractions.FluteBlock?.RestoreSlotIndex ??
             nativeObjectInteractions.SlimeBall?.RestoreSlotIndex ??
             nativeObjectInteractions.FeedHopper?.RestoreSlotIndex ??
             nativeObjectInteractions.AutoGrabber?.RestoreSlotIndex ??
@@ -28,6 +30,7 @@ public sealed partial class ModEntry
 
         nativeObjectInteractions.HousePlant = null;
         nativeObjectInteractions.SingingStone = null;
+        nativeObjectInteractions.FluteBlock = null;
         nativeObjectInteractions.SlimeBall = null;
         nativeObjectInteractions.FeedHopper = null;
         nativeObjectInteractions.AutoGrabber = null;
@@ -42,6 +45,7 @@ public sealed partial class ModEntry
     {
         public ActiveHousePlantRotation? HousePlant { get; set; }
         public ActiveSingingStone? SingingStone { get; set; }
+        public ActiveFluteBlock? FluteBlock { get; set; }
         public ActiveSlimeBallCollection? SlimeBall { get; set; }
         public ActiveFeedHopperWithdrawal? FeedHopper { get; set; }
         public ActiveAutoGrabberCollection? AutoGrabber { get; set; }
@@ -51,6 +55,7 @@ public sealed partial class ModEntry
         public bool IsActive =>
             HousePlant is not null ||
             SingingStone is not null ||
+            FluteBlock is not null ||
             SlimeBall is not null ||
             FeedHopper is not null ||
             AutoGrabber is not null ||

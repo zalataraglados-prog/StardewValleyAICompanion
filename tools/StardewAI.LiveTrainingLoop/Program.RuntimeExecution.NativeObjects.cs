@@ -11,6 +11,7 @@ static partial class Program
         {
             "world.rotate_house_plant" => "house_plant",
             "world.play_singing_stone" => "singing_stone",
+            "world.tune_flute_block" => "flute_block",
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
@@ -35,6 +36,18 @@ static partial class Program
         request.SingingStonePitchOutcomeCount = ReadQueueParameterInt(item, "singing_stone_pitch_outcome_count");
         request.SingingStoneExpectedShakeTimer = ReadQueueParameterInt(item, "singing_stone_expected_shake_timer");
         request.SingingStoneExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "singing_stone_expected_location_action_return");
+        request.FluteBlockSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        request.FluteBlockCurrentPitchRaw = ReadQueueParameterString(item, "flute_block_current_pitch_raw");
+        request.FluteBlockCurrentPitch = ReadQueueParameterInt(item, "flute_block_current_pitch");
+        request.FluteBlockNextPitch = ReadQueueParameterInt(item, "flute_block_next_pitch");
+        request.FluteBlockPitchMin = ReadQueueParameterInt(item, "flute_block_pitch_min");
+        request.FluteBlockPitchMax = ReadQueueParameterInt(item, "flute_block_pitch_max");
+        request.FluteBlockPitchStep = ReadQueueParameterInt(item, "flute_block_pitch_step");
+        request.FluteBlockPitchStateCount = ReadQueueParameterInt(item, "flute_block_pitch_state_count");
+        request.FluteBlockSoundCue = ReadQueueParameterString(item, "flute_block_sound_cue");
+        request.FluteBlockExpectedShakeTimer = ReadQueueParameterInt(item, "flute_block_expected_shake_timer");
+        request.FluteBlockExpectedScaleY = (float?)ReadQueueParameterDouble(item, "flute_block_expected_scale_y");
+        request.FluteBlockExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "flute_block_expected_location_action_return");
         request.RequiredFragility = ReadQueueParameterInt(item, "required_fragility");
         request.SlimeBallSeedDaysPlayed = ReadQueueParameterInt(item, "slime_ball_seed_days_played");
         request.SlimeBallSeedUniqueGameId = ReadQueueParameterLong(item, "slime_ball_seed_unique_game_id");
@@ -135,6 +148,22 @@ static partial class Program
                     PitchOutcomeCount = request.SingingStonePitchOutcomeCount,
                     ExpectedShakeTimer = request.SingingStoneExpectedShakeTimer,
                     ExpectedLocationActionReturn = request.SingingStoneExpectedLocationActionReturn
+                };
+                break;
+            case "flute_block":
+                request.NativeObjectPayload.FluteBlock = new FluteBlockExecutionProjection
+                {
+                    CurrentPitchRaw = request.FluteBlockCurrentPitchRaw,
+                    CurrentPitch = request.FluteBlockCurrentPitch,
+                    NextPitch = request.FluteBlockNextPitch,
+                    PitchMin = request.FluteBlockPitchMin,
+                    PitchMax = request.FluteBlockPitchMax,
+                    PitchStep = request.FluteBlockPitchStep,
+                    PitchStateCount = request.FluteBlockPitchStateCount,
+                    SoundCue = request.FluteBlockSoundCue,
+                    ExpectedShakeTimer = request.FluteBlockExpectedShakeTimer,
+                    ExpectedScaleY = request.FluteBlockExpectedScaleY,
+                    ExpectedLocationActionReturn = request.FluteBlockExpectedLocationActionReturn
                 };
                 break;
             case "slime_ball":

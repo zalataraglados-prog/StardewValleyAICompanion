@@ -492,6 +492,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact base (BC)94 Singing Stone and adjacent stand selected", "compiler binds a safe toolbar slot and the complete native pitch distribution", "one native GameLocation.checkAction emits the crystal sound and sets shakeTimer to 100", "object identity and selected toolbar slot are preserved" },
                 new[] { "block_not_explicitly_authorized", "block_non_base_or_non_singing_stone_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_object_or_distribution_projection_drift", "never_guess_exact_shared_rng_pitch" }));
 
+            Register(Option("world.tune_flute_block", "world", "Advance one exact placed Flute Block by one native persistent pitch step for an explicit player request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "current_location.objects", "menus.active_menu" },
+                new[] { "one exact base (O)464 Flute Block and adjacent stand selected", "compiler rebinds current and next pitch plus a safe empty/tool slot", "one native GameLocation.checkAction advances persistent pitch and plays the base flute cue", "shake/scale receipt, item identity and selected toolbar slot are verified" },
+                new[] { "block_not_explicitly_authorized", "block_non_base_or_non_flute_block_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_pitch_or_identity_projection_drift", "never_merge_adjacent_playback_with_tuning", "block_direct_pitch_or_animation_mutation" }));
+
             Register(Option("farming.read_farm_computer_report", "farming", "Open one exact Farm Computer native report for an explicit player request",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,

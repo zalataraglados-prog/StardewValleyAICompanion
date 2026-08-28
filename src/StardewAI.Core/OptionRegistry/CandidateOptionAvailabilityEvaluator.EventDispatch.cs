@@ -53,6 +53,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),
                 ["world.rotate_house_plant"] = (snapshot, _) => HousePlantRotationCandidates(snapshot),
                 ["world.play_singing_stone"] = (snapshot, _) => SingingStoneCandidates(snapshot),
+                ["world.tune_flute_block"] = (snapshot, _) => FluteBlockCandidates(snapshot),
                 ["farming.read_farm_computer_report"] = (snapshot, _) => FarmComputerReportCandidates(snapshot),
                 ["farming.collect_slime_ball"] = (snapshot, _) => SlimeBallCollectionCandidates(snapshot),
                 ["animals.withdraw_feed_hopper_hay"] = (snapshot, _) => FeedHopperWithdrawalCandidates(snapshot),

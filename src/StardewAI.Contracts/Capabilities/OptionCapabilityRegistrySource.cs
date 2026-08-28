@@ -249,6 +249,10 @@ namespace StardewAI.Contracts.Capabilities
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_exact_base_(BC)94_shared_rng_uniform_crystal_pitch_distribution_native_location_object_interaction_shake_timer_identity_and_selected_slot_receipt",
                         "EVD-274"),
+                    ["world.tune_flute_block"] = NativeObjectSeed(
+                        autonomous: false, playerCommandOnly: true,
+                        "vanilla_exact_base_(O)464_persistent_25_pitch_cycle_safe_flute_cue_native_location_object_interaction_shake_scale_identity_and_selected_slot_receipt",
+                        "EVD-281"),
                     ["farming.read_farm_computer_report"] = NativeObjectSeed(
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_exact_base_(BC)239_root_location_native_aggregate_localized_report_native_delayed_dialogue_identity_and_selected_slot_receipt",
@@ -728,6 +732,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("claim_statue_blessing"),
                 SupportedCandidate("rotate_house_plant"),
                 SupportedCandidate("play_singing_stone"),
+                SupportedCandidate("tune_flute_block"),
                 SupportedCandidate("read_farm_computer_report"),
                 SupportedCandidate("collect_slime_ball"),
                 SupportedCandidate("withdraw_feed_hopper_hay"),

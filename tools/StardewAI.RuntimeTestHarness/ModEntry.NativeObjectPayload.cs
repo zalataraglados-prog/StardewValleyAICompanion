@@ -22,6 +22,7 @@ public sealed partial class ModEntry
         {
             "world.rotate_house_plant" => "house_plant",
             "world.play_singing_stone" => "singing_stone",
+            "world.tune_flute_block" => "flute_block",
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
@@ -36,7 +37,7 @@ public sealed partial class ModEntry
         }
         var projectionCount = new object?[]
         {
-            payload.HousePlant, payload.SingingStone, payload.SlimeBall,
+            payload.HousePlant, payload.SingingStone, payload.FluteBlock, payload.SlimeBall,
             payload.FeedHopper, payload.AutoGrabber, payload.MiniObelisk,
             payload.FarmComputer
         }.Count(value => value is not null);
@@ -49,6 +50,7 @@ public sealed partial class ModEntry
         {
             "house_plant" => payload.HousePlant is not null,
             "singing_stone" => payload.SingingStone is not null,
+            "flute_block" => payload.FluteBlock is not null,
             "slime_ball" => payload.SlimeBall is not null,
             "feed_hopper" => payload.FeedHopper is not null,
             "auto_grabber" => payload.AutoGrabber is not null,
@@ -94,6 +96,21 @@ public sealed partial class ModEntry
             request.SingingStonePitchOutcomeCount = singingStone.PitchOutcomeCount;
             request.SingingStoneExpectedShakeTimer = singingStone.ExpectedShakeTimer;
             request.SingingStoneExpectedLocationActionReturn = singingStone.ExpectedLocationActionReturn;
+        }
+        if (payload.FluteBlock is { } fluteBlock)
+        {
+            request.FluteBlockSafeSlotKind = payload.SafeSlotKind;
+            request.FluteBlockCurrentPitchRaw = fluteBlock.CurrentPitchRaw;
+            request.FluteBlockCurrentPitch = fluteBlock.CurrentPitch;
+            request.FluteBlockNextPitch = fluteBlock.NextPitch;
+            request.FluteBlockPitchMin = fluteBlock.PitchMin;
+            request.FluteBlockPitchMax = fluteBlock.PitchMax;
+            request.FluteBlockPitchStep = fluteBlock.PitchStep;
+            request.FluteBlockPitchStateCount = fluteBlock.PitchStateCount;
+            request.FluteBlockSoundCue = fluteBlock.SoundCue;
+            request.FluteBlockExpectedShakeTimer = fluteBlock.ExpectedShakeTimer;
+            request.FluteBlockExpectedScaleY = fluteBlock.ExpectedScaleY;
+            request.FluteBlockExpectedLocationActionReturn = fluteBlock.ExpectedLocationActionReturn;
         }
         if (payload.SlimeBall is { } slimeBall)
         {
