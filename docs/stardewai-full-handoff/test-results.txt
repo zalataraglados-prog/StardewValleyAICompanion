@@ -1,3 +1,9 @@
+2026-08-28 EVD-275/EVD-276 legacy Raft correction and native Feed Hopper withdrawal
+- Locked 1.6.15 retains `Raft` source/state compatibility code but has no runtime `Data/Tools` row, acquisition, factory, event, or external construction path. It is classified `legacy_unreachable` and removed from the player semantic denominator.
+- Hidden/silent isolated E-drive Feed Hopper PASS: `artifacts/runtime-feed-hopper/runtime-feed-hopper-20260828-130723/summary.json`. One native location action withdrew 8 hay, changed root silo 10->2 and player inventory 0->8, preserved `(BC)99`, and restored the selected slot.
+- KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 training allowlist / 49 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with blocking 0.
+- Regression PASS: Core 1844/1844; Backend 131/131; solution build 0 errors with one existing `AvoidNetField` warning.
+
 2026-08-27 EVD-269 native Dwarf King Statue daily power admission
 - Locked 1.6.15 decompile confirms mining mastery `mastery_3 >= 1`, exact base `(BC)StatueOfTheDwarfKing`, two distinct daily choices from `Utility.CreateRandom(DaysPlayed*77, uniqueID)`, the existing-buff lock, and five effect use-site families.
 - The model selects one exact offered `power_id`; the compiler rebinds statue, stand, menu index, buff and day identity. Production reuses shared BFS and native `GameLocation.checkAction` plus `ChooseFromIconsMenu.receiveLeftClick`, with no direct production `applyBuff` or `AppliedBuffs` write.

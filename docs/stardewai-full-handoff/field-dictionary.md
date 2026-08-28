@@ -25,6 +25,13 @@ Status values:
 | `current_location.objects[].singing_stone_interaction` | Distinguish exact base `(BC)94` from same-name furniture and expose every mechanical input without advancing shared RNG | locked 1.6.15 `Object.checkForAction` / `CheckForActionOnSingingStone`; live object/location/player state | n/a; decompile and native runtime are authoritative for hidden RNG semantics | covered_for_read / player_command_only / exact_next_pitch_unavailable | Publishes `crystal`, uniform `0..2300 step 100`, 24 outcomes, `Game1.random_shared_unread`, expected `shakeTimer=100`, native return, permanent identity and safe stands. |
 | `world.play_singing_stone` | Compile one explicit player request into shared movement and exactly one native location action | DailyPlan/compiler, `NativeObjectInteractionMovement`, runtime harness | n/a | covered_for_compile_rebind / five_gate_closed_EVD_274 / training_excluded_player_command_only | Compiler never substitutes a different stone. Production never calls sound/RNG directly or writes the timer; runtime receipt is executor evidence only. |
 
+## Feed Hopper Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.objects[].feed_hopper_withdrawal` | Expose every current input to exact native Feed Hopper withdrawal | locked 1.6.15 `Object.checkForAction` / `CheckForActionOnFeedHopper`; live Animal House, root location, player inventory and object state | n/a; decompile and native runtime are authoritative | covered_for_read / covered_for_gate / five_gate_closed_EVD_276 | Publishes exact base identity, root location ID, silo hay, animal count/limit, placed hay, unfed animals, expected native quantity and post-state, exact-stack inventory acceptance, safe stands and native contract. |
+| `animals.withdraw_feed_hopper_hay` | Compile one useful animal-feeding withdrawal into shared movement and exactly one native location action | candidate, DailyPlan/compiler, typed runtime and conservation receipt | n/a | covered_for_compile_rebind / autonomous_when_unfed / training_admitted_EVD_276 | Upstream excludes zero unfed animals and all native failure states. Production never writes silo or inventory directly; receipt requires equal opposite deltas and unchanged hopper identity. |
+
 ## Slime Ball Collection Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

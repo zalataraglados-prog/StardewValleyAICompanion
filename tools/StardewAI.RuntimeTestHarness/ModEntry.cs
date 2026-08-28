@@ -106,6 +106,7 @@ public sealed partial class ModEntry : Mod
     private ActiveHousePlantRotation? activeHousePlantRotation;
     private ActiveSingingStone? activeSingingStone;
     private ActiveSlimeBallCollection? activeSlimeBallCollection;
+    private ActiveFeedHopperWithdrawal? activeFeedHopperWithdrawal;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -491,6 +492,7 @@ public sealed partial class ModEntry : Mod
         TickHousePlantRotation();
         TickSingingStone();
         TickSlimeBallCollection();
+        TickFeedHopperWithdrawal();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1498,6 +1500,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_feed_hopper")
+            {
+                pending.Completion.SetResult(ExecuteSetupFeedHopperFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "animals.withdraw_feed_hopper_hay")
+            {
+                StartFeedHopperWithdrawal(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.forge_item")
             {
                 StartForge(pending);
@@ -1653,6 +1667,11 @@ public sealed partial class ModEntry : Mod
             {
                 Game1.player.CurrentToolIndex = activeSlimeBallCollection.RestoreSlotIndex;
                 activeSlimeBallCollection = null;
+            }
+            if (activeFeedHopperWithdrawal is not null)
+            {
+                Game1.player.CurrentToolIndex = activeFeedHopperWithdrawal.RestoreSlotIndex;
+                activeFeedHopperWithdrawal = null;
             }
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
@@ -1890,6 +1909,7 @@ public sealed partial class ModEntry : Mod
             activeHousePlantRotation is not null ||
             activeSingingStone is not null ||
             activeSlimeBallCollection is not null ||
+            activeFeedHopperWithdrawal is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

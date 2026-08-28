@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-28 喂食斗训练准入与木筏分母修正（EVD-275 / EVD-276）
+
+`animals.withdraw_feed_hopper_hay` 已通过五门证据并进入训练 allowlist。训练样本只允许来自“当前动物屋至少有一只未喂动物、原生精确取草量为正、背包可接纳、菜单与站位安全”的候选；编译器必须从同一新鲜快照重绑根料仓、动物数、容量、已摆干草、取草量、安全槽和站位。生产运行只调用一次原生 `GameLocation.checkAction`，并以料仓 `-N`、背包 `(O)178 +N` 的守恒回执验收。E 盘隐藏静音运行 `runtime-feed-hopper-20260828-130723` 验证 `N=8`。
+
+不可达的 `Raft` 遗留类型不属于训练缺口。锁定 1.6.15 没有原版获取或调用入口，因此语义分母校正为 `198`，原生表面继续保留 `legacy_unreachable` 证据。最新状态为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；这仍不解除 Product Executor、正式数据 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。
+
 ## 2026-08-28 PlayerCommandOnly 原生声音交互边界
 
 `world.play_singing_stone` 已闭合五门执行证据，但正式训练准入保持关闭。锁定 1.6.15 原生语义只允许透明发布共享 RNG 的 24 项均匀音高分布，不允许预读或猜测下一音高。显式玩家命令经确认后，编译器重绑精确 `(BC)94`、站位和安全槽，运行时通过共享移动器调用一次原生地点交互并验证 `shakeTimer=100`、对象身份与槽位恢复。其证据范围为 `player_command_only_executor_evidence`，默认候选、策略请求和训练清洗分别通过生成、授权与类型化排除三层阻断。当前 allowlist 仍为 `38`，没有因为该执行器验证而增长。

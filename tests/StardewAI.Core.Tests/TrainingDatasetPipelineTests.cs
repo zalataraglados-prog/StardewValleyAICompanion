@@ -33,6 +33,7 @@ namespace StardewAI.Core.Tests
                 {
                     "animals.manage_animal",
                     "animals.purchase",
+                    "animals.withdraw_feed_hopper_hay",
                     "buildings.construct",
                     "crafting.cook_recipe",
                     "crafting.forge_item",

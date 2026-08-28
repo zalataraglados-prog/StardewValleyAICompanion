@@ -116,6 +116,7 @@ namespace StardewAI.Core.Execution
                 "rotate_house_plant" => "world.rotate_house_plant",
                 "play_singing_stone" => "world.play_singing_stone",
                 "collect_slime_ball" => "farming.collect_slime_ball",
+                "withdraw_feed_hopper_hay" => "animals.withdraw_feed_hopper_hay",
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",

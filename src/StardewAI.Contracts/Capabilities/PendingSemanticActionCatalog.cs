@@ -21,7 +21,6 @@ public static class PendingSemanticActionCatalog
     private static readonly IReadOnlyList<PendingSemanticActionDeclaration> Rows =
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
-            P("animals.withdraw_feed_hopper_hay", "animals", "engine.inventory_transfer", "Object"),
             P("animals.collect_auto_grabber_contents", "animals", "engine.inventory_transfer", "Object", "ItemGrabMenu"),
             P("movement.use_mini_obelisk", "movement", "engine.movement_navigation", "Object"),
             P("farming.read_farm_computer_report", "farming", "engine.interaction_menu", "Object"),
@@ -34,7 +33,6 @@ public static class PendingSemanticActionCatalog
             P("executor.use_horse_flute", "movement", "engine.movement_navigation", "Object"),
             P("executor.use_monster_musk", "combat", "engine.inventory_transfer", "Object"),
             P("executor.use_rain_totem", "farming", "engine.inventory_transfer", "Object"),
-            P("executor.use_raft", "movement", "engine.movement_navigation", "Raft"),
             P("executor.use_return_scepter", "movement", "engine.movement_navigation", "Wand"),
             P("executor.use_treasure_totem", "foraging", "engine.tool_harvest", "Object"),
             P("executor.use_warp_totem", "movement", "engine.movement_navigation", "Object"),

@@ -5,18 +5,16 @@
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
   "mapped_count": 68,
-  "catalogued_blocked_surface_count": 102,
-  "catalogued_blocked_action_count": 51,
+  "catalogued_blocked_surface_count": 101,
+  "catalogued_blocked_action_count": 49,
   "catalogued_blocked_action_ids": [
     "animals.collect_auto_grabber_contents",
-    "animals.withdraw_feed_hopper_hay",
     "executor.plant_grass",
     "executor.read_secret_note",
     "executor.toggle_lantern",
     "executor.use_firework",
     "executor.use_horse_flute",
     "executor.use_monster_musk",
-    "executor.use_raft",
     "executor.use_rain_totem",
     "executor.use_return_scepter",
     "executor.use_treasure_totem",
@@ -63,7 +61,7 @@
   "missing_registration_surface_count": 0,
   "missing_semantic_action_count": 0,
   "missing_semantic_action_ids": [],
-  "classified_non_semantic_surface_count": 91,
+  "classified_non_semantic_surface_count": 92,
   "branch_decompilation_required_count": 61,
   "branch_inventory_generated_count": 61,
   "branch_inventory_missing_count": 0,
@@ -5132,12 +5130,10 @@
       "startLine": 28,
       "endLine": 54,
       "bodySha256": "af68aec37ab9c7bae6ff8885408858d886f15e06771bb54b9f099ed57519b5d1",
-      "mappedOptionIds": [
-        "executor.use_raft"
-      ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
-      "scopeDisposition": "target_actor_action",
-      "evidenceBasis": "decompiled runtime type and native input member"
+      "mappedOptionIds": [],
+      "semanticCoverageStatus": "classified_non_semantic_surface",
+      "scopeDisposition": "legacy_unreachable",
+      "evidenceBasis": "locked 1.6.15 retains the tool type and rafting state branches, but Data/Tools has no entry and no acquisition, factory, event, or external construction path reaches it"
     },
     {
       "surfaceId": "native.8e3209031eb22b33",

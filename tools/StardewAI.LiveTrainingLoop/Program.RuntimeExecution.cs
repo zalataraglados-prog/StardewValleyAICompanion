@@ -690,6 +690,21 @@ static partial class Program
             out var parsedSlimeBallExpectedLocationActionReturn)
                 ? parsedSlimeBallExpectedLocationActionReturn
                 : (bool?)null;
+        var feedHopperSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        var feedHopperHayQualifiedItemId = ReadQueueParameterString(item, "feed_hopper_hay_qualified_item_id");
+        var feedHopperRootLocationId = ReadQueueParameterString(item, "feed_hopper_root_location_id");
+        var feedHopperSiloHayBefore = ReadQueueParameterInt(item, "feed_hopper_silo_hay_before");
+        var feedHopperAnimalCount = ReadQueueParameterInt(item, "feed_hopper_animal_count");
+        var feedHopperAnimalLimit = ReadQueueParameterInt(item, "feed_hopper_animal_limit");
+        var feedHopperPlacedHayCount = ReadQueueParameterInt(item, "feed_hopper_placed_hay_count");
+        var feedHopperUnfedAnimalCount = ReadQueueParameterInt(item, "feed_hopper_unfed_animal_count");
+        var feedHopperExpectedWithdrawalQuantity = ReadQueueParameterInt(item, "feed_hopper_expected_withdrawal_quantity");
+        var feedHopperExpectedSiloHayAfter = ReadQueueParameterInt(item, "feed_hopper_expected_silo_hay_after");
+        var feedHopperExpectedLocationActionReturn = bool.TryParse(
+            ReadQueueParameterString(item, "feed_hopper_expected_location_action_return"),
+            out var parsedFeedHopperExpectedLocationActionReturn)
+                ? parsedFeedHopperExpectedLocationActionReturn
+                : (bool?)null;
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1200,6 +1215,17 @@ static partial class Program
         executionRequest.SlimeBallExpectedSlimeQuantity = slimeBallExpectedSlimeQuantity;
         executionRequest.SlimeBallExpectedPetrifiedSlimeQuantity = slimeBallExpectedPetrifiedSlimeQuantity;
         executionRequest.SlimeBallExpectedLocationActionReturn = slimeBallExpectedLocationActionReturn;
+        executionRequest.FeedHopperSafeSlotKind = feedHopperSafeSlotKind;
+        executionRequest.FeedHopperHayQualifiedItemId = feedHopperHayQualifiedItemId;
+        executionRequest.FeedHopperRootLocationId = feedHopperRootLocationId;
+        executionRequest.FeedHopperSiloHayBefore = feedHopperSiloHayBefore;
+        executionRequest.FeedHopperAnimalCount = feedHopperAnimalCount;
+        executionRequest.FeedHopperAnimalLimit = feedHopperAnimalLimit;
+        executionRequest.FeedHopperPlacedHayCount = feedHopperPlacedHayCount;
+        executionRequest.FeedHopperUnfedAnimalCount = feedHopperUnfedAnimalCount;
+        executionRequest.FeedHopperExpectedWithdrawalQuantity = feedHopperExpectedWithdrawalQuantity;
+        executionRequest.FeedHopperExpectedSiloHayAfter = feedHopperExpectedSiloHayAfter;
+        executionRequest.FeedHopperExpectedLocationActionReturn = feedHopperExpectedLocationActionReturn;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

@@ -71,6 +71,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one ready tool-harvest animal selected", "native Milk Pail or Shears lifecycle handed to the mechanical executor" },
                 new[] { "block_unready_animal_product", "block_missing_harvest_tool", "block_inventory_full", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("animals.withdraw_feed_hopper_hay", "animals", "Withdraw the exact native hay stack needed by one animal house",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "player.inventory", "current_location.objects", "menus.active_menu" },
+                new[] { "one exact base Feed Hopper with unfed animals and one safe adjacent stand selected", "compiler rebinds silo hay, animal occupancy, trough occupancy and exact native withdrawal", "one native GameLocation.checkAction transfers hay from the root silo to player inventory" },
+                new[] { "block_non_animal_house_or_drifted_feed_hopper", "block_no_unfed_animals", "block_silo_empty_or_trough_full", "block_inventory_rejects_exact_stack", "block_destructive_object_trap_preamble", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_direct_silo_or_inventory_mutation" }));
+
             Register(Option("farming.collect_slime_ball", "farming", "Collect one exact natural Slime Hutch Slime Ball through its native object action",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,

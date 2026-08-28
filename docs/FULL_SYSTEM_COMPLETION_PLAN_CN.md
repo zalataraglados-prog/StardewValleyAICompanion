@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-28 木筏分母修正与喂食斗闭环（EVD-275 / EVD-276）
+
+锁定 1.6.15 中 `Raft` 只有残留类型与兼容状态分支，没有 `Data/Tools`、获取、工厂、事件或外部构造入口，因此保留为 `legacy_unreachable` 原生证据并从玩家语义动作分母移除。该修正把冻结语义分母从 `199` 校正为 `198`，没有改变 `322 surfaces / 448 branches / 150 map tokens` 的原生扫描范围。
+
+`animals.withdraw_feed_hopper_hay` 已实现精确透明投影和原生执行。模型只看到“当前动物屋确有未喂动物时取草”这一有意义候选；料仓、动物、已摆干草、原生取草公式、背包接纳、站位和安全槽全部由最新快照与编译器重绑定。运行时复用共享对象移动，且只调用一次原生 `GameLocation.checkAction`，以料仓和背包守恒回执验收。隐藏静音 E 盘运行 `runtime-feed-hopper-20260828-130723` 通过。当前对账为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；下一闭环固定为 `animals.collect_auto_grabber_contents`。
+
 ## 2026-08-28 声音石玩家指令闭环（EVD-274）
 
 `world.play_singing_stone` 已从冻结待办分母替换为唯一实现，但它不是自主策略能力。目标必须是当前已加载地点中的精确基础 `(BC)94`；同名家具 `(F)1300`、子类或身份漂移均失败关闭。透明桥发布原生 `crystal` 音高的完整均匀分布 `0..2300 step 100`、共享 RNG 不可预读状态、`shakeTimer=100`、相邻安全站位和对象身份。小模型只在玩家明确要求时选择目标石头，编译器重绑全部机械字段。

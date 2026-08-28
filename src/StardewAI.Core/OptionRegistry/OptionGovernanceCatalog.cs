@@ -266,6 +266,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("world.rotate_house_plant", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("world.play_singing_stone", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("farming.collect_slime_ball", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
+                P("animals.withdraw_feed_hopper_hay", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("recovery.stabilize_day", C, R0, None, NoConfirm, Actor, Mixed, Allowed),

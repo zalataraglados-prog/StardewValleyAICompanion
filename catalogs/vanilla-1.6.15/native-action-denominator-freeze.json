@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "9c0b9d492f2865d47ffe48586afd9c62d8b87672a806c1ecb09f7bea2034c427",
+  "fingerprint_sha256": "bae015b8a7524e065cc2b355c74c26579945a7b75f7626c892378a49358bc871",
   "surface_count": 322,
   "branch_count": 448,
   "map_token_count": 150,
-  "semantic_action_count": 199,
-  "approval_basis": "locked 1.6.15 decompile; executor.place_sign moved from pending to one exact native placement primitive covering all live sign_item and TextSign rows; checkForAction and Objects/Sign.cs were added to the native source denominator, exposing Object and Sign action surfaces plus 20 branches; every added Object branch is explicitly mapped to an existing or catalogued-blocked semantic action, with zero unresolved or missing registrations"
+  "semantic_action_count": 198,
+  "approval_basis": "locked 1.6.15 decompile and runtime assets; executor.place_sign moved from pending to one exact native placement primitive covering all live sign_item and TextSign rows; checkForAction and Objects/Sign.cs remain in the native source denominator, exposing Object and Sign action surfaces plus 20 branches; StardewValley.Tools.Raft remains inventoried as a legacy_unreachable source surface but was removed from the player semantic denominator because the 37-row Data/Tools asset has no Raft entry and no acquisition, factory, event, or external construction path reaches the retained class; every reachable Object branch remains explicitly mapped to an existing or catalogued-blocked semantic action, with zero unresolved or missing registrations"
 }

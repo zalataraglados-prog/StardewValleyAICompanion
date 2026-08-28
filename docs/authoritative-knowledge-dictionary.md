@@ -320,6 +320,13 @@ not an end-to-end execution claim. Existing action code remains the implementati
 the blocked entries prevent known native capabilities from disappearing while their
 read/candidate/compile/product-runtime/verifier/E3 gates are completed.
 
+`StardewValley.Tools.Raft` is intentionally excluded from that semantic denominator. The locked
+1.6.15 assembly retains the class and downstream `Farmer.isRafting` compatibility branches, but
+the 37-row runtime `Data/Tools` asset has no Raft entry and the decompiled sources contain no
+acquisition, factory, event, or external construction path. The native surface inventory keeps
+the source artifact as `legacy_unreachable`; it is not a player action, candidate, or training
+target unless a future locked game version supplies a reachable vanilla entry point.
+
 The earlier `downstream-capability-matrix.json` audit joined the then-registered 89-option
 baseline to executable downstream surfaces. The current registered count is 96 and is
 governed by `action-implementation-reconciliation.json`; the figures below describe that

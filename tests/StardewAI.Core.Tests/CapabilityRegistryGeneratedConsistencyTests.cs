@@ -157,6 +157,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "animals.manage_animal",
                 "animals.purchase",
+                "animals.withdraw_feed_hopper_hay",
                 "buildings.construct",
                 "crafting.cook_recipe",
                 "crafting.forge_item",
@@ -197,6 +198,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             {
                 "animals.manage_animal" => "vanilla_exact_loaded_base_animal_explicit_rename_reproduction_toggle_move_home_or_irreversible_sale_through_native_pet_and_AnimalQueryMenu_with_strict_receipt",
                 "animals.purchase" => "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
+                "animals.withdraw_feed_hopper_hay" => "vanilla_exact_base_(BC)99_AnimalHouse_root_silo_animal_and_placed_hay_projection_native_location_action_exact_(O)178_inventory_transfer_conservation_identity_and_selected_slot_receipt",
                 "buildings.change_skin" => "vanilla_actor_exact_live_Pet_Bowl_default_to_Stone_skin_current_Robin_service_native_CarpenterMenu_shortest_click_and_paint_reset_receipt",
                 "buildings.construct" => "vanilla_host_purpose_bound_exact_live_base_blueprint_current_Robin_service_native_CarpenterMenu_Coop_on_Farm_money_material_placement_and_countdown_receipt",
                 "buildings.paint" => "vanilla_actor_exact_live_Farmhouse_first_paint_region_current_Robin_service_native_CarpenterMenu_mouse_reachable_custom_HSL_and_unchanged_sibling_receipt",

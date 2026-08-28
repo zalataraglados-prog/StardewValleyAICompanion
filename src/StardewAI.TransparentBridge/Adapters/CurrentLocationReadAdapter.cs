@@ -160,6 +160,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var housePlantRotation = ReadHousePlantRotation(location, tile, item);
         var slimeBallCollection = ReadSlimeBallCollection(location, tile, item);
         var singingStoneInteraction = ReadSingingStoneInteraction(location, tile, item);
+        var feedHopperWithdrawal = ReadFeedHopperWithdrawal(location, tile, item, player);
         return new
         {
             tile_x = (int)tile.X,
@@ -264,7 +265,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             sign_state = sign,
             house_plant_rotation = housePlantRotation,
             slime_ball_collection = slimeBallCollection,
-            singing_stone_interaction = singingStoneInteraction
+            singing_stone_interaction = singingStoneInteraction,
+            feed_hopper_withdrawal = feedHopperWithdrawal
         };
     }
 

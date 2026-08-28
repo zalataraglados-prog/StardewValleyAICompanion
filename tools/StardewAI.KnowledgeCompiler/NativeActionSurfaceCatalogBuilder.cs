@@ -184,7 +184,6 @@ internal sealed class NativeActionSurfaceCatalogBuilder
             "WheelSpinGame" => new[] { "festival.spin_wheel" },
             "Wand" => new[] { "executor.use_return_scepter" },
             "Lantern" => new[] { "executor.toggle_lantern" },
-            "Raft" => new[] { "executor.use_raft" },
             "Bush" => new[] { "executor.harvest_bush" },
             "FruitTree" => new[] { "foraging.harvest_fruit_tree", "executor.clear_obstacle" },
             "HoeDirt" => new[] { "farm.maintain_crops", "executor.plant_seed", "executor.harvest_crop" },
@@ -266,6 +265,14 @@ internal sealed class NativeActionSurfaceCatalogBuilder
                 Array.Empty<string>(),
                 "observation_or_navigation_only",
                 "decompiled handler changes view, page, selection, or closes display without a gameplay commitment");
+        }
+
+        if (runtimeType is "Raft")
+        {
+            return new SurfaceClassification(
+                Array.Empty<string>(),
+                "legacy_unreachable",
+                "locked 1.6.15 retains the tool type and rafting state branches, but Data/Tools has no entry and no acquisition, factory, event, or external construction path reaches it");
         }
 
         if (runtimeType is "AnimationPreviewTool" or "Test")

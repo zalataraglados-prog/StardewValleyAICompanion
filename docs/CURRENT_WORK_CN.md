@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-28 当前权威检查点：EVD-275 / EVD-276
+
+- `StardewValley.Tools.Raft` 已确认为锁定 1.6.15 的不可达遗留类型。类、`Farmer.isRafting` 和兼容移动分支仍存在，但 37 项 `Data/Tools` 没有 Raft，全部运行时内容资产也没有获取或事件入口，源码除类型自身 `GetOneNew` 外没有外部构造或工厂路径。因此原生表面继续以 `legacy_unreachable` 留证，`executor.use_raft` 从玩家语义动作分母删除，不进入候选、训练或待实现目录。
+- `animals.withdraw_feed_hopper_hay` 已闭合透明读取、上游候选、DailyPlan、机械字段重绑定、动作编译、原生运行和守恒回执。透明投影精确发布根地点料仓干草、动物数、动物屋容量、已摆干草、未喂动物、原生取草量、背包接纳和安全站位；没有未喂动物、料仓为空、料槽无容量或背包不能接纳时在上游排除。
+- 生产运行复用唯一 `NativeObjectInteractionMovement` 和共享 BFS，到站后只调用一次 `GameLocation.checkAction`。生产代码不直接写 `piecesOfHay`、不直接加背包；成功必须同时满足料仓精确减少、背包 `(O)178` 精确增加、喂食斗身份不变、菜单为空和选中槽恢复。
+- 隐藏、静音、E 盘隔离运行 `runtime-feed-hopper-20260828-130723` 为 PASS：原生一次取出 `8`，料仓 `10 -> 2`、背包 `0 -> 8`，`native_handled=true`，喂食斗保留且槽位恢复；只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新权威对账为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 training allowlist / 49 catalogued blocked / 0 Product Executor`；原生分母为 `322 surfaces / 448 branches / 150 map tokens`，三类 blocking 均为 `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。回归为 Core `1844/1844`、Backend `131/131`。
+- 下一语义切片按冻结待办顺序为 `animals.collect_auto_grabber_contents`；必须先核对原生菜单、互斥锁、容器库存和空容器分支，再复用唯一库存/菜单转移实现，不复制第二套容器执行器。
+
 ## 2026-08-28 当前权威检查点：EVD-274
 
 - `world.play_singing_stone` 已闭合透明读取、显式玩家指令候选、DailyPlan 表述、机械字段重绑定、动作编译、原生运行与回执。锁定 1.6.15 反编译确认目标是基础 `StardewValley.Object` `(BC)94`，不是同名家具 `(F)1300`；原生分支执行 `Game1.random.Next(2400)` 后向下取整到百位，均匀产生 `0..2300` 共 24 种 `crystal` 音高，并把 `shakeTimer` 设为 `100`。
@@ -8,6 +17,7 @@
 - 运行时与 House Plant 共用 `NativeObjectInteractionMovement`，保留原生动画/BFS，只调用一次 `GameLocation.checkAction`；生产代码不调用 `Game1.playSound`、不写 `shakeTimer=100`、不消费 RNG，并在交互前双检四向物体陷阱、目标身份、安全手持状态和槽位恢复。
 - 隐藏、静音、E 盘隔离运行 `runtime-singing-stone-20260828-102438` 为 PASS：`native_handled=true`、`shake_timer=100`、`item_id=94`、`qualified_item_id=(BC)94`，选中槽恢复；只加载 TransparentBridge 与 RuntimeTestHarness。
 - 权威对账为 `148 registered / 199 semantic / 147 compiler-bound / 74 five-gate / 38 training allowlist / 51 catalogued blocked / 0 Product Executor`；原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 均为 `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。全量回归为 Core `1839/1839`、Backend `130/130`。
+- `executor.use_raft` 已从动作全集分母移除：锁定 1.6.15 虽保留 `Raft` 类、`Farmer.isRafting` 和移动兼容分支，但 37 项 `Data/Tools` 无该工具，源码也无获取、工厂、事件或外部构造入口；原生表面保留为 `legacy_unreachable` 证据，不作为候选、训练目标或待实现能力。
 - 下一语义切片固定为 `animals.withdraw_feed_hopper_hay`：先锁定饲料斗交互、库存/料槽容量与取草数量分支，再判断是否完全复用唯一库存转移引擎；不得从历史段落回退到已闭合声音石或复制第二套转移系统。
 
 ## 2026-08-27 当前权威检查点：EVD-272 / EVD-273
