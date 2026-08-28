@@ -58,7 +58,7 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeSingingStone = new ActiveSingingStone(
+        nativeObjectInteractions.SingingStone = new ActiveSingingStone(
             pending, location, stone!, target, stand, path, maxMovementTiles);
     }
 
@@ -136,7 +136,7 @@ public sealed partial class ModEntry
 
     private void TickSingingStone()
     {
-        var active = activeSingingStone;
+        var active = nativeObjectInteractions.SingingStone;
         if (active is null)
             return;
         var movement = AdvanceNativeObjectInteractionMovement(active, "singing_stone", out var movementFailure);
@@ -191,7 +191,7 @@ public sealed partial class ModEntry
     private void CompleteSingingStone(ActiveSingingStone active, bool verified, params string[] reasons)
     {
         StopAllMovement();
-        activeSingingStone = null;
+        nativeObjectInteractions.SingingStone = null;
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         var current = active.Location.objects.TryGetValue(active.Target.ToVector2(), out var item) ? item : null;
         var verificationReasons = verified

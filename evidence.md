@@ -1,5 +1,7 @@
 # Evidence
 
+> Historical root ledger only. Do not use this file as the current capability or training-readiness source. The maintained evidence ledger is `docs/stardewai-full-handoff/evidence.md`; generated capability truth comes from `OptionCapabilityRegistrySource` and its consistency tests.
+
 ## Local Decompile Evidence
 
 - `I:\StardewValleyAICompanion-decompile\StardewValley\StardewValley.Menus\DialogueBox.cs` shows:

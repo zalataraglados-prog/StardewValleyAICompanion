@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.3.3" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.*" PrivateAssets="All" />
+    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

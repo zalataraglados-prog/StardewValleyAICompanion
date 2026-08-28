@@ -658,69 +658,6 @@ static partial class Program
         var statueBlessingExactEffect = ReadQueueParameterString(item, "statue_blessing_exact_effect");
         var statueBlessingDaysPlayed = ReadQueueParameterInt(item, "statue_blessing_days_played");
         var statueBlessingRandomUpperBoundExclusive = ReadQueueParameterInt(item, "statue_blessing_random_upper_bound_exclusive");
-        var housePlantCurrentSpriteIndex = ReadQueueParameterInt(item, "house_plant_current_sprite_index");
-        var housePlantExpectedSpriteIndex = ReadQueueParameterInt(item, "house_plant_expected_sprite_index");
-        var housePlantExpectedObjectActionCalls = ReadQueueParameterInt(item, "house_plant_expected_object_action_calls");
-        var housePlantExpectedLocationActionReturn = bool.TryParse(
-            ReadQueueParameterString(item, "house_plant_expected_location_action_return"),
-            out var parsedHousePlantExpectedLocationActionReturn)
-                ? parsedHousePlantExpectedLocationActionReturn
-                : (bool?)null;
-        var singingStoneSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
-        var singingStoneSoundName = ReadQueueParameterString(item, "singing_stone_sound_name");
-        var singingStonePitchRngSource = ReadQueueParameterString(item, "singing_stone_pitch_rng_source");
-        var singingStoneExactNextPitchStatus = ReadQueueParameterString(item, "singing_stone_exact_next_pitch_status");
-        var singingStonePitchMin = ReadQueueParameterInt(item, "singing_stone_pitch_min");
-        var singingStonePitchMax = ReadQueueParameterInt(item, "singing_stone_pitch_max");
-        var singingStonePitchStep = ReadQueueParameterInt(item, "singing_stone_pitch_step");
-        var singingStonePitchOutcomeCount = ReadQueueParameterInt(item, "singing_stone_pitch_outcome_count");
-        var singingStoneExpectedShakeTimer = ReadQueueParameterInt(item, "singing_stone_expected_shake_timer");
-        var singingStoneExpectedLocationActionReturn = bool.TryParse(
-            ReadQueueParameterString(item, "singing_stone_expected_location_action_return"),
-            out var parsedSingingStoneExpectedLocationActionReturn)
-                ? parsedSingingStoneExpectedLocationActionReturn
-                : (bool?)null;
-        var requiredFragility = ReadQueueParameterInt(item, "required_fragility");
-        var slimeBallSeedDaysPlayed = ReadQueueParameterInt(item, "slime_ball_seed_days_played");
-        var slimeBallSeedUniqueGameId = ReadQueueParameterLong(item, "slime_ball_seed_unique_game_id");
-        var slimeBallExpectedSlimeQuantity = ReadQueueParameterInt(item, "slime_ball_expected_slime_quantity");
-        var slimeBallExpectedPetrifiedSlimeQuantity = ReadQueueParameterInt(item, "slime_ball_expected_petrified_slime_quantity");
-        var slimeBallExpectedLocationActionReturn = bool.TryParse(
-            ReadQueueParameterString(item, "slime_ball_expected_location_action_return"),
-            out var parsedSlimeBallExpectedLocationActionReturn)
-                ? parsedSlimeBallExpectedLocationActionReturn
-                : (bool?)null;
-        var feedHopperSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
-        var feedHopperHayQualifiedItemId = ReadQueueParameterString(item, "feed_hopper_hay_qualified_item_id");
-        var feedHopperRootLocationId = ReadQueueParameterString(item, "feed_hopper_root_location_id");
-        var feedHopperSiloHayBefore = ReadQueueParameterInt(item, "feed_hopper_silo_hay_before");
-        var feedHopperAnimalCount = ReadQueueParameterInt(item, "feed_hopper_animal_count");
-        var feedHopperAnimalLimit = ReadQueueParameterInt(item, "feed_hopper_animal_limit");
-        var feedHopperPlacedHayCount = ReadQueueParameterInt(item, "feed_hopper_placed_hay_count");
-        var feedHopperUnfedAnimalCount = ReadQueueParameterInt(item, "feed_hopper_unfed_animal_count");
-        var feedHopperExpectedWithdrawalQuantity = ReadQueueParameterInt(item, "feed_hopper_expected_withdrawal_quantity");
-        var feedHopperExpectedSiloHayAfter = ReadQueueParameterInt(item, "feed_hopper_expected_silo_hay_after");
-        var feedHopperExpectedLocationActionReturn = bool.TryParse(
-            ReadQueueParameterString(item, "feed_hopper_expected_location_action_return"),
-            out var parsedFeedHopperExpectedLocationActionReturn)
-                ? parsedFeedHopperExpectedLocationActionReturn
-                : (bool?)null;
-        var autoGrabberSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
-        var autoGrabberHeldContainerRuntimeType = ReadQueueParameterString(item, "auto_grabber_held_container_runtime_type");
-        var autoGrabberContentsBeforeJson = ReadQueueParameterString(item, "auto_grabber_contents_before_json");
-        var autoGrabberTransferableContentsJson = ReadQueueParameterString(item, "auto_grabber_transferable_contents_json");
-        var autoGrabberRemainingContentsJson = ReadQueueParameterString(item, "auto_grabber_remaining_contents_json");
-        var autoGrabberContentStackCountBefore = ReadQueueParameterInt(item, "auto_grabber_content_stack_count_before");
-        var autoGrabberTransferableStackCount = ReadQueueParameterInt(item, "auto_grabber_transferable_stack_count");
-        var autoGrabberExpectedStackCountAfter = ReadQueueParameterInt(item, "auto_grabber_expected_stack_count_after");
-        var autoGrabberContentQuantityBefore = ReadQueueParameterInt(item, "auto_grabber_content_quantity_before");
-        var autoGrabberExpectedTransferQuantity = ReadQueueParameterInt(item, "auto_grabber_expected_transfer_quantity");
-        var autoGrabberExpectedQuantityAfter = ReadQueueParameterInt(item, "auto_grabber_expected_quantity_after");
-        var autoGrabberExpectedLocationActionReturn = bool.TryParse(
-            ReadQueueParameterString(item, "auto_grabber_expected_location_action_return"),
-            out var parsedAutoGrabberExpectedLocationActionReturn)
-                ? parsedAutoGrabberExpectedLocationActionReturn
-                : (bool?)null;
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1211,49 +1148,7 @@ static partial class Program
         executionRequest.StatueBlessingExactEffect = statueBlessingExactEffect;
         executionRequest.StatueBlessingDaysPlayed = statueBlessingDaysPlayed;
         executionRequest.StatueBlessingRandomUpperBoundExclusive = statueBlessingRandomUpperBoundExclusive;
-        executionRequest.HousePlantCurrentSpriteIndex = housePlantCurrentSpriteIndex;
-        executionRequest.HousePlantExpectedSpriteIndex = housePlantExpectedSpriteIndex;
-        executionRequest.HousePlantExpectedObjectActionCalls = housePlantExpectedObjectActionCalls;
-        executionRequest.HousePlantExpectedLocationActionReturn = housePlantExpectedLocationActionReturn;
-        executionRequest.SingingStoneSafeSlotKind = singingStoneSafeSlotKind;
-        executionRequest.SingingStoneSoundName = singingStoneSoundName;
-        executionRequest.SingingStonePitchRngSource = singingStonePitchRngSource;
-        executionRequest.SingingStoneExactNextPitchStatus = singingStoneExactNextPitchStatus;
-        executionRequest.SingingStonePitchMin = singingStonePitchMin;
-        executionRequest.SingingStonePitchMax = singingStonePitchMax;
-        executionRequest.SingingStonePitchStep = singingStonePitchStep;
-        executionRequest.SingingStonePitchOutcomeCount = singingStonePitchOutcomeCount;
-        executionRequest.SingingStoneExpectedShakeTimer = singingStoneExpectedShakeTimer;
-        executionRequest.SingingStoneExpectedLocationActionReturn = singingStoneExpectedLocationActionReturn;
-        executionRequest.RequiredFragility = requiredFragility;
-        executionRequest.SlimeBallSeedDaysPlayed = slimeBallSeedDaysPlayed;
-        executionRequest.SlimeBallSeedUniqueGameId = slimeBallSeedUniqueGameId;
-        executionRequest.SlimeBallExpectedSlimeQuantity = slimeBallExpectedSlimeQuantity;
-        executionRequest.SlimeBallExpectedPetrifiedSlimeQuantity = slimeBallExpectedPetrifiedSlimeQuantity;
-        executionRequest.SlimeBallExpectedLocationActionReturn = slimeBallExpectedLocationActionReturn;
-        executionRequest.FeedHopperSafeSlotKind = feedHopperSafeSlotKind;
-        executionRequest.FeedHopperHayQualifiedItemId = feedHopperHayQualifiedItemId;
-        executionRequest.FeedHopperRootLocationId = feedHopperRootLocationId;
-        executionRequest.FeedHopperSiloHayBefore = feedHopperSiloHayBefore;
-        executionRequest.FeedHopperAnimalCount = feedHopperAnimalCount;
-        executionRequest.FeedHopperAnimalLimit = feedHopperAnimalLimit;
-        executionRequest.FeedHopperPlacedHayCount = feedHopperPlacedHayCount;
-        executionRequest.FeedHopperUnfedAnimalCount = feedHopperUnfedAnimalCount;
-        executionRequest.FeedHopperExpectedWithdrawalQuantity = feedHopperExpectedWithdrawalQuantity;
-        executionRequest.FeedHopperExpectedSiloHayAfter = feedHopperExpectedSiloHayAfter;
-        executionRequest.FeedHopperExpectedLocationActionReturn = feedHopperExpectedLocationActionReturn;
-        executionRequest.AutoGrabberSafeSlotKind = autoGrabberSafeSlotKind;
-        executionRequest.AutoGrabberHeldContainerRuntimeType = autoGrabberHeldContainerRuntimeType;
-        executionRequest.AutoGrabberContentsBeforeJson = autoGrabberContentsBeforeJson;
-        executionRequest.AutoGrabberTransferableContentsJson = autoGrabberTransferableContentsJson;
-        executionRequest.AutoGrabberRemainingContentsJson = autoGrabberRemainingContentsJson;
-        executionRequest.AutoGrabberContentStackCountBefore = autoGrabberContentStackCountBefore;
-        executionRequest.AutoGrabberTransferableStackCount = autoGrabberTransferableStackCount;
-        executionRequest.AutoGrabberExpectedStackCountAfter = autoGrabberExpectedStackCountAfter;
-        executionRequest.AutoGrabberContentQuantityBefore = autoGrabberContentQuantityBefore;
-        executionRequest.AutoGrabberExpectedTransferQuantity = autoGrabberExpectedTransferQuantity;
-        executionRequest.AutoGrabberExpectedQuantityAfter = autoGrabberExpectedQuantityAfter;
-        executionRequest.AutoGrabberExpectedLocationActionReturn = autoGrabberExpectedLocationActionReturn;
+        BindNativeObjectExecutionRequest(executionRequest, item);
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

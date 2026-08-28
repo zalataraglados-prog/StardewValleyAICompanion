@@ -45,6 +45,20 @@ function Wait-Snapshot([string] $Url, [int] $TimeoutSeconds) {
     throw "Timed out waiting for full snapshot. Last status: $lastStatus"
 }
 
+function Wait-SlimeBallProjection([string] $Url, [int] $TimeoutSeconds) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Wait-Snapshot $Url 30
+        $ball = @($snapshot.state.current_location.objects.value |
+            Where-Object { $null -ne $_.slime_ball_collection }) | Select-Object -First 1
+        if ($null -ne $ball) {
+            return [pscustomobject]@{ Snapshot = $snapshot; Ball = $ball }
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    throw "Timed out waiting for the Slime Ball fixture projection after the asynchronous warp."
+}
+
 function New-Request($Snapshot, [string] $OptionId, [string] $ItemId) {
     [ordered]@{
         schema_version = "training_execution_request.v1"
@@ -123,11 +137,9 @@ try {
     $fixture = Invoke-JsonPost $executeUrl (New-Request $current "debug.setup_slime_ball" "$RunId.fixture")
     Write-Json (Join-Path $runDirectory "fixture.json") $fixture
     if ($fixture.status -ne "applied") { throw "Slime Ball fixture failed: $(@($fixture.block_reasons) -join ',')" }
-    Start-Sleep -Milliseconds 500
-
-    $ready = Wait-Snapshot $snapshotUrl 30
-    $ball = @($ready.state.current_location.objects.value | Where-Object { $null -ne $_.slime_ball_collection }) | Select-Object -First 1
-    if ($null -eq $ball) { throw "Slime Ball transparent projection missing." }
+    $projected = Wait-SlimeBallProjection $snapshotUrl 30
+    $ready = $projected.Snapshot
+    $ball = $projected.Ball
     $projection = $ball.slime_ball_collection
     if ($projection.status -ne "ready") { throw "Slime Ball projection is not ready: $($projection.status)" }
     $stand = @($projection.stand_tiles | Where-Object { $_.available }) | Select-Object -First 1

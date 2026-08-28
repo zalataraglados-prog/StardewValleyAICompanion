@@ -1,0 +1,26 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  game-free-quality:
+    runs-on: windows-latest
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore locked dependencies
+        run: dotnet restore tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj --locked-mode
+      - name: Build contracts and core
+        run: dotnet build src/StardewAI.Core/StardewAI.Core.csproj --configuration Release --no-restore
+      - name: Build live training loop
+        run: dotnet build tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj --configuration Release --no-restore
+      - name: Test backend
+        run: dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --configuration Release

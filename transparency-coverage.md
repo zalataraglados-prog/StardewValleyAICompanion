@@ -1,5 +1,7 @@
 # Transparency Coverage
 
+> Historical root coverage table only. It is not an authoritative inventory of current fields. Use `docs/stardewai-full-handoff/field-dictionary.md`, `docs/stardewai-full-handoff/evidence.md`, and generated capability reconciliation outputs for current coverage decisions.
+
 | field or output id | consumer | required for training | transparent source path or reason unavailable | evidence claim id | runtime snapshot/artifact path | output recording path | status |
 |---|---|---|---|---|---|---|---|
 | `executor.sleep` home-bed target edge selection | executor, episode_writer | yes for terminal sleep calibration | `current_location.home_context`, `locations.collision_grid`, and bed `TouchAction=Sleep` context select a reachable bed-adjacent stand tile different from the current tile when possible; runtime still steps onto the native sleep touch tile before confirming | EVD-056, EVD-069 | `artifacts\runtime-sleep-edge-a-summary.json` | `training_execution_result.v1.primitive_kind=sleep`, `primitive_verification_status`, `primitive_verification_reasons`, `after_snapshot_path` | runtime_verified |

@@ -103,7 +103,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
                 health = monster.Health,
                 max_health = monster.MaxHealth,
                 damage_to_farmer = monster.DamageToFarmer,
-                combat_experience_on_defeat = mine.isFarm.Value
+                combat_experience_on_defeat = mine.IsFarm
                     ? Math.Max(1, monster.ExperienceGained / 3)
                     : monster.ExperienceGained,
                 combat_experience_skill_index = Farmer.combatSkill,

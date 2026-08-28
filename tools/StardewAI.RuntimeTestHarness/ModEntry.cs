@@ -103,11 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
-    private ActiveHousePlantRotation? activeHousePlantRotation;
-    private ActiveSingingStone? activeSingingStone;
-    private ActiveSlimeBallCollection? activeSlimeBallCollection;
-    private ActiveFeedHopperWithdrawal? activeFeedHopperWithdrawal;
-    private ActiveAutoGrabberCollection? activeAutoGrabberCollection;
+    private readonly NativeObjectInteractionDomainState nativeObjectInteractions = new();
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -425,6 +421,11 @@ public sealed partial class ModEntry : Mod
             await WriteJsonAsync(context, 400, new { error = "empty_request" });
             return;
         }
+        if (!TryNormalizeNativeObjectPayload(request, out var payloadReason))
+        {
+            await WriteJsonAsync(context, 400, new { error = "invalid_native_object_payload", detail = payloadReason });
+            return;
+        }
 
         var pending = new PendingExecution(request);
         pendingExecutions.Enqueue(pending);
@@ -490,11 +491,7 @@ public sealed partial class ModEntry : Mod
         TickPotOfGoldClaim();
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
-        TickHousePlantRotation();
-        TickSingingStone();
-        TickSlimeBallCollection();
-        TickFeedHopperWithdrawal();
-        TickAutoGrabberCollection();
+        TickNativeObjectInteractionDomain();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1667,31 +1664,7 @@ public sealed partial class ModEntry : Mod
             activePotOfGoldClaim = null;
             activeDwarfKingStatueChoice = null;
             activeStatueBlessingClaim = null;
-            if (activeHousePlantRotation is not null)
-            {
-                Game1.player.CurrentToolIndex = activeHousePlantRotation.RestoreSlotIndex;
-                activeHousePlantRotation = null;
-            }
-            if (activeSingingStone is not null)
-            {
-                Game1.player.CurrentToolIndex = activeSingingStone.RestoreSlotIndex;
-                activeSingingStone = null;
-            }
-            if (activeSlimeBallCollection is not null)
-            {
-                Game1.player.CurrentToolIndex = activeSlimeBallCollection.RestoreSlotIndex;
-                activeSlimeBallCollection = null;
-            }
-            if (activeFeedHopperWithdrawal is not null)
-            {
-                Game1.player.CurrentToolIndex = activeFeedHopperWithdrawal.RestoreSlotIndex;
-                activeFeedHopperWithdrawal = null;
-            }
-            if (activeAutoGrabberCollection is not null)
-            {
-                Game1.player.CurrentToolIndex = activeAutoGrabberCollection.RestoreSlotIndex;
-                activeAutoGrabberCollection = null;
-            }
+            ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
             activePetInteraction = null;
@@ -1925,11 +1898,7 @@ public sealed partial class ModEntry : Mod
             activePotOfGoldClaim is not null ||
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
-            activeHousePlantRotation is not null ||
-            activeSingingStone is not null ||
-            activeSlimeBallCollection is not null ||
-            activeFeedHopperWithdrawal is not null ||
-            activeAutoGrabberCollection is not null ||
+            nativeObjectInteractions.IsActive ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

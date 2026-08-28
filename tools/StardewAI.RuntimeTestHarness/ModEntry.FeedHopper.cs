@@ -62,7 +62,7 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeFeedHopperWithdrawal = new ActiveFeedHopperWithdrawal(
+        nativeObjectInteractions.FeedHopper = new ActiveFeedHopperWithdrawal(
             pending, house!, hopper!, target, stand, path, maxMovementTiles);
     }
 
@@ -162,7 +162,7 @@ public sealed partial class ModEntry
 
     private void TickFeedHopperWithdrawal()
     {
-        var active = activeFeedHopperWithdrawal;
+        var active = nativeObjectInteractions.FeedHopper;
         if (active is null)
             return;
         var movement = AdvanceNativeObjectInteractionMovement(active, "feed_hopper", out var movementFailure);
@@ -225,7 +225,7 @@ public sealed partial class ModEntry
         params string[] reasons)
     {
         StopAllMovement();
-        activeFeedHopperWithdrawal = null;
+        nativeObjectInteractions.FeedHopper = null;
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         var siloAfter = active.Location.GetRootLocation().piecesOfHay.Value;
         var inventoryAfter = CountInventoryItem(FeedHopperHayQualifiedItemId);

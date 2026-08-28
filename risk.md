@@ -1,5 +1,7 @@
 # Risk
 
+> Historical root snapshot only. Counts and residual risks below describe a 2026-07 development slice. Current risk and handoff records live under `docs/stardewai-full-handoff/`; executable truth is defined by source, generated catalogs, and the repository quality gates.
+
 ## Risk Level
 
 - Medium-high until isolated runtime smoke validates native input timing and BobberBar control in-game.

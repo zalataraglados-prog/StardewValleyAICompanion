@@ -76,7 +76,7 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeAutoGrabberCollection = new ActiveAutoGrabberCollection(
+        nativeObjectInteractions.AutoGrabber = new ActiveAutoGrabberCollection(
             pending, location, autoGrabber!, chest!, target, stand, path, maxMovementTiles,
             before, transferable, remaining);
     }
@@ -179,7 +179,7 @@ public sealed partial class ModEntry
 
     private void TickAutoGrabberCollection()
     {
-        var active = activeAutoGrabberCollection;
+        var active = nativeObjectInteractions.AutoGrabber;
         if (active is null)
             return;
         if (active.Stage != AutoGrabberStage.Move)
@@ -320,7 +320,7 @@ public sealed partial class ModEntry
         StopAllMovement();
         if (TryGetOwnedAutoGrabberMenu(active, out var menu) && menu.readyToClose())
             Game1.exitActiveMenu();
-        activeAutoGrabberCollection = null;
+        nativeObjectInteractions.AutoGrabber = null;
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         var after = ReadAutoGrabberRows(active.Chest);
         var afterQuantity = after.Sum(row => row.Quantity);

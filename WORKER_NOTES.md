@@ -1,5 +1,7 @@
 # Worker Notes
 
+> Archived worker-era notes. This file is not a current task list and must not override source, tests, issues, or the latest handoff records under `docs/stardewai-full-handoff/`.
+
 ## 2026-07-13 Fishing Native Cast Closure
 
 - Scope: bounded native `executor.catch_fish` cast, sustained BobberBar control, fail-closed verification, idle cleanup gate, and verified-action-count live loop semantics.

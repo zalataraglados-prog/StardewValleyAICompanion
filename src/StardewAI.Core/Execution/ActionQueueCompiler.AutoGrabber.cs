@@ -32,17 +32,12 @@ public sealed partial class ActionQueueCompiler
             .Where(parameter => !AutoGrabberBoundParameterNames.Contains(parameter.Name, StringComparer.Ordinal))
             .ToList();
         var target = SelectAutoGrabberCompilerTarget(action, snapshot);
-        var safeContext = ReadStateFieldValue(snapshot, "player", "safe_item_context");
-        if (target is null || !safeContext.HasValue || safeContext.Value.ValueKind != JsonValueKind.Object)
+        var safeContext = ReadNativeObjectCompilerSafeItemContext(snapshot);
+        if (target is null || !safeContext.AllowsEmptyOrTool)
             return parameters.ToArray();
-        var safeKind = ReadString(safeContext.Value, "safe_slot_kind");
-        var safeSlot = ReadInt(safeContext.Value, "safe_slot_index");
-        var restoreSlot = ReadInt(safeContext.Value, "current_tool_index");
-        if (safeSlot is < 0 or > 11 || restoreSlot is < 0 or > 11 ||
-            (safeKind != "empty" && safeKind != "tool"))
-        {
-            return parameters.ToArray();
-        }
+        var safeKind = safeContext.SafeSlotKind;
+        var safeSlot = safeContext.SafeSlotIndex;
+        var restoreSlot = safeContext.RestoreSlotIndex;
 
         parameters.AddRange(new[]
         {
@@ -107,12 +102,9 @@ public sealed partial class ActionQueueCompiler
         var reasons = new List<string>();
         if (ActionSeesActiveMenuOpen(action, snapshot))
             reasons.Add("auto_grabber_menu_must_be_clear");
-        var safeContext = ReadStateFieldValue(snapshot, "player", "safe_item_context");
-        var safeKind = safeContext.HasValue && safeContext.Value.ValueKind == JsonValueKind.Object
-            ? ReadString(safeContext.Value, "safe_slot_kind")
-            : "unavailable";
-        if (!safeContext.HasValue || safeContext.Value.ValueKind != JsonValueKind.Object ||
-            (safeKind != "empty" && safeKind != "tool"))
+        var safeContext = ReadNativeObjectCompilerSafeItemContext(snapshot);
+        var safeKind = safeContext.SafeSlotKind;
+        if (!safeContext.AllowsEmptyOrTool)
         {
             reasons.Add("auto_grabber_safe_toolbar_slot_required");
         }
@@ -124,8 +116,8 @@ public sealed partial class ActionQueueCompiler
             ReadIntParameter(bound, "target_tile_y") != target.TargetY ||
             ReadIntParameter(bound, "stand_tile_x") != target.StandX ||
             ReadIntParameter(bound, "stand_tile_y") != target.StandY ||
-            ReadIntParameter(bound, "safe_slot_index") != (safeContext.HasValue ? ReadInt(safeContext.Value, "safe_slot_index") : -1) ||
-            ReadIntParameter(bound, "restore_slot_index") != (safeContext.HasValue ? ReadInt(safeContext.Value, "current_tool_index") : -1) ||
+            ReadIntParameter(bound, "safe_slot_index") != safeContext.SafeSlotIndex ||
+            ReadIntParameter(bound, "restore_slot_index") != safeContext.RestoreSlotIndex ||
             ReadIntParameter(bound, "auto_grabber_content_stack_count_before") != target.ContentStackCountBefore ||
             ReadIntParameter(bound, "auto_grabber_transferable_stack_count") != target.TransferableStackCount ||
             ReadIntParameter(bound, "auto_grabber_expected_stack_count_after") != target.ExpectedStackCountAfter ||
@@ -164,44 +156,13 @@ public sealed partial class ActionQueueCompiler
         SmallModelAction action,
         SnapshotEnvelope snapshot)
     {
-        var requestedX = ReadIntParameter(action, "target_tile_x");
-        var requestedY = ReadIntParameter(action, "target_tile_y");
-        var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
-        if (!requestedX.HasValue || !requestedY.HasValue || !objects.HasValue ||
-            objects.Value.ValueKind != JsonValueKind.Array)
-        {
+        var selected = SelectExactReadyNativeObjectProjection(
+            action, snapshot, "auto_grabber_collection");
+        if (selected is null)
             return null;
-        }
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-        var row = objects.Value.EnumerateArray().FirstOrDefault(item =>
-            ReadInt(item, "tile_x") == requestedX.Value &&
-            ReadInt(item, "tile_y") == requestedY.Value &&
-            item.TryGetProperty("auto_grabber_collection", out var projection) &&
-            projection.ValueKind == JsonValueKind.Object &&
-            string.Equals(ReadString(projection, "status"), "ready", StringComparison.Ordinal));
-        if (row.ValueKind != JsonValueKind.Object ||
-            !row.TryGetProperty("auto_grabber_collection", out var value) ||
-            !value.TryGetProperty("stand_tiles", out var stands) || stands.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-        var stand = stands.EnumerateArray()
-            .Where(item => ReadBool(item, "available") == true)
-            .Select(item => new
-            {
-                X = ReadInt(item, "tile_x"),
-                Y = ReadInt(item, "tile_y"),
-                Distance = Math.Abs(playerX - ReadInt(item, "tile_x")) + Math.Abs(playerY - ReadInt(item, "tile_y"))
-            })
-            .OrderBy(item => item.Distance)
-            .ThenBy(item => item.Y)
-            .ThenBy(item => item.X)
-            .FirstOrDefault();
-        if (stand is null)
-            return null;
+        var value = selected.Projection;
         return new AutoGrabberCompilerTarget(
-            requestedX.Value, requestedY.Value, stand.X, stand.Y,
+            selected.TargetX, selected.TargetY, selected.StandX, selected.StandY,
             ReadString(value, "target_runtime_type"),
             ReadString(value, "canonical_item_id"),
             ReadString(value, "canonical_qualified_item_id"),

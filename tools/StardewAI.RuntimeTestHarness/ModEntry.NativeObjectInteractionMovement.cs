@@ -93,4 +93,9 @@ public sealed partial class ModEntry
         }
         return NativeObjectMovementStatus.Moving;
     }
+
+    private static bool IsDestructiveObjectTrap(GameLocation location, Point stand) =>
+        Neighbors(stand).All(tile =>
+            location.objects.TryGetValue(tile.ToVector2(), out var item) &&
+            !item.isPassable());
 }

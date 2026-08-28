@@ -26,18 +26,13 @@ public sealed partial class ActionQueueCompiler
             .Where(parameter => !SlimeBallBoundParameterNames.Contains(parameter.Name, StringComparer.Ordinal))
             .ToList();
         var target = SelectSlimeBallCompilerTarget(action, snapshot);
-        var safeContext = ReadStateFieldValue(snapshot, "player", "safe_item_context");
-        if (target is null || !safeContext.HasValue || safeContext.Value.ValueKind != JsonValueKind.Object ||
-            !string.Equals(ReadString(safeContext.Value, "safe_slot_kind"), "empty", StringComparison.Ordinal))
+        var safeContext = ReadNativeObjectCompilerSafeItemContext(snapshot);
+        if (target is null || !safeContext.AllowsEmpty)
         {
             return parameters.ToArray();
         }
-        var safeSlot = ReadInt(safeContext.Value, "safe_slot_index");
-        var restoreSlot = ReadInt(safeContext.Value, "current_tool_index");
-        if (safeSlot is < 0 or > 11 || restoreSlot is < 0 or > 11)
-        {
-            return parameters.ToArray();
-        }
+        var safeSlot = safeContext.SafeSlotIndex;
+        var restoreSlot = safeContext.RestoreSlotIndex;
 
         parameters.AddRange(new[]
         {
@@ -100,9 +95,8 @@ public sealed partial class ActionQueueCompiler
         {
             reasons.Add("slime_ball_menu_must_be_clear");
         }
-        var safeContext = ReadStateFieldValue(snapshot, "player", "safe_item_context");
-        if (!safeContext.HasValue || safeContext.Value.ValueKind != JsonValueKind.Object ||
-            !string.Equals(ReadString(safeContext.Value, "safe_slot_kind"), "empty", StringComparison.Ordinal))
+        var safeContext = ReadNativeObjectCompilerSafeItemContext(snapshot);
+        if (!safeContext.AllowsEmpty)
         {
             reasons.Add("slime_ball_empty_toolbar_slot_required");
         }
@@ -119,8 +113,8 @@ public sealed partial class ActionQueueCompiler
             ReadLongParameter(bound, "slime_ball_seed_unique_game_id") != target.SeedUniqueGameId ||
             ReadIntParameter(bound, "slime_ball_expected_slime_quantity") != target.ExpectedSlimeQuantity ||
             ReadIntParameter(bound, "slime_ball_expected_petrified_slime_quantity") != target.ExpectedPetrifiedSlimeQuantity ||
-            ReadIntParameter(bound, "safe_slot_index") != (safeContext.HasValue ? ReadInt(safeContext.Value, "safe_slot_index") : -1) ||
-            ReadIntParameter(bound, "restore_slot_index") != (safeContext.HasValue ? ReadInt(safeContext.Value, "current_tool_index") : -1) ||
+            ReadIntParameter(bound, "safe_slot_index") != safeContext.SafeSlotIndex ||
+            ReadIntParameter(bound, "restore_slot_index") != safeContext.RestoreSlotIndex ||
             !string.Equals(ReadParameter(bound, "target_location"), ReadStateFieldString(snapshot, "player", "location_id"), StringComparison.Ordinal) ||
             !string.Equals(ReadParameter(bound, "target_runtime_type"), target.RuntimeType, StringComparison.Ordinal) ||
             !string.Equals(ReadParameter(bound, "item_id"), target.ItemId, StringComparison.Ordinal) ||
@@ -146,48 +140,16 @@ public sealed partial class ActionQueueCompiler
 
     private static SlimeBallCompilerTarget? SelectSlimeBallCompilerTarget(SmallModelAction action, SnapshotEnvelope snapshot)
     {
-        var requestedX = ReadIntParameter(action, "target_tile_x");
-        var requestedY = ReadIntParameter(action, "target_tile_y");
-        var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
-        if (!requestedX.HasValue || !requestedY.HasValue || !objects.HasValue || objects.Value.ValueKind != JsonValueKind.Array)
-        {
+        var selected = SelectExactReadyNativeObjectProjection(
+            action, snapshot, "slime_ball_collection");
+        if (selected is null)
             return null;
-        }
-        var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
-        var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-        var row = objects.Value.EnumerateArray().FirstOrDefault(item =>
-            ReadInt(item, "tile_x") == requestedX.Value &&
-            ReadInt(item, "tile_y") == requestedY.Value &&
-            item.TryGetProperty("slime_ball_collection", out var collection) &&
-            collection.ValueKind == JsonValueKind.Object &&
-            string.Equals(ReadString(collection, "status"), "ready", StringComparison.Ordinal));
-        if (row.ValueKind != JsonValueKind.Object ||
-            !row.TryGetProperty("slime_ball_collection", out var projection) ||
-            !projection.TryGetProperty("stand_tiles", out var stands) || stands.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-        var stand = stands.EnumerateArray()
-            .Where(item => ReadBool(item, "available") == true)
-            .Select(item => new
-            {
-                X = ReadInt(item, "tile_x"),
-                Y = ReadInt(item, "tile_y"),
-                Distance = Math.Abs(playerX - ReadInt(item, "tile_x")) + Math.Abs(playerY - ReadInt(item, "tile_y"))
-            })
-            .OrderBy(item => item.Distance)
-            .ThenBy(item => item.Y)
-            .ThenBy(item => item.X)
-            .FirstOrDefault();
-        if (stand is null)
-        {
-            return null;
-        }
+        var projection = selected.Projection;
         return new SlimeBallCompilerTarget(
-            requestedX.Value,
-            requestedY.Value,
-            stand.X,
-            stand.Y,
+            selected.TargetX,
+            selected.TargetY,
+            selected.StandX,
+            selected.StandY,
             ReadString(projection, "target_runtime_type"),
             ReadString(projection, "canonical_item_id"),
             ReadString(projection, "canonical_qualified_item_id"),

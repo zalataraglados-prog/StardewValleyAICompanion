@@ -57,7 +57,7 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeHousePlantRotation = new ActiveHousePlantRotation(
+        nativeObjectInteractions.HousePlant = new ActiveHousePlantRotation(
             pending, location, plant!, target, stand, path, maxMovementTiles);
     }
 
@@ -130,7 +130,7 @@ public sealed partial class ModEntry
 
     private void TickHousePlantRotation()
     {
-        var active = activeHousePlantRotation;
+        var active = nativeObjectInteractions.HousePlant;
         if (active is null)
         {
             return;
@@ -191,7 +191,7 @@ public sealed partial class ModEntry
     private void CompleteHousePlantRotation(ActiveHousePlantRotation active, bool verified, params string[] reasons)
     {
         StopAllMovement();
-        activeHousePlantRotation = null;
+        nativeObjectInteractions.HousePlant = null;
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         var request = active.Pending.Request;
         var current = active.Location.objects.TryGetValue(active.Target.ToVector2(), out var item) ? item : null;
@@ -268,11 +268,6 @@ public sealed partial class ModEntry
     private static bool IsCanonicalHousePlantQualifiedItemId(string qualifiedItemId) =>
         qualifiedItemId is "(BC)0" or "(BC)1" or "(BC)2" or "(BC)3" or
             "(BC)4" or "(BC)5" or "(BC)6" or "(BC)7";
-
-    private static bool IsDestructiveObjectTrap(GameLocation location, Point stand) =>
-        Neighbors(stand).All(tile =>
-            location.objects.TryGetValue(tile.ToVector2(), out var item) &&
-            !item.isPassable());
 
     private sealed class ActiveHousePlantRotation : INativeObjectInteractionMovement
     {

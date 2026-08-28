@@ -62,7 +62,7 @@ public sealed partial class ModEntry
             return;
         }
 
-        activeSlimeBallCollection = new ActiveSlimeBallCollection(
+        nativeObjectInteractions.SlimeBall = new ActiveSlimeBallCollection(
             pending,
             location,
             slimeBall!,
@@ -142,24 +142,24 @@ public sealed partial class ModEntry
 
     private void TickSlimeBallCollection()
     {
-        var active = activeSlimeBallCollection;
+        var active = nativeObjectInteractions.SlimeBall;
         if (active is null)
         {
             return;
         }
-        active.ElapsedTicks++;
-        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
-        {
-            CompleteSlimeBallCollection(active, false, "slime_ball_location_changed");
-            return;
-        }
-        if (active.ElapsedTicks > active.MaxTicks)
-        {
-            CompleteSlimeBallCollection(active, false, "slime_ball_timeout");
-            return;
-        }
         if (active.ActionIssued)
         {
+            active.ElapsedTicks++;
+            if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
+            {
+                CompleteSlimeBallCollection(active, false, "slime_ball_location_changed");
+                return;
+            }
+            if (active.ElapsedTicks > active.MaxTicks)
+            {
+                CompleteSlimeBallCollection(active, false, "slime_ball_timeout");
+                return;
+            }
             var objectRemoved = !active.Location.objects.ContainsKey(active.Target.ToVector2());
             var slimeDelta = CountConservedItem(active.Location, SlimeQualifiedItemId) - active.SlimeTotalBefore;
             var petrifiedDelta = CountConservedItem(active.Location, PetrifiedSlimeQualifiedItemId) - active.PetrifiedTotalBefore;
@@ -176,52 +176,16 @@ public sealed partial class ModEntry
             return;
         }
 
-        var playerTile = Game1.player.TilePoint;
-        if (playerTile != active.LastObservedTile)
+        var movement = AdvanceNativeObjectInteractionMovement(active, "slime_ball", out var movementFailure);
+        if (movement == NativeObjectMovementStatus.Failed)
         {
-            active.MovementTiles += ManhattanDistance(active.LastObservedTile, playerTile);
-            active.LastObservedTile = playerTile;
-        }
-        if (active.MovementTiles > active.MaxMovementTiles)
-        {
-            CompleteSlimeBallCollection(active, false, "slime_ball_movement_budget_exceeded");
+            CompleteSlimeBallCollection(active, false, movementFailure);
             return;
         }
-        if (playerTile != active.Stand)
-        {
-            if (active.PathIndex >= active.Path.Count)
-            {
-                CompleteSlimeBallCollection(active, false, "slime_ball_path_exhausted");
-                return;
-            }
-            var next = active.Path[active.PathIndex];
-            if (playerTile == next)
-            {
-                active.PathIndex++;
-                return;
-            }
-            if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
-            {
-                CompleteSlimeBallCollection(active, false, "slime_ball_dynamic_path_blocked");
-                return;
-            }
-            var moved = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
-            active.LastPosition = Game1.player.Position;
-            StartMoving(DirectionTo(playerTile, next));
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-            }
-            active.StuckTicks = moved ? 0 : active.StuckTicks + 1;
-            if (active.StuckTicks > 45)
-            {
-                CompleteSlimeBallCollection(active, false, "slime_ball_movement_stuck");
-            }
+        if (movement == NativeObjectMovementStatus.Moving)
             return;
-        }
 
-        StopAllMovement();
+        var playerTile = Game1.player.TilePoint;
         if (!active.Location.objects.TryGetValue(active.Target.ToVector2(), out var current) ||
             !ReferenceEquals(current, active.SlimeBall) || current.Fragility != 2 ||
             !string.Equals(current.QualifiedItemId, SlimeBallQualifiedItemId, StringComparison.Ordinal))
@@ -262,7 +226,7 @@ public sealed partial class ModEntry
     private void CompleteSlimeBallCollection(ActiveSlimeBallCollection active, bool verified, params string[] reasons)
     {
         StopAllMovement();
-        activeSlimeBallCollection = null;
+        nativeObjectInteractions.SlimeBall = null;
         Game1.player.CurrentToolIndex = active.RestoreSlotIndex;
         var request = active.Pending.Request;
         var slimeAfter = CountConservedItem(active.Location, SlimeQualifiedItemId);
@@ -365,7 +329,7 @@ public sealed partial class ModEntry
             ";petrified_slime_total=" + CountConservedItem(location, PetrifiedSlimeQualifiedItemId);
     }
 
-    private sealed class ActiveSlimeBallCollection
+    private sealed class ActiveSlimeBallCollection : INativeObjectInteractionMovement
     {
         public ActiveSlimeBallCollection(PendingExecution pending, GameLocation location, StardewObject slimeBall,
             Point target, Point stand, List<Point> path, int maxMovementTiles, int slimeTotalBefore,

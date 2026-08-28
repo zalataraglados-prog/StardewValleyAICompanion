@@ -13,6 +13,8 @@ namespace StardewAI.KnowledgeCompiler;
 
 internal static class Program
 {
+    private static readonly string GeneratedAtUtc = ResolveGeneratedAtUtc();
+
     public static int Main(string[] args)
     {
         try
@@ -45,7 +47,7 @@ internal static class Program
             Write(outputRoot, "map-topology-index.json", new
             {
                 schema_version = "stardewai.map_topology_index.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority = "runtime-projected xTile maps interpreted with exact Linux 1.6.15 GameLocation.updateWarps, doesTileHaveProperty, and isTilePassable rules",
                 semantic_limit = "Static base-map topology excludes dynamic buildings, furniture, placed objects, characters, events, map mutations, and location-specific collision overrides.",
                 summary = mapTopology.Summary,
@@ -497,7 +499,7 @@ internal static class Program
             Write(outputRoot, "action-progress-dashboard.json", new
             {
                 schema_version = "stardewai.action_progress_dashboard.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 semantic_denominator_status = nativeDenominatorSourceClosed &&
                     denominatorFreeze.Status == "frozen"
                     ? "native_action_denominator_frozen"
@@ -551,7 +553,7 @@ internal static class Program
             Write(outputRoot, "option-governance-matrix.json", new
             {
                 schema_version = "stardewai.option_governance_matrix.v3",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority_policy = "Unknown governance fails registry initialization. Runtime status is evidence-scoped and cannot be inferred from compiler or Harness registration.",
                 option_count = optionRows.Length,
                 goal_template_count = optionRows.Count(row => row.SemanticKind == OptionSemanticKind.GoalTemplate),
@@ -613,7 +615,7 @@ internal static class Program
             {
                 schema_version = "stardewai.training_admission_manifest.v1",
                 capability_schema_version = OptionCapabilityRegistrySource.SchemaVersion,
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority_policy = "Policy training admits only model-facing policy options whose read, candidate, compile, runtime, and output gates have explicit runtime evidence. PlayerCommandOnly actions are executable only from explicit player-command requests and are never admitted to policy training. Every excluded option carries typed reasons.",
                 option_count = optionRows.Length,
                 eligible_count = OptionCapabilityRegistrySource.TrainingAllowlist.Count,
@@ -783,7 +785,7 @@ internal static class Program
             Write(outputRoot, "downstream-capability-matrix.json", new
             {
                 schema_version = "stardewai.downstream_capability_matrix.v2",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority_policy = "Readable fields, candidate generation, daily-plan compilation, action compilation, and runtime dispatch are distinct stages. A missing later stage remains explicit and cannot be replaced by a success no-op.",
                 option_count = downstreamRows.Length,
                 step_compiler_count = ActionQueueCompiler.StepCompilerOptionIds.Count,
@@ -812,7 +814,7 @@ internal static class Program
             Write(outputRoot, "progression-dependency-index.json", new
             {
                 schema_version = "stardewai.progression_dependency_index.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority = "runtime-loaded Data/mail and Data/TriggerActions joined to native 1.6.15 trigger, condition, and event parser output",
                 semantic_limit = "References are emitted only for argument roles verified against native handlers. Unclassified event commands remain losslessly preserved with exact handler identity and tokens.",
                 summary = progressionDependencies.Summary,
@@ -832,7 +834,7 @@ internal static class Program
             Write(outputRoot, "access-constraint-index.json", new
             {
                 schema_version = "stardewai.access_constraint_index.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority = "runtime-loaded shops and NPC schedules joined to exact static map actions and native-parsed game-state conditions",
                 semantic_limit = "NPC schedule selection and owner presence remain runtime-context decisions. Door windows and static interaction tiles are exact base-map records, not proof that a dynamic map mutation leaves them unchanged.",
                 summary = accessConstraints.Summary,
@@ -866,7 +868,7 @@ internal static class Program
                 Write(outputRoot, "decompiled-assembly-evidence.json", new
                 {
                     schema_version = "stardewai.decompiled_assembly_evidence.v1",
-                    generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                    generated_at_utc = GeneratedAtUtc,
                     evidence_limit = "Hashes and metadata prove exhaustive binary/source indexing. Rule semantics still require method-level review records.",
                     assembly_count = assemblyEvidence.Count,
                     source_file_count = assemblyEvidence.Sum(row => row.SourceFiles.Count),
@@ -890,7 +892,7 @@ internal static class Program
             Write(outputRoot, "goal-dependency-index.json", new
             {
                 schema_version = "stardewai.goal_dependency_index.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority = "runtime-loaded bundle, recipe, and achievement data joined to exact-platform Grandpa scoring IL/source identity and transparent live score inputs",
                 semantic_limit = "Recipe and bundle grammars are decoded according to native 1.6.15 consumers. Runtime availability and route feasibility remain contextual planning inputs.",
                 summary = goalDependencies.Summary,
@@ -904,7 +906,7 @@ internal static class Program
             Write(outputRoot, "runtime-rule-evidence.json", new
             {
                 schema_version = "stardewai.runtime_rule_evidence.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority = "runtime-loaded payload identity joined to exact installed assembly IL",
                 semantic_limit = "Indexed references and hashes are not interpreted rule semantics.",
                 condition_count = runtimeRuleEvidence.Conditions.Count,
@@ -935,7 +937,7 @@ internal static class Program
                 Write(outputRoot, "runtime-assembly-identity.json", new
                 {
                     schema_version = "stardewai.runtime_assembly_identity.v1",
-                    generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                    generated_at_utc = GeneratedAtUtc,
                     status = runtimeAssemblyIdentity.IsCompatible ? "exact_match" : "blocked",
                     handler_assembly_reference_count = runtimeAssemblyIdentity.HandlerAssemblyReferences.Count,
                     declared_runtime_assembly_count = runtimeAssemblyIdentity.DeclaredRuntimeAssemblies.Count,
@@ -978,7 +980,7 @@ internal static class Program
                     Write(outputRoot, "handler-operation-rules.json", new
                     {
                         schema_version = "stardewai.handler_operation_rules.v2",
-                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        generated_at_utc = GeneratedAtUtc,
                         authority = "exact installed assembly IL, rooted at handlers used by native-parsed runtime data",
                         semantic_limit = "Static operation closure identifies dependencies and mutation surfaces; branch conditions and runtime virtual targets still require semantic/runtime evidence.",
                         rule_count = handlerOperationIndex.Rules.Count,
@@ -1008,7 +1010,7 @@ internal static class Program
                     Write(outputRoot, "executable-rule-index.json", new
                     {
                         schema_version = "stardewai.executable_rule_index.v1",
-                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        generated_at_utc = GeneratedAtUtc,
                         authority = "runtime-native parser output bound to exact-platform transitive IL operation rules",
                         semantic_limit = "Bindings and operation surfaces are exhaustive for exported conditions, events, and data method references; runtime values and virtual targets remain context-bound.",
                         condition_count = executableRuleIndex.Conditions.Count,
@@ -1031,7 +1033,7 @@ internal static class Program
                     Write(outputRoot, "handler-semantic-surfaces.json", new
                     {
                         schema_version = "stardewai.handler_semantic_surfaces.v1",
-                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        generated_at_utc = GeneratedAtUtc,
                         authority = "normalized may-read, may-write, external side-effect, and runtime-boundary projection of exact-platform transitive IL operations",
                         interpretation = "IDs resolve through handler-operation-rules.json operation_catalogs. May-read/write sets are sound static surfaces, not proof that every branch executes.",
                         surface_count = semanticSurfaces.Count,
@@ -1054,7 +1056,7 @@ internal static class Program
                     Write(outputRoot, "authoritative-dependency-graph.json", new
                     {
                         schema_version = "stardewai.authoritative_dependency_graph.v1",
-                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        generated_at_utc = GeneratedAtUtc,
                         authority = "runtime-loaded content plus native parser bindings plus exact-platform IL operation identities",
                         semantic_limit = "Native-delegated rules preserve exact executable authority. Runtime-context classifications are not statically guessed.",
                         node_count = authoritativeGraph.Nodes.Count,
@@ -1080,7 +1082,7 @@ internal static class Program
                     Write(outputRoot, "knowledge-completeness-ledger.json", new
                     {
                         schema_version = "stardewai.knowledge_completeness_ledger.v1",
-                        generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                        generated_at_utc = GeneratedAtUtc,
                         authority_policy = "Identity completeness, runtime executability, and predictive semantic closure are tracked separately. Native delegation is never reported as static prediction.",
                         identity_graph_status = completenessLedger.Blockers.Count == 0
                             ? "complete"
@@ -1103,7 +1105,7 @@ internal static class Program
             Write(outputRoot, "wiki-verification-registry.json", new
             {
                 schema_version = "stardewai.wiki_verification_registry.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 authority_policy = "secondary corroboration only; never creates or overrides runtime fields, values, or executable rules",
                 source_count = WikiVerificationCatalog.Sources.Count,
                 sources = WikiVerificationCatalog.Sources
@@ -1112,7 +1114,7 @@ internal static class Program
             Write(outputRoot, "source-validation.json", new
             {
                 schema_version = "stardewai.knowledge_source_validation.v1",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 manifest = new
                 {
                     manifest.GameVersion,
@@ -1144,7 +1146,7 @@ internal static class Program
                         : assemblyEvidence.Count > 0 && snapshotCoverage is not null
                             ? "complete_evidence_index_stage"
                         : "complete_source_stage",
-                generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+                generated_at_utc = GeneratedAtUtc,
                 game_version = manifest.GameVersion,
                 source_manifest_sha256 = sourceHash,
                 runtime_assembly_identity_status = runtimeAssemblyIdentity is null
@@ -1173,6 +1175,26 @@ internal static class Program
         }
     }
 
+    private static string ResolveGeneratedAtUtc()
+    {
+        var explicitTimestamp = Environment.GetEnvironmentVariable("STARDEWAI_GENERATED_AT_UTC");
+        if (!string.IsNullOrWhiteSpace(explicitTimestamp)
+            && DateTimeOffset.TryParse(
+                explicitTimestamp,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsedTimestamp))
+        {
+            return parsedTimestamp.ToString("O", CultureInfo.InvariantCulture);
+        }
+
+        var sourceDateEpoch = Environment.GetEnvironmentVariable("SOURCE_DATE_EPOCH");
+        if (long.TryParse(sourceDateEpoch, NumberStyles.Integer, CultureInfo.InvariantCulture, out var epochSeconds))
+            return DateTimeOffset.FromUnixTimeSeconds(epochSeconds).ToString("O", CultureInfo.InvariantCulture);
+
+        return DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+    }
+
     private static int ValidateSnapshotSchemaOnly(
         IReadOnlyDictionary<string, string> options)
     {
@@ -1195,7 +1217,7 @@ internal static class Program
         Write(outputRoot, "snapshot-schema-validation.json", new
         {
             schema_version = "stardewai.snapshot_schema_validation.v1",
-            generated_at_utc = DateTimeOffset.UtcNow.ToString("O"),
+            generated_at_utc = GeneratedAtUtc,
             snapshot_path = snapshotPath,
             snapshot_sha256 = HashFile(snapshotPath),
             coverage.SchemaVersion,

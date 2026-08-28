@@ -17,16 +17,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         if (!objects.HasValue || objects.Value.ValueKind != JsonValueKind.Array)
             return Array.Empty<EventCandidate>();
 
-        var safeContext = ReadStateFieldValue(snapshot, "player", "safe_item_context");
-        var safeKind = safeContext.HasValue && safeContext.Value.ValueKind == JsonValueKind.Object
-            ? ReadString(safeContext.Value, "safe_slot_kind")
-            : "unavailable";
-        var safeSlot = safeContext.HasValue && safeContext.Value.ValueKind == JsonValueKind.Object
-            ? ReadInt(safeContext.Value, "safe_slot_index")
-            : -1;
-        var restoreSlot = safeContext.HasValue && safeContext.Value.ValueKind == JsonValueKind.Object
-            ? ReadInt(safeContext.Value, "current_tool_index")
-            : -1;
+        var safeContext = ReadNativeObjectSafeItemContext(snapshot);
+        var safeKind = safeContext.SafeSlotKind;
+        var safeSlot = safeContext.AllowsEmptyOrTool ? safeContext.SafeSlotIndex : -1;
+        var restoreSlot = safeContext.RestoreSlotIndex;
         var locationId = ReadStateFieldString(snapshot, "player", "location_id");
         var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
         var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
@@ -66,7 +60,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
         var targetX = ReadInt(row, "tile_x");
         var targetY = ReadInt(row, "tile_y");
-        var stand = SelectFeedHopperStand(projection, playerX, playerY);
+        var stand = SelectNearestAvailableNativeObjectStand(projection, playerX, playerY);
         if (stand is null)
             reasons.Add("feed_hopper_no_reachable_adjacent_stand");
         var parameters = FeedHopperCandidateParameters(
@@ -105,7 +99,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         JsonElement row,
         JsonElement projection,
         string locationId,
-        FeedHopperStand? stand,
+        NativeObjectStand? stand,
         int safeSlot,
         string safeKind,
         int restoreSlot)
@@ -142,21 +136,4 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
     }
 
-    private static FeedHopperStand? SelectFeedHopperStand(JsonElement projection, int playerX, int playerY)
-    {
-        if (!projection.TryGetProperty("stand_tiles", out var stands) || stands.ValueKind != JsonValueKind.Array)
-            return null;
-        return stands.EnumerateArray()
-            .Where(stand => ReadBool(stand, "available") == true)
-            .Select(stand => new FeedHopperStand(
-                ReadInt(stand, "tile_x"),
-                ReadInt(stand, "tile_y"),
-                Math.Abs(playerX - ReadInt(stand, "tile_x")) + Math.Abs(playerY - ReadInt(stand, "tile_y"))))
-            .OrderBy(stand => stand.Distance)
-            .ThenBy(stand => stand.Y)
-            .ThenBy(stand => stand.X)
-            .FirstOrDefault();
-    }
-
-    private sealed record FeedHopperStand(int X, int Y, int Distance);
 }
