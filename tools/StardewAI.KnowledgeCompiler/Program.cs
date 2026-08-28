@@ -203,7 +203,8 @@ internal static class Program
                 .Concat(nativeActionBranches.Branches
                     .Where(row => row.CoverageStatus == "semantic_action_missing_registration")
                     .SelectMany(row => row.MappedActionIds))
-                .Where(id => !OptionCapabilityRegistrySource.TryGet(id, out _))
+                .Where(id => !OptionCapabilityRegistrySource.TryGet(id, out _) &&
+                    !CompatibilitySemanticActionPlaceholderCatalog.TryGet(id, out _))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(id => id, StringComparer.Ordinal)
                 .ToArray();
@@ -284,6 +285,13 @@ internal static class Program
                     row.SemanticCoverageStatus == "mapped_to_catalogued_blocked_action"),
                 catalogued_blocked_action_count = cataloguedBlockedActionIds.Length,
                 catalogued_blocked_action_ids = cataloguedBlockedActionIds,
+                compatibility_placeholder_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
+                    row.SemanticCoverageStatus == "mapped_to_compatibility_placeholder"),
+                compatibility_placeholder_action_count = CompatibilitySemanticActionPlaceholderCatalog.All.Count,
+                compatibility_placeholder_action_ids = CompatibilitySemanticActionPlaceholderCatalog.All
+                    .Select(row => row.ActionId)
+                    .OrderBy(id => id, StringComparer.Ordinal)
+                    .ToArray(),
                 missing_registration_surface_count = nativeActionSurfaces.Surfaces.Count(row =>
                     row.SemanticCoverageStatus == "semantic_action_missing_registration"),
                 missing_semantic_action_count = missingSemanticActionIds.Length,
@@ -415,6 +423,8 @@ internal static class Program
                 uncatalogued_native_action_count = missingSemanticActionIds.Length,
                 pending_catalog_without_surface_count = pendingCatalogWithoutSurface.Length,
                 pending_catalog_without_surface_ids = pendingCatalogWithoutSurface,
+                compatibility_placeholder_count = CompatibilitySemanticActionPlaceholderCatalog.All.Count,
+                compatibility_placeholders = CompatibilitySemanticActionPlaceholderCatalog.All,
                 actions = semanticActionRows
             });
 

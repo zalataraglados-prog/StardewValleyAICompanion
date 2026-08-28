@@ -32,6 +32,19 @@ Status values:
 | `current_location.objects[].feed_hopper_withdrawal` | Expose every current input to exact native Feed Hopper withdrawal | locked 1.6.15 `Object.checkForAction` / `CheckForActionOnFeedHopper`; live Animal House, root location, player inventory and object state | n/a; decompile and native runtime are authoritative | covered_for_read / covered_for_gate / five_gate_closed_EVD_276 | Publishes exact base identity, root location ID, silo hay, animal count/limit, placed hay, unfed animals, expected native quantity and post-state, exact-stack inventory acceptance, safe stands and native contract. |
 | `animals.withdraw_feed_hopper_hay` | Compile one useful animal-feeding withdrawal into shared movement and exactly one native location action | candidate, DailyPlan/compiler, typed runtime and conservation receipt | n/a | covered_for_compile_rebind / autonomous_when_unfed / training_admitted_EVD_276 | Upstream excludes zero unfed animals and all native failure states. Production never writes silo or inventory directly; receipt requires equal opposite deltas and unchanged hopper identity. |
 
+## Auto-Grabber Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.objects[].auto_grabber_collection` | Publish the exact native `(BC)165` held-Chest transaction without opening the menu or mutating inventory | locked 1.6.15 `Object.checkForAction` / `CheckForActionOnAutoGrabber`; live object, Chest and player inventory | n/a; decompile and native runtime are authoritative | covered_for_read / covered_for_gate / five_gate_closed_EVD_278 | Publishes all source stack identities and unit-state hashes, a cumulative inventory-capacity simulation, transferable and remaining partitions, quantities, safe stands and the native menu contract. |
+| `animals.collect_auto_grabber_contents` | Compile useful collection into shared movement plus exact native `ItemGrabMenu` clicks | candidate, DailyPlan/compiler, typed request, runtime fixture/smoke and conservation verifier | n/a | covered_for_compile_rebind / training_admitted_EVD_278 | Empty/all-rejected/no-stand states are excluded upstream. Runtime never writes inventory or Chest directly and requires strict partition identity, quantity conservation, inventory receipts, unchanged object/Chest identity and restored selected slot. |
+
+## Cut-Content Compatibility Placeholders
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `executor.toggle_lantern` / `executor.use_raft` | Preserve recognized removed native actions for possible mod compatibility without corrupting the vanilla denominator | locked 1.6.15 source/content scan; compatibility placeholder catalog; generated inventory | Stardew Wiki modding pages identify both as cut tools | compatibility_placeholder / excluded_from_vanilla_denominator_and_training | `Data/Tools` contains Lantern and omits Raft, but neither has a normal save acquisition route. A reachable mod adapter must provide a new independent closure before activation. |
+
 ## Slime Ball Collection Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

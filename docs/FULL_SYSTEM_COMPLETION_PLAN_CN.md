@@ -1,8 +1,16 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-28 原版删减动作占位与自动采集器闭环（EVD-277 / EVD-278）
+
+Issue #31 的提速原则落为工程约束：按 `Object.checkForAction`、`performUseAction` 等共享原生底层分组推进，一组只维护一个移动/菜单事务实现；组内每个动作仍必须逐项完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`，不得共享语义结论或跳过运行证据。当前组完成 Feed Hopper 与 Auto-Grabber，下一项是 `movement.use_mini_obelisk`。
+
+`Lantern` 和 `Raft` 不再伪装成原版待实现动作，而是进入 `CompatibilitySemanticActionPlaceholderCatalog`。锁定 1.6.15 的 `Data/Tools` 含 Lantern、不含 Raft，但二者都没有正常存档获取链；生成目录必须把它们映射为 `cut_content_unreachable / mapped_to_compatibility_placeholder`，并从原版 `actions` 分母排除。未来 MOD 只有在透明桥证明可达来源并提供对应适配器后，才能激活这些占位。
+
+`animals.collect_auto_grabber_contents` 已完整复用共享对象移动，并通过原生 `ItemGrabMenu` 逐栈转移。透明桥预演背包累计容量，候选在空容器、全部不可接纳、无安全站位时上游排除；编译器重绑容器全部堆栈身份，运行回执验证转移与留存集合严格分割并守恒。隐藏运行 `runtime-auto-grabber-20260828-165346` 已通过。当前对账为 `150 registered / 197 semantic / 149 compiler-bound / 76 five-gate / 40 allowlist / 47 catalogued blocked / 0 Product Executor`，另有 2 个分母外兼容占位。
+
 ## 2026-08-28 木筏分母修正与喂食斗闭环（EVD-275 / EVD-276）
 
-锁定 1.6.15 中 `Raft` 只有残留类型与兼容状态分支，没有 `Data/Tools`、获取、工厂、事件或外部构造入口，因此保留为 `legacy_unreachable` 原生证据并从玩家语义动作分母移除。该修正把冻结语义分母从 `199` 校正为 `198`，没有改变 `322 surfaces / 448 branches / 150 map tokens` 的原生扫描范围。
+锁定 1.6.15 中 `Raft` 只有残留类型与兼容状态分支，没有 `Data/Tools`、获取、工厂、事件或外部构造入口，因此从玩家语义动作分母移除；当前由 EVD-277 以分母外兼容占位保留原生证据。该历史修正当时把冻结语义分母从 `199` 校正为 `198`，没有改变 `322 surfaces / 448 branches / 150 map tokens` 的原生扫描范围。
 
 `animals.withdraw_feed_hopper_hay` 已实现精确透明投影和原生执行。模型只看到“当前动物屋确有未喂动物时取草”这一有意义候选；料仓、动物、已摆干草、原生取草公式、背包接纳、站位和安全槽全部由最新快照与编译器重绑定。运行时复用共享对象移动，且只调用一次原生 `GameLocation.checkAction`，以料仓和背包守恒回执验收。隐藏静音 E 盘运行 `runtime-feed-hopper-20260828-130723` 通过。当前对账为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；下一闭环固定为 `animals.collect_auto_grabber_contents`。
 

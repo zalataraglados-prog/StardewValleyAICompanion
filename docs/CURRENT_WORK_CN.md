@@ -1,8 +1,17 @@
 # StardewAI 当前工作
 
+## 2026-08-28 当前权威检查点：EVD-277 / EVD-278
+
+- Issue #31 的“按共享原生底层批量推进”已采纳，但批量只表示复用同一移动/菜单状态机；每个语义动作仍保留独立透明字段、前后条件、运行夹具和 E3 证据，禁止把一条运行结果外推给整组动作。
+- `Lantern` 与 `Raft` 均确认为原版不可达的删减工具，并转入显式兼容占位目录。事实纠正：锁定 1.6.15 的 37 项 `Data/Tools` **包含 Lantern、没有 Raft**；二者均只有残留类型/调试构造或兼容状态，没有正常存档获取路径。它们不进入原版语义分母、候选、训练和待实现列表，但占位保留原生类型与未来 MOD 适配入口。
+- `animals.collect_auto_grabber_contents` 已闭合透明读取、上游排除、DailyPlan、机械字段重绑定、动作编译、原生菜单运行和物品守恒回执。它与喂食斗只共享 `NativeObjectInteractionMovement`；收取本身走精确 `(BC)165 -> ItemGrabMenu -> receiveLeftClick`，生产代码不直接改背包或 held Chest。
+- 隐藏、静音、E 盘隔离运行 `runtime-auto-grabber-20260828-165346` 为 PASS：原生菜单转移 `2` 个堆栈、共 `5` 件物品，Auto-Grabber 余量 `0`，`native_handled=true`，对象/Chest 身份和选中槽均保持正确。
+- 最新权威对账为 `150 registered / 197 semantic / 149 compiler-bound / 76 five-gate / 40 training allowlist / 47 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 为 `0`，另有 `2` 个分母外兼容占位。回归为 Core `1848/1848`、Backend `132/132`。
+- 下一语义切片为 `movement.use_mini_obelisk`，继续处理 `Object.checkForAction` 组；只复用已验证的移动/交互底层，并独立锁定成对方尖碑、目标选择、传送后位置与新鲜快照终止条件。
+
 ## 2026-08-28 当前权威检查点：EVD-275 / EVD-276
 
-- `StardewValley.Tools.Raft` 已确认为锁定 1.6.15 的不可达遗留类型。类、`Farmer.isRafting` 和兼容移动分支仍存在，但 37 项 `Data/Tools` 没有 Raft，全部运行时内容资产也没有获取或事件入口，源码除类型自身 `GetOneNew` 外没有外部构造或工厂路径。因此原生表面继续以 `legacy_unreachable` 留证，`executor.use_raft` 从玩家语义动作分母删除，不进入候选、训练或待实现目录。
+- `StardewValley.Tools.Raft` 已确认为锁定 1.6.15 的不可达删减类型。类、`Farmer.isRafting` 和兼容移动分支仍存在，但 37 项 `Data/Tools` 没有 Raft，全部运行时内容资产也没有获取或事件入口，源码除类型自身 `GetOneNew` 外没有外部构造或工厂路径。当前分类已由上方 EVD-277 接管为分母外兼容占位；`executor.use_raft` 不进入候选、训练或原版待实现目录。
 - `animals.withdraw_feed_hopper_hay` 已闭合透明读取、上游候选、DailyPlan、机械字段重绑定、动作编译、原生运行和守恒回执。透明投影精确发布根地点料仓干草、动物数、动物屋容量、已摆干草、未喂动物、原生取草量、背包接纳和安全站位；没有未喂动物、料仓为空、料槽无容量或背包不能接纳时在上游排除。
 - 生产运行复用唯一 `NativeObjectInteractionMovement` 和共享 BFS，到站后只调用一次 `GameLocation.checkAction`。生产代码不直接写 `piecesOfHay`、不直接加背包；成功必须同时满足料仓精确减少、背包 `(O)178` 精确增加、喂食斗身份不变、菜单为空和选中槽恢复。
 - 隐藏、静音、E 盘隔离运行 `runtime-feed-hopper-20260828-130723` 为 PASS：原生一次取出 `8`，料仓 `10 -> 2`、背包 `0 -> 8`，`native_handled=true`，喂食斗保留且槽位恢复；只加载 TransparentBridge 与 RuntimeTestHarness。
@@ -17,7 +26,7 @@
 - 运行时与 House Plant 共用 `NativeObjectInteractionMovement`，保留原生动画/BFS，只调用一次 `GameLocation.checkAction`；生产代码不调用 `Game1.playSound`、不写 `shakeTimer=100`、不消费 RNG，并在交互前双检四向物体陷阱、目标身份、安全手持状态和槽位恢复。
 - 隐藏、静音、E 盘隔离运行 `runtime-singing-stone-20260828-102438` 为 PASS：`native_handled=true`、`shake_timer=100`、`item_id=94`、`qualified_item_id=(BC)94`，选中槽恢复；只加载 TransparentBridge 与 RuntimeTestHarness。
 - 权威对账为 `148 registered / 199 semantic / 147 compiler-bound / 74 five-gate / 38 training allowlist / 51 catalogued blocked / 0 Product Executor`；原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 均为 `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。全量回归为 Core `1839/1839`、Backend `130/130`。
-- `executor.use_raft` 已从动作全集分母移除：锁定 1.6.15 虽保留 `Raft` 类、`Farmer.isRafting` 和移动兼容分支，但 37 项 `Data/Tools` 无该工具，源码也无获取、工厂、事件或外部构造入口；原生表面保留为 `legacy_unreachable` 证据，不作为候选、训练目标或待实现能力。
+- `executor.use_raft` 已从动作全集分母移除：锁定 1.6.15 虽保留 `Raft` 类、`Farmer.isRafting` 和移动兼容分支，但 37 项 `Data/Tools` 无该工具，源码也无获取、工厂、事件或外部构造入口；当前以分母外兼容占位保留原生证据，不作为候选、训练目标或原版待实现能力。
 - 下一语义切片固定为 `animals.withdraw_feed_hopper_hay`：先锁定饲料斗交互、库存/料槽容量与取草数量分支，再判断是否完全复用唯一库存转移引擎；不得从历史段落回退到已闭合声音石或复制第二套转移系统。
 
 ## 2026-08-27 当前权威检查点：EVD-272 / EVD-273

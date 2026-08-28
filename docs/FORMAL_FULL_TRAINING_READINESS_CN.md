@@ -1,10 +1,16 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-28 Auto-Grabber 训练准入与兼容占位边界（EVD-277 / EVD-278）
+
+`animals.collect_auto_grabber_contents` 已进入训练 allowlist。模型只决定是否在当前日计划中收取；精确对象、站位、安全槽、held Chest 全部堆栈身份、累计背包容量、转移集合和留存集合均由新鲜快照与编译器决定。空容器、全部物品不可接纳或无安全站位不会生成候选。生产执行只调用原生对象交互并向 `ItemGrabMenu` 发送原生点击，验收要求源集合严格等于“已转移 + 留存”、背包回执匹配、对象/Chest 身份不变且菜单关闭。
+
+Lantern/Raft 是分母外兼容占位，不是训练缺口，也不得生成负样本。当前准入计数为 `40`，完整权威状态为 `150 registered / 197 semantic / 149 compiler-bound / 76 five-gate / 47 catalogued blocked / 0 Product Executor`。这只增加一个经过原生运行验证的策略动作，不改变正式全量训练仍受 Product Executor、剩余 47 个动作、正式轨迹 manifest/checkpoint、独立存档评测及第三年 21 分长跑验收阻塞的结论。
+
 ## 2026-08-28 喂食斗训练准入与木筏分母修正（EVD-275 / EVD-276）
 
 `animals.withdraw_feed_hopper_hay` 已通过五门证据并进入训练 allowlist。训练样本只允许来自“当前动物屋至少有一只未喂动物、原生精确取草量为正、背包可接纳、菜单与站位安全”的候选；编译器必须从同一新鲜快照重绑根料仓、动物数、容量、已摆干草、取草量、安全槽和站位。生产运行只调用一次原生 `GameLocation.checkAction`，并以料仓 `-N`、背包 `(O)178 +N` 的守恒回执验收。E 盘隐藏静音运行 `runtime-feed-hopper-20260828-130723` 验证 `N=8`。
 
-不可达的 `Raft` 遗留类型不属于训练缺口。锁定 1.6.15 没有原版获取或调用入口，因此语义分母校正为 `198`，原生表面继续保留 `legacy_unreachable` 证据。最新状态为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；这仍不解除 Product Executor、正式数据 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。
+不可达的 `Raft` 遗留类型不属于训练缺口。锁定 1.6.15 没有原版获取或调用入口，因此该历史检查点把语义分母校正为 `198`；当前由 EVD-277 以分母外兼容占位保留原生表面。该检查点状态为 `149 registered / 198 semantic / 148 compiler-bound / 75 five-gate / 39 allowlist / 49 catalogued blocked / 0 Product Executor`；这仍不解除 Product Executor、正式数据 manifest/checkpoint、独立存档评测和第三年 21 分长跑阻塞。
 
 ## 2026-08-28 PlayerCommandOnly 原生声音交互边界
 

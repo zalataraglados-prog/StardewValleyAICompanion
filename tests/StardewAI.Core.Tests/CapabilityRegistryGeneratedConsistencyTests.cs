@@ -155,6 +155,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
         Assert.Equal(
             new[]
             {
+                "animals.collect_auto_grabber_contents",
                 "animals.manage_animal",
                 "animals.purchase",
                 "animals.withdraw_feed_hopper_hay",
@@ -196,6 +197,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Empty(declaration.TrainingExclusionReasons);
             var expectedScope = optionId switch
             {
+                "animals.collect_auto_grabber_contents" => "vanilla_exact_base_(BC)165_native_held_Chest_inventory_capacity_projection_shared_object_movement_native_ItemGrabMenu_stack_transfer_conservation_remaining_contents_identity_and_selected_slot_receipt",
                 "animals.manage_animal" => "vanilla_exact_loaded_base_animal_explicit_rename_reproduction_toggle_move_home_or_irreversible_sale_through_native_pet_and_AnimalQueryMenu_with_strict_receipt",
                 "animals.purchase" => "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
                 "animals.withdraw_feed_hopper_hay" => "vanilla_exact_base_(BC)99_AnimalHouse_root_silo_animal_and_placed_hay_projection_native_location_action_exact_(O)178_inventory_transfer_conservation_identity_and_selected_slot_receipt",

@@ -31,6 +31,7 @@ namespace StardewAI.Core.Tests
             Assert.Equal(
                 new[]
                 {
+                    "animals.collect_auto_grabber_contents",
                     "animals.manage_animal",
                     "animals.purchase",
                     "animals.withdraw_feed_hopper_hay",

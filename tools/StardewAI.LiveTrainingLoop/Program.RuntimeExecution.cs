@@ -705,6 +705,22 @@ static partial class Program
             out var parsedFeedHopperExpectedLocationActionReturn)
                 ? parsedFeedHopperExpectedLocationActionReturn
                 : (bool?)null;
+        var autoGrabberSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        var autoGrabberHeldContainerRuntimeType = ReadQueueParameterString(item, "auto_grabber_held_container_runtime_type");
+        var autoGrabberContentsBeforeJson = ReadQueueParameterString(item, "auto_grabber_contents_before_json");
+        var autoGrabberTransferableContentsJson = ReadQueueParameterString(item, "auto_grabber_transferable_contents_json");
+        var autoGrabberRemainingContentsJson = ReadQueueParameterString(item, "auto_grabber_remaining_contents_json");
+        var autoGrabberContentStackCountBefore = ReadQueueParameterInt(item, "auto_grabber_content_stack_count_before");
+        var autoGrabberTransferableStackCount = ReadQueueParameterInt(item, "auto_grabber_transferable_stack_count");
+        var autoGrabberExpectedStackCountAfter = ReadQueueParameterInt(item, "auto_grabber_expected_stack_count_after");
+        var autoGrabberContentQuantityBefore = ReadQueueParameterInt(item, "auto_grabber_content_quantity_before");
+        var autoGrabberExpectedTransferQuantity = ReadQueueParameterInt(item, "auto_grabber_expected_transfer_quantity");
+        var autoGrabberExpectedQuantityAfter = ReadQueueParameterInt(item, "auto_grabber_expected_quantity_after");
+        var autoGrabberExpectedLocationActionReturn = bool.TryParse(
+            ReadQueueParameterString(item, "auto_grabber_expected_location_action_return"),
+            out var parsedAutoGrabberExpectedLocationActionReturn)
+                ? parsedAutoGrabberExpectedLocationActionReturn
+                : (bool?)null;
         var connectorKind = ReadQueueParameterString(item, "connector_kind");
         var expectedTargetLocation = ReadQueueParameterString(item, "expected_target_location");
         var expectedArrivalTileX = ReadQueueParameterInt(item, "expected_arrival_tile_x");
@@ -1226,6 +1242,18 @@ static partial class Program
         executionRequest.FeedHopperExpectedWithdrawalQuantity = feedHopperExpectedWithdrawalQuantity;
         executionRequest.FeedHopperExpectedSiloHayAfter = feedHopperExpectedSiloHayAfter;
         executionRequest.FeedHopperExpectedLocationActionReturn = feedHopperExpectedLocationActionReturn;
+        executionRequest.AutoGrabberSafeSlotKind = autoGrabberSafeSlotKind;
+        executionRequest.AutoGrabberHeldContainerRuntimeType = autoGrabberHeldContainerRuntimeType;
+        executionRequest.AutoGrabberContentsBeforeJson = autoGrabberContentsBeforeJson;
+        executionRequest.AutoGrabberTransferableContentsJson = autoGrabberTransferableContentsJson;
+        executionRequest.AutoGrabberRemainingContentsJson = autoGrabberRemainingContentsJson;
+        executionRequest.AutoGrabberContentStackCountBefore = autoGrabberContentStackCountBefore;
+        executionRequest.AutoGrabberTransferableStackCount = autoGrabberTransferableStackCount;
+        executionRequest.AutoGrabberExpectedStackCountAfter = autoGrabberExpectedStackCountAfter;
+        executionRequest.AutoGrabberContentQuantityBefore = autoGrabberContentQuantityBefore;
+        executionRequest.AutoGrabberExpectedTransferQuantity = autoGrabberExpectedTransferQuantity;
+        executionRequest.AutoGrabberExpectedQuantityAfter = autoGrabberExpectedQuantityAfter;
+        executionRequest.AutoGrabberExpectedLocationActionReturn = autoGrabberExpectedLocationActionReturn;
         if (!string.IsNullOrWhiteSpace(connectorKind))
         {
             executionRequest.ConnectorKind = connectorKind;

@@ -138,6 +138,22 @@ internal sealed class NativeActionSurfaceCatalogBuilder
         string runtimeType,
         string member)
     {
+        if (runtimeType is "Lantern")
+        {
+            return new SurfaceClassification(
+                new[] { "executor.toggle_lantern" },
+                "cut_content_unreachable",
+                "locked 1.6.15 retains Data/Tools and debug construction support, but no normal save acquisition path reaches the cut Lantern tool");
+        }
+
+        if (runtimeType is "Raft")
+        {
+            return new SurfaceClassification(
+                new[] { "executor.use_raft" },
+                "cut_content_unreachable",
+                "locked 1.6.15 retains the tool type and rafting state branches, but no Data/Tools row or normal save acquisition path reaches the cut Raft tool");
+        }
+
         var options = runtimeType switch
         {
             "Axe" => new[] { "executor.clear_obstacle", "executor.break_farm_resource_clump" },
@@ -183,7 +199,6 @@ internal sealed class NativeActionSurfaceCatalogBuilder
             "StrengthGame" => new[] { "festival.play_strength_game" },
             "WheelSpinGame" => new[] { "festival.spin_wheel" },
             "Wand" => new[] { "executor.use_return_scepter" },
-            "Lantern" => new[] { "executor.toggle_lantern" },
             "Bush" => new[] { "executor.harvest_bush" },
             "FruitTree" => new[] { "foraging.harvest_fruit_tree", "executor.clear_obstacle" },
             "HoeDirt" => new[] { "farm.maintain_crops", "executor.plant_seed", "executor.harvest_crop" },
@@ -267,14 +282,6 @@ internal sealed class NativeActionSurfaceCatalogBuilder
                 "decompiled handler changes view, page, selection, or closes display without a gameplay commitment");
         }
 
-        if (runtimeType is "Raft")
-        {
-            return new SurfaceClassification(
-                Array.Empty<string>(),
-                "legacy_unreachable",
-                "locked 1.6.15 retains the tool type and rafting state branches, but Data/Tools has no entry and no acquisition, factory, event, or external construction path reaches it");
-        }
-
         if (runtimeType is "AnimationPreviewTool" or "Test")
         {
             return new SurfaceClassification(
@@ -302,6 +309,12 @@ internal sealed class NativeActionSurfaceCatalogBuilder
         if (classification.OptionIds.Length > 0)
         {
             if (classification.OptionIds.All(id =>
+                    CompatibilitySemanticActionPlaceholderCatalog.TryGet(id, out _)))
+            {
+                return "mapped_to_compatibility_placeholder";
+            }
+
+            if (classification.OptionIds.All(id =>
                     OptionCapabilityRegistrySource.TryGet(id, out _)))
             {
                 return "mapped_to_registered_option";
@@ -309,7 +322,8 @@ internal sealed class NativeActionSurfaceCatalogBuilder
 
             return classification.OptionIds.All(id =>
                     OptionCapabilityRegistrySource.TryGet(id, out _) ||
-                    PendingSemanticActionCatalog.TryGet(id, out _))
+                    PendingSemanticActionCatalog.TryGet(id, out _) ||
+                    CompatibilitySemanticActionPlaceholderCatalog.TryGet(id, out _))
                 ? "mapped_to_catalogued_blocked_action"
                 : "semantic_action_missing_registration";
         }

@@ -5,13 +5,11 @@
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
   "mapped_count": 68,
-  "catalogued_blocked_surface_count": 101,
-  "catalogued_blocked_action_count": 49,
+  "catalogued_blocked_surface_count": 100,
+  "catalogued_blocked_action_count": 47,
   "catalogued_blocked_action_ids": [
-    "animals.collect_auto_grabber_contents",
     "executor.plant_grass",
     "executor.read_secret_note",
-    "executor.toggle_lantern",
     "executor.use_firework",
     "executor.use_horse_flute",
     "executor.use_monster_musk",
@@ -58,10 +56,16 @@
     "world.tune_drum_block",
     "world.tune_flute_block"
   ],
+  "compatibility_placeholder_surface_count": 2,
+  "compatibility_placeholder_action_count": 2,
+  "compatibility_placeholder_action_ids": [
+    "executor.toggle_lantern",
+    "executor.use_raft"
+  ],
   "missing_registration_surface_count": 0,
   "missing_semantic_action_count": 0,
   "missing_semantic_action_ids": [],
-  "classified_non_semantic_surface_count": 92,
+  "classified_non_semantic_surface_count": 91,
   "branch_decompilation_required_count": 61,
   "branch_inventory_generated_count": 61,
   "branch_inventory_missing_count": 0,
@@ -5010,9 +5014,9 @@
       "mappedOptionIds": [
         "executor.toggle_lantern"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
-      "scopeDisposition": "target_actor_action",
-      "evidenceBasis": "decompiled runtime type and native input member"
+      "semanticCoverageStatus": "mapped_to_compatibility_placeholder",
+      "scopeDisposition": "cut_content_unreachable",
+      "evidenceBasis": "locked 1.6.15 retains Data/Tools and debug construction support, but no normal save acquisition path reaches the cut Lantern tool"
     },
     {
       "surfaceId": "native.8e6382f0043981f1",
@@ -5130,10 +5134,12 @@
       "startLine": 28,
       "endLine": 54,
       "bodySha256": "af68aec37ab9c7bae6ff8885408858d886f15e06771bb54b9f099ed57519b5d1",
-      "mappedOptionIds": [],
-      "semanticCoverageStatus": "classified_non_semantic_surface",
-      "scopeDisposition": "legacy_unreachable",
-      "evidenceBasis": "locked 1.6.15 retains the tool type and rafting state branches, but Data/Tools has no entry and no acquisition, factory, event, or external construction path reaches it"
+      "mappedOptionIds": [
+        "executor.use_raft"
+      ],
+      "semanticCoverageStatus": "mapped_to_compatibility_placeholder",
+      "scopeDisposition": "cut_content_unreachable",
+      "evidenceBasis": "locked 1.6.15 retains the tool type and rafting state branches, but no Data/Tools row or normal save acquisition path reaches the cut Raft tool"
     },
     {
       "surfaceId": "native.8e3209031eb22b33",

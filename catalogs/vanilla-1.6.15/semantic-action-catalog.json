@@ -1,25 +1,47 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "bae015b8a7524e065cc2b355c74c26579945a7b75f7626c892378a49358bc871",
-  "action_count": 198,
-  "registered_option_spec_count": 149,
-  "catalogued_blocked_count": 49,
+  "denominator_fingerprint_sha256": "d14bf4d8f36bcfd8f2c0376d14f3e0a168135d6a5e50f06f8b4a431d4da8d04c",
+  "action_count": 197,
+  "registered_option_spec_count": 150,
+  "catalogued_blocked_count": 47,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
+  "compatibility_placeholder_count": 2,
+  "compatibility_placeholders": [
+    {
+      "actionId": "executor.toggle_lantern",
+      "domain": "tool",
+      "semanticKind": "primitive",
+      "primaryEngineId": "engine.tool_harvest",
+      "vanillaDisposition": "cut_content_unreachable",
+      "compatibilityStatus": "placeholder_requires_reachable_adapter",
+      "nativeRuntimeTypes": [
+        "Lantern"
+      ]
+    },
+    {
+      "actionId": "executor.use_raft",
+      "domain": "movement",
+      "semanticKind": "primitive",
+      "primaryEngineId": "engine.movement_navigation",
+      "vanillaDisposition": "cut_content_unreachable",
+      "compatibilityStatus": "placeholder_requires_reachable_adapter",
+      "nativeRuntimeTypes": [
+        "Raft"
+      ]
+    }
+  ],
   "actions": [
     {
       "action_id": "animals.collect_auto_grabber_contents",
       "domain": "animals",
-      "semantic_kind": "primitive",
-      "primary_engine_id": "engine.inventory_transfer",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "ItemGrabMenu",
-        "Object"
-      ]
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "animals.manage_animal",
@@ -924,17 +946,6 @@
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
-    },
-    {
-      "action_id": "executor.toggle_lantern",
-      "domain": "tool",
-      "semantic_kind": "primitive",
-      "primary_engine_id": "engine.tool_harvest",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "Lantern"
-      ]
     },
     {
       "action_id": "executor.transfer_material",

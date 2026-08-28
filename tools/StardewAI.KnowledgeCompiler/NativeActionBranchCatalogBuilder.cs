@@ -290,7 +290,8 @@ internal static class NativeBranchSemanticClassifier
         {
             var known = actionIds.All(id =>
                 StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.TryGet(id, out _) ||
-                StardewAI.Contracts.Capabilities.PendingSemanticActionCatalog.TryGet(id, out _));
+                StardewAI.Contracts.Capabilities.PendingSemanticActionCatalog.TryGet(id, out _) ||
+                StardewAI.Contracts.Capabilities.CompatibilitySemanticActionPlaceholderCatalog.TryGet(id, out _));
             return new(
                 actionIds,
                 "player_semantic_action",

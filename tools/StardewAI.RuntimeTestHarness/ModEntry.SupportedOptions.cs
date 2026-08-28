@@ -72,6 +72,7 @@ public sealed partial class ModEntry
             "debug.setup_house_plant_rotation",
             "debug.setup_singing_stone",
             "debug.setup_feed_hopper",
+            "debug.setup_auto_grabber",
             "debug.setup_slime_ball",
             "debug.setup_partnership_fixture",
             "debug.setup_pet_care_target",

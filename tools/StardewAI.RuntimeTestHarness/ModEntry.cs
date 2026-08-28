@@ -107,6 +107,7 @@ public sealed partial class ModEntry : Mod
     private ActiveSingingStone? activeSingingStone;
     private ActiveSlimeBallCollection? activeSlimeBallCollection;
     private ActiveFeedHopperWithdrawal? activeFeedHopperWithdrawal;
+    private ActiveAutoGrabberCollection? activeAutoGrabberCollection;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
 
@@ -493,6 +494,7 @@ public sealed partial class ModEntry : Mod
         TickSingingStone();
         TickSlimeBallCollection();
         TickFeedHopperWithdrawal();
+        TickAutoGrabberCollection();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
         TickAnimalPurchase();
@@ -1506,9 +1508,21 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_auto_grabber")
+            {
+                pending.Completion.SetResult(ExecuteSetupAutoGrabberFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "animals.withdraw_feed_hopper_hay")
             {
                 StartFeedHopperWithdrawal(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "animals.collect_auto_grabber_contents")
+            {
+                StartAutoGrabberCollection(pending);
                 return;
             }
 
@@ -1672,6 +1686,11 @@ public sealed partial class ModEntry : Mod
             {
                 Game1.player.CurrentToolIndex = activeFeedHopperWithdrawal.RestoreSlotIndex;
                 activeFeedHopperWithdrawal = null;
+            }
+            if (activeAutoGrabberCollection is not null)
+            {
+                Game1.player.CurrentToolIndex = activeAutoGrabberCollection.RestoreSlotIndex;
+                activeAutoGrabberCollection = null;
             }
             activeAnimalProductHarvest = null;
             activeAnimalManagement = null;
@@ -1910,6 +1929,7 @@ public sealed partial class ModEntry : Mod
             activeSingingStone is not null ||
             activeSlimeBallCollection is not null ||
             activeFeedHopperWithdrawal is not null ||
+            activeAutoGrabberCollection is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;
     }

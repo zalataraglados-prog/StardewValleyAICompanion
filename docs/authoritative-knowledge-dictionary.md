@@ -9,6 +9,21 @@
 Wiki text or examples must never create a field, rule, or value that runtime content and
 decompiled code do not support.
 
+## Cut-content compatibility boundary
+
+Cut or unreachable native types remain source evidence but are not vanilla player semantic
+actions. The generated compatibility placeholder catalog currently retains `Lantern` and
+`Raft` for future mod adapters. Locked 1.6.15 `Data/Tools` contains Lantern but not Raft;
+neither type has a normal save acquisition path. They are therefore excluded from vanilla
+candidates, training, pending implementation counts, and the semantic denominator. A mod may
+activate a placeholder only after its runtime content exposes a reachable acquisition path and
+the adapter provides independent transparent fields, compilation rules, runtime verification,
+and evidence. This distinction is guarded by generated-catalog tests.
+
+Implementation may batch actions that share a decompiled native substrate, such as
+`Object.checkForAction`, but batching never merges their semantic contracts. Each action keeps
+independent preconditions, postconditions, fixture, and E3 evidence.
+
 ## Export coverage
 
 `StardewAI.KnowledgeExporter` creates a versioned export directory containing:

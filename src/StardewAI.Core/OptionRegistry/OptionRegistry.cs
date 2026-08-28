@@ -79,6 +79,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact base Feed Hopper with unfed animals and one safe adjacent stand selected", "compiler rebinds silo hay, animal occupancy, trough occupancy and exact native withdrawal", "one native GameLocation.checkAction transfers hay from the root silo to player inventory" },
                 new[] { "block_non_animal_house_or_drifted_feed_hopper", "block_no_unfed_animals", "block_silo_empty_or_trough_full", "block_inventory_rejects_exact_stack", "block_destructive_object_trap_preamble", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_direct_silo_or_inventory_mutation" }));
 
+            Register(Option("animals.collect_auto_grabber_contents", "animals", "Collect every currently inventory-acceptable stack from one exact Auto-Grabber",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "player.inventory", "current_location.objects", "menus.active_menu" },
+                new[] { "one exact base Auto-Grabber with nonempty native held Chest and one safe adjacent stand selected", "compiler rebinds the exact transferable and retained stack projections from a fresh snapshot", "native GameLocation.checkAction opens ItemGrabMenu and native menu clicks transfer only projected stacks" },
+                new[] { "block_drifted_or_empty_auto_grabber", "block_inventory_rejects_all_stacks", "block_content_identity_or_quantity_drift", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_non_native_chest_or_inventory_mutation", "block_native_menu_or_lock_lifecycle_mismatch" }));
+
             Register(Option("farming.collect_slime_ball", "farming", "Collect one exact natural Slime Hutch Slime Ball through its native object action",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,

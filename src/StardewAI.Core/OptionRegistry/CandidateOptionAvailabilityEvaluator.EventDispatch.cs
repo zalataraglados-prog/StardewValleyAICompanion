@@ -55,6 +55,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["world.play_singing_stone"] = (snapshot, _) => SingingStoneCandidates(snapshot),
                 ["farming.collect_slime_ball"] = (snapshot, _) => SlimeBallCollectionCandidates(snapshot),
                 ["animals.withdraw_feed_hopper_hay"] = (snapshot, _) => FeedHopperWithdrawalCandidates(snapshot),
+                ["animals.collect_auto_grabber_contents"] = (snapshot, _) => AutoGrabberCollectionCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
                 ["economy.sell_items"] = SellItemStageCandidates,

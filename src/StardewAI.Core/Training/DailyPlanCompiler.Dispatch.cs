@@ -65,6 +65,7 @@ namespace StardewAI.Core.Training
                 ["world.play_singing_stone"] = new[] { "play_singing_stone" },
                 ["farming.collect_slime_ball"] = new[] { "collect_slime_ball" },
                 ["animals.withdraw_feed_hopper_hay"] = new[] { "withdraw_feed_hopper_hay" },
+                ["animals.collect_auto_grabber_contents"] = new[] { "collect_auto_grabber_contents" },
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
                 ["skills.choose_profession"] = new[] { "choose_profession" },
@@ -351,6 +352,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return FeedHopperWithdrawalSteps(candidate);
+            }
+
+            if (candidate.Kind == "collect_auto_grabber_contents" &&
+                OptionCandidateCompilerKinds["animals.collect_auto_grabber_contents"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return AutoGrabberCollectionSteps(candidate);
             }
 
             if (candidate.Kind == "collect_crab_pot" &&

@@ -21,13 +21,11 @@ public static class PendingSemanticActionCatalog
     private static readonly IReadOnlyList<PendingSemanticActionDeclaration> Rows =
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
-            P("animals.collect_auto_grabber_contents", "animals", "engine.inventory_transfer", "Object", "ItemGrabMenu"),
             P("movement.use_mini_obelisk", "movement", "engine.movement_navigation", "Object"),
             P("farming.read_farm_computer_report", "farming", "engine.interaction_menu", "Object"),
             P("world.tune_flute_block", "world", "engine.interaction_menu", "Object"),
             P("world.tune_drum_block", "world", "engine.interaction_menu", "Object"),
             P("executor.plant_grass", "farming", "engine.placement_layout", "Object"),
-            P("executor.toggle_lantern", "tool", "engine.tool_harvest", "Lantern"),
             P("executor.read_secret_note", "inventory", "engine.interaction_menu", "Object"),
             P("executor.use_firework", "inventory", "engine.inventory_transfer", "Object"),
             P("executor.use_horse_flute", "movement", "engine.movement_navigation", "Object"),
