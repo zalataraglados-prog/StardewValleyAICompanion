@@ -1,7 +1,5 @@
 # Stardew Valley AI Companion
 
-本仓库按蓝图 `Stardew Valley AI 副官 -> 完全体陪玩智能体` 搭建。
-
 当前阶段定义为：
 
 ```text
