@@ -64,6 +64,7 @@ namespace StardewAI.Core.Training
                 ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
                 ["world.play_singing_stone"] = new[] { "play_singing_stone" },
                 ["world.tune_flute_block"] = new[] { "tune_flute_block" },
+                ["world.tune_drum_block"] = new[] { "tune_drum_block" },
                 ["farming.read_farm_computer_report"] = new[] { "read_farm_computer_report" },
                 ["farming.collect_slime_ball"] = new[] { "collect_slime_ball" },
                 ["animals.withdraw_feed_hopper_hay"] = new[] { "withdraw_feed_hopper_hay" },
@@ -347,6 +348,12 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return FluteBlockSteps(candidate);
+            }
+
+            if (candidate.Kind == "tune_drum_block" &&
+                OptionCandidateCompilerKinds["world.tune_drum_block"].Contains(candidate.Kind, StringComparer.Ordinal))
+            {
+                return DrumBlockSteps(candidate);
             }
 
             if (candidate.Kind == "read_farm_computer_report" &&

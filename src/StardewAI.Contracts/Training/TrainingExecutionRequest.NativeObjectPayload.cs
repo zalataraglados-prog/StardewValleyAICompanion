@@ -68,6 +68,10 @@ public sealed class NativeObjectExecutionPayload
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FluteBlockExecutionProjection? FluteBlock { get; set; }
 
+    [JsonPropertyName("drum_block")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DrumBlockExecutionProjection? DrumBlock { get; set; }
+
     [JsonPropertyName("slime_ball")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SlimeBallExecutionProjection? SlimeBall { get; set; }
@@ -119,6 +123,21 @@ public sealed class FluteBlockExecutionProjection
     public int? PitchMax { get; set; }
     public int? PitchStep { get; set; }
     public int? PitchStateCount { get; set; }
+    public string SoundCue { get; set; } = string.Empty;
+    public int? ExpectedShakeTimer { get; set; }
+    public float? ExpectedScaleY { get; set; }
+    public bool? ExpectedLocationActionReturn { get; set; }
+}
+
+public sealed class DrumBlockExecutionProjection
+{
+    public string CurrentToneRaw { get; set; } = string.Empty;
+    public int? CurrentTone { get; set; }
+    public int? NextTone { get; set; }
+    public int? ToneMin { get; set; }
+    public int? ToneMax { get; set; }
+    public int? ToneStep { get; set; }
+    public int? ToneStateCount { get; set; }
     public string SoundCue { get; set; } = string.Empty;
     public int? ExpectedShakeTimer { get; set; }
     public float? ExpectedScaleY { get; set; }

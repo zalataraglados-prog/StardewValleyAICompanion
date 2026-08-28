@@ -23,6 +23,7 @@ public sealed partial class ModEntry
             "world.rotate_house_plant" => "house_plant",
             "world.play_singing_stone" => "singing_stone",
             "world.tune_flute_block" => "flute_block",
+            "world.tune_drum_block" => "drum_block",
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
@@ -37,7 +38,7 @@ public sealed partial class ModEntry
         }
         var projectionCount = new object?[]
         {
-            payload.HousePlant, payload.SingingStone, payload.FluteBlock, payload.SlimeBall,
+            payload.HousePlant, payload.SingingStone, payload.FluteBlock, payload.DrumBlock, payload.SlimeBall,
             payload.FeedHopper, payload.AutoGrabber, payload.MiniObelisk,
             payload.FarmComputer
         }.Count(value => value is not null);
@@ -51,6 +52,7 @@ public sealed partial class ModEntry
             "house_plant" => payload.HousePlant is not null,
             "singing_stone" => payload.SingingStone is not null,
             "flute_block" => payload.FluteBlock is not null,
+            "drum_block" => payload.DrumBlock is not null,
             "slime_ball" => payload.SlimeBall is not null,
             "feed_hopper" => payload.FeedHopper is not null,
             "auto_grabber" => payload.AutoGrabber is not null,
@@ -111,6 +113,21 @@ public sealed partial class ModEntry
             request.FluteBlockExpectedShakeTimer = fluteBlock.ExpectedShakeTimer;
             request.FluteBlockExpectedScaleY = fluteBlock.ExpectedScaleY;
             request.FluteBlockExpectedLocationActionReturn = fluteBlock.ExpectedLocationActionReturn;
+        }
+        if (payload.DrumBlock is { } drumBlock)
+        {
+            request.DrumBlockSafeSlotKind = payload.SafeSlotKind;
+            request.DrumBlockCurrentToneRaw = drumBlock.CurrentToneRaw;
+            request.DrumBlockCurrentTone = drumBlock.CurrentTone;
+            request.DrumBlockNextTone = drumBlock.NextTone;
+            request.DrumBlockToneMin = drumBlock.ToneMin;
+            request.DrumBlockToneMax = drumBlock.ToneMax;
+            request.DrumBlockToneStep = drumBlock.ToneStep;
+            request.DrumBlockToneStateCount = drumBlock.ToneStateCount;
+            request.DrumBlockSoundCue = drumBlock.SoundCue;
+            request.DrumBlockExpectedShakeTimer = drumBlock.ExpectedShakeTimer;
+            request.DrumBlockExpectedScaleY = drumBlock.ExpectedScaleY;
+            request.DrumBlockExpectedLocationActionReturn = drumBlock.ExpectedLocationActionReturn;
         }
         if (payload.SlimeBall is { } slimeBall)
         {

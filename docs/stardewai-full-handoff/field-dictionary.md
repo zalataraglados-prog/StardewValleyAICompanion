@@ -32,6 +32,13 @@ Status values:
 | `current_location.objects[].flute_block_tuning` | Expose exact persistent pitch state, next step and independent playback entry | locked 1.6.15 `CheckForActionOnFluteBlock`, `getFluteBlockSoundFromHeldObject`, `farmerAdjacentAction` | secondary comparison pending | covered_for_read / deterministic_25_state_cycle | Publishes raw/parsed/current/next pitch, `0..2400 step 100`, base cue, held-object override boundary, shake/scale and safe stands. |
 | `world.tune_flute_block` | Execute one explicit native tuning step without direct state mutation | DailyPlan/compiler, shared movement, runtime harness | secondary comparison pending | five_gate_closed_EVD_281 / training_excluded_player_command_only | Empty/tool safe slot forces base `flute` cue; adjacent playback remains separate and is never used as tuning. |
 
+## Drum Block Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.objects[].drum_block_tuning` | Expose exact persistent tone state, next step, matching sound cue and independent playback entry | locked 1.6.15 `CheckForActionOnDrumBlock` and `farmerAdjacentAction` | secondary comparison pending | covered_for_read / deterministic_7_state_cycle | Publishes raw/parsed/current/next tone, `0..6 step 1`, `drumkitN`, shake/scale and safe stands. |
+| `world.tune_drum_block` | Execute one explicit native tuning step without direct state mutation | DailyPlan/compiler, shared Note Block runtime | secondary comparison pending | five_gate_closed_EVD_282 / training_excluded_player_command_only | Compiler rebinds all fields from the fresh projection. Runtime shares one native state machine with Flute but retains exact Drum identity and tone validation. |
+
 ## Singing Stone Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

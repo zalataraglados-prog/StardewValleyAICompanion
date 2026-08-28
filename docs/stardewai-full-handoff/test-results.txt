@@ -4067,3 +4067,9 @@ Scope boundary:
 - Hidden/silent isolated E-drive PASS 8/8: `artifacts/runtime-house-plant/runtime-house-plant-20260827-123652/summary.json`. Observed sequence was `1,2,3,4,5,6,7,1`; every case preserved item ID `(BC)0` and restored the selected slot.
 - Reconciliation: 146 registered / 199 semantic / 145 compiler-bound / 72 five-gate / 40 training allowlist / 53 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
 - Full regression PASS: Core 1826/1826; Backend 128/128; Release solution build 0 errors with one pre-existing `AvoidNetField` warning. Next slice is `farming.collect_slime_ball`.
+2026-08-29 EVD-282 native Drum Block tuning
+- Locked 1.6.15 source audit PASS: exact base `(O)463`, persistent raw tone parsing, complete `(current + 1) % 7` cycle, `drumkit0..6`, shake/scale receipt and separate adjacent playback are covered.
+- TDD RED observed Core failures from unknown registration/compiler and Backend failure from missing shared runtime. Focused GREEN PASS covered Drum boundaries, Flute regression, governance counts and the single shared native action entry.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-drum-block/runtime-drum-block-20260829-040623/summary.json`. One native action mapped `6->0`, selected `drumkit0`, observed shake 200/scale 1.3, preserved identity/restored slot and loaded only TransparentBridge plus RuntimeTestHarness.
+- KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 40 training allowlist / 43 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1879/1879; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.plant_grass`.

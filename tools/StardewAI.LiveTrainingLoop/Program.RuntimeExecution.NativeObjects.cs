@@ -12,6 +12,7 @@ static partial class Program
             "world.rotate_house_plant" => "house_plant",
             "world.play_singing_stone" => "singing_stone",
             "world.tune_flute_block" => "flute_block",
+            "world.tune_drum_block" => "drum_block",
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
@@ -48,6 +49,18 @@ static partial class Program
         request.FluteBlockExpectedShakeTimer = ReadQueueParameterInt(item, "flute_block_expected_shake_timer");
         request.FluteBlockExpectedScaleY = (float?)ReadQueueParameterDouble(item, "flute_block_expected_scale_y");
         request.FluteBlockExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "flute_block_expected_location_action_return");
+        request.DrumBlockSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        request.DrumBlockCurrentToneRaw = ReadQueueParameterString(item, "drum_block_current_tone_raw");
+        request.DrumBlockCurrentTone = ReadQueueParameterInt(item, "drum_block_current_tone");
+        request.DrumBlockNextTone = ReadQueueParameterInt(item, "drum_block_next_tone");
+        request.DrumBlockToneMin = ReadQueueParameterInt(item, "drum_block_tone_min");
+        request.DrumBlockToneMax = ReadQueueParameterInt(item, "drum_block_tone_max");
+        request.DrumBlockToneStep = ReadQueueParameterInt(item, "drum_block_tone_step");
+        request.DrumBlockToneStateCount = ReadQueueParameterInt(item, "drum_block_tone_state_count");
+        request.DrumBlockSoundCue = ReadQueueParameterString(item, "drum_block_sound_cue");
+        request.DrumBlockExpectedShakeTimer = ReadQueueParameterInt(item, "drum_block_expected_shake_timer");
+        request.DrumBlockExpectedScaleY = (float?)ReadQueueParameterDouble(item, "drum_block_expected_scale_y");
+        request.DrumBlockExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "drum_block_expected_location_action_return");
         request.RequiredFragility = ReadQueueParameterInt(item, "required_fragility");
         request.SlimeBallSeedDaysPlayed = ReadQueueParameterInt(item, "slime_ball_seed_days_played");
         request.SlimeBallSeedUniqueGameId = ReadQueueParameterLong(item, "slime_ball_seed_unique_game_id");
@@ -164,6 +177,22 @@ static partial class Program
                     ExpectedShakeTimer = request.FluteBlockExpectedShakeTimer,
                     ExpectedScaleY = request.FluteBlockExpectedScaleY,
                     ExpectedLocationActionReturn = request.FluteBlockExpectedLocationActionReturn
+                };
+                break;
+            case "drum_block":
+                request.NativeObjectPayload.DrumBlock = new DrumBlockExecutionProjection
+                {
+                    CurrentToneRaw = request.DrumBlockCurrentToneRaw,
+                    CurrentTone = request.DrumBlockCurrentTone,
+                    NextTone = request.DrumBlockNextTone,
+                    ToneMin = request.DrumBlockToneMin,
+                    ToneMax = request.DrumBlockToneMax,
+                    ToneStep = request.DrumBlockToneStep,
+                    ToneStateCount = request.DrumBlockToneStateCount,
+                    SoundCue = request.DrumBlockSoundCue,
+                    ExpectedShakeTimer = request.DrumBlockExpectedShakeTimer,
+                    ExpectedScaleY = request.DrumBlockExpectedScaleY,
+                    ExpectedLocationActionReturn = request.DrumBlockExpectedLocationActionReturn
                 };
                 break;
             case "slime_ball":

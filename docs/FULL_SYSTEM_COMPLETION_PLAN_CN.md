@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 Drum Block 原生调音闭环（EVD-282）
+
+`world.tune_drum_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布持久化原始/解析音色、下一档、完整七档循环、对应 `drumkitN` 音色和独立路过播放入口；编译器只允许安全空槽/工具槽并发起一次原生地点交互，不直接写音色、摇动或缩放。
+
+Flute 与 Drum 已收敛到唯一 `NoteBlockTuning` 运行状态机，但身份、状态算法、请求字段和证据合同仍独立，避免一条运行结果外推到另一动作。隐藏静音 E 盘运行 `runtime-drum-block-20260829-040623` 已验证 `6->0`、`drumkit0`、摇动/缩放、身份与槽位恢复。该动作是 `PlayerCommandOnly`，不进入自主候选和训练。当前对账为 `154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 40 allowlist / 43 catalogued blocked / 0 Product Executor`。下一纵向切片固定为 `executor.plant_grass`。
+
 ## 2026-08-29 Flute Block 原生调音闭环（EVD-281）
 
 `world.tune_flute_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布 `preservedParentSheetIndex` 原始/解析值、下一档、完整 25 档循环、基础音色与独立路过播放入口；编译器只允许空槽/工具槽并发起一次原生地点交互，不直接写音高、摇动或缩放。

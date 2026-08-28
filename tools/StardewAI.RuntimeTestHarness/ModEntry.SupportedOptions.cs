@@ -72,6 +72,7 @@ public sealed partial class ModEntry
             "debug.setup_house_plant_rotation",
             "debug.setup_singing_stone",
             "debug.setup_flute_block",
+            "debug.setup_drum_block",
             "debug.setup_farm_computer",
             "debug.setup_mini_obelisk",
             "debug.setup_feed_hopper",

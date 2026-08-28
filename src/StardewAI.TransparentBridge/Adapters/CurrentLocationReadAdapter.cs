@@ -161,6 +161,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var slimeBallCollection = ReadSlimeBallCollection(location, tile, item);
         var singingStoneInteraction = ReadSingingStoneInteraction(location, tile, item);
         var fluteBlockTuning = ReadFluteBlockTuning(location, tile, item);
+        var drumBlockTuning = ReadDrumBlockTuning(location, tile, item);
         var feedHopperWithdrawal = ReadFeedHopperWithdrawal(location, tile, item, player);
         var autoGrabberCollection = ReadAutoGrabberCollection(location, tile, item, player);
         var miniObeliskUse = ReadMiniObeliskUse(location, tile, item);
@@ -271,6 +272,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             slime_ball_collection = slimeBallCollection,
             singing_stone_interaction = singingStoneInteraction,
             flute_block_tuning = fluteBlockTuning,
+            drum_block_tuning = drumBlockTuning,
             feed_hopper_withdrawal = feedHopperWithdrawal,
             auto_grabber_collection = autoGrabberCollection,
             mini_obelisk_use = miniObeliskUse,

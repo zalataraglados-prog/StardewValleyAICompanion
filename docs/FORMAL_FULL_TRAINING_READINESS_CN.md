@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 Drum Block 玩家命令边界（EVD-282）
+
+`world.tune_drum_block` 已闭合五门执行证据，但训练 allowlist 保持 `40`。调音属于显式玩家表达/谜题布置，不是自主日计划欲望；运行数据只属于 `player_command_only_executor_evidence`。路过自动播放是独立对象邻接回调，不生成第二个训练动作。
+
+当前权威状态为 `154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 43 catalogued blocked / 0 Product Executor`。该切片不解除 Product Executor、剩余 43 个动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻挡。下一语义切片为 `executor.plant_grass`。
+
 ## 2026-08-29 Flute Block 玩家命令边界（EVD-281）
 
 `world.tune_flute_block` 已闭合五门执行证据，但训练 allowlist 保持 `40`。调音是玩家表达/谜题布置命令，不是自主日计划欲望；运行数据只属于 `player_command_only_executor_evidence`。路过自动播放是对象邻接回调，不生成第二个训练动作。

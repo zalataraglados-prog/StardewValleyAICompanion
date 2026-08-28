@@ -1499,6 +1499,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_drum_block")
+            {
+                pending.Completion.SetResult(ExecuteSetupDrumBlockFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "world.tune_drum_block")
+            {
+                StartDrumBlockTuning(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "farming.read_farm_computer_report")
             {
                 StartFarmComputerReport(pending);

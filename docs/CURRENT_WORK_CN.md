@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-282
+
+- `world.tune_drum_block` 已闭合透明读取、显式玩家候选、DailyPlan、新鲜字段重绑定、动作编译、v1/v2 类型请求、共享原生运行和持久化音色回执。锁定 1.6.15 反编译确认 `(O)463` 每次右键将 `preservedParentSheetIndex` 按 `(current + 1) % 7` 推进，并播放 `drumkit0..6` 对应音色。
+- 该动作严格为 `PlayerCommandOnly`，默认策略候选和训练 allowlist 均排除。路过播放由独立 `farmerAdjacentAction` 入口处理，不得替代调音。Drum 与 Flute 只共用一个 `NoteBlockTuning` 移动/原生交互状态机，各自保留独立透明字段、验证规则和 E3 证据。
+- 隐藏、静音、E 盘隔离运行 `runtime-drum-block-20260829-040623` 为 PASS：`6->0`、`drumkit0`、`shakeTimer=200`、`scale.Y=1.3`、原生返回 true、对象身份与槽位保持，只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新权威对账为 `154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 40 training allowlist / 43 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.plant_grass`。
+
 ## 2026-08-29 当前权威检查点：EVD-281
 
 - `world.tune_flute_block` 已闭合透明读取、显式玩家候选、DailyPlan、新鲜字段重绑定、动作编译、v1/v2 类型请求、共享原生运行和持久化音高回执。锁定 1.6.15 反编译确认 `(O)464` 每次右键按 `0..2400`、步长 `100`、共 25 档推进，特殊边为 `2300->2400->0`。

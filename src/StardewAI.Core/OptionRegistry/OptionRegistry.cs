@@ -500,6 +500,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact base (O)464 Flute Block and adjacent stand selected", "compiler rebinds current and next pitch plus a safe empty/tool slot", "one native GameLocation.checkAction advances persistent pitch and plays the base flute cue", "shake/scale receipt, item identity and selected toolbar slot are verified" },
                 new[] { "block_not_explicitly_authorized", "block_non_base_or_non_flute_block_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_pitch_or_identity_projection_drift", "never_merge_adjacent_playback_with_tuning", "block_direct_pitch_or_animation_mutation" }));
 
+            Register(Option("world.tune_drum_block", "world", "Advance one exact placed Drum Block by one native persistent tone step for an explicit player request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "current_location.objects", "menus.active_menu" },
+                new[] { "one exact base (O)463 Drum Block and adjacent stand selected", "compiler rebinds current and next tone plus a safe empty/tool slot", "one native GameLocation.checkAction advances persistent tone and plays drumkit0..6", "shake/scale receipt, item identity and selected toolbar slot are verified" },
+                new[] { "block_not_explicitly_authorized", "block_non_base_or_non_drum_block_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_tone_or_identity_projection_drift", "never_merge_adjacent_playback_with_tuning", "block_direct_tone_or_animation_mutation" }));
+
             Register(Option("farming.read_farm_computer_report", "farming", "Open one exact Farm Computer native report for an explicit player request",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
