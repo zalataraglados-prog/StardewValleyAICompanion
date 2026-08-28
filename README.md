@@ -16,7 +16,7 @@ Phase 1A: Transparent Read-Only Bridge + Typed Planning Preview
 - `schemas/json`：版本化接口合同。
 - `docs`：蓝图源文件和工程笔记。
 
-第一版只允许 `observer + planner`。禁止自动执行、键鼠模拟、OCR、截图推断、直接读写存档、直接读进程内存，以及绕过 MOD 获取游戏事实。
+第一版只允许 `observer + planner`。
 
 ## 本地环境
 
