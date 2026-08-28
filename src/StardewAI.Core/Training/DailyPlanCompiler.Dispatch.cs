@@ -63,6 +63,7 @@ namespace StardewAI.Core.Training
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
                 ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
                 ["world.play_singing_stone"] = new[] { "play_singing_stone" },
+                ["farming.read_farm_computer_report"] = new[] { "read_farm_computer_report" },
                 ["farming.collect_slime_ball"] = new[] { "collect_slime_ball" },
                 ["animals.withdraw_feed_hopper_hay"] = new[] { "withdraw_feed_hopper_hay" },
                 ["animals.collect_auto_grabber_contents"] = new[] { "collect_auto_grabber_contents" },
@@ -337,6 +338,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return SingingStoneSteps(candidate);
+            }
+
+            if (candidate.Kind == "read_farm_computer_report" &&
+                OptionCandidateCompilerKinds["farming.read_farm_computer_report"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return FarmComputerReportSteps(candidate);
             }
 
             if (candidate.Kind == "collect_slime_ball" &&

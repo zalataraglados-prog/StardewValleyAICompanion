@@ -15,6 +15,7 @@ static partial class Program
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
             "movement.use_mini_obelisk" => "mini_obelisk",
+            "farming.read_farm_computer_report" => "farm_computer",
             _ => string.Empty
         };
         if (kind.Length == 0)
@@ -75,6 +76,24 @@ static partial class Program
         request.MiniObeliskLandingTileY = ReadQueueParameterInt(item, "mini_obelisk_landing_tile_y");
         request.MiniObeliskExpectedDelayMilliseconds = ReadQueueParameterInt(item, "mini_obelisk_expected_delay_milliseconds");
         request.MiniObeliskExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "mini_obelisk_expected_location_action_return");
+        request.FarmComputerSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        request.FarmComputerRootLocationId = ReadQueueParameterString(item, "farm_computer_root_location_id");
+        request.FarmComputerIncludesHay = ReadNullableBoolQueueParameter(item, "farm_computer_includes_hay");
+        request.FarmComputerPiecesOfHay = ReadQueueParameterInt(item, "farm_computer_pieces_of_hay");
+        request.FarmComputerHayCapacity = ReadQueueParameterInt(item, "farm_computer_hay_capacity");
+        request.FarmComputerTotalCrops = ReadQueueParameterInt(item, "farm_computer_total_crops");
+        request.FarmComputerCropsReady = ReadQueueParameterInt(item, "farm_computer_crops_ready");
+        request.FarmComputerUnwateredCrops = ReadQueueParameterInt(item, "farm_computer_unwatered_crops");
+        request.FarmComputerGreenhouseCropsReady = ReadQueueParameterInt(item, "farm_computer_greenhouse_crops_ready");
+        request.FarmComputerOpenHoeDirt = ReadQueueParameterInt(item, "farm_computer_open_hoe_dirt");
+        request.FarmComputerTotalForage = ReadQueueParameterInt(item, "farm_computer_total_forage");
+        request.FarmComputerMachinesReady = ReadQueueParameterInt(item, "farm_computer_machines_ready");
+        request.FarmComputerFarmCaveReady = ReadNullableBoolQueueParameter(item, "farm_computer_farm_cave_ready");
+        request.FarmComputerReportSha256 = ReadQueueParameterString(item, "farm_computer_report_sha256");
+        request.FarmComputerExpectedDelayMs = ReadQueueParameterInt(item, "farm_computer_expected_delay_ms");
+        request.FarmComputerExpectedShakeTimer = ReadQueueParameterInt(item, "farm_computer_expected_shake_timer");
+        request.FarmComputerExpectedFreezeMs = ReadQueueParameterInt(item, "farm_computer_expected_freeze_ms");
+        request.FarmComputerExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "farm_computer_expected_location_action_return");
 
         request.NativeObjectPayload = new NativeObjectExecutionPayload
         {
@@ -174,6 +193,28 @@ static partial class Program
                     LandingTileY = request.MiniObeliskLandingTileY,
                     ExpectedDelayMilliseconds = request.MiniObeliskExpectedDelayMilliseconds,
                     ExpectedLocationActionReturn = request.MiniObeliskExpectedLocationActionReturn
+                };
+                break;
+            case "farm_computer":
+                request.NativeObjectPayload.FarmComputer = new FarmComputerExecutionProjection
+                {
+                    RootLocationId = request.FarmComputerRootLocationId,
+                    IncludesHay = request.FarmComputerIncludesHay,
+                    PiecesOfHay = request.FarmComputerPiecesOfHay,
+                    HayCapacity = request.FarmComputerHayCapacity,
+                    TotalCrops = request.FarmComputerTotalCrops,
+                    CropsReady = request.FarmComputerCropsReady,
+                    UnwateredCrops = request.FarmComputerUnwateredCrops,
+                    GreenhouseCropsReady = request.FarmComputerGreenhouseCropsReady,
+                    OpenHoeDirt = request.FarmComputerOpenHoeDirt,
+                    TotalForage = request.FarmComputerTotalForage,
+                    MachinesReady = request.FarmComputerMachinesReady,
+                    FarmCaveReady = request.FarmComputerFarmCaveReady,
+                    ReportSha256 = request.FarmComputerReportSha256,
+                    ExpectedDelayMs = request.FarmComputerExpectedDelayMs,
+                    ExpectedShakeTimer = request.FarmComputerExpectedShakeTimer,
+                    ExpectedFreezeMs = request.FarmComputerExpectedFreezeMs,
+                    ExpectedLocationActionReturn = request.FarmComputerExpectedLocationActionReturn
                 };
                 break;
         }

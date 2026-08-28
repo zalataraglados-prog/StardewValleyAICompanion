@@ -265,6 +265,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("rewards.claim_statue_blessing", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("world.rotate_house_plant", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("world.play_singing_stone", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
+                P("farming.read_farm_computer_report", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("farming.collect_slime_ball", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("animals.withdraw_feed_hopper_hay", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("animals.collect_auto_grabber_contents", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),

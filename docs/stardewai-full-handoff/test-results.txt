@@ -1,3 +1,10 @@
+2026-08-29 EVD-280 native Farm Computer report
+- Locked 1.6.15 source audit PASS: exact base `(BC)239`, root-location aggregate sources, conditional greenhouse row, localized report construction, immediate `shakeTimer=500` / `freezePause=500`, 500ms delayed `DialogueBox`, and location-dependent placement semantics are covered.
+- Candidate/DailyPlan/compiler/governance tests PASS for explicit-player-only invocation, direct structured transparency, fresh mechanical/report-field rebind and stale-target/report rejection. The action is excluded from autonomous ranking and training admission.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-farm-computer/runtime-farm-computer-20260829-031326/summary.json`. One native action returned handled; immediate timers were 500, delayed menu was `DialogueBox`, report SHA-256 matched the transparent projection, object identity and selected slot were preserved, and only TransparentBridge plus RuntimeTestHarness were loaded.
+- KnowledgeCompiler generation PASS 585/585, blocking 0. Reconciliation: 152 registered / 197 semantic / 151 compiler-bound / 78 five-gate / 40 training allowlist / 45 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with blocking 0, plus 2 denominator-external compatibility placeholders.
+- Final regression PASS: Core 1866/1866; Backend 136/136; Release solution build 0 warnings / 0 errors. Next slice is `world.tune_flute_block`.
+
 2026-08-29 EVD-279 native Mini-Obelisk route calibration
 - Locked 1.6.15 decompile confirms raw `location.objects.Pairs` first-two `(BC)238` scan with `Vector2.Zero` sentinels, farther-endpoint selection with second-endpoint tie, down/left/right/up landing order, exact `IsTileBlockedBy(All,All)`, and native 50ms delayed teleport.
 - Transparent projection, upstream candidate, DailyPlan, fresh compiler rebind, typed v1/v2 request, one native runtime action and delayed receipt are closed. Production reuses `NativeObjectInteractionMovement`, never writes player position, and verifies exact landing, pair identity, farmer display and slot restore.

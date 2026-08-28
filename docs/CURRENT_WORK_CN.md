@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-280
+
+- `farming.read_farm_computer_report` 已闭合透明读取、显式玩家候选、DailyPlan、机械字段新鲜重绑定、动作编译、v1/v2 类型请求、原生延迟对话和报告摘要回执。锁定 1.6.15 反编译确认原生 `(BC)239` 以对象所在地点的 `GetRootLocation()` 为报告根，精确读取作物、空闲耕地、成熟/未浇水作物、温室、采集物、已完成机器、干草与农场洞穴状态。
+- 透明桥直接发布结构化报告字段及本地化原生报告 SHA-256；策略层无需打开菜单才能获知这些信息。该动作严格为 `PlayerCommandOnly`，仅显式玩家请求能生成，默认候选和训练 allowlist 均排除。
+- 生产运行复用唯一 `NativeObjectInteractionMovement`，到站后只调用一次 `GameLocation.checkAction`，等待原生 500ms 延迟生成 `DialogueBox`；不合成报告、不直接设置菜单，并验证对象身份、精确报告摘要和工具栏槽恢复。显式命令完成后保留报告供玩家阅读。
+- 隐藏、静音、E 盘隔离运行 `runtime-farm-computer-20260829-031326` 为 PASS：`native_handled=true`、即时 `shakeTimer=500`、`freezePause=500`、延迟菜单为 `DialogueBox`，报告摘要与透明投影一致，且只加载 TransparentBridge 与 RuntimeTestHarness。
+- 最新权威对账为 `152 registered / 197 semantic / 151 compiler-bound / 78 five-gate / 40 training allowlist / 45 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 为 `0`，另有 `2` 个分母外兼容占位。
+- 下一语义切片固定为 `world.tune_flute_block`：先实时反编译音高调整、输入方向与持久化语义，再确定 PlayerCommandOnly 边界；继续复用共享对象移动/交互，不复制第二套执行器。
+
 ## 2026-08-29 当前权威检查点：EVD-279
 
 - `movement.use_mini_obelisk` 已闭合透明读取、校准候选、DailyPlan、机械字段重绑定、动作编译、v1/v2 类型请求、原生运行和延迟传送回执。锁定 1.6.15 反编译确认原生分支按 `location.objects.Pairs` 的实际枚举顺序取前两个 `(BC)238`，以 `Vector2.Zero` 为哨兵；从交互站位选择欧氏距离更远的一端，平局取第二端，再按下、左、右、上的顺序选择第一个 `IsTileBlockedBy(All,All)==false` 落点。

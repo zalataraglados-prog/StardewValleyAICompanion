@@ -163,6 +163,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var feedHopperWithdrawal = ReadFeedHopperWithdrawal(location, tile, item, player);
         var autoGrabberCollection = ReadAutoGrabberCollection(location, tile, item, player);
         var miniObeliskUse = ReadMiniObeliskUse(location, tile, item);
+        var farmComputerReport = ReadFarmComputerReport(location, tile, item);
         return new
         {
             tile_x = (int)tile.X,
@@ -270,7 +271,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             singing_stone_interaction = singingStoneInteraction,
             feed_hopper_withdrawal = feedHopperWithdrawal,
             auto_grabber_collection = autoGrabberCollection,
-            mini_obelisk_use = miniObeliskUse
+            mini_obelisk_use = miniObeliskUse,
+            farm_computer_report = farmComputerReport
         };
     }
 

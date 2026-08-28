@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 Farm Computer 透明信息与训练边界（EVD-280）
+
+`farming.read_farm_computer_report` 已闭合五门执行证据，但训练 allowlist 保持 `40`。透明桥已经按原生根地点语义直接发布报告的全部结构化来源和精确本地化摘要，因此策略模型可直接使用这些状态；打开 Farm Computer 只服务显式玩家查看，不得制造“先读菜单才能决策”的训练依赖。
+
+运行时只复用共享移动器并调用一次原生地点交互，验证 500ms 延迟 `DialogueBox`、报告摘要、对象身份及槽位恢复。当前权威状态为 `152 registered / 197 semantic / 151 compiler-bound / 78 five-gate / 45 catalogued blocked / 0 Product Executor`。该切片减少一个执行缺口，但不解除 Product Executor、剩余 45 个动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻塞。
+
 ## 2026-08-29 Mini-Obelisk 校准边界（EVD-279）
 
 `movement.use_mini_obelisk` 已闭合五门执行证据，但不增加训练 allowlist。它的作用是校准“机械路由原语能否严格复刻原生配对、目标和落点”，而不是让策略模型学习是否想传送。默认策略候选排除该动作；只有显式启用执行器校准候选时才发布，运行结果标记为 `executor_calibration_only_not_strategy_desire`，数据清洗不得把成功、耗时或落点当作策略偏好标签。

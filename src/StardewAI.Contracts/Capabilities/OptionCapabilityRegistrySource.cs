@@ -249,6 +249,10 @@ namespace StardewAI.Contracts.Capabilities
                         autonomous: false, playerCommandOnly: true,
                         "vanilla_exact_base_(BC)94_shared_rng_uniform_crystal_pitch_distribution_native_location_object_interaction_shake_timer_identity_and_selected_slot_receipt",
                         "EVD-274"),
+                    ["farming.read_farm_computer_report"] = NativeObjectSeed(
+                        autonomous: false, playerCommandOnly: true,
+                        "vanilla_exact_base_(BC)239_root_location_native_aggregate_localized_report_native_delayed_dialogue_identity_and_selected_slot_receipt",
+                        "EVD-280"),
                     ["farming.collect_slime_ball"] = NativeObjectSeed(
                         autonomous: true, playerCommandOnly: false,
                         "vanilla_exact_SlimeHutch_base_fragility_2_slime_ball_seeded_slime_and_petrified_slime_projection_native_location_action_object_removal_conserved_inventory_plus_debris_output_and_shared_pickup_handoff",
@@ -724,6 +728,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("claim_statue_blessing"),
                 SupportedCandidate("rotate_house_plant"),
                 SupportedCandidate("play_singing_stone"),
+                SupportedCandidate("read_farm_computer_report"),
                 SupportedCandidate("collect_slime_ball"),
                 SupportedCandidate("withdraw_feed_hopper_hay"),
                 SupportedCandidate("collect_auto_grabber_contents"),

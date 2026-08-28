@@ -13,6 +13,7 @@ public sealed partial class ModEntry
         TickFeedHopperWithdrawal();
         TickAutoGrabberCollection();
         TickMiniObeliskUse();
+        TickFarmComputerReport();
     }
 
     private void ResetNativeObjectInteractionDomain()
@@ -23,6 +24,7 @@ public sealed partial class ModEntry
             nativeObjectInteractions.FeedHopper?.RestoreSlotIndex ??
             nativeObjectInteractions.AutoGrabber?.RestoreSlotIndex ??
             nativeObjectInteractions.MiniObelisk?.RestoreSlotIndex;
+        restoreSlot ??= nativeObjectInteractions.FarmComputer?.RestoreSlotIndex;
 
         nativeObjectInteractions.HousePlant = null;
         nativeObjectInteractions.SingingStone = null;
@@ -30,6 +32,7 @@ public sealed partial class ModEntry
         nativeObjectInteractions.FeedHopper = null;
         nativeObjectInteractions.AutoGrabber = null;
         nativeObjectInteractions.MiniObelisk = null;
+        nativeObjectInteractions.FarmComputer = null;
 
         if (restoreSlot is int slot && Context.IsWorldReady)
             Game1.player.CurrentToolIndex = slot;
@@ -43,6 +46,7 @@ public sealed partial class ModEntry
         public ActiveFeedHopperWithdrawal? FeedHopper { get; set; }
         public ActiveAutoGrabberCollection? AutoGrabber { get; set; }
         public ActiveMiniObeliskUse? MiniObelisk { get; set; }
+        public ActiveFarmComputer? FarmComputer { get; set; }
 
         public bool IsActive =>
             HousePlant is not null ||
@@ -50,6 +54,7 @@ public sealed partial class ModEntry
             SlimeBall is not null ||
             FeedHopper is not null ||
             AutoGrabber is not null ||
-            MiniObelisk is not null;
+            MiniObelisk is not null ||
+            FarmComputer is not null;
     }
 }

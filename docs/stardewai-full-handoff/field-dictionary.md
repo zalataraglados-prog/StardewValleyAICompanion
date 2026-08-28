@@ -18,6 +18,13 @@ Status values:
 | `OptionAvailabilityCandidate.InvocationSource` | Prove that a player-command-only request actually came from the explicit player command surface | availability evaluator and `SafetyPolicyGate` | n/a | covered_for_gate / explicit_player_command_required | `Unknown` and `Policy` are rejected for `PlayerCommandOnly`; only `PlayerCommand` may continue to the existing confirmation and runtime gates. `InternalCompiler` is not a bypass. |
 | `TrainingAdmissionExclusionReason.PlayerCommandOnly` | Prevent executable decoration/layout actions from contaminating strategy training | capability registry v3, KnowledgeCompiler manifest, dataset admission filter | n/a | covered_for_training_exclusion / typed_reason_required | Runtime evidence remains useful for executor verification but its training evidence scope is `not_admitted`. Current IDs cover building appearance, House Plant rotation, Singing Stone playback, furniture placement, sign display assignment and text editing. |
 
+## Farm Computer Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.objects[].farm_computer_report` | Publish the complete location-dependent Farm Computer state without requiring policy code to open or parse a menu | locked 1.6.15 `Object.CheckForActionOnFarmComputer`, `ShowFarmComputerReport` and native aggregate getters; live object/location/farm state | Official Farm Computer page confirms the report is location-dependent and the object can be placed outside the Farm | covered_for_read / root_location_exact / localized_digest | Publishes crops, open hoe dirt, ready/unwatered crops, conditional greenhouse crops, forage, ready machines, hay/capacity, cave readiness, exact native timing and localized report SHA-256. |
+| `farming.read_farm_computer_report` | Compile one explicit player request into shared movement and exactly one native delayed report action | DailyPlan/compiler, `NativeObjectInteractionMovement`, runtime harness | Official player-facing report behavior used only as secondary confirmation | covered_for_compile_rebind / five_gate_closed_EVD_280 / training_excluded_player_command_only | Compiler rebinds every mechanical and report field from a fresh snapshot. Runtime waits for the native `DialogueBox`; production does not synthesize a report or mutate the menu. |
+
 ## Singing Stone Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

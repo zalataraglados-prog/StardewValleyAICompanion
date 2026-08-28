@@ -1,5 +1,13 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 Farm Computer 原生报告闭环（EVD-280）
+
+`farming.read_farm_computer_report` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。透明桥按锁定 1.6.15 的 `GetRootLocation()` 语义直接发布作物、耕地、成熟/未浇水作物、温室、采集物、机器、干草和农场洞穴字段，同时发布精确本地化报告摘要；模型不需要通过菜单读取策略信息。
+
+该动作归类为 `PlayerCommandOnly`。生产执行复用共享对象移动器并只发起一次原生地点交互，等待 500ms 原生回调后验证 `DialogueBox` 和报告 SHA-256，不自行拼接菜单或修改对象。隐藏静音 E 盘运行 `runtime-farm-computer-20260829-031326` 已验证即时摇动/冻结、延迟报告、对象身份和槽位恢复。当前对账为 `152 registered / 197 semantic / 151 compiler-bound / 78 five-gate / 40 allowlist / 45 catalogued blocked / 0 Product Executor`。
+
+下一纵向切片固定为 `world.tune_flute_block`。必须先从锁定反编译源确认调音方向、音高边界、持久化字段和原生可观测结果；若属于装饰/玩家表达，只建立显式命令执行闭环，不得进入自主策略候选或训练。
+
 ## 2026-08-29 Mini-Obelisk 原生路由闭环（EVD-279）
 
 `movement.use_mini_obelisk` 已完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。它只与其他静态对象动作共享 `NativeObjectInteractionMovement` 和 BFS；配对扫描、距离判定、落点顺序、50ms 原生延迟和传送回执均为独立合同。原生容器顺序必须实时读取，不能把测试夹具的赋值顺序当成 `location.objects.Pairs` 顺序。生产执行只发起一次 `GameLocation.checkAction`，不直接改角色坐标。

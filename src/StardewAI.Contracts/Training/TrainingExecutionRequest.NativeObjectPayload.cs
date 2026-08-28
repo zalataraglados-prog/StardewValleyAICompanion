@@ -79,6 +79,10 @@ public sealed class NativeObjectExecutionPayload
     [JsonPropertyName("mini_obelisk")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MiniObeliskExecutionProjection? MiniObelisk { get; set; }
+
+    [JsonPropertyName("farm_computer")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FarmComputerExecutionProjection? FarmComputer { get; set; }
 }
 
 public sealed class HousePlantExecutionProjection
@@ -153,5 +157,26 @@ public sealed class MiniObeliskExecutionProjection
     public int? LandingTileX { get; set; }
     public int? LandingTileY { get; set; }
     public int? ExpectedDelayMilliseconds { get; set; }
+    public bool? ExpectedLocationActionReturn { get; set; }
+}
+
+public sealed class FarmComputerExecutionProjection
+{
+    public string RootLocationId { get; set; } = string.Empty;
+    public bool? IncludesHay { get; set; }
+    public int? PiecesOfHay { get; set; }
+    public int? HayCapacity { get; set; }
+    public int? TotalCrops { get; set; }
+    public int? CropsReady { get; set; }
+    public int? UnwateredCrops { get; set; }
+    public int? GreenhouseCropsReady { get; set; }
+    public int? OpenHoeDirt { get; set; }
+    public int? TotalForage { get; set; }
+    public int? MachinesReady { get; set; }
+    public bool? FarmCaveReady { get; set; }
+    public string ReportSha256 { get; set; } = string.Empty;
+    public int? ExpectedDelayMs { get; set; }
+    public int? ExpectedShakeTimer { get; set; }
+    public int? ExpectedFreezeMs { get; set; }
     public bool? ExpectedLocationActionReturn { get; set; }
 }

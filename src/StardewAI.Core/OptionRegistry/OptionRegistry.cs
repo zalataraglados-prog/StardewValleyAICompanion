@@ -492,6 +492,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact base (BC)94 Singing Stone and adjacent stand selected", "compiler binds a safe toolbar slot and the complete native pitch distribution", "one native GameLocation.checkAction emits the crystal sound and sets shakeTimer to 100", "object identity and selected toolbar slot are preserved" },
                 new[] { "block_not_explicitly_authorized", "block_non_base_or_non_singing_stone_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_object_or_distribution_projection_drift", "never_guess_exact_shared_rng_pitch" }));
 
+            Register(Option("farming.read_farm_computer_report", "farming", "Open one exact Farm Computer native report for an explicit player request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "current_location.objects", "menus.active_menu" },
+                new[] { "transparent bridge publishes the exact native root-location aggregate and localized report", "compiler rebinds one exact base (BC)239 object and adjacent stand", "one native GameLocation.checkAction opens the delayed DialogueBox", "runtime verifies the exact report digest while preserving object identity and selected toolbar slot" },
+                new[] { "block_not_explicitly_authorized", "block_non_base_or_non_farm_computer_object", "block_no_safe_toolbar_slot", "block_no_adjacent_stand", "block_menu_or_player_busy", "block_root_aggregate_or_report_projection_drift", "never_require_menu_read_for_strategy_information" }));
+
             Register(Option("mining.acquire_golden_scythe", "mining", "Acquire the Golden Scythe from the Quarry Mine side branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

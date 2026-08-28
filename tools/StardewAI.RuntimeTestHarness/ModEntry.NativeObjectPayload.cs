@@ -26,6 +26,7 @@ public sealed partial class ModEntry
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
             "movement.use_mini_obelisk" => "mini_obelisk",
+            "farming.read_farm_computer_report" => "farm_computer",
             _ => string.Empty
         };
         if (expectedKind.Length == 0 || !string.Equals(payload.Kind, expectedKind, StringComparison.Ordinal))
@@ -36,7 +37,8 @@ public sealed partial class ModEntry
         var projectionCount = new object?[]
         {
             payload.HousePlant, payload.SingingStone, payload.SlimeBall,
-            payload.FeedHopper, payload.AutoGrabber, payload.MiniObelisk
+            payload.FeedHopper, payload.AutoGrabber, payload.MiniObelisk,
+            payload.FarmComputer
         }.Count(value => value is not null);
         if (projectionCount != 1)
         {
@@ -51,6 +53,7 @@ public sealed partial class ModEntry
             "feed_hopper" => payload.FeedHopper is not null,
             "auto_grabber" => payload.AutoGrabber is not null,
             "mini_obelisk" => payload.MiniObelisk is not null,
+            "farm_computer" => payload.FarmComputer is not null,
             _ => false
         };
         if (!projectionMatchesKind)
@@ -144,6 +147,27 @@ public sealed partial class ModEntry
             request.MiniObeliskLandingTileY = miniObelisk.LandingTileY;
             request.MiniObeliskExpectedDelayMilliseconds = miniObelisk.ExpectedDelayMilliseconds;
             request.MiniObeliskExpectedLocationActionReturn = miniObelisk.ExpectedLocationActionReturn;
+        }
+        if (payload.FarmComputer is { } farmComputer)
+        {
+            request.FarmComputerSafeSlotKind = payload.SafeSlotKind;
+            request.FarmComputerRootLocationId = farmComputer.RootLocationId;
+            request.FarmComputerIncludesHay = farmComputer.IncludesHay;
+            request.FarmComputerPiecesOfHay = farmComputer.PiecesOfHay;
+            request.FarmComputerHayCapacity = farmComputer.HayCapacity;
+            request.FarmComputerTotalCrops = farmComputer.TotalCrops;
+            request.FarmComputerCropsReady = farmComputer.CropsReady;
+            request.FarmComputerUnwateredCrops = farmComputer.UnwateredCrops;
+            request.FarmComputerGreenhouseCropsReady = farmComputer.GreenhouseCropsReady;
+            request.FarmComputerOpenHoeDirt = farmComputer.OpenHoeDirt;
+            request.FarmComputerTotalForage = farmComputer.TotalForage;
+            request.FarmComputerMachinesReady = farmComputer.MachinesReady;
+            request.FarmComputerFarmCaveReady = farmComputer.FarmCaveReady;
+            request.FarmComputerReportSha256 = farmComputer.ReportSha256;
+            request.FarmComputerExpectedDelayMs = farmComputer.ExpectedDelayMs;
+            request.FarmComputerExpectedShakeTimer = farmComputer.ExpectedShakeTimer;
+            request.FarmComputerExpectedFreezeMs = farmComputer.ExpectedFreezeMs;
+            request.FarmComputerExpectedLocationActionReturn = farmComputer.ExpectedLocationActionReturn;
         }
         return true;
     }

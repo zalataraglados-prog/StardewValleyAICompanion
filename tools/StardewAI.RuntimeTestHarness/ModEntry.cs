@@ -1487,6 +1487,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "farming.read_farm_computer_report")
+            {
+                StartFarmComputerReport(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_farm_computer")
+            {
+                pending.Completion.SetResult(ExecuteSetupFarmComputerFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_mini_obelisk")
             {
                 pending.Completion.SetResult(ExecuteSetupMiniObeliskFixture(pending.Request));
