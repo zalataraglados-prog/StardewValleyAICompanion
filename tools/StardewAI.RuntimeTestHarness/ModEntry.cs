@@ -104,6 +104,7 @@ public sealed partial class ModEntry : Mod
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
     private ActiveHousePlantRotation? activeHousePlantRotation;
+    private ActiveSingingStone? activeSingingStone;
     private ActiveSlimeBallCollection? activeSlimeBallCollection;
     private ActiveSpecialOrderBoardOpen? activeSpecialOrderBoardOpen;
     private ActiveQuestRewardClaim? activeQuestRewardClaim;
@@ -488,6 +489,7 @@ public sealed partial class ModEntry : Mod
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
         TickHousePlantRotation();
+        TickSingingStone();
         TickSlimeBallCollection();
         TickSpecialOrderBoardOpen();
         TickQuestRewardClaimSafely();
@@ -1472,6 +1474,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_singing_stone")
+            {
+                pending.Completion.SetResult(ExecuteSetupSingingStoneFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "world.play_singing_stone")
+            {
+                StartSingingStone(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "farming.collect_slime_ball")
             {
                 StartSlimeBallCollection(pending);
@@ -1629,6 +1643,11 @@ public sealed partial class ModEntry : Mod
             {
                 Game1.player.CurrentToolIndex = activeHousePlantRotation.RestoreSlotIndex;
                 activeHousePlantRotation = null;
+            }
+            if (activeSingingStone is not null)
+            {
+                Game1.player.CurrentToolIndex = activeSingingStone.RestoreSlotIndex;
+                activeSingingStone = null;
             }
             if (activeSlimeBallCollection is not null)
             {
@@ -1869,6 +1888,7 @@ public sealed partial class ModEntry : Mod
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
             activeHousePlantRotation is not null ||
+            activeSingingStone is not null ||
             activeSlimeBallCollection is not null ||
             activeSpecialOrderBoardOpen is not null ||
             activeQuestRewardClaim is not null;

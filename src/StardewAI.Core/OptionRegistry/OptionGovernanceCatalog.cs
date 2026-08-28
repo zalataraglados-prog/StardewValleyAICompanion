@@ -264,6 +264,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("mining.choose_dwarf_statue_power", C, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("rewards.claim_statue_blessing", Primitive, R1, None, NoConfirm, Actor, ActorState, Allowed),
                 P("world.rotate_house_plant", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
+                P("world.play_singing_stone", Primitive, R1, None, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("farming.collect_slime_ball", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("mining.acquire_golden_scythe", C, R4, Asset, ExplicitConfirm, Actor, ActorState, Explicit),
                 P("volcano.reach_caldera", C, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),

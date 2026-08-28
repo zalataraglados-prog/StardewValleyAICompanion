@@ -159,6 +159,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var sign = ReadSignState(location, tile, item, player);
         var housePlantRotation = ReadHousePlantRotation(location, tile, item);
         var slimeBallCollection = ReadSlimeBallCollection(location, tile, item);
+        var singingStoneInteraction = ReadSingingStoneInteraction(location, tile, item);
         return new
         {
             tile_x = (int)tile.X,
@@ -262,7 +263,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             fence_state = fence,
             sign_state = sign,
             house_plant_rotation = housePlantRotation,
-            slime_ball_collection = slimeBallCollection
+            slime_ball_collection = slimeBallCollection,
+            singing_stone_interaction = singingStoneInteraction
         };
     }
 

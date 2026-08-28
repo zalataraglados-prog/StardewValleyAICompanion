@@ -62,6 +62,7 @@ namespace StardewAI.Core.Training
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
                 ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
+                ["world.play_singing_stone"] = new[] { "play_singing_stone" },
                 ["farming.collect_slime_ball"] = new[] { "collect_slime_ball" },
                 ["mining.use_elevator"] = new[] { "route_connector_tile", "mine_elevator_approach", "open_mine_elevator", "select_mine_elevator_floor" },
                 ["skills.read_books"] = new[] { "read_inventory_book" },
@@ -325,6 +326,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return HousePlantRotationSteps(candidate);
+            }
+
+            if (candidate.Kind == "play_singing_stone" &&
+                OptionCandidateCompilerKinds["world.play_singing_stone"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return SingingStoneSteps(candidate);
             }
 
             if (candidate.Kind == "collect_slime_ball" &&

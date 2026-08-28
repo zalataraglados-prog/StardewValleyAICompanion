@@ -666,6 +666,20 @@ static partial class Program
             out var parsedHousePlantExpectedLocationActionReturn)
                 ? parsedHousePlantExpectedLocationActionReturn
                 : (bool?)null;
+        var singingStoneSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        var singingStoneSoundName = ReadQueueParameterString(item, "singing_stone_sound_name");
+        var singingStonePitchRngSource = ReadQueueParameterString(item, "singing_stone_pitch_rng_source");
+        var singingStoneExactNextPitchStatus = ReadQueueParameterString(item, "singing_stone_exact_next_pitch_status");
+        var singingStonePitchMin = ReadQueueParameterInt(item, "singing_stone_pitch_min");
+        var singingStonePitchMax = ReadQueueParameterInt(item, "singing_stone_pitch_max");
+        var singingStonePitchStep = ReadQueueParameterInt(item, "singing_stone_pitch_step");
+        var singingStonePitchOutcomeCount = ReadQueueParameterInt(item, "singing_stone_pitch_outcome_count");
+        var singingStoneExpectedShakeTimer = ReadQueueParameterInt(item, "singing_stone_expected_shake_timer");
+        var singingStoneExpectedLocationActionReturn = bool.TryParse(
+            ReadQueueParameterString(item, "singing_stone_expected_location_action_return"),
+            out var parsedSingingStoneExpectedLocationActionReturn)
+                ? parsedSingingStoneExpectedLocationActionReturn
+                : (bool?)null;
         var requiredFragility = ReadQueueParameterInt(item, "required_fragility");
         var slimeBallSeedDaysPlayed = ReadQueueParameterInt(item, "slime_ball_seed_days_played");
         var slimeBallSeedUniqueGameId = ReadQueueParameterLong(item, "slime_ball_seed_unique_game_id");
@@ -1170,6 +1184,16 @@ static partial class Program
         executionRequest.HousePlantExpectedSpriteIndex = housePlantExpectedSpriteIndex;
         executionRequest.HousePlantExpectedObjectActionCalls = housePlantExpectedObjectActionCalls;
         executionRequest.HousePlantExpectedLocationActionReturn = housePlantExpectedLocationActionReturn;
+        executionRequest.SingingStoneSafeSlotKind = singingStoneSafeSlotKind;
+        executionRequest.SingingStoneSoundName = singingStoneSoundName;
+        executionRequest.SingingStonePitchRngSource = singingStonePitchRngSource;
+        executionRequest.SingingStoneExactNextPitchStatus = singingStoneExactNextPitchStatus;
+        executionRequest.SingingStonePitchMin = singingStonePitchMin;
+        executionRequest.SingingStonePitchMax = singingStonePitchMax;
+        executionRequest.SingingStonePitchStep = singingStonePitchStep;
+        executionRequest.SingingStonePitchOutcomeCount = singingStonePitchOutcomeCount;
+        executionRequest.SingingStoneExpectedShakeTimer = singingStoneExpectedShakeTimer;
+        executionRequest.SingingStoneExpectedLocationActionReturn = singingStoneExpectedLocationActionReturn;
         executionRequest.RequiredFragility = requiredFragility;
         executionRequest.SlimeBallSeedDaysPlayed = slimeBallSeedDaysPlayed;
         executionRequest.SlimeBallSeedUniqueGameId = slimeBallSeedUniqueGameId;

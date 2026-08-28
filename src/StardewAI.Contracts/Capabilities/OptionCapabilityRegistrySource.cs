@@ -205,7 +205,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farming.collect_slime_ball", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "farming.collect_slime_ball", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "world.play_singing_stone", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -238,7 +238,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
-            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball", "executor.buy_shop_item",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "world.play_singing_stone", "farming.collect_slime_ball", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "inventory.transfer_item", "executor.transfer_material");
 
@@ -252,7 +252,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
             "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
-            "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball", "executor.collect_crab_pot",
+            "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "world.play_singing_stone", "farming.collect_slime_ball", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.donate_community_center_item",
@@ -278,7 +278,7 @@ namespace StardewAI.Contracts.Capabilities
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
             "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
-            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "farming.collect_slime_ball",
+            "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "world.play_singing_stone", "farming.collect_slime_ball",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
@@ -311,7 +311,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
             "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe", "social.advance_partnership",
-            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant",
+            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant", "world.play_singing_stone",
             "executor.change_building_skin", "executor.place_furniture",
             "executor.set_sign_display_item", "executor.edit_text_sign",
             "executor.choose_dialogue_response", "executor.donate_museum_item",
@@ -319,7 +319,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building");
 
         private static readonly HashSet<string> PlayerCommandOnlyIds = Set(
-            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant",
+            "buildings.change_skin", "buildings.paint", "world.rotate_house_plant", "world.play_singing_stone",
             "executor.change_building_skin", "executor.place_furniture",
             "executor.set_sign_display_item", "executor.edit_text_sign");
 
@@ -342,7 +342,7 @@ namespace StardewAI.Contracts.Capabilities
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
             "foraging.pan_ore_spot", "mining.reach_depth", "mining.use_elevator", "mining.obtain_skull_key",
-            "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "mining.acquire_golden_scythe",
+            "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "world.rotate_house_plant", "world.play_singing_stone", "mining.acquire_golden_scythe",
             "volcano.reach_caldera", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.buy_shop_item", "executor.sell_shop_item",
@@ -586,6 +586,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["world.rotate_house_plant"] = VerifiedEvidence(
                         "vanilla_all_eight_base_house_plant_visual_frames_empty_hand_native_location_object_interaction_double_call_edge_permanent_identity_and_selected_slot_receipt",
                         "EVD-271"),
+                    ["world.play_singing_stone"] = VerifiedEvidence(
+                        "vanilla_exact_base_(BC)94_shared_rng_uniform_crystal_pitch_distribution_native_location_object_interaction_shake_timer_identity_and_selected_slot_receipt",
+                        "EVD-274"),
                     ["farming.collect_slime_ball"] = VerifiedEvidence(
                         "vanilla_exact_SlimeHutch_base_fragility_2_slime_ball_seeded_slime_and_petrified_slime_projection_native_location_action_object_removal_conserved_inventory_plus_debris_output_and_shared_pickup_handoff",
                         "EVD-272"),
@@ -665,6 +668,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("choose_dwarf_statue_power"),
                 SupportedCandidate("claim_statue_blessing"),
                 SupportedCandidate("rotate_house_plant"),
+                SupportedCandidate("play_singing_stone"),
                 SupportedCandidate("collect_slime_ball"),
                 SupportedCandidate("clear_farm_resource_clump"),
                 SupportedCandidate("clear_green_rain_resource_clump"),

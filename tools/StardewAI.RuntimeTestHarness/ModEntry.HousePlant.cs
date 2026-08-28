@@ -135,64 +135,16 @@ public sealed partial class ModEntry
         {
             return;
         }
-        active.ElapsedTicks++;
-        if (!Context.IsWorldReady || !ReferenceEquals(Game1.currentLocation, active.Location))
+        var movement = AdvanceNativeObjectInteractionMovement(active, "house_plant", out var movementFailure);
+        if (movement == NativeObjectMovementStatus.Failed)
         {
-            CompleteHousePlantRotation(active, false, "house_plant_location_changed");
+            CompleteHousePlantRotation(active, false, movementFailure);
             return;
         }
-        if (active.ElapsedTicks > active.MaxTicks)
-        {
-            CompleteHousePlantRotation(active, false, "house_plant_timeout");
+        if (movement == NativeObjectMovementStatus.Moving)
             return;
-        }
 
         var playerTile = Game1.player.TilePoint;
-        if (playerTile != active.LastObservedTile)
-        {
-            active.MovementTiles += ManhattanDistance(active.LastObservedTile, playerTile);
-            active.LastObservedTile = playerTile;
-        }
-        if (active.MovementTiles > active.MaxMovementTiles)
-        {
-            CompleteHousePlantRotation(active, false, "house_plant_movement_budget_exceeded");
-            return;
-        }
-        if (playerTile != active.Stand)
-        {
-            if (active.PathIndex >= active.Path.Count)
-            {
-                CompleteHousePlantRotation(active, false, "house_plant_path_exhausted");
-                return;
-            }
-            var next = active.Path[active.PathIndex];
-            if (playerTile == next)
-            {
-                active.PathIndex++;
-                return;
-            }
-            if (!IsTileWalkable(active.Location, next) || IsTileOccupiedByCharacter(active.Location, next))
-            {
-                CompleteHousePlantRotation(active, false, "house_plant_dynamic_path_blocked");
-                return;
-            }
-            var moved = Vector2.DistanceSquared(active.LastPosition, Game1.player.Position) >= 0.01f;
-            active.LastPosition = Game1.player.Position;
-            StartMoving(DirectionTo(playerTile, next));
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                active.PathIndex++;
-            }
-            active.StuckTicks = moved ? 0 : active.StuckTicks + 1;
-            if (active.StuckTicks > 45)
-            {
-                CompleteHousePlantRotation(active, false, "house_plant_movement_stuck");
-            }
-            return;
-        }
-
-        StopAllMovement();
         if (!active.Location.objects.TryGetValue(active.Target.ToVector2(), out var currentPlant) ||
             !ReferenceEquals(currentPlant, active.Plant) ||
             currentPlant.ParentSheetIndex != active.BeforeSpriteIndex ||
@@ -322,7 +274,7 @@ public sealed partial class ModEntry
             location.objects.TryGetValue(tile.ToVector2(), out var item) &&
             !item.isPassable());
 
-    private sealed class ActiveHousePlantRotation
+    private sealed class ActiveHousePlantRotation : INativeObjectInteractionMovement
     {
         public ActiveHousePlantRotation(PendingExecution pending, GameLocation location, StardewObject plant,
             Point target, Point stand, List<Point> path, int maxMovementTiles)

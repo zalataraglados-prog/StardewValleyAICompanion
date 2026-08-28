@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-28 声音石玩家指令闭环（EVD-274）
+
+`world.play_singing_stone` 已从冻结待办分母替换为唯一实现，但它不是自主策略能力。目标必须是当前已加载地点中的精确基础 `(BC)94`；同名家具 `(F)1300`、子类或身份漂移均失败关闭。透明桥发布原生 `crystal` 音高的完整均匀分布 `0..2300 step 100`、共享 RNG 不可预读状态、`shakeTimer=100`、相邻安全站位和对象身份。小模型只在玩家明确要求时选择目标石头，编译器重绑全部机械字段。
+
+执行器与 House Plant 共用同一个原生静态对象移动状态机，到站后只调用一次 `GameLocation.checkAction`；生产路径不直接发声、不写震动计时器、不消费共享 RNG。隐藏静音 E 盘运行验证对象身份、原生返回、震动计时器和工具栏槽恢复。该动作保持 `PlayerCommandOnly`、不发布默认候选、不进入训练 allowlist。当前对账为 `148 registered / 199 semantic / 147 compiler-bound / 74 five-gate / 38 allowlist / 51 catalogued blocked / 0 Product Executor`；下一闭环为 `animals.withdraw_feed_hopper_hay`，优先复用唯一库存转移引擎。
+
 ## 计划权威与当前执行顺序（2026-08-01 修正）
 
 本文件是唯一的人类可读总计划。`docs/CURRENT_WORK_CN.md` 只记录当前切片；

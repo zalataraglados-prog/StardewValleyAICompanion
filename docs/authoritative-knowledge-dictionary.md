@@ -113,8 +113,10 @@ Invocation policy is orthogonal to runtime capability. `PlayerCommandOnly` optio
 the semantic dictionary and may retain complete compiler/runtime evidence, but are excluded
 from default candidates and policy training. Only an availability request carrying
 `InvocationSource=PlayerCommand` may enter their existing confirmation and safety gates.
-Current examples include House Plant rotation, building appearance, furniture placement, and
-sign content changes. By contrast, EVD-272 admits exact natural Slime Ball collection because
+Current examples include House Plant rotation, Singing Stone playback, building appearance,
+furniture placement, and sign content changes. EVD-274 records the complete native Singing
+Stone pitch distribution but deliberately leaves the exact next shared-RNG pitch unavailable;
+executor evidence for that action is not policy-training evidence. By contrast, EVD-272 admits exact natural Slime Ball collection because
 the model chooses only a legal target while the compiler binds all RNG, movement, interaction,
 and output mechanics.
 The legacy `executor_enabled`

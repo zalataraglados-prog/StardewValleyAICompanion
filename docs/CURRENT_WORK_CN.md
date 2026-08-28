@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-08-28 当前权威检查点：EVD-274
+
+- `world.play_singing_stone` 已闭合透明读取、显式玩家指令候选、DailyPlan 表述、机械字段重绑定、动作编译、原生运行与回执。锁定 1.6.15 反编译确认目标是基础 `StardewValley.Object` `(BC)94`，不是同名家具 `(F)1300`；原生分支执行 `Game1.random.Next(2400)` 后向下取整到百位，均匀产生 `0..2300` 共 24 种 `crystal` 音高，并把 `shakeTimer` 设为 `100`。
+- `Game1.random` 是共享 RNG，透明桥只发布完整分布和 `unavailable_shared_rng_state_not_consumed`，不得读取、推进或猜测下一音高。候选只选择一个精确声音石；对象身份、相邻站位、安全工具栏槽、分布和原生契约全部由最新快照与编译器重绑定，坐标漂移时不得替换另一块石头。
+- 该动作严格为 `PlayerCommandOnly`：默认候选、自主日计划和策略训练全部排除，只有 `InvocationSource=PlayerCommand` 且显式确认后可进入已有授权链。运行证据的范围是 `player_command_only_executor_evidence`，不能反推训练准入。
+- 运行时与 House Plant 共用 `NativeObjectInteractionMovement`，保留原生动画/BFS，只调用一次 `GameLocation.checkAction`；生产代码不调用 `Game1.playSound`、不写 `shakeTimer=100`、不消费 RNG，并在交互前双检四向物体陷阱、目标身份、安全手持状态和槽位恢复。
+- 隐藏、静音、E 盘隔离运行 `runtime-singing-stone-20260828-102438` 为 PASS：`native_handled=true`、`shake_timer=100`、`item_id=94`、`qualified_item_id=(BC)94`，选中槽恢复；只加载 TransparentBridge 与 RuntimeTestHarness。
+- 权威对账为 `148 registered / 199 semantic / 147 compiler-bound / 74 five-gate / 38 training allowlist / 51 catalogued blocked / 0 Product Executor`；原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 均为 `0`，KnowledgeCompiler 为 `585/585`、blocking `0`。全量回归为 Core `1839/1839`、Backend `130/130`。
+- 下一语义切片固定为 `animals.withdraw_feed_hopper_hay`：先锁定饲料斗交互、库存/料槽容量与取草数量分支，再判断是否完全复用唯一库存转移引擎；不得从历史段落回退到已闭合声音石或复制第二套转移系统。
+
 ## 2026-08-27 当前权威检查点：EVD-272 / EVD-273
 
 - `farming.collect_slime_ball` 已闭合透明读取、逐对象候选、DailyPlan、机械字段重绑定、动作编译、原生运行与产物守恒回执。锁定 1.6.15 反编译确认自然史莱姆球必须是精确 `SlimeHutch` 中的基础 `StardewValley.Object`、`(BC)56`、`Fragility=2`；`CheckForActionOnSlimeBall` 先移除对象，再按 `DaysPlayed`、`uniqueIDForThisGame` 和目标格生成 `10..20` 个 `(O)766`，并按 `NextDouble()<0.33` 的几何分布生成 `(O)557`。

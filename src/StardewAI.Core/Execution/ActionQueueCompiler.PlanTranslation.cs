@@ -114,6 +114,7 @@ namespace StardewAI.Core.Execution
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "claim_statue_blessing" => "rewards.claim_statue_blessing",
                 "rotate_house_plant" => "world.rotate_house_plant",
+                "play_singing_stone" => "world.play_singing_stone",
                 "collect_slime_ball" => "farming.collect_slime_ball",
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",

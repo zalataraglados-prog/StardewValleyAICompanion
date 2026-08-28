@@ -52,6 +52,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.choose_dwarf_statue_power"] = (snapshot, _) => DwarfKingStatuePowerCandidates(snapshot),
                 ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),
                 ["world.rotate_house_plant"] = (snapshot, _) => HousePlantRotationCandidates(snapshot),
+                ["world.play_singing_stone"] = (snapshot, _) => SingingStoneCandidates(snapshot),
                 ["farming.collect_slime_ball"] = (snapshot, _) => SlimeBallCollectionCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
