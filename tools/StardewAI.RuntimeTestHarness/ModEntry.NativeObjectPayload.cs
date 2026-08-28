@@ -25,6 +25,7 @@ public sealed partial class ModEntry
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
+            "movement.use_mini_obelisk" => "mini_obelisk",
             _ => string.Empty
         };
         if (expectedKind.Length == 0 || !string.Equals(payload.Kind, expectedKind, StringComparison.Ordinal))
@@ -35,7 +36,7 @@ public sealed partial class ModEntry
         var projectionCount = new object?[]
         {
             payload.HousePlant, payload.SingingStone, payload.SlimeBall,
-            payload.FeedHopper, payload.AutoGrabber
+            payload.FeedHopper, payload.AutoGrabber, payload.MiniObelisk
         }.Count(value => value is not null);
         if (projectionCount != 1)
         {
@@ -49,6 +50,7 @@ public sealed partial class ModEntry
             "slime_ball" => payload.SlimeBall is not null,
             "feed_hopper" => payload.FeedHopper is not null,
             "auto_grabber" => payload.AutoGrabber is not null,
+            "mini_obelisk" => payload.MiniObelisk is not null,
             _ => false
         };
         if (!projectionMatchesKind)
@@ -127,6 +129,21 @@ public sealed partial class ModEntry
             request.AutoGrabberExpectedTransferQuantity = autoGrabber.ExpectedTransferQuantity;
             request.AutoGrabberExpectedQuantityAfter = autoGrabber.ExpectedQuantityAfter;
             request.AutoGrabberExpectedLocationActionReturn = autoGrabber.ExpectedLocationActionReturn;
+        }
+        if (payload.MiniObelisk is { } miniObelisk)
+        {
+            request.MiniObeliskSafeSlotKind = payload.SafeSlotKind;
+            request.MiniObeliskPairMemberIndex = miniObelisk.PairMemberIndex;
+            request.MiniObeliskPairFirstTileX = miniObelisk.PairFirstTileX;
+            request.MiniObeliskPairFirstTileY = miniObelisk.PairFirstTileY;
+            request.MiniObeliskPairSecondTileX = miniObelisk.PairSecondTileX;
+            request.MiniObeliskPairSecondTileY = miniObelisk.PairSecondTileY;
+            request.MiniObeliskDestinationTileX = miniObelisk.DestinationTileX;
+            request.MiniObeliskDestinationTileY = miniObelisk.DestinationTileY;
+            request.MiniObeliskLandingTileX = miniObelisk.LandingTileX;
+            request.MiniObeliskLandingTileY = miniObelisk.LandingTileY;
+            request.MiniObeliskExpectedDelayMilliseconds = miniObelisk.ExpectedDelayMilliseconds;
+            request.MiniObeliskExpectedLocationActionReturn = miniObelisk.ExpectedLocationActionReturn;
         }
         return true;
     }

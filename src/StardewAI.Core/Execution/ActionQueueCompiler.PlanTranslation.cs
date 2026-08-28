@@ -118,6 +118,7 @@ namespace StardewAI.Core.Execution
                 "collect_slime_ball" => "farming.collect_slime_ball",
                 "withdraw_feed_hopper_hay" => "animals.withdraw_feed_hopper_hay",
                 "collect_auto_grabber_contents" => "animals.collect_auto_grabber_contents",
+                "use_mini_obelisk" => "movement.use_mini_obelisk",
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",

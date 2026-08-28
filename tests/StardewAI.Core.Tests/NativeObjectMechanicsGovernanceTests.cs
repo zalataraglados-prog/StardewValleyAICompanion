@@ -8,7 +8,8 @@ public sealed class NativeObjectMechanicsGovernanceTests
         "SingingStone",
         "SlimeBall",
         "FeedHopper",
-        "AutoGrabber"
+        "AutoGrabber",
+        "MiniObelisk"
     };
 
     [Fact]
@@ -106,6 +107,25 @@ public sealed class NativeObjectMechanicsGovernanceTests
         Assert.Equal("native_object_execution_payload.v2", roundTrip.NativeObjectPayload?.SchemaVersion);
         Assert.Equal(17, roundTrip.NativeObjectPayload?.SlimeBall?.ExpectedSlimeQuantity);
 
+        var miniObelisk = new StardewAI.Contracts.Training.TrainingExecutionRequest
+        {
+            OptionId = "movement.use_mini_obelisk",
+            NativeObjectPayload = new StardewAI.Contracts.Training.NativeObjectExecutionPayload
+            {
+                Kind = "mini_obelisk",
+                MiniObelisk = new StardewAI.Contracts.Training.MiniObeliskExecutionProjection
+                {
+                    PairMemberIndex = 0,
+                    DestinationTileX = 30,
+                    LandingTileY = 31
+                }
+            }
+        };
+        var miniJson = System.Text.Json.JsonSerializer.Serialize(miniObelisk);
+        var miniRoundTrip = System.Text.Json.JsonSerializer.Deserialize<
+            StardewAI.Contracts.Training.TrainingExecutionRequest>(miniJson)!;
+        Assert.Equal(30, miniRoundTrip.NativeObjectPayload?.MiniObelisk?.DestinationTileX);
+
         var ingress = ReadRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.NativeObjectPayload.cs");
         Assert.Contains("if (payload is null)", ingress, StringComparison.Ordinal);
@@ -126,7 +146,8 @@ public sealed class NativeObjectMechanicsGovernanceTests
             "world.play_singing_stone",
             "farming.collect_slime_ball",
             "animals.withdraw_feed_hopper_hay",
-            "animals.collect_auto_grabber_contents"
+            "animals.collect_auto_grabber_contents",
+            "movement.use_mini_obelisk"
         };
 
         foreach (var optionId in optionIds)
@@ -142,7 +163,8 @@ public sealed class NativeObjectMechanicsGovernanceTests
             ["SingingStone"] = "singing_stone_native_receipt_mismatch",
             ["SlimeBall"] = "slime_ball_native_output_receipt_mismatch",
             ["FeedHopper"] = "feed_hopper_native_receipt_mismatch",
-            ["AutoGrabber"] = "auto_grabber_native_receipt_mismatch"
+            ["AutoGrabber"] = "auto_grabber_native_receipt_mismatch",
+            ["MiniObelisk"] = "mini_obelisk_native_action_return_mismatch"
         };
 
         foreach (var pair in expected)

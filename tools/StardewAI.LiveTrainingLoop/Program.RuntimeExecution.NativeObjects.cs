@@ -14,6 +14,7 @@ static partial class Program
             "farming.collect_slime_ball" => "slime_ball",
             "animals.withdraw_feed_hopper_hay" => "feed_hopper",
             "animals.collect_auto_grabber_contents" => "auto_grabber",
+            "movement.use_mini_obelisk" => "mini_obelisk",
             _ => string.Empty
         };
         if (kind.Length == 0)
@@ -62,6 +63,18 @@ static partial class Program
         request.AutoGrabberExpectedTransferQuantity = ReadQueueParameterInt(item, "auto_grabber_expected_transfer_quantity");
         request.AutoGrabberExpectedQuantityAfter = ReadQueueParameterInt(item, "auto_grabber_expected_quantity_after");
         request.AutoGrabberExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "auto_grabber_expected_location_action_return");
+        request.MiniObeliskSafeSlotKind = ReadQueueParameterString(item, "safe_slot_kind");
+        request.MiniObeliskPairMemberIndex = ReadQueueParameterInt(item, "mini_obelisk_pair_member_index");
+        request.MiniObeliskPairFirstTileX = ReadQueueParameterInt(item, "mini_obelisk_pair_first_tile_x");
+        request.MiniObeliskPairFirstTileY = ReadQueueParameterInt(item, "mini_obelisk_pair_first_tile_y");
+        request.MiniObeliskPairSecondTileX = ReadQueueParameterInt(item, "mini_obelisk_pair_second_tile_x");
+        request.MiniObeliskPairSecondTileY = ReadQueueParameterInt(item, "mini_obelisk_pair_second_tile_y");
+        request.MiniObeliskDestinationTileX = ReadQueueParameterInt(item, "mini_obelisk_destination_tile_x");
+        request.MiniObeliskDestinationTileY = ReadQueueParameterInt(item, "mini_obelisk_destination_tile_y");
+        request.MiniObeliskLandingTileX = ReadQueueParameterInt(item, "mini_obelisk_landing_tile_x");
+        request.MiniObeliskLandingTileY = ReadQueueParameterInt(item, "mini_obelisk_landing_tile_y");
+        request.MiniObeliskExpectedDelayMilliseconds = ReadQueueParameterInt(item, "mini_obelisk_expected_delay_milliseconds");
+        request.MiniObeliskExpectedLocationActionReturn = ReadNullableBoolQueueParameter(item, "mini_obelisk_expected_location_action_return");
 
         request.NativeObjectPayload = new NativeObjectExecutionPayload
         {
@@ -145,6 +158,22 @@ static partial class Program
                     ExpectedTransferQuantity = request.AutoGrabberExpectedTransferQuantity,
                     ExpectedQuantityAfter = request.AutoGrabberExpectedQuantityAfter,
                     ExpectedLocationActionReturn = request.AutoGrabberExpectedLocationActionReturn
+                };
+                break;
+            case "mini_obelisk":
+                request.NativeObjectPayload.MiniObelisk = new MiniObeliskExecutionProjection
+                {
+                    PairMemberIndex = request.MiniObeliskPairMemberIndex,
+                    PairFirstTileX = request.MiniObeliskPairFirstTileX,
+                    PairFirstTileY = request.MiniObeliskPairFirstTileY,
+                    PairSecondTileX = request.MiniObeliskPairSecondTileX,
+                    PairSecondTileY = request.MiniObeliskPairSecondTileY,
+                    DestinationTileX = request.MiniObeliskDestinationTileX,
+                    DestinationTileY = request.MiniObeliskDestinationTileY,
+                    LandingTileX = request.MiniObeliskLandingTileX,
+                    LandingTileY = request.MiniObeliskLandingTileY,
+                    ExpectedDelayMilliseconds = request.MiniObeliskExpectedDelayMilliseconds,
+                    ExpectedLocationActionReturn = request.MiniObeliskExpectedLocationActionReturn
                 };
                 break;
         }

@@ -162,6 +162,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var singingStoneInteraction = ReadSingingStoneInteraction(location, tile, item);
         var feedHopperWithdrawal = ReadFeedHopperWithdrawal(location, tile, item, player);
         var autoGrabberCollection = ReadAutoGrabberCollection(location, tile, item, player);
+        var miniObeliskUse = ReadMiniObeliskUse(location, tile, item);
         return new
         {
             tile_x = (int)tile.X,
@@ -268,7 +269,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             slime_ball_collection = slimeBallCollection,
             singing_stone_interaction = singingStoneInteraction,
             feed_hopper_withdrawal = feedHopperWithdrawal,
-            auto_grabber_collection = autoGrabberCollection
+            auto_grabber_collection = autoGrabberCollection,
+            mini_obelisk_use = miniObeliskUse
         };
     }
 

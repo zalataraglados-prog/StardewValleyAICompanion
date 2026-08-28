@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-279
+
+- `movement.use_mini_obelisk` 已闭合透明读取、校准候选、DailyPlan、机械字段重绑定、动作编译、v1/v2 类型请求、原生运行和延迟传送回执。锁定 1.6.15 反编译确认原生分支按 `location.objects.Pairs` 的实际枚举顺序取前两个 `(BC)238`，以 `Vector2.Zero` 为哨兵；从交互站位选择欧氏距离更远的一端，平局取第二端，再按下、左、右、上的顺序选择第一个 `IsTileBlockedBy(All,All)==false` 落点。
+- 透明桥逐对象发布实际原生配对序号、两端坐标、每个安全站位对应的目的端与落点。第三个方尖碑、非基础对象、缺失配对、无落点和破坏性对象陷阱均在上游失败关闭；编译器从新鲜快照重绑全部机械字段，不能接受模型伪造的配对、目标或落点。
+- 生产运行复用唯一 `NativeObjectInteractionMovement` 与共享 BFS，到站后只调用一次 `GameLocation.checkAction`。生产文件不写 `Farmer.Position`、不调用 `setTileLocation`；它等待原生 50ms 延迟回调完成，并以精确落点、两端引用/身份不变、角色重新显示、菜单为空和工具栏槽恢复验收。
+- 隐藏、静音、E 盘隔离运行 `runtime-mini-obelisk-20260829-011139` 为 PASS：`native_handled=true`，预期/实际落点均为 `(1,2)`，配对坐标和对象引用不变，只加载 TransparentBridge 与 RuntimeTestHarness。该动作严格为 `ExecutorCalibration`，不会进入默认策略候选或训练 allowlist，运行样本范围为 `executor_calibration_only_not_strategy_desire`。
+- 最新权威对账为 `151 registered / 197 semantic / 150 compiler-bound / 77 five-gate / 40 training allowlist / 46 catalogued blocked / 0 Product Executor`；原生分母保持 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 为 `0`，另有 `2` 个分母外兼容占位。回归为 Core `1863/1863`、Backend `134/134`。
+- 下一语义切片固定为 `farming.read_farm_computer_report`。先实时反编译原生 Farm Computer 分支及数据来源，再决定候选/训练分类；不得把“能读取报告”直接解释成策略收益，也不得复制第二套对象移动器。
+
 ## 2026-08-28 当前权威检查点：EVD-277 / EVD-278
 
 - Issue #31 的“按共享原生底层批量推进”已采纳，但批量只表示复用同一移动/菜单状态机；每个语义动作仍保留独立透明字段、前后条件、运行夹具和 E3 证据，禁止把一条运行结果外推给整组动作。

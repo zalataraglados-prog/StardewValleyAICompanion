@@ -37,7 +37,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             {
                 var x = ReadInt(stand, "tile_x");
                 var y = ReadInt(stand, "tile_y");
-                return new NativeObjectStand(x, y, Math.Abs(playerX - x) + Math.Abs(playerY - y));
+                return new NativeObjectStand(
+                    x,
+                    y,
+                    Math.Abs(playerX - x) + Math.Abs(playerY - y),
+                    stand);
             })
             .OrderBy(stand => stand.Distance)
             .ThenBy(stand => stand.Y)
@@ -60,5 +64,5 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             SafeSlotKind is "empty" or "tool";
     }
 
-    private sealed record NativeObjectStand(int X, int Y, int Distance);
+    private sealed record NativeObjectStand(int X, int Y, int Distance, JsonElement Projection);
 }

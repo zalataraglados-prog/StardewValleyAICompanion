@@ -1487,6 +1487,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_mini_obelisk")
+            {
+                pending.Completion.SetResult(ExecuteSetupMiniObeliskFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "movement.use_mini_obelisk")
+            {
+                StartMiniObeliskUse(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "farming.collect_slime_ball")
             {
                 StartSlimeBallCollection(pending);

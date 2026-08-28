@@ -57,7 +57,13 @@ public sealed partial class ActionQueueCompiler
             {
                 var x = ReadInt(item, "tile_x");
                 var y = ReadInt(item, "tile_y");
-                return new { X = x, Y = y, Distance = Math.Abs(playerX - x) + Math.Abs(playerY - y) };
+                return new
+                {
+                    X = x,
+                    Y = y,
+                    Distance = Math.Abs(playerX - x) + Math.Abs(playerY - y),
+                    Projection = item
+                };
             })
             .OrderBy(item => item.Distance)
             .ThenBy(item => item.Y)
@@ -66,7 +72,7 @@ public sealed partial class ActionQueueCompiler
         return stand is null
             ? null
             : new NativeObjectCompilerProjection(
-                requestedX.Value, requestedY.Value, stand.X, stand.Y, row, value);
+                requestedX.Value, requestedY.Value, stand.X, stand.Y, row, value, stand.Projection);
     }
 
     private sealed record NativeObjectCompilerProjection(
@@ -75,7 +81,8 @@ public sealed partial class ActionQueueCompiler
         int StandX,
         int StandY,
         JsonElement Row,
-        JsonElement Projection);
+        JsonElement Projection,
+        JsonElement Stand);
 
     private sealed record NativeObjectCompilerSafeItemContext(
         int SafeSlotIndex,

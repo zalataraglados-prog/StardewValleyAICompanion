@@ -174,6 +174,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateSlimeBallPlan(action, snapshot));
             blocking.AddRange(ValidateFeedHopperPlan(action, snapshot));
             blocking.AddRange(ValidateAutoGrabberPlan(action, snapshot));
+            blocking.AddRange(ValidateMiniObeliskPlan(action, snapshot));
             blocking.AddRange(ValidateCollectCrabPotPlan(action, snapshot));
             blocking.AddRange(ValidateFishPondPlan(action, snapshot));
             blocking.AddRange(ValidateCollectAnimalProductPlan(action, snapshot));

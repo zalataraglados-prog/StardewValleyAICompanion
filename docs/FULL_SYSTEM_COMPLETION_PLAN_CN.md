@@ -1,5 +1,13 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 Mini-Obelisk 原生路由闭环（EVD-279）
+
+`movement.use_mini_obelisk` 已完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> delayed receipt -> E3`。它只与其他静态对象动作共享 `NativeObjectInteractionMovement` 和 BFS；配对扫描、距离判定、落点顺序、50ms 原生延迟和传送回执均为独立合同。原生容器顺序必须实时读取，不能把测试夹具的赋值顺序当成 `location.objects.Pairs` 顺序。生产执行只发起一次 `GameLocation.checkAction`，不直接改角色坐标。
+
+该动作归类为 `ExecutorCalibration`：路线编译器可以在明确的执行器校准流程中调用，但它不参与小模型的策略欲望训练，不能因为“传送成功”获得日计划价值标签。隐藏静音 E 盘运行 `runtime-mini-obelisk-20260829-011139` 已验证精确落点、配对身份和槽位恢复。当前对账为 `151 registered / 197 semantic / 150 compiler-bound / 77 five-gate / 40 allowlist / 46 catalogued blocked / 0 Product Executor`。
+
+下一纵向切片固定为 `farming.read_farm_computer_report`：先从锁定反编译源确认报告字段、访问条件、菜单/对话生命周期及可观测结果，再确定它是纯透明信息、玩家指令动作还是校准动作。若透明桥已直接发布报告的全部原生来源，则候选不得重复制造“读菜单才能知道”的假依赖。
+
 ## 2026-08-28 原版删减动作占位与自动采集器闭环（EVD-277 / EVD-278）
 
 Issue #31 的提速原则落为工程约束：按 `Object.checkForAction`、`performUseAction` 等共享原生底层分组推进，一组只维护一个移动/菜单事务实现；组内每个动作仍必须逐项完成 `read -> upstream exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`，不得共享语义结论或跳过运行证据。当前组完成 Feed Hopper 与 Auto-Grabber，下一项是 `movement.use_mini_obelisk`。

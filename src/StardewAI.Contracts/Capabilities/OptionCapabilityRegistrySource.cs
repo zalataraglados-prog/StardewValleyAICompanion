@@ -212,6 +212,7 @@ namespace StardewAI.Contracts.Capabilities
                 bool autonomousCandidate,
                 bool playerConfirmation,
                 bool playerCommandOnly,
+                bool calibrationOnly,
                 TrainingEvidence evidence)
             {
                 StepCompiler = stepCompiler;
@@ -221,6 +222,7 @@ namespace StardewAI.Contracts.Capabilities
                 AutonomousCandidate = autonomousCandidate;
                 PlayerConfirmation = playerConfirmation;
                 PlayerCommandOnly = playerCommandOnly;
+                CalibrationOnly = calibrationOnly;
                 Evidence = evidence;
             }
 
@@ -231,6 +233,7 @@ namespace StardewAI.Contracts.Capabilities
             public bool AutonomousCandidate { get; }
             public bool PlayerConfirmation { get; }
             public bool PlayerCommandOnly { get; }
+            public bool CalibrationOnly { get; }
             public TrainingEvidence Evidence { get; }
         }
 
@@ -257,7 +260,10 @@ namespace StardewAI.Contracts.Capabilities
                     ["animals.collect_auto_grabber_contents"] = NativeObjectSeed(
                         autonomous: true, playerCommandOnly: false,
                         "vanilla_exact_base_(BC)165_native_held_Chest_inventory_capacity_projection_shared_object_movement_native_ItemGrabMenu_stack_transfer_conservation_remaining_contents_identity_and_selected_slot_receipt",
-                        "EVD-278")
+                        "EVD-278"),
+                    ["movement.use_mini_obelisk"] = NativeObjectCalibrationSeed(
+                        "vanilla_exact_base_(BC)238_native_first_two_pair_raw_object_order_farther_destination_down_left_right_up_landing_shared_object_movement_native_delayed_same_location_teleport_pair_identity_and_selected_slot_receipt",
+                        "EVD-279")
                 });
 
         private static readonly HashSet<string> StepCompilerIds = Set(
@@ -721,6 +727,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("collect_slime_ball"),
                 SupportedCandidate("withdraw_feed_hopper_hay"),
                 SupportedCandidate("collect_auto_grabber_contents"),
+                SupportedCandidate("use_mini_obelisk"),
                 SupportedCandidate("clear_farm_resource_clump"),
                 SupportedCandidate("clear_green_rain_resource_clump"),
                 SupportedCandidate("clear_obstacle_tile"), SupportedCandidate("collect_animal_product"),
@@ -884,7 +891,7 @@ namespace StardewAI.Contracts.Capabilities
                             : CapabilityCompilerStatus.Unbound;
                 var policyTrainingCandidate =
                     !id.StartsWith("executor.", StringComparison.Ordinal) &&
-                    !CalibrationOnlyHighLevelIds.Contains(id) &&
+                    !(seed?.CalibrationOnly ?? CalibrationOnlyHighLevelIds.Contains(id)) &&
                     !(seed?.PlayerCommandOnly ?? PlayerCommandOnlyIds.Contains(id));
                 var evidence = seed?.Evidence;
                 evidence ??= TrainingEvidenceByOptionId.TryGetValue(id, out var legacyEvidence)
@@ -1016,6 +1023,21 @@ namespace StardewAI.Contracts.Capabilities
                 autonomousCandidate: autonomous,
                 playerConfirmation: playerCommandOnly,
                 playerCommandOnly: playerCommandOnly,
+                calibrationOnly: false,
+                evidence: VerifiedEvidence(scope, evidenceIds));
+
+        private static CapabilitySeed NativeObjectCalibrationSeed(
+            string scope,
+            params string[] evidenceIds) =>
+            new CapabilitySeed(
+                stepCompiler: true,
+                parameterCompiler: true,
+                harnessDispatch: true,
+                internalExecution: true,
+                autonomousCandidate: true,
+                playerConfirmation: false,
+                playerCommandOnly: false,
+                calibrationOnly: true,
                 evidence: VerifiedEvidence(scope, evidenceIds));
 
         private static TrainingEvidence VerifiedEvidence(string scope, params string[] evidenceIds)

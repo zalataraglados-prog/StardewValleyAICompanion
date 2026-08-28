@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 Mini-Obelisk 校准边界（EVD-279）
+
+`movement.use_mini_obelisk` 已闭合五门执行证据，但不增加训练 allowlist。它的作用是校准“机械路由原语能否严格复刻原生配对、目标和落点”，而不是让策略模型学习是否想传送。默认策略候选排除该动作；只有显式启用执行器校准候选时才发布，运行结果标记为 `executor_calibration_only_not_strategy_desire`，数据清洗不得把成功、耗时或落点当作策略偏好标签。
+
+当前准入计数仍为 `40`，权威状态为 `151 registered / 197 semantic / 150 compiler-bound / 77 five-gate / 46 catalogued blocked / 0 Product Executor`。因此这次闭环减少了一个原版动作缺口，但没有解除 Product Executor、剩余 46 个动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等正式全量训练阻塞。
+
 ## 2026-08-28 Auto-Grabber 训练准入与兼容占位边界（EVD-277 / EVD-278）
 
 `animals.collect_auto_grabber_contents` 已进入训练 allowlist。模型只决定是否在当前日计划中收取；精确对象、站位、安全槽、held Chest 全部堆栈身份、累计背包容量、转移集合和留存集合均由新鲜快照与编译器决定。空容器、全部物品不可接纳或无安全站位不会生成候选。生产执行只调用原生对象交互并向 `ItemGrabMenu` 发送原生点击，验收要求源集合严格等于“已转移 + 留存”、背包回执匹配、对象/Chest 身份不变且菜单关闭。

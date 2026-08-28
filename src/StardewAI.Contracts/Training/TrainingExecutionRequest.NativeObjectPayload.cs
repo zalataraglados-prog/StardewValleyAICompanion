@@ -75,6 +75,10 @@ public sealed class NativeObjectExecutionPayload
     [JsonPropertyName("auto_grabber")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AutoGrabberExecutionProjection? AutoGrabber { get; set; }
+
+    [JsonPropertyName("mini_obelisk")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MiniObeliskExecutionProjection? MiniObelisk { get; set; }
 }
 
 public sealed class HousePlantExecutionProjection
@@ -134,5 +138,20 @@ public sealed class AutoGrabberExecutionProjection
     public int? ContentQuantityBefore { get; set; }
     public int? ExpectedTransferQuantity { get; set; }
     public int? ExpectedQuantityAfter { get; set; }
+    public bool? ExpectedLocationActionReturn { get; set; }
+}
+
+public sealed class MiniObeliskExecutionProjection
+{
+    public int? PairMemberIndex { get; set; }
+    public int? PairFirstTileX { get; set; }
+    public int? PairFirstTileY { get; set; }
+    public int? PairSecondTileX { get; set; }
+    public int? PairSecondTileY { get; set; }
+    public int? DestinationTileX { get; set; }
+    public int? DestinationTileY { get; set; }
+    public int? LandingTileX { get; set; }
+    public int? LandingTileY { get; set; }
+    public int? ExpectedDelayMilliseconds { get; set; }
     public bool? ExpectedLocationActionReturn { get; set; }
 }

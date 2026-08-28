@@ -6,7 +6,7 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 47,
+  "catalogued_blocked_action_count": 46,
   "catalogued_blocked_action_ids": [
     "executor.plant_grass",
     "executor.read_secret_note",
@@ -36,7 +36,6 @@
     "minigame.play_prairie_king",
     "minigame.play_slots",
     "mining.activate_calico_statue",
-    "movement.use_mini_obelisk",
     "multiplayer.manage_wallet",
     "multiplayer.send_chat",
     "player.choose_bobber",
