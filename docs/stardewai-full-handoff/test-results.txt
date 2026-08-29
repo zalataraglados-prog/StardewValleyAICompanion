@@ -4121,3 +4121,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 136 required, 120 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 training allowlist / 37 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1949/1949; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_return_scepter`.
+
+2026-08-29 EVD-289 native Return Scepter own-home warp
+- Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base `(T)ReturnScepter`/`Wand`, `InstantUse`, complete player tool caller chain, bathing/bridge gate, 12+17 sprite graph and random domains, sound condition, 1000ms callback, 2000ms freeze, own `FarmHouse`/`Cabin` front-door resolution, native Farm warp, final state restoration and reusable inventory behavior are covered.
+- TDD RED observed 15 failures from unknown registration/missing capability/compiler/runtime. Focused GREEN PASS 25/25 including existing registry governance covers host/cabin destinations, stale source/projection/home/tile/inventory/timing/native-contract rejection, missing-home/bathing/bridge/already-there exclusion, five gates and native-only source guards.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-return-scepter/runtime-return-scepter-20260829-162520/summary.json`. Native use moved Farm `66,19 -> 64,15`, synchronously added 29 sprites, settled after 125 ticks with display/invincibility/movement restored and preserved the exact slot-9 Wand at stack 1.
+- Installed full snapshot schema PASS: 137 required, 121 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 161 registered / 197 semantic / 160 compiler-bound / 87 five-gate / 40 training allowlist / 36 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1964/1964; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_treasure_totem`.

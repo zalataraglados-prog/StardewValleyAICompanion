@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 回城魔杖原生住宅传送闭环（EVD-289）
+
+`executor.use_return_scepter` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(T)ReturnScepter`/`Wand` 身份、不可消耗栈、当前角色 `homeLocation`、原生 `FarmHouse.getFrontDoorSpot()` 结果、房主/小屋差异、浴衣/桥上原生门和执行器稳定门；编译器拒绝库存、住宅类型、门前格、时序、指纹或原生合同漂移，并排除已在落点的无价值重复使用。
+
+运行层复用游戏唯一即时工具入口 `Farmer.BeginUsingTool`，等待 `Wand.wandWarpForReal` 原生回调后验证落点、物品身份以及显示/无敌/移动状态，不复制传送算法。隐藏静音 E 盘运行 PASS，最终回归为 Core `1964/1964`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `161 registered / 197 semantic / 160 compiler-bound / 87 five-gate / 40 allowlist / 36 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_treasure_totem`。
+
 ## 2026-08-29 雨水图腾原生天气闭环（EVD-288）
 
 `executor.use_rain_totem` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)681` 库存身份、公共使用门、`AllowRainTotem`、`RainTotemAffectsContext`、决策目标与实际天气状态归属、默认节日门、即时天气写入、2000ms 动画/提示，以及默认上下文的换日最终天气修正规则。编译器拒绝任何库存、路由、日期、最终天气、时序或指纹漂移，并在节日、最终天气覆盖、重复 Rain 等无效消耗发生前关闭动作。

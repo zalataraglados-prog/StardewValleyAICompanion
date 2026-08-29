@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-289
+
+- `executor.use_return_scepter` 已闭合原版回城魔杖 `(T)ReturnScepter` 的透明读取、fresh 住宅/落点重绑定、动作编译、类型化请求、原生即时工具调用和严格异步回执。锁定 1.6.15 `Data/Tools` 与 `Wand.cs` 确认其为不可丢失、不可出售、非消耗型 `Wand`，入口必须经过 `Farmer.BeginUsingTool -> Tool.beginUsing(InstantUse) -> Game1.toolAnimationDone -> Wand.DoFunction`。
+- 透明桥实时调用 `Utility.getHomeOfFarmer(player).getFrontDoorSpot()`，分别发布房主 `FarmHouse` 与农场工 `Cabin` 的精确门前格，不把主屋常量错误外推给联机角色。住宅缺失、浴衣、桥上、执行器瞬态门禁以及已在精确落点时均在上游排除；全部原生物品槽保持可读且栈前后均为 1。
+- 原生时序为 12 个随机烟雾精灵加 17 个横向轨迹精灵、`wand` 音效、1000ms 回调和 2000ms `freezePause`。源码顺序表明 `Wand` 暂时写 `CanMove=false` 后，`Tool.beginUsing` 在返回前将其恢复为 true，实际输入冻结由 `freezePause` 保持；透明合同和运行断言按完整调用栈而非孤立方法体记录。
+- 运行层只选择精确 `Wand` 并调用 `BeginUsingTool`，不直接调用 `warpFarmer`，也不写位置、显示、无敌、移动或库存。隐藏静音 E 盘隔离运行 `runtime-return-scepter-20260829-162520` PASS：从 Farm `(66,19)` 原生抵达主屋门前 `(64,15)`，同步观察 29 个精灵，125 tick 后状态结算，原槽 `(T)ReturnScepter` 仍为 stack 1。
+- 官方 Wiki 二次确认回城魔杖不消耗、房主回主屋门前、农场工回自己的小屋门前；本地反编译仍是字段、门禁和时序的主证据。
+- 最终回归为 Core `1964/1964`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。最新 full snapshot schema 为 `137 required / 121 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `161 registered / 197 semantic / 160 compiler-bound / 87 five-gate / 40 training allowlist / 36 catalogued blocked / 0 Product Executor`。下一语义切片固定为 `executor.use_treasure_totem`。
+
 ## 2026-08-29 当前权威检查点：EVD-288
 
 - `executor.use_rain_totem` 已闭合原版雨水图腾 `(O)681` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生库存物品使用和严格异步回执。锁定 1.6.15 反编译确认 `Object.performUseAction -> rainTotem` 的上下文许可、`RainTotemAffectsContext` 路由、默认上下文节日门、天气写入、2000ms 动画与提示对话完整分支。

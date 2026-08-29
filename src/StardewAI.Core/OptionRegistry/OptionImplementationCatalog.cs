@@ -42,7 +42,8 @@ public static class OptionImplementationCatalog
         "executor.move_to_tile",
         "executor.traverse_connector",
         "executor.face_direction",
-        "executor.use_horse_flute");
+        "executor.use_horse_flute",
+        "executor.use_return_scepter");
 
     private static readonly HashSet<string> InteractionOptions = Set(
         "executor.interact",

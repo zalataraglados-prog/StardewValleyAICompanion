@@ -1583,6 +1583,9 @@ static partial class Program
         ApplyRainTotemRequestFields(
             executionRequest,
             item);
+        ApplyReturnScepterRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

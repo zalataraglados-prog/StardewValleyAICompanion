@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Return Scepter Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.return_scepter.rows[]` | Bind every exact base `(T)ReturnScepter` `Wand` slot, runtime type, nonstackable identity, instant-use and sound flags | locked 1.6.15 `Data/Tools`, `Tool.cs`, `Wand.cs`; live inventory | Return Scepter page confirms non-consumable use | covered_for_read / fresh_projection_required | Stack remains 1; no inventory reduction is synthesized. |
+| `destination` | Publish the current player's home location/type and exact native Farm front-door tile | `Utility.getHomeOfFarmer`; `FarmHouse.getFrontDoorSpot`; `Cabin` branch | Return Scepter page confirms farmhouse versus own cabin destination | covered_for_read_and_gate_EVD_289 | The destination location is native `Farm`, but the tile is resolved from the player's own home every time. Missing home and exact-destination no-op fail upstream. |
+| `native_wand_gate` / `executor_base_gate` | Separate Wand's bathing/bridge rules from the stable executor invocation boundary | locked `Wand.DoFunction`; player tool input path; live player/menu state | Wiki history confirms the former bathing-suit freeze fix | covered_for_read_and_gate_EVD_289 | Stable execution additionally excludes active tool/menu/dialogue/minigame/event/fade/swim/sit/mount/walk-only transients. |
+| `animation_contract` / `state_transition_contract` | Bind 12 poofs, 17 trail sprites, bounded random domains, 1000ms callback, 2000ms freeze and exact instant-tool ordering | `Wand.DoFunction`; `Tool.beginUsing`; `Game1.toolAnimationDone` | Wiki confirms the scepter skips the Warp Totem animation | covered_for_read_and_gate_EVD_289 / native_runtime_verified | `Tool.beginUsing` restores `CanMove=true` after `Wand.DoFunction`; `freezePause` remains the effective hold. Random coordinates/delays are domains, never predicted values. |
+| `executor.use_return_scepter` | Execute one exact native immediate-tool use and verify own-home landing, settled player state and unchanged Wand identity | native `Farmer.BeginUsingTool`; delayed `wandWarpForReal` callback | n/a | five_gate_closed_EVD_289 / executor_calibration_only | Upstream owns whether returning home has route/time value. No direct warp, position, invincibility, visibility, movement or inventory mutation is permitted. |
+
 ## Rain Totem Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

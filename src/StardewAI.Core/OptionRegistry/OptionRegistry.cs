@@ -1339,6 +1339,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native use consumes exactly one Rain Totem", "the affected vanilla location context tomorrow-weather becomes Rain", "default-context festival tomorrow and redundant Rain states are excluded before consumption" },
                 new[] { "block_native_object_use_or_effect_gate", "block_inventory_location_context_weather_or_projection_drift", "block_animation_contract_drift", "block_open_menu", "block_direct_weather_sprite_audio_or_inventory_mutation" }));
 
+            Register(Option("executor.use_return_scepter", "movement", "Use one reusable Return Scepter through its native exact-home delayed warp",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.return_scepter", "menus.active_menu" },
+                new[] { "the exact base Wand runs through Farmer.BeginUsingTool and Tool.InstantUse", "the native delayed callback resolves the current player's own FarmHouse or Cabin front door", "the reusable Return Scepter remains in the same inventory slot with unchanged stack" },
+                new[] { "block_native_wand_or_executor_use_gate", "block_missing_home_or_redundant_destination", "block_inventory_home_destination_or_projection_drift", "block_animation_contract_drift", "block_open_menu", "block_direct_warp_position_invincibility_movement_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

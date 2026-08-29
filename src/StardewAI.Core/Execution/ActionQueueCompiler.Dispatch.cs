@@ -101,6 +101,7 @@ namespace StardewAI.Core.Execution
                 ["executor.use_horse_flute"] = (action, _) => CompileUseHorseFluteStep(action),
                 ["executor.use_monster_musk"] = (action, _) => CompileUseMonsterMuskStep(action),
                 ["executor.use_rain_totem"] = (action, _) => CompileUseRainTotemStep(action),
+                ["executor.use_return_scepter"] = (action, _) => CompileUseReturnScepterStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),
                 ["executor.play_junimo_kart"] = (action, _) => CompilePlayJunimoKartStep(action),
                 ["executor.cool_volcano_lava"] = (action, _) => CompileCoolVolcanoLavaStep(action),

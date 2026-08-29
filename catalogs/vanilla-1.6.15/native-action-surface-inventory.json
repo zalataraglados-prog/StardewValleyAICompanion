@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 68,
-  "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 37,
+  "mapped_count": 69,
+  "catalogued_blocked_surface_count": 99,
+  "catalogued_blocked_action_count": 36,
   "catalogued_blocked_action_ids": [
-    "executor.use_return_scepter",
     "executor.use_treasure_totem",
     "executor.use_warp_totem",
     "festival.manage_grange_display",
@@ -5229,7 +5228,7 @@
       "mappedOptionIds": [
         "executor.use_return_scepter"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
