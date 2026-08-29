@@ -118,7 +118,8 @@ namespace StardewAI.Core.Execution
                         reasons.Add("quest_resource_clearance_source_drop_drifted");
                     }
                 }
-                else if (action.OptionId is "executor.harvest_bush" or "executor.harvest_ginger")
+                else if (action.OptionId is "executor.harvest_bush" or "executor.harvest_ginger" or
+                    "executor.harvest_fruit_tree" or "executor.harvest_tree_product" or "executor.rummage_garbage")
                 {
                     if (!string.Equals(
                         ReadParameter(action, "qualified_item_id"),

@@ -20,6 +20,9 @@ public sealed partial class CurrentLocationReadAdapter
         var primaryId = PrimaryWildTreeProductId(tree, data?.SeedItemId);
         var primaryItem = string.IsNullOrWhiteSpace(primaryId) ? null : ItemRegistry.Create(primaryId);
         var primaryQualifiedId = primaryItem?.QualifiedItemId ?? string.Empty;
+        var primaryContextTags = primaryItem?.GetContextTags()
+            .OrderBy(tag => tag, StringComparer.Ordinal)
+            .ToArray() ?? Array.Empty<string>();
         var primaryQuality = primaryItem is not null && Game1.player.professions.Contains(16) && primaryItem.HasContextTag("forage_item")
             ? 4
             : 0;
@@ -32,7 +35,8 @@ public sealed partial class CurrentLocationReadAdapter
                     qualified_item_id = primaryQualifiedId,
                     quality = primaryQuality,
                     quantity = 1,
-                    branch
+                    branch,
+                    context_tags = primaryContextTags
                 }
             };
         var optional = ProjectWildTreeOptionalOutputDomain(tree);
@@ -66,6 +70,7 @@ public sealed partial class CurrentLocationReadAdapter
             branch,
             data?.SeedItemId ?? string.Empty,
             primaryQualifiedId,
+            primaryContextTags,
             primaryQuality,
             guaranteed.Length == 0 ? 0 : 1,
             guaranteed,
@@ -190,6 +195,7 @@ public sealed partial class CurrentLocationReadAdapter
         string Branch,
         string SeedItemId,
         string PrimaryQualifiedItemId,
+        string[] PrimaryContextTags,
         int PrimaryQuality,
         int PrimaryQuantity,
         object[] GuaranteedOutputs,

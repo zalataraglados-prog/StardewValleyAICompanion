@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-300
+
+- `foraging.rummage_garbage` 已闭合透明读取、上游候选排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生垃圾桶交互和输出/任务反馈。唯一动作链为 `rummage_garbage -> executor.rummage_garbage`；移动、物品接收、debris 拾取和普通/特别收集任务继续复用既有实现。
+- 锁定 1.6.15 `performAction Garbage -> CheckGarbage -> TryGetGarbageItem` 与实时 `Data/GarbageCans`。透明桥在一次 Buildings 扫描中发布 Garbage action、桶 ID、当日已查集合、`trashCansChecked`、DailyLuck、Alleyway Buffet、确定性无副作用预测、选中数据行、精确物品状态/品质/数量/交付方式、目击 NPC 及反应、空工具栏槽、数据哈希与投影指纹。原版日随机只在预测副本上计算，不推进游戏 RNG。
+- 当日已查、未知/漂移数据、无安全槽、不可达及负友谊目击在上游直接排除；无物品是有效原生结果，Linus 的精确正友谊分支允许执行。运行层只调用一次 `GameLocation.checkAction`，核对 CheckedGarbage、统计 `+1`、背包加 debris 的精确单位状态守恒、可选 Linus 好感及槽位恢复，不直接写结果状态。
+- 隐藏静音 E 盘矩阵 `9/9` PASS：普通输出、无输出、垃圾帽直接入包、沙漠节多 debris、当日已查排除、负面目击排除、Linus 正向目击、普通收集任务和特别订单。full snapshot 为 `146 required / 130 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 training allowlist / 25 catalogued blocked / 0 Product Executor`。完整回归为 Core `2039/2039`、Backend `145/145`、Release `0 warnings / 0 errors`；下一语义切片固定为 `housing.renovate`。
+
 ## 2026-08-30 当前权威检查点：EVD-299
 
 - `foraging.harvest_tree_product` 已闭合普通原版 `Tree` 的透明读取、上游排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 terrain BFS、原生摇树与完整输出域回执。唯一动作链为 `harvest_tree_product -> executor.harvest_tree_product`；果树、砍树、清障和苔藓采集继续使用各自既有语义，不新增第二套移动或拾取系统。

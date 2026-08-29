@@ -190,6 +190,9 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_tree_product":
                 case "executor.harvest_tree_product":
                     return EstimateCompiledSteps(item, "native_wild_tree_product_shake_steps.v1");
+                case "foraging.rummage_garbage":
+                case "executor.rummage_garbage":
+                    return EstimateCompiledSteps(item, "native_garbage_can_rummage_steps.v1");
                 case "foraging.clear_green_rain_bushes":
                 case "executor.break_current_location_resource_clump":
                     return EstimateCompiledSteps(item, "native_green_rain_resource_clump_steps.v1");
@@ -383,6 +386,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_tree_product" or "executor.harvest_tree_product")
             {
                 return assumptionRegistry.GetRequired("wild_tree_product_harvest");
+            }
+
+            if (item.OptionId is "foraging.rummage_garbage" or "executor.rummage_garbage")
+            {
+                return assumptionRegistry.GetRequired("garbage_can_rummage");
             }
 
             if (item.OptionId is "foraging.clear_green_rain_bushes" or "executor.break_current_location_resource_clump")

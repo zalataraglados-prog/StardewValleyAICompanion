@@ -72,6 +72,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.crops",
                 "current_location.planting_context",
                 "current_location.shop_action_tiles",
+                "current_location.garbage_cans",
                 "current_location.mine_elevator_action_tiles",
                 "current_location.drop_box_action_tiles",
                 "current_location.arcade_action_tiles",
@@ -103,6 +104,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["crops"] = Field(location is null ? null : FarmReadAdapter.ReadCrops(location), "Game1.currentLocation terrain HoeDirt and IndoorPot.hoeDirt live crop state", tick, "vanilla_1_6_current_location_crops"),
             ["planting_context"] = Field(location is null ? null : ReadPlantingContext(location), "Game1.currentLocation planting APIs and HoeDirt terrain features", tick),
             ["shop_action_tiles"] = Field(actionIndex?.ShopActionTiles, "Game1.currentLocation map Action properties parsed by GameLocation.performAction", tick),
+            ["garbage_cans"] = Field(actionIndex?.GarbageCanActionTiles, "Game1.currentLocation Buildings Action=Garbage; locked Data/GarbageCans; GameLocation.TryGetGarbageItem deterministic non-mutating prediction; live CheckedGarbage and NPC reaction state", tick, "vanilla_1_6_15_garbage_cans"),
             ["mine_elevator_action_tiles"] = Field(actionIndex?.MineElevatorActionTiles, "GameLocation Buildings Action first token MineElevator or MineShaft Buildings/mine tile index 112; native performAction/checkAction elevator dispatch", tick),
             ["drop_box_action_tiles"] = Field(actionIndex?.DropBoxActionTiles, "Game1.currentLocation map Action=DropBox <box_id>; GameLocation.performAction native drop-box dispatch", tick),
             ["arcade_action_tiles"] = Field(actionIndex?.ArcadeActionTiles, "Game1.currentLocation map Action=Arcade_*; GameLocation.performAction native arcade dispatch", tick),
@@ -364,6 +366,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
     private sealed class MapActionIndex
     {
         public object[] ShopActionTiles { get; set; } = Array.Empty<object>();
+        public object[] GarbageCanActionTiles { get; set; } = Array.Empty<object>();
         public object[] MineElevatorActionTiles { get; set; } = Array.Empty<object>();
         public object[] DropBoxActionTiles { get; set; } = Array.Empty<object>();
         public object[] ArcadeActionTiles { get; set; } = Array.Empty<object>();
@@ -377,6 +380,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             return new MapActionIndex
             {
                 ShopActionTiles = Array.Empty<object>(),
+                GarbageCanActionTiles = Array.Empty<object>(),
                 MineElevatorActionTiles = Array.Empty<object>(),
                 DropBoxActionTiles = Array.Empty<object>(),
                 ArcadeActionTiles = Array.Empty<object>()
@@ -386,6 +390,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         var width = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerWidth);
         var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
         var shopTiles = new List<object>();
+        var garbageCanTiles = new List<object>();
         var mineElevatorTiles = new List<object>();
         var dropBoxTiles = new List<object>();
         var arcadeTiles = new List<object>();
@@ -429,6 +434,10 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 }
 
                 var parts = action.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0 && string.Equals(parts[0], "Garbage", StringComparison.Ordinal))
+                {
+                    garbageCanTiles.Add(ReadGarbageCanAction(location, action, parts, x, y));
+                }
                 if (parts.Length > 0 && string.Equals(parts[0], "MineElevator", StringComparison.Ordinal))
                 {
                     mineElevatorTiles.Add(new
@@ -474,6 +483,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         return new MapActionIndex
         {
             ShopActionTiles = shopTiles.ToArray(),
+            GarbageCanActionTiles = garbageCanTiles.ToArray(),
             MineElevatorActionTiles = mineElevatorTiles.ToArray(),
             DropBoxActionTiles = dropBoxTiles.ToArray(),
             ArcadeActionTiles = arcadeTiles.ToArray()

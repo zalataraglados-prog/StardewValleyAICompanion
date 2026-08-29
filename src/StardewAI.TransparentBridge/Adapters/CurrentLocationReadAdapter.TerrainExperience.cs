@@ -85,6 +85,7 @@ public sealed partial class CurrentLocationReadAdapter
             tree_product_branch = treeProduct.Branch,
             tree_product_seed_item_id = treeProduct.SeedItemId,
             tree_product_primary_qualified_item_id = treeProduct.PrimaryQualifiedItemId,
+            tree_product_primary_context_tags = treeProduct.PrimaryContextTags,
             tree_product_primary_quality = treeProduct.PrimaryQuality,
             tree_product_primary_quantity = treeProduct.PrimaryQuantity,
             tree_product_guaranteed_outputs = treeProduct.GuaranteedOutputs,

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 垃圾桶翻找原生闭环（EVD-300）
+
+`foraging.rummage_garbage` 已按完整纵向切片进入正式策略训练范围。透明桥基于一次地图交互扫描和锁定 `Data/GarbageCans` 发布全部原版 Garbage 端点、日级检查状态、统计、运气/书籍、非变异确定预测、完整物品状态、交付方式、NPC 反应与安全槽。候选先排除已检查、数据漂移、负好感目击、容量/空槽和路线问题，fresh 编译器再重绑全部机械字段。
+
+运行层复用共享 BFS、连续移动、原生 `checkAction`、输出守恒和任务反馈，不复制路线、拾取或任务执行器。隐藏静音矩阵 `9/9` 覆盖全部有界交付/排除/NPC 分支以及两类收集任务；当前对账为 `180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 allowlist / 25 catalogued blocked / 0 Product Executor`，回归为 Core `2039/2039`、Backend `145/145`、Release `0 warnings / 0 errors`。下一纵向切片为 `housing.renovate`：先锁定 RenovateMenu 全部原版选项、前置条件、费用、房屋几何与可逆性，再决定哪些必须保持 PlayerCommandOnly，禁止把装饰偏好混入自主训练。
+
 ## 2026-08-30 普通树产品原生收获闭环（EVD-299）
 
 `foraging.harvest_tree_product` 已按完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行发布精确基础 `Tree` 身份、种类、成熟/树桩/tapped/种子/摇动状态、`Data/WildTrees` 合同状态、确定输出、完整随机可选输出域、零经验合同、安全空槽和相邻交互状态。候选层先排除自定义类型、数据漂移、未成熟、树桩、tapped、无种子、采集等级不足、摇动中、输出不完整、无空槽及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。

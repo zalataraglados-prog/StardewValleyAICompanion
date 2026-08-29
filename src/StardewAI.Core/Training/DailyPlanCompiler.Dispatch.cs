@@ -63,6 +63,7 @@ namespace StardewAI.Core.Training
                 ["foraging.harvest_bushes"] = new[] { "harvest_bush" },
                 ["foraging.harvest_fruit_tree"] = new[] { "harvest_fruit_tree" },
                 ["foraging.harvest_tree_product"] = new[] { "harvest_tree_product" },
+                ["foraging.rummage_garbage"] = new[] { "rummage_garbage" },
                 ["foraging.harvest_ginger"] = new[] { "harvest_ginger" },
                 ["foraging.pan_ore_spot"] = new[] { "pan_ore_spot" },
                 ["mining.claim_reward_chests"] = new[] { "claim_mine_reward_chest" },
@@ -319,6 +320,12 @@ namespace StardewAI.Core.Training
                 OptionCandidateCompilerKinds["foraging.harvest_tree_product"].Contains(candidate.Kind, StringComparer.Ordinal))
             {
                 return HarvestWildTreeProductSteps(candidate);
+            }
+
+            if (candidate.Kind == "rummage_garbage" &&
+                OptionCandidateCompilerKinds["foraging.rummage_garbage"].Contains(candidate.Kind, StringComparer.Ordinal))
+            {
+                return RummageGarbageSteps(candidate);
             }
 
             if (candidate.Kind == "claim_mine_reward_chest" &&

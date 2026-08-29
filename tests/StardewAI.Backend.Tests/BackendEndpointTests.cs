@@ -848,7 +848,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(47, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(48, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "animals.purchase");

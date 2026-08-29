@@ -96,6 +96,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "Tree.performUseAction", "Tree.shake", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
             Assumption(
+                "garbage_can_rummage",
+                new[] { "foraging.rummage_garbage", "executor.rummage_garbage" },
+                new[] { "exact_map_Garbage_action", "locked_Data_GarbageCans", "unchecked_today", "deterministic_prediction", "safe_or_no_npc_witness", "empty_toolbar_slot", "adjacent_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_animation_and_debris_settlement_ticks" },
+                Array.Empty<string>(),
+                new[] { "GameLocation.checkAction", "GameLocation.performAction", "GameLocation.CheckGarbage", "GameLocation.TryGetGarbageItem", "Data/GarbageCans" }),
+            Assumption(
                 "green_rain_resource_clump",
                 new[] { "foraging.clear_green_rain_bushes", "executor.break_current_location_resource_clump" },
                 new[] { "exact_vanilla_resource_clump_44_or_46", "axe_available", "perimeter_stand_tile", "menu_clear" },

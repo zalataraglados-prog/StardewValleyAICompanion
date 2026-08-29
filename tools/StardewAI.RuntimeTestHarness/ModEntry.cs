@@ -81,6 +81,7 @@ public sealed partial class ModEntry : Mod
     private ActiveBushHarvest? activeBushHarvest;
     private ActiveFruitTreeHarvest? activeFruitTreeHarvest;
     private ActiveWildTreeProductHarvest? activeWildTreeProductHarvest;
+    private ActiveGarbageCanRummage? activeGarbageCanRummage;
     private ActiveCrabPotCollect? activeCrabPotCollect;
     private ActiveAnimalProductHarvest? activeAnimalProductHarvest;
     private ActiveAnimalManagement? activeAnimalManagement;
@@ -498,6 +499,7 @@ public sealed partial class ModEntry : Mod
         TickBushHarvest();
         TickFruitTreeHarvest();
         TickWildTreeProductHarvest();
+        TickGarbageCanRummage();
         TickCrabPotCollect();
         TickShootMonster();
         TickPlaceBomb();
@@ -1698,6 +1700,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.rummage_garbage")
+            {
+                StartGarbageCanRummage(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "fishing.manage_fish_pond")
             {
                 StartFishPondManagement(pending);
@@ -1933,6 +1941,7 @@ public sealed partial class ModEntry : Mod
             activeBushHarvest = null;
             activeFruitTreeHarvest = null;
             activeWildTreeProductHarvest = null;
+            activeGarbageCanRummage = null;
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
             activeDwarfKingStatueChoice = null;
@@ -2162,6 +2171,7 @@ public sealed partial class ModEntry : Mod
             activeBushHarvest is not null ||
             activeFruitTreeHarvest is not null ||
             activeWildTreeProductHarvest is not null ||
+            activeGarbageCanRummage is not null ||
             activeCrabPotCollect is not null ||
             activeAnimalProductHarvest is not null ||
             activeAnimalManagement is not null ||

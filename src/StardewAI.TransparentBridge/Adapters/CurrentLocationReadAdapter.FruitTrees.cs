@@ -22,7 +22,11 @@ public sealed partial class CurrentLocationReadAdapter
             {
                 qualified_item_id = group.Key.QualifiedItemId,
                 quality = group.Key.Quality,
-                quantity = group.Sum(output => output.Quantity)
+                quantity = group.Sum(output => output.Quantity),
+                context_tags = ItemRegistry.Create(group.Key.QualifiedItemId)
+                    .GetContextTags()
+                    .OrderBy(tag => tag, StringComparer.Ordinal)
+                    .ToArray()
             })
             .OrderBy(output => output.qualified_item_id, StringComparer.Ordinal)
             .ThenBy(output => output.quality)

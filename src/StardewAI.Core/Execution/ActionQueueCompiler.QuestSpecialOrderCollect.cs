@@ -21,6 +21,9 @@ namespace StardewAI.Core.Execution
                     "executor.pickup_debris" or
                     "executor.harvest_bush" or
                     "executor.harvest_ginger" or
+                    "executor.harvest_fruit_tree" or
+                    "executor.harvest_tree_product" or
+                    "executor.rummage_garbage" or
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
                     "executor.catch_fish" or
@@ -72,6 +75,9 @@ namespace StardewAI.Core.Execution
             var sourceOption = action.OptionId is
                     "executor.harvest_bush" or
                     "executor.harvest_ginger" or
+                    "executor.harvest_fruit_tree" or
+                    "executor.harvest_tree_product" or
+                    "executor.rummage_garbage" or
                     "executor.harvest_giant_crop" or
                     "executor.break_current_location_resource_clump" or
                     "executor.catch_fish" or
@@ -219,6 +225,31 @@ namespace StardewAI.Core.Execution
                     QuestContextTagMatcher.Matches(
                         ReadQuestStringArray(bush, "bush_output_context_tags"),
                         tagSets);
+            }
+            if (action.OptionId is "executor.harvest_fruit_tree" or "executor.harvest_tree_product")
+            {
+                var features = ReadStateFieldValue(snapshot, "current_location", "terrain_features");
+                var feature = features.HasValue && features.Value.ValueKind == JsonValueKind.Array
+                    ? features.Value.EnumerateArray().FirstOrDefault(row =>
+                        ReadInt(row, "tile_x") == targetX.Value && ReadInt(row, "tile_y") == targetY.Value)
+                    : default;
+                if (feature.ValueKind != JsonValueKind.Object) return false;
+                return action.OptionId == "executor.harvest_fruit_tree"
+                    ? feature.TryGetProperty("fruit_tree_expected_outputs", out var outputs) &&
+                      ProjectedOutputContextTagsMatch(outputs.GetRawText(), tagSets)
+                    : QuestContextTagMatcher.Matches(
+                        ReadQuestStringArray(feature, "tree_product_primary_context_tags"), tagSets);
+            }
+            if (action.OptionId == "executor.rummage_garbage")
+            {
+                var cans = ReadStateFieldValue(snapshot, "current_location", "garbage_cans");
+                var can = cans.HasValue && cans.Value.ValueKind == JsonValueKind.Array
+                    ? cans.Value.EnumerateArray().FirstOrDefault(row =>
+                        ReadInt(row, "tile_x") == targetX.Value && ReadInt(row, "tile_y") == targetY.Value)
+                    : default;
+                return can.ValueKind == JsonValueKind.Object &&
+                    can.TryGetProperty("expected_output", out var output) && output.ValueKind == JsonValueKind.Object &&
+                    QuestContextTagMatcher.Matches(ReadQuestStringArray(output, "context_tags"), tagSets);
             }
             if (action.OptionId == "executor.catch_fish")
             {

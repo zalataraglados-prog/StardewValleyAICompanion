@@ -97,6 +97,33 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("quest_acquisition_target_step", "false"),
                         Parameter("quest_acquisition_source_step", "true")
                     }));
+            var fruitTreeSourceSteps = FruitTreeHarvestCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, quest.RequiredItemId))
+                .Select(candidate => AttachQuest(candidate, quest, new[]
+                {
+                    Parameter("quest_required_item_id", quest.RequiredItemId),
+                    Parameter("quest_acquisition_target_step", "false"),
+                    Parameter("quest_acquisition_source_step", "true")
+                }));
+            var wildTreeSourceSteps = WildTreeProductHarvestCandidates(snapshot)
+                .Where(candidate => candidate.Available)
+                .Where(candidate => ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, quest.RequiredItemId))
+                .Select(candidate => AttachQuest(candidate, quest, new[]
+                {
+                    Parameter("quest_required_item_id", quest.RequiredItemId),
+                    Parameter("quest_acquisition_target_step", "false"),
+                    Parameter("quest_acquisition_source_step", "true")
+                }));
+            var garbageCanSourceSteps = GarbageCanRummageCandidates(snapshot)
+                .Where(candidate => candidate.Available && candidate.Quantity > 0)
+                .Where(candidate => ItemIdentityMatches(candidate.ItemId, candidate.QualifiedItemId, quest.RequiredItemId))
+                .Select(candidate => AttachQuest(candidate, quest, new[]
+                {
+                    Parameter("quest_required_item_id", quest.RequiredItemId),
+                    Parameter("quest_acquisition_target_step", "false"),
+                    Parameter("quest_acquisition_source_step", "true")
+                }));
             var scytheCropSourceSteps = HarvestCropCandidates(snapshot)
                 .Where(candidate => candidate.Available)
                 .Where(candidate => string.Equals(
@@ -203,6 +230,9 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(sourceSteps)
                 .Concat(bushSourceSteps)
                 .Concat(gingerSourceSteps)
+                .Concat(fruitTreeSourceSteps)
+                .Concat(wildTreeSourceSteps)
+                .Concat(garbageCanSourceSteps)
                 .Concat(scytheCropSourceSteps)
                 .Concat(giantCropSourceSteps)
                 .Concat(currentLocationClumpSourceSteps)
@@ -404,6 +434,33 @@ namespace StardewAI.Core.OptionRegistry
                                 "quest_acceptable_context_tag_sets_json",
                                 JsonSerializer.Serialize(fields.AcceptableContextTagSets))
                         })))
+                .Concat(FruitTreeHarvestCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(candidate, "fruit_tree_output_context_tags_json", fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(candidate, quest, new[]
+                    {
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true"),
+                        Parameter("quest_acceptable_context_tag_sets_json", JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                    })))
+                .Concat(WildTreeProductHarvestCandidates(snapshot)
+                    .Where(candidate => candidate.Available)
+                    .Where(candidate => CandidateContextTagsMatch(candidate, "tree_product_output_context_tags_json", fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(candidate, quest, new[]
+                    {
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true"),
+                        Parameter("quest_acceptable_context_tag_sets_json", JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                    })))
+                .Concat(GarbageCanRummageCandidates(snapshot)
+                    .Where(candidate => candidate.Available && candidate.Quantity > 0)
+                    .Where(candidate => CandidateContextTagsMatch(candidate, "garbage_output_context_tags_json", fields.AcceptableContextTagSets))
+                    .Select(candidate => AttachQuest(candidate, quest, new[]
+                    {
+                        Parameter("quest_acquisition_target_step", "false"),
+                        Parameter("quest_acquisition_source_step", "true"),
+                        Parameter("quest_acceptable_context_tag_sets_json", JsonSerializer.Serialize(fields.AcceptableContextTagSets))
+                    })))
                 .Concat(HarvestCropCandidates(snapshot)
                     .Where(candidate => candidate.Available)
                     .Where(candidate => string.Equals(

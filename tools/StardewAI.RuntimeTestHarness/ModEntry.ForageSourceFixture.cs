@@ -31,6 +31,7 @@ public sealed partial class ModEntry
             "bush" => ExecuteSetupBushSourceFixture(request),
             "fruit_tree" => ExecuteSetupFruitTreeSourceFixture(request),
             "wild_tree" => ExecuteSetupWildTreeProductFixture(request),
+            "garbage_can" => ExecuteSetupGarbageCanFixture(request),
             "ginger" => ExecuteSetupGingerSourceFixture(request),
             "spawned_object" => ExecuteSetupSpawnedObjectFixture(request),
             _ => BlockedWithPrimitive(

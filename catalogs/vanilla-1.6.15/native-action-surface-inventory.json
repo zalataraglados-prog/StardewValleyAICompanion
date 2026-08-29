@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 85,
   "catalogued_blocked_surface_count": 83,
-  "catalogued_blocked_action_count": 26,
+  "catalogued_blocked_action_count": 25,
   "catalogued_blocked_action_ids": [
-    "foraging.rummage_garbage",
     "housing.renovate",
     "island.field_office_donate",
     "minigame.play_calico_jack",

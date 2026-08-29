@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 垃圾桶翻找训练准入（EVD-300）
+
+`foraging.rummage_garbage` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否翻找某个当前可达且安全的未检查垃圾桶；桶身份、地图位置、站位、路径、运气/书籍状态、确定输出、交付方式、安全槽、NPC 目击和任务回执都由编译执行层从 fresh snapshot 机械绑定。已检查、负友谊目击、数据/预测漂移、无安全槽和不可达目标在上游排除。
+
+隐藏静音 E 盘矩阵 `9/9` 覆盖空结果、普通 debris、直接入包垃圾帽、Desert Festival 多 debris、两类排除、Linus 正向反应以及普通/特别收集任务。生产执行只调用一次原生 `GameLocation.checkAction`，不写 CheckedGarbage、统计、好感、库存、debris 或 RNG。最新 schema 为 `146/130/16/0`；对账为 `180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 allowlist / 25 catalogued blocked / 0 Product Executor`，回归为 Core `2039/2039`、Backend `145/145`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 25 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `housing.renovate`。
+
 ## 2026-08-30 普通树产品训练准入（EVD-299）
 
 `foraging.harvest_tree_product` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否收取当前可用普通树产品；树种、地点、站位、路径、安全空槽、确定掉落和随机附加掉落域全部由编译执行层机械生成并在 fresh snapshot 重绑。自定义树、数据漂移、未成熟、树桩、tapped、无种子、原生等级门不满足、摇动中、输出域不完整及不可达目标在上游直接排除。

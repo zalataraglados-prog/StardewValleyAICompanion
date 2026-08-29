@@ -86,6 +86,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("expected_tree_has_seed_before", ReadBool(feature, "has_seed").ToString().ToLowerInvariant()), Parameter("expected_tree_has_seed_after", ReadBool(feature, "tree_product_expected_has_seed_after").ToString().ToLowerInvariant()),
             Parameter("expected_tree_was_shaken_today_before", ReadBool(feature, "was_shaken_today").ToString().ToLowerInvariant()), Parameter("expected_tree_was_shaken_today_after", ReadBool(feature, "tree_product_expected_was_shaken_today_after").ToString().ToLowerInvariant()),
             Parameter("expected_output_items_json", JsonSerializer.Serialize(ReadArray(feature, "tree_product_guaranteed_outputs"))),
+            Parameter("tree_product_output_context_tags_json", JsonSerializer.Serialize(ReadStringArray(feature, "tree_product_primary_context_tags"))),
             Parameter("tree_product_output_domain_json", JsonSerializer.Serialize(ReadArray(feature, "tree_product_optional_output_domain"))),
             Parameter("tree_product_output_domain_contract", ReadString(feature, "tree_product_output_distribution_status")),
             Parameter("expected_foraging_experience_delta", ReadInt(feature, "tree_product_expected_foraging_experience_delta").ToString()),

@@ -1,3 +1,11 @@
+2026-08-30 EVD-300 native garbage-can rummage
+- Locked 1.6.15 source/data audit PASS: map Garbage actions, daily CheckedGarbage/stat lifecycle, deterministic TryGetGarbageItem selection, empty/standard/direct inventory/multiple-debris delivery, Book_Trash/luck inputs and exact NPC reaction ordering are covered. Locked Data/GarbageCans payload SHA-256 is `34621d9c92c472019c6e0a6bae4ac86a62576b7bccae4b9191590ed11e46911f`.
+- Focused mainline/source/runtime/governance tests PASS. One `foraging.rummage_garbage -> rummage_garbage -> executor.rummage_garbage` chain fresh-rebinds every typed field and rejects checked, negative-witness, data/prediction, geometry, safe-slot and projection drift.
+- Hidden/silent isolated E-drive matrix PASS 9/9: ordinary output, no output, direct inventory hat, Desert Festival multiple debris, already-checked exclusion, negative-witness exclusion, Linus positive witness, ordinary ResourceCollectionQuest and SpecialOrder Collect receipt. Production runtime used one native checkAction and verified checked set, stat, exact inventory/debris unit-state delta, friendship branch and slot restoration.
+- Installed full snapshot schema is 146 required, 130 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 180 registered / 205 semantic / 179 compiler-bound / 103 five-gate / 48 training allowlist / 25 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2039/2039; Backend 145/145; full solution Release build 0 warnings / 0 errors. Next slice is `housing.renovate`.
+
 2026-08-30 EVD-299 native ordinary Tree product harvest
 - Locked 1.6.15 source/data audit PASS: exact Tree.performUseAction/Tree.shake seed gate, all base tree seed identities, Fall maple days 14-28 hazelnut replacement, Island palm golden-coconut continuation, mystery/cracker/cosmetic/skill-book/Qi-bean optional domains, zero Foraging XP and tapped exclusion are covered.
 - Focused mainline/source/runtime tests PASS after introducing the high-level and primitive registrations, fresh mechanical rebind, typed transport, complete output-domain matching and direct-mutation source guards.

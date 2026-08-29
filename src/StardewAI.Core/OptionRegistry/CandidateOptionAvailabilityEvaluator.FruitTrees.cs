@@ -121,6 +121,11 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("expected_fruit_count_before", ReadInt(feature, "fruit_count").ToString()),
                 Parameter("expected_fruit_count_after", ReadInt(feature, "fruit_tree_expected_fruit_count_after").ToString()),
                 Parameter("expected_output_items_json", JsonSerializer.Serialize(ReadArray(feature, "fruit_tree_expected_outputs"))),
+                Parameter("fruit_tree_output_context_tags_json", JsonSerializer.Serialize(
+                    ReadArray(feature, "fruit_tree_expected_outputs")
+                        .SelectMany(output => ReadStringArray(output, "context_tags"))
+                        .Distinct(StringComparer.Ordinal)
+                        .OrderBy(tag => tag, StringComparer.Ordinal))),
                 Parameter("expected_foraging_experience_delta", ReadInt(feature, "fruit_tree_expected_foraging_experience_delta").ToString()),
                 Parameter("fruit_tree_projection_status", ReadString(feature, "fruit_tree_projection_status")),
                 Parameter("fruit_tree_native_contract", ReadString(feature, "fruit_tree_native_contract")),
