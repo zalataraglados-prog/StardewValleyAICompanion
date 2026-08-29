@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-292
+
+- `festival.manage_grange_display` 已闭合秋季 16 日星露谷展览会陈列的透明读取、确定性最优九件选择、上游候选、DailyPlan、fresh 编译重绑定和原生执行回执。高层动作负责“为一等奖准备陈列/评审后取回”，进入策略训练；`executor.manage_grange_display` 每次只执行一件物品的放入或取回，严格为 `ExecutorCalibration`。
+- 透明桥实时读取共享 `FarmerTeam.grangeDisplay`、玩家库存、原生实际售价 `sellToStorePrice(-1L)`、品质、八类多样性、九件数量分、Mayor 短裤惩罚、评审状态、展台交互图块和 `grangeMutex`。优化器按原版公式计算当前分与可达最优分，不依赖文档示例或静态物价。
+- 生产执行器复用共享 BFS/移动状态机，到达相邻格后只调用节日 `Event.checkAction` 打开原生 `StorageContainer`，通过菜单点击完成一次变更并等待共享互斥锁释放；禁止直接写展台、库存、评分或评审状态，异常列表形状也只会 fail-closed。动作不会替玩家启动评审。
+- 隐藏静音 E 盘隔离运行 `runtime-grange-display-20260829-203602` 为 `10/10` PASS：连续九次原生放入把陈列分数提升到 `124`，超过一等奖阈值 `90`，模拟评审后再原生取回一件；每次均验证菜单入口、互斥锁获取/释放、单次展台变更、库存守恒和评分状态。
+- 最新 full snapshot schema 为 `140 required / 124 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 training allowlist / 33 catalogued blocked / 0 Product Executor`。完整回归为 Core `2003/2003`、Backend `138/138`、Release `0 warnings / 0 errors`。下一语义切片固定为 `festival.play_fishing_game`。
+
 ## 2026-08-29 当前权威检查点：EVD-291
 
 - `executor.use_warp_totem` 已闭合五种原版传送图腾 `(O)688/(O)689/(O)690/(O)261/(O)886` 的透明读取、fresh 路由重绑定、动作编译、类型化请求、共享原生库存物品使用和延迟回执。锁定 1.6.15 反编译、`Data/Objects`、`Data/CraftingRecipes` 与官方 Wiki，确认 Farm/Mountain/Beach/Desert/Island 全部可达变体及其消耗语义。

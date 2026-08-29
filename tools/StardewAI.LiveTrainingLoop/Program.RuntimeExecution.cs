@@ -1592,6 +1592,9 @@ static partial class Program
         ApplyWarpTotemRequestFields(
             executionRequest,
             item);
+        ApplyGrangeDisplayRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

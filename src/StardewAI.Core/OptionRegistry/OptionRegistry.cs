@@ -175,6 +175,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact undonated inventory item selected", "native MuseumMenu donation lifecycle handed to the mechanical executor", "collection and Rusty Key threshold progress recorded" },
                 new[] { "block_non_donatable_or_already_donated_item", "block_museum_mutex", "block_missing_free_display_tile", "block_unverified_route", "block_projection_drift", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
 
+            Register(Option("festival.manage_grange_display", "festival", "Prepare the best available Stardew Valley Fair grange display and retrieve it after judging",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.grange_display", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact fresh-snapshot display removal or placement selected", "live sell prices quality categories and shared display state rebound", "native festival StorageContainer and grange mutex lifecycle handed to the mechanical executor" },
+                new[] { "block_inactive_festival_or_judging_transition", "block_grange_mutex", "block_inventory_capacity", "block_unverified_route", "block_projection_drift", "block_direct_team_display_inventory_score_or_judging_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1074,6 +1082,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.museum", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the Gunther counter", "native LibraryMuseum.OpenDonationMenu and MuseumMenu.receiveLeftClick donate exactly one item", "menu close settles museum rewards through native callbacks" },
                 new[] { "block_museum_not_current", "block_museum_mutex", "block_inventory_or_display_tile_drift", "block_unverified_route", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
+
+            Register(Option("executor.manage_grange_display", "festival", "Apply one verified Fair grange display mutation through the native shared StorageContainer",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.grange_display", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one live Fair display interaction tile", "native Event.checkAction and StorageContainer clicks apply one exact removal or placement", "menu close releases the shared grange mutex and verifies inventory score and judging state" },
+                new[] { "block_inactive_or_changed_fair_event", "block_grange_mutex", "block_inventory_display_or_score_drift", "block_unverified_route", "block_direct_team_display_inventory_score_or_judging_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

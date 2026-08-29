@@ -49,6 +49,7 @@ namespace StardewAI.Core.Tests
                     "farm.fulfill_machine_task_demand",
                     "farm.load_supported_machine_input",
                     "farming.collect_slime_ball",
+                    "festival.manage_grange_display",
                     "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mail.process_letter",

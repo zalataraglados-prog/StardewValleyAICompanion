@@ -5,6 +5,7 @@ param(
     [string] $SaveSlot = "",
     [string] $OutputPath = "artifacts\live-full-snapshot\full-schema-snapshot.json",
     [int] $StartupTimeoutSeconds = 150,
+    [switch] $NoBuild,
     [switch] $KeepGameRunning
 )
 
@@ -39,10 +40,12 @@ if (-not (Test-Path -LiteralPath (Join-Path $savesPath $SaveSlot) -PathType Cont
 
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
     -ProjectRoot $ProjectRoot `
-    -RuntimeRoot $RuntimeRoot | Out-Null
+    -RuntimeRoot $RuntimeRoot `
+    -NoBuild:$NoBuild | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
     -ProjectRoot $ProjectRoot `
-    -RuntimeRoot $RuntimeRoot | Out-Null
+    -RuntimeRoot $RuntimeRoot `
+    -NoBuild:$NoBuild | Out-Null
 
 $previousEnvironment = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES

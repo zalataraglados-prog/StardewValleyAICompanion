@@ -5,7 +5,8 @@ param(
     [string]$KnowledgeRoot = "I:\StardewAI-KnowledgeArtifacts\game-1.6.15",
     [string]$ExpectedGameVersion = "1.6.15",
     [string]$GamePath = "E:\StardewValleyAICompanion-runtime\Stardew Valley",
-    [string]$LockFile = ""
+    [string]$LockFile = "",
+    [switch]$NoBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,9 +43,11 @@ if ($null -eq $snapshot.state -or $null -eq $snapshot.state.player) {
     throw "Snapshot has no state.player object: $source"
 }
 
-& dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
-if ($LASTEXITCODE -ne 0) {
-    throw "KnowledgeCompiler build failed with exit code $LASTEXITCODE."
+if (-not $NoBuild) {
+    & dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
+    if ($LASTEXITCODE -ne 0) {
+        throw "KnowledgeCompiler build failed with exit code $LASTEXITCODE."
+    }
 }
 & dotnet run --project $compilerProject --no-build -- `
     --validate-snapshot-schema-only $source `

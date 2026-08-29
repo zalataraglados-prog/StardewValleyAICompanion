@@ -281,7 +281,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -292,7 +292,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
-            "executor.donate_museum_item", "executor.donate_community_center_item",
+            "executor.donate_museum_item", "executor.manage_grange_display", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
@@ -331,7 +331,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
-            "executor.donate_museum_item", "executor.donate_community_center_item",
+            "executor.donate_museum_item", "executor.manage_grange_display", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
@@ -353,7 +353,7 @@ namespace StardewAI.Contracts.Capabilities
             "buildings.change_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
-            "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
+            "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -363,7 +363,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "inventory.transfer_item");
 
         private static readonly HashSet<string> AutonomousCandidateIds = Set(
-            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets",
+            "farm.maintain_crops", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "farm.care_for_pets", "festival.manage_grange_display",
             "strategy.grandpa_progress", "exploration.visit_location", "fishing.collect_crab_pots",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.clear_green_rain_bushes",
@@ -379,7 +379,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.harvest_crop", "executor.harvest_giant_crop", "executor.pickup_debris",
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
-            "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
+            "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl", "executor.manage_grange_display",
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.name_hatched_animal", "executor.select_safe_item_slot",
             "executor.transfer_material");
@@ -409,7 +409,7 @@ namespace StardewAI.Contracts.Capabilities
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "executor.accept_daily_quest", "quest.accept_special_order", "executor.accept_special_order", "quest.claim_reward", "executor.claim_quest_reward", "mail.process_letter",
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
-            "buildings.construct", "farm.care_for_pets", "museum.donate_items",
+            "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display",
             "community_center.donate_bundle_items", "joja.advance_development",
             "housing.advance_farmhouse", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
             "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership",
@@ -440,7 +440,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
             "executor.complete_fish_pond_request", "executor.collect_animal_product",
-            "executor.pet_interact", "executor.fill_pet_bowl", "executor.donate_museum_item",
+            "executor.pet_interact", "executor.fill_pet_bowl", "executor.donate_museum_item", "executor.manage_grange_display",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
             "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building",
             "executor.pan_ore_spot", "executor.collect_machine_output",
@@ -723,6 +723,12 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.use_warp_totem"] = VerifiedEvidence(
                         "vanilla_all_five_exact_base_warp_totems_native_object_use_single_item_consumption_farm_map_property_all_fixed_destinations_active_and_passive_festival_routing_delayed_warp_and_final_state_receipt_executor_calibration_only",
                         "EVD-291"),
+                    ["festival.manage_grange_display"] = VerifiedEvidence(
+                        "vanilla_fall16_shared_team_grange_exact_live_sell_price_quality_category_optimizer_one_fresh_snapshot_native_StorageContainer_mutation_and_post_judging_retrieval_receipt",
+                        "EVD-292"),
+                    ["executor.manage_grange_display"] = VerifiedEvidence(
+                        "vanilla_fall16_exact_native_Event_checkAction_grange_mutex_StorageContainer_single_display_mutation_inventory_score_and_judging_receipt_executor_calibration_only",
+                        "EVD-292"),
                     ["skills.choose_profession"] = VerifiedEvidence(
                         "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
                         "EVD-244"),
@@ -795,7 +801,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("relocate_machine_item"),
                 SupportedCandidate("place_storage_item"),
                 SupportedCandidate("donate_community_center_item"),
-                SupportedCandidate("donate_museum_item"), SupportedCandidate("fill_pet_bowl"),
+                SupportedCandidate("donate_museum_item"), SupportedCandidate("manage_grange_display"), SupportedCandidate("fill_pet_bowl"),
                 SupportedCandidate("harvest_bush"), SupportedCandidate("harvest_crop_tile"),
                 SupportedCandidate("harvest_giant_crop_tile"), SupportedCandidate("harvest_ginger"),
                 SupportedCandidate("interact_endpoint"), SupportedCandidate("load_machine_input_tile"),

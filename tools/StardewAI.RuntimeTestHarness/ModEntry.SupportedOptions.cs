@@ -32,6 +32,7 @@ public sealed partial class ModEntry
             "debug.setup_return_scepter",
             "debug.setup_treasure_totem",
             "debug.setup_warp_totem",
+            "debug.setup_grange_display",
             "debug.setup_furniture_placement_target",
             "debug.setup_sign_placement_target",
             "debug.setup_sign_display_item_target",

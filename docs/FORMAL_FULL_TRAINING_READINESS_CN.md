@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 展览会陈列策略与原生执行闭环（EVD-292）
+
+`festival.manage_grange_display` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否在展览会准备一等奖陈列或在评审后取回；透明桥与编译器从 fresh snapshot 绑定共享展台、库存单位、实际售价、品质、八类多样性、九件数量分、Mayor 短裤、评审状态、交互图块、互斥锁和下一次唯一机械操作。`executor.manage_grange_display` 严格为 `ExecutorCalibration`，每个快照只允许一次原生放入/取回，不进入策略训练，也不得启动评审。
+
+隐藏静音隔离运行 `10/10` 通过：九次原生菜单放入达到 `124` 分，超过一等奖阈值 `90`，评审后一次原生取回；生产链复用共享 BFS/连续移动与 `Event.checkAction -> StorageContainer -> grangeMutex`，不直接写展台、库存、评分或评审状态。最新 schema 为 `140 required / 124 readable / 16 contextual / 0 blocking`，对账为 `165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 allowlist / 33 catalogued blocked / 0 Product Executor`。Core `2003/2003`、Backend `138/138`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 33 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `festival.play_fishing_game`。
+
 ## 2026-08-29 传送图腾执行器校准（EVD-291）
 
 `executor.use_warp_totem` 已完成五道执行证据闭环，训练角色严格为 `ExecutorCalibration`。上游策略只决定目的地和“是否值得消耗”；机械链从 fresh snapshot 重绑五种精确库存、Farm 地图属性/农场回退、固定目的地、主动与被动节日路由、地图边缘修正、2000ms 动画和 1000ms 原生回调。会消耗但不传送的节日前分支、联机 ReadyCheck、精确目的地重复使用和基础物品门失败均在消费前排除。

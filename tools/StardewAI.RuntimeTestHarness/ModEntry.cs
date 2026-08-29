@@ -45,6 +45,7 @@ public sealed partial class ModEntry : Mod
     private ActiveRainTotem? activeRainTotem;
     private ActiveReturnScepter? activeReturnScepter;
     private ActiveWarpTotem? activeWarpTotem;
+    private ActiveGrangeDisplay? activeGrangeDisplay;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -457,6 +458,8 @@ public sealed partial class ModEntry : Mod
         TickRainTotem();
         TickReturnScepter();
         TickWarpTotem();
+        TickSetupGrangeDisplayFixture();
+        TickGrangeDisplay();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -915,6 +918,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_grange_display")
+            {
+                StartSetupGrangeDisplayFixture(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1289,6 +1298,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.use_warp_totem")
             {
                 StartUseWarpTotem(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.manage_grange_display")
+            {
+                StartGrangeDisplay(pending);
                 return;
             }
 
@@ -2017,6 +2032,8 @@ public sealed partial class ModEntry : Mod
             activeRainTotem is not null ||
             activeReturnScepter is not null ||
             activeWarpTotem is not null ||
+            activeGrangeFixture is not null ||
+            activeGrangeDisplay is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

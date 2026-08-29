@@ -10,6 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Grange Display Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.grange_display` | Publish the complete active Fall 16 shared-display context or an explicit contextual-inactive state | locked 1.6.15 festival event and `FarmerTeam`; live event/team state | Grange Display page confirms Fall 16, nine slots and shared multiplayer display | covered_for_read / contextual_outside_festival | Full snapshot keeps the field required; outside the festival it is contextual, not missing. |
+| `display_rows[]` / `rows[]` | Bind every display slot and every eligible inventory unit with exact identity, quality, category, actual sell price and item points | live `grangeDisplay`, inventory and `sellToStorePrice(-1L)`; locked scoring code | Wiki confirms actual sell price, quality and category diversity affect score | covered_for_read_and_gate_EVD_292 / fresh_projection_required | Mayor shorts are published but excluded from the optimizer because native score becomes -666. |
+| `current_projected_score` / `best_available_score` / `scoring_contract` | Reproduce the exact base, item-count, category and item scoring and prove whether first place 90 is reachable | locked judging branches and deterministic optimizer | Wiki confirms 90/75/60 prize thresholds and nine-item scoring | covered_for_read_and_compile_EVD_292 | The optimizer selects at most nine concrete units and prefers preserving equivalent items already on display. |
+| `next_operation` / `projection_fingerprint` | Bind exactly one place/remove operation and reject stale inventory, display, judging or scoring state | transparent projection plus action compiler drift checks | n/a | covered_for_gate / one_fresh_snapshot_mutation_only | Before judging it converges on the best available set; after judging it retrieves occupied slots. It never initiates judging. |
+| `interaction_tiles` / `mutex_*` / `native_contract` | Bind the live Buildings interaction endpoint, shared lock and original menu lifecycle | locked `Event.checkAction`; live map tiles and `FarmerTeam.grangeMutex` | Wiki confirms the display is shared in multiplayer | covered_for_gate_and_output_EVD_292 | A lock held by another player, missing endpoint, open menu, busy player or non-nine-slot display fails closed. |
+| `festival.manage_grange_display` / `executor.manage_grange_display` | Separate strategic festival scheduling from one mechanical native menu mutation | candidate/DailyPlan/compiler/capability registry; shared movement and `StorageContainer` executor | n/a | strategy_value_allowlisted / executor_calibration_only | Production does not directly write display, inventory, score or judging state. |
+
 ## Warp Totem Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

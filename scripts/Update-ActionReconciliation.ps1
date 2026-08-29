@@ -3,7 +3,8 @@ param(
     [string]$KnowledgeRoot = "I:\StardewAI-KnowledgeArtifacts\game-1.6.15",
     [string]$DecompileRoot = "I:\StardewValleyAICompanion-decompile-linux-server-1.6.15",
     [string]$GamePath = "E:\StardewValleyAICompanion-runtime\Stardew Valley",
-    [string]$SnapshotPath = ""
+    [string]$SnapshotPath = "",
+    [switch]$NoBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,9 +37,11 @@ if (-not $explicitSnapshot) {
 }
 $runtimeRoot = Join-Path $KnowledgeRoot "runtime-binaries\linux-server-1.6.15-20260719"
 
-& dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
-if ($LASTEXITCODE -ne 0) {
-    throw "KnowledgeCompiler build failed with exit code $LASTEXITCODE."
+if (-not $NoBuild) {
+    & dotnet build $compilerProject --no-restore "-p:GamePath=$GamePath" --verbosity minimal
+    if ($LASTEXITCODE -ne 0) {
+        throw "KnowledgeCompiler build failed with exit code $LASTEXITCODE."
+    }
 }
 
 $compilerArguments = @(

@@ -68,6 +68,7 @@ namespace StardewAI.Core.Execution
                 ["executor.pet_interact"] = (action, _) => CompilePetInteractStep(action),
                 ["executor.fill_pet_bowl"] = (action, _) => CompileFillPetBowlStep(action),
                 ["executor.donate_museum_item"] = (action, _) => CompileDonateMuseumItemStep(action),
+                ["executor.manage_grange_display"] = (action, _) => CompileManageGrangeDisplayStep(action),
                 ["executor.donate_community_center_item"] = (action, _) => CompileDonateCommunityCenterItemStep(action),
                 ["executor.purchase_joja_membership"] = (action, _) => CompilePurchaseJojaStep(action),
                 ["executor.purchase_joja_project"] = (action, _) => CompilePurchaseJojaStep(action),

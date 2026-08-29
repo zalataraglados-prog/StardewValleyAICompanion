@@ -112,6 +112,7 @@ public static class OptionImplementationCatalog
         "rewards.claim_pot_of_gold",
         "executor.ship_inventory_item_to_bin",
         "executor.transfer_material",
+        "executor.manage_grange_display",
         "executor.select_safe_item_slot",
         "executor.set_sign_display_item",
         "executor.use_firework",
@@ -219,7 +220,7 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.AnimalManagement;
         if (optionId is "crafting.cook_recipe" or "executor.cook_recipe" or "crafting.forge_item" or "executor.forge_item")
             return ImplementationEngineIds.CraftingProcessing;
-        if (optionId == "inventory.transfer_item")
+        if (optionId is "inventory.transfer_item" or "festival.manage_grange_display")
             return ImplementationEngineIds.InventoryTransfer;
         if (RecoveryOptions.Contains(optionId))
             return ImplementationEngineIds.RecoveryTiming;

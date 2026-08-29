@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 展览会陈列闭环（EVD-292）
+
+`festival.manage_grange_display` 已覆盖秋季 16 日展览会的完整稳定陈列周期：实时枚举共享展台和可用库存单位，按原版实际售价、品质、八类多样性、九件数量分及 Mayor 短裤惩罚求最优组合；评审前逐次替换至最佳可用陈列，评审后逐次取回。策略训练只学习安排该目标，坐标、槽位、物品身份、分数、互斥锁和一次操作都由 fresh snapshot 与编译器机械绑定。
+
+运行层复用共享 BFS/移动，只经 `Event.checkAction` 打开原生 `StorageContainer` 并完成一次菜单点击对，不复制展台或评分实现，也不启动评审。隐藏静音 E 盘 `10/10` PASS，九次放入达到 `124` 分、超过一等奖阈值 `90`，并完成一次评审后取回；Core `2003/2003`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 allowlist / 33 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_fishing_game`。
+
 ## 2026-08-29 五类传送图腾原生路由闭环（EVD-291）
 
 `executor.use_warp_totem` 已覆盖锁定 1.6.15 的五种可达原版变体和完整稳定使用分支。透明桥按库存行绑定精确 Object 身份、公共使用门、Farm `WarpTotemEntry`/农场类型回退、固定目的地、被动节日替换链、主动节日入口、地图宽度修正和动画时序；编译器拒绝库存、目的地、节日、坐标、时序、颜色、指纹或原生合同漂移，并在会浪费图腾或需要联机 ReadyCheck 时上游关闭。

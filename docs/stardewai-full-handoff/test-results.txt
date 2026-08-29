@@ -1,3 +1,11 @@
+2026-08-29 EVD-292 native Fall 16 Grange Display management
+- Locked 1.6.15 source/data and official Wiki secondary audit PASS: shared nine-slot `FarmerTeam.grangeDisplay`, Buildings tiles 349/350/351, `grangeMutex`, native `StorageContainer`, exact live-price/quality/category/count scoring, Mayor shorts -666 and 90/75/60 thresholds are covered.
+- Focused Grange chain PASS 5/5 after adding fail-closed nine-slot shape validation and enforcing reuse of the shared native-object movement state machine. Strategy capability is allowlisted; the executor closes all five gates but remains calibration-only.
+- Hidden/silent isolated E-drive runtime PASS 10/10: `artifacts/runtime-grange-display/runtime-grange-display-20260829-203602/summary.json`. Nine native placements reached score 124, above the first-place threshold 90; one post-judging native retrieval passed. Every operation verified the original menu, mutex acquire/release, exactly one display mutation, inventory conservation, score and unchanged judging state.
+- Installed full snapshot schema PASS: 140 required, 124 readable with provenance, 16 contextual, blocking 0. Non-festival snapshots report `contextual_inactive_festival_fall16`; KnowledgeCompiler/native denominator blocking remains 0.
+- Reconciliation: 165 registered / 198 semantic / 164 compiler-bound / 91 five-gate / 41 training allowlist / 33 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2003/2003; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `festival.play_fishing_game`.
+
 2026-08-29 EVD-291 native five-variant Warp Totem routing
 - Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base IDs 688/689/690/261/886, common use gate, Farm `WarpTotemEntry`/farm fallbacks, fixed destinations, map-width correction, active festival entry/ReadyCheck, ordered passive replacements, 2000ms animation and 1000ms callback are covered.
 - TDD RED observed 20/20 failures from unknown registration/missing projection/compiler/runtime. Final focused GREEN PASS 22/22 additionally covers malformed snapshots with a missing selected row or animation contract, both fail-closed without compiler exceptions.
