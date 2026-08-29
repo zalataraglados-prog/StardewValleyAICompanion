@@ -30,6 +30,28 @@ public static class QueueReplanFilter
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");
+        var renovationId = ReadParameter(queueItem, "continuation.renovation_id");
+        var renovationSelectedIndex = ReadParameter(queueItem, "continuation.selected_index");
+        var renovationReason = ReadParameter(queueItem, "continuation.renovation_reason");
+        var renovationConfirmed = ReadParameter(queueItem, "continuation.confirm_renovation");
+        if (string.Equals(optionId, "housing.renovate", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(renovationId) &&
+            !string.IsNullOrWhiteSpace(renovationSelectedIndex) &&
+            !string.IsNullOrWhiteSpace(renovationReason) &&
+            string.Equals(renovationConfirmed, "true", StringComparison.Ordinal))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "home_renovation",
+                ["option_id"] = optionId,
+                ["renovation_id"] = renovationId,
+                ["selected_index"] = renovationSelectedIndex,
+                ["renovation_reason"] = renovationReason,
+                ["confirm_renovation"] = renovationConfirmed,
+                ["confirm_destructive"] = ReadParameter(queueItem, "continuation.confirm_destructive")
+            };
+        }
+
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
         if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
             !string.IsNullOrWhiteSpace(questCandidateId))
@@ -326,6 +348,19 @@ public static class QueueReplanFilter
         }
 
         var continuationKind = ReadString(continuation, "kind");
+        if (string.Equals(continuationKind, "home_renovation", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.renovate_home", StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "renovation_id"),
+                    ReadString(continuation, "renovation_id"),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(queueItem, "selected_index"),
+                    ReadString(continuation, "selected_index"),
+                    StringComparison.Ordinal);
+        }
+
         if (string.Equals(
                 continuationKind,
                 "economy_purchase",
@@ -570,6 +605,15 @@ public static class QueueReplanFilter
         if (!string.Equals(optionId, ReadString(continuation, "option_id"), StringComparison.Ordinal))
         {
             return false;
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "home_renovation", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "renovation_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "selected_index") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "renovation_reason") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_renovation") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_destructive");
         }
 
         if (string.Equals(

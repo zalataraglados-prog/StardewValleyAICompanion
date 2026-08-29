@@ -140,6 +140,7 @@ namespace StardewAI.Core.Execution
                 "purchase_joja_project" => "executor.purchase_joja_project",
                 "purchase_farmhouse_upgrade" => "executor.purchase_farmhouse_upgrade",
                 "purchase_farmhouse_expansion" => "executor.purchase_farmhouse_upgrade",
+                "renovate_home" => "executor.renovate_home",
                 "select_safe_item_slot" => "executor.select_safe_item_slot",
                 "pan_ore_spot" => "executor.pan_ore_spot",
                 "collect_machine_output" => "executor.collect_machine_output",

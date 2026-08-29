@@ -86,7 +86,8 @@ public sealed partial class WorldProgressReadAdapter
             GrandpaFactorSatisfied = currentGrandpaFactor,
             CellarUnlocked = level >= 3,
             CellarInfrastructure = cellarInfrastructure,
-            HouseUpgrade = spec
+            HouseUpgrade = spec,
+            HomeRenovations = ReadHomeRenovations(actor, scienceHouse, actionTile, robinAtCounter, buildingUnderConstruction, menuClear)
         };
     }
 

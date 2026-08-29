@@ -181,6 +181,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_native_cooking_candidate");
             }
 
+            if (optionId == "housing.renovate")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "explicit_home_renovation_id_region_reason_and_confirmation_required",
+                    "no_available_exact_home_renovation_candidate");
+            }
+
             if (optionId == "foraging.harvest_fruit_tree")
             {
                 return EventCandidateAvailabilityReasons(

@@ -91,6 +91,7 @@ public sealed partial class ModEntry : Mod
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveJojaDevelopment? activeJojaDevelopment;
     private ActiveFarmhouseUpgrade? activeFarmhouseUpgrade;
+    private ActiveHomeRenovation? activeHomeRenovation;
     private ActiveBuildingConstruction? activeBuildingConstruction;
     private ActiveBuildingAppearanceChange? activeBuildingAppearanceChange;
     private ActiveAnimalPurchase? activeAnimalPurchase;
@@ -534,6 +535,7 @@ public sealed partial class ModEntry : Mod
         TickCommunityCenterDonation();
         TickJojaDevelopment();
         TickFarmhouseUpgrade();
+        TickHomeRenovation();
         TickBuildingConstruction();
         TickBuildingAppearanceChange();
         TickPanOreSpot();
@@ -1562,6 +1564,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_home_renovation")
+            {
+                pending.Completion.SetResult(ExecuteSetupHomeRenovationFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_building_skin")
             {
                 pending.Completion.SetResult(ExecuteSetupBuildingSkinFixture(pending.Request));
@@ -1685,6 +1693,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "world.play_singing_stone")
             {
                 StartSingingStone(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.renovate_home")
+            {
+                StartHomeRenovation(pending);
                 return;
             }
 
@@ -1955,6 +1969,7 @@ public sealed partial class ModEntry : Mod
             activeCommunityCenterDonation = null;
             activeJojaDevelopment = null;
             activeFarmhouseUpgrade = null;
+            activeHomeRenovation = null;
             activeBuildingConstruction = null;
             activeBuildingAppearanceChange = null;
             activeAnimalPurchase = null;
@@ -2181,6 +2196,7 @@ public sealed partial class ModEntry : Mod
             activeCommunityCenterDonation is not null ||
             activeJojaDevelopment is not null ||
             activeFarmhouseUpgrade is not null ||
+            activeHomeRenovation is not null ||
             activeBuildingConstruction is not null ||
             activeBuildingAppearanceChange is not null ||
             activeAnimalPurchase is not null ||

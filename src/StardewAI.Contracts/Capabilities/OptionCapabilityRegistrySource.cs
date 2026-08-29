@@ -281,7 +281,7 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> StepCompilerIds = Set(
             "buildings.change_skin", "executor.change_building_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter", "mining.use_elevator",
-            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "housing.advance_farmhouse", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
+            "farm.maintain_crops", "farm.process_machines", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "quest.advance", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "housing.advance_farmhouse", "housing.renovate", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.harvest_ginger", "foraging.pan_ore_spot", "mining.claim_reward_chests", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "skills.read_books", "skills.choose_profession", "economy.buy_supplies", "economy.sell_items", "recovery.stabilize_day", "recovery.sleep_in_tent", "recovery.escape_object_trap",
             "executor.move_to_tile", "executor.traverse_connector", "executor.face_direction",
             "executor.interact", "executor.accept_daily_quest", "executor.accept_special_order", "executor.claim_quest_reward", "executor.buy_shop_item", "executor.sell_shop_item",
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
@@ -294,7 +294,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.manage_grange_display", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
-            "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
+            "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
@@ -314,7 +314,7 @@ namespace StardewAI.Contracts.Capabilities
             "exploration.visit_location", "executor.traverse_connector",
             "executor.select_safe_item_slot", "executor.close_menu", "mining.reach_depth",
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
-            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "fishing.manage_fish_pond", "executor.buy_shop_item",
+            "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "fishing.manage_fish_pond", "housing.renovate", "executor.renovate_home", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "inventory.transfer_item", "executor.transfer_material");
 
@@ -334,7 +334,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
             "executor.donate_museum_item", "executor.manage_grange_display", "executor.donate_community_center_item",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
-            "executor.purchase_farmhouse_upgrade", "executor.construct_building", "executor.pan_ore_spot",
+            "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
@@ -354,7 +354,7 @@ namespace StardewAI.Contracts.Capabilities
             "buildings.change_skin", "buildings.paint",
             "quest.accept_daily", "quest.accept_special_order", "quest.claim_reward", "mail.process_letter",
             "recovery.stabilize_day", "recovery.escape_object_trap", "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand",
-            "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse",
+            "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item", "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel", "community_center.donate_bundle_items", "joja.advance_development", "skills.read_books", "skills.choose_profession", "housing.advance_farmhouse", "housing.renovate",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing",
             "foraging.collect_spawned_objects", "foraging.harvest_ginger",
             "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_tree_product", "foraging.rummage_garbage", "foraging.clear_green_rain_bushes",
@@ -388,19 +388,19 @@ namespace StardewAI.Contracts.Capabilities
         private static readonly HashSet<string> PlayerConfirmationIds = Set(
             "museum.donate_items", "community_center.donate_bundle_items",
             "fishing.manage_fish_pond",
-            "joja.advance_development", "housing.advance_farmhouse", "mining.acquire_golden_scythe", "social.advance_partnership",
+            "joja.advance_development", "housing.advance_farmhouse", "housing.renovate", "mining.acquire_golden_scythe", "social.advance_partnership",
             "buildings.change_skin", "buildings.paint",
             "executor.change_building_skin", "executor.place_furniture",
             "executor.set_sign_display_item", "executor.edit_text_sign", "executor.use_firework",
             "executor.choose_dialogue_response", "executor.donate_museum_item",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
-            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building");
+            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building");
 
         private static readonly HashSet<string> PlayerCommandOnlyIds = Set(
             "buildings.change_skin", "buildings.paint",
-            "fishing.manage_fish_pond",
+            "fishing.manage_fish_pond", "housing.renovate",
             "executor.change_building_skin", "executor.place_furniture",
-            "executor.set_sign_display_item", "executor.edit_text_sign", "executor.use_firework");
+            "executor.set_sign_display_item", "executor.edit_text_sign", "executor.use_firework", "executor.renovate_home");
 
         private static readonly HashSet<string> HostOnlyIds = Set(
             "buildings.construct", "joja.advance_development", "housing.advance_farmhouse",
@@ -414,7 +414,7 @@ namespace StardewAI.Contracts.Capabilities
             "farm.maintain_crops", "farm.process_machines", "farm.collect_machine_outputs", "farm.load_supported_machine_input", "farm.establish_supported_machine_capacity", "farm.fulfill_machine_task_demand", "farm.collect_animal_products", "animals.purchase", "animals.manage_animal", "crafting.cook_recipe", "crafting.forge_item",
             "buildings.construct", "farm.care_for_pets", "museum.donate_items", "festival.manage_grange_display", "festival.play_fishing_game", "festival.play_slingshot_game", "festival.play_strength_game", "festival.spin_wheel",
             "community_center.donate_bundle_items", "joja.advance_development",
-            "housing.advance_farmhouse", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
+            "housing.advance_farmhouse", "housing.renovate", "skills.read_books", "skills.choose_profession", "economy.buy_supplies",
             "economy.sell_items", "economy.ship_items", "inventory.transfer_item", "social.talk_npc", "social.gift_npc", "social.advance_partnership",
             "quest.advance", "strategy.grandpa_progress", "exploration.visit_location",
             "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "fishing.manage_fish_pond",
@@ -445,7 +445,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.complete_fish_pond_request", "executor.collect_animal_product",
             "executor.pet_interact", "executor.fill_pet_bowl", "executor.donate_museum_item", "executor.manage_grange_display",
             "executor.donate_community_center_item", "executor.purchase_joja_membership",
-            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.construct_building",
+            "executor.purchase_joja_project", "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building",
             "executor.pan_ore_spot", "executor.collect_machine_output",
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
@@ -491,6 +491,12 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.purchase_farmhouse_upgrade"] = VerifiedEvidence(
                         "vanilla_host_exact_level_0_to_1_level_1_to_2_and_level_2_to_3_native_Carpenter_action_Upgrade_Yes_money_material_and_three_day_countdown_receipt",
                         "EVD-229"),
+                    ["housing.renovate"] = VerifiedEvidence(
+                        "vanilla_exact_live_18_entry_Data_HomeRenovations_explicit_player_command_candidate_daily_plan_fresh_collision_stand_rebind_native_Carpenter_HouseRenovations_RenovateMenu_all_branch_money_FirstPurchase_action_animation_return_and_no_refund_receipt",
+                        "EVD-301"),
+                    ["executor.renovate_home"] = VerifiedEvidence(
+                        "vanilla_exact_live_18_entry_native_Carpenter_Renovate_HouseRenovations_shop_order_RenovateMenu_hover_world_region_click_all_branch_money_FirstPurchase_Value_Mail_animation_return_and_negative_price_no_FirstPurchase_no_refund_receipt",
+                        "EVD-301"),
                     ["animals.purchase"] = VerifiedEvidence(
                         "vanilla_exact_live_stock_compatible_home_money_name_and_native_PurchaseAnimalsMenu_terminal_receipt_with_source_verified_rolling_route_Marnie_service_and_multi_location_paging",
                         "EVD-247"),
@@ -857,6 +863,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("plant_seed_tile"), SupportedCandidate("apply_fertilizer_tile"),
                 SupportedCandidate("purchase_farmhouse_expansion"),
                 SupportedCandidate("purchase_farmhouse_upgrade"),
+                SupportedCandidate("renovate_home"),
                 SupportedCandidate("purchase_joja_membership"),
                 SupportedCandidate("purchase_joja_project"), SupportedCandidate("read_inventory_book"),
                 SupportedCandidate("choose_profession"),

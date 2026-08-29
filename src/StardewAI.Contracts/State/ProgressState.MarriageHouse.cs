@@ -61,6 +61,9 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("house_upgrade")]
         public FarmhouseUpgradeProgressRef? HouseUpgrade { get; set; }
+
+        [JsonPropertyName("home_renovations")]
+        public HomeRenovationCatalogRef HomeRenovations { get; set; } = new();
     }
 
     public sealed class FarmhouseUpgradeProgressRef

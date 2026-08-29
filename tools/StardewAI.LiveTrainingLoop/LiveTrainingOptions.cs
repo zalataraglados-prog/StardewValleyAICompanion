@@ -57,6 +57,7 @@ public sealed class LiveTrainingOptions
     public bool RequireStructuredPolicy { get; set; }
     public List<SmallModelActionParameter> DailyPlanCandidateParameters { get; } = new();
     public bool DailyPlanExplicitConfirmationGranted { get; set; }
+    public OptionInvocationSource DailyPlanInvocationSource { get; set; } = OptionInvocationSource.Policy;
     public string DailyPlanCandidateKind { get; set; } = string.Empty;
     public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterObjectiveComplete { get; set; }
@@ -336,6 +337,13 @@ public sealed class LiveTrainingOptions
             else if (current == "--daily-plan-explicit-confirmation")
             {
                 options.DailyPlanExplicitConfirmationGranted = true;
+            }
+            else if (current == "--daily-plan-invocation-source" && i + 1 < args.Length)
+            {
+                var value = args[++i];
+                if (!Enum.TryParse<OptionInvocationSource>(value, ignoreCase: true, out var source))
+                    throw new ArgumentException("Unsupported --daily-plan-invocation-source: " + value);
+                options.DailyPlanInvocationSource = source;
             }
             else if (current == "--daily-plan-candidate-kind" &&
                 i + 1 < args.Length)

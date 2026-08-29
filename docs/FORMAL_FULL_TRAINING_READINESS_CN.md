@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 住宅装修玩家命令闭环（EVD-301）
+
+`housing.renovate` 已通过 read / candidate / compile / native runtime / output receipt 五门，但严格保持 `PlayerCommandOnly`，不进入正式策略训练 allowlist。模型或玩家命令层只给出精确装修 ID、区域、原因和确认；目录、要求、原生商店顺序、价格、首次购买退款语义、区域几何、阻挡、柜台站位和菜单输入均由 fresh snapshot 与编译执行层机械绑定。破坏动画另需独立破坏性确认。
+
+隐藏静音 E 盘矩阵 `19/19` 覆盖实时 `Data/HomeRenovations` 的 18 个原版条目，以及一个负价、无 `FirstPurchase` 标记、不退款分支。生产执行只通过 Robin 原生对话、`ShopMenu("HouseRenovations")` 和 `RenovateMenu` 输入完成，不直接写钱、邮件、`NetInt`、地图、家具或事件。跨地图 continuation 以装修 ID、区域、原因和确认锁定同一目标，并在每次新快照排名时恢复 `PlayerCommand` 来源，终端原生执行成功后才结束。最新 schema 为 `146/130/16/0`；对账为 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，回归为 Core `2045/2045`、Backend `148/148`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 24 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `island.field_office_donate`。
+
 ## 2026-08-30 垃圾桶翻找训练准入（EVD-300）
 
 `foraging.rummage_garbage` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否翻找某个当前可达且安全的未检查垃圾桶；桶身份、地图位置、站位、路径、运气/书籍状态、确定输出、交付方式、安全槽、NPC 目击和任务回执都由编译执行层从 fresh snapshot 机械绑定。已检查、负友谊目击、数据/预测漂移、无安全槽和不可达目标在上游排除。

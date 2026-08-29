@@ -577,6 +577,43 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "applied"));
     }
 
+    [Fact]
+    public void HomeRenovationContinuationKeepsExactRenovationUntilNativeTerminal()
+    {
+        var route = QueueItem("queue.renovation.route", "executor.traverse_connector", "2", "3", string.Empty);
+        var parameters = route["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "housing.renovate"));
+        parameters.Add(Parameter("continuation.renovation_id", "remove_crib"));
+        parameters.Add(Parameter("continuation.selected_index", "0"));
+        parameters.Add(Parameter("continuation.renovation_reason", "explicit player request"));
+        parameters.Add(Parameter("continuation.confirm_renovation", "true"));
+        parameters.Add(Parameter("continuation.confirm_destructive", "true"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("home_renovation", continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            HomeRenovationCandidate("build_crib", "0", "false"),
+            HomeRenovationCandidate("remove_crib", "1", "true"),
+            HomeRenovationCandidate("remove_crib", "0", "true")
+        };
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(candidates, continuation));
+        Assert.Equal(
+            "remove_crib",
+            selected!["parameters"]![0]!["value"]!.GetValue<string>());
+
+        var terminal = QueueItem("queue.renovation.terminal", "executor.renovate_home", "10", "10", string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("renovation_id", "remove_crib"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("selected_index", "0"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "blocked"));
+
+        terminal["normalized_command"]!["parameters"]!.AsArray()
+            .Single(node => node!["name"]!.GetValue<string>() == "selected_index")!["value"] = "1";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -724,6 +761,27 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["parameters"] = new JsonArray
             {
                 Parameter("quest_candidate_id", candidateId)
+            }
+        };
+    }
+
+    private static JsonObject HomeRenovationCandidate(
+        string renovationId,
+        string selectedIndex,
+        string confirmDestructive)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "home-renovation:" + renovationId + ":" + selectedIndex,
+            ["option_id"] = "housing.renovate",
+            ["kind"] = "renovate_home",
+            ["parameters"] = new JsonArray
+            {
+                Parameter("renovation_id", renovationId),
+                Parameter("selected_index", selectedIndex),
+                Parameter("renovation_reason", "explicit player request"),
+                Parameter("confirm_renovation", "true"),
+                Parameter("confirm_destructive", confirmDestructive)
             }
         };
     }

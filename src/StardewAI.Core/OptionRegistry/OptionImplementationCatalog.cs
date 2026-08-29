@@ -66,6 +66,7 @@ public static class OptionImplementationCatalog
         "executor.purchase_joja_membership",
         "executor.purchase_joja_project",
         "executor.purchase_farmhouse_upgrade",
+        "executor.renovate_home",
         "executor.construct_building",
         "executor.change_building_skin",
         "executor.read_book",

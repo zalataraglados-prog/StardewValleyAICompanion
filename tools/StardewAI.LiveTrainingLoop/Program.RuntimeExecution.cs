@@ -1680,6 +1680,9 @@ static partial class Program
         ApplyFishPondManagementRequestFields(
             executionRequest,
             item);
+        ApplyHomeRenovationRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

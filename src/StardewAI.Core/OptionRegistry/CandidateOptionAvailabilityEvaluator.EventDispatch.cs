@@ -31,6 +31,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["quest.accept_special_order"] = (snapshot, _) => SpecialOrderAcceptanceCandidates(snapshot),
                 ["quest.claim_reward"] = (snapshot, _) => QuestRewardClaimCandidates(snapshot),
                 ["housing.advance_farmhouse"] = (snapshot, _) => FarmhouseUpgradeCandidates(snapshot),
+                ["housing.renovate"] = HomeRenovationCandidates,
                 ["skills.read_books"] = (snapshot, _) => BookReadCandidates(snapshot),
                 ["skills.choose_profession"] = (snapshot, _) => ProfessionChoiceCandidates(snapshot),
                 ["mail.process_letter"] = (snapshot, _) => MailProcessingCandidates(snapshot),

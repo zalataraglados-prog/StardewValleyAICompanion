@@ -103,6 +103,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "GameLocation.performAction", "GameLocation.CheckGarbage", "GameLocation.TryGetGarbageItem", "Data/GarbageCans" }),
             Assumption(
+                "home_renovation",
+                new[] { "housing.renovate", "executor.renovate_home" },
+                new[] { "explicit_player_command", "exact_Data_HomeRenovations_payload", "native_shop_order", "requirements_and_family_gate", "money_and_refund_semantics", "clear_selected_region", "native_menu_lifecycle" },
+                new[] { "route_length", "native_shop_scroll_ticks", "build_or_destroy_animation_and_return_ticks" },
+                Array.Empty<string>(),
+                new[] { "GameLocation.carpenters", "HouseRenovation.GetAvailableRenovations", "HouseRenovation.EnsureNoObstructions", "RenovateMenu.CompleteRenovation", "Data/HomeRenovations" }),
+            Assumption(
                 "green_rain_resource_clump",
                 new[] { "foraging.clear_green_rain_bushes", "executor.break_current_location_resource_clump" },
                 new[] { "exact_vanilla_resource_clump_44_or_46", "axe_available", "perimeter_stand_tile", "menu_clear" },

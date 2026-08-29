@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 85,
-  "catalogued_blocked_surface_count": 83,
-  "catalogued_blocked_action_count": 25,
+  "mapped_count": 87,
+  "catalogued_blocked_surface_count": 81,
+  "catalogued_blocked_action_count": 24,
   "catalogued_blocked_action_ids": [
-    "housing.renovate",
     "island.field_office_donate",
     "minigame.play_calico_jack",
     "minigame.play_crane_game",
@@ -3024,7 +3023,7 @@
       "mappedOptionIds": [
         "housing.renovate"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3041,7 +3040,7 @@
       "mappedOptionIds": [
         "housing.renovate"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

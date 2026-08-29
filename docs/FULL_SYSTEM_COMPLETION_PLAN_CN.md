@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 住宅装修原生玩家命令闭环（EVD-301）
+
+`housing.renovate` 已按完整纵向切片闭合，但分类为玩家指令能力而非自主策略动作。透明桥实时发布基础 1.6.15 `Data/HomeRenovations` 的完整 18 项目录、原生可用顺序、要求/动作、区域、婴儿床特殊门、阻挡、费用、首次购买与退款投影。玩家命令只选择装修 ID、区域并给出原因/确认；fresh 编译器重绑机械字段并从碰撞网格选择可达 Robin 柜台站位。
+
+运行层复用共享移动和菜单输入，只经 `Carpenter -> Renovate -> HouseRenovations -> RenovateMenu` 原生链执行。隐藏静音矩阵 `19/19` 覆盖 18 个原版分支及负价无首次购买标记不退款分支；跨地图 continuation 保留玩家命令授权并精确锁定装修 ID/区域，原生终端成功前禁止切换目标；没有第二套住宅状态写入器。当前对账为 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2045/2045`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_donate`；必须先锁定捐赠集合、奖励、菜单与持久化分支，再复用既有岛屿路线、库存选择和原生菜单执行体系。
+
 ## 2026-08-30 垃圾桶翻找原生闭环（EVD-300）
 
 `foraging.rummage_garbage` 已按完整纵向切片进入正式策略训练范围。透明桥基于一次地图交互扫描和锁定 `Data/GarbageCans` 发布全部原版 Garbage 端点、日级检查状态、统计、运气/书籍、非变异确定预测、完整物品状态、交付方式、NPC 反应与安全槽。候选先排除已检查、数据漂移、负好感目击、容量/空槽和路线问题，fresh 编译器再重绑全部机械字段。

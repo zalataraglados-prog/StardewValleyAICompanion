@@ -66,6 +66,7 @@ static partial class Program
                     {
                         option_id = options.DailyPlanCandidateOptionIds[0],
                         explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
+                        invocation_source = options.DailyPlanInvocationSource,
                         parameters = options.DailyPlanCandidateParameters
                     }
                 }
@@ -90,6 +91,8 @@ static partial class Program
                     new
                     {
                         option_id = ReadString(objectiveContinuation, "option_id"),
+                        explicit_confirmation_granted = options.DailyPlanExplicitConfirmationGranted,
+                        invocation_source = options.DailyPlanInvocationSource,
                         parameters = new[]
                         {
                             new { name = "continuation.option_id", value = ReadString(objectiveContinuation, "option_id") },
@@ -114,7 +117,12 @@ static partial class Program
                             new { name = "continuation.machine_tile_y", value = ReadString(objectiveContinuation, "machine_tile_y") },
                             new { name = "continuation.machine_inventory_slot_index", value = ReadString(objectiveContinuation, "machine_inventory_slot_index") },
                             new { name = "continuation.machine_qualified_item_id", value = ReadString(objectiveContinuation, "machine_qualified_item_id") },
-                            new { name = "continuation.machine_item_id", value = ReadString(objectiveContinuation, "machine_item_id") }
+                            new { name = "continuation.machine_item_id", value = ReadString(objectiveContinuation, "machine_item_id") },
+                            new { name = "continuation.renovation_id", value = ReadString(objectiveContinuation, "renovation_id") },
+                            new { name = "continuation.selected_index", value = ReadString(objectiveContinuation, "selected_index") },
+                            new { name = "continuation.renovation_reason", value = ReadString(objectiveContinuation, "renovation_reason") },
+                            new { name = "continuation.confirm_renovation", value = ReadString(objectiveContinuation, "confirm_renovation") },
+                            new { name = "continuation.confirm_destructive", value = ReadString(objectiveContinuation, "confirm_destructive") }
                         }.Where(parameter => !string.IsNullOrWhiteSpace(parameter.value)).ToArray()
                     }
                 },

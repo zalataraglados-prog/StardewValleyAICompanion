@@ -239,6 +239,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact vanilla farmhouse upgrade is selected", "money and material costs are verified", "native Carpenter dialogue lifecycle is handed to the mechanical executor" },
                 new[] { "block_active_construction", "block_robin_absent", "block_insufficient_money_or_materials", "block_unverified_route", "block_projection_drift", "block_direct_money_inventory_or_house_mutation" }));
 
+            Register(Option("housing.renovate", "housing", "Apply one exact explicit farmhouse renovation through the native Robin renovation flow",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.marriage_house", "locations.route_graph", "locations.route_connectors", "locations.collision_grid", "menus.active_menu" },
+                new[] { "player command selects one exact renovation ID and region with a reason and confirmation", "compiler rebinds all 18 live Data/HomeRenovations branches, native shop order, cost, requirements, actions, bounds and obstructions", "native Carpenter, HouseRenovations ShopMenu and RenovateMenu lifecycle is handed to the mechanical executor", "money, FirstPurchase marker, renovation action state, event, map update and return are verified" },
+                new[] { "block_non_player_command_or_missing_confirmation", "block_destructive_branch_without_destructive_confirmation", "block_data_catalog_menu_order_or_projection_drift", "block_unsatisfied_requirement_or_crib_family_gate", "block_insufficient_money", "block_selected_region_obstructed", "block_unverified_route", "block_direct_money_mail_NetInt_map_furniture_menu_viewport_or_event_mutation" }));
+
             Register(Option("skills.read_books", "skills", "Read one transparent inventory book through its native branch",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1242,6 +1250,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.marriage_house", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches Robin's counter", "native Carpenter Upgrade and Yes responses deduct exact costs", "three-day construction countdown starts" },
                 new[] { "block_active_construction", "block_robin_or_upgrade_tuple_drift", "block_unverified_route", "block_direct_money_inventory_or_house_mutation" }));
+
+            Register(Option("executor.renovate_home", "housing", "Apply one verified farmhouse renovation through native Carpenter and RenovateMenu input",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.marriage_house", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches Robin's counter", "native Renovate response opens the exact live HouseRenovations row", "native RenovateMenu hover and world-region click applies only the rebound branch", "money, FirstPurchase marker, action state, renovation event and return are verified" },
+                new[] { "block_non_player_command_or_confirmation_drift", "block_data_catalog_shop_order_or_region_drift", "block_requirement_money_crib_or_obstruction_drift", "block_native_menu_or_return_lifecycle_drift", "block_direct_money_mail_NetInt_map_furniture_menu_viewport_or_event_mutation" }));
 
             Register(Option("executor.construct_building", "buildings", "Construct one exact verified building through native Carpenter dialogue and placement",
                 OptionBehaviorCategories.Mechanical,

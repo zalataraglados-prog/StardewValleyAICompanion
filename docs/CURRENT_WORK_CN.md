@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-301
+
+- `housing.renovate` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、共享碰撞网格站位、Robin 原生对话、`HouseRenovations` 商店和 `RenovateMenu` 世界区域点击。唯一动作链为 `housing.renovate -> executor.renovate_home`；住宅升级、建筑建造/外观、家具摆放和移动继续使用各自既有实现。
+- 透明桥实时读取完整 `Data/HomeRenovations`，锁定基础 1.6.15 的 18 个条目、原生可用顺序、`Value`/`Mail` 要求与动作、全部矩形组、婴儿床特殊区域、阻挡、价格、`FirstPurchase_<RoomId>` 和退款资格。数据 payload SHA-256 为 `26bdcd0681a57c1f749d249ad9305ffa1d58c433c86c1a0b954d0052c6d5d40b`；目录数量、顺序、字段或哈希漂移均失败关闭。
+- 全部 18 项严格保持 `PlayerCommandOnly`：必须给出精确 `renovation_id`、`selected_index`、原因和确认；破坏动画另需破坏性确认。它们从默认候选、策略训练和 allowlist 排除。LiveTrainingLoop 已补齐 `PlayerCommand` 调用来源传输；编译器从 fresh `locations.collision_grid` 派生或复核可达柜台站位，不再要求模型提供机械站位。
+- 隐藏静音 E 盘矩阵 `19/19` PASS：18 个实时原版条目全部经原生 Robin/商店/装修菜单执行，并额外覆盖负价项目在没有首次购买标记时不退款。跨地图续跑会锁定同一装修 ID/区域，保留玩家指令来源与两级确认，到达服务地图后才重建终端动作。full snapshot 为 `146 required / 130 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `182 registered / 206 semantic / 181 compiler-bound / 105 five-gate / 48 training allowlist / 24 catalogued blocked / 0 Product Executor`。KnowledgeCompiler `585/585`、blocking `0`；完整回归为 Core `2045/2045`、Backend `148/148`、Release `0 warnings / 0 errors`；下一语义切片固定为 `island.field_office_donate`。
+
 ## 2026-08-30 当前权威检查点：EVD-300
 
 - `foraging.rummage_garbage` 已闭合透明读取、上游候选排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生垃圾桶交互和输出/任务反馈。唯一动作链为 `rummage_garbage -> executor.rummage_garbage`；移动、物品接收、debris 拾取和普通/特别收集任务继续复用既有实现。
