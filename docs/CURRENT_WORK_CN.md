@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-302
+
+- `island.field_office_donate` 已闭合透明读取、显式确认候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 `FieldOfficeDesk -> Safari_Donate -> FieldOfficeMenu` 输入和严格结算回执。唯一动作链为 `island.field_office_donate -> donate_field_office_piece -> executor.donate_field_office_piece`；生产执行不直接写 fossil、奖励、核桃标记、邮件或 finale。
+- 锁定 1.6.15 反编译确认 11 个槽位和物品映射，其中 `(O)823` 按槽 0 后槽 2、`(O)826` 按槽 7 后槽 6 的原生顺序解析。透明桥同时公开解锁/教授/互斥锁/菜单、Desk 与 Survey 端点、11 项捐赠状态、四组恢复状态、两道调查状态与答案、finale readiness、GoldenWalnutsFound、未领取奖励和每个可执行捐赠候选。
+- 隐藏静音 E 盘最终矩阵 `15/15` PASS：11 个槽位逐一原生捐赠，中心骨架奖励 `(O)73 x6 + (O)69`、蛇骨架 `(O)73 x3 + (O)835`，蝙蝠/青蛙普通核桃奖励，以及 `GoldenWalnutsFound=130` 时 `(O)TentKit` / `(O)926` 替代奖励全部匹配。最终证据为 `artifacts/runtime-field-office-donation-smoke/runtime-field-office-donation-smoke-20260830-063003/summary.json`。
+- 全仓库分母复核纠正了此前将 `FieldOfficeSurvey` 错并入捐赠的问题。它现作为独立 `island.field_office_survey` 保持 `catalogued_blocked`；22/18 两个固定答案和调查状态已透明，但候选、编译和原生执行尚未借用捐赠证据。最新 full snapshot 为 `148 required / 132 readable with provenance / 16 contextual / 0 blocking`；对账为 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 training allowlist / 24 catalogued blocked / 0 Product Executor`。KnowledgeCompiler `585/585`、blocking `0`；回归为 Core `2049/2049`、Backend `148/148`、Release `0 warnings / 0 errors`。下一切片固定为 `island.field_office_survey`。
+
 ## 2026-08-30 当前权威检查点：EVD-301
 
 - `housing.renovate` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求、共享碰撞网格站位、Robin 原生对话、`HouseRenovations` 商店和 `RenovateMenu` 世界区域点击。唯一动作链为 `housing.renovate -> executor.renovate_home`；住宅升级、建筑建造/外观、家具摆放和移动继续使用各自既有实现。

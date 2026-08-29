@@ -11260,7 +11260,7 @@
       "itemIds": [],
       "mappedActionIds": [
         "executor.choose_dialogue_response",
-        "island.field_office_donate"
+        "island.field_office_survey"
       ],
       "semanticDisposition": "player_semantic_action",
       "coverageStatus": "mapped_to_semantic_action",

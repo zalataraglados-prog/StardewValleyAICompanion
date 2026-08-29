@@ -62,6 +62,7 @@ public static class OptionImplementationCatalog
         "executor.quest_npc_interact",
         "executor.quest_drop_box_donate",
         "executor.donate_museum_item",
+        "executor.donate_field_office_piece",
         "executor.donate_community_center_item",
         "executor.purchase_joja_membership",
         "executor.purchase_joja_project",

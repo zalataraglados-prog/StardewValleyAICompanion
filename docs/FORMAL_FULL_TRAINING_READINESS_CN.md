@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 Field Office 化石捐赠闭环（EVD-302）
+
+`island.field_office_donate` 已通过 read / candidate / compile / native runtime / output receipt 五门，但当前要求显式确认且未进入策略训练 allowlist。模型或玩家只选择“捐赠当前已拥有且原生可接受的一件化石”；具体背包槽、原生重复物品槽位顺序、Desk 端点、站位、路线、菜单点击、集合奖励、核桃标记和 finale readiness 均由 fresh snapshot 与编译执行层机械绑定。远程候选每次只走一个已解析连接器，并锁定同一背包物品和目标槽位直到原生捐赠成功。
+
+隐藏静音 E 盘最终矩阵 `15/15` 覆盖 11 个显示槽、中心/蛇集合完成、蝙蝠/青蛙普通奖励及 130 核桃替代奖励。生产执行只经 `FieldOfficeDesk` 互斥锁、`Safari_Donate` 回答、`FieldOfficeMenu` 背包/精确 holder/OK 输入完成，不直接修改持久状态。最新 schema 为 `148/132/16/0`；对账为 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 24 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡。下一语义切片为独立 `island.field_office_survey`；透明读已存在，但不得用 EVD-302 捐赠回执替代调查执行证据。
+
 ## 2026-08-30 住宅装修玩家命令闭环（EVD-301）
 
 `housing.renovate` 已通过 read / candidate / compile / native runtime / output receipt 五门，但严格保持 `PlayerCommandOnly`，不进入正式策略训练 allowlist。模型或玩家命令层只给出精确装修 ID、区域、原因和确认；目录、要求、原生商店顺序、价格、首次购买退款语义、区域几何、阻挡、柜台站位和菜单输入均由 fresh snapshot 与编译执行层机械绑定。破坏动画另需独立破坏性确认。

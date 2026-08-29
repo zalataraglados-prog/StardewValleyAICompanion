@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Island Field Office Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `world_progress.island_field_office.location_id` / `is_current_location` / `north_cave_opened` / `professor_available` / `intro_received_or_pending` / `mutex_locked` / `menu_clear` | Exclude locked, busy, unavailable or wrong-map donations before scoring and drive one-connector rolling routes | locked 1.6.15 `IslandFieldOffice.performAction`, `resetLocalState`, `safariGuyMutex`; live location/mail/menu state | n/a | covered_for_read_and_gate_EVD_302 | Current-map terminal execution requires the professor, Desk and clear mutex/menu; remote execution retains only exact continuation identity. |
+| `desk_action_tiles[]` / `pieces[]` / `donated_piece_count` / `donation_candidates[]` / `projection_status` | Bind one inventory fossil to the exact native display slot, stack transition, set identity and fresh compiler request | locked `totalPieces=11`, `FieldOfficeMenu.receiveLeftClick` and item-to-holder order | n/a | covered_for_read_candidate_compile_EVD_302 | `(O)823` resolves 0 then 2; `(O)826` resolves 7 then 6. Changed slot/item/runtime/count/reward projection fails closed. |
+| `center_skeleton_restored` / `snake_restored` / `bat_restored` / `frog_restored` / `golden_walnuts_found` / `uncollected_rewards[]` / `finale_ready` / `finale_received_or_pending` | Predict and verify exact native set settlement without direct mutation | locked `IslandFieldOffice.donatePiece`, `TransferDataFromSavedLocation`, collected-nut/mail logic | n/a | covered_for_read_compile_runtime_output_EVD_302 | Includes center `(O)73 x6 + (O)69`, snake `(O)73 x3 + (O)835`, ordinary bat/frog walnuts and 130-found fallback `(O)TentKit`/`(O)926`. |
+| `survey_action_tiles[]` / `plants_restored_left` / `plants_restored_right` / `has_failed_survey_today` / `next_survey_kind` / `next_survey_answer` | Preserve the independent two-question survey state and prevent it from being hidden under donation evidence | locked `FieldOfficeSurvey` and survey answer branches; fixed answers 22 and 18; day reset and finale condition | n/a | covered_for_read_but_blocked_for_execution | Explicitly catalogued as `island.field_office_survey`; candidate, compiler and native runtime evidence are the next slice. |
+
 ## Fruit Tree Harvest Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

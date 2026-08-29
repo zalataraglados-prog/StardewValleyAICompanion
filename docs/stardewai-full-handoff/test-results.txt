@@ -1,3 +1,12 @@
+2026-08-30 EVD-302 native Island Field Office fossil donation
+- Locked 1.6.15 source audit PASS: exact 11-slot piece identity, `(O)823` 0-then-2 and `(O)826` 7-then-6 ordering, Desk/Safari/Menu lifecycle, four set settlements, collected-nut/finale persistence and 130-walnut fallback rewards are covered.
+- Focused transparent-candidate/DailyPlan/fresh-compiler/continuation/source-governance tests PASS 4/4. Long-route review added an independent 240-tick Safari question wait budget instead of reusing total movement elapsed time.
+- Hidden/silent isolated E-drive final matrix PASS 15/15: `artifacts/runtime-field-office-donation-smoke/runtime-field-office-donation-smoke-20260830-063003/summary.json`. All native slot, stack, piece-count, set-restored, reward and GoldenWalnutsFound receipts matched fresh snapshots.
+- Full denominator audit split `FieldOfficeSurvey` from donation and retained it as `island.field_office_survey` catalogued-blocked; its 22/18 answers and persistent state are transparent but no execution evidence is claimed.
+- Installed full snapshot schema is 148 required, 132 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 training allowlist / 24 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2049/2049; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next slice is `island.field_office_survey`.
+
 2026-08-30 EVD-300 native garbage-can rummage
 - Locked 1.6.15 source/data audit PASS: map Garbage actions, daily CheckedGarbage/stat lifecycle, deterministic TryGetGarbageItem selection, empty/standard/direct inventory/multiple-debris delivery, Book_Trash/luck inputs and exact NPC reaction ordering are covered. Locked Data/GarbageCans payload SHA-256 is `34621d9c92c472019c6e0a6bae4ac86a62576b7bccae4b9191590ed11e46911f`.
 - Focused mainline/source/runtime/governance tests PASS. One `foraging.rummage_garbage -> rummage_garbage -> executor.rummage_garbage` chain fresh-rebinds every typed field and rejects checked, negative-witness, data/prediction, geometry, safe-slot and projection drift.

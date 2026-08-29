@@ -729,6 +729,63 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("rusty_key_reward_action")]
         public string RustyKeyRewardAction { get; set; } = string.Empty;
 
+        [JsonPropertyName("field_office_desk_action_raw")]
+        public string FieldOfficeDeskActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_target_piece_index")]
+        public int? FieldOfficeTargetPieceIndex { get; set; }
+
+        [JsonPropertyName("field_office_target_piece_kind")]
+        public string FieldOfficeTargetPieceKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_target_set_kind")]
+        public string FieldOfficeTargetSetKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_donated_piece_count_before")]
+        public int? FieldOfficeDonatedPieceCountBefore { get; set; }
+
+        [JsonPropertyName("field_office_donated_piece_count_after")]
+        public int? FieldOfficeDonatedPieceCountAfter { get; set; }
+
+        [JsonPropertyName("field_office_completes_set")]
+        public bool? FieldOfficeCompletesSet { get; set; }
+
+        [JsonPropertyName("field_office_new_reward_items_json")]
+        public string FieldOfficeNewRewardItemsJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_rewards_before_json")]
+        public string FieldOfficeRewardsBeforeJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_rewards_after_json")]
+        public string FieldOfficeRewardsAfterJson { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_collected_nut_key")]
+        public string FieldOfficeCollectedNutKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_collected_nut_before")]
+        public bool? FieldOfficeCollectedNutBefore { get; set; }
+
+        [JsonPropertyName("field_office_finale_ready_after")]
+        public bool? FieldOfficeFinaleReadyAfter { get; set; }
+
+        [JsonPropertyName("field_office_plants_restored_left_before")]
+        public bool? FieldOfficePlantsRestoredLeftBefore { get; set; }
+
+        [JsonPropertyName("field_office_plants_restored_right_before")]
+        public bool? FieldOfficePlantsRestoredRightBefore { get; set; }
+
+        [JsonPropertyName("field_office_finale_received_before")]
+        public bool? FieldOfficeFinaleReceivedBefore { get; set; }
+
+        [JsonPropertyName("field_office_golden_walnuts_found_before")]
+        public int? FieldOfficeGoldenWalnutsFoundBefore { get; set; }
+
+        [JsonPropertyName("field_office_projection_status")]
+        public string FieldOfficeProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_fixture_case")]
+        public string FieldOfficeFixtureCase { get; set; } = string.Empty;
+
         [JsonPropertyName("route_state")]
         public string RouteState { get; set; } = string.Empty;
 

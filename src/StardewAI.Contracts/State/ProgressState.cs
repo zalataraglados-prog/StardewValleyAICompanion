@@ -1255,6 +1255,189 @@ namespace StardewAI.Contracts.State
         public string? ItemId { get; set; }
     }
 
+    public sealed class IslandFieldOfficeProgressRef
+    {
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("is_current_location")]
+        public bool IsCurrentLocation { get; set; }
+
+        [JsonPropertyName("north_cave_opened")]
+        public bool NorthCaveOpened { get; set; }
+
+        [JsonPropertyName("professor_available")]
+        public bool ProfessorAvailable { get; set; }
+
+        [JsonPropertyName("intro_received_or_pending")]
+        public bool IntroReceivedOrPending { get; set; }
+
+        [JsonPropertyName("mutex_locked")]
+        public bool MutexLocked { get; set; }
+
+        [JsonPropertyName("menu_clear")]
+        public bool MenuClear { get; set; }
+
+        [JsonPropertyName("desk_action_tiles")]
+        public IslandFieldOfficeActionTileRef[] DeskActionTiles { get; set; } = System.Array.Empty<IslandFieldOfficeActionTileRef>();
+
+        [JsonPropertyName("survey_action_tiles")]
+        public IslandFieldOfficeActionTileRef[] SurveyActionTiles { get; set; } = System.Array.Empty<IslandFieldOfficeActionTileRef>();
+
+        [JsonPropertyName("pieces")]
+        public IslandFieldOfficePieceRef[] Pieces { get; set; } = System.Array.Empty<IslandFieldOfficePieceRef>();
+
+        [JsonPropertyName("donated_piece_count")]
+        public int DonatedPieceCount { get; set; }
+
+        [JsonPropertyName("center_skeleton_restored")]
+        public bool CenterSkeletonRestored { get; set; }
+
+        [JsonPropertyName("snake_restored")]
+        public bool SnakeRestored { get; set; }
+
+        [JsonPropertyName("bat_restored")]
+        public bool BatRestored { get; set; }
+
+        [JsonPropertyName("frog_restored")]
+        public bool FrogRestored { get; set; }
+
+        [JsonPropertyName("plants_restored_left")]
+        public bool PlantsRestoredLeft { get; set; }
+
+        [JsonPropertyName("plants_restored_right")]
+        public bool PlantsRestoredRight { get; set; }
+
+        [JsonPropertyName("has_failed_survey_today")]
+        public bool HasFailedSurveyToday { get; set; }
+
+        [JsonPropertyName("next_survey_kind")]
+        public string NextSurveyKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("next_survey_answer")]
+        public int? NextSurveyAnswer { get; set; }
+
+        [JsonPropertyName("finale_ready")]
+        public bool FinaleReady { get; set; }
+
+        [JsonPropertyName("finale_received_or_pending")]
+        public bool FinaleReceivedOrPending { get; set; }
+
+        [JsonPropertyName("golden_walnuts_found")]
+        public int GoldenWalnutsFound { get; set; }
+
+        [JsonPropertyName("uncollected_rewards")]
+        public IslandFieldOfficeRewardRef[] UncollectedRewards { get; set; } = System.Array.Empty<IslandFieldOfficeRewardRef>();
+
+        [JsonPropertyName("donation_candidates")]
+        public IslandFieldOfficeDonationCandidateRef[] DonationCandidates { get; set; } = System.Array.Empty<IslandFieldOfficeDonationCandidateRef>();
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+    }
+
+    public sealed class IslandFieldOfficeActionTileRef
+    {
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("action_raw")]
+        public string ActionRaw { get; set; } = string.Empty;
+    }
+
+    public sealed class IslandFieldOfficePieceRef
+    {
+        [JsonPropertyName("piece_index")]
+        public int PieceIndex { get; set; }
+
+        [JsonPropertyName("piece_kind")]
+        public string PieceKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("set_kind")]
+        public string SetKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("donated")]
+        public bool Donated { get; set; }
+    }
+
+    public sealed class IslandFieldOfficeRewardRef
+    {
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("stack")]
+        public int Stack { get; set; }
+
+        [JsonPropertyName("quality")]
+        public int Quality { get; set; }
+    }
+
+    public sealed class IslandFieldOfficeDonationCandidateRef
+    {
+        [JsonPropertyName("slot_index")]
+        public int SlotIndex { get; set; }
+
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("qualified_item_id")]
+        public string QualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_type")]
+        public string RuntimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("stack_before")]
+        public int StackBefore { get; set; }
+
+        [JsonPropertyName("stack_after")]
+        public int StackAfter { get; set; }
+
+        [JsonPropertyName("target_piece_index")]
+        public int TargetPieceIndex { get; set; }
+
+        [JsonPropertyName("target_piece_kind")]
+        public string TargetPieceKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_set_kind")]
+        public string TargetSetKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("donated_piece_count_before")]
+        public int DonatedPieceCountBefore { get; set; }
+
+        [JsonPropertyName("donated_piece_count_after")]
+        public int DonatedPieceCountAfter { get; set; }
+
+        [JsonPropertyName("completes_set")]
+        public bool CompletesSet { get; set; }
+
+        [JsonPropertyName("new_reward_items")]
+        public IslandFieldOfficeRewardRef[] NewRewardItems { get; set; } = System.Array.Empty<IslandFieldOfficeRewardRef>();
+
+        [JsonPropertyName("uncollected_rewards_before")]
+        public IslandFieldOfficeRewardRef[] UncollectedRewardsBefore { get; set; } = System.Array.Empty<IslandFieldOfficeRewardRef>();
+
+        [JsonPropertyName("uncollected_rewards_after")]
+        public IslandFieldOfficeRewardRef[] UncollectedRewardsAfter { get; set; } = System.Array.Empty<IslandFieldOfficeRewardRef>();
+
+        [JsonPropertyName("expected_collected_nut_key")]
+        public string ExpectedCollectedNutKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("collected_nut_before")]
+        public bool CollectedNutBefore { get; set; }
+
+        [JsonPropertyName("expected_finale_ready_after")]
+        public bool ExpectedFinaleReadyAfter { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
+    }
+
     public sealed class CollectionsProgressRef
     {
         [JsonPropertyName("basic_shipped")]

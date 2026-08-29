@@ -1087,11 +1087,9 @@
         "Maps/Island_FieldOffice:Buildings[8,7]=FieldOfficeDesk"
       ],
       "sourceBranchIds": [
-        "native_branch.87442db306a2f1c0",
         "native_branch.dd6ed2722c9428c2"
       ],
       "mappedActionIds": [
-        "executor.choose_dialogue_response",
         "island.field_office_donate"
       ],
       "sourceBindingStatus": "matched_native_branch",
@@ -1111,7 +1109,7 @@
       ],
       "mappedActionIds": [
         "executor.choose_dialogue_response",
-        "island.field_office_donate"
+        "island.field_office_survey"
       ],
       "sourceBindingStatus": "matched_native_branch",
       "semanticCoverageStatus": "mapped_to_semantic_action",

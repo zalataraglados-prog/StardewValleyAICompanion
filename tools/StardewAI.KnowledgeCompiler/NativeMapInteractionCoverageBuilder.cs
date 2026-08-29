@@ -50,6 +50,13 @@ internal sealed class NativeMapInteractionCoverageBuilder
             var matchingBranches = candidateBranches
                 .Where(row => AnchorContainsToken(row.Anchor, token))
                 .ToArray();
+            if (token == "FieldOfficeDesk")
+            {
+                matchingBranches = matchingBranches
+                    .Where(row => row.RuntimeType == "IslandFieldOffice" &&
+                        row.Anchor.StartsWith("!(!(", StringComparison.Ordinal))
+                    .ToArray();
+            }
             if (matchingBranches.Length == 0)
             {
                 var literalMatches = candidateBranches
@@ -62,6 +69,13 @@ internal sealed class NativeMapInteractionCoverageBuilder
                         .Where(row => row.EndLine - row.StartLine == narrowestSpan)
                         .ToArray();
                 }
+            }
+            if (token == "FieldOfficeSurvey")
+            {
+                matchingBranches = matchingBranches
+                    .Where(row => row.RuntimeType == "IslandFieldOffice" &&
+                        row.StringLiterals.Contains("FieldOfficeSurvey", StringComparer.Ordinal))
+                    .ToArray();
             }
             var actionIds = matchingBranches
                 .SelectMany(row => row.MappedActionIds)

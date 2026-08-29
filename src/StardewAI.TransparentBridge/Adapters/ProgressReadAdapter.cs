@@ -92,6 +92,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
         var actor = Context.IsWorldReady ? Game1.player : null;
         var world = Context.IsWorldReady ? Game1.netWorldState?.Value : null;
         var museum = Context.IsWorldReady ? Game1.getLocationFromName("ArchaeologyHouse") as LibraryMuseum : null;
+        var islandFieldOffice = Context.IsWorldReady ? Game1.getLocationFromName("IslandFieldOffice") as IslandFieldOffice : null;
         var communityCenter = Context.IsWorldReady ? Game1.getLocationFromName("CommunityCenter") as CommunityCenter : null;
         var jojaMart = Context.IsWorldReady ? Game1.getLocationFromName("JojaMart") as JojaMart : null;
         var scienceHouse = Context.IsWorldReady ? Game1.getLocationFromName("ScienceHouse") : null;
@@ -104,6 +105,7 @@ public sealed partial class WorldProgressReadAdapter : ReadAdapterBase
             ["marriage_house"] = Field(ReadMarriageHouse(actor, scienceHouse), "GameLocation.Carpenter action/carpenters/answerDialogue carpenter_Upgrade and upgrade_Yes; Farmer houseUpgradeLevel/daysUntilHouseUpgrade/isMarriedOrRoommates/isEngaged/hasCurrentOrPendingRoommate; FarmHouse.setMapForUpgradeLevel/AddCellarTiles/createCellarWarps/GetCellarName; Cellar map/objects plus GameLocation.isTilePlaceable/IsTileBlockedBy static capacity; exact vanilla 1.6 upgrade costs and Cask recipe unlock", tick),
             ["raccoon_request"] = Field(ReadRaccoonRequest(world), "NetWorldState raccoon request fields and Raccoon.GetBundle", tick),
             ["museum"] = Field(ReadMuseum(museum, master), "LibraryMuseum.museumPieces/totalArtifacts/IsItemSuitableForDonation/isTileSuitableForMuseumPiece/CanCollectReward; Data/MuseumRewards; Farmer.questLog[24]/achievements/mailReceived; Events/Farm[66]", tick),
+            ["island_field_office"] = Field(ReadIslandFieldOffice(islandFieldOffice, actor, world), "IslandFieldOffice piecesDonated/restoration NetBools/uncollectedRewards/safariGuyMutex/map actions; FieldOfficeMenu native item-to-slot mapping and donatePiece rewards; survey answerDialogueAction; Farmer mail and team collectedNutTracker", tick),
             ["shipping_collection"] = Field(ToSortedDictionary(master?.basicShipped), "Game1.MasterPlayer.basicShipped", tick),
             ["fish_collection"] = Field(ToSortedArrayDictionary(master?.fishCaught), "Game1.MasterPlayer.fishCaught", tick),
             ["artifact_collection"] = Field(ToSortedArrayDictionary(master?.archaeologyFound), "Game1.MasterPlayer.archaeologyFound", tick),

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 Field Office 原生捐赠闭环（EVD-302）
+
+`island.field_office_donate` 已按完整纵向切片闭合。透明桥发布完整 11 槽化石状态、原生重复物品分配顺序、当前背包可捐候选、Desk/Survey 端点、解锁/教授/互斥锁/菜单、四组恢复标记、两项调查、finale readiness、GoldenWalnutsFound 和奖励队列。高层只选择一个精确捐赠候选并要求确认；fresh 编译器重绑所有机械字段，跨地图 continuation 只保留物品与目标槽身份。
+
+运行层复用共享路线和连续移动，只经 `FieldOfficeDesk -> Safari_Donate -> FieldOfficeMenu` 输入完成。隐藏静音最终矩阵 `15/15` 覆盖所有槽位、两组多件集合奖励、两组单件普通奖励和 130 核桃替代奖励；没有第二套岛屿状态写入器。全量复核把此前被捐赠语义遮蔽的 `FieldOfficeSurvey` 拆为独立待办，因此当前对账为 `184 registered / 208 semantic / 183 compiler-bound / 107 five-gate / 48 allowlist / 24 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2049/2049`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片为 `island.field_office_survey`：复用当前透明状态、岛屿路线、通用对话输入和持久化回执，独立覆盖 22 朵紫花、18 只紫海星、当日失败锁和 finale 触发，不得扩写捐赠执行器。
+
 ## 2026-08-30 住宅装修原生玩家命令闭环（EVD-301）
 
 `housing.renovate` 已按完整纵向切片闭合，但分类为玩家指令能力而非自主策略动作。透明桥实时发布基础 1.6.15 `Data/HomeRenovations` 的完整 18 项目录、原生可用顺序、要求/动作、区域、婴儿床特殊门、阻挡、费用、首次购买与退款投影。玩家命令只选择装修 ID、区域并给出原因/确认；fresh 编译器重绑机械字段并从碰撞网格选择可达 Robin 柜台站位。

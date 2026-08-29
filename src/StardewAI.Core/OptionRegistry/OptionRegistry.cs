@@ -175,6 +175,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact undonated inventory item selected", "native MuseumMenu donation lifecycle handed to the mechanical executor", "collection and Rusty Key threshold progress recorded" },
                 new[] { "block_non_donatable_or_already_donated_item", "block_museum_mutex", "block_missing_free_display_tile", "block_unverified_route", "block_projection_drift", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
 
+            Register(Option("island.field_office_donate", "island", "Donate one transparent Island Field Office fossil",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.island_field_office", "world_progress.golden_walnuts", "locations.collision_grid", "locations.route_connectors", "menus.active_menu" },
+                new[] { "one exact owned fossil and native display slot selected", "route continuation retains fossil and slot identity", "native FieldOfficeMenu donation and set reward settlement handed to the mechanical executor" },
+                new[] { "block_locked_field_office", "block_field_office_mutex", "block_missing_professor_or_desk", "block_inventory_piece_or_reward_projection_drift", "block_unverified_route", "block_direct_piece_reward_nut_mail_or_finale_mutation" }));
+
             Register(Option("festival.manage_grange_display", "festival", "Prepare the best available Stardew Valley Fair grange display and retrieve it after judging",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1178,6 +1186,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.museum", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the Gunther counter", "native LibraryMuseum.OpenDonationMenu and MuseumMenu.receiveLeftClick donate exactly one item", "menu close settles museum rewards through native callbacks" },
                 new[] { "block_museum_not_current", "block_museum_mutex", "block_inventory_or_display_tile_drift", "block_unverified_route", "block_direct_museum_inventory_achievement_mail_or_event_mutation" }));
+
+            Register(Option("executor.donate_field_office_piece", "island", "Donate one verified fossil through native FieldOfficeMenu clicks",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.island_field_office", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the Field Office desk", "native FieldOfficeDesk mutex and Donate response open FieldOfficeMenu", "inventory and exact display-holder clicks consume one fossil", "native set rewards and collected-nut marker match the locked projection" },
+                new[] { "block_field_office_not_current", "block_field_office_mutex", "block_inventory_piece_or_reward_projection_drift", "block_unverified_route", "block_direct_piece_reward_nut_mail_or_finale_mutation" }));
 
             Register(Option("executor.manage_grange_display", "festival", "Apply one verified Fair grange display mutation through the native shared StorageContainer",
                 OptionBehaviorCategories.Mechanical,

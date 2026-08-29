@@ -130,6 +130,7 @@ namespace StardewAI.Core.Execution
                 "pet_interact" => "executor.pet_interact",
                 "fill_pet_bowl" => "executor.fill_pet_bowl",
                 "donate_museum_item" => "executor.donate_museum_item",
+                "donate_field_office_piece" => "executor.donate_field_office_piece",
                 "manage_grange_display" => "executor.manage_grange_display",
                 "play_fair_fishing_game" => "executor.play_fair_fishing_game",
                 "play_fair_slingshot_game" => "executor.play_fair_slingshot_game",

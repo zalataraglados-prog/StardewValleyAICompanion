@@ -1683,6 +1683,9 @@ static partial class Program
         ApplyHomeRenovationRequestFields(
             executionRequest,
             item);
+        ApplyFieldOfficeRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

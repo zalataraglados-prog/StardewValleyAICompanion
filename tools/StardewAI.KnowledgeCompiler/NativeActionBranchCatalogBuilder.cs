@@ -707,7 +707,11 @@ internal static class NativeBranchSemanticClassifier
             result.Add("quest.advance");
         }
         if (surface.RuntimeType == "IslandFieldOffice")
-            result.Add("island.field_office_donate");
+        {
+            result.Add(literals.Contains("FieldOfficeSurvey", StringComparer.Ordinal)
+                ? "island.field_office_survey"
+                : "island.field_office_donate");
+        }
         if (surface.RuntimeType == "JojaMart")
         {
             result.Add("executor.purchase_joja_membership");

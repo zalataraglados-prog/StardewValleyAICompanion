@@ -87,6 +87,7 @@ public sealed partial class ModEntry : Mod
     private ActiveAnimalManagement? activeAnimalManagement;
     private ActivePetInteraction? activePetInteraction;
     private ActiveMuseumDonation? activeMuseumDonation;
+    private ActiveFieldOfficeDonation? activeFieldOfficeDonation;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveJojaDevelopment? activeJojaDevelopment;
@@ -531,6 +532,7 @@ public sealed partial class ModEntry : Mod
         TickAnimalManagement();
         TickPetInteraction();
         TickMuseumDonation();
+        TickFieldOfficeDonation();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
         TickJojaDevelopment();
@@ -1564,6 +1566,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_field_office_donation")
+            {
+                pending.Completion.SetResult(ExecuteSetupFieldOfficeDonationFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_home_renovation")
             {
                 pending.Completion.SetResult(ExecuteSetupHomeRenovationFixture(pending.Request));
@@ -1699,6 +1707,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.renovate_home")
             {
                 StartHomeRenovation(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.donate_field_office_piece")
+            {
+                StartFieldOfficeDonation(pending);
                 return;
             }
 
@@ -1965,6 +1979,7 @@ public sealed partial class ModEntry : Mod
             activeAnimalManagement = null;
             activePetInteraction = null;
             activeMuseumDonation = null;
+            activeFieldOfficeDonation = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
             activeJojaDevelopment = null;
@@ -2192,6 +2207,7 @@ public sealed partial class ModEntry : Mod
             activeAnimalManagement is not null ||
             activePetInteraction is not null ||
             activeMuseumDonation is not null ||
+            activeFieldOfficeDonation is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
             activeJojaDevelopment is not null ||
