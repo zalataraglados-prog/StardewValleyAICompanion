@@ -62,6 +62,8 @@ public sealed partial class MenuReadAdapter
             money_included = menu.moneyIncluded,
             learned_recipe = menu.learnedRecipe,
             cooking_or_crafting = menu.cookingOrCrafting,
+            secret_note_image = menu.secretNoteImage,
+            which_bg = menu.whichBG,
             destroy = menu.destroy,
             menu_identity_sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identitySource))).ToLowerInvariant()
         };

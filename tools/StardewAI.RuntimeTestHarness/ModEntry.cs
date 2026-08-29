@@ -924,6 +924,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_secret_note_fixture")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupSecretNoteFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_output_target")
             {
                 pending.Completion.SetResult(ExecuteSetupMachineOutputTarget(pending.Request));
@@ -1625,6 +1632,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.read_book")
             {
                 pending.Completion.SetResult(ExecuteReadBook(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.read_secret_note")
+            {
+                pending.Completion.SetResult(ExecuteReadSecretNote(pending.Request));
                 return;
             }
 

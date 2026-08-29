@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 秘密纸条执行器校准（EVD-284）
+
+`executor.read_secret_note` 已完成五道执行证据闭环，但训练角色仍为 `ExecutorCalibration`：它校准透明桥、编译器和执行器能否忠实完成一个已由上游选择的纸条读取，不让策略模型学习原生随机数、菜单构造或库存扣减。普通纸条与日记残页的选择均在 fresh snapshot 中机械计算，小模型不能伪造 note id 或任务副作用。
+
+隐藏静音隔离运行覆盖多未读种子抽取、任务 30、任务 29 和普通日记残页四条分支。最新 schema 为 `132 required / 116 readable / 16 contextual / 0 blocking`，对账为 `156 registered / 197 semantic / 155 compiler-bound / 82 five-gate / 40 allowlist / 41 catalogued blocked / 0 Product Executor`。因此该切片不解除 Product Executor、剩余 41 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻挡。下一语义切片为 `executor.use_firework`。
+
 ## 2026-08-29 草种放置执行器校准（EVD-283）
 
 `executor.plant_grass` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`：它证明动作编译和执行器能忠实完成上游给定的普通/蓝草精确布局，不为策略模型生成“应该在哪里种草”的价值标签。上游必须给出用途、精确地块和时间预算；编译器从 fresh snapshot 重绑所有机械字段。

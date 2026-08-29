@@ -15,6 +15,7 @@ public sealed partial class ModEntry
             "debug.setup_animal_management",
             "debug.setup_animal_product_target",
             "debug.setup_book_fixture",
+            "debug.setup_secret_note_fixture",
             "debug.setup_breakable_container",
             "debug.setup_clear_obstacle",
             "debug.setup_cooking_fixture",

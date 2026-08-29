@@ -298,7 +298,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
+            "executor.read_book", "executor.read_secret_note", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -337,7 +337,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.catch_fish", "executor.play_junimo_kart",
+            "executor.read_book", "executor.read_secret_note", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -447,7 +447,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
             "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.select_safe_item_slot"
+            "executor.read_book", "executor.read_secret_note", "executor.select_safe_item_slot"
         };
 
         private static readonly HashSet<string> CalibrationOnlyHighLevelIds = Set(
@@ -699,6 +699,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["skills.read_books"] = VerifiedEvidence(
                         "all_six_vanilla_base_book_branch_families_exact_projection_native_use_and_durable_output",
                         "EVD-124"),
+                    ["executor.read_secret_note"] = VerifiedEvidence(
+                        "vanilla_exact_secret_note_and_journal_scrap_unseen_selection_native_use_note_seen_quest_menu_and_single_item_receipt",
+                        "EVD-284"),
                     ["skills.choose_profession"] = VerifiedEvidence(
                         "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
                         "EVD-244"),

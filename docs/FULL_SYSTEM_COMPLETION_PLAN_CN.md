@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 秘密纸条原生读取闭环（EVD-284）
+
+`executor.read_secret_note` 已覆盖锁定 1.6.15 的两类原生可读物：普通秘密纸条 `(O)79` 按存档与玩家身份种子从未读集合确定性选择，日记残页 `(O)842` 选择最小未读编号。完整数据目录、已读/未读状态、选择输入和结果、原文哈希、显示分支及 10/23 号任务副作用均由透明桥实时发布，编译器只接受 fresh snapshot 中精确匹配的一行。
+
+运行层与 `executor.read_book` 共用唯一原生库存物品使用入口，不复制库存消耗逻辑，也不直接修改已读集合、任务或菜单。隐藏静音隔离运行覆盖多未读种子抽取、两个任务分支和日记残页，四例均为 `applied/verified`。该动作是 `ExecutorCalibration`，不直接进入策略训练 allowlist；后续高层规划可以把“读取已有纸条”组合为机械安排。当前对账为 `156 registered / 197 semantic / 155 compiler-bound / 82 five-gate / 40 allowlist / 41 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_firework`。
+
 ## 2026-08-29 草种原生放置闭环（EVD-283）
 
 `executor.plant_grass` 已覆盖锁定 1.6.15 的全部原生草种放置分支：普通草种 `(O)297 -> Grass(1,4)` 与蓝草种 `(O)BlueGrassStarter -> Grass(7,4)`。透明桥只在 full profile 发布当前加载地图的原生合法区间、精确库存变体与结果合同；当前地形输出补充 `grass_type` 和 `number_of_weeds`。用途、布局和精确位置属于上游规划，小模型或布局器必须明确给出，执行器不得自行扩张布局意图。

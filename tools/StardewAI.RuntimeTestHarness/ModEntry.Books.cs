@@ -86,12 +86,8 @@ public sealed partial class ModEntry
             ? string.Empty
             : Game1.player.stats.Get(projection.StatKey).ToString(CultureInfo.InvariantCulture);
 
-        Game1.player.CurrentToolIndex = slot;
-        var used = book.performUseAction(Game1.player.currentLocation);
-        if (used)
-        {
-            Game1.player.reduceActiveItemByOne();
-        }
+        var nativeUse = UseInventoryObjectNative(book, slot);
+        var used = nativeUse.Used;
 
         var actualExperience = Enumerable.Range(0, 6)
             .Select(index => new SkillExperienceDelta(

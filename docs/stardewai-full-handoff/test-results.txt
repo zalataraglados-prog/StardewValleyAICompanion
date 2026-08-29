@@ -4081,3 +4081,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 131 required, 115 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 training allowlist / 42 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1887/1887; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.read_secret_note`.
+
+2026-08-29 EVD-284 native Secret Note and Journal Scrap reading
+- Locked 1.6.15 source audit PASS: normal `(O)79` seeded unseen selection, journal `(O)842` minimum unseen selection, exact seen-set add, note 10/23 quest side effects, native LetterViewerMenu and caller-side single item consumption are covered.
+- TDD RED observed `unknown_option_id`, missing capability and registry count 155 before implementation. Focused GREEN PASS 11/11 covers normal/journal compilation, both quest branches, stale projection rejection, five gates, complete data projection and shared native-use source guards.
+- Hidden/silent isolated E-drive runtime PASS 4/4: `artifacts/runtime-secret-note-smoke/runtime-secret-note-smoke-20260829-103012/summary.json`. A multi-unseen normal set selected note 18 deterministically; notes 10 and 23 added quests 30 and 29; journal scrap 1001 had no quest; every case was marked seen, opened the native menu and consumed exactly one item.
+- Installed full snapshot schema PASS: 132 required, 116 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 156 registered / 197 semantic / 155 compiler-bound / 82 five-gate / 40 training allowlist / 41 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1897/1897; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_firework`.

@@ -66,6 +66,7 @@ public static class OptionImplementationCatalog
         "executor.construct_building",
         "executor.change_building_skin",
         "executor.read_book",
+        "executor.read_secret_note",
         "executor.edit_text_sign");
 
 

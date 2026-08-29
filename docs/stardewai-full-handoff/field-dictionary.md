@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Secret Note Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.secret_note_candidates.note_catalog[]` | Publish every live `Data/SecretNotes` row, raw content hash, journal classification and native display shape | locked 1.6.15 `DataLoader.SecretNotes` and `LetterViewerMenu(int)` | secondary comparison pending | covered_for_read / complete_live_catalog | Raw content is also published; SHA-256 is the stable compiler/runtime identity. |
+| `rows[].unseen_note_ids_native_order_json` / `selected_note_id` | Bind the exact normal-note seeded choice or minimum journal-scrap choice | locked `Utility.GetUnseenSecretNotes` and `Object.performUseAction` | secondary comparison pending | covered_for_read_and_compile / fresh_projection_required | Normal seed inputs are game id, player multiplayer id and unseen count times 777. |
+| `rows[].expected_quest_id` and before/after flags | Verify native note 10 quest 30 and note 23 quest 29 side effects | locked `Object.performUseAction` cases 10 and 23 | secondary comparison pending | covered_for_gate_and_output_EVD_284 | Mail `qiCave` and event `2120303` suppress the respective additions exactly as vanilla does. |
+| `menus.menu_specific_state.secret_note_image` / `which_bg` | Verify the native LetterViewer image/text branch after use | live `LetterViewerMenu` public fields | n/a | covered_for_output_EVD_284 | Text notes require non-empty native pages; image notes bind the parsed image index. |
+| `executor.read_secret_note` | Consume one exact note through the shared native inventory-object use caller | shared `UseInventoryObjectNative`; strict note/quest/menu/inventory receipt | secondary comparison pending | five_gate_closed_EVD_284 / executor_calibration_only | No direct seen-note, quest, menu or inventory mutation is permitted in the executor. |
+
 ## Grass Placement Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

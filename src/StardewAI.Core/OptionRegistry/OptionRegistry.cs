@@ -1299,6 +1299,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native book animation starts and one item is consumed", "skill XP, permanent level, new-level queue, mastery, stat, mail, recipe, and feedback deltas are verified", "native animation settling wait is scheduled" },
                 new[] { "block_native_book_use_gate", "block_inventory_identity_drift", "block_projection_drift", "block_direct_skill_stat_mail_or_recipe_mutation" }));
 
+            Register(Option("executor.read_secret_note", "inventory", "Read one exactly projected Secret Note or Journal Scrap through native performUseAction",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.secret_note_candidates", "menus.active_menu" },
+                new[] { "the native unseen-note selector chooses the rebound note id", "native performUseAction records exactly one newly seen note and opens its LetterViewerMenu", "note 10 or 23 native quest side effects are verified", "the native caller consumes exactly one matching inventory item" },
+                new[] { "block_native_secret_note_use_gate", "block_inventory_or_unseen_set_drift", "block_selection_or_side_effect_projection_drift", "block_direct_seen_note_quest_menu_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

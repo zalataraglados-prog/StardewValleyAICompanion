@@ -369,6 +369,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.edit_text_sign", Primitive, R1, None, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("executor.load_crab_pot_bait", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.read_book", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
+                P("executor.read_secret_note", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("executor.select_safe_item_slot", Primitive, R0, None, NoConfirm, Actor, ActorState, Allowed)
             };
 

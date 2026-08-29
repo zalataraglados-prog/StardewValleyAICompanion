@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-284
+
+- `executor.read_secret_note` 已闭合普通秘密纸条 `(O)79` 与日记残页 `(O)842` 的完整透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生物品使用和严格回执。锁定 1.6.15 反编译确认普通纸条用 `Utility.CreateRandom(gameId, playerId, unseenCount * 777)` 从原生未读顺序确定性抽取，日记残页取最小未读编号。
+- 透明桥发布完整 `Data/SecretNotes` 目录、原文与 SHA-256、已读集合、每类未读原生顺序、选择结果、图片/文本菜单预期以及 10/23 号纸条的任务副作用。菜单投影新增 `secret_note_image` 和 `which_bg`，输出不再只凭运行时返回值判断。
+- 书籍和纸条现共用唯一 `UseInventoryObjectNative` 调用原生 `performUseAction` 并仅在成功时执行原生调用者的 `reduceActiveItemByOne`；纸条执行器不直接写已读集合、任务、菜单或库存。菜单为空是产品安全门，不伪装成原版纸条分支条件。
+- 隐藏静音 E 盘隔离运行 `runtime-secret-note-smoke-20260829-103012` 四分支 PASS：多未读集合确定性选择 18、10 号新增任务 30、23 号新增任务 29、1001 号日记残页无任务副作用，四例均精确已读、原生 LetterViewerMenu 和单物品消耗。
+- 最新 full snapshot schema 为 `132 required / 116 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `156 registered / 197 semantic / 155 compiler-bound / 82 five-gate / 40 training allowlist / 41 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.use_firework`。
+
 ## 2026-08-29 当前权威检查点：EVD-283
 
 - `executor.plant_grass` 已闭合普通草种 `(O)297` 与蓝草种 `(O)BlueGrassStarter` 的透明读取、精确地块重绑定、动作编译、v1 请求绑定、共享相邻移动、原生放置和后状态回执。锁定 1.6.15 反编译确认两条分支分别创建 `Grass(1,4)` 与 `Grass(7,4)`，均播放 `dirtyHit`。
