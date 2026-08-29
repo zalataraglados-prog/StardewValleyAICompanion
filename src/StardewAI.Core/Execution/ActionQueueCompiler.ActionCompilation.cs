@@ -148,6 +148,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidatePlaceCrabPotPlan(action, snapshot));
             blocking.AddRange(ValidatePlaceFencePlan(action, snapshot));
             blocking.AddRange(ValidatePlaceFlooringPlan(action, snapshot));
+            blocking.AddRange(ValidatePlantGrassPlan(action, snapshot));
             blocking.AddRange(ValidatePlaceFurniturePlan(action, snapshot));
             blocking.AddRange(ValidatePlaceSignPlan(action, snapshot));
             blocking.AddRange(ValidateSetSignDisplayItemPlan(action, snapshot));

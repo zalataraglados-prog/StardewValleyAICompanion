@@ -14,6 +14,20 @@ public sealed partial class CurrentLocationReadAdapter
             return ReadFlooringDetails(tile, flooring);
         }
 
+        if (feature is Grass grass)
+        {
+            return new
+            {
+                tile_x = (int)tile.X,
+                tile_y = (int)tile.Y,
+                type = grass.GetType().FullName,
+                grass_type = grass.grassType.Value,
+                number_of_weeds = grass.numberOfWeeds.Value,
+                is_passable = true,
+                source = "Grass live net fields"
+            };
+        }
+
         if (feature is HoeDirt dirt)
         {
             return ReadHoeDirtDetails(tile, dirt);

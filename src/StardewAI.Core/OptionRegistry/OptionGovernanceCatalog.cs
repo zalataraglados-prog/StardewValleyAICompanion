@@ -361,6 +361,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.place_crab_pot", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_fence", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_flooring", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
+                P("executor.plant_grass", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 P("executor.place_furniture", Primitive, R2, Consume, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("executor.place_sign", Primitive, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
                 // The source is preserved, but native replacement discards the previous, non-returned display copy.

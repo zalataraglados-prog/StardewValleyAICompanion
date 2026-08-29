@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 43,
+  "catalogued_blocked_action_count": 42,
   "catalogued_blocked_action_ids": [
-    "executor.plant_grass",
     "executor.read_secret_note",
     "executor.use_firework",
     "executor.use_horse_flute",

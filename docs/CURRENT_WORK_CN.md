@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-283
+
+- `executor.plant_grass` 已闭合普通草种 `(O)297` 与蓝草种 `(O)BlueGrassStarter` 的透明读取、精确地块重绑定、动作编译、v1 请求绑定、共享相邻移动、原生放置和后状态回执。锁定 1.6.15 反编译确认两条分支分别创建 `Grass(1,4)` 与 `Grass(7,4)`，均播放 `dirtyHit`。
+- 上游用途/布局规划器必须提供 `grass_layout_reason` 和精确目标/站位；执行器不会推断牧草布局。编译器从 fresh full snapshot 重绑草种变体、槽位、堆叠、合法区间、可达性和投影指纹，任一漂移均失败关闭。
+- 生产运行只调用共享 `Utility.playerCanPlaceItemHere -> Utility.tryToPlaceItem`，不直接写 `terrainFeatures`、`grassType`、`numberOfWeeds` 或库存。`current_location.terrain_features` 现直接发布草类型与 weeds 数，支持严格输出复核。
+- 隐藏、静音、E 盘隔离运行 `runtime-grass-placement-20260829-093605` 双分支 PASS：type 1/type 7 均为四株初始 weeds，库存精确减一，透明后状态一致。
+- 最新 full snapshot schema 为 `131 required / 115 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 training allowlist / 42 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.read_secret_note`。
+
 ## 2026-08-29 当前权威检查点：EVD-282
 
 - `world.tune_drum_block` 已闭合透明读取、显式玩家候选、DailyPlan、新鲜字段重绑定、动作编译、v1/v2 类型请求、共享原生运行和持久化音色回执。锁定 1.6.15 反编译确认 `(O)463` 每次右键将 `preservedParentSheetIndex` 按 `(current + 1) % 7` 推进，并播放 `drumkit0..6` 对应音色。

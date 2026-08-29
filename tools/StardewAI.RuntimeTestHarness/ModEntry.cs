@@ -857,6 +857,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_grass_placement_target")
+            {
+                pending.Completion.SetResult(ExecuteSetupGrassPlacementTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1176,6 +1182,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.place_flooring")
             {
                 StartAdjacentTileAction(pending, "place_flooring");
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.plant_grass")
+            {
+                StartAdjacentTileAction(pending, "plant_grass");
                 return;
             }
 

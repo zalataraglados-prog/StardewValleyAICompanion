@@ -287,7 +287,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "executor.wait_ticks",
             "executor.clear_obstacle", "executor.break_farm_resource_clump",
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
-            "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
+            "executor.plant_seed", "executor.plant_grass", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
@@ -326,7 +326,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.sell_shop_item", "executor.choose_dialogue_response", "executor.choose_animal_purchase_response", "executor.purchase_animal", "executor.manage_animal", "executor.cook_recipe", "executor.forge_item", "executor.sleep", "recovery.sleep_in_tent",
             "executor.wait_ticks", "executor.clear_obstacle", "executor.break_farm_resource_clump",
             "executor.break_current_location_resource_clump", "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.till_soil",
-            "executor.plant_seed", "executor.harvest_crop", "executor.harvest_giant_crop",
+            "executor.plant_seed", "executor.plant_grass", "executor.harvest_crop", "executor.harvest_giant_crop",
             "executor.pickup_debris", "executor.collect_spawned_object", "executor.harvest_ginger",
             "executor.harvest_bush", "executor.claim_mine_reward_chest", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "executor.collect_crab_pot",
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
@@ -435,7 +435,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.social_interact", "executor.quest_npc_interact",
             "executor.quest_drop_box_donate", "executor.clear_obstacle",
             "executor.break_farm_resource_clump", "executor.break_current_location_resource_clump",
-            "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.plant_seed", "executor.till_soil", "executor.harvest_crop",
+            "executor.water_crop", "executor.apply_fertilizer", "executor.apply_tree_treatment", "executor.plant_seed", "executor.plant_grass", "executor.till_soil", "executor.harvest_crop",
             "executor.harvest_giant_crop", "executor.pickup_debris",
             "executor.collect_spawned_object", "executor.harvest_ginger", "executor.harvest_bush",
             "executor.collect_crab_pot", "executor.collect_fish_pond_output",
@@ -536,6 +536,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.place_flooring"] = VerifiedEvidence(
                         "vanilla_all_live_inventory_floor_path_identities_native_Utility_tryToPlaceItem_TerrainFeatures_Flooring_data_connection_view_passability_stack_receipt",
                         "EVD-260"),
+                    ["executor.plant_grass"] = VerifiedEvidence(
+                        "vanilla_exact_base_(O)297_and_(O)BlueGrassStarter_native_Utility_tryToPlaceItem_TerrainFeatures_Grass_type_1_or_7_four_initial_weeds_passability_and_stack_receipt",
+                        "EVD-283"),
                     ["executor.place_furniture"] = VerifiedEvidence(
                         "vanilla_inventory_furniture_factory_runtime_rotation_wall_ground_table_endpoint_rectangular_footprint_stack_and_route_safe_native_placement_receipt",
                         "EVD-261"),

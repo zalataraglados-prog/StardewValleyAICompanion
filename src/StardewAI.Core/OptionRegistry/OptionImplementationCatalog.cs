@@ -153,6 +153,7 @@ public static class OptionImplementationCatalog
         "executor.place_crab_pot",
         "executor.place_fence",
         "executor.place_flooring",
+        "executor.plant_grass",
         "executor.place_furniture",
         "executor.place_sign");
 

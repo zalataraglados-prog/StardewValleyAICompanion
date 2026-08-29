@@ -1530,6 +1530,9 @@ static partial class Program
         ApplyFlooringPlacementRequestFields(
             executionRequest,
             item);
+        ApplyGrassPlacementRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

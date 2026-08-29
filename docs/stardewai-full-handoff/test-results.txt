@@ -4073,3 +4073,11 @@ Scope boundary:
 - Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-drum-block/runtime-drum-block-20260829-040623/summary.json`. One native action mapped `6->0`, selected `drumkit0`, observed shake 200/scale 1.3, preserved identity/restored slot and loaded only TransparentBridge plus RuntimeTestHarness.
 - KnowledgeCompiler PASS 585/585, blocking 0. Reconciliation: 154 registered / 197 semantic / 153 compiler-bound / 80 five-gate / 40 training allowlist / 43 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1879/1879; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.plant_grass`.
+
+2026-08-29 EVD-283 native normal/blue grass starter placement
+- Locked 1.6.15 source audit PASS: exact `(O)297 -> Grass(1,4)` and `(O)BlueGrassStarter -> Grass(7,4)` branches, occupied-tile rejection, `dirtyHit`, native true return and shared caller consumption are covered.
+- TDD RED observed `unknown_option_id` and registry count 154 before production registration. Focused GREEN PASS 18/18 covers both variants, stale fingerprint/stack/type/layout rejection, five gates and direct-mutation source guards.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-grass-placement/runtime-grass-placement-20260829-093605/summary.json`. Both variants applied; runtime and fresh transparent snapshots verified exact type, four initial weeds and one-item consumption.
+- Installed full snapshot schema PASS: 131 required, 115 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 training allowlist / 42 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1887/1887; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.read_secret_note`.

@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 草种原生放置闭环（EVD-283）
+
+`executor.plant_grass` 已覆盖锁定 1.6.15 的全部原生草种放置分支：普通草种 `(O)297 -> Grass(1,4)` 与蓝草种 `(O)BlueGrassStarter -> Grass(7,4)`。透明桥只在 full profile 发布当前加载地图的原生合法区间、精确库存变体与结果合同；当前地形输出补充 `grass_type` 和 `number_of_weeds`。用途、布局和精确位置属于上游规划，小模型或布局器必须明确给出，执行器不得自行扩张布局意图。
+
+编译器在 fresh snapshot 上重绑槽位、堆叠、变体、目标、相邻站位、合法区间、通行投影与指纹。运行层复用共享相邻移动和唯一原生物品放置入口，只验证原生结果，不直接写地形或库存。隐藏静音 E 盘运行 `runtime-grass-placement-20260829-093605` 已验证两个变体及透明后状态。该动作是 `ExecutorCalibration`，不进入策略训练 allowlist。当前对账为 `155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 allowlist / 42 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.read_secret_note`。
+
 ## 2026-08-29 Drum Block 原生调音闭环（EVD-282）
 
 `world.tune_drum_block` 已完成 `read -> explicit-command exclusion -> plan -> fresh rebind -> native runtime -> receipt -> E3`。透明桥发布持久化原始/解析音色、下一档、完整七档循环、对应 `drumkitN` 音色和独立路过播放入口；编译器只允许安全空槽/工具槽并发起一次原生地点交互，不直接写音色、摇动或缩放。

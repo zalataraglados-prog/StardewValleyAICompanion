@@ -170,6 +170,7 @@ public sealed partial class ModEntry
                 "place_crab_pot" => ExecutePlaceCrabPot(action.Pending.Request),
                 "place_fence" => ExecutePlaceFence(action.Pending.Request),
                 "place_flooring" => ExecutePlaceFlooring(action.Pending.Request),
+                "plant_grass" => ExecutePlantGrass(action.Pending.Request),
                 "place_furniture" => ExecutePlaceFurniture(action.Pending.Request),
                 "place_sign" => ExecutePlaceSign(action.Pending.Request),
                 "set_sign_display_item" => ExecuteSetSignDisplayItem(action.Pending.Request),

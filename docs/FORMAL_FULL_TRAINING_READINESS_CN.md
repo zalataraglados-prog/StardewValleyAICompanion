@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 草种放置执行器校准（EVD-283）
+
+`executor.plant_grass` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`：它证明动作编译和执行器能忠实完成上游给定的普通/蓝草精确布局，不为策略模型生成“应该在哪里种草”的价值标签。上游必须给出用途、精确地块和时间预算；编译器从 fresh snapshot 重绑所有机械字段。
+
+隐藏静音隔离运行已验证 `(O)297 -> Grass(1,4)` 与 `(O)BlueGrassStarter -> Grass(7,4)`，库存精确减一且透明后状态可读。最新 schema 为 `131 required / 115 readable / 16 contextual / 0 blocking`，对账为 `155 registered / 197 semantic / 154 compiler-bound / 81 five-gate / 40 allowlist / 42 catalogued blocked / 0 Product Executor`。因此该切片不解除 Product Executor、剩余 42 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻挡。下一语义切片为 `executor.read_secret_note`。
+
 ## 2026-08-29 Drum Block 玩家命令边界（EVD-282）
 
 `world.tune_drum_block` 已闭合五门执行证据，但训练 allowlist 保持 `40`。调音属于显式玩家表达/谜题布置，不是自主日计划欲望；运行数据只属于 `player_command_only_executor_evidence`。路过自动播放是独立对象邻接回调，不生成第二个训练动作。
