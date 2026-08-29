@@ -113,7 +113,8 @@ public static class OptionImplementationCatalog
         "executor.select_safe_item_slot",
         "executor.set_sign_display_item",
         "executor.use_firework",
-        "executor.use_monster_musk");
+        "executor.use_monster_musk",
+        "executor.use_rain_totem");
 
     private static readonly HashSet<string> ToolOptions = Set(
         "executor.clear_obstacle",

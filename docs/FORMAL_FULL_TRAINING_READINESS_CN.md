@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 雨水图腾执行器校准（EVD-288）
+
+`executor.use_rain_totem` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`。上游只决定未来天气是否值得消耗图腾；机械链从 fresh snapshot 绑定精确库存、上下文许可/重定向、天气状态归属、明日日期、换日最终天气、动画和对话结算。官方 Wiki 关于季节首日的可见规则已用锁定 1.6.15 的 `Game1.getWeatherModificationsForDate` 复核并扩大为完整默认上下文覆盖门，不能只凭即时 `WeatherForTomorrow=Rain` 认定有效。
+
+隐藏静音隔离运行覆盖 Default、Desert->Default、Island 和默认节日前拒绝四条分支。最新 schema 为 `136 required / 120 readable / 16 contextual / 0 blocking`，对账为 `160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 allowlist / 37 catalogued blocked / 0 Product Executor`。该切片不进入训练 allowlist，也不解除 Product Executor、剩余 37 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等阻挡。下一语义切片为 `executor.use_return_scepter`。
+
 ## 2026-08-29 怪兽香水执行器校准（EVD-287）
 
 `executor.use_monster_musk` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`。小模型或上游战斗目标只决定是否需要提高怪物密度；精确库存槽、Buff 24 当前状态、消费、朝向、动画时序和刷新回执全部由机械编译/执行链负责。普通矿井与火山地牢都按在线玩家 Buff 24 将怪物生成率乘以 2，普通矿井与驱怪 Buff 23 的组合继续服从原生优先级。

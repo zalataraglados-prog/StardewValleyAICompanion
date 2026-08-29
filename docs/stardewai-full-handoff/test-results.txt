@@ -4113,3 +4113,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 135 required, 119 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 training allowlist / 38 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1932/1932; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_rain_totem`.
+
+2026-08-29 EVD-288 native Rain Totem routed weather transition
+- Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base `(O)681`, common object-use gate, `AllowRainTotem`, `RainTotemAffectsContext`, Default festival handling, non-Default current-weather ownership, 2000ms animation/dialogue, and Default `Game1.getWeatherModificationsForDate` next-day overrides are covered.
+- TDD RED observed 15 failures from unknown registration/missing projection/compiler/runtime. Focused GREEN PASS 17/17 covers Default, Desert-to-Default, Island and custom-context routing, stale inventory/context/weather/date/animation/native-contract rejection, festival/already-rain/final-weather-override exclusion, five gates and native-only source guards.
+- Hidden/silent isolated E-drive runtime PASS 4/4: `artifacts/runtime-rain-totem/runtime-rain-totem-20260829-153640/summary.json`. Three valid routes consumed `2->1` and changed the correct weather owner; the Default festival case blocked before consumption. The native information dialogue was closed by input and control settlement used the exact native `Farmer.canMoveNow` callback.
+- Installed full snapshot schema PASS: 136 required, 120 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 training allowlist / 37 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1949/1949; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_return_scepter`.

@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Rain Totem Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.rain_totem.rows[]` | Bind every exact base `(O)681` inventory slot, runtime type, stack transition and temporary visibility | locked 1.6.15 `Object.performUseAction`; live inventory | Rain Totem page confirms consumed-on-use | covered_for_read / fresh_projection_required | Successful native caller behavior consumes exactly one item; blocked planning branches consume none. |
+| `context_routing` | Separate source context, configured affected context, native decision context and actual weather-state owner | `LocationContextData.AllowRainTotem`; `RainTotemAffectsContext`; `Object.rainTotem` | Modding:Location contexts confirms both data fields and Desert-to-valley routing | covered_for_read_and_gate_EVD_288 | For a non-Default redirected mod context, native code still writes the current location weather instance; the owner field therefore need not equal the decision target. |
+| `weather_transition` | Publish immediate weather write plus tomorrow date and final effective weather after known new-day normalization | `Object.rainTotem`; `Game1.getWeatherModificationsForDate`; `Data/PassiveFestivals`; live date/weather | Rain Totem and Weather pages confirm regional weather, festivals and first-of-season caveats | covered_for_read_and_gate_EVD_288 / native_runtime_verified | Default-context overrides are excluded before consumption. Independent non-Default contexts preserve the native Rain write for the coming day. |
+| `animation_contract` | Bind deterministic facing, 2000ms animation, cloud/item counts and sound timing | locked 1.6.15 `Object.rainTotem` | n/a | covered_for_read_and_gate_EVD_288 | Random sprite coordinates are not predicted or advanced by policy code. |
+| `executor.use_rain_totem` | Execute one valid routed Rain Totem through native use and verify inventory, weather owner, dialogue and control settlement | shared `UseInventoryObjectNative`; exact native `Farmer.canMoveNow` callback recovery | n/a | five_gate_closed_EVD_288 / executor_calibration_only | Upstream owns weather value and timing. The primitive is not an autonomous candidate or policy-training option. |
+
 ## Horse Flute Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

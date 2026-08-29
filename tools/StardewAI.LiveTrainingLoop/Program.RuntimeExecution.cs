@@ -1580,6 +1580,9 @@ static partial class Program
         ApplyMonsterMuskRequestFields(
             executionRequest,
             item);
+        ApplyRainTotemRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

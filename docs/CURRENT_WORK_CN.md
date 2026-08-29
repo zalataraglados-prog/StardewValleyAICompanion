@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-288
+
+- `executor.use_rain_totem` 已闭合原版雨水图腾 `(O)681` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生库存物品使用和严格异步回执。锁定 1.6.15 反编译确认 `Object.performUseAction -> rainTotem` 的上下文许可、`RainTotemAffectsContext` 路由、默认上下文节日门、天气写入、2000ms 动画与提示对话完整分支。
+- 透明桥分别发布“分支判断目标上下文”和“实际天气状态归属上下文”，因此支持模组上下文重定向而不会错记写入对象。默认/沙漠重定向/姜岛分支分别绑定 Default/Default/Island；运行层只调用共享 `UseInventoryObjectNative`，不直接写天气、库存、精灵或音频。
+- 官方 Wiki 的季节首日提示触发了源码复核：默认上下文即时写入 Rain 后，换日仍会经过 `Game1.getWeatherModificationsForDate`。透明字段和执行门现绑定明日日期、最终有效天气及有效性；季节首日、开局固定天气、绿雨、夏季固定风暴、主动/被动节庆等覆盖会在消耗前排除。已是 Rain 也在上游排除。
+- 隐藏静音 E 盘隔离运行 `runtime-rain-totem-20260829-153640` 为 4/4 PASS：默认、沙漠重定向和姜岛均原生消耗 `2->1` 并写入正确天气实例；节日前分支保持 `stack=2` 并拒绝执行。原生 2000ms 信息对话由输入覆盖关闭，随后通过精确 `Farmer.canMoveNow` 回调恢复控制。
+- 最终回归为 Core `1949/1949`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。
+- 最新 full snapshot schema 为 `136 required / 120 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 training allowlist / 37 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.use_return_scepter`。
+
 ## 2026-08-29 当前权威检查点：EVD-287
 
 - `executor.use_monster_musk` 已闭合原版怪兽香水 `(O)879` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生库存物品使用和严格异步回执。锁定 1.6.15 反编译确认原生入口在 750ms 动画回调中调用 `Object.MonsterMusk -> Farmer.applyBuff("24")`，`BuffManager.Apply` 对同 ID 先移除再替换，不叠加旧时长。

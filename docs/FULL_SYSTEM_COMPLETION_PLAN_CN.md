@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 雨水图腾原生天气闭环（EVD-288）
+
+`executor.use_rain_totem` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)681` 库存身份、公共使用门、`AllowRainTotem`、`RainTotemAffectsContext`、决策目标与实际天气状态归属、默认节日门、即时天气写入、2000ms 动画/提示，以及默认上下文的换日最终天气修正规则。编译器拒绝任何库存、路由、日期、最终天气、时序或指纹漂移，并在节日、最终天气覆盖、重复 Rain 等无效消耗发生前关闭动作。
+
+运行层复用唯一 `UseInventoryObjectNative`，等待原生提示和控制恢复后验证库存、上下文天气与朝向；没有第二套天气执行器。隐藏静音 E 盘四分支均符合预期，最终回归为 Core `1949/1949`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `160 registered / 197 semantic / 159 compiler-bound / 86 five-gate / 40 allowlist / 37 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_return_scepter`。
+
 ## 2026-08-29 怪兽香水原生 Buff 闭环（EVD-287）
 
 `executor.use_monster_musk` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)879` 库存身份、公共使用门、`Data/Buffs` 的 Buff 24 定义、当前 Buff 实例与剩余时间、全部确定性动画/精灵域，以及普通矿井和火山地牢的原生生成率消费者；生成编译器拒绝任何身份、数据、活动 Buff、时序、生成语义或指纹漂移。

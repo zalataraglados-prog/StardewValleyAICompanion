@@ -1331,6 +1331,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native use consumes exactly one Monster Musk", "the 750 ms native callback removes and replaces Buff 24 with its 600000 ms data contract", "ordinary-mine and volcano monster spawn multipliers are transparently bound to Buff 24" },
                 new[] { "block_native_object_use_gate", "block_inventory_buff_data_or_active_buff_projection_drift", "block_animation_or_spawn_semantics_drift", "block_open_menu", "block_direct_buff_sprite_audio_or_inventory_mutation" }));
 
+            Register(Option("executor.use_rain_totem", "farming", "Consume one exact Rain Totem through its native location-context weather branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.rain_totem", "menus.active_menu" },
+                new[] { "native use consumes exactly one Rain Totem", "the affected vanilla location context tomorrow-weather becomes Rain", "default-context festival tomorrow and redundant Rain states are excluded before consumption" },
+                new[] { "block_native_object_use_or_effect_gate", "block_inventory_location_context_weather_or_projection_drift", "block_animation_contract_drift", "block_open_menu", "block_direct_weather_sprite_audio_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
