@@ -183,6 +183,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact owned fossil and native display slot selected", "route continuation retains fossil and slot identity", "native FieldOfficeMenu donation and set reward settlement handed to the mechanical executor" },
                 new[] { "block_locked_field_office", "block_field_office_mutex", "block_missing_professor_or_desk", "block_inventory_piece_or_reward_projection_drift", "block_unverified_route", "block_direct_piece_reward_nut_mail_or_finale_mutation" }));
 
+            Register(Option("island.field_office_survey", "island", "Answer the next transparent Island Field Office survey",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_field_office", "world_progress.golden_walnuts", "current_location.debris", "locations.collision_grid", "locations.route_connectors", "menus.active_menu" },
+                new[] { "the unique next survey and locked vanilla numeric answer selected", "route continuation retains survey identity", "native survey dialogues and plant/nut/debris/finale settlement handed to the mechanical executor" },
+                new[] { "block_locked_or_completed_field_office", "block_failed_survey_today", "block_missing_professor_or_survey_endpoint", "block_unverified_route", "block_projection_drift", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
+
             Register(Option("festival.manage_grange_display", "festival", "Prepare the best available Stardew Valley Fair grange display and retrieve it after judging",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1194,6 +1202,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "world_progress.island_field_office", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the Field Office desk", "native FieldOfficeDesk mutex and Donate response open FieldOfficeMenu", "inventory and exact display-holder clicks consume one fossil", "native set rewards and collected-nut marker match the locked projection" },
                 new[] { "block_field_office_not_current", "block_field_office_mutex", "block_inventory_piece_or_reward_projection_drift", "block_unverified_route", "block_direct_piece_reward_nut_mail_or_finale_mutation" }));
+
+            Register(Option("executor.answer_field_office_survey", "island", "Answer one verified Field Office survey through native dialogue responses",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_field_office", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the Field Office survey wall", "native Survey Yes and exact Correct responses answer the unique next question", "native plant restore, collected-nut, walnut debris and finale trigger match the locked projection" },
+                new[] { "block_field_office_not_current", "block_failed_survey_today", "block_question_or_answer_projection_drift", "block_unverified_route", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
 
             Register(Option("executor.manage_grange_display", "festival", "Apply one verified Fair grange display mutation through the native shared StorageContainer",
                 OptionBehaviorCategories.Mechanical,

@@ -88,6 +88,7 @@ public sealed partial class ModEntry : Mod
     private ActivePetInteraction? activePetInteraction;
     private ActiveMuseumDonation? activeMuseumDonation;
     private ActiveFieldOfficeDonation? activeFieldOfficeDonation;
+    private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveJojaDevelopment? activeJojaDevelopment;
@@ -533,6 +534,7 @@ public sealed partial class ModEntry : Mod
         TickPetInteraction();
         TickMuseumDonation();
         TickFieldOfficeDonation();
+        TickFieldOfficeSurvey();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
         TickJojaDevelopment();
@@ -1572,6 +1574,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_field_office_survey")
+            {
+                pending.Completion.SetResult(ExecuteSetupFieldOfficeSurveyFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.field_office_survey_day_update")
+            {
+                pending.Completion.SetResult(ExecuteFieldOfficeSurveyDayUpdate(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_home_renovation")
             {
                 pending.Completion.SetResult(ExecuteSetupHomeRenovationFixture(pending.Request));
@@ -1713,6 +1727,18 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.donate_field_office_piece")
             {
                 StartFieldOfficeDonation(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.answer_field_office_survey")
+            {
+                StartFieldOfficeSurvey(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.answer_field_office_survey_wrong")
+            {
+                StartFieldOfficeSurvey(pending, intentionallyWrong: true);
                 return;
             }
 
@@ -1980,6 +2006,7 @@ public sealed partial class ModEntry : Mod
             activePetInteraction = null;
             activeMuseumDonation = null;
             activeFieldOfficeDonation = null;
+            activeFieldOfficeSurvey = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
             activeJojaDevelopment = null;
@@ -2208,6 +2235,7 @@ public sealed partial class ModEntry : Mod
             activePetInteraction is not null ||
             activeMuseumDonation is not null ||
             activeFieldOfficeDonation is not null ||
+            activeFieldOfficeSurvey is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
             activeJojaDevelopment is not null ||

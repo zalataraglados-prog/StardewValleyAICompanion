@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 Field Office 原生调查闭环（EVD-303）
+
+`island.field_office_survey` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布唯一下一题、答案范围与锁定答案、问题/响应键、左右植物、当日失败锁、collected-nut、当前 debris、核桃前后计数、finale readiness 和原生交付方式。高层只选择是否答当前题；fresh 编译器重绑全部机械字段，跨地图 continuation 锁定题型与答案。
+
+运行层复用共享路线，只经 `FieldOfficeSurvey -> Survey_Yes -> exact Correct` 原生输入完成。隐藏静音矩阵 `9/9` 覆盖两题、同日顺序、错误锁日、DayUpdate、130 上限和 finale，并区分瞬时 debris 生成与磁力拾取后的最终状态；没有第二套 Field Office 状态写入器。当前对账为 `186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 allowlist / 23 catalogued blocked / 0 Product Executor`，KnowledgeCompiler `585/585`、blocking `0`，回归为 Core `2054/2054`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_calico_jack`。
+
 ## 2026-08-30 Field Office 原生捐赠闭环（EVD-302）
 
 `island.field_office_donate` 已按完整纵向切片闭合。透明桥发布完整 11 槽化石状态、原生重复物品分配顺序、当前背包可捐候选、Desk/Survey 端点、解锁/教授/互斥锁/菜单、四组恢复标记、两项调查、finale readiness、GoldenWalnutsFound 和奖励队列。高层只选择一个精确捐赠候选并要求确认；fresh 编译器重绑所有机械字段，跨地图 continuation 只保留物品与目标槽身份。

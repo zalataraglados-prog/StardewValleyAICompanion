@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "44d225b0a38bce5f2591928919b44fa423d1d6d3c0df9ae680982f152828cc2d",
-  "action_count": 208,
-  "registered_option_spec_count": 184,
-  "catalogued_blocked_count": 24,
+  "denominator_fingerprint_sha256": "a7128f6e7617bc8e76d332d8982d4ac6e86a08c0b70e102e27dffc15f42db809",
+  "action_count": 209,
+  "registered_option_spec_count": 186,
+  "catalogued_blocked_count": 23,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -163,6 +163,15 @@
     {
       "action_id": "executor.accept_special_order",
       "domain": "quest",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.answer_field_office_survey",
+      "domain": "island",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.interaction_menu",
       "catalog_status": "registered_option_spec",
@@ -1423,13 +1432,11 @@
     {
       "action_id": "island.field_office_survey",
       "domain": "island",
-      "semantic_kind": "composite",
-      "primary_engine_id": "engine.interaction_menu",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "IslandFieldOffice"
-      ]
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "joja.advance_development",

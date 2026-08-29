@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 Field Office 调查训练准入（EVD-303）
+
+`island.field_office_survey` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否完成当前唯一未完成调查；问题身份、固定答案、端点、站位、路线、当日失败锁、核桃上限、瞬时 debris 生成、共享拾取和 finale 结算均由 fresh snapshot 与编译执行层机械绑定。已有核桃 debris、答错锁日、完成态、锁/菜单/教授/路线漂移会在上游排除。
+
+隐藏静音 E 盘矩阵 `9/9` 覆盖 22/18、同日连续两题、错误答案锁日、原生 DayUpdate 重置、130 核桃无掉落和 finale。生产执行只经 `checkAction(FieldOfficeSurvey)` 与两个原生 `answerDialogue` 响应，不直接写游戏结果。最新 schema 为 `148/132/16/0`；对账为 `186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 allowlist / 23 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 23 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一目录切片为 `minigame.play_calico_jack`。
+
 ## 2026-08-30 Field Office 化石捐赠闭环（EVD-302）
 
 `island.field_office_donate` 已通过 read / candidate / compile / native runtime / output receipt 五门，但当前要求显式确认且未进入策略训练 allowlist。模型或玩家只选择“捐赠当前已拥有且原生可接受的一件化石”；具体背包槽、原生重复物品槽位顺序、Desk 端点、站位、路线、菜单点击、集合奖励、核桃标记和 finale readiness 均由 fresh snapshot 与编译执行层机械绑定。远程候选每次只走一个已解析连接器，并锁定同一背包物品和目标槽位直到原生捐赠成功。

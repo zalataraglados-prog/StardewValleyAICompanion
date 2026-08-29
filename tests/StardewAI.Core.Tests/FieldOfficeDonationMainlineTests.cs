@@ -119,8 +119,7 @@ public sealed class FieldOfficeDonationMainlineTests
             Assert.Equal(new[] { "EVD-302" }, capability.RuntimeEvidenceIds);
             Assert.False(PendingSemanticActionCatalog.TryGet(optionId, out _));
         }
-        Assert.True(PendingSemanticActionCatalog.TryGet("island.field_office_survey", out var survey));
-        Assert.Equal("engine.interaction_menu", survey.PrimaryEngineId);
+        Assert.False(PendingSemanticActionCatalog.TryGet("island.field_office_survey", out _));
 
         var runtime = File.ReadAllText(FindRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.FieldOffice.cs"));
         Assert.Contains("FieldOfficeDesk", runtime, StringComparison.Ordinal);

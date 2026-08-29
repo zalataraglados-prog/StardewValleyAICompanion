@@ -1,3 +1,12 @@
+2026-08-30 EVD-303 native Island Field Office surveys
+- Locked 1.6.15 source audit PASS: exact 22/18 answers, dialogue keys/ranges, plant/nut/debris/finale effects, failed-today lock and native DayUpdate reset are covered independently from fossil donation.
+- Focused transparent-candidate/DailyPlan/fresh-compiler/continuation/source-governance regression PASS 9/9 together with EVD-302 donation checks.
+- Hidden/silent isolated E-drive final matrix PASS 9/9: `artifacts/runtime-field-office-survey-smoke/runtime-field-office-survey-final-20260830/summary.json`. It covers both ordinary questions, same-day sequence, wrong/day reset, two 130-cap branches and finale.
+- Runtime records transient native `(O)73` debris spawn before shared magnet pickup, then verifies final debris baseline and GoldenWalnutsFound increment. Existing Field Office walnut debris is excluded upstream for prior pickup.
+- Installed full snapshot schema is 148 required, 132 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 training allowlist / 23 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2054/2054; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next slice is `minigame.play_calico_jack`.
+
 2026-08-30 EVD-302 native Island Field Office fossil donation
 - Locked 1.6.15 source audit PASS: exact 11-slot piece identity, `(O)823` 0-then-2 and `(O)826` 7-then-6 ordering, Desk/Safari/Menu lifecycle, four set settlements, collected-nut/finale persistence and 130-walnut fallback rewards are covered.
 - Focused transparent-candidate/DailyPlan/fresh-compiler/continuation/source-governance tests PASS 4/4. Long-route review added an independent 240-tick Safari question wait budget instead of reusing total movement elapsed time.

@@ -73,6 +73,7 @@ namespace StardewAI.Core.Execution
                 ["executor.fill_pet_bowl"] = (action, _) => CompileFillPetBowlStep(action),
                 ["executor.donate_museum_item"] = (action, _) => CompileDonateMuseumItemStep(action),
                 ["executor.donate_field_office_piece"] = (action, _) => CompileDonateFieldOfficePieceStep(action),
+                ["executor.answer_field_office_survey"] = (action, _) => CompileAnswerFieldOfficeSurveyStep(action),
                 ["executor.manage_grange_display"] = (action, _) => CompileManageGrangeDisplayStep(action),
                 ["executor.play_fair_fishing_game"] = (action, _) => CompileFairFishingGameStep(action),
                 ["executor.play_fair_slingshot_game"] = (action, _) => CompileFairSlingshotGameStep(action),

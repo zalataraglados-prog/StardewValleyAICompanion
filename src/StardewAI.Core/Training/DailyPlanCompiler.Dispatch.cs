@@ -23,6 +23,7 @@ namespace StardewAI.Core.Training
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["island.field_office_donate"] = new[] { "route_connector_tile", "donate_field_office_piece" },
+                ["island.field_office_survey"] = new[] { "route_connector_tile", "answer_field_office_survey" },
                 ["festival.manage_grange_display"] = new[] { "manage_grange_display" },
                 ["festival.play_fishing_game"] = new[] { "play_fair_fishing_game" },
                 ["festival.play_slingshot_game"] = new[] { "play_fair_slingshot_game" },
@@ -468,6 +469,10 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "donate_field_office_piece")
             {
                 return FieldOfficeDonationSteps(candidate);
+            }
+            if (candidate.Kind == "answer_field_office_survey")
+            {
+                return FieldOfficeSurveySteps(candidate);
             }
             if (candidate.Kind == "manage_grange_display")
             {

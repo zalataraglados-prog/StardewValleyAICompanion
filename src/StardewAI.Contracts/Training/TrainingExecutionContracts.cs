@@ -786,6 +786,75 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("field_office_fixture_case")]
         public string FieldOfficeFixtureCase { get; set; } = string.Empty;
 
+        [JsonPropertyName("field_office_survey_action_raw")]
+        public string FieldOfficeSurveyActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_kind")]
+        public string FieldOfficeSurveyKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_answer")]
+        public int? FieldOfficeSurveyAnswer { get; set; }
+
+        [JsonPropertyName("field_office_survey_answer_minimum")]
+        public int? FieldOfficeSurveyAnswerMinimum { get; set; }
+
+        [JsonPropertyName("field_office_survey_answer_maximum")]
+        public int? FieldOfficeSurveyAnswerMaximum { get; set; }
+
+        [JsonPropertyName("field_office_survey_prompt_question_key")]
+        public string FieldOfficeSurveyPromptQuestionKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_prompt_response_key")]
+        public string FieldOfficeSurveyPromptResponseKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_answer_question_key")]
+        public string FieldOfficeSurveyAnswerQuestionKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_answer_response_key")]
+        public string FieldOfficeSurveyAnswerResponseKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_plant_restored_before")]
+        public bool? FieldOfficeSurveyPlantRestoredBefore { get; set; }
+
+        [JsonPropertyName("field_office_survey_plant_restored_after")]
+        public bool? FieldOfficeSurveyPlantRestoredAfter { get; set; }
+
+        [JsonPropertyName("field_office_survey_failed_today_before")]
+        public bool? FieldOfficeSurveyFailedTodayBefore { get; set; }
+
+        [JsonPropertyName("field_office_survey_failed_today_after")]
+        public bool? FieldOfficeSurveyFailedTodayAfter { get; set; }
+
+        [JsonPropertyName("field_office_survey_walnut_debris_count_before")]
+        public int? FieldOfficeSurveyWalnutDebrisCountBefore { get; set; }
+
+        [JsonPropertyName("field_office_survey_walnut_debris_count_after")]
+        public int? FieldOfficeSurveyWalnutDebrisCountAfter { get; set; }
+
+        [JsonPropertyName("field_office_survey_walnut_debris_spawn_count")]
+        public int? FieldOfficeSurveyWalnutDebrisSpawnCount { get; set; }
+
+        [JsonPropertyName("field_office_survey_golden_walnuts_found_after")]
+        public int? FieldOfficeSurveyGoldenWalnutsFoundAfter { get; set; }
+
+        [JsonPropertyName("field_office_survey_golden_walnuts_found_delta")]
+        public int? FieldOfficeSurveyGoldenWalnutsFoundDelta { get; set; }
+
+        [JsonPropertyName("field_office_survey_output_delivery")]
+        public string FieldOfficeSurveyOutputDelivery { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_expected_finale_trigger_after")]
+        public bool? FieldOfficeSurveyExpectedFinaleTriggerAfter { get; set; }
+
+        [JsonPropertyName("field_office_survey_donated_piece_count_before")]
+        public int? FieldOfficeSurveyDonatedPieceCountBefore { get; set; }
+
+        [JsonPropertyName("field_office_survey_fixture_case")]
+        public string FieldOfficeSurveyFixtureCase { get; set; } = string.Empty;
+
+        [JsonPropertyName("field_office_survey_answer_mode")]
+        public string FieldOfficeSurveyAnswerMode { get; set; } = string.Empty;
+
         [JsonPropertyName("route_state")]
         public string RouteState { get; set; } = string.Empty;
 

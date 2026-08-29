@@ -1332,6 +1332,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("donation_candidates")]
         public IslandFieldOfficeDonationCandidateRef[] DonationCandidates { get; set; } = System.Array.Empty<IslandFieldOfficeDonationCandidateRef>();
 
+        [JsonPropertyName("survey_candidates")]
+        public IslandFieldOfficeSurveyCandidateRef[] SurveyCandidates { get; set; } = System.Array.Empty<IslandFieldOfficeSurveyCandidateRef>();
+
         [JsonPropertyName("projection_status")]
         public string ProjectionStatus { get; set; } = string.Empty;
     }
@@ -1433,6 +1436,81 @@ namespace StardewAI.Contracts.State
 
         [JsonPropertyName("expected_finale_ready_after")]
         public bool ExpectedFinaleReadyAfter { get; set; }
+
+        [JsonPropertyName("action_status")]
+        public string ActionStatus { get; set; } = string.Empty;
+    }
+
+    public sealed class IslandFieldOfficeSurveyCandidateRef
+    {
+        [JsonPropertyName("survey_kind")]
+        public string SurveyKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer")]
+        public int Answer { get; set; }
+
+        [JsonPropertyName("answer_minimum")]
+        public int AnswerMinimum { get; set; }
+
+        [JsonPropertyName("answer_maximum")]
+        public int AnswerMaximum { get; set; }
+
+        [JsonPropertyName("prompt_question_key")]
+        public string PromptQuestionKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("prompt_response_key")]
+        public string PromptResponseKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer_question_key")]
+        public string AnswerQuestionKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer_response_key")]
+        public string AnswerResponseKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("plant_restored_before")]
+        public bool PlantRestoredBefore { get; set; }
+
+        [JsonPropertyName("plant_restored_after")]
+        public bool PlantRestoredAfter { get; set; }
+
+        [JsonPropertyName("failed_survey_today_before")]
+        public bool FailedSurveyTodayBefore { get; set; }
+
+        [JsonPropertyName("failed_survey_today_after")]
+        public bool FailedSurveyTodayAfter { get; set; }
+
+        [JsonPropertyName("expected_collected_nut_key")]
+        public string ExpectedCollectedNutKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("collected_nut_before")]
+        public bool CollectedNutBefore { get; set; }
+
+        [JsonPropertyName("walnut_debris_count_before")]
+        public int WalnutDebrisCountBefore { get; set; }
+
+        [JsonPropertyName("walnut_debris_count_after")]
+        public int WalnutDebrisCountAfter { get; set; }
+
+        [JsonPropertyName("walnut_debris_spawn_count")]
+        public int WalnutDebrisSpawnCount { get; set; }
+
+        [JsonPropertyName("golden_walnuts_found_before")]
+        public int GoldenWalnutsFoundBefore { get; set; }
+
+        [JsonPropertyName("golden_walnuts_found_after")]
+        public int GoldenWalnutsFoundAfter { get; set; }
+
+        [JsonPropertyName("golden_walnuts_found_delta")]
+        public int GoldenWalnutsFoundDelta { get; set; }
+
+        [JsonPropertyName("output_delivery")]
+        public string OutputDelivery { get; set; } = string.Empty;
+
+        [JsonPropertyName("expected_finale_ready_after")]
+        public bool ExpectedFinaleReadyAfter { get; set; }
+
+        [JsonPropertyName("expected_finale_trigger_after")]
+        public bool ExpectedFinaleTriggerAfter { get; set; }
 
         [JsonPropertyName("action_status")]
         public string ActionStatus { get; set; } = string.Empty;

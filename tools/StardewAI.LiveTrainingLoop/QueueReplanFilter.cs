@@ -48,6 +48,19 @@ public static class QueueReplanFilter
                 ["confirm_donation"] = "true"
             };
         }
+        var fieldOfficeSurveyKind = ReadParameter(queueItem, "continuation.survey_kind");
+        var fieldOfficeSurveyAnswer = ReadParameter(queueItem, "continuation.answer");
+        if (string.Equals(optionId, "island.field_office_survey", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(fieldOfficeSurveyKind) && !string.IsNullOrWhiteSpace(fieldOfficeSurveyAnswer))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "field_office_survey",
+                ["option_id"] = optionId,
+                ["survey_kind"] = fieldOfficeSurveyKind,
+                ["survey_answer"] = fieldOfficeSurveyAnswer
+            };
+        }
         var renovationId = ReadParameter(queueItem, "continuation.renovation_id");
         var renovationSelectedIndex = ReadParameter(queueItem, "continuation.selected_index");
         var renovationReason = ReadParameter(queueItem, "continuation.renovation_reason");
@@ -373,6 +386,12 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "qualified_item_id"), ReadString(continuation, "qualified_item_id"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "target_piece_index"), ReadString(continuation, "target_piece_index"), StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "field_office_survey", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.answer_field_office_survey", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "survey_kind"), ReadString(continuation, "survey_kind"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "survey_answer"), ReadString(continuation, "survey_answer"), StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "home_renovation", StringComparison.Ordinal))
         {
             return string.Equals(optionId, "executor.renovate_home", StringComparison.Ordinal) &&
@@ -647,6 +666,12 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "qualified_item_id") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "target_piece_index") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_donation");
+        }
+
+        if (string.Equals(ReadString(continuation, "kind"), "field_office_survey", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "survey_kind") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "survey_answer");
         }
 
         if (string.Equals(

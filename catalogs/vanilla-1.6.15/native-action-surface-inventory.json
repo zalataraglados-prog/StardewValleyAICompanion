@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 88,
   "catalogued_blocked_surface_count": 80,
-  "catalogued_blocked_action_count": 24,
+  "catalogued_blocked_action_count": 23,
   "catalogued_blocked_action_ids": [
-    "island.field_office_survey",
     "minigame.play_calico_jack",
     "minigame.play_crane_game",
     "minigame.play_darts",

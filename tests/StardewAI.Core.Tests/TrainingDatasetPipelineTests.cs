@@ -56,6 +56,7 @@ namespace StardewAI.Core.Tests
                     "festival.spin_wheel",
                     "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_fruit_tree", "foraging.harvest_ginger", "foraging.harvest_tree_product", "foraging.pan_ore_spot", "foraging.rummage_garbage",
                     "inventory.transfer_item",
+                    "island.field_office_survey",
                     "mail.process_letter",
                     "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                     "rewards.claim_pot_of_gold", "rewards.claim_statue_blessing",

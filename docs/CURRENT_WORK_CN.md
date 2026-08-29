@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-303
+
+- `island.field_office_survey` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 `FieldOfficeSurvey -> Survey_Yes -> PurpleFlowerSurvey/PurpleStarfishSurvey` 对话输入和严格结算回执。唯一动作链为 `island.field_office_survey -> answer_field_office_survey -> executor.answer_field_office_survey`；生产执行不直接写植物、当日失败锁、核桃标记、debris、邮件或 finale。
+- 锁定 1.6.15 反编译确认紫花答案 `22`、紫海星答案 `18`、答错后当天禁答、`IslandFieldOffice.DayUpdate` 次日清锁、两侧各一次 collected-nut、`GoldenWalnutsFound < 130` 时先生成 `(O)73` debris、磁力拾取后核桃数 `+1`，以及 11 件化石和两项调查全完成后的 finale。已有核桃 debris 会在上游要求先拾取，避免路线移动造成投影漂移。
+- 隐藏静音 E 盘最终矩阵 `9/9` PASS：两道普通答案、同日连续两题、错误答案日锁、原生 DayUpdate 解锁、两道 `GoldenWalnutsFound=130` 无掉落分支和最后一题触发 finale 全部匹配。运行层同时捕获瞬时原生 debris 生成与共享磁力拾取后的最终 debris/核桃计数。证据为 `artifacts/runtime-field-office-survey-smoke/runtime-field-office-survey-final-20260830/summary.json`。
+- 最新 full snapshot 为 `148 required / 132 readable with provenance / 16 contextual / 0 blocking`；对账为 `186 registered / 209 semantic / 185 compiler-bound / 109 five-gate / 49 training allowlist / 23 catalogued blocked / 0 Product Executor`。KnowledgeCompiler `585/585`、blocking `0`；回归为 Core `2054/2054`、Backend `148/148`、Release `0 warnings / 0 errors`。下一目录切片为 `minigame.play_calico_jack`。
+
 ## 2026-08-30 当前权威检查点：EVD-302
 
 - `island.field_office_donate` 已闭合透明读取、显式确认候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 `FieldOfficeDesk -> Safari_Donate -> FieldOfficeMenu` 输入和严格结算回执。唯一动作链为 `island.field_office_donate -> donate_field_office_piece -> executor.donate_field_office_piece`；生产执行不直接写 fossil、奖励、核桃标记、邮件或 finale。

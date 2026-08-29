@@ -66,6 +66,24 @@ public sealed partial class WorldProgressReadAdapter
                             : current ? "ready" : "route_to_field_office_required";
         var allPieces = donated.All(value => value);
         var surveysComplete = office.plantsRestoredLeft.Value && office.plantsRestoredRight.Value;
+        var surveyWalnutDebrisCount = CountFieldOfficeWalnutDebris(office);
+        var surveyStatus = !unlocked
+            ? "field_office_locked"
+            : current && !professorAvailable
+                ? "field_office_professor_unavailable"
+                : office.hasFailedSurveyToday.Value
+                    ? "field_office_survey_failed_today"
+                    : surveysComplete
+                        ? "field_office_surveys_complete"
+                        : surveyWalnutDebrisCount > 0
+                            ? "field_office_existing_walnut_debris_requires_pickup"
+                        : current && !menuClear
+                            ? "field_office_menu_dialogue_or_event_not_clear"
+                            : office.safariGuyMutex.IsLocked()
+                                ? "field_office_mutex_locked"
+                                : surveyTiles.Length == 0
+                                    ? "field_office_survey_action_unavailable"
+                                    : current ? "ready" : "route_to_field_office_required";
 
         return new IslandFieldOfficeProgressRef
         {
@@ -114,9 +132,77 @@ public sealed partial class WorldProgressReadAdapter
                 .OrderBy(candidate => candidate.SlotIndex)
                 .ThenBy(candidate => candidate.TargetPieceIndex)
                 .ToArray(),
+            SurveyCandidates = FieldOfficeSurveyCandidates(
+                office,
+                actor,
+                donated,
+                world.GoldenWalnutsFound,
+                surveyStatus),
             ProjectionStatus = "exact_locked_base_1.6.15"
         };
     }
+
+    private static IslandFieldOfficeSurveyCandidateRef[] FieldOfficeSurveyCandidates(
+        IslandFieldOffice office,
+        Farmer actor,
+        bool[] donated,
+        int goldenWalnutsFound,
+        string actionStatus)
+    {
+        if (office.plantsRestoredLeft.Value && office.plantsRestoredRight.Value)
+            return Array.Empty<IslandFieldOfficeSurveyCandidateRef>();
+
+        var left = !office.plantsRestoredLeft.Value;
+        var surveyKind = left ? "purple_flower" : "purple_starfish";
+        var answer = left ? 22 : 18;
+        var answerMinimum = left ? 18 : 11;
+        var answerMaximum = left ? 24 : 18;
+        var nutKey = left ? "IslandLeftPlantRestored" : "IslandRightPlantRestored";
+        var debrisBefore = CountFieldOfficeWalnutDebris(office);
+        var debrisSpawnCount = goldenWalnutsFound < 130 ? 1 : 0;
+        var leftAfter = left || office.plantsRestoredLeft.Value;
+        var rightAfter = !left || office.plantsRestoredRight.Value;
+        var finaleReady = donated.All(value => value) && leftAfter && rightAfter;
+        return new[]
+        {
+            new IslandFieldOfficeSurveyCandidateRef
+            {
+                SurveyKind = surveyKind,
+                Answer = answer,
+                AnswerMinimum = answerMinimum,
+                AnswerMaximum = answerMaximum,
+                PromptQuestionKey = "Survey",
+                PromptResponseKey = "Yes",
+                AnswerQuestionKey = left ? "PurpleFlowerSurvey" : "PurpleStarfishSurvey",
+                AnswerResponseKey = "Correct",
+                PlantRestoredBefore = false,
+                PlantRestoredAfter = true,
+                FailedSurveyTodayBefore = office.hasFailedSurveyToday.Value,
+                FailedSurveyTodayAfter = false,
+                ExpectedCollectedNutKey = nutKey,
+                CollectedNutBefore = actor.team.collectedNutTracker.Contains(nutKey),
+                WalnutDebrisCountBefore = debrisBefore,
+                WalnutDebrisCountAfter = debrisBefore,
+                WalnutDebrisSpawnCount = debrisSpawnCount,
+                GoldenWalnutsFoundBefore = goldenWalnutsFound,
+                GoldenWalnutsFoundAfter = goldenWalnutsFound + debrisSpawnCount,
+                GoldenWalnutsFoundDelta = debrisSpawnCount,
+                OutputDelivery = debrisSpawnCount == 1
+                    ? "native_debris_spawn_then_magnet_pickup_to_golden_walnuts_found"
+                    : "none_at_130_walnuts_found",
+                ExpectedFinaleReadyAfter = finaleReady,
+                ExpectedFinaleTriggerAfter = finaleReady && !actor.hasOrWillReceiveMail("fieldOfficeFinale"),
+                ActionStatus = actionStatus
+            }
+        };
+    }
+
+    private static int CountFieldOfficeWalnutDebris(IslandFieldOffice office) =>
+        office.debris.Count(debris =>
+            string.Equals(
+                debris.item?.QualifiedItemId ?? ItemRegistry.QualifyItemId(debris.itemId.Value) ?? debris.itemId.Value,
+                "(O)73",
+                StringComparison.Ordinal));
 
     private static IslandFieldOfficeDonationCandidateRef? FieldOfficeDonationCandidate(
         Item item,

@@ -21,6 +21,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["farm.care_for_pets"] = (snapshot, _) => PetCareCandidates(snapshot),
                 ["museum.donate_items"] = (snapshot, _) => MuseumDonationCandidates(snapshot),
                 ["island.field_office_donate"] = (snapshot, _) => FieldOfficeDonationCandidates(snapshot),
+                ["island.field_office_survey"] = (snapshot, _) => FieldOfficeSurveyCandidates(snapshot),
                 ["festival.manage_grange_display"] = (snapshot, _) => GrangeDisplayCandidates(snapshot),
                 ["festival.play_fishing_game"] = (snapshot, _) => FairFishingGameCandidates(snapshot),
                 ["festival.play_slingshot_game"] = (snapshot, _) => FairSlingshotGameCandidates(snapshot),
