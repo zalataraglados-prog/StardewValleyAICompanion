@@ -1601,6 +1601,9 @@ static partial class Program
         ApplyFairSlingshotGameRequestFields(
             executionRequest,
             item);
+        ApplyFairStrengthGameRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

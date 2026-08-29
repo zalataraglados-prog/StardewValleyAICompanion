@@ -23,6 +23,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["festival.manage_grange_display"] = (snapshot, _) => GrangeDisplayCandidates(snapshot),
                 ["festival.play_fishing_game"] = (snapshot, _) => FairFishingGameCandidates(snapshot),
                 ["festival.play_slingshot_game"] = (snapshot, _) => FairSlingshotGameCandidates(snapshot),
+                ["festival.play_strength_game"] = (snapshot, _) => FairStrengthGameCandidates(snapshot),
                 ["community_center.donate_bundle_items"] = (snapshot, _) => CommunityCenterDonationCandidates(snapshot),
                 ["joja.advance_development"] = (snapshot, _) => JojaDevelopmentCandidates(snapshot),
                 ["quest.accept_daily"] = (snapshot, _) => DailyQuestAcceptanceCandidates(snapshot),

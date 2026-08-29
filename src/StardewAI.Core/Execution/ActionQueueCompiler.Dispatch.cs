@@ -71,6 +71,7 @@ namespace StardewAI.Core.Execution
                 ["executor.manage_grange_display"] = (action, _) => CompileManageGrangeDisplayStep(action),
                 ["executor.play_fair_fishing_game"] = (action, _) => CompileFairFishingGameStep(action),
                 ["executor.play_fair_slingshot_game"] = (action, _) => CompileFairSlingshotGameStep(action),
+                ["executor.play_fair_strength_game"] = (action, _) => CompileFairStrengthGameStep(action),
                 ["executor.donate_community_center_item"] = (action, _) => CompileDonateCommunityCenterItemStep(action),
                 ["executor.purchase_joja_membership"] = (action, _) => CompilePurchaseJojaStep(action),
                 ["executor.purchase_joja_project"] = (action, _) => CompilePurchaseJojaStep(action),

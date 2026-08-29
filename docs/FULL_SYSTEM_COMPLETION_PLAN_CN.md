@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 展览会力量小游戏闭环（EVD-295）
+
+`festival.play_strength_game` 已覆盖 Fall 16 原版力量小游戏的完整策略与执行周期。透明桥发布唯一入口和站位、免费/固定一星币合同、实时力量/速度/方向/动画/计时状态、全部 Fair 商店行和 Stardrop 缺口；候选仅服务于扣除陈列奖励后恰好剩余一枚星币的需求。
+
+运行层复用共享 BFS，经真实 `Event.checkAction` 打开 `StrengthGame`，等待原生移动结算并根据点击后 `9` 次力量更新预测最大值，只发送一次原生点击。两个隐藏静音样本覆盖 changeSpeed `4` 和 `3`，分别达到力量 `100` 和 `99`，均原生获得一星币并清理菜单状态。当前对账为 `171 registered / 201 semantic / 170 compiler-bound / 97 five-gate / 44 allowlist / 30 catalogued blocked / 0 Product Executor`，回归为 Core `2018/2018`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.spin_wheel`。
+
 ## 2026-08-29 展览会靶场闭环（EVD-294）
 
 `festival.play_slingshot_game` 已覆盖 Fall 16 原版靶场的稳定策略周期。透明桥发布入口、费用、四段原生时序、完整 79 目标日程、实时目标/弹丸/临时装备状态、精确准确率/倍率/奖励公式、全部 Fair 商店行和 Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务。

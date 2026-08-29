@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 展览会力量小游戏策略与原生执行闭环（EVD-295）
+
+`festival.play_strength_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只在扣除未领取陈列奖励后，未获得 Fair Stardrop 的缺口恰好为 `1` 星币时决定是否进行这次免费尝试；其他缺口不会把单次固定一币的小游戏误当作高效循环。编译器从 fresh snapshot 绑定节日实例、Buildings `540`、站立 X=`29`、力量/速度/方向、动画和计时合同、商店需求及 native contract；`executor.play_fair_strength_game` 严格为 `ExecutorCalibration`。
+
+运行层复用共享 BFS，等待移动输入结算后通过真实 `Event.checkAction` 打开 `StrengthGame`，以点击后恰好 `9` 次原生更新预测满力量窗口并只调用一次原生点击。隐藏静音样本覆盖两种初始速度：`64/+4 -> 100` 与 `72/+3 -> 99`，均由原版把 festivalScore `1999->2000` 并完成结果对话/退出；生产代码不直接写力量、得分、计时器、菜单或位置。最新 schema 为 `143 required / 127 readable / 16 contextual / 0 blocking`，对账为 `171 registered / 201 semantic / 170 compiler-bound / 97 five-gate / 44 allowlist / 30 catalogued blocked / 0 Product Executor`，回归为 Core `2018/2018`、Backend `138/138`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 30 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `festival.spin_wheel`。
+
 ## 2026-08-29 展览会靶场策略与原生执行闭环（EVD-294）
 
 `festival.play_slingshot_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否投入 50g 和原版 50 秒会话补齐未获得 Fair Stardrop 的星币缺口；尚未领取的展览陈列奖励会先从缺口扣除。编译器从 fresh snapshot 绑定节日实例、交互/站立图块、金额、星币、四段时序、79 个目标、Dialogue key 和 native contract；`executor.play_fair_slingshot_game` 严格为 `ExecutorCalibration`。

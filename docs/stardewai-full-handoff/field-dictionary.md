@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fair Strength Game Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.fair_strength_game` | Publish the complete active Fall 16 StrengthGame context or an explicit contextual-inactive state | locked 1.6.15 `Event` and `StrengthGame`; live event/player/minigame state | Fair page confirms the free strength minigame and fixed top/bottom one-token result | covered_for_read / contextual_outside_festival | Full snapshot keeps the field required. Fixed rules come from locked source; power, direction, speed, timers and result state come from the live instance. |
+| `interaction_tiles` / `stand_tile_x` / `native_contract` | Bind Buildings 540, required player TilePoint.X 29, exact menu creation, swing callback, score and result exit | locked `Event.checkAction`, `StrengthGame.receiveLeftClick`, `FarmerSprite.animateOnce`, `StrengthGame.afterSwingAnimation` | n/a | covered_for_gate_and_output_EVD_295 / fresh_projection_required | Runtime must enter through the real festival action and may not bypass the original click/result lifecycle. |
+| `power_contract` / `active_minigame` | Publish power 0..100, changeSpeed 3/4, direction reversals, animation 168/80ms/8, end timer and live clicked/result state | locked constructor/update/click/callback paths plus reflected live private fields | n/a | covered_for_read_and_receipt_EVD_295 | Production predicts the state after nine native updates and clicks once at a projected power of at least 99; no field or result writes are allowed. |
+| `shop_rows[]` / `remaining_star_token_demand` | Reuse the complete Fair shop while bounding this fixed one-token action to an exact Stardrop top-up | live shop stock; locked conditions; current mail/tokens and Grange projection | Fair shop table confirms `(O)434` costs 2000 Star Tokens | covered_for_candidate_and_compile_EVD_295 | A deficit other than exactly one is excluded upstream because this action has a fixed one-token return. |
+| `festival.play_strength_game` / `executor.play_fair_strength_game` | Separate the exact-one-token scheduling decision from one native maximum-power attempt | candidate/DailyPlan/compiler/capability registry; shared movement and native minigame executor | n/a | strategy_value_allowlisted / executor_calibration_only | The executor handles movement, timing and one click; only the high-level action enters strategy training. |
+
 ## Fair Slingshot Game Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

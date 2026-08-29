@@ -199,6 +199,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one 50g 50-second native TargetGame session selected from a fresh fair snapshot", "automatic repetition is bounded by the same unacquired 2000-token Stardrop demand as the other Fair games", "native festival dialogue and predictive moving-target intercept input handed to the mechanical executor" },
                 new[] { "block_inactive_or_changed_fair_event", "block_no_remaining_automatic_star_token_demand", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_target_score_accuracy_reward_timer_or_inventory_mutation" }));
 
+            Register(Option("festival.play_strength_game", "festival", "Play one native Stardew Valley Fair strength game to close an exact one-star-token Stardrop shortfall",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_strength_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one free native StrengthGame session selected only for an exact one-token automatic Stardrop shortfall", "the live Buildings tile 540 endpoint and required player x=29 stand are rebound from a fresh snapshot", "native maximum-power timing input is handed to the mechanical executor" },
+                new[] { "block_inactive_or_changed_fair_event", "block_remaining_automatic_star_token_demand_not_exactly_one", "block_unverified_route", "block_projection_drift", "block_direct_power_timer_score_reward_animation_or_inventory_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1122,6 +1130,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_slingshot_game", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one live Fair slingshot booth interaction tile", "native Event dialogue deducts exactly 50g and starts TargetGame", "native charged shots use the existing aim patch and verify score accuracy token and return receipts" },
                 new[] { "block_inactive_or_changed_fair_event", "block_dialogue_or_entry_fee_drift", "block_unverified_native_session_or_result_formula", "block_unverified_route", "block_direct_money_target_score_accuracy_reward_timer_or_inventory_mutation" }));
+
+            Register(Option("executor.play_fair_strength_game", "festival", "Execute one verified native Fair StrengthGame with predictive maximum-power input",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_strength_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact x=29 stand adjacent to live Buildings tile 540", "native Event.checkAction directly opens StrengthGame without a fee or entry dialogue", "one predictive native click drives the real swing result and verifies exactly one star token plus native cleanup" },
+                new[] { "block_inactive_or_changed_fair_event", "block_entry_endpoint_or_power_timing_drift", "block_unverified_native_result_or_cleanup", "block_unverified_route", "block_direct_power_timer_score_reward_animation_or_inventory_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

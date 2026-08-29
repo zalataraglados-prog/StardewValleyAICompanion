@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-295
+
+- `festival.play_strength_game` 已闭合秋季 16 日展览会力量小游戏的透明读取、精确一枚星币的 Stardrop 缺口候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生回执。该动作免费但固定只奖励 `1` 星币，因此自动候选仅在扣除尚未领取的陈列奖励后恰好还缺 `1` 星币时出现。
+- 透明桥发布 Buildings 图块 `540`、站立 X=`29`、实时 `StrengthGame` 私有状态、力量 `0..100`、变化速度 `3/4`、摆锤方向、点击/结果/透明度/计时器、玩家动画状态、完整 Fair 商店行和共享星币缺口。固定合同来自锁定 1.6.15 反编译，活动状态逐帧读取。
+- 执行器复用共享 BFS，到位并等待原生移动输入完全结算后，经 `Event.checkAction -> StrengthGame.receiveLeftClick -> FarmerSprite.animateOnce(168,80ms,8) -> StrengthGame.afterSwingAnimation` 进入和完成原版流程。它预测点击后 `9` 次原生力量更新，只点击一次，不写 power、festivalScore、计时器、菜单或玩家位置。
+- 隐藏静音 E 盘隔离运行 `runtime-fair-strength-game-20260829-234510` 与 `runtime-fair-strength-game-20260829-234614` 均 PASS，分别覆盖 changeSpeed `4` 与 `3`：点击力量 `64->100`、`72->99`，星币均为 `1999->2000`，原版结果对话和清理完成。
+- 最新 full snapshot schema 为 `143 required / 127 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `171 registered / 201 semantic / 170 compiler-bound / 97 five-gate / 44 training allowlist / 30 catalogued blocked / 0 Product Executor`。完整回归为 Core `2018/2018`、Backend `138/138`、Release `0 warnings / 0 errors`。下一语义切片固定为 `festival.spin_wheel`。
+
 ## 2026-08-29 当前权威检查点：EVD-294
 
 - `festival.play_slingshot_game` 已闭合秋季 16 日展览会靶场的透明读取、Stardrop 有界需求候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生 TargetGame 回执。模型只决定是否花费 50g 开始一轮；自动候选仅在“当前星币 + 尚未领取的展览陈列奖励”仍不足 2000 星币且 Stardrop 未获得时出现。

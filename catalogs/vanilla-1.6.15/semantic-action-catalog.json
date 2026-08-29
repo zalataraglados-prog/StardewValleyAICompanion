@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "41ece77a06fde83df58d156f2728f970f18450f7638c1d3afaf3b2df4f6a2cc7",
-  "action_count": 200,
-  "registered_option_spec_count": 169,
-  "catalogued_blocked_count": 31,
+  "denominator_fingerprint_sha256": "ed3a925b890d548ab3c29f2afef21bf503a04ec8d917346e1949c23db8439de8",
+  "action_count": 201,
+  "registered_option_spec_count": 171,
+  "catalogued_blocked_count": 30,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -809,6 +809,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.play_fair_strength_game",
+      "domain": "festival",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.minigame",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.play_junimo_kart",
       "domain": "minigame",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -1198,13 +1207,11 @@
     {
       "action_id": "festival.play_strength_game",
       "domain": "festival",
-      "semantic_kind": "composite",
+      "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.minigame",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "StrengthGame"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "festival.spin_wheel",

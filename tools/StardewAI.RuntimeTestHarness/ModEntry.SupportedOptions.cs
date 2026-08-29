@@ -35,6 +35,7 @@ public sealed partial class ModEntry
             "debug.setup_grange_display",
             "debug.setup_fair_fishing_game",
             "debug.setup_fair_slingshot_game",
+            "debug.setup_fair_strength_game",
             "debug.setup_furniture_placement_target",
             "debug.setup_sign_placement_target",
             "debug.setup_sign_display_item_target",

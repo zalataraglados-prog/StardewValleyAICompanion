@@ -48,6 +48,7 @@ public sealed partial class ModEntry : Mod
     private ActiveGrangeDisplay? activeGrangeDisplay;
     private ActiveFairFishingGame? activeFairFishingGame;
     private ActiveFairSlingshotGame? activeFairSlingshotGame;
+    private ActiveFairStrengthGame? activeFairStrengthGame;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -464,6 +465,7 @@ public sealed partial class ModEntry : Mod
         TickGrangeDisplay();
         TickFairFishingGame();
         TickFairSlingshotGame();
+        TickFairStrengthGame();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -940,6 +942,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_fair_strength_game")
+            {
+                StartSetupFairStrengthGameFixture(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1332,6 +1340,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.play_fair_slingshot_game")
             {
                 StartFairSlingshotGame(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_fair_strength_game")
+            {
+                StartFairStrengthGame(pending);
                 return;
             }
 
@@ -1955,6 +1969,7 @@ public sealed partial class ModEntry : Mod
                 Monitor.Log($"Movement input dispatch failed: {movementInputReason}.", LogLevel.Error);
             }
             CaptureExecutorDiagnosticFrame("update_ticking");
+            ApplyFairStrengthGameInput();
             if (activeCatchFish is not null && !ApplyCatchFishUseToolInput(activeCatchFish, out var castInputReason))
             {
                 CompleteBlockedCatchFish(activeCatchFish, castInputReason);
@@ -2072,6 +2087,7 @@ public sealed partial class ModEntry : Mod
             activeGrangeDisplay is not null ||
             activeFairFishingGame is not null ||
             activeFairSlingshotGame is not null ||
+            activeFairStrengthGame is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||
