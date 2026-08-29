@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-296
+
+- `festival.spin_wheel` 已闭合秋季 16 日展览会转盘的透明读取、Stardrop 有界需求候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生随机回执。自动候选仅在未获得 Fair Stardrop、扣除尚未领取的陈列奖励后仍缺至少 `2` 星币时出现；恰好缺 `1` 星币继续交给免费力量小游戏。
+- 锁定 1.6.15 反编译确认 Buildings `308/309`、`wheelBet -> Green -> NumberSelectionMenu -> WheelSpinGame`、1000ms 预启动、固定减速度、`LuckLevel` 重试门和原生 `+/- wager` 结算。零幸运 30 个等可能构造结果中绿方胜 `22`、橙方胜 `8`，因此下注使用零幸运 Kelly 比例 `7/15`，再按剩余需求封顶；Wiki 的 73.3% 与 46.7% 只作玩家可见规则二次核验。
+- 执行器复用共享 BFS，点击真实 `Green` 响应，在原生数字菜单输入精确下注，然后等待真实转盘、结果文字、菜单退出和人物控制恢复。它不写 RNG、旋转速度、得分、下注结算或菜单结果；原生胜负都属于有效训练反馈。
+- 隐藏静音 E 盘隔离运行 `runtime-fair-wheel-spin-20260830-005054` PASS：两次真实下注均为 `466`，分别覆盖 `1000->1466` 的胜局和 `1000->534` 的负局，原生结果与清理均通过。
+- 最新 full snapshot schema 为 `145 required / 129 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 training allowlist / 29 catalogued blocked / 0 Product Executor`。完整回归为 Core `2023/2023`、Backend `138/138`、Release `0 warnings / 0 errors`。下一语义切片固定为 `fishing.manage_fish_pond`。
+
 ## 2026-08-29 当前权威检查点：EVD-295
 
 - `festival.play_strength_game` 已闭合秋季 16 日展览会力量小游戏的透明读取、精确一枚星币的 Stardrop 缺口候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生回执。该动作免费但固定只奖励 `1` 星币，因此自动候选仅在扣除尚未领取的陈列奖励后恰好还缺 `1` 星币时出现。

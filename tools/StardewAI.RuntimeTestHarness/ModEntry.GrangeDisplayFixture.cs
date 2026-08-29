@@ -14,7 +14,8 @@ public sealed partial class ModEntry
         Grange,
         Fishing,
         Slingshot,
-        Strength
+        Strength,
+        Wheel
     }
 
     private sealed class ActiveGrangeFixture
@@ -60,6 +61,11 @@ public sealed partial class ModEntry
     private void StartSetupFairStrengthGameFixture(PendingExecution pending)
     {
         StartSetupFallFairFixture(pending, judged: true, FallFairFixtureMode.Strength);
+    }
+
+    private void StartSetupFairWheelSpinFixture(PendingExecution pending)
+    {
+        StartSetupFallFairFixture(pending, judged: true, FallFairFixtureMode.Wheel);
     }
 
     private void StartSetupFallFairFixture(
@@ -147,6 +153,7 @@ public sealed partial class ModEntry
                     FallFairFixtureMode.Fishing => tileIndex is 503 or 504,
                     FallFairFixtureMode.Slingshot => tileIndex is 501 or 502,
                     FallFairFixtureMode.Strength => tileIndex == 540,
+                    FallFairFixtureMode.Wheel => tileIndex is 308 or 309,
                     _ => false
                 };
                 if (!matchesFixture)
@@ -205,6 +212,13 @@ public sealed partial class ModEntry
             Game1.player.mailReceived.Remove("CF_Fair");
             Game1.player.mailForTomorrow.Remove("CF_Fair");
         }
+        else if (active.Mode == FallFairFixtureMode.Wheel)
+        {
+            active.Festival.grangeJudged = true;
+            Game1.player.festivalScore = 1000;
+            Game1.player.mailReceived.Remove("CF_Fair");
+            Game1.player.mailForTomorrow.Remove("CF_Fair");
+        }
         else
         {
             Game1.player.Money = Math.Max(Game1.player.Money, 500);
@@ -221,6 +235,9 @@ public sealed partial class ModEntry
             (active.Mode == FallFairFixtureMode.Strength
                 ? active.Festival.grangeJudged && Game1.player.festivalScore == 1999 &&
                   fixtureStand.Value.X == 29 && !Game1.player.hasOrWillReceiveMail("CF_Fair")
+                : active.Mode == FallFairFixtureMode.Wheel
+                ? active.Festival.grangeJudged && Game1.player.festivalScore == 1000 &&
+                  !Game1.player.hasOrWillReceiveMail("CF_Fair")
                 : active.Mode != FallFairFixtureMode.Grange
                 ? Game1.player.Money >= 500 && Game1.player.festivalScore == 0 && !Game1.player.hasOrWillReceiveMail("CF_Fair")
                 : Game1.player.team.grangeDisplay.Count == 9 &&
@@ -238,6 +255,7 @@ public sealed partial class ModEntry
                 FallFairFixtureMode.Fishing => "debug_setup_fair_fishing_game",
                 FallFairFixtureMode.Slingshot => "debug_setup_fair_slingshot_game",
                 FallFairFixtureMode.Strength => "debug_setup_fair_strength_game",
+                FallFairFixtureMode.Wheel => "debug_setup_fair_wheel_spin",
                 _ => "debug_setup_grange_display"
             },
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
@@ -247,6 +265,7 @@ public sealed partial class ModEntry
                     FallFairFixtureMode.Fishing => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_fishing_game_interaction_tiles_present", "unacquired_stardrop_token_demand_and_entry_money_ready" },
                     FallFairFixtureMode.Slingshot => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_slingshot_game_interaction_tiles_present", "unacquired_stardrop_token_demand_and_entry_money_ready" },
                     FallFairFixtureMode.Strength => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_strength_game_tile_540_and_x29_stand_present", "exact_one_unacquired_stardrop_token_demand_ready" },
+                    FallFairFixtureMode.Wheel => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_wheel_tiles_308_309_present", "one_thousand_wagerable_tokens_and_stardrop_demand_ready" },
                     _ => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_grange_interaction_tiles_present", "nine_live_scoring_inventory_rows_ready", active.Judged ? "judged_retrieval_fixture_ready" : "pre_judging_fixture_ready" }
                 }
                 : new[] { FairFixtureMismatchReason(active.Mode) },
@@ -270,6 +289,7 @@ public sealed partial class ModEntry
                 FallFairFixtureMode.Fishing => "debug_setup_fair_fishing_game",
                 FallFairFixtureMode.Slingshot => "debug_setup_fair_slingshot_game",
                 FallFairFixtureMode.Strength => "debug_setup_fair_strength_game",
+                FallFairFixtureMode.Wheel => "debug_setup_fair_wheel_spin",
                 _ => "debug_setup_grange_display"
             },
             FairFixtureRequestedEffect(active),
@@ -283,6 +303,7 @@ public sealed partial class ModEntry
         FallFairFixtureMode.Fishing => "festival=fall16;fair_fishing_game=ready",
         FallFairFixtureMode.Slingshot => "festival=fall16;fair_slingshot_game=ready",
         FallFairFixtureMode.Strength => "festival=fall16;fair_strength_game=ready;festival_score=1999;grange_judged=true",
+        FallFairFixtureMode.Wheel => "festival=fall16;fair_wheel_spin=ready;festival_score=1000;grange_judged=true",
         _ => "festival=fall16;judged=" + active.Judged.ToString().ToLowerInvariant()
     };
 
@@ -291,6 +312,7 @@ public sealed partial class ModEntry
         FallFairFixtureMode.Fishing => "fair_fishing_fixture_post_state_mismatch",
         FallFairFixtureMode.Slingshot => "fair_slingshot_fixture_post_state_mismatch",
         FallFairFixtureMode.Strength => "fair_strength_fixture_post_state_mismatch",
+        FallFairFixtureMode.Wheel => "fair_wheel_fixture_post_state_mismatch",
         _ => "grange_fixture_post_state_mismatch"
     };
 }

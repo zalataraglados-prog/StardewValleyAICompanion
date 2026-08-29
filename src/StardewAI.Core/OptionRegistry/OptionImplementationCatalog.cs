@@ -109,10 +109,12 @@ public static class OptionImplementationCatalog
         "festival.play_fishing_game",
         "festival.play_slingshot_game",
         "festival.play_strength_game",
+        "festival.spin_wheel",
         "executor.play_junimo_kart",
         "executor.play_fair_fishing_game",
         "executor.play_fair_slingshot_game",
-        "executor.play_fair_strength_game");
+        "executor.play_fair_strength_game",
+        "executor.spin_fair_wheel");
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "rewards.claim_pot_of_gold",

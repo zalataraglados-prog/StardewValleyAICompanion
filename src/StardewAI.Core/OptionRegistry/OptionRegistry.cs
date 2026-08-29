@@ -207,6 +207,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one free native StrengthGame session selected only for an exact one-token automatic Stardrop shortfall", "the live Buildings tile 540 endpoint and required player x=29 stand are rebound from a fresh snapshot", "native maximum-power timing input is handed to the mechanical executor" },
                 new[] { "block_inactive_or_changed_fair_event", "block_remaining_automatic_star_token_demand_not_exactly_one", "block_unverified_route", "block_projection_drift", "block_direct_power_timer_score_reward_animation_or_inventory_mutation" }));
 
+            Register(Option("festival.spin_wheel", "festival", "Make one bounded green wager on the native Stardew Valley Fair spinning wheel for the unacquired Stardrop token deficit",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_wheel_spin", "player.luck_context", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one native stochastic WheelSpinGame selected from a fresh fair snapshot", "green zero-luck 22-of-30 constructor distribution and effective LuckLevel are transparent", "wager is the exact zero-luck Kelly fraction 7/15 of current star tokens capped by the remaining unacquired Stardrop demand" },
+                new[] { "block_inactive_or_changed_fair_event", "block_remaining_demand_below_two", "block_fewer_than_two_wagerable_star_tokens", "block_unverified_route", "block_projection_drift", "block_direct_rng_rotation_wager_score_result_or_menu_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1138,6 +1146,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_strength_game", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the exact x=29 stand adjacent to live Buildings tile 540", "native Event.checkAction directly opens StrengthGame without a fee or entry dialogue", "one predictive native click drives the real swing result and verifies exactly one star token plus native cleanup" },
                 new[] { "block_inactive_or_changed_fair_event", "block_entry_endpoint_or_power_timing_drift", "block_unverified_native_result_or_cleanup", "block_unverified_route", "block_direct_power_timer_score_reward_animation_or_inventory_mutation" }));
+
+            Register(Option("executor.spin_fair_wheel", "festival", "Execute one verified native Fair green wheel wager and record its stochastic settlement",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_wheel_spin", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one live Buildings 308 or 309 wheel endpoint", "native wheelBet Green dialogue and NumberSelectionMenu submit the exact bounded wager", "the real WheelSpinGame owns randomness score settlement result text and menu exit" },
+                new[] { "block_inactive_or_changed_fair_event", "block_dialogue_number_selection_or_wager_drift", "block_unverified_native_random_settlement_or_cleanup", "block_unverified_route", "block_direct_rng_rotation_wager_score_result_or_menu_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

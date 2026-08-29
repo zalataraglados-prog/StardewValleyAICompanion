@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 展览会转盘闭环（EVD-296）
+
+`festival.spin_wheel` 已覆盖 Fall 16 原版转盘的完整策略与执行周期。透明桥发布实时入口/站位、数字下注菜单、活动转盘私有状态、完整 Fair 商店与 Stardrop 缺口、零幸运 `22/30` 绿方胜率、有效 `LuckLevel` 及原版随机/计时/结算合同。策略使用 `7/15` 零幸运 Kelly 下注并按需求封顶；精确缺一枚继续复用力量小游戏。
+
+运行层只通过原生对话、数字输入和 `WheelSpinGame` 执行，胜负均按随机反馈验收。隐藏静音运行 `runtime-fair-wheel-spin-20260830-005054` 两次即覆盖 `466` 星币下注的胜负两支和清理。当前对账为 `173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 allowlist / 29 catalogued blocked / 0 Product Executor`，回归为 Core `2023/2023`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `fishing.manage_fish_pond`。
+
 ## 2026-08-29 展览会力量小游戏闭环（EVD-295）
 
 `festival.play_strength_game` 已覆盖 Fall 16 原版力量小游戏的完整策略与执行周期。透明桥发布唯一入口和站位、免费/固定一星币合同、实时力量/速度/方向/动画/计时状态、全部 Fair 商店行和 Stardrop 缺口；候选仅服务于扣除陈列奖励后恰好剩余一枚星币的需求。

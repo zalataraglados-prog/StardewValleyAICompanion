@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 展览会转盘策略与原生随机执行闭环（EVD-296）
+
+`festival.spin_wheel` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否用绿方转盘补齐未获得 Fair Stardrop 的至少两枚星币缺口；编译器从 fresh snapshot 绑定节日、Buildings `308/309`、站位、节庆币、需求、零幸运 `22/30` 分布、有效 `LuckLevel`、数字菜单和 native contract。下注严格为 `min(remainingDemand, floor(festivalScore * 7 / 15))`，即等赔率零幸运 Kelly 比例，不把 50% 误标为 Kelly；`executor.spin_fair_wheel` 保持 `ExecutorCalibration` 与 policy confirmation。
+
+运行层复用共享 BFS 和原生菜单输入，只经 `Event.checkAction -> DialogueBox(Green) -> NumberSelectionMenu -> WheelSpinGame` 启动，接受原版随机胜负并核对精确 `+/- wager`、结果文字与退出。最终隐藏静音运行 `runtime-fair-wheel-spin-20260830-005054` 用两次 `466` 星币下注覆盖胜负两支，festivalScore 分别 `1000->1466` 与 `1000->534`；生产代码不写 RNG、旋转、结算或结果。最新 schema 为 `145 required / 129 readable / 16 contextual / 0 blocking`，对账为 `173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 allowlist / 29 catalogued blocked / 0 Product Executor`，回归为 Core `2023/2023`、Backend `138/138`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 29 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `fishing.manage_fish_pond`。
+
 ## 2026-08-29 展览会力量小游戏策略与原生执行闭环（EVD-295）
 
 `festival.play_strength_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只在扣除未领取陈列奖励后，未获得 Fair Stardrop 的缺口恰好为 `1` 星币时决定是否进行这次免费尝试；其他缺口不会把单次固定一币的小游戏误当作高效循环。编译器从 fresh snapshot 绑定节日实例、Buildings `540`、站立 X=`29`、力量/速度/方向、动画和计时合同、商店需求及 native contract；`executor.play_fair_strength_game` 严格为 `ExecutorCalibration`。

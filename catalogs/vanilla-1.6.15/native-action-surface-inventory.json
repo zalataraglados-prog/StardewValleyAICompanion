@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 78,
-  "catalogued_blocked_surface_count": 90,
-  "catalogued_blocked_action_count": 30,
+  "mapped_count": 80,
+  "catalogued_blocked_surface_count": 88,
+  "catalogued_blocked_action_count": 29,
   "catalogued_blocked_action_ids": [
-    "festival.spin_wheel",
     "fishing.manage_fish_pond",
     "foraging.harvest_fruit_tree",
     "foraging.harvest_tree_product",
@@ -3493,7 +3492,7 @@
       "mappedOptionIds": [
         "festival.spin_wheel"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3510,7 +3509,7 @@
       "mappedOptionIds": [
         "festival.spin_wheel"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

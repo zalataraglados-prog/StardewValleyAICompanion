@@ -1,3 +1,12 @@
+2026-08-30 EVD-296 native Fall 16 Fair Wheel
+- Locked 1.6.15 source and official Wiki secondary audit PASS: Buildings 308/309, wheelBet/Green, NumberSelectionMenu, 1000ms prestart, exact initial-velocity domain, fixed deceleration, LuckLevel retry gates, 22/30 zero-luck green distribution, native +/- wager and result/exit are covered.
+- Mathematical correction PASS: the wager is `floor(score*7/15)` capped by remaining Stardrop demand, not 50% mislabeled as Kelly. Focused Fair wheel and capability regression PASS 45/45; complete focused bundle previously passed 59/59.
+- Hidden/silent isolated E-drive runtime PASS: `runtime-fair-wheel-spin-20260830-005054` covered native loss and win in two attempts, each wager 466, with festivalScore `1000->534` and `1000->1466`, exact result text and clean menu/control exit.
+- Installed full snapshot schema PASS: 145 required, 129 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator refresh PASS 585/585 with blocking 0.
+- Reconciliation: 173 registered / 202 semantic / 172 compiler-bound / 99 five-gate / 45 training allowlist / 29 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2023/2023; Backend 138/138; Release solution build 0 warnings / 0 errors.
+- Next slice is `fishing.manage_fish_pond`.
+
 2026-08-29 EVD-295 native Fall 16 Fair Strength Game
 - Locked 1.6.15 source audit PASS: Buildings 540, required stand X 29, free entry, power 0..100, changeSpeed 3/4, animation 168/80ms/8, callback timing, power >=99 top result, exact one-token reward and native result/exit are covered.
 - Focused combined regression PASS 59/59, including Fair strength mainline 5/5: exact-one demand compiles to one attempt, other demand is excluded upstream, projection drift fails closed, strategy/executor roles are separated, and source guards prohibit outcome writes.

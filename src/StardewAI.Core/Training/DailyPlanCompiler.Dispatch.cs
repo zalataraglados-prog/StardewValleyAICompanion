@@ -26,6 +26,7 @@ namespace StardewAI.Core.Training
                 ["festival.play_fishing_game"] = new[] { "play_fair_fishing_game" },
                 ["festival.play_slingshot_game"] = new[] { "play_fair_slingshot_game" },
                 ["festival.play_strength_game"] = new[] { "play_fair_strength_game" },
+                ["festival.spin_wheel"] = new[] { "spin_fair_wheel" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
                 ["joja.advance_development"] = new[] { "purchase_joja_membership", "purchase_joja_project" },
                 ["quest.accept_daily"] = new[] { "route_connector_tile", "daily_quest_board_approach", "accept_daily_quest" },
@@ -443,6 +444,10 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "play_fair_strength_game")
             {
                 return FairStrengthGameSteps(candidate);
+            }
+            if (candidate.Kind == "spin_fair_wheel")
+            {
+                return FairWheelSpinSteps(candidate);
             }
             if (candidate.Kind == "donate_community_center_item")
             {

@@ -130,6 +130,7 @@ namespace StardewAI.Core.Execution
                 "play_fair_fishing_game" => "executor.play_fair_fishing_game",
                 "play_fair_slingshot_game" => "executor.play_fair_slingshot_game",
                 "play_fair_strength_game" => "executor.play_fair_strength_game",
+                "spin_fair_wheel" => "executor.spin_fair_wheel",
                 "donate_community_center_item" => "executor.donate_community_center_item",
                 "purchase_joja_membership" => "executor.purchase_joja_membership",
                 "purchase_joja_project" => "executor.purchase_joja_project",

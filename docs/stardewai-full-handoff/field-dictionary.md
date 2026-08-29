@@ -10,6 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fair Wheel Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.fair_wheel_spin` | Publish the complete active Fall 16 wheel context or an explicit contextual-inactive state | locked 1.6.15 `Event`, `NumberSelectionMenu` and `WheelSpinGame`; live event/player/menu state | Fair page confirms green/orange wagering, 73.3% base green rate and Luck effects | covered_for_read / contextual_outside_festival | Full snapshot keeps the field required. Active menu and wheel private fields are read live; fixed formulas come from locked source. |
+| `interaction_tiles` / `dialogue_key` / `response_key` / `native_contract` | Bind Buildings 308/309 and the exact `wheelBet -> Green -> NumberSelectionMenu -> WheelSpinGame` lifecycle | locked `Event.checkAction`, `Event.answerDialogue` and `Event.betStarTokens` | n/a | covered_for_gate_and_output_EVD_296 / fresh_projection_required | Runtime must click the real response and numeric menu; direct menu creation or result mutation is prohibited. |
+| `base_zero_luck_distribution` / `random_contract` / `effective_luck_level` | Expose all 30 zero-luck constructor outcomes, deceleration, win arcs and LuckLevel retry gates | exhaustive locked constructor enumeration plus `WheelSpinGame.update` | Fair page independently reports 22/30 green and the Luck/15 green correction | covered_for_read_and_compile_EVD_296 | `DailyLuck` is not consumed by this code path. Random win/loss remains feedback, not an execution-success invariant. |
+| `wager_policy` / `zero_luck_kelly_fraction` / `remaining_star_token_demand` | Size a green wager without overshooting the automatic Stardrop demand | exact `22/30` source distribution and even-money Kelly derivation `2p-1=7/15`; current tokens and shared Fair demand | Fair page independently reports a 46.7% current-token wager | covered_for_candidate_and_compile_EVD_296 | Wager is `min(demand, floor(score*7/15))`. Demand below two is excluded; exact one reuses the free strength game. |
+| `active_wheel` / `active_number_selection` | Record native wager input, velocity, rotation, timer, done/result state and settlement | live reflected fields bound to exact runtime types | n/a | covered_for_read_and_receipt_EVD_296 | Production writes only the visible native number textbox and sends menu clicks; RNG, rotation and festivalScore are never written. |
+| `festival.spin_wheel` / `executor.spin_fair_wheel` | Separate economic scheduling from one stochastic native wheel session | candidate/DailyPlan/compiler/capability registry; shared movement and native menu executor | n/a | strategy_value_allowlisted_policy_confirmed / executor_calibration_only | Both native outcomes are accepted only after exact score delta, result text, cleanup and fresh replan receipts. |
+
 ## Fair Strength Game Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
