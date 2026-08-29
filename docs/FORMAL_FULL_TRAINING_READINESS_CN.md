@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 传送图腾执行器校准（EVD-291）
+
+`executor.use_warp_totem` 已完成五道执行证据闭环，训练角色严格为 `ExecutorCalibration`。上游策略只决定目的地和“是否值得消耗”；机械链从 fresh snapshot 重绑五种精确库存、Farm 地图属性/农场回退、固定目的地、主动与被动节日路由、地图边缘修正、2000ms 动画和 1000ms 原生回调。会消耗但不传送的节日前分支、联机 ReadyCheck、精确目的地重复使用和基础物品门失败均在消费前排除。
+
+隐藏静音隔离运行五变体 `5/5` 验证原生单物品消费、68 个即时效果精灵、五个精确落点和最终角色状态恢复。最新 schema 为 `139 required / 123 readable / 16 contextual / 0 blocking`，对账为 `163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 allowlist / 34 catalogued blocked / 0 Product Executor`。该切片不进入训练 allowlist，也不解除 Product Executor、剩余 34 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等阻挡。下一语义切片为 `festival.manage_grange_display`。
+
 ## 2026-08-29 宝藏图腾执行器校准（EVD-290）
 
 `executor.use_treasure_totem` 已完成五道执行证据闭环，训练角色严格为 `ExecutorCalibration`。上游策略只决定是否值得在当前位置消耗图腾；机械链从 fresh snapshot 重绑精确库存、室内门、中心周围 16 格原生候选环、每格可生成原因、`TreasureTotemsUsed` 和时序合同。公共物品门失败、室内或零可生成格会在消费前排除，不能依赖下游失败补救。

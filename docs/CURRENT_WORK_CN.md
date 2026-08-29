@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-291
+
+- `executor.use_warp_totem` 已闭合五种原版传送图腾 `(O)688/(O)689/(O)690/(O)261/(O)886` 的透明读取、fresh 路由重绑定、动作编译、类型化请求、共享原生库存物品使用和延迟回执。锁定 1.6.15 反编译、`Data/Objects`、`Data/CraftingRecipes` 与官方 Wiki，确认 Farm/Mountain/Beach/Desert/Island 全部可达变体及其消耗语义。
+- 透明桥逐库存行发布精确物品身份、公共使用门、2000ms 动画和 1000ms 回调合同，并实时解析 Farm `WarpTotemEntry`/农场类型回退、固定目的地、地图宽度修正、主动节日入口和按顺序应用的被动节日地图替换。节日前误消耗但不传送、联机节日 ReadyCheck、已在精确目的地和基础使用门失败均在上游排除。
+- 执行层只调用 `UseInventoryObjectNative`，不直接调用 `Game1.warpFarmer`，不写位置、库存、可见性、无敌或音频。回执要求一个精确图腾 `2->1`、原生首段至少 68 个效果精灵、目的地图/格、节日路由以及角色显示/无敌/移动状态全部结算。
+- 隐藏静音 E 盘隔离运行 `runtime-warp-totem-20260829-181523` 五变体 `5/5` PASS：Farm `48,39`、Mountain `31,20`、Beach `20,4`、Desert `35,43`、IslandSouth `11,11` 均由原生回调抵达，每例 `68` 个即时精灵、约 `281 tick` 后完成并恢复控制。
+- 最终回归为 Core `1998/1998`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。最新 full snapshot schema 为 `139 required / 123 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 training allowlist / 34 catalogued blocked / 0 Product Executor`。下一语义切片固定为 `festival.manage_grange_display`。
+
 ## 2026-08-29 当前权威检查点：EVD-290
 
 - `executor.use_treasure_totem` 已闭合原版宝藏图腾 `(O)TreasureTotem` 的透明读取、fresh 候选环重绑定、动作编译、类型化请求、共享原生库存物品使用和严格回执。锁定 1.6.15 反编译、`Data/Objects`、`Data/CraftingRecipes` 与官方 Wiki，确认原生效果是中心周围按四舍五入距离 3 生成至多 16 个 `(O)590` 宝藏点，并递增 `TreasureTotemsUsed`。

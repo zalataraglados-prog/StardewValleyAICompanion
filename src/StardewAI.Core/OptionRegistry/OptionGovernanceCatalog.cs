@@ -376,6 +376,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.use_rain_totem", Primitive, R2, Consume, PolicyConfirm, Actor, World, Policy),
                 P("executor.use_return_scepter", Primitive, R1, None, NoConfirm, Actor, World, Policy),
                 P("executor.use_treasure_totem", Primitive, R2, Consume, PolicyConfirm, Actor, World, Policy),
+                P("executor.use_warp_totem", Primitive, R2, Consume, PolicyConfirm, Actor, World, Policy),
                 P("executor.select_safe_item_slot", Primitive, R0, None, NoConfirm, Actor, ActorState, Allowed)
             };
 

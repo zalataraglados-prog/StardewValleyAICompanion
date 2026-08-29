@@ -44,6 +44,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMonsterMusk? activeMonsterMusk;
     private ActiveRainTotem? activeRainTotem;
     private ActiveReturnScepter? activeReturnScepter;
+    private ActiveWarpTotem? activeWarpTotem;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -455,6 +456,7 @@ public sealed partial class ModEntry : Mod
         TickMonsterMusk();
         TickRainTotem();
         TickReturnScepter();
+        TickWarpTotem();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -907,6 +909,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_warp_totem")
+            {
+                pending.Completion.SetResult(ExecuteSetupWarpTotemFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1275,6 +1283,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.use_treasure_totem")
             {
                 ExecuteUseTreasureTotem(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.use_warp_totem")
+            {
+                StartUseWarpTotem(pending);
                 return;
             }
 
@@ -2002,6 +2016,7 @@ public sealed partial class ModEntry : Mod
             activeMonsterMusk is not null ||
             activeRainTotem is not null ||
             activeReturnScepter is not null ||
+            activeWarpTotem is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

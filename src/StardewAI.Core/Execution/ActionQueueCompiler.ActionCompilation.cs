@@ -218,6 +218,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateUseRainTotemPlan(action, snapshot));
             blocking.AddRange(ValidateUseReturnScepterPlan(action, snapshot));
             blocking.AddRange(ValidateUseTreasureTotemPlan(action, snapshot));
+            blocking.AddRange(ValidateUseWarpTotemPlan(action, snapshot));
             blocking.AddRange(ValidateConnectorPlan(action, snapshot));
             blocking.AddRange(ValidateFaceDirectionPlan(action));
             blocking.AddRange(ValidateInteractPlan(action, snapshot));

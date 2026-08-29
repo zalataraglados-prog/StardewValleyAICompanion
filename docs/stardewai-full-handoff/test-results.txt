@@ -1,3 +1,11 @@
+2026-08-29 EVD-291 native five-variant Warp Totem routing
+- Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base IDs 688/689/690/261/886, common use gate, Farm `WarpTotemEntry`/farm fallbacks, fixed destinations, map-width correction, active festival entry/ReadyCheck, ordered passive replacements, 2000ms animation and 1000ms callback are covered.
+- TDD RED observed 20/20 failures from unknown registration/missing projection/compiler/runtime. Final focused GREEN PASS 22/22 additionally covers malformed snapshots with a missing selected row or animation contract, both fail-closed without compiler exceptions.
+- Hidden/silent isolated E-drive runtime PASS 5/5: `artifacts/runtime-warp-totem/runtime-warp-totem-20260829-181523/summary.json`. Native callbacks reached Farm `48,39`, Mountain `31,20`, Beach `20,4`, Desert `35,43` and IslandSouth `11,11`; each consumed `2->1`, emitted 68 initial sprites and settled after about 281 ticks with player control restored.
+- Installed full snapshot schema PASS: 139 required, 123 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator blocking remains 0.
+- Reconciliation: 163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 training allowlist / 34 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1998/1998; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `festival.manage_grange_display`.
+
 2026-08-29 EVD-290 native Treasure Totem artifact-spot ring
 - Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base `(O)TreasureTotem`, common object-use/outdoors gate, `TreasureTotemsUsed` transition, full 16-tile rounded-distance-3 scan, placement/occupancy/front-layer/bush/Diggable-or-winter-grass membership, `(O)590` output and downstream artifact-spot seed consumer are covered.
 - TDD RED observed 12/12 failures from unknown registration/missing projection/compiler/runtime. Focused GREEN PASS 62/62 including capability and registry governance covers valid/blocked compilation, stale inventory/map/ring/counter/timing/native-contract rejection, five gates and native-only source guards.

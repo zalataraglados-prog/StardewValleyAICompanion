@@ -1355,6 +1355,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native use consumes exactly one Treasure Totem", "TreasureTotemsUsed increments exactly once", "artifact spots appear on the exact eligible subset of the native 16-tile rounded-distance ring" },
                 new[] { "block_native_object_use_or_outdoors_gate", "block_inventory_center_tile_ring_or_counter_projection_drift", "block_zero_spawn_consumption", "block_open_menu", "block_direct_world_object_counter_audio_visual_or_inventory_mutation" }));
 
+            Register(Option("executor.use_warp_totem", "movement", "Consume one exact Warp Totem through its native delayed and festival-routed destination branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.warp_totem", "menus.active_menu" },
+                new[] { "native use consumes exactly one selected Warp Totem", "Farm uses the live WarpTotemEntry or exact farm-type fallback while the other four variants retain their native destinations", "active and passive festival routing is resolved before consumption and the final native location/tile is verified" },
+                new[] { "block_native_object_use_gate", "block_inventory_destination_festival_or_projection_drift", "block_pre_festival_consumption_without_warp", "block_multiplayer_festival_ready_check", "block_redundant_exact_destination", "block_open_menu", "block_direct_warp_position_state_audio_visual_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

@@ -1589,6 +1589,9 @@ static partial class Program
         ApplyTreasureTotemRequestFields(
             executionRequest,
             item);
+        ApplyWarpTotemRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

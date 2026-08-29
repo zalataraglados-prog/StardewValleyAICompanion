@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Warp Totem Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.warp_totem.rows[]` | Bind every exact base Farm, Mountain, Beach, Desert and Island Warp Totem slot and its row-specific destination | locked 1.6.15 `Data/Objects`, `Data/CraftingRecipes`, `Object.performUseAction`; live inventory/map state | Warp Totem pages confirm the five destinations and consumption | covered_for_read / fresh_projection_required | Multiple variants may coexist; each row owns its route so a selected slot cannot bind another totem's destination. |
+| `destination_route` | Publish Farm map-property/fallback coordinates, fixed destinations, map-width correction, active festival entry and ordered passive replacements | locked `Object.totemWarpForReal`, `Game1.warpFarmer`, festival data; live farm/festival/map state | Beach page confirms festival-sensitive use | covered_for_read_and_gate_EVD_291 | Pre-start consume-without-warp, multiplayer ReadyCheck and exact-destination no-op fail upstream. Single-player festival entry and passive replacement remain native-supported routes. |
+| `native_animation_contract` | Bind facing, 2000ms animation, 1000ms callback, deterministic sprite counts and visual-only random domains | locked `Object.performUseAction`, `totemWarp`, `totemWarpForReal` | n/a | covered_for_read_and_gate_EVD_291 / native_runtime_verified | Initial effects are 3 item sprites plus 65 sprinkles; later poofs/trails do not affect routing. |
+| `executor.use_warp_totem` | Consume one exact selected totem through native object use and verify destination, festival route and restored player state | shared `UseInventoryObjectNative`; delayed native receipt | n/a | five_gate_closed_EVD_291 / executor_calibration_only | Upstream owns travel value and destination choice. No direct warp, position, inventory, visibility, invincibility or audio write is permitted. |
+
 ## Treasure Totem Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

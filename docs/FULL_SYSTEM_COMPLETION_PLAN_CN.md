@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 五类传送图腾原生路由闭环（EVD-291）
+
+`executor.use_warp_totem` 已覆盖锁定 1.6.15 的五种可达原版变体和完整稳定使用分支。透明桥按库存行绑定精确 Object 身份、公共使用门、Farm `WarpTotemEntry`/农场类型回退、固定目的地、被动节日替换链、主动节日入口、地图宽度修正和动画时序；编译器拒绝库存、目的地、节日、坐标、时序、颜色、指纹或原生合同漂移，并在会浪费图腾或需要联机 ReadyCheck 时上游关闭。
+
+运行层复用唯一 `UseInventoryObjectNative`，等待 `Object.totemWarpForReal -> Game1.warpFarmer` 原生回调后验证单物品消费、精确目的地和角色状态，不复制传送实现。隐藏静音 E 盘五变体 `5/5` PASS，最终回归为 Core `1998/1998`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `163 registered / 197 semantic / 162 compiler-bound / 89 five-gate / 40 allowlist / 34 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.manage_grange_display`。
+
 ## 2026-08-29 宝藏图腾原生宝藏点闭环（EVD-290）
 
 `executor.use_treasure_totem` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(O)TreasureTotem`、公共物品使用门、室内状态、中心周围 16 格原生圆环、每格放置/占用/前景/灌木/地层判定、可生成集合、世界使用计数、确定性生成合同与指纹；编译器拒绝任何身份、地图、候选集合、计数、时序或合同漂移，并在零有效格时避免浪费图腾。

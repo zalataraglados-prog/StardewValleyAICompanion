@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 69,
   "catalogued_blocked_surface_count": 99,
-  "catalogued_blocked_action_count": 35,
+  "catalogued_blocked_action_count": 34,
   "catalogued_blocked_action_ids": [
-    "executor.use_warp_totem",
     "festival.manage_grange_display",
     "festival.play_fishing_game",
     "festival.play_slingshot_game",
