@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Firework Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.firework_placement.supported_variants[]` / `rows[]` | Publish every exact base inventory firework and bind `(O)893/(O)894/(O)895` to type `0/1/2` and source X `256/272/288` | locked 1.6.15 `Object.placementAction` switch branch and live inventory | secondary comparison pending | covered_for_read / full_profile / fresh_projection_required | The field is computed only for the current loaded location and only scans placement ranges when inventory contains a supported firework. |
+| `rows[].locations[].static_legal_tile_ranges` / `temporary_sprite_blocked_tiles` | Separate static native placement legality from the branch's exact transient sprite-position rejection | live `canBePlacedHere` probe and `location.temporarySprites` exact `target*64` comparison | n/a | covered_for_gate_EVD_285 | Compiler and runtime both reject the exact transiently occupied tile. |
+| `random_outcome_contract`, rocket ID and acceleration domains | Publish every knowable random domain without consuming or guessing shared RNG | locked `Game1.random.Next()` calls in the firework branch | n/a | covered_for_read_and_output / no_rng_advance | ID is `20..30`; Y acceleration is `-0.36..-0.27` in `0.01` steps. Exact next values exist only after native execution. |
+| `executor.use_firework` | Execute one explicit three-color firework through the shared native placement caller | adjacent movement, shared `CanPlaceInventoryObjectNative` / `PlaceInventoryObjectNative`, strict five-sprite receipt | secondary comparison pending | five_gate_closed_EVD_285 / player_command_only | No direct sprite broadcast, audio call, inventory mutation, autonomous candidate or policy-training admission is permitted. |
+
 ## Secret Note Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

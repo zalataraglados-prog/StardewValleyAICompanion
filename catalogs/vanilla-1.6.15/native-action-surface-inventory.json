@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 41,
+  "catalogued_blocked_action_count": 40,
   "catalogued_blocked_action_ids": [
-    "executor.use_firework",
     "executor.use_horse_flute",
     "executor.use_monster_musk",
     "executor.use_rain_totem",

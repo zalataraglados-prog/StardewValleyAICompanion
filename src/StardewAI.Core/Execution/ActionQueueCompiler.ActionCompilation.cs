@@ -212,6 +212,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidatePlaceStoragePlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateReadBookPlan(action, snapshot));
             blocking.AddRange(ValidateReadSecretNotePlan(action, snapshot));
+            blocking.AddRange(ValidateUseFireworkPlan(action, snapshot));
             blocking.AddRange(ValidateConnectorPlan(action, snapshot));
             blocking.AddRange(ValidateFaceDirectionPlan(action));
             blocking.AddRange(ValidateInteractPlan(action, snapshot));

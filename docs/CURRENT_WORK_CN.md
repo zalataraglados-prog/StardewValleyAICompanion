@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-285
+
+- `executor.use_firework` 已闭合三种原版烟花 `(O)893/(O)894/(O)895` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享相邻移动、原生放置和严格瞬时回执。锁定 1.6.15 分支确认三者映射 `fireworkType=0/1/2` 与源图 X=`256/272/288`，共用 2400ms 引信和延迟火箭。
+- 透明桥只在 full profile 且库存存在烟花时计算当前加载地图合法区间，并发布精确临时精灵占位格。读取阶段不调用 `Game1.random`；只发布火箭 ID `20..30` 与 Y 加速度 `-0.36..-0.27`、步长 `0.01` 的完整结果域。
+- 动作严格为 `PlayerCommandOnly`：不进入自主候选或训练 allowlist。运行层只复用 `CanPlaceInventoryObjectNative -> PlaceInventoryObjectNative`，不直接广播精灵、播放音频或修改库存；执行回执要求 5 个新原生精灵、目标格 2 个主体精灵、精确三色身份、随机结果域和单物品消耗全部成立。
+- 隐藏静音 E 盘隔离运行 `runtime-firework-20260829-111607` 三分支 PASS；观测火箭 ID 为 `22/20/25`，加速度为 `-0.27/-0.34/-0.31`，均在反编译域内。
+- 最新 full snapshot schema 为 `133 required / 117 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `157 registered / 197 semantic / 156 compiler-bound / 83 five-gate / 40 training allowlist / 40 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.use_horse_flute`。
+
 ## 2026-08-29 当前权威检查点：EVD-284
 
 - `executor.read_secret_note` 已闭合普通秘密纸条 `(O)79` 与日记残页 `(O)842` 的完整透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生物品使用和严格回执。锁定 1.6.15 反编译确认普通纸条用 `Utility.CreateRandom(gameId, playerId, unseenCount * 777)` 从原生未读顺序确定性抽取，日记残页取最小未读编号。

@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 烟花玩家命令边界（EVD-285）
+
+`executor.use_firework` 已闭合五道执行证据，但训练 allowlist 保持 `40`。烟花是显式玩家表达命令，不是第三年爷爷 21 分路线、日循环或资源规划的自主欲望；相关运行样本只属于 `player_command_only_executor_evidence`。模型不能学习或猜测共享 RNG 的精确下一值。
+
+隐藏静音隔离运行已验证 `(O)893/(O)894/(O)895` 三个分支、原生 5 精灵图、目标格冲突、随机域和精确单件消耗。最新 schema 为 `133 required / 117 readable / 16 contextual / 0 blocking`，对账为 `157 registered / 197 semantic / 156 compiler-bound / 83 five-gate / 40 allowlist / 40 catalogued blocked / 0 Product Executor`。因此该切片不解除 Product Executor、剩余 40 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻挡。下一语义切片为 `executor.use_horse_flute`。
+
 ## 2026-08-29 秘密纸条执行器校准（EVD-284）
 
 `executor.read_secret_note` 已完成五道执行证据闭环，但训练角色仍为 `ExecutorCalibration`：它校准透明桥、编译器和执行器能否忠实完成一个已由上游选择的纸条读取，不让策略模型学习原生随机数、菜单构造或库存扣减。普通纸条与日记残页的选择均在 fresh snapshot 中机械计算，小模型不能伪造 note id 或任务副作用。

@@ -1307,6 +1307,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "the native unseen-note selector chooses the rebound note id", "native performUseAction records exactly one newly seen note and opens its LetterViewerMenu", "note 10 or 23 native quest side effects are verified", "the native caller consumes exactly one matching inventory item" },
                 new[] { "block_native_secret_note_use_gate", "block_inventory_or_unseen_set_drift", "block_selection_or_side_effect_projection_drift", "block_direct_seen_note_quest_menu_or_inventory_mutation" }));
 
+            Register(Option("executor.use_firework", "inventory", "Launch one exact inventory firework at one explicit native-legal target tile",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.firework_placement", "menus.active_menu" },
+                new[] { "explicit player command selects one exact tile and one of the three vanilla firework variants", "native placement creates the exact fuse and rocket sprite graph", "one matching inventory item is consumed", "random rocket acceleration and explosion id remain bounded runtime outcomes rather than guessed reads" },
+                new[] { "block_not_explicitly_authorized", "block_inventory_variant_or_projection_identity_drift", "block_non_native_legal_or_transiently_occupied_target", "block_nonadjacent_stand_or_open_menu", "never_advance_or_guess_shared_rng_during_read", "block_direct_sprite_audio_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

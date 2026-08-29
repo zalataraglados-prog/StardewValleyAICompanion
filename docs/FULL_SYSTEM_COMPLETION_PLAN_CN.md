@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 三色烟花原生放置闭环（EVD-285）
+
+`executor.use_firework` 已覆盖锁定 1.6.15 的全部三色烟花分支。透明桥发布库存身份、三色类型与源图映射、当前地图原生合法区间、目标格临时精灵冲突、2400ms 引信以及完整随机结果域；读取阶段绝不推进共享 `Game1.random`。编译器只接受 fresh snapshot 中精确匹配的库存行、相邻站位与目标格。
+
+运行层复用唯一共享原生物品放置入口，不复制精灵、音频或库存副作用。隐藏静音隔离运行三例均创建 5 个原生临时精灵、精确消耗一件物品并验证对应火箭类型。该动作严格为 `PlayerCommandOnly`，不产生自主候选也不进入训练 allowlist。当前对账为 `157 registered / 197 semantic / 156 compiler-bound / 83 five-gate / 40 allowlist / 40 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_horse_flute`。
+
 ## 2026-08-29 秘密纸条原生读取闭环（EVD-284）
 
 `executor.read_secret_note` 已覆盖锁定 1.6.15 的两类原生可读物：普通秘密纸条 `(O)79` 按存档与玩家身份种子从未读集合确定性选择，日记残页 `(O)842` 选择最小未读编号。完整数据目录、已读/未读状态、选择输入和结果、原文哈希、显示分支及 10/23 号任务副作用均由透明桥实时发布，编译器只接受 fresh snapshot 中精确匹配的一行。

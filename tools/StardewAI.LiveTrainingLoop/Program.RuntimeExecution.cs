@@ -1571,6 +1571,9 @@ static partial class Program
         ApplyGrassPlacementRequestFields(
             executionRequest,
             item);
+        ApplyFireworkRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);
