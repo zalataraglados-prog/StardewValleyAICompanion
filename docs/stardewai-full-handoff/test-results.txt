@@ -1,3 +1,11 @@
+2026-08-29 EVD-290 native Treasure Totem artifact-spot ring
+- Locked 1.6.15 source/data and official Wiki secondary audit PASS: exact base `(O)TreasureTotem`, common object-use/outdoors gate, `TreasureTotemsUsed` transition, full 16-tile rounded-distance-3 scan, placement/occupancy/front-layer/bush/Diggable-or-winter-grass membership, `(O)590` output and downstream artifact-spot seed consumer are covered.
+- TDD RED observed 12/12 failures from unknown registration/missing projection/compiler/runtime. Focused GREEN PASS 62/62 including capability and registry governance covers valid/blocked compilation, stale inventory/map/ring/counter/timing/native-contract rejection, five gates and native-only source guards.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-treasure-totem/runtime-treasure-totem-20260829-173258/summary.json`. Farm center `6,12` produced all predicted `16/16` artifact spots, consumed slot 9 `2->1`, incremented `TreasureTotemsUsed 0->1`, and changed location artifact spots `5->21`.
+- Installed full snapshot schema PASS: 138 required, 122 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator blocking remains 0.
+- Reconciliation: 162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 training allowlist / 35 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1976/1976; Backend 138/138; Release solution build 0 warnings / 0 errors. Generated spots reuse the existing artifact projection and `executor.clear_obstacle` chain. Next slice is `executor.use_warp_totem`.
+
 2026-08-29 EVD-281 native Flute Block tuning
 - Locked 1.6.15 source audit PASS: exact base `(O)464`, persistent raw pitch parsing, complete `0..2400 step 100` cycle, special `2300->2400->0` edges, held-object cue override, shake/scale receipt and separate adjacent playback are covered.
 - TDD RED observed 7/7 Core failures from unknown registration/compiler and 1/1 Backend failure from missing runtime; focused GREEN PASS is Core 7/7 and Backend 1/1.

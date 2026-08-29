@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-290
+
+- `executor.use_treasure_totem` 已闭合原版宝藏图腾 `(O)TreasureTotem` 的透明读取、fresh 候选环重绑定、动作编译、类型化请求、共享原生库存物品使用和严格回执。锁定 1.6.15 反编译、`Data/Objects`、`Data/CraftingRecipes` 与官方 Wiki，确认原生效果是中心周围按四舍五入距离 3 生成至多 16 个 `(O)590` 宝藏点，并递增 `TreasureTotemsUsed`。
+- 透明桥逐格发布全部 16 个候选、放置/占用/前景层/灌木/可挖或冬季草地门、最终可生成集合、使用前计数和指纹。原生代码中形似 Forest 的判断实际比较物品名 `Treasure Totem`，对基础物品恒为 false；合同保留该真实操作数与结果，不按示例修正源码语义。
+- 上游在公共物品门失败、室内或可生成集合为空时直接排除，策略只决定何时及在哪里使用。机械执行器只调用 `UseInventoryObjectNative`，不直接写地图、库存或世界计数；新宝藏点继续交给既有 `ArtifactSpots` 透明读取和 `executor.clear_obstacle` 挖掘链，不建立第二套采集实现。
+- 隐藏静音 E 盘隔离运行 `runtime-treasure-totem-20260829-173258` PASS：Farm 中心 `(6,12)` 原生生成 `16/16` 个宝藏点，槽 9 图腾 `2->1`，`TreasureTotemsUsed 0->1`，地点宝藏点 `5->21`。
+- 最终回归为 Core `1976/1976`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。最新 full snapshot schema 为 `138 required / 122 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 training allowlist / 35 catalogued blocked / 0 Product Executor`。下一语义切片固定为 `executor.use_warp_totem`。
+
 ## 2026-08-29 当前权威检查点：EVD-289
 
 - `executor.use_return_scepter` 已闭合原版回城魔杖 `(T)ReturnScepter` 的透明读取、fresh 住宅/落点重绑定、动作编译、类型化请求、原生即时工具调用和严格异步回执。锁定 1.6.15 `Data/Tools` 与 `Wand.cs` 确认其为不可丢失、不可出售、非消耗型 `Wand`，入口必须经过 `Farmer.BeginUsingTool -> Tool.beginUsing(InstantUse) -> Game1.toolAnimationDone -> Wand.DoFunction`。

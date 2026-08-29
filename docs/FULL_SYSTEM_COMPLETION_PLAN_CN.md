@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 宝藏图腾原生宝藏点闭环（EVD-290）
+
+`executor.use_treasure_totem` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(O)TreasureTotem`、公共物品使用门、室内状态、中心周围 16 格原生圆环、每格放置/占用/前景/灌木/地层判定、可生成集合、世界使用计数、确定性生成合同与指纹；编译器拒绝任何身份、地图、候选集合、计数、时序或合同漂移，并在零有效格时避免浪费图腾。
+
+运行层复用唯一 `UseInventoryObjectNative`，只验证原生消费、计数递增和精确 `(O)590` 生成集合，不直接增删地图对象。后续掉落解析与挖掘复用现有 `ArtifactSpots -> executor.clear_obstacle` 链。隐藏静音 E 盘运行生成 `16/16`，最终回归为 Core `1976/1976`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 allowlist / 35 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_warp_totem`。
+
 ## 2026-08-29 回城魔杖原生住宅传送闭环（EVD-289）
 
 `executor.use_return_scepter` 已覆盖锁定 1.6.15 的完整稳定世界使用分支。透明桥绑定精确 `(T)ReturnScepter`/`Wand` 身份、不可消耗栈、当前角色 `homeLocation`、原生 `FarmHouse.getFrontDoorSpot()` 结果、房主/小屋差异、浴衣/桥上原生门和执行器稳定门；编译器拒绝库存、住宅类型、门前格、时序、指纹或原生合同漂移，并排除已在落点的无价值重复使用。

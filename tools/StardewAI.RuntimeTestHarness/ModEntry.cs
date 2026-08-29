@@ -901,6 +901,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_treasure_totem")
+            {
+                pending.Completion.SetResult(ExecuteSetupTreasureTotemFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1263,6 +1269,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.use_return_scepter")
             {
                 StartUseReturnScepter(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.use_treasure_totem")
+            {
+                ExecuteUseTreasureTotem(pending);
                 return;
             }
 

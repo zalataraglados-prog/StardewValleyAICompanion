@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Treasure Totem Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.treasure_totem.rows[]` | Bind every exact base `(O)TreasureTotem` inventory slot and common native-use state | locked 1.6.15 `Data/Objects`, `Object.performUseAction`; live inventory/player state | Treasure Totem page confirms recipe, outdoor use and surrounding spots | covered_for_read / fresh_projection_required | Each row retains slot, stack, item identity and the shared object-use gate; subclasses and stale slots fail closed. |
+| `player.treasure_totem.spawn_projection` | Publish all 16 rounded-distance-3 tiles and every native membership predicate | locked `Object.treasureTotem`; live map/object/layer/bush/tile-property state | Treasure Totem page confirms up to 16 tillable outdoor spots | covered_for_read_and_gate_EVD_290 | Each tile records placement, occupancy, `AlwaysFront`/`Front`, bush, Diggable and winter-grass results. Visual RNG is excluded because it cannot change spot membership. |
+| `player.treasure_totem.ring_contract` | Bind center, exact scan/ring rule, output `(O)590`, current spot counts and `TreasureTotemsUsed` transition | locked `Object.treasureTotem`; artifact-spot deterministic seed consumers | Artifact Spot page confirms the world counter affects later fixed drops | covered_for_read_and_gate_EVD_290 / native_runtime_verified | The native `name.Equals("Forest")` operand is the item name and is false for the base item; the projection preserves this exact behavior. |
+| `executor.use_treasure_totem` | Consume one exact totem through native object use and verify the exact generated set plus counter | shared `UseInventoryObjectNative`; native map/counter receipt | n/a | five_gate_closed_EVD_290 / executor_calibration_only | Upstream owns location/value selection. Generated spots flow into existing `ArtifactSpots` transparency and `executor.clear_obstacle`; no duplicate digging executor is allowed. |
+
 ## Return Scepter Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

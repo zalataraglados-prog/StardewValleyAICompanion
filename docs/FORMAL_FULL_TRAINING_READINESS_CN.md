@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 宝藏图腾执行器校准（EVD-290）
+
+`executor.use_treasure_totem` 已完成五道执行证据闭环，训练角色严格为 `ExecutorCalibration`。上游策略只决定是否值得在当前位置消耗图腾；机械链从 fresh snapshot 重绑精确库存、室内门、中心周围 16 格原生候选环、每格可生成原因、`TreasureTotemsUsed` 和时序合同。公共物品门失败、室内或零可生成格会在消费前排除，不能依赖下游失败补救。
+
+隐藏静音隔离运行验证原生 `16/16` 宝藏点生成、图腾 `2->1`、世界计数 `0->1` 和地点宝藏点 `5->21`。生成结果由既有宝藏点读取与挖掘链继续处理，不训练也不复制机械挖掘。最新 schema 为 `138 required / 122 readable / 16 contextual / 0 blocking`，对账为 `162 registered / 197 semantic / 161 compiler-bound / 88 five-gate / 40 allowlist / 35 catalogued blocked / 0 Product Executor`。该切片不进入训练 allowlist，也不解除 Product Executor、剩余 35 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等阻挡。下一语义切片为 `executor.use_warp_totem`。
+
 ## 2026-08-29 回城魔杖执行器校准（EVD-289）
 
 `executor.use_return_scepter` 已完成五道执行证据闭环，训练角色严格为 `ExecutorCalibration`。上游只决定“现在是否值得立即回家”；机械链从 fresh snapshot 重绑精确 `Wand`、当前角色自己的 `FarmHouse`/`Cabin`、门前格、稳定输入门、即时工具调用、1000ms 原生回调和最终状态。已在落点、住宅不可解析、浴衣、桥上或执行瞬态不稳定时均在候选/编译阶段排除，不能等到原生回调后再补救。

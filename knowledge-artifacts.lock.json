@@ -49,13 +49,13 @@
   },
   "current_snapshot": {
     "relative_path": "snapshots\\current-live-full-snapshot.json",
-    "bytes": 11190680,
-    "sha256": "32d757804f328bb5951296195c6d64c1eedfa1cfe8d30d01ad99271815b6fdeb",
+    "bytes": 11203433,
+    "sha256": "1ce719b764100d172924255f3f7efb45b7eebc2d8d81c05218aa69bf226ff493",
     "metadata_relative_path": "snapshots\\current-live-full-snapshot.metadata.json",
     "metadata_bytes": 909,
-    "metadata_sha256": "2ecc3bba198ed4caa45571cbe4c75bfc4f0de719a8da5cd9c3b4e474f8e46535",
-    "required_state_factor_count": 137,
-    "readable_with_provenance_count": 121,
+    "metadata_sha256": "28c7aae9d00961aa97a9302b56c823383ace33b88ac0bb4c4a128894c392481c",
+    "required_state_factor_count": 138,
+    "readable_with_provenance_count": 122,
     "contextual_or_stale_count": 16,
     "blocking_count": 0
   }

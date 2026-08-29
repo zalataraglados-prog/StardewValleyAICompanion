@@ -132,6 +132,7 @@ public static class OptionImplementationCatalog
         "executor.collect_spawned_object",
         "executor.harvest_ginger",
         "executor.harvest_bush",
+        "executor.use_treasure_totem",
         "executor.collect_animal_product",
         "executor.pet_interact",
         "executor.fill_pet_bowl",

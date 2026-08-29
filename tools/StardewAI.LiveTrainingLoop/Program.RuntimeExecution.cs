@@ -1586,6 +1586,9 @@ static partial class Program
         ApplyReturnScepterRequestFields(
             executionRequest,
             item);
+        ApplyTreasureTotemRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

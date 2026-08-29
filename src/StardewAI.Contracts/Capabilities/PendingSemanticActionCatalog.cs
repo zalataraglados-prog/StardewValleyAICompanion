@@ -21,7 +21,6 @@ public static class PendingSemanticActionCatalog
     private static readonly IReadOnlyList<PendingSemanticActionDeclaration> Rows =
         new ReadOnlyCollection<PendingSemanticActionDeclaration>(new[]
         {
-            P("executor.use_treasure_totem", "foraging", "engine.tool_harvest", "Object"),
             P("executor.use_warp_totem", "movement", "engine.movement_navigation", "Object"),
             C("festival.manage_grange_display", "festival", "composite", "engine.inventory_transfer", "Event"),
             C("festival.play_fishing_game", "festival", "composite", "engine.minigame", "FishingGame"),
