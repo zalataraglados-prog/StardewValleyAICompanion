@@ -183,6 +183,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact fresh-snapshot display removal or placement selected", "live sell prices quality categories and shared display state rebound", "native festival StorageContainer and grange mutex lifecycle handed to the mechanical executor" },
                 new[] { "block_inactive_festival_or_judging_transition", "block_grange_mutex", "block_inventory_capacity", "block_unverified_route", "block_projection_drift", "block_direct_team_display_inventory_score_or_judging_mutation" }));
 
+            Register(Option("festival.play_fishing_game", "festival", "Play one native Stardew Valley Fair fishing game while the unacquired Stardrop still needs star tokens",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_fishing_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one 50g 100-second native FishingGame session selected from a fresh fair snapshot", "automatic repetition is bounded by the unacquired 2000-token Stardrop after projected unclaimed grange tokens", "native festival dialogue and predictive legal-input session handed to the mechanical executor" },
+                new[] { "block_inactive_or_changed_fair_event", "block_no_remaining_automatic_star_token_demand", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_score_fish_timer_reward_or_inventory_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1090,6 +1098,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.grange_display", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one live Fair display interaction tile", "native Event.checkAction and StorageContainer clicks apply one exact removal or placement", "menu close releases the shared grange mutex and verifies inventory score and judging state" },
                 new[] { "block_inactive_or_changed_fair_event", "block_grange_mutex", "block_inventory_display_or_score_drift", "block_unverified_route", "block_direct_team_display_inventory_score_or_judging_mutation" }));
+
+            Register(Option("executor.play_fair_fishing_game", "festival", "Execute one verified native Fair FishingGame with shared predictive legal-input control",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_fishing_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one live Fair fishing booth interaction tile", "native Event dialogue deducts exactly 50g and starts FishingGame", "the shared BobberBar controller completes the real 100-second session and verifies exact score perfection token and return receipts" },
+                new[] { "block_inactive_or_changed_fair_event", "block_dialogue_or_entry_fee_drift", "block_unverified_native_session_or_result_formula", "block_unverified_route", "block_direct_money_score_fish_timer_reward_or_inventory_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

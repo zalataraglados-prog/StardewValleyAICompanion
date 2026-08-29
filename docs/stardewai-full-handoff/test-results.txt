@@ -1,3 +1,11 @@
+2026-08-29 EVD-293 native Fall 16 Fair Fishing Game
+- Locked 1.6.15 source/data audit PASS: Buildings 503/504, real DialogueBox event response, 50g fee, Bamboo Pole + bait 690x99 + tackle 687, 100000ms session, 11100ms results, exact score/perfection/triple-perfect/token formula, return tiles and live Fair shop rows are covered.
+- Focused Fair fishing chain PASS 5/5. The first runtime attempt exposed and fixed an invalid ordinary-dialogue call; final production entry uses `DialogueBox.receiveLeftClick -> Event.answerDialogue`. Bobber control is shared with ordinary fishing and dispatched at `UpdateTicking`, before native physics.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-fair-fishing-game/runtime-fair-fishing-game-20260829-221047/summary.json`. One native 100-second session caught 5 effective fish at 5/5 perfection, score 364 and 432 Star Tokens; fee, exact formula, festival return and temporary-loadout cleanup all verified.
+- Installed full snapshot schema PASS: 141 required, 125 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator refresh PASS 585/585 with blocking 0.
+- Reconciliation: 167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 training allowlist / 32 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2008/2008; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `festival.play_slingshot_game`.
+
 2026-08-29 EVD-292 native Fall 16 Grange Display management
 - Locked 1.6.15 source/data and official Wiki secondary audit PASS: shared nine-slot `FarmerTeam.grangeDisplay`, Buildings tiles 349/350/351, `grangeMutex`, native `StorageContainer`, exact live-price/quality/category/count scoring, Mayor shorts -666 and 90/75/60 thresholds are covered.
 - Focused Grange chain PASS 5/5 after adding fail-closed nine-slot shape validation and enforcing reuse of the shared native-object movement state machine. Strategy capability is allowlisted; the executor closes all five gates but remains calibration-only.

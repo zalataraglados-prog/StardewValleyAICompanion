@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "3862f037df6aea3c9a3e7efa86c0c92e38bffa659a3e7a6e194013fee50ec7ab",
+  "fingerprint_sha256": "207bee80ac161bb6b71d3993a262e3461ddb0c693d5d4a7d54e8695b66abf19f",
   "surface_count": 322,
   "branch_count": 448,
   "map_token_count": 150,
-  "semantic_action_count": 198,
-  "approval_basis": "locked 1.6.15 decompile and runtime assets; all reachable native surfaces and branches map to registered or catalogued-blocked vanilla semantic actions with zero unresolved registrations; Lantern and Raft are cut-content tools without normal-save acquisition paths, so executor.toggle_lantern and executor.use_raft are retained as explicit compatibility placeholders for future mod adapters while excluded from the in-save vanilla player denominator; festival.manage_grange_display moved from pending to a registered Fall 16 shared-display strategy action and executor.manage_grange_display was added as its separate native Event.checkAction, grange mutex, and StorageContainer mechanical primitive; native surface, branch, and map-token counts are unchanged"
+  "semantic_action_count": 199,
+  "approval_basis": "locked 1.6.15 decompile and runtime assets; all reachable native surfaces and branches map to registered or catalogued-blocked vanilla semantic actions with zero unresolved registrations; Lantern and Raft are cut-content tools without normal-save acquisition paths, so executor.toggle_lantern and executor.use_raft are retained as explicit compatibility placeholders for future mod adapters while excluded from the in-save vanilla player denominator; festival.manage_grange_display and festival.play_fishing_game moved from pending to registered Fall 16 strategy actions with separate native Event/checkAction/menu/minigame mechanical primitives; native surface, branch, and map-token counts are unchanged"
 }

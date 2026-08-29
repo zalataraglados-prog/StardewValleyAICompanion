@@ -307,16 +307,7 @@ public sealed partial class ModEntry : Mod
     private bool SetBobberBarControl(ActiveCatchFish active, BobberBar bar, out string reason)
     {
         RecordBobberBarState(active, bar);
-        var trackBottom = 568f - bar.bobberBarHeight;
-        var fishSpeed = bar.bobberSpeed + bar.floaterSinkerAcceleration;
-        var predictedFishCenter = Math.Clamp(bar.bobberPosition + fishSpeed, 0f, 532f);
-        var targetBarPosition = Math.Clamp(predictedFishCenter + 32f - bar.bobberBarHeight / 2f, 0f, trackBottom);
-        var positionError = targetBarPosition - bar.bobberBarPos;
-        var acceleration = bar.bobberInBar ? 0.15f : 0.25f;
-        var reachableSpeed = MathF.Sqrt(2f * acceleration * MathF.Abs(positionError));
-        var desiredRelativeSpeed = MathF.Sign(positionError) * MathF.Min(7f, reachableSpeed);
-        var desiredBarSpeed = fishSpeed + desiredRelativeSpeed;
-        var shouldPress = bar.bobberBarSpeed > desiredBarSpeed;
+        var shouldPress = PerfectBobberBarShouldPress(bar);
         active.BobberControlTicks++;
         if (shouldPress)
         {
@@ -324,6 +315,41 @@ public sealed partial class ModEntry : Mod
         }
 
         return ApplyBobberBarInput(shouldPress, out reason);
+    }
+
+    private static bool PerfectBobberBarShouldPress(BobberBar bar)
+    {
+        var trackBottom = 568f - bar.bobberBarHeight;
+        var fishSpeed = bar.bobberSpeed + bar.floaterSinkerAcceleration;
+        var predictedFishCenter = PredictBobberPosition(bar);
+        var predictedTarget = Math.Clamp(predictedFishCenter + 32f - bar.bobberBarHeight / 2f, 0f, trackBottom);
+        var currentContainmentTop = Math.Clamp(bar.bobberPosition - bar.bobberBarHeight + 50f, 0f, trackBottom);
+        var currentContainmentBottom = Math.Clamp(bar.bobberPosition + 10f, 0f, trackBottom);
+        var targetBarPosition = Math.Clamp(predictedTarget, currentContainmentTop, currentContainmentBottom);
+        var positionError = targetBarPosition - bar.bobberBarPos;
+        var acceleration = bar.bobberInBar ? 0.15f : 0.25f;
+        var reachableSpeed = MathF.Sqrt(2f * acceleration * MathF.Abs(positionError));
+        var desiredRelativeSpeed = MathF.Sign(positionError) * MathF.Min(7f, reachableSpeed);
+        var desiredBarSpeed = fishSpeed + desiredRelativeSpeed;
+        return bar.bobberBarSpeed > desiredBarSpeed;
+    }
+
+    private static float PredictBobberPosition(BobberBar bar)
+    {
+        var position = bar.bobberPosition;
+        var speed = bar.bobberSpeed;
+        var hasActiveTarget = bar.bobberTargetPosition >= 0f &&
+            Math.Abs(bar.bobberPosition - bar.bobberTargetPosition) > 3f;
+        var ticks = hasActiveTarget
+            ? Math.Clamp((int)Math.Ceiling(4f + Math.Abs(bar.bobberAcceleration) * 2f), 4, 18)
+            : 3;
+        for (var tick = 0; tick < ticks; tick++)
+        {
+            if (hasActiveTarget)
+                speed += (bar.bobberAcceleration - speed) / 5f;
+            position = Math.Clamp(position + speed + bar.floaterSinkerAcceleration, 0f, 532f);
+        }
+        return position;
     }
 
     private static void RecordBobberBarState(ActiveCatchFish active, BobberBar bar)

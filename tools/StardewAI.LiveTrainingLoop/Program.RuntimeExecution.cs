@@ -1595,6 +1595,9 @@ static partial class Program
         ApplyGrangeDisplayRequestFields(
             executionRequest,
             item);
+        ApplyFairFishingGameRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

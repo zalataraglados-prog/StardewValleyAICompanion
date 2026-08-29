@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 展览会钓鱼小游戏闭环（EVD-293）
+
+`festival.play_fishing_game` 已覆盖 Fall 16 原版钓鱼游戏的稳定策略周期。透明桥发布入口、费用、时长、临时钓具、实时小游戏状态、精确评分/奖励公式、全部星币商店行和 Fair Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务，并把尚未领取的展览陈列奖励计入供给，其他购买价值留给后续策略而不自动刷分。
+
+运行层复用共享 BFS 和普通钓鱼控制器，经真实节日 DialogueBox 点击进入原版 100 秒 FishingGame，在 `UpdateTicking` 发合法输入并验证随机结果的完整公式，不写结果字段。隐藏静音 E 盘最终样本 PASS：`5/5` 完美、`364` 分、`432` 星币。Core `2008/2008`、Backend `138/138`、Release `0 warnings / 0 errors`；当前对账为 `167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 allowlist / 32 catalogued blocked / 0 Product Executor`。下一纵向切片为 `festival.play_slingshot_game`。
+
 ## 2026-08-29 展览会陈列闭环（EVD-292）
 
 `festival.manage_grange_display` 已覆盖秋季 16 日展览会的完整稳定陈列周期：实时枚举共享展台和可用库存单位，按原版实际售价、品质、八类多样性、九件数量分及 Mayor 短裤惩罚求最优组合；评审前逐次替换至最佳可用陈列，评审后逐次取回。策略训练只学习安排该目标，坐标、槽位、物品身份、分数、互斥锁和一次操作都由 fresh snapshot 与编译器机械绑定。

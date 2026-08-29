@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-293
+
+- `festival.play_fishing_game` 已闭合秋季 16 日展览会钓鱼小游戏的透明读取、上游需求候选、DailyPlan、fresh 编译重绑定、类型化请求和原生执行回执。自动候选只在展览会进行中、玩家有 50g，且“当前星币 + 尚未领取的展览陈列奖励”仍不足以购买未获得的 `(O)434` Stardrop 时出现；其他商店行保持透明，但不会形成无限刷小游戏的自动需求。
+- 透明桥实时发布 Buildings 503/504 交互图块、50g 入场费、100000ms 游戏时长、11100ms 结果时长、临时 Bamboo Pole / `(O)690` bait / `(O)687` tackle、原版得分与星币公式、当前小游戏私有计时器、全部星币商店行、Stardrop 价格与投影缺口。字段来自锁定 1.6.15 反编译和实时对象，不按 Wiki 示例推断。
+- 执行器复用共享 BFS/连续移动与普通钓鱼的 BobberBar 控制器，只经 `Event.checkAction -> DialogueBox.receiveLeftClick -> Event.answerDialogue -> FishingGame` 进入原版小游戏；输入在 `UpdateTicking` 物理更新前发出，不直接写 Money、score、perfections、starTokensWon 或 festivalScore。随机完美率作为训练反馈，执行可靠性由合法输入、完整时序、精确原版公式、星币到账、节日返回和临时钓具清理共同验证。
+- 隐藏静音 E 盘隔离运行 `runtime-fair-fishing-game-20260829-221047` PASS：原版 100 秒会话钓到 `5` 条有效鱼且 `5/5` 完美，最终 `364` 分、`432` 星币；50g、原版三连完美翻倍/奖励公式、返回图块和临时状态全部通过。首轮烟测同时抓到并修正了错误的普通对话调用，最终入口使用真实节日菜单点击。
+- 最新 full snapshot schema 为 `141 required / 125 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 training allowlist / 32 catalogued blocked / 0 Product Executor`。完整回归为 Core `2008/2008`、Backend `138/138`、Release `0 warnings / 0 errors`。下一语义切片固定为 `festival.play_slingshot_game`。
+
 ## 2026-08-29 当前权威检查点：EVD-292
 
 - `festival.manage_grange_display` 已闭合秋季 16 日星露谷展览会陈列的透明读取、确定性最优九件选择、上游候选、DailyPlan、fresh 编译重绑定和原生执行回执。高层动作负责“为一等奖准备陈列/评审后取回”，进入策略训练；`executor.manage_grange_display` 每次只执行一件物品的放入或取回，严格为 `ExecutorCalibration`。

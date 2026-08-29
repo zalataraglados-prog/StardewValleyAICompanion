@@ -106,7 +106,9 @@ public static class OptionImplementationCatalog
         "executor.complete_fish_pond_request");
 
     private static readonly HashSet<string> MinigameOptions = Set(
-        "executor.play_junimo_kart");
+        "festival.play_fishing_game",
+        "executor.play_junimo_kart",
+        "executor.play_fair_fishing_game");
 
     private static readonly HashSet<string> InventoryOptions = Set(
         "rewards.claim_pot_of_gold",
@@ -222,6 +224,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.CraftingProcessing;
         if (optionId is "inventory.transfer_item" or "festival.manage_grange_display")
             return ImplementationEngineIds.InventoryTransfer;
+        if (MinigameOptions.Contains(optionId))
+            return ImplementationEngineIds.Minigame;
         if (RecoveryOptions.Contains(optionId))
             return ImplementationEngineIds.RecoveryTiming;
         if (InventoryOptions.Contains(optionId))

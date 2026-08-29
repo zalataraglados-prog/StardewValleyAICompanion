@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fair Fishing Game Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.fair_fishing_game` | Publish the complete active Fall 16 fishing-game context or an explicit contextual-inactive state | locked 1.6.15 `Event`, `FishingGame`, `BobberBar`, shop data; live event/player/minigame state | Fair page confirms the 50g fishing minigame and star-token shop | covered_for_read / contextual_outside_festival | Full snapshot keeps the field required. Missing world/player data is unavailable; a non-Fall-16 context is explicitly contextual, not missing. |
+| `interaction_tiles` / `dialogue_key` / `native_contract` | Bind Buildings 503/504, `fishingGame`/`Play`, the exact menu click path and native festival return | locked `Event.checkAction`, `DialogueBox.receiveLeftClick`, `Event.answerDialogue`, `FishingGame.unload` | n/a | covered_for_gate_and_output_EVD_293 / fresh_projection_required | The runtime uses the real clickable response after transition and safety timers settle; ordinary `GameLocation.answerDialogue` is not a valid festival substitute. |
+| `scoring_contract` / `active_minigame` | Publish raw fish points, perfection bonus, three-perfect multiplier, reward formula, private timers, native loadout and live rod state | locked `Event.caughtFish`, `Event.perfectFishing`, `FishingGame.update`; live reflection over exact private timers | Fair page confirms score converts to Star Tokens | covered_for_read_and_receipt_EVD_293 | Random fish/perfection outcomes remain feedback. Runtime recomputes the exact result and never writes score, perfections, tokens or money. |
+| `shop_rows[]` / `remaining_star_token_demand` | Expose every current Fair star-token shop row while bounding automatic repeat demand to the unacquired Stardrop | live `ShopBuilder.GetShopStock`; locked shop conditions; current mail, tokens and Grange projection | Fair shop table confirms the Stardrop costs 2000 Star Tokens | covered_for_candidate_and_compile_EVD_293 | Current tokens and projected unclaimed Grange prize reduce the demand. Other shop rows are strategy inputs, not automatic repeat targets. |
+| `festival.play_fishing_game` / `executor.play_fair_fishing_game` | Separate economic scheduling from one complete native 100-second session | candidate/DailyPlan/compiler/capability registry; shared movement and predictive legal-input controller | n/a | strategy_value_allowlisted / executor_calibration_only | Input runs before native physics. Perfection ratio is recorded as stochastic output; native lifecycle/formula mismatches fail closed. |
+
 ## Grange Display Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

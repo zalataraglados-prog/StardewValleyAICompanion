@@ -46,6 +46,7 @@ public sealed partial class ModEntry : Mod
     private ActiveReturnScepter? activeReturnScepter;
     private ActiveWarpTotem? activeWarpTotem;
     private ActiveGrangeDisplay? activeGrangeDisplay;
+    private ActiveFairFishingGame? activeFairFishingGame;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -460,6 +461,7 @@ public sealed partial class ModEntry : Mod
         TickWarpTotem();
         TickSetupGrangeDisplayFixture();
         TickGrangeDisplay();
+        TickFairFishingGame();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -924,6 +926,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_fair_fishing_game")
+            {
+                StartSetupFairFishingGameFixture(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1304,6 +1312,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.manage_grange_display")
             {
                 StartGrangeDisplay(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_fair_fishing_game")
+            {
+                StartFairFishingGame(pending);
                 return;
             }
 
@@ -1942,6 +1956,14 @@ public sealed partial class ModEntry : Mod
                 }
             }
 
+            if (activeFairFishingGame is not null && Game1.activeClickableMenu is BobberBar fairBar &&
+                !ApplyFairFishingBobberInput(activeFairFishingGame, fairBar, out var fairBobberInputReason))
+            {
+                BlockFairFishingGame(activeFairFishingGame,
+                    "fair_fishing_game_bobber_input_failed:" + fairBobberInputReason);
+                return;
+            }
+
             if (activeShipInventoryToBin is not null)
             {
                 ApplyShipPhaseInput(activeShipInventoryToBin);
@@ -2034,6 +2056,7 @@ public sealed partial class ModEntry : Mod
             activeWarpTotem is not null ||
             activeGrangeFixture is not null ||
             activeGrangeDisplay is not null ||
+            activeFairFishingGame is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

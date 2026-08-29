@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 展览会钓鱼小游戏策略与原生执行闭环（EVD-293）
+
+`festival.play_fishing_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否投入 50g 和原版 100 秒来补齐未获得 Fair Stardrop 的星币缺口；上游会扣除尚未领取的展览陈列奖励，不会为其他装饰商店行无限重复。编译器从 fresh snapshot 绑定节日实例、交互/站立图块、金额、星币、缺口、时长、Dialogue key 和 native contract；`executor.play_fair_fishing_game` 严格为 `ExecutorCalibration`。
+
+运行层复用共享移动和普通钓鱼预测输入，在游戏物理更新前控制原生 BobberBar。运行验收不把随机完美率误作执行器稳定性：必须精确验证 50g、真实 FishingGame、原版 raw score + perfection bonus + triple-perfect multiplier、星币公式、节日返回和临时钓具清理，完美数/有效鱼数则作为收益反馈。最终隐藏静音样本为 `5/5` 完美、`364` 分、`432` 星币。最新 schema 为 `141 required / 125 readable / 16 contextual / 0 blocking`，对账为 `167 registered / 199 semantic / 166 compiler-bound / 93 five-gate / 42 allowlist / 32 catalogued blocked / 0 Product Executor`。Core `2008/2008`、Backend `138/138`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 32 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `festival.play_slingshot_game`。
+
 ## 2026-08-29 展览会陈列策略与原生执行闭环（EVD-292）
 
 `festival.manage_grange_display` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否在展览会准备一等奖陈列或在评审后取回；透明桥与编译器从 fresh snapshot 绑定共享展台、库存单位、实际售价、品质、八类多样性、九件数量分、Mayor 短裤、评审状态、交互图块、互斥锁和下一次唯一机械操作。`executor.manage_grange_display` 严格为 `ExecutorCalibration`，每个快照只允许一次原生放入/取回，不进入策略训练，也不得启动评审。
