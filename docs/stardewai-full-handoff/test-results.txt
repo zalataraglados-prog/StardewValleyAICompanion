@@ -4105,3 +4105,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 134 required, 118 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 training allowlist / 39 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1921/1921; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_monster_musk`.
+
+2026-08-29 EVD-287 native Monster Musk apply and refresh
+- Locked 1.6.15 source/data audit PASS: exact base `(O)879`, common object-use gate, facing/freeze/animation, 750ms `MonsterMusk` callback, three bounded-random sprite contracts, native sounds, Buff 24 remove-then-replace semantics, 600000ms data and ordinary-mine/volcano double-spawn consumers are covered.
+- TDD RED observed 11 failures from unknown registration/missing capability/compiler/runtime. Focused GREEN PASS 11/11 covers initial/refresh compilation, stale inventory/Buff/spawn/timing/native-contract rejection, five gates and native-only source guards. A focused RED/GREEN follow-up fixed the permissible monotonic active-Buff time drift between snapshot and HTTP execution.
+- Hidden/silent isolated E-drive runtime PASS 2/2: `artifacts/runtime-monster-musk/runtime-monster-musk-20260829-141932/summary.json`. Initial apply consumed stack `2->1`; refresh consumed `1->0`; both observed a new Buff 24 instance near full 600000ms and waited until native controls recovered.
+- Installed full snapshot schema PASS: 135 required, 119 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 training allowlist / 38 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1932/1932; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_rain_totem`.

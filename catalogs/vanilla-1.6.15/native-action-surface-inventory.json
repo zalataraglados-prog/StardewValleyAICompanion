@@ -6,9 +6,8 @@
   "surface_count": 322,
   "mapped_count": 68,
   "catalogued_blocked_surface_count": 100,
-  "catalogued_blocked_action_count": 39,
+  "catalogued_blocked_action_count": 38,
   "catalogued_blocked_action_ids": [
-    "executor.use_monster_musk",
     "executor.use_rain_totem",
     "executor.use_return_scepter",
     "executor.use_treasure_totem",

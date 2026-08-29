@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 怪兽香水执行器校准（EVD-287）
+
+`executor.use_monster_musk` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`。小模型或上游战斗目标只决定是否需要提高怪物密度；精确库存槽、Buff 24 当前状态、消费、朝向、动画时序和刷新回执全部由机械编译/执行链负责。普通矿井与火山地牢都按在线玩家 Buff 24 将怪物生成率乘以 2，普通矿井与驱怪 Buff 23 的组合继续服从原生优先级。
+
+隐藏静音隔离运行覆盖“无 Buff 首次施加”和“已有 Buff 替换刷新”两条分支。最新 schema 为 `135 required / 119 readable / 16 contextual / 0 blocking`，对账为 `159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 allowlist / 38 catalogued blocked / 0 Product Executor`。该切片没有把机械原语直接加入策略训练，也不解除 Product Executor、剩余语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等阻挡。下一语义切片为 `executor.use_rain_totem`。
+
 ## 2026-08-29 马笛执行器校准（EVD-286）
 
 `executor.use_horse_flute` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`：策略只需决定是否用马笛，机械层从 fresh snapshot 重绑库存、限制掩码、拥有马匹身份、邻近状态、朝向和延迟结果。模型不得预测或复制原生 team event、mutex 与传送副作用。

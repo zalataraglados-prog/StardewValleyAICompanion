@@ -372,6 +372,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.read_secret_note", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("executor.use_firework", Primitive, R2, Consume, ExplicitConfirm, Actor, World, Explicit, PlayerCommand),
                 P("executor.use_horse_flute", Primitive, R1, None, NoConfirm, Actor, World, Policy),
+                P("executor.use_monster_musk", Primitive, R2, Consume, PolicyConfirm, Actor, ActorState, Policy),
                 P("executor.select_safe_item_slot", Primitive, R0, None, NoConfirm, Actor, ActorState, Allowed)
             };
 

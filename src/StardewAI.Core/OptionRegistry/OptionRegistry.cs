@@ -1323,6 +1323,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "the native start and delayed horse-warp restrictions both pass", "an owned horse already adjacent is a successful no-op", "otherwise the owned horse is warped through the team event after 1500 ms", "the reusable flute inventory stack is unchanged" },
                 new[] { "block_native_object_use_gate_or_horse_warp_restriction", "block_inventory_or_owned_horse_identity_drift", "block_expected_adjacent_or_delayed_result_drift", "block_open_menu", "block_direct_horse_position_team_event_or_inventory_mutation" }));
 
+            Register(Option("executor.use_monster_musk", "combat", "Consume one exact Monster Musk through its native delayed Buff 24 branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.monster_musk", "menus.active_menu" },
+                new[] { "native use consumes exactly one Monster Musk", "the 750 ms native callback removes and replaces Buff 24 with its 600000 ms data contract", "ordinary-mine and volcano monster spawn multipliers are transparently bound to Buff 24" },
+                new[] { "block_native_object_use_gate", "block_inventory_buff_data_or_active_buff_projection_drift", "block_animation_or_spawn_semantics_drift", "block_open_menu", "block_direct_buff_sprite_audio_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

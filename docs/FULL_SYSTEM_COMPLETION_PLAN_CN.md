@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 怪兽香水原生 Buff 闭环（EVD-287）
+
+`executor.use_monster_musk` 已覆盖锁定 1.6.15 的完整原生物品分支。透明桥绑定精确 `(O)879` 库存身份、公共使用门、`Data/Buffs` 的 Buff 24 定义、当前 Buff 实例与剩余时间、全部确定性动画/精灵域，以及普通矿井和火山地牢的原生生成率消费者；生成编译器拒绝任何身份、数据、活动 Buff、时序、生成语义或指纹漂移。
+
+运行层复用唯一 `UseInventoryObjectNative`，等待 750ms 回调和 1750ms 原生动作完全结算，再以新 Buff 实例、总时长、库存与朝向形成回执。隐藏静音 E 盘首次施加与替换刷新均为 `applied/verified`；最终回归为 Core `1932/1932`、Backend `138/138`、Release `0 warnings / 0 errors`。当前对账为 `159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 allowlist / 38 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_rain_totem`。
+
 ## 2026-08-29 马笛原生召回闭环（EVD-286）
 
 `executor.use_horse_flute` 已覆盖锁定 1.6.15 的完整原生分支：无马、室内、无落脚空间和马匹占用限制均在上游失败关闭；已有拥有马匹位于当前地点一格邻域内时成功但不传送，否则执行朝下、音频/动画/冻结、1500ms 延迟重检和 team event/mutex 原生召回。透明桥实时发布全部决策输入，编译器只接受 fresh 指纹一致的精确马匹与库存身份。

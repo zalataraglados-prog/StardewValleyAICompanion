@@ -1577,6 +1577,9 @@ static partial class Program
         ApplyHorseFluteRequestFields(
             executionRequest,
             item);
+        ApplyMonsterMuskRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-287
+
+- `executor.use_monster_musk` 已闭合原版怪兽香水 `(O)879` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享原生库存物品使用和严格异步回执。锁定 1.6.15 反编译确认原生入口在 750ms 动画回调中调用 `Object.MonsterMusk -> Farmer.applyBuff("24")`，`BuffManager.Apply` 对同 ID 先移除再替换，不叠加旧时长。
+- 透明桥实时发布全部精确库存行、公共物品使用门、Buff 24 数据定义与当前实例剩余时长、1750ms 冻结/750ms 回调/1400ms 后续动画合同，以及普通矿井与火山地牢的双倍怪物生成消费者。读取不推进三枚紫色精灵的随机 X 速度。
+- 运行层只调用共享 `UseInventoryObjectNative`，不直接施加 Buff、不广播精灵、不播放音频、不写库存。回执等待 Buff 新实例、600000ms 总时长、精确一次消耗、方向 2 和完整原生冻结结算；已有 Buff 的快照到执行时间只允许最多 5000ms 的单调递减漂移。
+- 隐藏静音 E 盘隔离运行 `runtime-monster-musk-20260829-141932` 双分支 PASS：首次施加库存 `2->1`，刷新分支 `1->0`；两次均观测到新 Buff 24 实例，刷新把约 `599968ms` 恢复到约 `599984ms`。
+- 最终回归为 Core `1932/1932`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。
+- 最新 full snapshot schema 为 `135 required / 119 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `159 registered / 197 semantic / 158 compiler-bound / 85 five-gate / 40 training allowlist / 38 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.use_rain_totem`。
+
 ## 2026-08-29 当前权威检查点：EVD-286
 
 - `executor.use_horse_flute` 已闭合原版马笛 `(O)911` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、原生 `Object.performUseAction` 与严格延迟回执。锁定 1.6.15 反编译确认起始与 1500ms 回调各检查一次 `Utility.GetHorseWarpRestrictionsForFarmer`，远程分支再通过 team event、马匹 mutex 和 `Game1.warpCharacter` 完成原生召回。

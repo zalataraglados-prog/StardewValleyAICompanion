@@ -112,7 +112,8 @@ public static class OptionImplementationCatalog
         "executor.transfer_material",
         "executor.select_safe_item_slot",
         "executor.set_sign_display_item",
-        "executor.use_firework");
+        "executor.use_firework",
+        "executor.use_monster_musk");
 
     private static readonly HashSet<string> ToolOptions = Set(
         "executor.clear_obstacle",
