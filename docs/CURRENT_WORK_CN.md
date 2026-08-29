@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-294
+
+- `festival.play_slingshot_game` 已闭合秋季 16 日展览会靶场的透明读取、Stardrop 有界需求候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生 TargetGame 回执。模型只决定是否花费 50g 开始一轮；自动候选仅在“当前星币 + 尚未领取的展览陈列奖励”仍不足 2000 星币且 Stardrop 未获得时出现。
+- 透明桥实时发布 Buildings 501/502、50g 入场费、1000/50000/1000/16100ms 四段时序、79 个锁定目标、实时目标私有状态、临时 `(W)32` 与 `(O)390 x999`、命中/准确率/倍率/奖励公式、全部 Fair 商店行和共享星币缺口。固定规则来自锁定 1.6.15 反编译；活动实例与目标状态均实时核对。
+- 执行器复用共享 BFS 和普通矿井弹弓唯一的 `SlingshotAimPatch`，经 `Event.checkAction -> DialogueBox.receiveLeftClick -> TargetGame` 进入原版小游戏，只调用原生按下/蓄力/释放输入。它不写 Money、计时器、目标、score、accuracy、festivalScore 或库存；原版拥有弹药、碰撞、命中、得分、奖励和清理。
+- 隐藏静音 E 盘隔离运行 `runtime-fair-slingshot-game-20260829-225533` PASS：48 次原生发射、48 次有效命中，raw score `95`、accuracy `102`、final score `380`，原版高分封顶奖励 `500` 星币；50g 扣款、节庆返回、临时弹弓/弹药清理均通过。
+- 最新 full snapshot schema 为 `142 required / 126 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 training allowlist / 31 catalogued blocked / 0 Product Executor`。完整回归为 Core `2013/2013`、Backend `138/138`、Release `0 warnings / 0 errors`。下一语义切片固定为 `festival.play_strength_game`。
+
 ## 2026-08-29 当前权威检查点：EVD-293
 
 - `festival.play_fishing_game` 已闭合秋季 16 日展览会钓鱼小游戏的透明读取、上游需求候选、DailyPlan、fresh 编译重绑定、类型化请求和原生执行回执。自动候选只在展览会进行中、玩家有 50g，且“当前星币 + 尚未领取的展览陈列奖励”仍不足以购买未获得的 `(O)434` Stardrop 时出现；其他商店行保持透明，但不会形成无限刷小游戏的自动需求。

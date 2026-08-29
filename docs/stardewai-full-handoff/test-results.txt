@@ -1,3 +1,12 @@
+2026-08-29 EVD-294 native Fall 16 Fair Slingshot Game
+- Locked 1.6.15 source/data audit PASS: Buildings 501/502, real DialogueBox response, 50g fee, four native timing stages, exact 79-target schedule, temporary `(W)32` plus `(O)390 x999`, target values, shots/success/accuracy, multiplier and reward formulas are covered.
+- Focused Fair slingshot mainline PASS 5/5: bounded demand compiles to one native session, zero demand is excluded upstream, projection drift fails closed, and source guards require native dialogue plus shared `SlingshotAimPatch` without outcome writes.
+- Hidden/silent isolated E-drive runtime PASS: `artifacts/runtime-fair-slingshot-game/runtime-fair-slingshot-game-20260829-225533/summary.json`. Native input launched 48 shots with 48 effective hits, raw score 95, accuracy 102, final score 380 and capped 500 Star Tokens; fee, festival return and temporary-loadout cleanup all verified.
+- Installed full snapshot schema PASS: 142 required, 126 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator refresh PASS 585/585 with blocking 0.
+- Reconciliation: 169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 training allowlist / 31 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2013/2013; Backend 138/138; Release solution build 0 warnings / 0 errors.
+- Next slice is `festival.play_strength_game`.
+
 2026-08-29 EVD-293 native Fall 16 Fair Fishing Game
 - Locked 1.6.15 source/data audit PASS: Buildings 503/504, real DialogueBox event response, 50g fee, Bamboo Pole + bait 690x99 + tackle 687, 100000ms session, 11100ms results, exact score/perfection/triple-perfect/token formula, return tiles and live Fair shop rows are covered.
 - Focused Fair fishing chain PASS 5/5. The first runtime attempt exposed and fixed an invalid ordinary-dialogue call; final production entry uses `DialogueBox.receiveLeftClick -> Event.answerDialogue`. Bobber control is shared with ordinary fishing and dispatched at `UpdateTicking`, before native physics.

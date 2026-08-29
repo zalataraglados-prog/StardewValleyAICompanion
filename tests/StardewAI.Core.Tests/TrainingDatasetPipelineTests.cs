@@ -51,6 +51,7 @@ namespace StardewAI.Core.Tests
                     "farming.collect_slime_ball",
                     "festival.manage_grange_display",
                     "festival.play_fishing_game",
+                    "festival.play_slingshot_game",
                     "fishing.catch_fish", "fishing.collect_crab_pots", "fishing.service_fish_ponds", "foraging.clear_green_rain_bushes", "foraging.collect_spawned_objects", "foraging.harvest_bushes", "foraging.harvest_ginger", "foraging.pan_ore_spot",
                     "inventory.transfer_item",
                     "mail.process_letter",

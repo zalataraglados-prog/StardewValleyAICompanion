@@ -1598,6 +1598,9 @@ static partial class Program
         ApplyFairFishingGameRequestFields(
             executionRequest,
             item);
+        ApplyFairSlingshotGameRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

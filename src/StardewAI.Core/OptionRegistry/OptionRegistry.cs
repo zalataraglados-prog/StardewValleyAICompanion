@@ -191,6 +191,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one 50g 100-second native FishingGame session selected from a fresh fair snapshot", "automatic repetition is bounded by the unacquired 2000-token Stardrop after projected unclaimed grange tokens", "native festival dialogue and predictive legal-input session handed to the mechanical executor" },
                 new[] { "block_inactive_or_changed_fair_event", "block_no_remaining_automatic_star_token_demand", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_score_fish_timer_reward_or_inventory_mutation" }));
 
+            Register(Option("festival.play_slingshot_game", "festival", "Play one native Stardew Valley Fair slingshot game while the unacquired Stardrop still needs star tokens",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_slingshot_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one 50g 50-second native TargetGame session selected from a fresh fair snapshot", "automatic repetition is bounded by the same unacquired 2000-token Stardrop demand as the other Fair games", "native festival dialogue and predictive moving-target intercept input handed to the mechanical executor" },
+                new[] { "block_inactive_or_changed_fair_event", "block_no_remaining_automatic_star_token_demand", "block_insufficient_money", "block_unverified_route", "block_projection_drift", "block_direct_money_target_score_accuracy_reward_timer_or_inventory_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1106,6 +1114,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_fishing_game", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one live Fair fishing booth interaction tile", "native Event dialogue deducts exactly 50g and starts FishingGame", "the shared BobberBar controller completes the real 100-second session and verifies exact score perfection token and return receipts" },
                 new[] { "block_inactive_or_changed_fair_event", "block_dialogue_or_entry_fee_drift", "block_unverified_native_session_or_result_formula", "block_unverified_route", "block_direct_money_score_fish_timer_reward_or_inventory_mutation" }));
+
+            Register(Option("executor.play_fair_slingshot_game", "festival", "Execute one verified native Fair TargetGame with predictive moving-target intercept input",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.money", "player.fair_slingshot_game", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches one live Fair slingshot booth interaction tile", "native Event dialogue deducts exactly 50g and starts TargetGame", "native charged shots use the existing aim patch and verify score accuracy token and return receipts" },
+                new[] { "block_inactive_or_changed_fair_event", "block_dialogue_or_entry_fee_drift", "block_unverified_native_session_or_result_formula", "block_unverified_route", "block_direct_money_target_score_accuracy_reward_timer_or_inventory_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

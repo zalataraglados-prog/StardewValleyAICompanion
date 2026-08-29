@@ -9,21 +9,32 @@ public sealed partial class ModEntry
     private static readonly string[] GrangeFixtureItemIds =
         { "276", "613", "440", "72", "163", "421", "220", "348", "74" };
 
+    private enum FallFairFixtureMode
+    {
+        Grange,
+        Fishing,
+        Slingshot
+    }
+
     private sealed class ActiveGrangeFixture
     {
-        public ActiveGrangeFixture(PendingExecution pending, StardewValley.Event festival, bool judged, bool fairFishing)
+        public ActiveGrangeFixture(
+            PendingExecution pending,
+            StardewValley.Event festival,
+            bool judged,
+            FallFairFixtureMode mode)
         {
             Pending = pending;
             Festival = festival;
             Judged = judged;
-            FairFishing = fairFishing;
+            Mode = mode;
             StartedAt = DateTimeOffset.UtcNow.ToString("O");
         }
 
         public PendingExecution Pending { get; }
         public StardewValley.Event Festival { get; }
         public bool Judged { get; }
-        public bool FairFishing { get; }
+        public FallFairFixtureMode Mode { get; }
         public string StartedAt { get; }
         public int ElapsedTicks { get; set; }
     }
@@ -32,15 +43,23 @@ public sealed partial class ModEntry
 
     private void StartSetupGrangeDisplayFixture(PendingExecution pending)
     {
-        StartSetupFallFairFixture(pending, pending.Request.GrangeJudged == true, fairFishing: false);
+        StartSetupFallFairFixture(pending, pending.Request.GrangeJudged == true, FallFairFixtureMode.Grange);
     }
 
     private void StartSetupFairFishingGameFixture(PendingExecution pending)
     {
-        StartSetupFallFairFixture(pending, judged: false, fairFishing: true);
+        StartSetupFallFairFixture(pending, judged: false, FallFairFixtureMode.Fishing);
     }
 
-    private void StartSetupFallFairFixture(PendingExecution pending, bool judged, bool fairFishing)
+    private void StartSetupFairSlingshotGameFixture(PendingExecution pending)
+    {
+        StartSetupFallFairFixture(pending, judged: false, FallFairFixtureMode.Slingshot);
+    }
+
+    private void StartSetupFallFairFixture(
+        PendingExecution pending,
+        bool judged,
+        FallFairFixtureMode mode)
     {
         var request = pending.Request;
         var reasons = ValidateExecutionRequest(request);
@@ -87,7 +106,7 @@ public sealed partial class ModEntry
                 "festival=fall16", "festival=start_rejected", "grange_fixture_festival_start_rejected"));
             return;
         }
-        activeGrangeFixture = new ActiveGrangeFixture(pending, festival, judged, fairFishing);
+        activeGrangeFixture = new ActiveGrangeFixture(pending, festival, judged, mode);
     }
 
     private void TickSetupGrangeDisplayFixture()
@@ -116,7 +135,14 @@ public sealed partial class ModEntry
             for (var x = 0; x < layer.LayerWidth; x++)
             {
                 var tileIndex = location.getTileIndexAt(x, y, "Buildings", "untitled tile sheet");
-                if (active.FairFishing ? tileIndex is not (503 or 504) : tileIndex is not (349 or 350 or 351))
+                var matchesFixture = active.Mode switch
+                {
+                    FallFairFixtureMode.Grange => tileIndex is 349 or 350 or 351,
+                    FallFairFixtureMode.Fishing => tileIndex is 503 or 504,
+                    FallFairFixtureMode.Slingshot => tileIndex is 501 or 502,
+                    _ => false
+                };
+                if (!matchesFixture)
                     continue;
                 interactionCount++;
                 if (fixtureStand.HasValue)
@@ -143,7 +169,7 @@ public sealed partial class ModEntry
         if (interactionCount == 0 || !fixtureInteraction.HasValue || !fixtureStand.HasValue)
             return;
 
-        if (!active.FairFishing)
+        if (active.Mode == FallFairFixtureMode.Grange)
         {
             Game1.player.team.grangeDisplay.Clear();
             for (var slot = 0; slot < 9; slot++)
@@ -177,7 +203,7 @@ public sealed partial class ModEntry
         var verified = ReferenceEquals(location.currentEvent, active.Festival) &&
             active.Festival.id == "festival_fall16" && interactionCount > 0 &&
             Game1.player.TilePoint == fixtureStand.Value &&
-            (active.FairFishing
+            (active.Mode != FallFairFixtureMode.Grange
                 ? Game1.player.Money >= 500 && Game1.player.festivalScore == 0 && !Game1.player.hasOrWillReceiveMail("CF_Fair")
                 : Game1.player.team.grangeDisplay.Count == 9 &&
                   Game1.player.Items.Take(9).All(item => item is StardewValley.Object obj && obj.Stack >= 1));
@@ -189,23 +215,29 @@ public sealed partial class ModEntry
             BeforeStateHash = active.Pending.Request.BeforeStateHash, OptionId = active.Pending.Request.OptionId,
             Status = verified ? "applied" : "blocked", FeedbackAvailable = true,
             StartedAt = active.StartedAt, CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = active.FairFishing ? "debug_setup_fair_fishing_game" : "debug_setup_grange_display",
+            PrimitiveKind = active.Mode switch
+            {
+                FallFairFixtureMode.Fishing => "debug_setup_fair_fishing_game",
+                FallFairFixtureMode.Slingshot => "debug_setup_fair_slingshot_game",
+                _ => "debug_setup_grange_display"
+            },
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? active.FairFishing
-                    ? new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_fishing_game_interaction_tiles_present", "unacquired_stardrop_token_demand_and_entry_money_ready" }
-                    : new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_grange_interaction_tiles_present", "nine_live_scoring_inventory_rows_ready", active.Judged ? "judged_retrieval_fixture_ready" : "pre_judging_fixture_ready" }
-                : new[] { active.FairFishing ? "fair_fishing_fixture_post_state_mismatch" : "grange_fixture_post_state_mismatch" },
-            RequestedEffect = active.FairFishing
-                ? "festival=fall16;fair_fishing_game=ready"
-                : "festival=fall16;judged=" + active.Judged.ToString().ToLowerInvariant(),
+                ? active.Mode switch
+                {
+                    FallFairFixtureMode.Fishing => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_fishing_game_interaction_tiles_present", "unacquired_stardrop_token_demand_and_entry_money_ready" },
+                    FallFairFixtureMode.Slingshot => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_slingshot_game_interaction_tiles_present", "unacquired_stardrop_token_demand_and_entry_money_ready" },
+                    _ => new[] { "real_festival_fall16_event_started", "native_change_to_temporary_town_fair_completed", "native_grange_interaction_tiles_present", "nine_live_scoring_inventory_rows_ready", active.Judged ? "judged_retrieval_fixture_ready" : "pre_judging_fixture_ready" }
+                }
+                : new[] { FairFixtureMismatchReason(active.Mode) },
+            RequestedEffect = FairFixtureRequestedEffect(active),
             ObservedEffect = "festival=" + (location.currentEvent?.id ?? "none") + ";location=" + location.NameOrUniqueName +
                 ";map=" + location.mapPath.Value + ";interaction_tiles=" + interactionCount +
                 ";interaction=" + fixtureInteraction?.X + "," + fixtureInteraction?.Y +
                 ";stand=" + fixtureStand?.X + "," + fixtureStand?.Y +
                 ";display_count=" + Game1.player.team.grangeDisplay.Count +
                 ";money=" + Game1.player.Money + ";festival_score=" + Game1.player.festivalScore,
-            BlockReasons = verified ? Array.Empty<string>() : new[] { active.FairFishing ? "fair_fishing_fixture_post_state_mismatch" : "grange_fixture_post_state_mismatch" }
+            BlockReasons = verified ? Array.Empty<string>() : new[] { FairFixtureMismatchReason(active.Mode) }
         });
     }
 
@@ -213,10 +245,29 @@ public sealed partial class ModEntry
     {
         activeGrangeFixture = null;
         active.Pending.Completion.SetResult(BlockedWithPrimitive(active.Pending.Request,
-            active.FairFishing ? "debug_setup_fair_fishing_game" : "debug_setup_grange_display",
-            active.FairFishing ? "festival=fall16;fair_fishing_game=ready" : "festival=fall16;judged=" + active.Judged.ToString().ToLowerInvariant(),
+            active.Mode switch
+            {
+                FallFairFixtureMode.Fishing => "debug_setup_fair_fishing_game",
+                FallFairFixtureMode.Slingshot => "debug_setup_fair_slingshot_game",
+                _ => "debug_setup_grange_display"
+            },
+            FairFixtureRequestedEffect(active),
             "festival=" + (Game1.currentLocation?.currentEvent?.id ?? "none") +
             ";location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") +
             ";current_command=" + active.Festival.CurrentCommand, reason));
     }
+
+    private static string FairFixtureRequestedEffect(ActiveGrangeFixture active) => active.Mode switch
+    {
+        FallFairFixtureMode.Fishing => "festival=fall16;fair_fishing_game=ready",
+        FallFairFixtureMode.Slingshot => "festival=fall16;fair_slingshot_game=ready",
+        _ => "festival=fall16;judged=" + active.Judged.ToString().ToLowerInvariant()
+    };
+
+    private static string FairFixtureMismatchReason(FallFairFixtureMode mode) => mode switch
+    {
+        FallFairFixtureMode.Fishing => "fair_fishing_fixture_post_state_mismatch",
+        FallFairFixtureMode.Slingshot => "fair_slingshot_fixture_post_state_mismatch",
+        _ => "grange_fixture_post_state_mismatch"
+    };
 }

@@ -128,6 +128,7 @@ namespace StardewAI.Core.Execution
                 "donate_museum_item" => "executor.donate_museum_item",
                 "manage_grange_display" => "executor.manage_grange_display",
                 "play_fair_fishing_game" => "executor.play_fair_fishing_game",
+                "play_fair_slingshot_game" => "executor.play_fair_slingshot_game",
                 "donate_community_center_item" => "executor.donate_community_center_item",
                 "purchase_joja_membership" => "executor.purchase_joja_membership",
                 "purchase_joja_project" => "executor.purchase_joja_project",

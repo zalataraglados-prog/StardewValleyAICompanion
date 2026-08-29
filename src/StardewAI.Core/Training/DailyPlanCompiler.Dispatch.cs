@@ -24,6 +24,7 @@ namespace StardewAI.Core.Training
                 ["museum.donate_items"] = new[] { "donate_museum_item" },
                 ["festival.manage_grange_display"] = new[] { "manage_grange_display" },
                 ["festival.play_fishing_game"] = new[] { "play_fair_fishing_game" },
+                ["festival.play_slingshot_game"] = new[] { "play_fair_slingshot_game" },
                 ["community_center.donate_bundle_items"] = new[] { "donate_community_center_item" },
                 ["joja.advance_development"] = new[] { "purchase_joja_membership", "purchase_joja_project" },
                 ["quest.accept_daily"] = new[] { "route_connector_tile", "daily_quest_board_approach", "accept_daily_quest" },
@@ -433,6 +434,10 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "play_fair_fishing_game")
             {
                 return FairFishingGameSteps(candidate);
+            }
+            if (candidate.Kind == "play_fair_slingshot_game")
+            {
+                return FairSlingshotGameSteps(candidate);
             }
             if (candidate.Kind == "donate_community_center_item")
             {

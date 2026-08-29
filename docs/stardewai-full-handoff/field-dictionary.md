@@ -10,6 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fair Slingshot Game Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.fair_slingshot_game` | Publish the complete active Fall 16 TargetGame context or an explicit contextual-inactive state | locked 1.6.15 `Event`, `TargetGame`, `Slingshot`, shop data; live event/player/minigame state | Fair page confirms the 50g slingshot minigame and Star Token shop | covered_for_read / contextual_outside_festival | Full snapshot keeps the field required. Fixed rules come from locked source; current targets/projectiles/timers come from the live instance. |
+| `interaction_tiles` / `dialogue_key` / `native_contract` | Bind Buildings 501/502, `slingshotGame`/`Play`, the exact menu click path and native festival return | locked `Event.checkAction`, `DialogueBox.receiveLeftClick`, `Event.answerDialogue`, `TargetGame.unload` | n/a | covered_for_gate_and_output_EVD_294 / fresh_projection_required | Runtime must use the real festival response and exact 50g receipt. |
+| `target_sequence[]` / `active_minigame.targets[]` | Bind all 79 scheduled targets plus every live target's type, rectangle, speed, motion, pause and spawn state | locked TargetGame constructor/update and live reflected private state | n/a | covered_for_read_and_receipt_EVD_294 | Predictive intercept consumes live state. The compiler binds the exact schedule count and contract rather than accepting a partial projection. |
+| `scoring_contract` / `temporary_loadout` | Publish target values, shot counters, accuracy denominator, multiplier thresholds, reward branches, four timers, temporary slingshot/ammo and projectiles | locked `TargetGame`, `BasicProjectile`, `Slingshot`; live minigame state | Fair page confirms score/accuracy converts to Star Tokens | covered_for_read_and_output_EVD_294 | Runtime recomputes the full result and never writes score, accuracy, tokens, money, timers, targets or inventory. |
+| `shop_rows[]` / `remaining_star_token_demand` | Reuse the complete Fair shop and bound repeat demand to the unacquired Stardrop | live shop stock; locked conditions; current mail/tokens and Grange projection | Fair shop table confirms `(O)434` costs 2000 Star Tokens | covered_for_candidate_and_compile_EVD_294 | Shared with Fair fishing. Other shop rows remain transparent but do not automatically request repeated minigames. |
+| `festival.play_slingshot_game` / `executor.play_fair_slingshot_game` | Separate economic scheduling from one complete native 50-second TargetGame | candidate/DailyPlan/compiler/capability registry; shared movement and SlingshotAimPatch | n/a | strategy_value_allowlisted / executor_calibration_only | The ordinary-mine slingshot and Fair TargetGame share one aim override; no second projectile system exists. |
+
 ## Fair Fishing Game Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

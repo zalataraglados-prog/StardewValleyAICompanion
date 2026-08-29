@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 展览会靶场策略与原生执行闭环（EVD-294）
+
+`festival.play_slingshot_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否投入 50g 和原版 50 秒会话补齐未获得 Fair Stardrop 的星币缺口；尚未领取的展览陈列奖励会先从缺口扣除。编译器从 fresh snapshot 绑定节日实例、交互/站立图块、金额、星币、四段时序、79 个目标、Dialogue key 和 native contract；`executor.play_fair_slingshot_game` 严格为 `ExecutorCalibration`。
+
+运行层复用共享移动与普通矿井弹弓唯一的瞄准补丁，在原生 TargetGame 物理更新前预测拦截点并发送按下/蓄力/释放输入。验收精确核对 50g、临时弹弓和弹药、shots/success、原版 accuracy 分母、75/85/90/95/100% 倍率、得分、40 分奖励门、280 分封顶、节庆返回和临时物品清理，不直接写任何结果。隐藏静音样本为 `48/48` 命中、raw `95`、accuracy `102`、final `380`、`500` 星币。最新 schema 为 `142 required / 126 readable / 16 contextual / 0 blocking`，对账为 `169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 allowlist / 31 catalogued blocked / 0 Product Executor`，回归为 Core `2013/2013`、Backend `138/138`、Release `0 warnings / 0 errors`。正式全量训练仍受剩余 31 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `festival.play_strength_game`。
+
 ## 2026-08-29 展览会钓鱼小游戏策略与原生执行闭环（EVD-293）
 
 `festival.play_fishing_game` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否投入 50g 和原版 100 秒来补齐未获得 Fair Stardrop 的星币缺口；上游会扣除尚未领取的展览陈列奖励，不会为其他装饰商店行无限重复。编译器从 fresh snapshot 绑定节日实例、交互/站立图块、金额、星币、缺口、时长、Dialogue key 和 native contract；`executor.play_fair_fishing_game` 严格为 `ExecutorCalibration`。

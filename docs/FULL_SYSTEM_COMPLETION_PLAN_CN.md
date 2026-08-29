@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 展览会靶场闭环（EVD-294）
+
+`festival.play_slingshot_game` 已覆盖 Fall 16 原版靶场的稳定策略周期。透明桥发布入口、费用、四段原生时序、完整 79 目标日程、实时目标/弹丸/临时装备状态、精确准确率/倍率/奖励公式、全部 Fair 商店行和 Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务。
+
+运行层复用共享 BFS 和普通矿井弹弓的唯一 `SlingshotAimPatch`，经真实节日 DialogueBox 点击进入原版 TargetGame，在物理更新前计算移动目标拦截点并只发原生输入。隐藏静音 E 盘样本 PASS：48 发 48 次有效命中，raw `95`、accuracy `102`、final `380`、封顶 `500` 星币；费用、返回和临时装备清理均验证。当前对账为 `169 registered / 200 semantic / 168 compiler-bound / 95 five-gate / 43 allowlist / 31 catalogued blocked / 0 Product Executor`，回归为 Core `2013/2013`、Backend `138/138`、Release `0 warnings / 0 errors`。下一纵向切片为 `festival.play_strength_game`。
+
 ## 2026-08-29 展览会钓鱼小游戏闭环（EVD-293）
 
 `festival.play_fishing_game` 已覆盖 Fall 16 原版钓鱼游戏的稳定策略周期。透明桥发布入口、费用、时长、临时钓具、实时小游戏状态、精确评分/奖励公式、全部星币商店行和 Fair Stardrop 缺口；候选只为未获得 Stardrop 的剩余星币需求服务，并把尚未领取的展览陈列奖励计入供给，其他购买价值留给后续策略而不自动刷分。

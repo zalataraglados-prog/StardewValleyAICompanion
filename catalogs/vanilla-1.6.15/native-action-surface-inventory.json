@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 73,
-  "catalogued_blocked_surface_count": 95,
-  "catalogued_blocked_action_count": 32,
+  "mapped_count": 77,
+  "catalogued_blocked_surface_count": 91,
+  "catalogued_blocked_action_count": 31,
   "catalogued_blocked_action_ids": [
-    "festival.play_slingshot_game",
     "festival.play_strength_game",
     "festival.spin_wheel",
     "fishing.manage_fish_pond",
@@ -4594,7 +4593,7 @@
       "mappedOptionIds": [
         "festival.play_slingshot_game"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4611,7 +4610,7 @@
       "mappedOptionIds": [
         "festival.play_slingshot_game"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4628,7 +4627,7 @@
       "mappedOptionIds": [
         "festival.play_slingshot_game"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -4645,7 +4644,7 @@
       "mappedOptionIds": [
         "festival.play_slingshot_game"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

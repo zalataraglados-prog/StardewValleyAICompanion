@@ -848,7 +848,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(42, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(43, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "animals.purchase");
@@ -867,6 +867,9 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "festival.play_fishing_game");
+            Assert.Contains(
+                trainRoot.GetProperty("training_allowlist").EnumerateArray(),
+                item => item.GetString() == "festival.play_slingshot_game");
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "fishing.catch_fish");
