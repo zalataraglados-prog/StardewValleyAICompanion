@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-298
+
+- `foraging.harvest_fruit_tree` 已闭合当前地点果树的透明读取、上游候选排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS 与原生摇树回执；唯一动作链为 `harvest_fruit_tree -> executor.harvest_fruit_tree`，没有新增第二套路由或移动系统。
+- 锁定 1.6.15 `FruitTree.performUseAction -> shake` 确认：成熟且非树桩、`maxShake==0`、实时 `fruit` 非空才可收获；普通分支保留每个 live Item 的标识、品质和数量，雷击分支按果槽替换为零品质 `(O)382` 煤炭；原生收获清空果实且不给 Foraging XP。季节只影响后续产出，不阻挡树上已有果实的摇取。官方 Wiki 仅二次确认每日一果、最多积累三果、树龄品质与雷击煤炭。
+- 运行层只调用一次 `GameLocation.checkAction`，不直接调用 `FruitTree.shake`，也不写果实、debris、库存或技能。隐藏静音 E 盘矩阵全部 PASS：单果普通、三果金星、三份雷击煤炭、空树上游排除、摇动中上游排除；每个成功分支均核对完整 `qualified_item_id + quality + quantity` 守恒和零经验变化。
+- full snapshot schema 仍为 `145 required / 129 readable with provenance / 16 contextual / 0 blocking`，因为新增内容位于既有 `current_location.terrain_features` 行内；权威对账为 `176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 training allowlist / 27 catalogued blocked / 0 Product Executor`。完整回归为 Core `2031/2031`、Backend `143/143`；下一语义切片固定为 `foraging.harvest_tree_product`。
+
 ## 2026-08-30 当前权威检查点：EVD-297
 
 - `fishing.manage_fish_pond` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求和原生 `PondQueryMenu` 回执；复用既有鱼塘 BFS/站位基础设施，不替代 `fishing.service_fish_ponds` 的产出收取与请求交付链。

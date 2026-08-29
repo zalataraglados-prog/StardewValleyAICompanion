@@ -82,6 +82,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "Bush.performUseAction", "Bush.shake", "FarmerTeam.MarkCollectedNut", "Farmer.gainExperience" }),
             Assumption(
+                "fruit_tree_harvest",
+                new[] { "foraging.harvest_fruit_tree", "executor.harvest_fruit_tree" },
+                new[] { "exact_vanilla_fruit_tree", "nonempty_live_fruit_list", "native_shake_idle", "adjacent_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_shake_and_debris_settlement_ticks" },
+                Array.Empty<string>(),
+                new[] { "GameLocation.checkAction", "FruitTree.performUseAction", "FruitTree.shake", "FruitTree.GetQuality" }),
+            Assumption(
                 "green_rain_resource_clump",
                 new[] { "foraging.clear_green_rain_bushes", "executor.break_current_location_resource_clump" },
                 new[] { "exact_vanilla_resource_clump_44_or_46", "axe_available", "perimeter_stand_tile", "menu_clear" },

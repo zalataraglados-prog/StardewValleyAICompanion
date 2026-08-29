@@ -1,3 +1,12 @@
+2026-08-30 EVD-298 native Fruit Tree harvest
+- Locked 1.6.15 decompile PASS: exact base FruitTree maturity/stump/maxShake/live-fruit gates, ordinary item identity, GetQuality result, lightning `(O)382` substitution, fruit clear and zero Foraging XP are covered. Official Wiki is secondary confirmation only.
+- Mainline and governance PASS: one `foraging.harvest_fruit_tree -> harvest_fruit_tree -> executor.harvest_fruit_tree` chain; fresh compiler rebinds exact target, outputs, geometry and native contract; unavailable states are excluded upstream; high-level action alone enters the allowlist.
+- Hidden/silent isolated E-drive runtime PASS: `runtime-fruit-tree-single-20260830`, `runtime-fruit-tree-triple-gold-20260830`, `runtime-fruit-tree-lightning-20260830`, `runtime-fruit-tree-empty-20260830`, and `runtime-fruit-tree-active-shake-retry-20260830` cover all bounded branches and exclusions; `runtime-fruit-tree-contract-final-20260830` revalidates the final native-contract transport binary.
+- Installed full snapshot schema remains 145 required, 129 readable with provenance, 16 contextual, blocking 0 because the projection enriches the existing terrain-feature array.
+- Reconciliation: 176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 training allowlist / 27 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2031/2031; Backend 143/143; Release solution build 0 warnings / 0 errors.
+- Next slice is `foraging.harvest_tree_product`.
+
 2026-08-30 EVD-297 native Fish Pond management
 - Locked 1.6.15 source and official Wiki secondary audit PASS: right-click query-menu priority, modulo-four netting, confirmed ClearPond fish debris, complete reset fields and preserved max/request-complete/sign/output/netting fields are covered.
 - Governance and compiler PASS: exact pond/operation/reason required; clear requires operation-level confirmation; PlayerCommandOnly is absent from default candidates and training allowlist; fresh snapshot rebinds all mechanical state and stale coordinates fail closed.

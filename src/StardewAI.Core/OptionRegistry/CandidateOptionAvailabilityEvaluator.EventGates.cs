@@ -181,6 +181,14 @@ namespace StardewAI.Core.OptionRegistry
                     "no_available_native_cooking_candidate");
             }
 
+            if (optionId == "foraging.harvest_fruit_tree")
+            {
+                return EventCandidateAvailabilityReasons(
+                    eventCandidates,
+                    "no_fruit_tree_harvest_candidates",
+                    "no_available_fruit_tree_harvest_candidates");
+            }
+
             if (optionId == "recovery.escape_object_trap")
             {
                 return EventCandidateAvailabilityReasons(

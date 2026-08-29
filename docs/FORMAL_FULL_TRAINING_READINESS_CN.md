@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 果树收获训练准入（EVD-298）
+
+`foraging.harvest_fruit_tree` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否在日计划中收获已就绪果树；位置、站位、路径、交互、live fruit、品质、雷击替换、数量与零经验回执全部由编译执行层机械生成并在 fresh snapshot 重绑。空树、未成熟、树桩、摇动中、自定义类型和不可达目标在上游直接排除，不产生无意义训练阻塞。
+
+隐藏静音 E 盘矩阵覆盖单果普通、三果金星、雷击三煤炭、空树排除和摇动中排除；生产执行只调用一次原生 `GameLocation.checkAction`，不写任何结果状态。最新 schema 仍为 `145/129/16/0`；对账为 `176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 allowlist / 27 catalogued blocked / 0 Product Executor`，回归为 Core `2031/2031`、Backend `143/143`。正式全量训练仍受剩余 27 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `foraging.harvest_tree_product`。
+
 ## 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
 
 `fishing.manage_fish_pond` 已完成五道证据闭环，但严格保持 `PlayerCommandOnly`，不进入正式训练 allowlist。玩家必须提供精确鱼塘、操作和原因，`empty_pond` 另需操作级确认；自动日计划继续只使用既有 `fishing.service_fish_ponds` 处理产出与请求，不会把换网装饰或清塘破坏性重置混入收益训练。

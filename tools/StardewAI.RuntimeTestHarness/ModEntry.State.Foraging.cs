@@ -146,4 +146,61 @@ public sealed partial class ModEntry
         public Point LastObservedTile { get; set; }
         public bool ActionIssued { get; set; }
     }
+
+    private sealed class ActiveFruitTreeHarvest
+    {
+        public ActiveFruitTreeHarvest(
+            PendingExecution pending,
+            GameLocation location,
+            StardewValley.TerrainFeatures.FruitTree tree,
+            Point target,
+            Point interaction,
+            Point stand,
+            List<Point> path,
+            IReadOnlyList<FruitTreeOutputExpectation> outputs,
+            int maxMovementTiles)
+        {
+            Pending = pending;
+            Location = location;
+            Tree = tree;
+            Target = target;
+            Interaction = interaction;
+            Stand = stand;
+            Path = path;
+            Outputs = outputs;
+            MaxMovementTiles = maxMovementTiles;
+            FruitCountBefore = tree.fruit.Count;
+            ForagingExperienceBefore = Game1.player.experiencePoints[Farmer.foragingSkill];
+            OutputCountsBefore = outputs.ToDictionary(
+                output => output.Key,
+                output => CountFruitTreeOutput(location, output.QualifiedItemId, output.Quality),
+                StringComparer.Ordinal);
+            LastPosition = Game1.player.Position;
+            LastObservedTile = Game1.player.TilePoint;
+            RequestedEffect = "current_location.terrain_features[" + target.X + "," + target.Y + "].fruit_count=0;outputs=" + FruitTreeOutputsJson(outputs);
+        }
+
+        public PendingExecution Pending { get; }
+        public GameLocation Location { get; }
+        public StardewValley.TerrainFeatures.FruitTree Tree { get; }
+        public Point Target { get; }
+        public Point Interaction { get; }
+        public Point Stand { get; }
+        public List<Point> Path { get; }
+        public IReadOnlyList<FruitTreeOutputExpectation> Outputs { get; }
+        public int MaxMovementTiles { get; }
+        public int FruitCountBefore { get; }
+        public int ForagingExperienceBefore { get; }
+        public IReadOnlyDictionary<string, int> OutputCountsBefore { get; }
+        public string RequestedEffect { get; }
+        public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
+        public int MaxTicks { get; } = 3600;
+        public int ElapsedTicks { get; set; }
+        public int PathIndex { get; set; }
+        public int StuckTicks { get; set; }
+        public int MovementTiles { get; set; }
+        public Vector2 LastPosition { get; set; }
+        public Point LastObservedTile { get; set; }
+        public bool ActionIssued { get; set; }
+    }
 }

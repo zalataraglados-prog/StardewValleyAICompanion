@@ -29,7 +29,7 @@ namespace StardewAI.Core.OptionRegistry
                     var x = ReadInt(feature, "tile_x");
                     var y = ReadInt(feature, "tile_y");
                     var width = Math.Max(1, ReadInt(feature, "bounding_tile_width"));
-                    var interaction = FindBestBushInteraction(snapshot, x, y, width);
+                    var interaction = FindBestTerrainInteraction(snapshot, x, y, width);
                     var outputId = ReadString(feature, "bush_output_qualified_item_id");
                     var quantity = ReadInt(feature, "bush_output_quantity_min");
                     var status = ReadString(feature, "bush_harvest_status");
@@ -92,11 +92,11 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static BushInteraction? FindBestBushInteraction(SnapshotEnvelope snapshot, int anchorX, int anchorY, int width)
+        private static TerrainInteraction? FindBestTerrainInteraction(SnapshotEnvelope snapshot, int anchorX, int anchorY, int width)
         {
             var playerX = ReadStateFieldInt(snapshot, "player", "tile_x");
             var playerY = ReadStateFieldInt(snapshot, "player", "tile_y");
-            var candidates = new List<BushInteraction>();
+            var candidates = new List<TerrainInteraction>();
             for (var actionX = anchorX; actionX < anchorX + width; actionX++)
             {
                 var action = new CandidateTile(actionX, anchorY);
@@ -111,7 +111,7 @@ namespace StardewAI.Core.OptionRegistry
                     var insideFootprint = stand.Y == anchorY && stand.X >= anchorX && stand.X < anchorX + width;
                     if (!insideFootprint && !CollisionGridBlocksTile(snapshot, stand.X, stand.Y))
                     {
-                        candidates.Add(new BushInteraction(action, stand));
+                        candidates.Add(new TerrainInteraction(action, stand));
                     }
                 }
             }
@@ -123,7 +123,7 @@ namespace StardewAI.Core.OptionRegistry
                 .FirstOrDefault();
         }
 
-        private static SmallModelActionParameter[] BushParameters(JsonElement feature, string locationId, BushInteraction interaction)
+        private static SmallModelActionParameter[] BushParameters(JsonElement feature, string locationId, TerrainInteraction interaction)
         {
             return new[]
             {
@@ -153,7 +153,7 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static string BushExpectedEffect(JsonElement feature, BushInteraction? interaction)
+        private static string BushExpectedEffect(JsonElement feature, TerrainInteraction? interaction)
         {
             var x = ReadInt(feature, "tile_x");
             var y = ReadInt(feature, "tile_y");
@@ -178,9 +178,9 @@ namespace StardewAI.Core.OptionRegistry
             return qualifiedItemId.StartsWith("(O)", StringComparison.Ordinal) ? qualifiedItemId[3..] : qualifiedItemId;
         }
 
-        private sealed class BushInteraction
+        private sealed class TerrainInteraction
         {
-            public BushInteraction(CandidateTile action, CandidateTile stand)
+            public TerrainInteraction(CandidateTile action, CandidateTile stand)
             {
                 Action = action;
                 Stand = stand;

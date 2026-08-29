@@ -9,6 +9,11 @@ public sealed partial class CurrentLocationReadAdapter
 {
     private static object ReadTerrainFeatureDetails(Vector2 tile, TerrainFeature feature)
     {
+        if (feature is FruitTree fruitTree)
+        {
+            return ReadFruitTreeDetails(tile, fruitTree);
+        }
+
         if (feature is Flooring flooring)
         {
             return ReadFlooringDetails(tile, flooring);

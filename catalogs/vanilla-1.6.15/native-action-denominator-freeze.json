@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.native_action_denominator_freeze.v1",
   "game_version": "1.6.15",
-  "fingerprint_sha256": "25a2bb8c0343656a0df2d0d15db561daf1c4df003603a29d732c1523524994e8",
+  "fingerprint_sha256": "ac47e764292c5f72bc05762f009eab1ca36a5b61f1f84b3dd7b756cf02326325",
   "surface_count": 322,
   "branch_count": 448,
   "map_token_count": 150,
-  "semantic_action_count": 202,
-  "approval_basis": "locked 1.6.15 decompile and runtime assets; all reachable native surfaces and branches map to registered or catalogued-blocked vanilla semantic actions with zero unresolved registrations; Lantern and Raft are cut-content tools without normal-save acquisition paths, so executor.toggle_lantern and executor.use_raft are retained as explicit compatibility placeholders for future mod adapters while excluded from the in-save vanilla player denominator; festival.manage_grange_display, festival.play_fishing_game, festival.play_slingshot_game, festival.play_strength_game, and festival.spin_wheel moved from pending to registered Fall 16 strategy actions with separate native Event/checkAction/menu/minigame mechanical primitives; festival.spin_wheel preserves native random win and loss settlement while bounding the green wager by the exact zero-luck Kelly fraction 7/15 and remaining unacquired Stardrop demand; native surface, branch, and map-token counts are unchanged"
+  "semantic_action_count": 203,
+  "approval_basis": "locked 1.6.15 decompile and runtime assets; all reachable native surfaces and branches map to registered or catalogued-blocked vanilla semantic actions with zero unresolved registrations; Lantern and Raft are cut-content tools without normal-save acquisition paths, so executor.toggle_lantern and executor.use_raft are retained as explicit compatibility placeholders for future mod adapters while excluded from the in-save vanilla player denominator; foraging.harvest_fruit_tree moved from pending to a registered exact FruitTree action using the existing native FruitTree.performUseAction surface, so only the semantic action count changed while native surface, branch, and map-token counts remain unchanged; its transparent and runtime contracts preserve every live fruit item, GetQuality result, lightning coal substitution, zero-XP rule, native shake-idle gate, and grouped debris or inventory receipt"
 }

@@ -439,6 +439,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact berry, tea, or golden-walnut bush selected", "native checkAction and Bush.performUseAction handed to the mechanical executor" },
                 new[] { "block_unready_bush", "block_custom_bush_runtime", "block_unverified_perimeter_route", "block_projection_drift", "block_direct_bush_or_reward_mutation" }));
 
+            Register(Option("foraging.harvest_fruit_tree", "foraging", "Shake one transparent fruit-bearing FruitTree",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one exact mature fruit-bearing FruitTree selected", "all live fruit slots and lightning substitution preserved", "native checkAction and FruitTree shake handed to the mechanical executor" },
+                new[] { "block_unready_or_empty_fruit_tree", "block_custom_fruit_tree_runtime", "block_native_shake_in_progress", "block_unverified_adjacent_route", "block_projection_drift", "block_direct_tree_debris_inventory_or_skill_mutation" }));
+
             Register(Option("foraging.clear_green_rain_bushes", "foraging", "Clear one loaded Green Rain ResourceClump",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1066,6 +1074,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.skills_detail", "current_location.large_terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one transparent perimeter stand tile", "native checkAction shakes the exact Bush", "offset, output, XP, and golden-walnut tracker deltas are verified by branch" },
                 new[] { "block_target_not_exact_bush", "block_unready_bush", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_bush_debris_inventory_nut_or_skill_mutation" }));
+
+            Register(Option("executor.harvest_fruit_tree", "foraging", "Harvest one verified FruitTree through native checkAction and shake",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.terrain_features", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the transparent adjacent stand tile", "native checkAction shakes the exact FruitTree", "fruit-list clearing and every qualified item, quality, and quantity delta are verified" },
+                new[] { "block_target_not_exact_fruit_tree", "block_unready_or_empty_fruit_tree", "block_menu_unsafe_interact", "block_projection_drift", "block_direct_tree_debris_inventory_or_skill_mutation" }));
 
             Register(Option("executor.collect_crab_pot", "fishing", "Collect one verified ready crab pot through native checkAction",
                 OptionBehaviorCategories.Mechanical,

@@ -48,6 +48,7 @@ namespace StardewAI.Core.Execution
                 ["executor.collect_spawned_object"] = (action, _) => CompileCollectSpawnedObjectStep(action),
                 ["executor.harvest_ginger"] = (action, _) => CompileHarvestGingerStep(action),
                 ["executor.harvest_bush"] = (action, _) => CompileHarvestBushStep(action),
+                ["executor.harvest_fruit_tree"] = (action, _) => CompileHarvestFruitTreeStep(action),
                 ["executor.claim_mine_reward_chest"] = (action, _) => CompileClaimMineRewardChestStep(action),
                 ["rewards.claim_pot_of_gold"] = CompileClaimPotOfGoldStep,
                 ["mining.choose_dwarf_statue_power"] = CompileDwarfKingStatuePowerStep,

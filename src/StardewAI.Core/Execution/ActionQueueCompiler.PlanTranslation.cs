@@ -109,6 +109,7 @@ namespace StardewAI.Core.Execution
                 "collect_spawned_object" => "executor.collect_spawned_object",
                 "harvest_ginger" => "executor.harvest_ginger",
                 "harvest_bush" => "executor.harvest_bush",
+                "harvest_fruit_tree" => "executor.harvest_fruit_tree",
                 "claim_mine_reward_chest" => "executor.claim_mine_reward_chest",
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",

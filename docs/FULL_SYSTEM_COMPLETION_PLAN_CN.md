@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 果树原生收获闭环（EVD-298）
+
+`foraging.harvest_fruit_tree` 已按一个完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行中发布精确 base FruitTree 身份、成熟/树桩/摇动状态、实时 fruit 列表、按标识与品质分组的最终输出、雷击替换、零经验合同和相邻交互状态。候选层先排除自定义类型、未成熟、树桩、空树、瞬态空果、摇动中、输出不完整及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。
+
+运行层复用共享 BFS 和连续移动，只经 `GameLocation.checkAction -> FruitTree.performUseAction -> FruitTree.shake` 执行。隐藏静音矩阵覆盖单果、三果金星、雷击三煤炭以及空树/摇动中排除，成功分支逐项核对输出守恒、fruit 清空和 Foraging XP 零变化。当前对账为 `176 registered / 203 semantic / 175 compiler-bound / 101 five-gate / 46 allowlist / 27 catalogued blocked / 0 Product Executor`，回归为 Core `2031/2031`、Backend `143/143`。下一纵向切片为 `foraging.harvest_tree_product`。
+
 ## 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
 
 `fishing.manage_fish_pond` 已覆盖两种原版管理操作，并与自动鱼塘服务链保持单一职责：模型可训练的日循环负责收产出和交请求，换网与清塘只响应玩家明确指令。上游要求精确坐标、操作、原因及清塘二次确认；fresh 编译器重新绑定鱼种、数量、请求、饼干、标牌、产出、水色、网样式、站位和安全槽，任何漂移都闭锁。

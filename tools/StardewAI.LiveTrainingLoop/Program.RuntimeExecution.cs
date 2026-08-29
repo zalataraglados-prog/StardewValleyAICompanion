@@ -447,6 +447,11 @@ static partial class Program
         var clearOutputProjectionStatus = ReadQueueParameterString(item, "clear_output_projection_status");
         var clearOutputItemsJson = ReadQueueParameterString(item, "clear_output_items_json");
         var expectedOutputItemsJson = ReadQueueParameterString(item, "expected_output_items_json");
+        var fruitTreeId = ReadQueueParameterString(item, "fruit_tree_id");
+        var expectedFruitCountBefore = ReadQueueParameterInt(item, "expected_fruit_count_before");
+        var expectedFruitCountAfter = ReadQueueParameterInt(item, "expected_fruit_count_after");
+        var fruitTreeProjectionStatus = ReadQueueParameterString(item, "fruit_tree_projection_status");
+        var fruitTreeNativeContract = ReadQueueParameterString(item, "fruit_tree_native_contract");
         var expectedOutputQuality = ReadQueueParameterInt(item, "expected_output_quality");
         var expectedAnimalCrackerMultiplier = ReadQueueParameterInt(item, "expected_animal_cracker_multiplier");
         var expectedEnergyDelta = ReadQueueParameterInt(item, "expected_energy_delta");
@@ -957,6 +962,11 @@ static partial class Program
         executionRequest.ClearOutputProjectionStatus = clearOutputProjectionStatus;
         executionRequest.ClearOutputItemsJson = clearOutputItemsJson;
         executionRequest.ExpectedOutputItemsJson = expectedOutputItemsJson;
+        executionRequest.FruitTreeId = fruitTreeId;
+        executionRequest.ExpectedFruitCountBefore = expectedFruitCountBefore;
+        executionRequest.ExpectedFruitCountAfter = expectedFruitCountAfter;
+        executionRequest.FruitTreeProjectionStatus = fruitTreeProjectionStatus;
+        executionRequest.FruitTreeNativeContract = fruitTreeNativeContract;
         executionRequest.ExpectedOutputQuality = expectedOutputQuality;
         executionRequest.ExpectedAnimalCrackerMultiplier = expectedAnimalCrackerMultiplier;
         executionRequest.ExpectedEnergyDelta = expectedEnergyDelta;

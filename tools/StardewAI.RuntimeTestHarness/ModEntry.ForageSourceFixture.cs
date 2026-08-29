@@ -29,6 +29,7 @@ public sealed partial class ModEntry
         return request.RuleKey switch
         {
             "bush" => ExecuteSetupBushSourceFixture(request),
+            "fruit_tree" => ExecuteSetupFruitTreeSourceFixture(request),
             "ginger" => ExecuteSetupGingerSourceFixture(request),
             "spawned_object" => ExecuteSetupSpawnedObjectFixture(request),
             _ => BlockedWithPrimitive(
@@ -38,6 +39,78 @@ public sealed partial class ModEntry
                 "rule_key=" + request.RuleKey,
                 "forage_source_fixture_rule_key_invalid")
         };
+    }
+
+    private TrainingExecutionResult ExecuteSetupFruitTreeSourceFixture(
+        TrainingExecutionRequest request)
+    {
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var profile = string.IsNullOrWhiteSpace(request.FixtureFruitTreeProfile)
+            ? "single_normal"
+            : request.FixtureFruitTreeProfile;
+        if (profile is not ("single_normal" or "triple_gold" or "lightning_coal" or "empty" or "active_shake"))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_forage_source_fixture",
+                "current_location.terrain_features[target].fruit_tree_harvest_status=ready",
+                "fixture_fruit_tree_profile=" + profile,
+                "fixture_fruit_tree_profile_unknown");
+        }
+        if (!TryResolveForageFixtureLocation(request, out var location, out var target, out var reason))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_forage_source_fixture",
+                "current_location.terrain_features[target].fruit_tree_harvest_status=ready",
+                "location_or_target=invalid",
+                reason);
+        }
+
+        ClearForageFixtureArea(location, target, 1, 1);
+        var before = ForageFixtureObservedEffect(location, target);
+        var tree = new FruitTree("628", FruitTree.treeStage);
+        tree.daysUntilMature.Value = profile == "triple_gold" ? -224 : -1;
+        tree.struckByLightningCountdown.Value = profile == "lightning_coal" ? 4 : 0;
+        tree.maxShake = profile == "active_shake" ? 1f : 0f;
+        var fruitCount = profile switch
+        {
+            "empty" => 0,
+            "triple_gold" or "lightning_coal" => 3,
+            _ => 1
+        };
+        for (var index = 0; index < fruitCount; index++)
+        {
+            tree.fruit.Add(ItemRegistry.Create("(O)638", 1, tree.GetQuality()));
+        }
+        location.terrainFeatures[target.ToVector2()] = tree;
+        var moved = MoveFixtureFarmerToLocationAdjacent(location, target, out var stand, out var moveReason);
+        var projection = ProjectFruitTreeHarvest(tree);
+        var expectedStatus = profile switch
+        {
+            "empty" => "fruit_tree_has_no_fruit",
+            "active_shake" => "fruit_tree_shake_in_progress",
+            _ => "ready"
+        };
+        var expectedId = profile == "lightning_coal" ? "(O)382" : "(O)638";
+        var verified = moved &&
+            string.Equals(projection.Status, expectedStatus, StringComparison.Ordinal) &&
+            (projection.Outputs.Count == 0 ||
+                projection.Outputs.All(output => string.Equals(output.QualifiedItemId, expectedId, StringComparison.Ordinal))) &&
+            AreAdjacent(stand, target);
+
+        return ForageFixtureResult(
+            request,
+            started,
+            location,
+            target,
+            stand,
+            before,
+            ForageFixtureObservedEffect(location, target),
+            "fruit_tree",
+            projection.Outputs.FirstOrDefault()?.QualifiedItemId ?? string.Empty,
+            verified,
+            verified ? "isolated_native_fruit_tree_" + profile : moved ? "fixture_fruit_tree_status=" + projection.Status : moveReason);
     }
 
     private TrainingExecutionResult ExecuteSetupBushSourceFixture(
@@ -403,9 +476,13 @@ public sealed partial class ModEntry
                 (int)candidate.Tile.X == target.X &&
                 (int)candidate.Tile.Y == target.Y);
         var ginger = IsExactGinger(location, tile, out _);
+        var fruitTree = location.terrainFeatures.TryGetValue(tile, out var feature)
+            ? feature as FruitTree
+            : null;
         return "location=" + location.NameOrUniqueName +
             ";target=" + target.X + "," + target.Y +
             ";bush_ready=" + (bush?.readyForHarvest() == true).ToString().ToLowerInvariant() +
-            ";ginger_ready=" + ginger.ToString().ToLowerInvariant();
+            ";ginger_ready=" + ginger.ToString().ToLowerInvariant() +
+            ";fruit_tree_status=" + (fruitTree is null ? "missing" : ProjectFruitTreeHarvest(fruitTree).Status);
     }
 }

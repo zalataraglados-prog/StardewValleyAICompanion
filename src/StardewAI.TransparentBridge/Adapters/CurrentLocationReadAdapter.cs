@@ -97,7 +97,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["dwarf_king_statue_power"] = Field(location is null ? null : ReadDwarfKingStatuePower(location), "Object.checkForAction StatueOfTheDwarfKing; ChooseFromIconsMenu dwarfStatue deterministic daily offers; five native buff use branches", tick, "vanilla_1_6_15_dwarf_king_statue_power"),
             ["statue_blessing"] = Field(location is null ? null : ReadStatueBlessing(location), "Object.CheckForActionOnBlessedStatue deterministic daily blessing; farming mastery, daily lock and seven native effect branches", tick, "vanilla_1_6_15_statue_blessing"),
             ["chests"] = chestsField,
-            ["terrain_features"] = Field(location is null ? null : ReadTerrainFeatures(location), "Game1.currentLocation.terrainFeatures", tick),
+            ["terrain_features"] = Field(location is null ? null : ReadTerrainFeatures(location), "Game1.currentLocation.terrainFeatures; FruitTree native harvest projection", tick),
             ["large_terrain_features"] = Field(location is null ? null : ReadLargeTerrainFeatures(location), "Game1.currentLocation.largeTerrainFeatures; Bush native harvest projection", tick),
             ["resource_clumps"] = Field(location is null ? null : ReadCurrentLocationResourceClumps(location, Game1.player), "Game1.currentLocation.resourceClumps; ResourceClump.performToolAction/destroy decompiled projections", tick),
             ["crops"] = Field(location is null ? null : FarmReadAdapter.ReadCrops(location), "Game1.currentLocation terrain HoeDirt and IndoorPot.hoeDirt live crop state", tick, "vanilla_1_6_current_location_crops"),

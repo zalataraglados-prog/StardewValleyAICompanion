@@ -79,6 +79,7 @@ public sealed partial class ModEntry : Mod
     private ActivePickupDebris? activePickupDebris;
     private ActiveSpawnedObjectPickup? activeSpawnedObjectPickup;
     private ActiveBushHarvest? activeBushHarvest;
+    private ActiveFruitTreeHarvest? activeFruitTreeHarvest;
     private ActiveCrabPotCollect? activeCrabPotCollect;
     private ActiveAnimalProductHarvest? activeAnimalProductHarvest;
     private ActiveAnimalManagement? activeAnimalManagement;
@@ -494,6 +495,7 @@ public sealed partial class ModEntry : Mod
         TickPickupDebris();
         TickSpawnedObjectPickup();
         TickBushHarvest();
+        TickFruitTreeHarvest();
         TickCrabPotCollect();
         TickShootMonster();
         TickPlaceBomb();
@@ -1682,6 +1684,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.harvest_fruit_tree")
+            {
+                StartFruitTreeHarvest(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "fishing.manage_fish_pond")
             {
                 StartFishPondManagement(pending);
@@ -1915,6 +1923,7 @@ public sealed partial class ModEntry : Mod
             activeJunimoKart = null;
             activeCrabPotCollect = null;
             activeBushHarvest = null;
+            activeFruitTreeHarvest = null;
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
             activeDwarfKingStatueChoice = null;
@@ -2142,6 +2151,7 @@ public sealed partial class ModEntry : Mod
             activePickupDebris is not null ||
             activeSpawnedObjectPickup is not null ||
             activeBushHarvest is not null ||
+            activeFruitTreeHarvest is not null ||
             activeCrabPotCollect is not null ||
             activeAnimalProductHarvest is not null ||
             activeAnimalManagement is not null ||

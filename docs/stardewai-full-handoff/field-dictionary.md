@@ -10,6 +10,14 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fruit Tree Harvest Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `current_location.terrain_features[].is_fruit_tree` / `fruit_tree_id` / `growth_stage` / `stump` / `max_shake` | Bind one exact harvestable base FruitTree and reject stale or unsafe states upstream | locked 1.6.15 `FruitTree.performUseAction` and `FruitTree.shake`; live terrain feature | Fruit Trees page confirms maturity and harvest lifecycle | covered_for_read_and_gate_EVD_298 | Custom runtime types, immature trees, stumps, empty fruit and active shake fail closed before planning. |
+| `fruit_tree_fruit[]` / `fruit_tree_expected_outputs[]` / `fruit_tree_expected_output_quantity_total` | Preserve exact live item identity, quality and quantity for compiler and runtime receipts | live `FruitTree.fruit`, `GetQuality()`, `struckByLightningCountdown`, and shake debris branches | Wiki confirms up to three accumulated fruit, age quality and temporary lightning coal production | covered_for_read_compile_output_EVD_298 | Existing fruit remains harvestable regardless of current season; lightning output is `(O)382`, quality 0, one per fruit slot. |
+| `fruit_tree_harvest_status` / `fruit_tree_projection_status` / `fruit_tree_native_contract` / expected after-state and XP delta | Make candidate exclusion and native-only execution auditable | locked native call chain and zero-XP shake implementation | n/a | covered_for_gate_runtime_receipt_EVD_298 | Runtime calls `GameLocation.checkAction` only and verifies fruit count 0, all output deltas and Foraging XP delta 0. |
+
 ## Fish Pond Management Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

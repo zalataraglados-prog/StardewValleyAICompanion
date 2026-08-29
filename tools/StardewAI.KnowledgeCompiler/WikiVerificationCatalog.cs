@@ -10,6 +10,11 @@ internal static class WikiVerificationCatalog
             "Grandpa evaluation timing, all 21 available points, milestone thresholds, and four-candle distinction",
             "runtime/decompile must remain authoritative for exact thresholds and event ordering"),
         Source(
+            "fruit_trees",
+            "https://stardewvalleywiki.com/Fruit_Trees",
+            "maturity, one-fruit-per-day production, three-fruit accumulation, age-based quality, and lightning coal behavior",
+            "current player-facing page is secondary only; locked 1.6.15 FruitTree fields and shake implementation remain authoritative"),
+        Source(
             "shop_schedules",
             "https://stardewvalleywiki.com/mediawiki/index.php?title=Shop_Schedules&oldid=188150",
             "shop opening windows, regular closures, festival closures, and Key To The Town exceptions",
