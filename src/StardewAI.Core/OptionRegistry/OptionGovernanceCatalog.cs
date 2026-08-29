@@ -256,6 +256,7 @@ namespace StardewAI.Core.OptionRegistry
                 P("fishing.catch_fish", C, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("fishing.collect_crab_pots", C, R1, None, NoConfirm, Actor, Farm, Allowed),
                 P("fishing.service_fish_ponds", C, R2, Consume, PolicyConfirm, Actor, Farm, Policy),
+                P("fishing.manage_fish_pond", C, R4, Asset, ExplicitConfirm, Actor, Farm, Explicit, PlayerCommand),
                 P("foraging.collect_spawned_objects", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.harvest_ginger", C, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("foraging.harvest_bushes", C, R1, None, NoConfirm, Actor, Inventory, Allowed),

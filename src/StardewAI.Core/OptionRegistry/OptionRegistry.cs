@@ -407,6 +407,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one exact fish-pond branch selected", "native FishPond.doAction handed to the mechanical executor" },
                 new[] { "block_unready_fish_pond", "block_output_precedes_request", "block_inventory_or_toolbar", "block_unverified_route", "block_projection_drift" }));
 
+            Register(Option("fishing.manage_fish_pond", "fishing", "Manage one exact Fish Pond through its native query menu for an explicit player request",
+                OptionBehaviorCategories.LongTermStrategic,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.safe_item_context", "farm.buildings", "menus.active_menu" },
+                new[] { "player command names one exact pond and cycle_netting or empty_pond operation", "compiler rebinds live pond state, edge stand, safe slot, native menu contract and exact expected receipt", "runtime right-click opens the bound PondQueryMenu and clicks only its public native controls", "netting cycles modulo four or ClearPond returns exact fish debris and verifies all reset and preserved fields" },
+                new[] { "block_not_explicitly_authorized", "block_management_operation_or_reason_missing", "block_empty_pond_confirmation_missing", "block_output_precedes_management", "block_no_exact_live_pond_or_adjacent_stand", "block_menu_or_player_busy", "block_pond_projection_drift", "block_direct_fish_pond_state_mutation" }));
+
             Register(Option("foraging.collect_spawned_objects", "foraging", "Collect one transparent spawned object candidate",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,

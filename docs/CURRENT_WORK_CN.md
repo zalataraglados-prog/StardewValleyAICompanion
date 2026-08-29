@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-297
+
+- `fishing.manage_fish_pond` 已闭合透明读取、显式玩家命令候选、DailyPlan、fresh 编译重绑定、类型化请求和原生 `PondQueryMenu` 回执；复用既有鱼塘 BFS/站位基础设施，不替代 `fishing.service_fish_ponds` 的产出收取与请求交付链。
+- 该动作只接受玩家明确给出的鱼塘坐标、`cycle_netting|empty_pond` 和原因；清塘还需操作级 `confirm_empty_pond=true`。它是 `PlayerCommandOnly`，不进入默认候选、策略训练或 allowlist，避免模型因装饰偏好或破坏性重置自主操作鱼塘。
+- 锁定 1.6.15 反编译确认：换网只执行 `(nettingStyle+1)%4`；`ClearPond` 按当前鱼数生成同种鱼 debris，并重置鱼种/数量/请求项/天数/闸门/金色饼干/生成标记/水色，同时保留容量、请求完成标记、标牌、产出引用和网样式。官方 Wiki 仅作清塘语义与金色饼干丢失的二次核验。
+- 隐藏静音 E 盘隔离运行 `runtime-fish-pond-management-20260830-013602` PASS：换网 `2->3` 且经济状态不变；清塘 `fish_count 1->0`，精确鱼 debris、重置字段、保留字段和工具栏恢复均通过。入口使用一次性作用域右键边沿进入 `GameLocation.checkAction -> FishPond.doAction`，不构造菜单、不调用 `ClearPond`、不直接写鱼塘状态。
+- 最新 full snapshot schema 为 `145 required / 129 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 training allowlist / 28 catalogued blocked / 0 Product Executor`。完整回归为 Core `2027/2027`、Backend `142/142`；下一语义切片固定为 `foraging.harvest_fruit_tree`。
+
 ## 2026-08-30 当前权威检查点：EVD-296
 
 - `festival.spin_wheel` 已闭合秋季 16 日展览会转盘的透明读取、Stardrop 有界需求候选、DailyPlan、fresh 编译重绑定、类型化请求和完整原生随机回执。自动候选仅在未获得 Fair Stardrop、扣除尚未领取的陈列奖励后仍缺至少 `2` 星币时出现；恰好缺 `1` 星币继续交给免费力量小游戏。

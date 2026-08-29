@@ -56,6 +56,7 @@ namespace StardewAI.Core.Training
                 ["fishing.catch_fish"] = new[] { "catch_fish" },
                 ["fishing.collect_crab_pots"] = new[] { "collect_crab_pot" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
+                ["fishing.manage_fish_pond"] = new[] { "manage_fish_pond" },
                 ["housing.advance_farmhouse"] = new[] { "purchase_farmhouse_upgrade", "purchase_farmhouse_expansion" },
                 ["foraging.clear_green_rain_bushes"] = new[] { "clear_green_rain_resource_clump" },
                 ["foraging.collect_spawned_objects"] = new[] { "collect_spawned_object" },
@@ -125,6 +126,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "manage_animal")
             {
                 return AnimalManagementSteps(candidate);
+            }
+
+            if (candidate.Kind == "manage_fish_pond")
+            {
+                return FishPondManagementSteps(candidate);
             }
 
             if (candidate.Kind == "cook_recipe")

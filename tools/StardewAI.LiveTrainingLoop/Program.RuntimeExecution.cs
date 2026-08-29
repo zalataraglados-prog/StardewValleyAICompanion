@@ -1607,6 +1607,9 @@ static partial class Program
         ApplyFairWheelSpinRequestFields(
             executionRequest,
             item);
+        ApplyFishPondManagementRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

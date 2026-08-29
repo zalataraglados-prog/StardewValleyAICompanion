@@ -54,6 +54,7 @@ public sealed partial class ModEntry
             "debug.setup_fish_pond",
             "debug.setup_fish_pond_output",
             "debug.setup_fish_pond_request",
+            "debug.setup_fish_pond_management",
             "debug.setup_fertilizer_target",
             "debug.setup_tree_treatment_target",
             "debug.setup_indoor_pot_fertilizer_target",

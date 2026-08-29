@@ -93,6 +93,7 @@ public sealed partial class ModEntry : Mod
     private ActiveAnimalPurchase? activeAnimalPurchase;
     private ActivePanOreSpot? activePanOreSpot;
     private ActiveFishPondService? activeFishPondService;
+    private ActiveFishPondManagement? activeFishPondManagement;
     private ActiveDescendLadder? activeDescendLadder;
     private ActiveDescendShaft? activeDescendShaft;
     private ActiveExitMine? activeExitMine;
@@ -152,6 +153,9 @@ public sealed partial class ModEntry : Mod
         harmony.Patch(
             original: AccessTools.Method(typeof(Game1), nameof(Game1.getOldMouseY), new[] { typeof(bool) }),
             prefix: new HarmonyMethod(typeof(PlacementCursorPatch), nameof(PlacementCursorPatch.GetOldMouseYPrefix)));
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.didPlayerJustRightClick), new[] { typeof(bool) }),
+            prefix: new HarmonyMethod(typeof(NativeRightClickEdgePatch), nameof(NativeRightClickEdgePatch.Prefix)));
         harmony.Patch(
             original: AccessTools.Method(typeof(Farmer), nameof(Farmer.caughtFish), new[] { typeof(string), typeof(int), typeof(bool), typeof(int) }),
             prefix: new HarmonyMethod(typeof(CrabPotCaughtFishPatch), nameof(CrabPotCaughtFishPatch.Prefix)));
@@ -528,6 +532,7 @@ public sealed partial class ModEntry : Mod
         TickBuildingAppearanceChange();
         TickPanOreSpot();
         TickFishPondService();
+        TickFishPondManagement();
         CaptureExecutorDiagnosticFrame("update_ticked");
 
         if (HasActiveExecutorOperation())
@@ -707,6 +712,12 @@ public sealed partial class ModEntry : Mod
                 pending.Request.OptionId == "debug.setup_fish_pond_request")
             {
                 pending.Completion.SetResult(ExecuteSetupFishPondService(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_fish_pond_management")
+            {
+                pending.Completion.SetResult(ExecuteSetupFishPondManagement(pending.Request));
                 return;
             }
 
@@ -1671,6 +1682,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "fishing.manage_fish_pond")
+            {
+                StartFishPondManagement(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_flute_block")
             {
                 pending.Completion.SetResult(ExecuteSetupFluteBlockFixture(pending.Request));
@@ -1916,6 +1933,7 @@ public sealed partial class ModEntry : Mod
             activeAnimalPurchase = null;
             activePanOreSpot = null;
             activeFishPondService = null;
+            activeFishPondManagement = null;
             activeMaterialTransfer = null;
             activeWorkbenchCraft = null;
             activeCooking = null;
@@ -2138,6 +2156,7 @@ public sealed partial class ModEntry : Mod
             activeAnimalPurchase is not null ||
             activePanOreSpot is not null ||
             activeFishPondService is not null ||
+            activeFishPondManagement is not null ||
             activeDescendLadder is not null ||
             activeDescendShaft is not null ||
             activeExitMine is not null ||

@@ -10,6 +10,16 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Fish Pond Management Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `farm.buildings[].fish_pond.management_*` | Publish exact management readiness, safe/restore slots, supported operations and native contract | locked 1.6.15 `FishPond.doAction`, `PondQueryMenu` and `FishPond.ClearPond`; live pond state | Fish Pond page confirms empty/reset semantics and loss of Golden Animal Cracker | covered_for_read_and_gate_EVD_297 | Output must be empty before management because native output collection has priority over the right-click menu. |
+| `netting_style` / `management_cycle_expected_netting_style_after` | Bind the only cosmetic pond management transition | `PondQueryMenu.receiveLeftClick` increments and applies modulo four | n/a | covered_for_read_compile_output_EVD_297 | Explicit player command only; never an autonomous value candidate. |
+| `management_empty_expected_*` | Bind exact destructive clear reset and preservation receipt | `ClearPond` fish debris loop and every assignment; negative evidence for untouched max occupants, completion flag, sign, output and netting | Wiki secondary confirms all fish are removed and the cracker is lost | covered_for_read_compile_output_EVD_297 | `empty_pond` needs both general PlayerCommand authorization and `confirm_empty_pond=true`. |
+| `menus.menu_specific_state(kind=fish_pond_query)` | Expose bound pond identity, confirmation state and public button bounds | live `PondQueryMenu._pond`, `confirmingEmpty`, and public controls | n/a | covered_for_runtime_diagnosis_EVD_297 | Runtime verifies exact object identity before either menu click. |
+| `fishing.manage_fish_pond` | Keep visual/destructive pond management separate from productive pond service | governance, candidate, DailyPlan, compiler and runtime catalogs | n/a | five_gate_closed_player_command_only / excluded_from_training | Reuses fish-pond movement and native interaction infrastructure; does not duplicate `fishing.service_fish_ponds`. |
+
 ## Fair Wheel Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

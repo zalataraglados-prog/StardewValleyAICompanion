@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
+
+`fishing.manage_fish_pond` 已覆盖两种原版管理操作，并与自动鱼塘服务链保持单一职责：模型可训练的日循环负责收产出和交请求，换网与清塘只响应玩家明确指令。上游要求精确坐标、操作、原因及清塘二次确认；fresh 编译器重新绑定鱼种、数量、请求、饼干、标牌、产出、水色、网样式、站位和安全槽，任何漂移都闭锁。
+
+运行层只通过共享 BFS、作用域右键输入边沿和原生 `PondQueryMenu` 公共按钮执行。隐藏静音样本 `runtime-fish-pond-management-20260830-013602` 已验证换网保全经济状态与清塘的完整 reset/preserve/debris 矩阵。当前对账为 `174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 allowlist / 28 catalogued blocked / 0 Product Executor`，回归为 Core `2027/2027`、Backend `142/142`。下一纵向切片为 `foraging.harvest_fruit_tree`。
+
 ## 2026-08-30 展览会转盘闭环（EVD-296）
 
 `festival.spin_wheel` 已覆盖 Fall 16 原版转盘的完整策略与执行周期。透明桥发布实时入口/站位、数字下注菜单、活动转盘私有状态、完整 Fair 商店与 Stardrop 缺口、零幸运 `22/30` 绿方胜率、有效 `LuckLevel` 及原版随机/计时/结算合同。策略使用 `7/15` 零幸运 Kelly 下注并按需求封顶；精确缺一枚继续复用力量小游戏。

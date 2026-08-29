@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 鱼塘管理玩家命令闭环（EVD-297）
+
+`fishing.manage_fish_pond` 已完成五道证据闭环，但严格保持 `PlayerCommandOnly`，不进入正式训练 allowlist。玩家必须提供精确鱼塘、操作和原因，`empty_pond` 另需操作级确认；自动日计划继续只使用既有 `fishing.service_fish_ponds` 处理产出与请求，不会把换网装饰或清塘破坏性重置混入收益训练。
+
+透明桥发布鱼塘管理状态、四种网样式、空手安全槽、精确站位、清塘前状态及反编译锁定的 reset/preserve 收据，菜单桥发布绑定鱼塘、确认状态和全部公共按钮。运行层复用共享 BFS，经作用域右键边沿和真实 `GameLocation.checkAction -> FishPond.doAction -> PondQueryMenu.receiveLeftClick` 执行；不构造菜单、不调用 `ClearPond`、不直接写鱼塘状态。隐藏静音运行 `runtime-fish-pond-management-20260830-013602` 覆盖换网和确认清塘两支。最新 schema 为 `145/129/16/0`，对账为 `174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 allowlist / 28 catalogued blocked / 0 Product Executor`，回归为 Core `2027/2027`、Backend `142/142`。正式全量训练仍受剩余 28 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `foraging.harvest_fruit_tree`。
+
 ## 2026-08-30 展览会转盘策略与原生随机执行闭环（EVD-296）
 
 `festival.spin_wheel` 已完成五道证据闭环并进入 `StrategyValue` allowlist。模型只决定是否用绿方转盘补齐未获得 Fair Stardrop 的至少两枚星币缺口；编译器从 fresh snapshot 绑定节日、Buildings `308/309`、站位、节庆币、需求、零幸运 `22/30` 分布、有效 `LuckLevel`、数字菜单和 native contract。下注严格为 `min(remainingDemand, floor(festivalScore * 7 / 15))`，即等赔率零幸运 Kelly 比例，不把 50% 误标为 Kelly；`executor.spin_fair_wheel` 保持 `ExecutorCalibration` 与 policy confirmation。

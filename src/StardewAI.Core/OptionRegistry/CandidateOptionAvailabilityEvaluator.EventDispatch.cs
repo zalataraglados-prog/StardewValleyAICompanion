@@ -43,6 +43,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["fishing.catch_fish"] = (snapshot, _) => FishingEventCandidateBuilder.Build(snapshot),
                 ["fishing.collect_crab_pots"] = (snapshot, _) => CrabPotCollectCandidates(snapshot),
                 ["fishing.service_fish_ponds"] = (snapshot, _) => FishPondServiceCandidates(snapshot),
+                ["fishing.manage_fish_pond"] = FishPondManagementCandidates,
                 ["foraging.collect_spawned_objects"] = (snapshot, _) => SpawnedObjectForagingCandidates(snapshot),
                 ["foraging.harvest_ginger"] = (snapshot, _) => GingerHarvestCandidates(snapshot),
                 ["foraging.harvest_bushes"] = (snapshot, _) => BushHarvestCandidates(snapshot),

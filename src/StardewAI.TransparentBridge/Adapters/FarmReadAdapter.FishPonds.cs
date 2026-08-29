@@ -20,6 +20,7 @@ public sealed partial class FarmReadAdapter
         var interactionPoints = ReadFishPondInteractionPoints(farm, pond, player);
         var preferred = interactionPoints.FirstOrDefault();
         var safeSlot = FindSafeToolbarSlot(player);
+        var restoreSlot = player.CurrentToolIndex;
         var output = pond.output.Value;
         ClearanceOutputItemProjection? outputProjection = null;
         var outputItemsJson = string.Empty;
@@ -110,6 +111,22 @@ public sealed partial class FarmReadAdapter
                                     : preferred is null
                                         ? "fish_pond_interaction_point_unavailable"
                                         : "ready";
+        var managementStatus = !exactRuntimeType
+            ? "unsupported_fish_pond_runtime_type"
+            : !completed
+                ? "fish_pond_under_construction"
+                : string.IsNullOrWhiteSpace(pond.fishType.Value)
+                    ? "fish_pond_species_not_set"
+                    : output is not null
+                        ? "fish_pond_output_precedes_management"
+                        : !safeSlot.HasValue
+                            ? "fish_pond_safe_toolbar_slot_unavailable"
+                            : preferred is null
+                                ? "fish_pond_interaction_point_unavailable"
+                                : Game1.activeClickableMenu is not null || Game1.dialogueUp || player.UsingTool || !player.CanMove
+                                    ? "fish_pond_player_or_menu_busy"
+                                    : "ready";
+        var fishQualifiedItemId = ItemRegistry.QualifyItemId(pond.fishType.Value) ?? string.Empty;
 
         return new
         {
@@ -123,7 +140,16 @@ public sealed partial class FarmReadAdapter
             seed_offset = pond.seedOffset.Value,
             has_completed_request = pond.hasCompletedRequest.Value,
             golden_animal_cracker = pond.goldenAnimalCracker.Value,
+            golden_animal_cracker_animation_playing = pond.isPlayingGoldenCrackerAnimation.Value,
+            has_spawned_fish = pond.hasSpawnedFish.Value,
             sign_qualified_item_id = pond.sign.Value?.QualifiedItemId ?? string.Empty,
+            needed_item_qualified_item_id = neededItem?.QualifiedItemId ?? string.Empty,
+            needed_item_count = pond.neededItemCount.Value,
+            output_qualified_item_id_before_management = output?.QualifiedItemId ?? string.Empty,
+            netting_style = pond.nettingStyle.Value,
+            netting_style_count = 4,
+            next_netting_style = (pond.nettingStyle.Value + 1) % 4,
+            override_water_color_packed = pond.overrideWaterColor.Value.PackedValue,
             interaction_points = interactionPoints,
             preferred_target_tile_x = preferred?.target_tile_x,
             preferred_target_tile_y = preferred?.target_tile_y,
@@ -158,7 +184,34 @@ public sealed partial class FarmReadAdapter
             request_expected_last_unlocked_population_gate_after = expectedUnlockedGate,
             request_expected_days_since_spawn_after = 0,
             request_expected_needed_item_count_after = -1,
-            request_expected_has_completed_request_after = true
+            request_expected_has_completed_request_after = true,
+            management_status = managementStatus,
+            management_safe_slot_index = safeSlot,
+            management_restore_slot_index = restoreSlot,
+            management_operations = new[] { "cycle_netting", "empty_pond" },
+            management_invocation_policy = "player_command_only",
+            management_native_contract = "GameLocation.checkAction(right_click)->FishPond.doAction->PondQueryMenu.receiveLeftClick->changeNettingButton|emptyButton->yesButton->FishPond.ClearPond",
+            management_requires_empty_output = true,
+            management_cycle_expected_netting_style_after = (pond.nettingStyle.Value + 1) % 4,
+            management_empty_requires_explicit_confirmation = true,
+            management_empty_expected_fish_debris_qualified_item_id = fishQualifiedItemId,
+            management_empty_expected_fish_debris_count = pond.FishCount,
+            management_empty_expected_fish_type_item_id_after = string.Empty,
+            management_empty_expected_fish_count_after = 0,
+            management_empty_expected_maximum_occupants_after = pond.maxOccupants.Value,
+            management_empty_expected_last_unlocked_population_gate_after = 0,
+            management_empty_expected_days_since_spawn_after = 0,
+            management_empty_expected_needed_item_qualified_item_id_after = string.Empty,
+            management_empty_expected_needed_item_count_after = -1,
+            management_empty_expected_has_completed_request_after = pond.hasCompletedRequest.Value,
+            management_empty_expected_golden_animal_cracker_after = false,
+            management_empty_expected_golden_animal_cracker_animation_after = false,
+            management_empty_expected_has_spawned_fish_after = false,
+            management_empty_expected_override_water_color_packed_after = Color.White.PackedValue,
+            management_empty_expected_output_qualified_item_id_after = output?.QualifiedItemId ?? string.Empty,
+            management_empty_expected_sign_qualified_item_id_after = pond.sign.Value?.QualifiedItemId ?? string.Empty,
+            management_empty_expected_netting_style_after = pond.nettingStyle.Value,
+            management_empty_seed_offset_after_status = "runtime_observed_reseed_0_to_999"
         };
     }
 

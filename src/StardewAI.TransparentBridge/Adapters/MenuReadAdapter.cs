@@ -1,5 +1,6 @@
 using System.Reflection;
 using StardewValley;
+using StardewValley.Buildings;
 using StardewValley.Menus;
 
 namespace StardewAI.TransparentBridge.Adapters;
@@ -304,6 +305,13 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                     tick,
                     AdapterId),
                     Array.Empty<string>()),
+            PondQueryMenu pondQueryMenu =>
+                (Field(
+                    ReadPondQueryMenuState(pondQueryMenu),
+                    "PondQueryMenu exact bound FishPond, confirmation state, and public management buttons",
+                    tick,
+                    AdapterId),
+                    Array.Empty<string>()),
             NamingMenu namingMenu =>
                 (Field(
                     ReadNamingMenuState(namingMenu),
@@ -314,6 +322,44 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             _ => (null, Array.Empty<string>())
         };
     }
+
+    private static object ReadPondQueryMenuState(PondQueryMenu menu)
+    {
+        var pond = typeof(PondQueryMenu)
+            .GetField("_pond", BindingFlags.Instance | BindingFlags.NonPublic)?
+            .GetValue(menu) as FishPond;
+        var confirmingEmpty = ReadPrivateBool(menu, "confirmingEmpty") == true;
+        return new
+        {
+            kind = "fish_pond_query",
+            bound_pond_available = pond is not null,
+            building_tile_x = pond?.tileX.Value,
+            building_tile_y = pond?.tileY.Value,
+            fish_type_item_id = pond?.fishType.Value ?? string.Empty,
+            fish_count = pond?.FishCount,
+            netting_style = pond?.nettingStyle.Value,
+            confirming_empty = confirmingEmpty,
+            global_fade = Game1.globalFade,
+            ok_button = ReadButtonBounds(menu.okButton),
+            empty_button = ReadButtonBounds(menu.emptyButton),
+            change_netting_button = ReadButtonBounds(menu.changeNettingButton),
+            yes_button = ReadButtonBounds(menu.yesButton),
+            no_button = ReadButtonBounds(menu.noButton)
+        };
+    }
+
+    private static object? ReadButtonBounds(ClickableTextureComponent? button) =>
+        button is null
+            ? null
+            : new
+            {
+                available = true,
+                id = button.myID,
+                x = button.bounds.X,
+                y = button.bounds.Y,
+                width = button.bounds.Width,
+                height = button.bounds.Height
+            };
 
     private static object ReadAnimalQueryMenuState(AnimalQueryMenu menu)
     {

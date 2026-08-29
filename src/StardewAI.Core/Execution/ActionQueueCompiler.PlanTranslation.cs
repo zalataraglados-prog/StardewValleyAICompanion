@@ -122,6 +122,7 @@ namespace StardewAI.Core.Execution
                 "collect_crab_pot" => "executor.collect_crab_pot",
                 "collect_fish_pond_output" => "executor.collect_fish_pond_output",
                 "complete_fish_pond_request" => "executor.complete_fish_pond_request",
+                "manage_fish_pond" => "fishing.manage_fish_pond",
                 "collect_animal_product" => "executor.collect_animal_product",
                 "pet_interact" => "executor.pet_interact",
                 "fill_pet_bowl" => "executor.fill_pet_bowl",

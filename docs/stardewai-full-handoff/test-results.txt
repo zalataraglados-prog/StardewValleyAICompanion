@@ -1,3 +1,12 @@
+2026-08-30 EVD-297 native Fish Pond management
+- Locked 1.6.15 source and official Wiki secondary audit PASS: right-click query-menu priority, modulo-four netting, confirmed ClearPond fish debris, complete reset fields and preserved max/request-complete/sign/output/netting fields are covered.
+- Governance and compiler PASS: exact pond/operation/reason required; clear requires operation-level confirmation; PlayerCommandOnly is absent from default candidates and training allowlist; fresh snapshot rebinds all mechanical state and stale coordinates fail closed.
+- Hidden/silent isolated E-drive runtime PASS: `runtime-fish-pond-management-20260830-013602` covered native netting `2->3` with economic state unchanged and native clear `fish_count 1->0` with exact debris, reset/preserve matrix and slot restoration.
+- Installed full snapshot schema PASS: 145 required, 129 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler/native denominator refresh PASS 585/585 with blocking 0.
+- Reconciliation: 174 registered / 202 semantic / 173 compiler-bound / 100 five-gate / 45 training allowlist / 28 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 2027/2027; Backend 142/142; Release projects 0 warnings / 0 errors.
+- Next slice is `foraging.harvest_fruit_tree`.
+
 2026-08-30 EVD-296 native Fall 16 Fair Wheel
 - Locked 1.6.15 source and official Wiki secondary audit PASS: Buildings 308/309, wheelBet/Green, NumberSelectionMenu, 1000ms prestart, exact initial-velocity domain, fixed deceleration, LuckLevel retry gates, 22/30 zero-luck green distribution, native +/- wager and result/exit are covered.
 - Mathematical correction PASS: the wager is `floor(score*7/15)` capped by remaining Stardrop demand, not 50% mislabeled as Kelly. Focused Fair wheel and capability regression PASS 45/45; complete focused bundle previously passed 59/59.

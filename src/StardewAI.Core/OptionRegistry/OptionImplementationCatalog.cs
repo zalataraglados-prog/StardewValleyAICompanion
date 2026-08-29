@@ -230,6 +230,8 @@ public static class OptionImplementationCatalog
             return ImplementationEngineIds.CraftingProcessing;
         if (optionId is "inventory.transfer_item" or "festival.manage_grange_display")
             return ImplementationEngineIds.InventoryTransfer;
+        if (optionId == "fishing.manage_fish_pond")
+            return ImplementationEngineIds.Fishing;
         if (MinigameOptions.Contains(optionId))
             return ImplementationEngineIds.Minigame;
         if (RecoveryOptions.Contains(optionId))
