@@ -10,6 +10,15 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+## Horse Flute Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.horse_flute.rows[]` | Bind every exact base `(O)911` inventory slot, runtime type, stack and temporary-visibility state | locked 1.6.15 `Object.performUseAction` common gate and live inventory | secondary comparison pending | covered_for_read / fresh_projection_required | Temporary invisibility is part of the projection fingerprint; the reusable item reports equal before/after stacks. |
+| `native_base_use_gate` / `horse_warp_restrictions` / `summon_rectangle` | Publish all knowable start restrictions and native error precedence | `Object.performUseAction`; `Utility.GetHorseWarpRestrictionsForFarmer` | secondary comparison pending | covered_for_read_and_gate_EVD_286 | Restriction bits are no-owned-horse=1, indoors=2, no-room=4 and in-use=8; native error precedence is preserved. The delayed callback rechecks the same native function at execution time. |
+| `owned_horse` / `expected_result` / timing and facing fields | Bind the exact globally found owned horse and distinguish adjacent success from delayed summon | `Utility.findHorseForPlayer`; `FarmerTeam.OnRequestHorseWarp`; live Horse identity/location/rider/mutex | n/a | covered_for_read / covered_for_gate / native_runtime_verified | Remote use faces direction 2 and schedules 1500ms; adjacent use leaves position and facing unchanged. Mutex state is observable but not invented as a native start restriction. |
+| `executor.use_horse_flute` | Execute the complete native reusable-flute branch and verify exact horse, landing, facing and inventory receipts | native `Object.performUseAction` plus caller `reduceActiveItemByOne`; no direct production warp/event/position mutation | n/a | five_gate_closed_EVD_286 / executor_calibration_only | Strategy may choose this movement accelerator, but does not learn or emit the mechanical team-event implementation. |
+
 ## Firework Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

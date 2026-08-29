@@ -98,6 +98,7 @@ namespace StardewAI.Core.Execution
                 ["executor.read_book"] = (action, _) => CompileReadBookStep(action),
                 ["executor.read_secret_note"] = (action, _) => CompileReadSecretNoteStep(action),
                 ["executor.use_firework"] = (action, _) => CompileUseFireworkStep(action),
+                ["executor.use_horse_flute"] = (action, _) => CompileUseHorseFluteStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),
                 ["executor.play_junimo_kart"] = (action, _) => CompilePlayJunimoKartStep(action),
                 ["executor.cool_volcano_lava"] = (action, _) => CompileCoolVolcanoLavaStep(action),

@@ -298,7 +298,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "economy.ship_items", "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.catch_fish", "executor.play_junimo_kart",
+            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.use_horse_flute", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -337,7 +337,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_machine_output", "executor.load_machine_input",
             "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item", "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.catch_fish", "executor.play_junimo_kart",
+            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.use_horse_flute", "executor.catch_fish", "executor.play_junimo_kart",
             "executor.cool_volcano_lava", "executor.break_volcano_stone",
             "executor.break_volcano_container", "executor.combat_volcano_monster",
             "executor.mine_stone", "executor.break_container", "executor.break_resource_clump",
@@ -447,7 +447,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.load_machine_input", "executor.name_hatched_animal",
             "executor.craft_machine_item", "executor.craft_storage_item", "executor.craft_quest_item",
             "executor.place_machine", "executor.remove_machine", "executor.place_storage", "executor.place_cookout_kit", "executor.place_tent", "executor.place_crab_pot", "executor.place_fence", "executor.place_flooring", "executor.place_furniture", "executor.place_sign", "executor.set_sign_display_item", "executor.edit_text_sign", "executor.load_crab_pot_bait",
-            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.select_safe_item_slot"
+            "executor.read_book", "executor.read_secret_note", "executor.use_firework", "executor.use_horse_flute", "executor.select_safe_item_slot"
         };
 
         private static readonly HashSet<string> CalibrationOnlyHighLevelIds = Set(
@@ -705,6 +705,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.use_firework"] = VerifiedEvidence(
                         "vanilla_all_three_exact_base_firework_variants_native_placement_transient_collision_fuse_sprite_random_domain_and_single_item_receipt_player_command_only",
                         "EVD-285"),
+                    ["executor.use_horse_flute"] = VerifiedEvidence(
+                        "vanilla_exact_base_horse_flute_all_native_use_and_warp_restrictions_adjacent_noop_delayed_recheck_team_event_mutex_warp_and_reusable_inventory_receipt_executor_calibration_only",
+                        "EVD-286"),
                     ["skills.choose_profession"] = VerifiedEvidence(
                         "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",
                         "EVD-244"),

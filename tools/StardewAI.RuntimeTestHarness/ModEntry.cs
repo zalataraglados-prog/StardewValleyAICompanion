@@ -40,6 +40,7 @@ public sealed partial class ModEntry : Mod
     private ActiveWait? activeWait;
     private ActiveCatchFish? activeCatchFish;
     private ActiveJunimoKart? activeJunimoKart;
+    private ActiveHorseFlute? activeHorseFlute;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -447,6 +448,7 @@ public sealed partial class ModEntry : Mod
         TickWait();
         TickCatchFish();
         TickJunimoKart();
+        TickHorseFlute();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -869,6 +871,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_horse_flute")
+            {
+                pending.Completion.SetResult(ExecuteSetupHorseFluteFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1207,6 +1215,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.use_firework")
             {
                 StartAdjacentTileAction(pending, "use_firework");
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.use_horse_flute")
+            {
+                StartUseHorseFlute(pending);
                 return;
             }
 
@@ -1930,6 +1944,7 @@ public sealed partial class ModEntry : Mod
             activeWait is not null ||
             activeCatchFish is not null ||
             activeJunimoKart is not null ||
+            activeHorseFlute is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

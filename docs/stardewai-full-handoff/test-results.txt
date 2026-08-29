@@ -4097,3 +4097,11 @@ Scope boundary:
 - Installed full snapshot schema PASS: 133 required, 117 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
 - Reconciliation: 157 registered / 197 semantic / 156 compiler-bound / 83 five-gate / 40 training allowlist / 40 catalogued blocked / 0 Product Executor.
 - Final regression PASS: Core 1908/1908; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_horse_flute`.
+
+2026-08-29 EVD-286 native Horse Flute summon
+- Locked 1.6.15 source audit PASS: common object-use gate, four-bit horse-warp restriction mask/error precedence, global owned-horse lookup, adjacent success no-op, remote facing/animation/freeze, 1500ms delayed restriction recheck, team event, Stable horse mutex/native warp and reusable caller stack behavior are covered.
+- TDD RED observed 10 failures from unknown registration/missing capability and runtime, then focused semantic REDs for adjacent-facing preservation and exact team-event Stable binding. Focused GREEN PASS 13/13 covers both success branches, stale projection/restriction/horse/Stable/timing/stack rejection, missing-horse failure closure without exceptions, five gates, native-only warp source guards and the branch-specific facing rule.
+- Hidden/silent isolated E-drive runtime PASS 2/2: `artifacts/runtime-horse-flute/runtime-horse-flute-20260829-120232/summary.json`. Projection, runtime and the native event selected the same Stable horse; the exact owned GUID moved from Farm `56,14` to player `40,7`, adjacent reuse stayed at `40,7`, and both preserved `(O)911` stack 1 and verified the native facing receipt.
+- Installed full snapshot schema PASS: 134 required, 118 readable with provenance, 16 contextual, blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 training allowlist / 39 catalogued blocked / 0 Product Executor.
+- Final regression PASS: Core 1921/1921; Backend 138/138; Release solution build 0 warnings / 0 errors. Next slice is `executor.use_monster_musk`.

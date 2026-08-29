@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-08-29 当前权威检查点：EVD-286
+
+- `executor.use_horse_flute` 已闭合原版马笛 `(O)911` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、原生 `Object.performUseAction` 与严格延迟回执。锁定 1.6.15 反编译确认起始与 1500ms 回调各检查一次 `Utility.GetHorseWarpRestrictionsForFarmer`，远程分支再通过 team event、马匹 mutex 和 `Game1.warpCharacter` 完成原生召回。
+- 透明桥发布完整库存身份/临时不可见状态、四位限制掩码与错误优先级、召回矩形、全地图拥有马匹的 GUID/位置/骑手/mutex 状态、邻近分支、朝向及延迟合同。指纹绑定玩家位置/朝向、限制、马匹身份与库存可见性；`Utility.findHorseForPlayer` 原生遍历全部已加载/生成地点，不依赖模型猜测马厩位置。
+- 运行层只调用 `performUseAction` 和原生调用者的 `reduceActiveItemByOne`；不直接调用 team warp event、不写马匹位置。远程召唤强制朝下并等待精确拥有马匹到达玩家格；已有马在一格邻域内是成功无传送分支并保留原朝向。两条分支都验证可复用马笛堆叠不变。
+- 隐藏静音 E 盘隔离运行 `runtime-horse-flute-20260829-120232` 双分支 PASS：透明投影、执行重绑和原生 team event 选中同一马厩马匹；该 GUID 从 `Farm 56,14` 原生召回 `40,7`，随后邻近使用保持 `40,7`，两次库存均为 `stack=1`。
+- 最终回归为 Core `1921/1921`、Backend `138/138`、Release 全解决方案 `0 warnings / 0 errors`。
+- 最新 full snapshot schema 为 `134 required / 118 readable with provenance / 16 contextual / 0 blocking`。权威对账为 `158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 training allowlist / 39 catalogued blocked / 0 Product Executor`；下一语义切片固定为 `executor.use_monster_musk`。
+
 ## 2026-08-29 当前权威检查点：EVD-285
 
 - `executor.use_firework` 已闭合三种原版烟花 `(O)893/(O)894/(O)895` 的透明读取、fresh 参数重绑定、动作编译、类型化请求、共享相邻移动、原生放置和严格瞬时回执。锁定 1.6.15 分支确认三者映射 `fireworkType=0/1/2` 与源图 X=`256/272/288`，共用 2400ms 引信和延迟火箭。

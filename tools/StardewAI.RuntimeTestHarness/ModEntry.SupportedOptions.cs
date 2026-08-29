@@ -26,6 +26,7 @@ public sealed partial class ModEntry
             "debug.setup_flooring_placement_target",
             "debug.setup_grass_placement_target",
             "debug.setup_firework_target",
+            "debug.setup_horse_flute",
             "debug.setup_furniture_placement_target",
             "debug.setup_sign_placement_target",
             "debug.setup_sign_display_item_target",

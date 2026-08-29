@@ -41,7 +41,8 @@ public static class OptionImplementationCatalog
     private static readonly HashSet<string> MovementOptions = Set(
         "executor.move_to_tile",
         "executor.traverse_connector",
-        "executor.face_direction");
+        "executor.face_direction",
+        "executor.use_horse_flute");
 
     private static readonly HashSet<string> InteractionOptions = Set(
         "executor.interact",

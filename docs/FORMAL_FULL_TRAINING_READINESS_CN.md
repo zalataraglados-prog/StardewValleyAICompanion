@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-29 马笛执行器校准（EVD-286）
+
+`executor.use_horse_flute` 已完成五道执行证据闭环，但训练角色严格为 `ExecutorCalibration`：策略只需决定是否用马笛，机械层从 fresh snapshot 重绑库存、限制掩码、拥有马匹身份、邻近状态、朝向和延迟结果。模型不得预测或复制原生 team event、mutex 与传送副作用。
+
+隐藏静音隔离运行覆盖远程 1500ms 召回与邻近成功无传送两条分支，并验证同一马匹 GUID、精确落点、朝向规则和可复用库存。最新 schema 为 `134 required / 118 readable / 16 contextual / 0 blocking`，对账为 `158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 allowlist / 39 catalogued blocked / 0 Product Executor`。因此该切片不解除 Product Executor、剩余 39 个语义动作、正式长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收等全量训练阻挡。下一语义切片为 `executor.use_monster_musk`。
+
 ## 2026-08-29 烟花玩家命令边界（EVD-285）
 
 `executor.use_firework` 已闭合五道执行证据，但训练 allowlist 保持 `40`。烟花是显式玩家表达命令，不是第三年爷爷 21 分路线、日循环或资源规划的自主欲望；相关运行样本只属于 `player_command_only_executor_evidence`。模型不能学习或猜测共享 RNG 的精确下一值。

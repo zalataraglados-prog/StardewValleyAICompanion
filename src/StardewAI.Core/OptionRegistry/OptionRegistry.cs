@@ -1315,6 +1315,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "explicit player command selects one exact tile and one of the three vanilla firework variants", "native placement creates the exact fuse and rocket sprite graph", "one matching inventory item is consumed", "random rocket acceleration and explosion id remain bounded runtime outcomes rather than guessed reads" },
                 new[] { "block_not_explicitly_authorized", "block_inventory_variant_or_projection_identity_drift", "block_non_native_legal_or_transiently_occupied_target", "block_nonadjacent_stand_or_open_menu", "never_advance_or_guess_shared_rng_during_read", "block_direct_sprite_audio_or_inventory_mutation" }));
 
+            Register(Option("executor.use_horse_flute", "movement", "Use one reusable Horse Flute through the exact native delayed team-warp branch",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.inventory", "player.horse_flute", "menus.active_menu" },
+                new[] { "the native start and delayed horse-warp restrictions both pass", "an owned horse already adjacent is a successful no-op", "otherwise the owned horse is warped through the team event after 1500 ms", "the reusable flute inventory stack is unchanged" },
+                new[] { "block_native_object_use_gate_or_horse_warp_restriction", "block_inventory_or_owned_horse_identity_drift", "block_expected_adjacent_or_delayed_result_drift", "block_open_menu", "block_direct_horse_position_team_event_or_inventory_mutation" }));
+
             Register(Option("executor.select_safe_item_slot", "inventory", "Select safe toolbar slot",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

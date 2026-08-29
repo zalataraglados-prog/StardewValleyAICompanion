@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-29 马笛原生召回闭环（EVD-286）
+
+`executor.use_horse_flute` 已覆盖锁定 1.6.15 的完整原生分支：无马、室内、无落脚空间和马匹占用限制均在上游失败关闭；已有拥有马匹位于当前地点一格邻域内时成功但不传送，否则执行朝下、音频/动画/冻结、1500ms 延迟重检和 team event/mutex 原生召回。透明桥实时发布全部决策输入，编译器只接受 fresh 指纹一致的精确马匹与库存身份。
+
+运行层不复制传送逻辑，只调用原生 `Object.performUseAction` 并验证精确拥有马匹的后状态以及马笛堆叠不变。隐藏静音 E 盘运行两分支均为 `applied/verified`；最终回归为 Core `1921/1921`、Backend `138/138`、Release `0 warnings / 0 errors`。该动作是 `ExecutorCalibration`，不是策略欲望；上层路线可以机械选择它作为移动加速。当前对账为 `158 registered / 197 semantic / 157 compiler-bound / 84 five-gate / 40 allowlist / 39 catalogued blocked / 0 Product Executor`。下一纵向切片为 `executor.use_monster_musk`。
+
 ## 2026-08-29 三色烟花原生放置闭环（EVD-285）
 
 `executor.use_firework` 已覆盖锁定 1.6.15 的全部三色烟花分支。透明桥发布库存身份、三色类型与源图映射、当前地图原生合法区间、目标格临时精灵冲突、2400ms 引信以及完整随机结果域；读取阶段绝不推进共享 `Game1.random`。编译器只接受 fresh snapshot 中精确匹配的库存行、相邻站位与目标格。
