@@ -89,6 +89,13 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.checkAction", "FruitTree.performUseAction", "FruitTree.shake", "FruitTree.GetQuality" }),
             Assumption(
+                "wild_tree_product_harvest",
+                new[] { "foraging.harvest_tree_product", "executor.harvest_tree_product" },
+                new[] { "exact_vanilla_tree", "locked_base_wild_tree_data", "mature_seed_ready_untapped", "native_shake_idle", "empty_toolbar_slot", "adjacent_interaction_tile", "menu_clear" },
+                new[] { "route_length", "native_shake_and_debris_settlement_ticks", "complete_stochastic_output_domain" },
+                Array.Empty<string>(),
+                new[] { "GameLocation.checkAction", "Tree.performUseAction", "Tree.shake", "Utility.tryRollMysteryBox", "Utility.trySpawnRareObject", "Data/WildTrees" }),
+            Assumption(
                 "green_rain_resource_clump",
                 new[] { "foraging.clear_green_rain_bushes", "executor.break_current_location_resource_clump" },
                 new[] { "exact_vanilla_resource_clump_44_or_46", "axe_available", "perimeter_stand_tile", "menu_clear" },

@@ -1,3 +1,11 @@
+2026-08-30 EVD-299 native ordinary Tree product harvest
+- Locked 1.6.15 source/data audit PASS: exact Tree.performUseAction/Tree.shake seed gate, all base tree seed identities, Fall maple days 14-28 hazelnut replacement, Island palm golden-coconut continuation, mystery/cracker/cosmetic/skill-book/Qi-bean optional domains, zero Foraging XP and tapped exclusion are covered.
+- Focused mainline/source/runtime tests PASS after introducing the high-level and primitive registrations, fresh mechanical rebind, typed transport, complete output-domain matching and direct-mutation source guards.
+- Hidden/silent isolated E-drive matrix PASS 6/6: `runtime-wild-tree-ordinary-20260830`, `runtime-wild-tree-hazelnut-20260830`, `runtime-wild-tree-island-palm-reset-20260830`, `runtime-wild-tree-no_seed-20260830`, `runtime-wild-tree-active_shake-20260830`, `runtime-wild-tree-tapped-20260830`. Successful branches used native checkAction and verified combined inventory/debris conservation, seed consumption, shaken state, zero XP and safe-slot restoration.
+- Installed full snapshot schema remains 145 required, 129 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 training allowlist / 26 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2035/2035; Backend 144/144; full solution build 0 warnings / 0 errors. Next slice is `foraging.rummage_garbage`.
+
 2026-08-30 EVD-298 native Fruit Tree harvest
 - Locked 1.6.15 decompile PASS: exact base FruitTree maturity/stump/maxShake/live-fruit gates, ordinary item identity, GetQuality result, lightning `(O)382` substitution, fruit clear and zero Foraging XP are covered. Official Wiki is secondary confirmation only.
 - Mainline and governance PASS: one `foraging.harvest_fruit_tree -> harvest_fruit_tree -> executor.harvest_fruit_tree` chain; fresh compiler rebinds exact target, outputs, geometry and native contract; unavailable states are excluded upstream; high-level action alone enters the allowlist.

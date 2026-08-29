@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 普通树产品原生收获闭环（EVD-299）
+
+`foraging.harvest_tree_product` 已按完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行发布精确基础 `Tree` 身份、种类、成熟/树桩/tapped/种子/摇动状态、`Data/WildTrees` 合同状态、确定输出、完整随机可选输出域、零经验合同、安全空槽和相邻交互状态。候选层先排除自定义类型、数据漂移、未成熟、树桩、tapped、无种子、采集等级不足、摇动中、输出不完整、无空槽及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。
+
+运行层复用共享 terrain BFS 和连续移动，到站后才冻结背包与 debris 联合基线，并只经 `GameLocation.checkAction -> Tree.performUseAction -> Tree.shake` 执行。隐藏静音矩阵覆盖普通种子、秋季枫树榛子、岛屿棕榈及无种子/摇动中/tapped 上游排除；随机附加掉落只按完整有界域验收，不作为监督标签。当前对账为 `178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 allowlist / 26 catalogued blocked / 0 Product Executor`，回归为 Core `2035/2035`、Backend `144/144`。下一纵向切片为 `foraging.rummage_garbage`；它必须复用现有移动、对象交互、输出守恒和任务资源反馈，不得复制路由或拾取执行器。
+
 ## 2026-08-30 果树原生收获闭环（EVD-298）
 
 `foraging.harvest_fruit_tree` 已按一个完整纵向切片进入正式策略训练范围。透明桥在既有 terrain feature 行中发布精确 base FruitTree 身份、成熟/树桩/摇动状态、实时 fruit 列表、按标识与品质分组的最终输出、雷击替换、零经验合同和相邻交互状态。候选层先排除自定义类型、未成熟、树桩、空树、瞬态空果、摇动中、输出不完整及无可达站位，编译器再从 fresh snapshot 重绑全部机械字段。

@@ -30,6 +30,7 @@ public sealed partial class ModEntry
         {
             "bush" => ExecuteSetupBushSourceFixture(request),
             "fruit_tree" => ExecuteSetupFruitTreeSourceFixture(request),
+            "wild_tree" => ExecuteSetupWildTreeProductFixture(request),
             "ginger" => ExecuteSetupGingerSourceFixture(request),
             "spawned_object" => ExecuteSetupSpawnedObjectFixture(request),
             _ => BlockedWithPrimitive(
@@ -39,6 +40,54 @@ public sealed partial class ModEntry
                 "rule_key=" + request.RuleKey,
                 "forage_source_fixture_rule_key_invalid")
         };
+    }
+
+    private TrainingExecutionResult ExecuteSetupWildTreeProductFixture(TrainingExecutionRequest request)
+    {
+        var started = DateTimeOffset.UtcNow.ToString("O");
+        var profile = string.IsNullOrWhiteSpace(request.FixtureWildTreeProductProfile) ? "ordinary_seed" : request.FixtureWildTreeProductProfile;
+        if (profile is not ("ordinary_seed" or "fall_hazelnut" or "island_palm" or "no_seed" or "active_shake" or "tapped"))
+            return BlockedWithPrimitive(request, "debug_setup_forage_source_fixture", "current_location.terrain_features[target].tree_product_harvest_status=ready", "fixture_wild_tree_product_profile=" + profile, "fixture_wild_tree_product_profile_unknown");
+        if (!TryResolveForageFixtureLocation(request, out var location, out var target, out var reason))
+            return BlockedWithPrimitive(request, "debug_setup_forage_source_fixture", "current_location.terrain_features[target].tree_product_harvest_status=ready", "location_or_target=invalid", reason);
+
+        if (profile == "island_palm")
+        {
+            Game1.currentLocation = location;
+            Game1.player.currentLocation = location;
+            location.resetForPlayerEntry();
+        }
+        ClearForageFixtureArea(location, target, 1, 1);
+        var before = ForageFixtureObservedEffect(location, target);
+        Game1.currentSeason = profile == "fall_hazelnut" ? "fall" : "spring";
+        Game1.dayOfMonth = profile == "fall_hazelnut" ? 14 : 1;
+        Game1.player.foragingLevel.Value = Math.Max(1, Game1.player.foragingLevel.Value);
+        var treeType = profile switch { "fall_hazelnut" => "2", "island_palm" => "6", _ => "1" };
+        var tree = new Tree(treeType, Tree.treeStage);
+        tree.hasSeed.Value = profile != "no_seed";
+        tree.maxShake = profile == "active_shake" ? 1f : 0f;
+        tree.tapped.Value = profile == "tapped";
+        tree.wasShakenToday.Value = false;
+        location.terrainFeatures[target.ToVector2()] = tree;
+        var emptySlot = Enumerable.Range(0, Math.Min(12, Game1.player.Items.Count)).FirstOrDefault(index => Game1.player.Items[index] is null);
+        if (Game1.player.Items[emptySlot] is not null) Game1.player.Items[emptySlot] = null;
+        Game1.player.CurrentToolIndex = emptySlot == 0 && Game1.player.Items.Count > 1 ? 1 : 0;
+        var moved = MoveFixtureFarmerToLocationAdjacent(location, target, out var stand, out var moveReason);
+        var projection = ProjectRuntimeWildTreeProduct(tree);
+        var expectedStatus = profile switch
+        {
+            "no_seed" => "blocked_tree_has_no_seed",
+            "active_shake" => "blocked_tree_shake_in_progress",
+            "tapped" => "blocked_tree_is_tapped",
+            _ => "ready"
+        };
+        var expectedId = profile == "fall_hazelnut" ? "(O)408" : tree.GetData().SeedItemId;
+        var verified = moved && projection.Status == expectedStatus &&
+            projection.GuaranteedOutputs.All(output => output.QualifiedItemId == ItemRegistry.Create(expectedId).QualifiedItemId) &&
+            (profile != "island_palm" || location.InIslandContext()) && AreAdjacent(stand, target);
+        return ForageFixtureResult(request, started, location, target, stand, before, ForageFixtureObservedEffect(location, target), "wild_tree",
+            projection.GuaranteedOutputs.FirstOrDefault()?.QualifiedItemId ?? string.Empty, verified,
+            verified ? "isolated_native_wild_tree_" + profile : moved ? "fixture_wild_tree_product_status=" + projection.Status : moveReason);
     }
 
     private TrainingExecutionResult ExecuteSetupFruitTreeSourceFixture(
@@ -479,10 +528,14 @@ public sealed partial class ModEntry
         var fruitTree = location.terrainFeatures.TryGetValue(tile, out var feature)
             ? feature as FruitTree
             : null;
+        var wildTree = location.terrainFeatures.TryGetValue(tile, out feature)
+            ? feature as Tree
+            : null;
         return "location=" + location.NameOrUniqueName +
             ";target=" + target.X + "," + target.Y +
             ";bush_ready=" + (bush?.readyForHarvest() == true).ToString().ToLowerInvariant() +
             ";ginger_ready=" + ginger.ToString().ToLowerInvariant() +
-            ";fruit_tree_status=" + (fruitTree is null ? "missing" : ProjectFruitTreeHarvest(fruitTree).Status);
+            ";fruit_tree_status=" + (fruitTree is null ? "missing" : ProjectFruitTreeHarvest(fruitTree).Status) +
+            ";wild_tree_product_status=" + (wildTree is null ? "missing" : ProjectRuntimeWildTreeProduct(wildTree).Status);
     }
 }

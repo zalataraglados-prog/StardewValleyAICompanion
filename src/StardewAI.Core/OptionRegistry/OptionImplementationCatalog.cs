@@ -143,6 +143,7 @@ public static class OptionImplementationCatalog
         "executor.harvest_ginger",
         "executor.harvest_bush",
         "executor.harvest_fruit_tree",
+        "executor.harvest_tree_product",
         "executor.use_treasure_totem",
         "executor.collect_animal_product",
         "executor.pet_interact",

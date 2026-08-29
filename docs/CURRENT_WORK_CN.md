@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-299
+
+- `foraging.harvest_tree_product` 已闭合普通原版 `Tree` 的透明读取、上游排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 terrain BFS、原生摇树与完整输出域回执。唯一动作链为 `harvest_tree_product -> executor.harvest_tree_product`；果树、砍树、清障和苔藓采集继续使用各自既有语义，不新增第二套移动或拾取系统。
+- 锁定 1.6.15 `Tree.performUseAction -> shake` 与 `Data/WildTrees` 确认：成熟、非树桩、未 tapped、有种子、满足原生采集等级门且 `maxShake==0` 时才形成候选。默认种子、秋季枫树 `(O)408` 榛子替换、岛屿棕榈 `(O)88` 椰子及可选 `(O)791` 金色椰子均按实时地点和数据投影；神秘箱、金色动物饼干、原生稀有物品族、技能书和齐豆只发布完整有界输出域，不预读 RNG。锁定数据的榛子日期为秋 14–28 日；Wiki 页面存在 14/15 日起始描述差异，运行合同以数据与反编译为准。
+- 运行层到站后冻结背包与 debris 的联合输出基线，临时切到经 fresh snapshot 验证的空工具栏槽，只调用一次 `GameLocation.checkAction`，并在 `finally` 恢复槽位；不直接调用 `Tree.shake`，不写树、RNG、debris、库存或技能。隐藏静音 E 盘矩阵全部 PASS：普通种子、秋季榛子、岛屿棕榈、无种子排除、摇动中排除、tapped 排除；成功分支验证确定输出、可选输出域、种子消耗、当日摇动标记、零 Foraging XP 与槽位恢复。
+- full snapshot schema 仍为 `145 required / 129 readable with provenance / 16 contextual / 0 blocking`；权威对账为 `178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 training allowlist / 26 catalogued blocked / 0 Product Executor`。完整回归为 Core `2035/2035`、Backend `144/144`，全解构建 `0 warnings / 0 errors`；下一语义切片固定为 `foraging.rummage_garbage`。
+
 ## 2026-08-30 当前权威检查点：EVD-298
 
 - `foraging.harvest_fruit_tree` 已闭合当前地点果树的透明读取、上游候选排除、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS 与原生摇树回执；唯一动作链为 `harvest_fruit_tree -> executor.harvest_fruit_tree`，没有新增第二套路由或移动系统。

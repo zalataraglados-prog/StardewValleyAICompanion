@@ -59,11 +59,15 @@ public sealed partial class CurrentLocationReadAdapter
             ? (int?)null
             : ExpectedTreeAxeHits(tree, bestAxe.UpgradeLevel);
 
+        var treeProduct = ProjectWildTreeProduct(tree);
+
         return new
         {
             tile_x = (int)tile.X,
             tile_y = (int)tile.Y,
             type = feature.GetType().FullName,
+            runtime_type = feature.GetType().FullName,
+            is_tree = true,
             tree_type = tree.treeType.Value,
             growth_stage = tree.growthStage.Value,
             health = tree.health.Value,
@@ -72,6 +76,27 @@ public sealed partial class CurrentLocationReadAdapter
             fertilized = tree.fertilized.Value,
             has_moss = tree.hasMoss.Value,
             stop_growing_moss = tree.stopGrowingMoss.Value,
+            has_seed = tree.hasSeed.Value,
+            was_shaken_today = tree.wasShakenToday.Value,
+            max_shake = tree.maxShake,
+            is_temporary_green_rain_tree = tree.isTemporaryGreenRainTree.Value,
+            tree_product_harvest_status = treeProduct.Status,
+            tree_product_data_contract_status = treeProduct.DataContractStatus,
+            tree_product_branch = treeProduct.Branch,
+            tree_product_seed_item_id = treeProduct.SeedItemId,
+            tree_product_primary_qualified_item_id = treeProduct.PrimaryQualifiedItemId,
+            tree_product_primary_quality = treeProduct.PrimaryQuality,
+            tree_product_primary_quantity = treeProduct.PrimaryQuantity,
+            tree_product_guaranteed_outputs = treeProduct.GuaranteedOutputs,
+            tree_product_optional_output_domain = treeProduct.OptionalOutputDomain,
+            tree_product_output_distribution_status = treeProduct.OutputDistributionStatus,
+            tree_product_expected_has_seed_after = false,
+            tree_product_expected_was_shaken_today_after = true,
+            tree_product_expected_foraging_experience_delta = 0,
+            tree_product_safe_slot_index = treeProduct.SafeSlotIndex,
+            tree_product_restore_slot_index = treeProduct.RestoreSlotIndex,
+            tree_product_projection_status = treeProduct.ProjectionStatus,
+            tree_product_native_contract = WildTreeProductNativeContract,
             tree_treatment_required_qualified_item_id = "(O)419",
             tree_treatment_native_allowed = tree.GetType() == typeof(Tree) && !tree.stopGrowingMoss.Value,
             tree_treatment_executor_status = tree.GetType() != typeof(Tree)
@@ -102,7 +127,7 @@ public sealed partial class CurrentLocationReadAdapter
             harvest_experience_projection_status = tree.GetType() == typeof(Tree)
                 ? "exact_from_decompiled_native_tree_branches"
                 : "unavailable_custom_tree_runtime_type",
-            source = "Tree live net fields; Tree.performToolAction/performTreeFall/CreateMossItem; Object.placementAction (O)419"
+            source = "Tree live net fields; Data/WildTrees locked base 1.6.15; Tree.performUseAction/shake; Tree.performToolAction/performTreeFall/CreateMossItem; Object.placementAction (O)419"
         };
     }
 

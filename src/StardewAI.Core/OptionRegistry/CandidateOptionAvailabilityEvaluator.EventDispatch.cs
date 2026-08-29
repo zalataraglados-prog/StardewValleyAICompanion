@@ -48,6 +48,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["foraging.harvest_ginger"] = (snapshot, _) => GingerHarvestCandidates(snapshot),
                 ["foraging.harvest_bushes"] = (snapshot, _) => BushHarvestCandidates(snapshot),
                 ["foraging.harvest_fruit_tree"] = (snapshot, _) => FruitTreeHarvestCandidates(snapshot),
+                ["foraging.harvest_tree_product"] = (snapshot, _) => WildTreeProductHarvestCandidates(snapshot),
                 ["foraging.clear_green_rain_bushes"] = (snapshot, _) => GreenRainResourceClumpCandidates(snapshot),
                 ["foraging.pan_ore_spot"] = (snapshot, _) => PanningCandidates(snapshot),
                 ["mining.reach_depth"] = MiningReachDepthCandidates,

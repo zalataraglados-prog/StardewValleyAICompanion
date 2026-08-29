@@ -8,7 +8,7 @@ param(
     [string] $LocationId = "Forest",
     [int] $TargetTileX = 64,
     [int] $TargetTileY = 15,
-    [ValidateSet("bush", "ginger", "fruit_tree")]
+    [ValidateSet("bush", "ginger", "fruit_tree", "wild_tree")]
     [string] $SourceKind = "bush",
     [ValidateSet("none", "ordinary_quest", "special_order")]
     [string] $TaskFamily = "ordinary_quest",
@@ -19,8 +19,10 @@ param(
     [string] $GingerFixtureProfile = "dry_standard",
     [ValidateSet("single_normal", "triple_gold", "lightning_coal", "empty", "active_shake")]
     [string] $FruitTreeFixtureProfile = "single_normal",
+    [ValidateSet("ordinary_seed", "fall_hazelnut", "island_palm", "no_seed", "active_shake", "tapped")]
+    [string] $WildTreeFixtureProfile = "ordinary_seed",
     [switch] $FillInventory,
-    [ValidateSet("ready", "blocked_insufficient_energy", "golden_walnut_already_collected", "bush_shake_cooldown_active", "fruit_tree_has_no_fruit", "fruit_tree_shake_in_progress")]
+    [ValidateSet("ready", "blocked_insufficient_energy", "golden_walnut_already_collected", "bush_shake_cooldown_active", "fruit_tree_has_no_fruit", "fruit_tree_shake_in_progress", "blocked_tree_has_no_seed", "blocked_tree_shake_in_progress", "blocked_tree_is_tapped")]
     [string] $ExpectedSourceStatus = "ready",
     [switch] $KeepGameRunning
 )
@@ -96,7 +98,8 @@ function Find-ForageSource {
             [int]$_.tile_y -eq $TargetTileY -and
             (($SourceKind -eq "bush" -and $_.is_bush -eq $true) -or
              ($SourceKind -eq "ginger" -and $_.is_ginger -eq $true) -or
-             ($SourceKind -eq "fruit_tree" -and $_.is_fruit_tree -eq $true))
+             ($SourceKind -eq "fruit_tree" -and $_.is_fruit_tree -eq $true) -or
+             ($SourceKind -eq "wild_tree" -and [string]$_.runtime_type -eq "StardewValley.TerrainFeatures.Tree"))
         } |
         Select-Object -First 1
 }
@@ -264,6 +267,7 @@ try {
         fixture_bush_profile = if ($SourceKind -eq "bush") { $BushFixtureProfile } else { "" }
         fixture_ginger_profile = if ($SourceKind -eq "ginger") { $GingerFixtureProfile } else { "" }
         fixture_fruit_tree_profile = if ($SourceKind -eq "fruit_tree") { $FruitTreeFixtureProfile } else { "" }
+        fixture_wild_tree_product_profile = if ($SourceKind -eq "wild_tree") { $WildTreeFixtureProfile } else { "" }
         debug_fill_inventory = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
     }
     $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest
@@ -277,6 +281,7 @@ try {
         "bush" { [string]$source.bush_harvest_status }
         "ginger" { [string]$source.ginger_harvest_status }
         "fruit_tree" { [string]$source.fruit_tree_harvest_status }
+        "wild_tree" { [string]$source.tree_product_harvest_status }
     }
     if ($null -eq $source -or $sourceStatus -ne $ExpectedSourceStatus) {
         Write-JsonFile (Join-Path $runDirectory "source-snapshot-rejected.json") $sourceSnapshot
@@ -286,6 +291,7 @@ try {
         "bush" { [string]$source.bush_output_qualified_item_id }
         "ginger" { [string]$source.ginger_output_qualified_item_id }
         "fruit_tree" { [string](@($source.fruit_tree_expected_outputs)[0].qualified_item_id) }
+        "wild_tree" { [string](@($source.tree_product_guaranteed_outputs)[0].qualified_item_id) }
     }
 
     $taskSetupResult = [pscustomobject]@{
@@ -325,7 +331,7 @@ try {
             run_id = $RunId
             save_slot = $SaveSlot
             source_kind = $SourceKind
-            fixture_profile = switch ($SourceKind) { "bush" { $BushFixtureProfile } "ginger" { $GingerFixtureProfile } "fruit_tree" { $FruitTreeFixtureProfile } }
+            fixture_profile = switch ($SourceKind) { "bush" { $BushFixtureProfile } "ginger" { $GingerFixtureProfile } "fruit_tree" { $FruitTreeFixtureProfile } "wild_tree" { $WildTreeFixtureProfile } }
             location_id = $LocationId
             target_tile = "$TargetTileX,$TargetTileY"
             task_family = $TaskFamily
@@ -353,7 +359,7 @@ try {
         queue_id = "runtime-forage-task-source"
         queue_item_id = "runtime-forage-task-source.harvest"
         before_state_hash = $beforeHarvestSnapshot.state_hash
-        option_id = switch ($SourceKind) { "bush" { "executor.harvest_bush" } "ginger" { "executor.harvest_ginger" } "fruit_tree" { "executor.harvest_fruit_tree" } }
+        option_id = switch ($SourceKind) { "bush" { "executor.harvest_bush" } "ginger" { "executor.harvest_ginger" } "fruit_tree" { "executor.harvest_fruit_tree" } "wild_tree" { "executor.harvest_tree_product" } }
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
         save_isolation_path = $savesPath
@@ -363,12 +369,12 @@ try {
         target_tile_x = $TargetTileX
         target_tile_y = $TargetTileY
         qualified_item_id = $qualifiedOutputId
-        quantity = switch ($SourceKind) { "bush" { [int]$source.bush_output_quantity_min } "ginger" { [int]$source.ginger_output_quantity_min } "fruit_tree" { [int]$source.fruit_tree_expected_output_quantity_total } }
-        expected_output_quality = switch ($SourceKind) { "bush" { [int]$source.bush_output_quality } "ginger" { [int]$source.ginger_output_quality } "fruit_tree" { [int](@($source.fruit_tree_expected_outputs)[0].quality) } }
-        expected_foraging_experience_delta = switch ($SourceKind) { "bush" { [int]$source.bush_foraging_experience_on_success_min } "ginger" { [int]$source.ginger_foraging_experience_on_success_min } "fruit_tree" { 0 } }
+        quantity = switch ($SourceKind) { "bush" { [int]$source.bush_output_quantity_min } "ginger" { [int]$source.ginger_output_quantity_min } "fruit_tree" { [int]$source.fruit_tree_expected_output_quantity_total } "wild_tree" { 1 } }
+        expected_output_quality = switch ($SourceKind) { "bush" { [int]$source.bush_output_quality } "ginger" { [int]$source.ginger_output_quality } "fruit_tree" { [int](@($source.fruit_tree_expected_outputs)[0].quality) } "wild_tree" { [int](@($source.tree_product_guaranteed_outputs)[0].quality) } }
+        expected_foraging_experience_delta = switch ($SourceKind) { "bush" { [int]$source.bush_foraging_experience_on_success_min } "ginger" { [int]$source.ginger_foraging_experience_on_success_min } "fruit_tree" { 0 } "wild_tree" { 0 } }
         max_movement_tiles = 16
     }
-    if ($SourceKind -in @("bush", "fruit_tree")) {
+    if ($SourceKind -in @("bush", "fruit_tree", "wild_tree")) {
         $harvestRequest.interaction_tile_x = $TargetTileX
         $harvestRequest.interaction_tile_y = $TargetTileY
         $harvestRequest.stand_tile_x = [int]$beforeHarvestSnapshot.state.player.tile_x.value
@@ -381,6 +387,20 @@ try {
             $harvestRequest.expected_output_items_json = ConvertTo-Json -InputObject @($source.fruit_tree_expected_outputs) -Depth 8 -Compress
             $harvestRequest.fruit_tree_projection_status = [string]$source.fruit_tree_projection_status
             $harvestRequest.fruit_tree_native_contract = [string]$source.fruit_tree_native_contract
+        }
+        if ($SourceKind -eq "wild_tree") {
+            $harvestRequest.tree_product_tree_type = [string]$source.tree_type
+            $harvestRequest.expected_tree_has_seed_before = [bool]$source.has_seed
+            $harvestRequest.expected_tree_has_seed_after = [bool]$source.tree_product_expected_has_seed_after
+            $harvestRequest.expected_tree_was_shaken_today_before = [bool]$source.was_shaken_today
+            $harvestRequest.expected_tree_was_shaken_today_after = [bool]$source.tree_product_expected_was_shaken_today_after
+            $harvestRequest.expected_output_items_json = ConvertTo-Json -InputObject @($source.tree_product_guaranteed_outputs) -Depth 8 -Compress
+            $harvestRequest.tree_product_output_domain_json = ConvertTo-Json -InputObject @($source.tree_product_optional_output_domain) -Depth 8 -Compress
+            $harvestRequest.tree_product_output_domain_contract = [string]$source.tree_product_output_distribution_status
+            $harvestRequest.tree_product_projection_status = [string]$source.tree_product_projection_status
+            $harvestRequest.tree_product_native_contract = [string]$source.tree_product_native_contract
+            $harvestRequest.safe_slot_index = [int]$source.tree_product_safe_slot_index
+            $harvestRequest.restore_slot_index = [int]$source.tree_product_restore_slot_index
         }
     } else {
         $harvestRequest.tool_slot_index = [int]$source.ginger_tool_slot_index
@@ -400,6 +420,8 @@ try {
         $null -ne $sourceAfter -and [string]$sourceAfter.bush_harvest_status -ne "ready"
     } elseif ($SourceKind -eq "fruit_tree") {
         $null -ne $sourceAfter -and [int]$sourceAfter.fruit_count -eq 0
+    } elseif ($SourceKind -eq "wild_tree") {
+        $null -ne $sourceAfter -and $sourceAfter.has_seed -eq $false
     } else {
         $null -eq $sourceAfter
     }
@@ -464,7 +486,7 @@ try {
         run_id = $RunId
         save_slot = $SaveSlot
         source_kind = $SourceKind
-        fixture_profile = switch ($SourceKind) { "bush" { $BushFixtureProfile } "ginger" { $GingerFixtureProfile } "fruit_tree" { $FruitTreeFixtureProfile } }
+        fixture_profile = switch ($SourceKind) { "bush" { $BushFixtureProfile } "ginger" { $GingerFixtureProfile } "fruit_tree" { $FruitTreeFixtureProfile } "wild_tree" { $WildTreeFixtureProfile } }
         inventory_full = $SourceKind -eq "ginger" -and $FillInventory.IsPresent
         smoke_mods_path = $smokeModsPath
         loaded_mod_allowlist = @(

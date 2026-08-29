@@ -187,6 +187,9 @@ namespace StardewAI.Core.Execution
                 case "foraging.harvest_fruit_tree":
                 case "executor.harvest_fruit_tree":
                     return EstimateCompiledSteps(item, "native_fruit_tree_shake_steps.v1");
+                case "foraging.harvest_tree_product":
+                case "executor.harvest_tree_product":
+                    return EstimateCompiledSteps(item, "native_wild_tree_product_shake_steps.v1");
                 case "foraging.clear_green_rain_bushes":
                 case "executor.break_current_location_resource_clump":
                     return EstimateCompiledSteps(item, "native_green_rain_resource_clump_steps.v1");
@@ -375,6 +378,11 @@ namespace StardewAI.Core.Execution
             if (item.OptionId is "foraging.harvest_fruit_tree" or "executor.harvest_fruit_tree")
             {
                 return assumptionRegistry.GetRequired("fruit_tree_harvest");
+            }
+
+            if (item.OptionId is "foraging.harvest_tree_product" or "executor.harvest_tree_product")
+            {
+                return assumptionRegistry.GetRequired("wild_tree_product_harvest");
             }
 
             if (item.OptionId is "foraging.clear_green_rain_bushes" or "executor.break_current_location_resource_clump")

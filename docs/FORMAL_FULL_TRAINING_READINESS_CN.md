@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 普通树产品训练准入（EVD-299）
+
+`foraging.harvest_tree_product` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否收取当前可用普通树产品；树种、地点、站位、路径、安全空槽、确定掉落和随机附加掉落域全部由编译执行层机械生成并在 fresh snapshot 重绑。自定义树、数据漂移、未成熟、树桩、tapped、无种子、原生等级门不满足、摇动中、输出域不完整及不可达目标在上游直接排除。
+
+隐藏静音 E 盘矩阵覆盖普通种子、秋季榛子、岛屿棕榈和三类排除分支。生产执行只调用一次原生 `GameLocation.checkAction`，以背包加 debris 守恒验收确定输出及至多一个有界可选输出，不读取或改写 RNG。最新 schema 仍为 `145/129/16/0`；对账为 `178 registered / 204 semantic / 177 compiler-bound / 102 five-gate / 47 allowlist / 26 catalogued blocked / 0 Product Executor`，回归为 Core `2035/2035`、Backend `144/144`。正式全量训练仍受剩余 26 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一语义切片为 `foraging.rummage_garbage`。
+
 ## 2026-08-30 果树收获训练准入（EVD-298）
 
 `foraging.harvest_fruit_tree` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入 `StrategyValue` allowlist。小模型只决定是否在日计划中收获已就绪果树；位置、站位、路径、交互、live fruit、品质、雷击替换、数量与零经验回执全部由编译执行层机械生成并在 fresh snapshot 重绑。空树、未成熟、树桩、摇动中、自定义类型和不可达目标在上游直接排除，不产生无意义训练阻塞。
