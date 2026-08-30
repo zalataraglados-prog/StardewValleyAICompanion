@@ -4,11 +4,10 @@
   "source_status": "native_decompile_scanned",
   "decompile_root": "I:\\StardewValleyAICompanion-decompile-linux-server-1.6.15",
   "surface_count": 322,
-  "mapped_count": 88,
-  "catalogued_blocked_surface_count": 80,
-  "catalogued_blocked_action_count": 23,
+  "mapped_count": 92,
+  "catalogued_blocked_surface_count": 76,
+  "catalogued_blocked_action_count": 22,
   "catalogued_blocked_action_ids": [
-    "minigame.play_calico_jack",
     "minigame.play_crane_game",
     "minigame.play_darts",
     "minigame.play_junimo_kart",
@@ -3656,7 +3655,7 @@
       "mappedOptionIds": [
         "minigame.play_calico_jack"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3673,7 +3672,7 @@
       "mappedOptionIds": [
         "minigame.play_calico_jack"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3690,7 +3689,7 @@
       "mappedOptionIds": [
         "minigame.play_calico_jack"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },
@@ -3707,7 +3706,7 @@
       "mappedOptionIds": [
         "minigame.play_calico_jack"
       ],
-      "semanticCoverageStatus": "mapped_to_catalogued_blocked_action",
+      "semanticCoverageStatus": "mapped_to_registered_option",
       "scopeDisposition": "target_actor_action",
       "evidenceBasis": "decompiled runtime type and native input member"
     },

@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-304
+
+- `minigame.play_calico_jack` 已闭合透明读取、自主需求候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享路线、原生牌桌/对话/小游戏输入和严格齐币结算回执。唯一动作链为 `minigame.play_calico_jack -> play_calico_jack -> executor.play_calico_jack`；生产执行不直接写牌、RNG、齐币、牌局结果或统计。
+- 锁定 1.6.15 反编译确认低注 `ClubCards` 为 100、高注 `BlackJack 1000`，初始牌和后续抽牌共用由 `timesPlayedCalicoJack / DaysPlayed / uniqueID` 建立的确定性随机流；庄家 18/19/20 的对玩家分支、抽牌偏置和结算均已完整复刻到只读投影。Wiki 关于 Luck 不影响牌局的概述不能覆盖源码：基础牌局不消费 Luck，但原生 Qi fruit `999` 分支明确读取 `DailyLuck + LuckLevel`，透明桥保留这一冲突及实时值。
+- 自主候选严格限定为玩家缺少赌场 Rarecrow `(BC)126` 且 Deluxe Scarecrow 依赖仍开放时补足 `10000` 齐币。每次只允许一局；正收益种子且余额至少 1000 时选高注，损失/平局种子降到低注，若只剩 100 且投影为损失则上游延后。该动作是 `R2 Consumptive / PolicyAuthorizationRequired`，不是逐局显式确认，因此在证据闭合后进入策略训练 allowlist。
+- 隐藏静音 E 盘矩阵 `3/3` PASS：高注 seed 1 站牌庄家爆牌 `+1000`、低注 seed 23 站牌庄家更高 `-100`、低注 seed 4 首次要牌后庄家爆牌 `+100`。证据为 `artifacts/runtime-calico-jack-smoke/runtime-calico-jack-smoke-20260830-085329/summary.json`。
+- 最新 full snapshot 为 `151 required / 135 readable with provenance / 16 contextual / 0 blocking`；对账为 `188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 training allowlist / 22 catalogued blocked / 0 Product Executor`。原生分母为 `322 surfaces / 448 branches / 150 map tokens` 且 blocking 为 0；Core `2060/2060`、Backend `148/148`、Release `0 warnings / 0 errors`。冻结目录的下一切片为 `minigame.play_crane_game`。
+
 ## 2026-08-30 当前权威检查点：EVD-303
 
 - `island.field_office_survey` 已闭合透明读取、自主候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 `FieldOfficeSurvey -> Survey_Yes -> PurpleFlowerSurvey/PurpleStarfishSurvey` 对话输入和严格结算回执。唯一动作链为 `island.field_office_survey -> answer_field_office_survey -> executor.answer_field_office_survey`；生产执行不直接写植物、当日失败锁、核桃标记、debris、邮件或 finale。

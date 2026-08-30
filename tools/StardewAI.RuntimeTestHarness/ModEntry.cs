@@ -50,6 +50,7 @@ public sealed partial class ModEntry : Mod
     private ActiveFairSlingshotGame? activeFairSlingshotGame;
     private ActiveFairStrengthGame? activeFairStrengthGame;
     private ActiveFairWheelSpin? activeFairWheelSpin;
+    private ActiveCalicoJack? activeCalicoJack;
     private bool catchFishUseToolHeld;
     private Type? smapiInputStateType;
     private MethodInfo? smapiOverrideButtonMethod;
@@ -478,6 +479,7 @@ public sealed partial class ModEntry : Mod
         TickFairSlingshotGame();
         TickFairStrengthGame();
         TickFairWheelSpin();
+        TickCalicoJack();
         TickMineFishingSetup();
         TickMineSetup();
         TickQuarrySetup();
@@ -979,6 +981,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_calico_jack")
+            {
+                pending.Completion.SetResult(ExecuteSetupCalicoJackFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_furniture_placement_target")
             {
                 pending.Completion.SetResult(ExecuteSetupFurniturePlacementTarget(pending.Request));
@@ -1383,6 +1391,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.spin_fair_wheel")
             {
                 StartFairWheelSpin(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.play_calico_jack")
+            {
+                StartCalicoJack(pending);
                 return;
             }
 
@@ -2205,6 +2219,7 @@ public sealed partial class ModEntry : Mod
             activeFairSlingshotGame is not null ||
             activeFairStrengthGame is not null ||
             activeFairWheelSpin is not null ||
+            activeCalicoJack is not null ||
             activeMineFishingSetup is not null ||
             activeMineSetup is not null ||
             activeQuarrySetup is not null ||

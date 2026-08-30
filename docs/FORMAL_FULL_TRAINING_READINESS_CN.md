@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 Calico Jack 训练准入（EVD-304）
+
+`minigame.play_calico_jack` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否执行一局由稀有稻草人依赖驱动的牌局；牌桌、路线、下注、初始牌、隐藏牌、未来抽牌、要牌/停牌序列、齐币结算和单局退出都由 fresh snapshot 与共享确定性模型机械绑定。缺少赌场权限、无 Rarecrow 需求、菜单/路线/牌局漂移、余额不足或仅剩 100 且下一局投影损失会在上游排除。
+
+隐藏静音 E 盘 `3/3` 原生矩阵覆盖高注获胜、低注失败和首次要牌获胜；生产执行只使用赌场原生 `checkAction`、`DialogueBox` 和 `CalicoJack.receiveLeftClick`，不写 RNG、牌、齐币或结果。最新 schema 为 `151/135/16/0`；对账为 `188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 allowlist / 22 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 22 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；下一目录切片为 `minigame.play_crane_game`。
+
 ## 2026-08-30 Field Office 调查训练准入（EVD-303）
 
 `island.field_office_survey` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否完成当前唯一未完成调查；问题身份、固定答案、端点、站位、路线、当日失败锁、核桃上限、瞬时 debris 生成、共享拾取和 finale 结算均由 fresh snapshot 与编译执行层机械绑定。已有核桃 debris、答错锁日、完成态、锁/菜单/教授/路线漂移会在上游排除。

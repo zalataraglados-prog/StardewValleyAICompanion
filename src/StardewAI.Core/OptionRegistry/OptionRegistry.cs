@@ -231,6 +231,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "one native stochastic WheelSpinGame selected from a fresh fair snapshot", "green zero-luck 22-of-30 constructor distribution and effective LuckLevel are transparent", "wager is the exact zero-luck Kelly fraction 7/15 of current star tokens capped by the remaining unacquired Stardrop demand" },
                 new[] { "block_inactive_or_changed_fair_event", "block_remaining_demand_below_two", "block_fewer_than_two_wagerable_star_tokens", "block_unverified_route", "block_projection_drift", "block_direct_rng_rotation_wager_score_result_or_menu_mutation" }));
 
+            Register(Option("minigame.play_calico_jack", "minigame", "Play one native CalicoJack round only while the missing Casino Rarecrow creates an exact Qi-coin deficit",
+                OptionBehaviorCategories.EconomicStrategic,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.calico_jack", "locations.collision_grid", "menus.active_menu" },
+                new[] { "one native low- or high-stakes round is selected from a fresh exact seed projection", "automatic demand exists only while (BC)126 is absent and the Deluxe Scarecrow dependency remains open", "the shared deterministic hidden-card and future-draw decision model chooses native hit or stand input", "the executor quits after one native settlement so every coin delta is auditable" },
+                new[] { "block_no_rarecrow_currency_demand", "block_club_card_or_seed_coins_missing", "block_projected_loss_of_last_seed_coins", "block_unverified_route", "block_projection_or_rng_replay_drift", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
+
             Register(Option("community_center.donate_bundle_items", "community_center", "Donate one transparent Community Center bundle ingredient",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1250,6 +1258,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.fair_wheel_spin", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches one live Buildings 308 or 309 wheel endpoint", "native wheelBet Green dialogue and NumberSelectionMenu submit the exact bounded wager", "the real WheelSpinGame owns randomness score settlement result text and menu exit" },
                 new[] { "block_inactive_or_changed_fair_event", "block_dialogue_number_selection_or_wager_drift", "block_unverified_native_random_settlement_or_cleanup", "block_unverified_route", "block_direct_rng_rotation_wager_score_result_or_menu_mutation" }));
+
+            Register(Option("executor.play_calico_jack", "minigame", "Execute one verified native CalicoJack round with exact deterministic seed replay",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.club_coins", "player.has_club_card", "player.calico_jack", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact live ClubCards or BlackJack table", "native Play dialogue constructs CalicoJack with the projected bet and seed", "shared exact seed replay validates every dealt card and chooses native hit or stand", "native result settlement and quit verify the exact Qi-coin delta without direct mutation" },
+                new[] { "block_club_or_table_projection_drift", "block_dialogue_bet_or_seed_replay_drift", "block_unverified_native_settlement_or_cleanup", "block_unverified_route", "block_direct_card_rng_coin_result_or_minigame_mutation" }));
 
             Register(Option("executor.donate_community_center_item", "community_center", "Donate one verified bundle ingredient through native Junimo Note clicks",
                 OptionBehaviorCategories.Mechanical,

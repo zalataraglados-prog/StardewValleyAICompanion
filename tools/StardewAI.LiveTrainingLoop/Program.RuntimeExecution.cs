@@ -1686,6 +1686,9 @@ static partial class Program
         ApplyFieldOfficeRequestFields(
             executionRequest,
             item);
+        ApplyCalicoJackRequestFields(
+            executionRequest,
+            item);
         ApplyFurniturePlacementRequestFields(
             executionRequest,
             item);

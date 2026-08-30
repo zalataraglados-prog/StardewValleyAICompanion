@@ -1,3 +1,12 @@
+2026-08-30 EVD-304 native Calico Jack deterministic rounds
+- Locked 1.6.15 source/data audit PASS: 100/1000 tables, exact constructor seed, initial/hidden/future card stream, hit bias, dealer 18/19/20 branches, native settlement, single-round exit and Qi fruit luck conflict are covered.
+- Focused Calico Jack mainline/governance/allowlist regression PASS 12/12; full Core PASS 2060/2060.
+- Hidden/silent isolated E-drive matrix PASS 3/3: `artifacts/runtime-calico-jack-smoke/runtime-calico-jack-smoke-20260830-085329/summary.json`. High win, low loss and first-hit win all matched exact cards, decisions, bet, result and ClubCoins delta.
+- Runtime source guard confirms production uses native Club table, DialogueBox and CalicoJack input only; no direct production mutation of cards, RNG, ClubCoins, result or play count.
+- Installed full snapshot schema is 151 required, 135 readable with provenance, 16 contextual and blocking 0. KnowledgeCompiler PASS 585/585, blocking 0.
+- Reconciliation: 188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 training allowlist / 22 catalogued blocked / 0 Product Executor. Native denominator remains 322 surfaces / 448 branches / 150 map tokens with zero blockers.
+- Final regression PASS: Core 2060/2060; Backend 148/148; full solution Release build 0 warnings / 0 errors. Next slice is `minigame.play_crane_game`.
+
 2026-08-30 EVD-303 native Island Field Office surveys
 - Locked 1.6.15 source audit PASS: exact 22/18 answers, dialogue keys/ranges, plant/nut/debris/finale effects, failed-today lock and native DayUpdate reset are covered independently from fossil donation.
 - Focused transparent-candidate/DailyPlan/fresh-compiler/continuation/source-governance regression PASS 9/9 together with EVD-302 donation checks.

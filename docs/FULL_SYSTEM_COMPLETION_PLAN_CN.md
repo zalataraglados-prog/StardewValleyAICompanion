@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 Calico Jack 原生牌局闭环（EVD-304）
+
+`minigame.play_calico_jack` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布赌场权限、齐币、Rarecrow 需求、两张桌子、精确动作格、下一局种子、初始牌、隐藏牌、完整未来随机流、推荐要牌/停牌序列、预期结算和活动小游戏私有状态。高层只决定是否接受一个由 `(BC)126`/Deluxe Scarecrow 依赖产生的单局候选；fresh 编译器覆盖下注、牌、随机数、点击和结算等全部机械字段。
+
+运行层复用共享路线，只经原生桌面 `checkAction`、`Play` 对话和 `CalicoJack` 左键输入完成。隐藏静音矩阵 `3/3` 覆盖 1000 齐币获胜、100 齐币失败和首次要牌获胜；不存在第二套牌局状态写入器。当前对账为 `188 registered / 210 semantic / 187 compiler-bound / 111 five-gate / 50 allowlist / 22 catalogued blocked / 0 Product Executor`，原生 `322/448/150` 分母和 full snapshot `151/135/16/0` 均 blocking 0，回归为 Core `2060/2060`、Backend `148/148`、Release `0 warnings / 0 errors`。下一纵向切片按冻结目录顺序为 `minigame.play_crane_game`。
+
 ## 2026-08-30 Field Office 原生调查闭环（EVD-303）
 
 `island.field_office_survey` 已按完整纵向切片闭合并进入策略训练范围。透明桥发布唯一下一题、答案范围与锁定答案、问题/响应键、左右植物、当日失败锁、collected-nut、当前 debris、核桃前后计数、finale readiness 和原生交付方式。高层只选择是否答当前题；fresh 编译器重绑全部机械字段，跨地图 continuation 锁定题型与答案。

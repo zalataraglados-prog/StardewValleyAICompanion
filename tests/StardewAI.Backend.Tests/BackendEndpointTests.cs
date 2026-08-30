@@ -848,7 +848,7 @@ namespace StardewAI.Backend.Tests
             Assert.Equal(0, trainRoot.GetProperty("included_row_count").GetInt32());
             Assert.Equal(1, trainRoot.GetProperty("excluded_calibration_row_count").GetInt32());
             Assert.Equal(0, trainRoot.GetProperty("excluded_admission_row_count").GetInt32());
-            Assert.Equal(49, trainRoot.GetProperty("training_allowlist").GetArrayLength());
+            Assert.Equal(50, trainRoot.GetProperty("training_allowlist").GetArrayLength());
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "animals.purchase");
@@ -900,6 +900,9 @@ namespace StardewAI.Backend.Tests
             Assert.Contains(
                 trainRoot.GetProperty("training_allowlist").EnumerateArray(),
                 item => item.GetString() == "mail.process_letter");
+            Assert.Contains(
+                trainRoot.GetProperty("training_allowlist").EnumerateArray(),
+                item => item.GetString() == "minigame.play_calico_jack");
             Assert.Equal(0, trainRoot.GetProperty("option_scores").GetArrayLength());
 
             var predictResponse = await client.PostAsJsonAsync("/api/v1/training/baseline/predict", new

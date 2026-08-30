@@ -10,6 +10,17 @@ Status values:
 - `needs_runtime_regen`: field needs a fresh runtime snapshot after next Bridge deploy.
 - `needs_wiki_secondary`: local decompile evidence exists, but player-facing Wiki confirmation is still pending.
 
+Current installed full-snapshot schema checkpoint: **151 required / 135 readable with provenance / 16 contextual / 0 blocking** (EVD-304).
+
+## Calico Jack Transparency
+
+| Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |
+|---|---|---|---|---|---|
+| `player.club_coins` / `player.has_club_card` / `player.calico_jack.access` / `shop_rows[]` / `action_tiles[]` | Exclude inaccessible or irrelevant casino play before scoring and bind the exact low/high table | live player/team state, Club map actions and shop data; locked 1.6.15 `Club.checkAction` | Casino page confirms Qi coins and the Rarecrow shop dependency | covered_for_read_and_gate_EVD_304 | Automatic demand exists only while `(BC)126` is absent and the Deluxe Scarecrow dependency remains open. |
+| `next_round.seed` / `initial_cards[]` / `hidden_dealer_card` / `future_draws[]` / `decision_trace[]` / `expected_result` / `expected_coin_delta` | Replay the complete next native round without consuming production RNG and keep all card mechanics out of model output | locked `CalicoJack` constructor, `getRandomCard`, hit bias, dealer branches and settlement; shared pure cursor model | Wiki gives player-facing rules but not the complete RNG/dealer implementation | covered_for_read_candidate_compile_output_EVD_304 | Fresh compilation rejects seed/card/decision/bet/result drift. Random stream derives from play count, day count and unique ID. |
+| `luck_conflict` / `daily_luck` / `luck_level` / `qi_fruit_999_chance` | Preserve the exact scope of luck rather than accepting a broad secondary-source statement | locked Qi fruit 999 branch reads `DailyLuck + LuckLevel`; normal card flow does not | Wiki broadly states luck does not affect Calico Jack | decompile_authoritative_conflict_recorded_EVD_304 | Luck is not injected into ordinary card choice. It remains transparent because the native special reward branch consumes it. |
+| `active_game.*` / `native_contract` | Verify table/dialogue/minigame identity, current cards, hit/stand sequence, bet, settlement and single-round quit | live reflected `CalicoJack` private state plus locked native input lifecycle | n/a | covered_for_native_runtime_and_receipt_EVD_304 | Production may call native input methods only; direct card, RNG, ClubCoins, result or statistic writes are forbidden. |
+
 ## Island Field Office Transparency
 
 | Field | Purpose | Local evidence | Wiki evidence | Gate/status | Notes |

@@ -1,10 +1,10 @@
 {
   "schema_version": "stardewai.semantic_action_catalog.v1",
   "denominator_status": "native_action_denominator_frozen",
-  "denominator_fingerprint_sha256": "a7128f6e7617bc8e76d332d8982d4ac6e86a08c0b70e102e27dffc15f42db809",
-  "action_count": 209,
-  "registered_option_spec_count": 186,
-  "catalogued_blocked_count": 23,
+  "denominator_fingerprint_sha256": "12f506a286769c934fad024ba8cb6775ab44c9881f2ba5d9e3cf77c3de6a849f",
+  "action_count": 210,
+  "registered_option_spec_count": 188,
+  "catalogued_blocked_count": 22,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
   "pending_catalog_without_surface_ids": [],
@@ -827,6 +827,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.play_calico_jack",
+      "domain": "minigame",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.minigame",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.play_fair_fishing_game",
       "domain": "festival",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -1459,13 +1468,11 @@
     {
       "action_id": "minigame.play_calico_jack",
       "domain": "minigame",
-      "semantic_kind": "composite",
+      "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.minigame",
-      "catalog_status": "catalogued_blocked",
-      "block_reason": "option_spec_not_declared",
-      "native_runtime_types": [
-        "CalicoJack"
-      ]
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
     },
     {
       "action_id": "minigame.play_crane_game",

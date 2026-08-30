@@ -61,6 +61,19 @@ public static class QueueReplanFilter
                 ["survey_answer"] = fieldOfficeSurveyAnswer
             };
         }
+        var calicoTargetCoins = ReadParameter(queueItem, "continuation.calico_target_club_coins");
+        var calicoTargetItem = ReadParameter(queueItem, "continuation.calico_target_item_id");
+        if (string.Equals(optionId, "minigame.play_calico_jack", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(calicoTargetCoins) && !string.IsNullOrWhiteSpace(calicoTargetItem))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "calico_jack",
+                ["option_id"] = optionId,
+                ["calico_target_club_coins"] = calicoTargetCoins,
+                ["calico_target_item_id"] = calicoTargetItem
+            };
+        }
         var renovationId = ReadParameter(queueItem, "continuation.renovation_id");
         var renovationSelectedIndex = ReadParameter(queueItem, "continuation.selected_index");
         var renovationReason = ReadParameter(queueItem, "continuation.renovation_reason");
@@ -392,6 +405,12 @@ public static class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "survey_kind"), ReadString(continuation, "survey_kind"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "survey_answer"), ReadString(continuation, "survey_answer"), StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "calico_jack", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.play_calico_jack", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "calico_target_club_coins"), ReadString(continuation, "calico_target_club_coins"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "calico_target_item_id"), ReadString(continuation, "calico_target_item_id"), StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "home_renovation", StringComparison.Ordinal))
         {
             return string.Equals(optionId, "executor.renovate_home", StringComparison.Ordinal) &&
@@ -672,6 +691,11 @@ public static class QueueReplanFilter
         {
             return CandidateParameterMatchesContinuation(candidate, continuation, "survey_kind") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "survey_answer");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "calico_jack", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "calico_target_club_coins") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "calico_target_item_id");
         }
 
         if (string.Equals(
