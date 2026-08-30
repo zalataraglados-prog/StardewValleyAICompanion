@@ -40,6 +40,8 @@ public sealed partial class ModEntry
             "debug.setup_calico_jack",
             "debug.setup_slots",
             "debug.setup_calico_statue",
+            "debug.setup_multiplayer_wallet",
+            "debug.settle_multiplayer_wallet",
             "debug.setup_crane_game",
             "debug.setup_darts_game",
             "debug.setup_prairie_king",

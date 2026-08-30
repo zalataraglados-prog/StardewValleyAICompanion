@@ -66,6 +66,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["mining.obtain_skull_key"] = MiningSkullKeyCandidateBuilder.Build,
                 ["mining.claim_reward_chests"] = (snapshot, _) => MineRewardChestCandidates(snapshot),
                 ["mining.activate_calico_statue"] = (snapshot, _) => CalicoStatueCandidates(snapshot),
+                ["multiplayer.manage_wallet"] = MultiplayerWalletCandidates,
                 ["rewards.claim_pot_of_gold"] = (snapshot, _) => PotOfGoldCandidates(snapshot),
                 ["mining.choose_dwarf_statue_power"] = (snapshot, _) => DwarfKingStatuePowerCandidates(snapshot),
                 ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),

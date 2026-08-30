@@ -1695,6 +1695,9 @@ static partial class Program
         ApplyCalicoStatueRequestFields(
             executionRequest,
             item);
+        ApplyMultiplayerWalletRequestFields(
+            executionRequest,
+            item);
         ApplyCraneGameRequestFields(
             executionRequest,
             item);

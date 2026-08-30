@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-08-30 当前权威检查点：EVD-310
+
+- `multiplayer.manage_wallet` 已闭合透明读取、显式玩家命令候选、跨地图 continuation、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 ManorHouse LedgerBook 菜单输入和严格回执。唯一动作链为 `multiplayer.manage_wallet -> manage_multiplayer_wallet -> executor.manage_multiplayer_wallet`，没有第二套钱包执行系统。
+- 完整命令域为 `schedule_separate`、`cancel_separate`、`schedule_merge`、`cancel_merge`、`transfer`。前四项只允许房主；转账允许独立钱包模式下的实际玩家，收款人严格绑定原生 `Game1.getAllFarmers()` 已认领顺序、响应键和玩家 ID。模式更改只设置今晚待结算状态，次日由原生 `ManorHouse.SeparateWallets/MergeWallets` 完成；独立钱包按原生整数除法分配共享余额并舍弃余数，合并钱包汇总已认领玩家余额。转账通过原生收款人对话和 `DigitEntryMenu` 结算。
+- 该能力严格为 `PlayerCommandOnly`：要求原因和显式确认，转账另需独立转账确认；默认候选、自主规划和策略训练均排除。fresh 编译器只保留操作意图，并从当前透明投影重绑模式、参与者、余额、收款人响应键、LedgerBook 站位和投影指纹。
+- 隐藏静音 E 盘矩阵 `7/7` PASS：`artifacts/runtime-multiplayer-wallet/runtime-multiplayer-wallet-20260830-154907/summary.json`。5 个即时命令和共享转独立、独立转共享两个原生次日结算全部 `applied/verified`。生产执行器不直接写钱包模式、待结算标记、共享余额、个人余额或赠款统计。
+- 最新 full snapshot 为 `157 required / 140 readable with provenance / 17 contextual / 0 blocking`；对账为 `200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 training allowlist / 16 catalogued blocked / 0 Product Executor`。原生分母仍为 `322 surfaces / 448 branches / 150 map tokens` 且已冻结；KnowledgeCompiler `585/585`、blocking 0；Core `2096/2096`、Backend `150/150`、Release `0 warnings / 0 errors`。`minigame.play_junimo_kart` 按既定决定继续复用现有等价执行并后置完美代打，下一实际纵向切片为 `multiplayer.send_chat`。
+
 ## 2026-08-30 当前权威检查点：EVD-309
 
 - `mining.activate_calico_statue` 已闭合透明读取、自主候选、DailyPlan、fresh 编译重绑定、类型化请求、共享 BFS、原生 MineShaft 地块交互和严格结果回执。唯一动作链为 `mining.activate_calico_statue -> activate_calico_statue -> executor.activate_calico_statue`；小模型只接受或拒绝当前精确投影的下一效果，移动、交互和结果验收由机械层完成。

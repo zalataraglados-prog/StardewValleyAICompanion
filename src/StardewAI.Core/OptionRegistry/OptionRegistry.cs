@@ -596,6 +596,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "small model accepts or rejects the exact day-save-seeded next effect", "compiler replays the fresh seed and binds the one live unactivated tile and adjacent stand", "shared BFS reaches the statue", "one native MineShaft.checkAction advances rating and applies the exact team effect" },
                 new[] { "block_not_desert_festival_skull_cavern", "block_no_unactivated_calico_statue", "block_projected_effect_changed", "block_no_reachable_adjacent_stand", "block_menu_or_player_busy", "block_seed_tile_or_team_state_drift", "block_direct_rating_effect_reward_health_stamina_buff_tile_or_rng_mutation" }));
 
+            Register(Option("multiplayer.manage_wallet", "multiplayer", "Execute one explicitly confirmed native multiplayer wallet command",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.multiplayer_wallet", "menus.active_menu" },
+                new[] { "player selects one exact schedule, cancellation, or transfer command", "compiler rebinds current wallet mode, participant balances, recipient response key and live LedgerBook stand", "shared BFS reaches the ManorHouse ledger", "native dialogue or digit-menu input produces an immediate receipt", "scheduled mode changes settle only at the native next-day wallet barrier" },
+                new[] { "block_without_explicit_command_reason_and_confirmation", "block_mode_change_when_not_host", "block_transfer_outside_separate_wallet_mode", "block_unknown_recipient_or_invalid_amount", "block_menu_or_ledger_unavailable", "block_projection_or_balance_drift", "block_direct_wallet_flag_money_balance_or_stat_mutation" }));
+
             Register(Option("rewards.claim_pot_of_gold", "rewards", "Claim the exact Spring 17 Forest Pot of Gold through its native object interaction",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.FullActionExpansion,
@@ -876,6 +884,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "mining.current_mine", "mining.calico_statue", "mining.tiles", "menus.active_menu" },
                 new[] { "shared BFS reaches the exact adjacent stand", "one native Buildings tile 284 checkAction fires the activation event", "tile 285, rating plus one, activation count plus one and exact seeded effect dictionary are verified", "egg, refresh or speed side effects remain game-owned and are checked from the receipt" },
                 new[] { "block_endpoint_or_projection_drift", "block_not_master_seed_receipt", "block_unverified_effect_or_side_effect", "block_unverified_route", "block_direct_rating_effect_reward_health_stamina_buff_tile_or_rng_mutation" }));
+
+            Register(Option("executor.manage_multiplayer_wallet", "multiplayer", "Execute and verify one explicitly confirmed native ManorHouse wallet command",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.PlayerCommandOnly,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "player.multiplayer_wallet", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact live LedgerBook stand", "native DialogueBox response clicks select one authorized mode command or recipient", "native DigitEntryMenu clicks enter an exact transfer amount", "pending flag, balances and gifted statistic are checked without production writes", "native next-day settlement is verified separately for shared-to-separate and separate-to-shared transitions" },
+                new[] { "block_without_explicit_command_reason_and_confirmation", "block_mode_change_when_not_host", "block_transfer_outside_separate_wallet_mode", "block_unknown_recipient_or_invalid_amount", "block_endpoint_menu_or_projection_drift", "block_unverified_immediate_or_next_day_receipt", "block_direct_wallet_flag_money_balance_or_stat_mutation" }));
 
             Register(Option("executor.mine_stone", "mining", "Mine one transparent breakable stone",
                 OptionBehaviorCategories.Mechanical,

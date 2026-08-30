@@ -1,5 +1,11 @@
 # StardewAI 完全体完成路线图
 
+## 2026-08-30 联机钱包玩家命令闭环（EVD-310）
+
+`multiplayer.manage_wallet` 已按完整纵向切片闭合，但严格保持 `PlayerCommandOnly`。透明桥发布 ManorHouse LedgerBook 端点、当前共享/独立模式、今晚待切换状态、已认领参与者、原生收款人顺序与响应键、共享及个人余额、赠款统计、五项命令门控和两种次日结算投影。上游仅接收带原因和确认的显式命令；fresh 编译器从实时投影重绑全部机械字段，跨地图 continuation 锁定同一操作、收款人和金额。
+
+运行层复用共享 BFS，只通过原生 LedgerBook `checkAction`、`DialogueBox` 和 `DigitEntryMenu` 输入执行。隐藏静音矩阵 `7/7` 覆盖五项即时命令与两种原生次日结算，生产路径不存在钱包或余额直写。当前对账为 `200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 allowlist / 16 catalogued blocked / 0 Product Executor`，full snapshot `157/140/17/0`、KnowledgeCompiler `585/585` blocking 0、Core `2096/2096`、Backend `150/150`、Release `0 warnings / 0 errors`。该切片不增加策略训练 allowlist；Junimo Kart 维持既定后置边界，下一实际纵向切片为 `multiplayer.send_chat`。
+
 ## 2026-08-30 卡利科雕像原生闭环（EVD-309）
 
 `mining.activate_calico_statue` 已按完整纵向切片闭合并进入策略训练范围。透明桥以房主权威的日存档随机域发布下一次精确效果、完整 18 效果目录、当前效果栈、雕像地块、可达站位、评分和所有效果回执；上游只在沙漠节骷髅洞内、当前层雕像未激活且存在安全站位时生成候选。fresh 编译器重新计算效果并锁定种子输入、投影指纹、效果身份、地块和前后状态。

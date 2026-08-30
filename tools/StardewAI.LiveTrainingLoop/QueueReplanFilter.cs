@@ -134,6 +134,25 @@ public static class QueueReplanFilter
                 ["confirm_destructive"] = ReadParameter(queueItem, "continuation.confirm_destructive")
             };
         }
+        var walletOperation = ReadParameter(queueItem, "continuation.wallet_operation");
+        var walletReason = ReadParameter(queueItem, "continuation.wallet_reason");
+        var walletConfirmed = ReadParameter(queueItem, "continuation.confirm_wallet_operation");
+        if (string.Equals(optionId, "multiplayer.manage_wallet", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(walletOperation) && !string.IsNullOrWhiteSpace(walletReason) &&
+            string.Equals(walletConfirmed, "true", StringComparison.Ordinal))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "multiplayer_wallet",
+                ["option_id"] = optionId,
+                ["wallet_operation"] = walletOperation,
+                ["wallet_reason"] = walletReason,
+                ["confirm_wallet_operation"] = walletConfirmed,
+                ["confirm_wallet_transfer"] = ReadParameter(queueItem, "continuation.confirm_wallet_transfer"),
+                ["wallet_recipient_player_id"] = ReadParameter(queueItem, "continuation.wallet_recipient_player_id"),
+                ["wallet_transfer_amount"] = ReadParameter(queueItem, "continuation.wallet_transfer_amount")
+            };
+        }
 
         var questCandidateId = ReadParameter(queueItem, "continuation.quest_candidate_id");
         if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal) &&
@@ -480,6 +499,14 @@ public static class QueueReplanFilter
                     ReadString(continuation, "selected_index"),
                     StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "multiplayer_wallet", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.manage_multiplayer_wallet", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "wallet_operation"), ReadString(continuation, "wallet_operation"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "wallet_reason"), ReadString(continuation, "wallet_reason"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "wallet_recipient_player_id"), ReadString(continuation, "wallet_recipient_player_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "wallet_transfer_amount"), ReadString(continuation, "wallet_transfer_amount"), StringComparison.Ordinal);
+        }
 
         if (string.Equals(
                 continuationKind,
@@ -734,6 +761,15 @@ public static class QueueReplanFilter
                 CandidateParameterMatchesContinuation(candidate, continuation, "renovation_reason") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_renovation") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "confirm_destructive");
+        }
+        if (string.Equals(ReadString(continuation, "kind"), "multiplayer_wallet", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "wallet_operation") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "wallet_reason") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_wallet_operation") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "confirm_wallet_transfer") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "wallet_recipient_player_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "wallet_transfer_amount");
         }
 
         if (string.Equals(ReadString(continuation, "kind"), "field_office_donation", StringComparison.Ordinal))

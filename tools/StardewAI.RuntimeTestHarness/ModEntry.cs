@@ -54,6 +54,7 @@ public sealed partial class ModEntry : Mod
     private ActiveSlots? activeSlots;
     private ActiveCalicoStatueFixture? activeCalicoStatueFixture;
     private ActiveCalicoStatue? activeCalicoStatue;
+    private ActiveMultiplayerWallet? activeMultiplayerWallet;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -489,6 +490,7 @@ public sealed partial class ModEntry : Mod
         TickSlots();
         TickCalicoStatueFixture();
         TickCalicoStatue();
+        TickMultiplayerWallet();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1011,6 +1013,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_multiplayer_wallet")
+            {
+                pending.Completion.SetResult(ExecuteSetupMultiplayerWalletFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.settle_multiplayer_wallet")
+            {
+                pending.Completion.SetResult(ExecuteSettleMultiplayerWalletFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_crane_game")
             {
                 pending.Completion.SetResult(ExecuteSetupCraneGameFixture(pending.Request));
@@ -1451,6 +1465,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.activate_calico_statue")
             {
                 StartCalicoStatue(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.manage_multiplayer_wallet")
+            {
+                StartMultiplayerWallet(pending);
                 return;
             }
 
@@ -2088,6 +2108,7 @@ public sealed partial class ModEntry : Mod
             activeDwarfKingStatueChoice = null;
             activeCalicoStatueFixture = null;
             activeCalicoStatue = null;
+            activeMultiplayerWallet = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2326,6 +2347,7 @@ public sealed partial class ModEntry : Mod
             activeSlots is not null ||
             activeCalicoStatueFixture is not null ||
             activeCalicoStatue is not null ||
+            activeMultiplayerWallet is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

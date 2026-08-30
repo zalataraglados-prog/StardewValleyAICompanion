@@ -1,5 +1,11 @@
 # StardewAI 正式全量训练准入与实施路线
 
+## 2026-08-30 联机钱包执行准入（EVD-310）
+
+`multiplayer.manage_wallet` 已通过 read / candidate / compile / native runtime / output receipt 五门，但治理为 `PlayerCommandOnly`，不进入策略训练 allowlist。玩家命令层给出五类操作之一；转账还必须给出精确收款人、金额和第二级确认。模式、房主权限、参与者、余额、原生菜单响应键、LedgerBook 站位、路线、即时回执和次日结算均由 fresh snapshot 与机械执行层绑定，模型不能自主决定分钱、合并或转账。
+
+隐藏静音 E 盘 `7/7` 原生矩阵覆盖五项即时命令及共享转独立、独立转共享的次日结算；生产执行仅使用原生 `ManorHouse.checkAction`、对话和数字输入，不直接写钱包状态。最新 schema 为 `157/140/17/0`；对账为 `200 registered / 216 semantic / 199 compiler-bound / 123 five-gate / 54 allowlist / 16 catalogued blocked / 0 Product Executor`。正式全量训练仍受剩余 16 个目录动作、Product Executor、长期轨迹、独立存档评测和第三年爷爷 21 分长跑验收阻挡；Junimo Kart 完美代打维持后置，下一实际目录切片为 `multiplayer.send_chat`。
+
 ## 2026-08-30 卡利科雕像训练准入（EVD-309）
 
 `mining.activate_calico_statue` 已通过 read / candidate / compile / native runtime / output receipt 五门并进入策略训练 allowlist。小模型只决定是否接受 fresh snapshot 投影的精确下一效果；沙漠节/骷髅洞/房主权限、日存档随机种子、效果栈、站位、移动和原生交互均由透明桥与机械执行层绑定。每次激活后必须以 live feedback 重规划，模型不得自行指定不同效果。

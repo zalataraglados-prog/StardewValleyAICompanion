@@ -614,6 +614,46 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
     }
 
+    [Fact]
+    public void MultiplayerWalletContinuationKeepsExactTransferUntilNativeTerminal()
+    {
+        var route = QueueItem("queue.wallet.route", "executor.traverse_connector", "2", "5", string.Empty);
+        var parameters = route["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "multiplayer.manage_wallet"));
+        parameters.Add(Parameter("continuation.wallet_operation", "transfer"));
+        parameters.Add(Parameter("continuation.wallet_reason", "explicit player request"));
+        parameters.Add(Parameter("continuation.confirm_wallet_operation", "true"));
+        parameters.Add(Parameter("continuation.confirm_wallet_transfer", "true"));
+        parameters.Add(Parameter("continuation.wallet_recipient_player_id", "2002"));
+        parameters.Add(Parameter("continuation.wallet_transfer_amount", "175"));
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(route);
+
+        Assert.NotNull(continuation);
+        Assert.Equal("multiplayer_wallet", continuation!["kind"]!.GetValue<string>());
+        var candidates = new JsonArray
+        {
+            MultiplayerWalletCandidate("transfer", "2001", "175"),
+            MultiplayerWalletCandidate("transfer", "2002", "100"),
+            MultiplayerWalletCandidate("transfer", "2002", "175")
+        };
+        var selected = Assert.Single(QueueReplanFilter.FilterRankedCandidates(candidates, continuation));
+        Assert.Equal(
+            "2002",
+            selected!["parameters"]![4]!["value"]!.GetValue<string>());
+
+        var terminal = QueueItem("queue.wallet.terminal", "executor.manage_multiplayer_wallet", "2", "5", string.Empty);
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("wallet_operation", "transfer"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("wallet_reason", "explicit player request"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("wallet_recipient_player_id", "2002"));
+        terminal["normalized_command"]!["parameters"]!.AsArray().Add(Parameter("wallet_transfer_amount", "175"));
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "blocked"));
+
+        terminal["normalized_command"]!["parameters"]!.AsArray()
+            .Single(node => node!["name"]!.GetValue<string>() == "wallet_transfer_amount")!["value"] = "100";
+        Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+    }
+
     private static JsonObject QueueItem(string queueItemId, string optionId, string targetX, string targetY, string qualifiedItemId)
     {
         return new JsonObject
@@ -782,6 +822,28 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                 Parameter("renovation_reason", "explicit player request"),
                 Parameter("confirm_renovation", "true"),
                 Parameter("confirm_destructive", confirmDestructive)
+            }
+        };
+    }
+
+    private static JsonObject MultiplayerWalletCandidate(
+        string operation,
+        string recipientPlayerId,
+        string transferAmount)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "multiplayer-wallet:" + operation + ":" + recipientPlayerId + ":" + transferAmount,
+            ["option_id"] = "multiplayer.manage_wallet",
+            ["kind"] = "manage_multiplayer_wallet",
+            ["parameters"] = new JsonArray
+            {
+                Parameter("wallet_operation", operation),
+                Parameter("wallet_reason", "explicit player request"),
+                Parameter("confirm_wallet_operation", "true"),
+                Parameter("confirm_wallet_transfer", "true"),
+                Parameter("wallet_recipient_player_id", recipientPlayerId),
+                Parameter("wallet_transfer_amount", transferAmount)
             }
         };
     }
